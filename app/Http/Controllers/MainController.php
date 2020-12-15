@@ -1091,8 +1091,10 @@ class MainController extends Controller
                 $voucher_no = implode(', ', $voucher_no->toArray());
                 $transaction = 'Picking Slip';
             }elseif($row->voucher_type == 'Purchase Receipt'){
-                
                 $transaction = $row->voucher_type;
+            }elseif($row->voucher_type == 'Stock Reconciliation'){
+                $transaction = $row->voucher_type;
+                $voucher_no = $row->voucher_no;
             }else{
                 $transaction = DB::table('tabStock Entry')->where('name', $row->voucher_no)->first()->purpose;
                 $voucher_no = $row->voucher_no;
@@ -1107,6 +1109,8 @@ class MainController extends Controller
             }elseif($row->voucher_type == 'Stock Entry'){
                 $ref_no = DB::table('tabStock Entry')->where('name', $row->voucher_no)->pluck('sales_order_no');
                 $ref_no = implode(', ', $ref_no->toArray());;
+            }elseif($row->voucher_type == 'Stock Reconciliation'){
+                $ref_no = $voucher_no;
             }else{
                 $ref_no = null;
             }
