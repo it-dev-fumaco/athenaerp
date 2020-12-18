@@ -36,11 +36,14 @@
 						<div class="card-header p-0 pt-1 border-bottom-0">
 							<ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist">
                 <li class="nav-item">
-                  <a class="nav-link active" id="custom-tabs-three-home-tab" data-toggle="pill" href="#custom-tabs-three-1" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Production Order(s) - Feedback</a>
+                  <a class="nav-link active font-weight-bold" id="custom-tabs-three-home-tab" data-toggle="pill" href="#custom-tabs-three-1" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Production Order(s) - Feedback</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" id="custom-tabs-three-profile-tab" data-toggle="pill" href="#custom-tabs-three-2" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Items for Return</a>
-                </li>
+                  <a class="nav-link font-weight-bold" id="custom-tabs-three-profile-tab" data-toggle="pill" href="#custom-tabs-three-2" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Internal Return</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link font-weight-bold" id="custom-tabs-three-mrsr-tab" data-toggle="pill" href="#custom-tabs-three-3" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Sales Return</a>
+				</li>
               </ul>
 						</div>
 						<div class="card-body p-0">
@@ -177,6 +180,64 @@
 										</div>
 									</div>
 								</div>
+								<div class="tab-pane fade" id="custom-tabs-three-3" role="tabpanel" aria-labelledby="custom-tabs-three-mrsr-tab">
+									<div class="row m-0 p-0">
+									  <div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
+										<div class="text-right">
+										  <span class="font-weight-bold">TOTAL RESULT:</span>
+										  <span class="badge bg-info" style="font-size: 12pt;">@{{ mr_ret_filtered.length }}</span>
+										</div>
+									  </div>
+									  <div class="col-md-12 m-0 p-0">
+										<div class="alert m-3 text-center" ng-show="custom_loading_spinner_3">
+										  <h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
+										</div>
+										<div class="table-responsive p-0">
+										  <table class="table table-hover">
+											<col style="width: 10%;">
+											<col style="width: 15%;">
+											<col style="width: 33%;">
+											<col style="width: 10%;">
+											<col style="width: 16%;">
+											<col style="width: 8%;">
+											<col style="width: 8%;">
+											<thead>
+											  <tr>
+												<th scope="col" class="text-center">STE No.</th>
+												<th scope="col" class="text-center">Target Warehouse</th>
+												<th scope="col">Item Description</th>
+												<th scope="col" class="text-center">Qty</th>
+												<th scope="col" class="text-center">Ref. No.</th>
+												<th scope="col" class="text-center">Status</th>
+												<th scope="col" class="text-center">Actions</th>
+											  </tr>
+											</thead>
+											<tbody>
+											  <tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr)">
+												<td class="text-center">@{{ r.name }}</td>
+												<td class="text-center">@{{ r.t_warehouse }}</td>
+												<td class="text-justify">
+												  <span class="d-block font-weight-bold view-item-details" data-item-code="@{{ x.item_code }}">@{{ r.item_code }}</span>
+												  <span class="d-block">@{{ r.description }}</span>
+												  <span class="d-block mt-3" ng-hide="r.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ r.owner }}</span>
+												</td>
+												<td class="text-center">@{{ r.transfer_qty | number:2 }}</td>
+												<td class="text-center">
+												  <span class="d-block">@{{ r.sales_order_no }}</span>
+												  <span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>
+												</td>
+												<td class="text-center" ng-if="r.status === 'Returned'"><span class="badge badge-success">@{{ r.status }}</span></td>
+												<td class="text-center" ng-if="r.status === 'For Checking'"><span class="badge badge-warning">@{{ r.status }}</span></td>
+												<td class="text-center">
+												  <img src="dist/img/icon.png" class="img-circle checkout update-item-return" data-id="@{{ r.stedname }}">
+												</td>
+											  </tr>
+											</tbody>
+										  </table>
+										</div>
+									  </div>
+									</div>
+								  </div>
 							</div>
 						</div>
 					</div>
@@ -266,6 +327,90 @@
 	</div>
 </div>
 
+<div class="modal fade" id="update-item-return-modal">
+	<form id="update-ste-form" method="POST" action="/checkout_ste_item">
+		 @csrf
+		 <div class="modal-dialog" style="min-width: 35%;">
+			  <div class="modal-content">
+					<div class="modal-header">
+					  <h4 class="modal-title"><span class="parent"></span> <small class="purpose"></small></h4>
+						 <button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						 <div class="row">
+							  <input type="hidden" value="1" name="is_material_receipt">
+							  <input type="hidden" value="-" name="user">
+							  <input type="hidden" class="transfer_as" value="For Return" name="transfer_as">
+							  <input type="hidden" class="id" name="sted_id">
+							  <input type="hidden" class="total_issued_qty" name="balance">
+							  <input type="hidden" class="item_code" name="item_code">
+							  <div class="col-md-12">
+									<div class="box-header with-border">
+										 <h4 class="box-title"><span class="t_warehouse_txt"></span></h4>
+									</div>
+									<div class="box-body" style="font-size: 12pt;">
+										 <div class="row">
+											  <div class="col-md-6">
+													<label>Barcode</label>
+													<input type="text" class="form-control barcode" name="barcode" placeholder="Barcode" required>
+											  </div>
+											  <div class="col-md-6">
+													<label>Qty</label>
+													<input type="text" class="form-control qty" name="qty" placeholder="Qty">
+											  </div>
+											  <div class="col-md-12">
+													<div class="row">
+														 <div class="col-md-5 mt-2">
+															  <a class='sample item_image_link' data-height='720' data-lighter='samples/sample-01.jpg' data-width='1280' href="#">
+																	<img src="{{ asset('storage/icon/no_img.png') }}" style="width: 100%;" class="item_image">
+															  </a>
+														 </div>
+														 <div class="col-md-7 mt-2">
+															  <span class="item_code_txt" style="display: block; font-weight: bold;"></span>
+															  <p class="description"></p>
+															  <dl>
+																	<dt>Return Qty</dt>
+																	<dd>
+																		 <p class="badge lbl-color" style="font-size: 12pt;">
+																			  <span class="total_issued_qty_txt"></span> <span class="stock_uom"></span>
+																		 </p>
+																	</dd>
+															  </dl>
+														 </div>
+													</div>
+											  </div>
+											  <div class="col-md-5 mt-2">
+													<dl>
+														 <dt>Reference No:</dt>
+														 <dd class="ref_no"></dd>
+														 <dt style="padding-top: 2%;">Status:</dt>
+														 <dd class="status"></dd>
+													</dl>
+											  </div>
+											  <div class="col-md-7 mt-2">
+													<dl>
+														 <dt>Requested by:</dt>
+														 <dd class="owner"></dd>
+														 <dt style="padding-top: 2%;">Remarks:</dt>
+														 <dd>
+															  <textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks"></textarea>
+														 </dd>
+													</dl>
+											  </div>
+										 </div>
+									</div>
+							  </div>
+						 </div>
+					</div>
+					<div class="modal-footer">
+						 <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> RETURN</button>
+						 <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+					</div>
+			  </div>
+		 </div>
+	</form>
+ </div>
+
 @endsection
 
 @section('script')
@@ -276,6 +421,52 @@
 			headers: {
 			  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
 			}
+		});
+
+		$(document).on('click', '.update-item-return', function(){
+			var id = $(this).data('id');
+			$.ajax({
+			  type: 'GET',
+			  url: '/get_ste_details/' + id,
+			  success: function(response){
+					$('#update-item-return-modal .parent').text(response.parent);
+					$('#update-item-return-modal .purpose').text('Sales Return');
+			
+					$('#update-item-return-modal .id').val(response.name);
+					$('#update-item-return-modal .total_issued_qty').val(response.total_issued_qty);
+					$('#update-item-return-modal .item_code').val(response.item_code);
+			
+					$('#update-item-return-modal .t_warehouse_txt').text(response.t_warehouse);
+			
+					var barcode_value = '';
+					var img = (response.img) ? '/img/' + response.img : '/icon/no_img.png';
+					img = "{{ asset('storage/') }}" + img;
+			
+					$('#update-item-return-modal .item_image').attr('src', img);
+					$('#update-item-return-modal .item_image_link').removeAttr('href').attr('href', img);
+			
+					$('#update-item-return-modal .qty').val(Number(response.qty));
+					$('#update-item-return-modal .item_code_txt').text(response.item_code);
+					$('#update-item-return-modal .description').text(response.description);
+					$('#update-item-return-modal .owner').text(response.owner);
+					$('#update-item-return-modal .t_warehouse').val(response.t_warehouse);
+					$('#update-item-return-modal .barcode').val(barcode_value);
+					$('#update-item-return-modal .ref_no').text(response.ref_no);
+					$('#update-item-return-modal .status').text(response.status);
+			
+					if (response.qty <= 0) {
+					$('#update-item-return-modal .lbl-color').addClass('badge-danger').removeClass('badge-success');
+					}else{
+					$('#update-item-return-modal .lbl-color').addClass('badge-success').removeClass('badge-danger');
+					}
+			
+					$('#update-item-return-modal .total_issued_qty_txt').text(Number(response.qty));
+					$('#update-item-return-modal .stock_uom').text(response.stock_uom);
+					$('#update-item-return-modal .remarks').text(response.remarks);
+	
+					$('#update-item-return-modal').modal('show');
+				}
+			});
 		});
 
 		$(document).on('click', '.receive-item', function(e){
@@ -311,7 +502,6 @@
 				type: "POST",
 				data: $(this).serialize(),
 				success: function(response){
-					console.log(response);
 					$('#modal-notification').modal('show'); 
 					$('#modal-notification .modal-title').html(response.modal_title);
 					$('#modal-notification p').html(response.modal_message);
@@ -329,6 +519,7 @@
           $scope.loadData = function(){
 			$scope.custom_loading_spinner_1 = true;
 			$scope.custom_loading_spinner_2 = true;
+			$scope.custom_loading_spinner_3 = true;
 			$http.get("/production_to_receive?arr=1").then(function (response) {
 				$scope.pr = response.data.records;
 				$scope.custom_loading_spinner_1 = false;
@@ -339,6 +530,11 @@
 				$scope.return_items = response.data.return;
 				$scope.custom_loading_spinner_2 = false;
 			  });  
+
+			  $http.get("/get_mr_sales_return").then(function (response) {
+				$scope.mr_ret = response.data.mr_return;
+				$scope.custom_loading_spinner_3 = false;
+			  });
 		 }
 	 
 		$scope.loadData();
