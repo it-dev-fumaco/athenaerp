@@ -344,6 +344,7 @@
 							  <input type="hidden" class="id" name="sted_id">
 							  <input type="hidden" class="total_issued_qty" name="balance">
 							  <input type="hidden" class="item_code" name="item_code">
+							  <input type="hidden" class="requested_qty" name="requested_qty">
 							  <div class="col-md-12">
 									<div class="box-header with-border">
 										 <h4 class="box-title"><span class="t_warehouse_txt"></span></h4>
@@ -453,6 +454,8 @@
 					$('#update-item-return-modal .barcode').val(barcode_value);
 					$('#update-item-return-modal .ref_no').text(response.ref_no);
 					$('#update-item-return-modal .status').text(response.status);
+
+					$('#update-item-return-modal input[name="requested_qty"]').val(response.qty);
 			
 					if (response.qty <= 0) {
 					$('#update-item-return-modal .lbl-color').addClass('badge-danger').removeClass('badge-success');
