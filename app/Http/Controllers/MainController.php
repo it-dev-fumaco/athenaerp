@@ -345,7 +345,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
-            ->whereIn('s_warehouse', $allowed_warehouses)
+            ->whereIn('s_warehouse', $allowed_warehouses)->where('ste.transfer_as', '!=', 'For Return')
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
@@ -1679,9 +1679,11 @@ class MainController extends Controller
                         if(!$bom_material){
                             $valuation_rate = DB::connection('mysql')->table('tabBin')
                                 ->where('item_code', $row->item_code)
-                                ->where('warehouse', $source_warehouse)
+                                ->where('warehouse', $row->source_warehouse)
                                 ->sum('valuation_rate');
                         }
+
+                        $conversion_factor = (!$bom_material) ? 1 : $bom_material->conversion_factor;
 
                         $base_rate = ($bom_material) ? $bom_material->base_rate : $valuation_rate;
 
@@ -1725,7 +1727,7 @@ class MainController extends Controller
                             'basic_rate' => $base_rate,
                             'description' => $row->description,
                             'barcode' => null,
-                            'conversion_factor' => $bom_material->conversion_factor,
+                            'conversion_factor' => $conversion_factor,
                             'item_code' => $row->item_code,
                             'retain_sample' => 0,
                             'qty' => $remaining_qty,
@@ -1913,6 +1915,21 @@ class MainController extends Controller
                 if($draft_ste->purpose == 'Material Transfer for Manufacture'){
                     $this->update_production_order_items($production_order_details->name);
                 }
+
+                if($production_order_details->status == 'Not Started'){
+                    $values = [
+                        'status' => 'In Process',
+                        'material_transferred_for_manufacturing' => $production_order_details->qty
+                    ];
+                }else{
+                    $values = [
+                        'material_transferred_for_manufacturing' => $production_order_details->qty
+                    ];
+                }
+
+                DB::connection('mysql')->table('tabProduction Order')
+                    ->where('name', $production_order_details->name)
+                    ->update($values);
 
                 $this->update_bin($id);
                 $this->create_stock_ledger_entry($id);
