@@ -31,6 +31,9 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/count_production_to_receive', 'MainController@count_production_to_receive');
 
     Route::get('/load_suggestion_box', 'MainController@load_suggestion_box');
+    Route::get('/sales_report', 'ReportController@salesReport');
+    Route::get('/sales_summary_report/{year}', 'ReportController@salesReportSummary');
+
     Route::get('/get_select_filters', 'MainController@get_select_filters');
 
     Route::get('/get_parent_warehouses', 'MainController@get_parent_warehouses');
