@@ -498,9 +498,9 @@ class MainController extends Controller
 
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', '<', 2)->whereIn('purpose', ['Material Transfer', 'Material Transfer for Manufacture'])
+            ->where('ste.docstatus', 0)->whereIn('purpose', ['Material Transfer', 'Material Transfer for Manufacture'])
             ->where('ste.transfer_as', 'For Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'ste.material_request', 'ste.owner', 'ste.transfer_as')
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'ste.material_request', 'ste.owner', 'ste.transfer_as', 'ste.so_customer_name')
             ->orderBy('sted.status', 'asc')->get();
 
         $list = [];
@@ -512,26 +512,18 @@ class MainController extends Controller
             
             $balance = $actual_qty - $total_issued;
 
-            if($d->material_request){
-                $customer = DB::table('tabMaterial Request')->where('name', $d->material_request)->first();
-            }else{
-                $customer = DB::table('tabSales Order')->where('name', $d->sales_order_no)->first();
-            }
-
-            $ref_no = ($customer) ? $customer->name : null;
-            $customer = ($customer) ? $customer->customer : null;
+            $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
 
             $part_nos = implode(', ', $part_nos->toArray());
 
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
+            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
             $parent_warehouse = $this->get_warehouse_parent($d->t_warehouse);
 
             $list[] = [
-                'customer' => $customer,
+                'customer' => $d->so_customer_name,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
@@ -782,7 +774,7 @@ class MainController extends Controller
 
             $this->insert_transaction_log('Stock Entry', $request->sted_id);
 
-            $this->update_pending_ste_item_status();
+            $status_result = $this->update_pending_ste_item_status();
 
             if ($request->purpose == 'Material Transfer for Manufacture') {
                 $production_order_details = DB::table('tabProduction Order')
@@ -800,19 +792,25 @@ class MainController extends Controller
                 $this->generate_stock_entry($request->production_order);
             }
 
+            if ($request->purpose == 'Material Transfer') {
+                if($request->transfer_as == 'For Return' && $status_result == 'Returned'){
+                    $this->submit_stock_entry($request->ste_name);
+                }
+            }
+
             DB::commit();
 
             if ($request->transfer_as == 'For Return') {
                 return response()->json([
                     'error' => 0, 
                     'modal_title' => 'Returned', 
-                    'modal_message' => 'Item ' . $request->item_code . 'has been returned.'
+                    'modal_message' => 'Item ' . $request->item_code . ' has been returned.'
                 ]);
             }else{
                 return response()->json([
                     'error' => 0, 
                     'modal_title' => 'Checked Out', 
-                    'modal_message' => 'Item ' . $request->item_code . 'has been checked out.'
+                    'modal_message' => 'Item ' . $request->item_code . ' has been checked out.'
                 ]);
             }
         } catch (Exception $e) {
@@ -889,6 +887,7 @@ class MainController extends Controller
                 ->where('item_status', 'For Checking')->where('docstatus', 0)
                 ->select('name', 'transfer_as', 'receive_as')->get();
 
+            $item_status = null;
             foreach($for_checking_ste as $ste){
                 $items_for_checking = DB::table('tabStock Entry Detail')
                     ->where('parent', $ste->name)->where('status', 'For Checking')->exists();
@@ -904,6 +903,8 @@ class MainController extends Controller
             }
 
             DB::commit();
+
+            return $item_status;
         } catch (Exception $e) {
             DB::rollback();
         }
@@ -1876,7 +1877,7 @@ class MainController extends Controller
             if($draft_ste){
                 if ($draft_ste->purpose != 'Manufacture') {
                      // check if all items are issued
-                    $count_not_issued_items = DB::table('tabStock Entry Detail')->where('status', '!=', 'Issued')->where('parent', $draft_ste->name)->count();
+                    $count_not_issued_items = DB::table('tabStock Entry Detail')->whereNotIn('status', ['Issued', 'Returned'])->where('parent', $draft_ste->name)->count();
                     if($count_not_issued_items > 0){
                         return response()->json(['success' => 0, 'message' => 'All item(s) must be issued.']);
                     }
@@ -1925,22 +1926,22 @@ class MainController extends Controller
 
                 if($draft_ste->purpose == 'Material Transfer for Manufacture'){
                     $this->update_production_order_items($production_order_details->name);
-                }
 
-                if($production_order_details->status == 'Not Started'){
-                    $values = [
-                        'status' => 'In Process',
-                        'material_transferred_for_manufacturing' => $production_order_details->qty
-                    ];
-                }else{
-                    $values = [
-                        'material_transferred_for_manufacturing' => $production_order_details->qty
-                    ];
+                    if($production_order_details->status == 'Not Started'){
+                        $values = [
+                            'status' => 'In Process',
+                            'material_transferred_for_manufacturing' => $production_order_details->qty
+                        ];
+                    }else{
+                        $values = [
+                            'material_transferred_for_manufacturing' => $production_order_details->qty
+                        ];
+                    }
+    
+                    DB::connection('mysql')->table('tabProduction Order')
+                        ->where('name', $production_order_details->name)
+                        ->update($values);
                 }
-
-                DB::connection('mysql')->table('tabProduction Order')
-                    ->where('name', $production_order_details->name)
-                    ->update($values);
 
                 $this->update_bin($id);
                 $this->create_stock_ledger_entry($id);

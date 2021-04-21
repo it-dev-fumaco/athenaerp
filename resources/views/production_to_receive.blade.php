@@ -328,7 +328,7 @@
 </div>
 
 <div class="modal fade" id="update-item-return-modal">
-	<form id="update-ste-form" method="POST" action="/checkout_ste_item">
+	<form method="POST" action="/checkout_ste_item">
 		 @csrf
 		 <div class="modal-dialog" style="min-width: 35%;">
 			  <div class="modal-content">
