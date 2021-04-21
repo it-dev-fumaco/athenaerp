@@ -277,7 +277,7 @@ class MainController extends Controller
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer for Manufacture')
             ->where('ste.transfer_as', '!=', 'For Return')
             ->whereIn('s_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.production_order', 'ste.creation')
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.production_order', 'ste.creation', 'ste.so_customer_name')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -290,26 +290,32 @@ class MainController extends Controller
             
             $balance = $actual_qty - $total_issued;
 
-            if($d->material_request){
-                $customer = DB::table('tabMaterial Request')->where('name', $d->material_request)->first();
-            }else{
-                $customer = DB::table('tabSales Order')->where('name', $d->sales_order_no)->first();
-            }
-
-            $ref_no = ($customer) ? $customer->name : null;
-            $customer = ($customer) ? $customer->customer : null;
+            $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-            
+
             $part_nos = implode(', ', $part_nos->toArray());
 
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
+            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
             $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
 
+            // check if production order exist
+            $production_order = DB::table('tabProduction Order')->where('name', $d->production_order)->first();
+
+            $delivery_date = $production_order->delivery_date;
+            if($production_order){
+                $per_item_delivery_date = DB::table('tabSales Order Item')->where('parent', $production_order->sales_order)
+                    ->where('item_code', $production_order->parent_item_code)->first();
+
+                if($per_item_delivery_date){
+                    $delivery_date = $per_item_delivery_date->rescheduled_delivery_date;
+                }
+            }
+
             $list[] = [
-                'customer' => $customer,
+                'delivery_date' => Carbon::parse($delivery_date)->format('M-d-Y'),
+                'customer' => $d->so_customer_name,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
