@@ -498,9 +498,9 @@ class MainController extends Controller
 
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)->whereIn('purpose', ['Material Transfer', 'Material Transfer for Manufacture'])
-            ->where('ste.transfer_as', 'For Return')->whereIn('t_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'ste.material_request', 'ste.owner', 'ste.transfer_as', 'ste.so_customer_name')
+            ->where('ste.docstatus', '<', 2)->whereIn('purpose', ['Material Transfer', 'Material Transfer for Manufacture'])
+            ->where('ste.transfer_as', 'For Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'ste.material_request', 'ste.owner', 'ste.transfer_as')
             ->orderBy('sted.status', 'asc')->get();
 
         $list = [];
@@ -522,7 +522,7 @@ class MainController extends Controller
 
             $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
-            $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+            $parent_warehouse = $this->get_warehouse_parent($d->t_warehouse);
 
             $list[] = [
                 'customer' => $d->so_customer_name,
