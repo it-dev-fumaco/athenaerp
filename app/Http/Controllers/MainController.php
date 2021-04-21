@@ -785,6 +785,17 @@ class MainController extends Controller
             $this->update_pending_ste_item_status();
 
             if ($request->purpose == 'Material Transfer for Manufacture') {
+                $production_order_details = DB::table('tabProduction Order')
+                    ->where('name', $request->production_order)->first();
+
+                if($production_order_details && $production_order_details->docstatus > 1){
+                    return response()->json([
+                        'error' => 1, 
+                        'modal_title' => 'Message', 
+                        'modal_message' => 'Production Order ' . $request->production_order . ' was cancelled. Please reload the page.'
+                    ]);
+                }
+
                 $this->submit_stock_entry($request->ste_name);
                 $this->generate_stock_entry($request->production_order);
             }
