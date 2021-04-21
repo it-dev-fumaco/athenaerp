@@ -781,7 +781,6 @@
 					url: '/checkout_ste_item',
 					data: $(this).serialize(),
 					success: function(response){
-					  console.log(response);
 					  if (response.error) {
 							$('#myModal').modal('show'); 
 							$('#myModalLabel').html(response.modal_title);
