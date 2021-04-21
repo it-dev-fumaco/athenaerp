@@ -499,7 +499,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', '<', 2)->whereIn('purpose', ['Material Transfer', 'Material Transfer for Manufacture'])
-            ->where('ste.transfer_as', 'For Return')->whereIn('s_warehouse', $allowed_warehouses)
+            ->where('ste.transfer_as', 'For Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'ste.material_request', 'ste.owner', 'ste.transfer_as')
             ->orderBy('sted.status', 'asc')->get();
 
@@ -528,7 +528,7 @@ class MainController extends Controller
             $owner = DB::table('tabUser')->where('email', $d->owner)->first();
             $owner = ($owner) ? $owner->full_name : null;
 
-            $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+            $parent_warehouse = $this->get_warehouse_parent($d->t_warehouse);
 
             $list[] = [
                 'customer' => $customer,
