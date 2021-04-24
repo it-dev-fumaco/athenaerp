@@ -235,11 +235,13 @@
                                     <div class="col-md-12 mt-2">
                                       <h5 class="text-center font-weight-bold text-uppercase">Product Bundle Item(s)</h5>
                                       <table class="table table-sm table-bordered" id="product-bundle-table">
-                                        <col style="width: 80%;">
+                                        <col style="width: 60%;">
+                                        <col style="width: 20%;">
                                         <col style="width: 20%;">
                                         <thead>
                                           <th class="text-center">Item Description</th>
                                           <th class="text-center">Qty</th>
+                                          <th class="text-center">Available Qty</th>
                                         </thead>
                                         <tbody></tbody>
                                       </table>
@@ -374,9 +376,12 @@
 
             var table_row = '';
             $.each(response.product_bundle_items, function(i, d){
+              var badge = (d.available_qty < d.qty) ? 'badge-danger' : 'badge-success';
               table_row += '<tr>' +
-                  '<td class="align-middle"><span class="d-block font-weight-bold">' + d.item_code + '</span><small class="font-italic">' + d.description + '</small></td>' +
-                  '<td class="text-center align-middle"><span class="d-block font-weight-bold">' + d.qty + '</span><small class="font-italic">' + d.uom + '</small></td>' +
+                  '<td class="text-justify align-middle"><b>' + d.item_code + '</b> ' + d.description + '</td>' +
+                  '<td class="text-center align-middle"><b>' + d.qty + '</b> ' + d.uom + '</td>' +
+                  '<td class="text-center align-middle"><span class="badge ' + badge + '"  style="font-size: 11pt;">' + d.available_qty + ' ' + d.uom + '</span>' +
+                  '<span class="d-block" style="font-size: 9pt;">' + d.warehouse + '</span></td>' +
                   '</tr>';
             });
 

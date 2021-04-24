@@ -662,7 +662,7 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name')
             ->first();
 
         if(!$q){
@@ -682,13 +682,21 @@ class MainController extends Controller
 
         $product_bundle_items = [];
         if($is_bundle){
-            $query = DB::table('tabProduct Bundle Item')->where('parent', $q->item_code)->get();
+            $query = DB::table('tabPacked Item')->where('parent_detail_docname', $q->dri_name)->get();
             foreach ($query as $row) {
+                $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
+
+                $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
+                
+                $available_qty = $actual_qty - $total_issued;
+
                 $product_bundle_items[] = [
                     'item_code' => $row->item_code,
                     'description' => $row->description,
                     'uom' => $row->uom,
-                    'qty' => ($row->qty * $q->qty)
+                    'qty' => ($row->qty * $q->qty),
+                    'available_qty' => $available_qty,
+                    'warehouse' => $row->warehouse
                 ];
             }
         }
