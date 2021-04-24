@@ -232,6 +232,18 @@
                                             <dd class="status"></dd>
                                         </dl>
                                     </div>
+                                    <div class="col-md-12 mt-2">
+                                      <h5 class="text-center font-weight-bold text-uppercase">Product Bundle Item(s)</h5>
+                                      <table class="table table-sm table-bordered" id="product-bundle-table">
+                                        <col style="width: 80%;">
+                                        <col style="width: 20%;">
+                                        <thead>
+                                          <th class="text-center">Item Description</th>
+                                          <th class="text-center">Qty</th>
+                                        </thead>
+                                        <tbody></tbody>
+                                      </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -337,7 +349,7 @@
             
             return false;
           }
-          
+
           $('#update-ps-modal .id').val(response.id);
           $('#update-ps-modal .wh').val(response.wh);
           $('#update-ps-modal .parent').text(response.name);
@@ -354,12 +366,26 @@
           $('#update-ps-modal .stock_uom').text(response.stock_uom);
           $('#update-ps-modal .is_bundle').val(response.is_bundle);
 
+          $('#product-bundle-table tbody').empty();
+
           if(response.is_bundle) {
             $('#update-ps-modal .product-bundle-badge').removeClass('d-none');
             $('#update-ps-modal .actual-stock-dl').addClass('d-none');
+
+            var table_row = '';
+            $.each(response.product_bundle_items, function(i, d){
+              table_row += '<tr>' +
+                  '<td class="align-middle"><span class="d-block font-weight-bold">' + d.item_code + '</span><small class="font-italic">' + d.description + '</small></td>' +
+                  '<td class="text-center align-middle"><span class="d-block font-weight-bold">' + d.qty + '</span><small class="font-italic">' + d.uom + '</small></td>' +
+                  '</tr>';
+            });
+
+            $('#product-bundle-table tbody').append(table_row);
+            $('#product-bundle-table').parent().removeClass('d-none');
           } else {
             $('#update-ps-modal .product-bundle-badge').addClass('d-none');
             $('#update-ps-modal .actual-stock-dl').removeClass('d-none');
+            $('#product-bundle-table').parent().addClass('d-none');
           }
         
           if (response.actual_qty <= 0) {

@@ -680,6 +680,19 @@ class MainController extends Controller
             $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->exists();
         }
 
+        $product_bundle_items = [];
+        if($is_bundle){
+            $query = DB::table('tabProduct Bundle Item')->where('parent', $q->item_code)->get();
+            foreach ($query as $row) {
+                $product_bundle_items[] = [
+                    'item_code' => $row->item_code,
+                    'description' => $row->description,
+                    'uom' => $row->uom,
+                    'qty' => ($row->qty * $q->qty)
+                ];
+            }
+        }
+
         $actual_qty = $this->get_actual_qty($q->item_code, $q->warehouse);
 
         $total_issued = $this->get_issued_qty($q->item_code, $q->warehouse);
@@ -700,6 +713,7 @@ class MainController extends Controller
             'wh' => $q->warehouse,
             'actual_qty' => $actual_qty * 1,
             'is_bundle' => $is_bundle,
+            'product_bundle_items' => $product_bundle_items
         ];
 
         return response()->json($data);
