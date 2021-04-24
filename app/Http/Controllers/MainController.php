@@ -665,8 +665,20 @@ class MainController extends Controller
             ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty')
             ->first();
 
-        $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
-        $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->count();
+        if(!$q){
+            return response()->json([
+                'error' => 1,
+                'modal_title' => 'Not Found', 
+                'modal_message' => 'Item not found. Please reload the page.'
+            ]);
+        }
+
+        $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
+
+        $is_bundle = false;
+        if(!$item_details->is_stock_item){
+            $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->exists();
+        }
 
         $actual_qty = $this->get_actual_qty($q->item_code, $q->warehouse);
 
@@ -677,7 +689,7 @@ class MainController extends Controller
         $data = [
             'id' => $q->id,
 	        'barcode' => $q->barcode,
-            'item_image' => $img,
+            'item_image' => $item_details->item_image_path,
             'delivery_note' => $q->delivery_note,
             'description' => $q->description,
             'item_code' => $q->item_code,

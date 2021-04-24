@@ -207,9 +207,9 @@
                                                 </a>
                                             </div>
                                             <div class="col-md-8 mt-2">
-                                                <span class="item_code_txt d-block font-weight-bold"></span>
+                                                <span class="item_code_txt font-weight-bold"></span> <span class="badge badge-info product-bundle-badge" style="font-size: 11pt;">Product Bundle</span>
                                                 <p class="description"></p>
-                                                <dl>
+                                                <dl class="actual-stock-dl">
                                                     <dt>Actual Qty</dt>
                                                     <dd>
                                                         <p class="badge lbl-color" style="font-size: 12pt;">
@@ -330,6 +330,14 @@
         type: 'GET',
         url: '/get_ps_details/' + $(this).data('id'),
         success: function(response){
+          if (response.error) {
+            $('#myModal').modal('show'); 
+            $('#myModalLabel').html(response.modal_title);
+            $('#desc').html(response.modal_message);
+            
+            return false;
+          }
+          
           $('#update-ps-modal .id').val(response.id);
           $('#update-ps-modal .wh').val(response.wh);
           $('#update-ps-modal .parent').text(response.name);
@@ -345,6 +353,14 @@
           $('#update-ps-modal .actual').text(response.actual_qty);
           $('#update-ps-modal .stock_uom').text(response.stock_uom);
           $('#update-ps-modal .is_bundle').val(response.is_bundle);
+
+          if(response.is_bundle) {
+            $('#update-ps-modal .product-bundle-badge').removeClass('d-none');
+            $('#update-ps-modal .actual-stock-dl').addClass('d-none');
+          } else {
+            $('#update-ps-modal .product-bundle-badge').addClass('d-none');
+            $('#update-ps-modal .actual-stock-dl').removeClass('d-none');
+          }
         
           if (response.actual_qty <= 0) {
               $('#update-ps-modal .lbl-color').addClass('badge-danger').removeClass('badge-success');
