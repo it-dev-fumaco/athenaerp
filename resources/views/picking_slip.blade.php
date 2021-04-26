@@ -207,9 +207,9 @@
                                                 </a>
                                             </div>
                                             <div class="col-md-8 mt-2">
-                                                <span class="item_code_txt d-block font-weight-bold"></span>
+                                                <span class="item_code_txt font-weight-bold"></span> <span class="badge badge-info product-bundle-badge" style="font-size: 11pt;">Product Bundle</span>
                                                 <p class="description"></p>
-                                                <dl>
+                                                <dl class="actual-stock-dl">
                                                     <dt>Actual Qty</dt>
                                                     <dd>
                                                         <p class="badge lbl-color" style="font-size: 12pt;">
@@ -231,6 +231,20 @@
                                             <dt>Status:</dt>
                                             <dd class="status"></dd>
                                         </dl>
+                                    </div>
+                                    <div class="col-md-12 mt-2">
+                                      <h5 class="text-center font-weight-bold text-uppercase">Product Bundle Item(s)</h5>
+                                      <table class="table table-sm table-bordered" id="product-bundle-table">
+                                        <col style="width: 60%;">
+                                        <col style="width: 20%;">
+                                        <col style="width: 20%;">
+                                        <thead>
+                                          <th class="text-center">Item Description</th>
+                                          <th class="text-center">Qty</th>
+                                          <th class="text-center">Available Qty</th>
+                                        </thead>
+                                        <tbody></tbody>
+                                      </table>
                                     </div>
                                 </div>
                             </div>
@@ -330,6 +344,14 @@
         type: 'GET',
         url: '/get_ps_details/' + $(this).data('id'),
         success: function(response){
+          if (response.error) {
+            $('#myModal').modal('show'); 
+            $('#myModalLabel').html(response.modal_title);
+            $('#desc').html(response.modal_message);
+            
+            return false;
+          }
+
           $('#update-ps-modal .id').val(response.id);
           $('#update-ps-modal .wh').val(response.wh);
           $('#update-ps-modal .parent').text(response.name);
@@ -345,6 +367,31 @@
           $('#update-ps-modal .actual').text(response.actual_qty);
           $('#update-ps-modal .stock_uom').text(response.stock_uom);
           $('#update-ps-modal .is_bundle').val(response.is_bundle);
+
+          $('#product-bundle-table tbody').empty();
+
+          if(response.is_bundle) {
+            $('#update-ps-modal .product-bundle-badge').removeClass('d-none');
+            $('#update-ps-modal .actual-stock-dl').addClass('d-none');
+
+            var table_row = '';
+            $.each(response.product_bundle_items, function(i, d){
+              var badge = (d.available_qty < d.qty) ? 'badge-danger' : 'badge-success';
+              table_row += '<tr>' +
+                  '<td class="text-justify align-middle"><b>' + d.item_code + '</b> ' + d.description + '</td>' +
+                  '<td class="text-center align-middle"><b>' + d.qty + '</b> ' + d.uom + '</td>' +
+                  '<td class="text-center align-middle"><span class="badge ' + badge + '"  style="font-size: 11pt;">' + d.available_qty + ' ' + d.uom + '</span>' +
+                  '<span class="d-block" style="font-size: 9pt;">' + d.warehouse + '</span></td>' +
+                  '</tr>';
+            });
+
+            $('#product-bundle-table tbody').append(table_row);
+            $('#product-bundle-table').parent().removeClass('d-none');
+          } else {
+            $('#update-ps-modal .product-bundle-badge').addClass('d-none');
+            $('#update-ps-modal .actual-stock-dl').removeClass('d-none');
+            $('#product-bundle-table').parent().addClass('d-none');
+          }
         
           if (response.actual_qty <= 0) {
               $('#update-ps-modal .lbl-color').addClass('badge-danger').removeClass('badge-success');

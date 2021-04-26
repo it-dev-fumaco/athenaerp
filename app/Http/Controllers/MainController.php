@@ -668,11 +668,44 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name')
             ->first();
 
-        $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
-        $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->count();
+        if(!$q){
+            return response()->json([
+                'error' => 1,
+                'modal_title' => 'Not Found', 
+                'modal_message' => 'Item not found. Please reload the page.'
+            ]);
+        }
+
+        $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
+
+        $is_bundle = false;
+        if(!$item_details->is_stock_item){
+            $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->exists();
+        }
+
+        $product_bundle_items = [];
+        if($is_bundle){
+            $query = DB::table('tabPacked Item')->where('parent_detail_docname', $q->dri_name)->get();
+            foreach ($query as $row) {
+                $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
+
+                $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
+                
+                $available_qty = $actual_qty - $total_issued;
+
+                $product_bundle_items[] = [
+                    'item_code' => $row->item_code,
+                    'description' => $row->description,
+                    'uom' => $row->uom,
+                    'qty' => ($row->qty * $q->qty),
+                    'available_qty' => $available_qty,
+                    'warehouse' => $row->warehouse
+                ];
+            }
+        }
 
         $actual_qty = $this->get_actual_qty($q->item_code, $q->warehouse);
 
@@ -683,7 +716,7 @@ class MainController extends Controller
         $data = [
             'id' => $q->id,
 	        'barcode' => $q->barcode,
-            'item_image' => $img,
+            'item_image' => $item_details->item_image_path,
             'delivery_note' => $q->delivery_note,
             'description' => $q->description,
             'item_code' => $q->item_code,
@@ -694,6 +727,7 @@ class MainController extends Controller
             'wh' => $q->warehouse,
             'actual_qty' => $actual_qty * 1,
             'is_bundle' => $is_bundle,
+            'product_bundle_items' => $product_bundle_items
         ];
 
         return response()->json($data);
