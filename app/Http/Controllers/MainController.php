@@ -957,7 +957,7 @@ class MainController extends Controller
                 return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
             }
 
-            if($request->balance < $request->qty && $request->is_bundle <= 0){
+            if($request->balance < $request->qty && !$request->is_bundle){
                 return response()->json([
                     'error' => 1,
                     'modal_title' => 'Insufficient Stock', 
