@@ -727,7 +727,8 @@ class MainController extends Controller
             'wh' => $q->warehouse,
             'actual_qty' => $actual_qty * 1,
             'is_bundle' => $is_bundle,
-            'product_bundle_items' => $product_bundle_items
+            'product_bundle_items' => $product_bundle_items,
+            'dri_name' => $q->dri_name
         ];
 
         return response()->json($data);
@@ -971,6 +972,25 @@ class MainController extends Controller
                     'modal_title' => 'Invalid Qty', 
                     'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
                 ]);
+            }
+
+            if($request->is_bundle){
+                $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
+                foreach ($query as $row) {
+                    $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
+    
+                    $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
+                    
+                    $available_qty = $actual_qty - $total_issued;
+
+                    if($available_qty < $request->qty){
+                        return response()->json([
+                            'error' => 1,
+                            'modal_title' => 'Insufficient Stock', 
+                            'modal_message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>'
+                        ]);
+                    }
+                }
             }
 
             $now = Carbon::now();

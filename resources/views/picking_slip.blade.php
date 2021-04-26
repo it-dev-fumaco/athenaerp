@@ -190,6 +190,7 @@
                                 <input type="hidden" class="wh" name="s_warehouse">
                                 <input type="hidden" class="actual_qty" name="balance">
                                 <input type="hidden" class="is_bundle" name="is_bundle">
+                                <input type="hidden" class="dri-name" name="dri_name">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <label>Barcode</label>
@@ -367,6 +368,7 @@
           $('#update-ps-modal .actual').text(response.actual_qty);
           $('#update-ps-modal .stock_uom').text(response.stock_uom);
           $('#update-ps-modal .is_bundle').val(response.is_bundle);
+          $('#update-ps-modal .dri-name').val(response.dri_name);
 
           $('#product-bundle-table tbody').empty();
 
