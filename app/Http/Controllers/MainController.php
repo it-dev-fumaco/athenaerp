@@ -767,6 +767,19 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
 
+            $item_details = DB::table('tabItem')->where('name', $request->item_code)->first();
+            if(!$item_details){
+                return response()->json(['error' => 1, 'modal_title' => 'Not Found', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> not found.']);
+            }
+
+            if($item_details->is_stock_item == 0){
+                return response()->json(['error' => 1, 'modal_title' => 'Not Stock Item', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> is not a stock item.']);
+            }
+
+            if($request->barcode != $request->item_code){
+                return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+            }
+
             if($request->barcode != $request->item_code){
                 return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
             }
