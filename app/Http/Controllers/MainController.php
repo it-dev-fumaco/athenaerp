@@ -990,13 +990,15 @@ class MainController extends Controller
             if($request->is_bundle){
                 $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
                 foreach ($query as $row) {
+                    $bundle_item_qty = $row->qty * $request->qty;
+                   
                     $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
     
                     $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
                     
                     $available_qty = $actual_qty - $total_issued;
 
-                    if($available_qty < $request->qty){
+                    if($available_qty < $bundle_item_qty){
                         return response()->json([
                             'error' => 1,
                             'modal_title' => 'Insufficient Stock', 
