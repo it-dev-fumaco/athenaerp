@@ -277,7 +277,7 @@ class MainController extends Controller
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer for Manufacture')
             ->where('ste.transfer_as', '!=', 'For Return')
             ->whereIn('s_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.production_order', 'ste.creation')
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.production_order', 'ste.creation', 'ste.so_customer_name')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -290,26 +290,32 @@ class MainController extends Controller
             
             $balance = $actual_qty - $total_issued;
 
-            if($d->material_request){
-                $customer = DB::table('tabMaterial Request')->where('name', $d->material_request)->first();
-            }else{
-                $customer = DB::table('tabSales Order')->where('name', $d->sales_order_no)->first();
-            }
-
-            $ref_no = ($customer) ? $customer->name : null;
-            $customer = ($customer) ? $customer->customer : null;
+            $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-            
+
             $part_nos = implode(', ', $part_nos->toArray());
 
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
+            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
             $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
 
+            // check if production order exist
+            $production_order = DB::table('tabProduction Order')->where('name', $d->production_order)->first();
+
+            $delivery_date = $production_order->delivery_date;
+            if($production_order){
+                $per_item_delivery_date = DB::table('tabSales Order Item')->where('parent', $production_order->sales_order)
+                    ->where('item_code', $production_order->parent_item_code)->first();
+
+                if($per_item_delivery_date){
+                    $delivery_date = $per_item_delivery_date->rescheduled_delivery_date;
+                }
+            }
+
             $list[] = [
-                'customer' => $customer,
+                'delivery_date' => Carbon::parse($delivery_date)->format('M-d-Y'),
+                'customer' => $d->so_customer_name,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
@@ -662,11 +668,44 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name')
             ->first();
 
-        $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
-        $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->count();
+        if(!$q){
+            return response()->json([
+                'error' => 1,
+                'modal_title' => 'Not Found', 
+                'modal_message' => 'Item not found. Please reload the page.'
+            ]);
+        }
+
+        $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
+
+        $is_bundle = false;
+        if(!$item_details->is_stock_item){
+            $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->exists();
+        }
+
+        $product_bundle_items = [];
+        if($is_bundle){
+            $query = DB::table('tabPacked Item')->where('parent_detail_docname', $q->dri_name)->get();
+            foreach ($query as $row) {
+                $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
+
+                $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
+                
+                $available_qty = $actual_qty - $total_issued;
+
+                $product_bundle_items[] = [
+                    'item_code' => $row->item_code,
+                    'description' => $row->description,
+                    'uom' => $row->uom,
+                    'qty' => ($row->qty * $q->qty),
+                    'available_qty' => $available_qty,
+                    'warehouse' => $row->warehouse
+                ];
+            }
+        }
 
         $actual_qty = $this->get_actual_qty($q->item_code, $q->warehouse);
 
@@ -677,7 +716,7 @@ class MainController extends Controller
         $data = [
             'id' => $q->id,
 	        'barcode' => $q->barcode,
-            'item_image' => $img,
+            'item_image' => $item_details->item_image_path,
             'delivery_note' => $q->delivery_note,
             'description' => $q->description,
             'item_code' => $q->item_code,
@@ -688,6 +727,8 @@ class MainController extends Controller
             'wh' => $q->warehouse,
             'actual_qty' => $actual_qty * 1,
             'is_bundle' => $is_bundle,
+            'product_bundle_items' => $product_bundle_items,
+            'dri_name' => $q->dri_name
         ];
 
         return response()->json($data);
@@ -725,6 +766,19 @@ class MainController extends Controller
     public function checkout_ste_item(Request $request){
         DB::beginTransaction();
         try {
+
+            $item_details = DB::table('tabItem')->where('name', $request->item_code)->first();
+            if(!$item_details){
+                return response()->json(['error' => 1, 'modal_title' => 'Not Found', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> not found.']);
+            }
+
+            if($item_details->is_stock_item == 0){
+                return response()->json(['error' => 1, 'modal_title' => 'Not Stock Item', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> is not a stock item.']);
+            }
+
+            if($request->barcode != $request->item_code){
+                return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+            }
 
             if($request->barcode != $request->item_code){
                 return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
@@ -917,7 +971,7 @@ class MainController extends Controller
                 return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
             }
 
-            if($request->balance < $request->qty && $request->is_bundle <= 0){
+            if($request->balance < $request->qty && !$request->is_bundle){
                 return response()->json([
                     'error' => 1,
                     'modal_title' => 'Insufficient Stock', 
@@ -931,6 +985,27 @@ class MainController extends Controller
                     'modal_title' => 'Invalid Qty', 
                     'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
                 ]);
+            }
+
+            if($request->is_bundle){
+                $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
+                foreach ($query as $row) {
+                    $bundle_item_qty = $row->qty * $request->qty;
+                   
+                    $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
+    
+                    $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
+                    
+                    $available_qty = $actual_qty - $total_issued;
+
+                    if($available_qty < $bundle_item_qty){
+                        return response()->json([
+                            'error' => 1,
+                            'modal_title' => 'Insufficient Stock', 
+                            'modal_message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>'
+                        ]);
+                    }
+                }
             }
 
             $now = Carbon::now();
