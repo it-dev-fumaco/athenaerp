@@ -2108,4 +2108,43 @@ class MainController extends Controller
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => 'There was a problem creating transaction.']);
         }
     }
+
+    public function get_items(Request $request){
+        return DB::table('tabItem')->where('disabled', 0)
+            ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->selectRaw('name as id, name as text, description, stock_uom')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function get_warehouses(Request $request){
+        return DB::table('tabWarehouse')
+            ->where('disabled', 0)->where('is_group', 0)
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function get_projects(Request $request){
+        return DB::table('tabProject')
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function get_sales_persons(Request $request){
+        return DB::table('tabSales Person')
+            ->where('enabled', 1)->where('is_group', 0)
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
 }

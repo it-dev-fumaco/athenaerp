@@ -15,6 +15,10 @@
   <link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
   {{--  <!-- Theme style -->  --}}
   <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
+  <!-- Select2 -->
+  <link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
+  <!-- bootstrap datepicker -->
+  <link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
 </head>
 <body class="hold-transition layout-top-nav">
 	<div class="wrapper">
@@ -572,8 +576,10 @@
 <script src="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.min.js') }}"></script>
 <!-- AdminLTE App -->
 <script src="{{ asset('/updated/dist/js/adminlte.min.js') }}"></script>
-<!-- AdminLTE for demo purposes -->
-{{--  <script src="../../dist/js/demo.js"></script>  --}}
+<!-- Select2 -->
+<script src="{{ asset('/updated/plugins/select2/js/select2.full.min.js') }}"></script>
+<!-- bootstrap datepicker -->
+<script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
 
 <script src="{{ asset('/js/angular.min.js') }}"></script>
 

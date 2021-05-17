@@ -61,4 +61,12 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/upload_item_image', 'MainController@upload_item_image');
 
     Route::post('/update_stock_entry', 'MainController@update_stock_entry');
+
+    // stock reservation
+    Route::get('/items', 'MainController@get_items');
+    Route::get('/warehouses', 'MainController@get_warehouses');
+    Route::get('/sales_persons', 'MainController@get_sales_persons');
+    Route::get('/projects', 'MainController@get_projects');
+    Route::get('/stock_reservation', 'StockReservationController@view_form');
+    Route::post('/create_reservation', 'StockReservationController@create_reservation');
 });
