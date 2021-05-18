@@ -442,6 +442,9 @@
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">ERP Submitted Transaction Histories</a>
 									</li>
+									<li class="nav-item">
+										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">Stock Reservations</a>
+									</li>
 								</ul>
 								<div class="tab-content">
 									<div class="tab-pane active" id="tab_1">
@@ -458,6 +461,13 @@
 										<div class="row">
 											<div class="col-md-12">
 												<div class="box-body table-responsive no-padding" id="stock-ledger-table"></div>
+											</div>
+										</div>
+									</div>
+									<div class="tab-pane" id="tab_4">
+										<div class="row">
+											<div class="col-md-12">
+												<div class="box-body table-responsive no-padding" id="stock-reservation-table"></div>
 											</div>
 										</div>
 									</div>
@@ -834,6 +844,7 @@
 
 				get_athena_transactions(item_code);
 				get_stock_ledger(item_code);
+				get_stock_reservation(item_code)
 			}
 
 			function get_athena_transactions(item_code, page){
@@ -842,6 +853,16 @@
 					url: '/get_athena_transactions/' + item_code + '?page=' + page,
 					success: function(response){
 						$('#athena-transactions-table').html(response);
+					}
+				});
+			}
+
+			function get_stock_reservation(item_code, page){
+				$.ajax({
+					type: 'GET',
+					url: '/get_stock_reservation/' + item_code + '?page=' + page,
+					success: function(response){
+						$('#stock-reservation-table').html(response);
 					}
 				});
 			}
