@@ -15,7 +15,7 @@
                 </div>
                 <div class="col-md-8">
                     <dl>
-                        <dt style="font-size: 15pt;">{{ $item_details->name }}</dt>
+                        <dt style="font-size: 15pt;" id="selected-item-code">{{ $item_details->name }}</dt>
                         <dd style="font-size: 13pt;" class="text-justify mb-2">{{ $item_details->description }}</dd>
                         <dt>Classification</dt>
                         <dd>{{ $item_details->item_classification }}</dd>

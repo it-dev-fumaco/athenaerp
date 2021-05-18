@@ -471,6 +471,9 @@
 									<div class="tab-pane" id="tab_4">
 										<div class="row">
 											<div class="col-md-12">
+												<div class="float-right m-2">
+													<button class="btn btn-primary" id="add-stock-reservation-btn">New Stock Reservation</button>
+												</div>
 												<div class="box-body table-responsive no-padding" id="stock-reservation-table"></div>
 											</div>
 										</div>
@@ -564,6 +567,130 @@
 		</form>
 	</div>
 
+	<style>
+		.select2{
+			width: 100% !important;
+		}
+		.select2-selection__rendered {
+			line-height: 31px !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 37px !important;
+			padding-top: 1.5%;
+		}
+		.select2-selection__arrow {
+			height: 36px !important;
+		}
+	</style>
+
+	<div class="modal fade" id="add-stock-reservation-modal">
+		<form id="stock-reservation-form" method="POST" action="/create_reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">New Stock Reservation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div class="row m-2">
+							<div class="col-md-6">
+								<div class="form-group">
+									<label for="">Item Code</label>
+									<input type="text" class="form-control" name="item_code" id="item-code-c">
+								</div>
+								<div class="form-group">
+									<label for="">Description</label>
+									<textarea rows="4" name="item_description" class="form-control" style="height: 124px;" id="description-c"></textarea>
+								</div>
+								<div class="form-group">
+									<label for="">Notes</label>
+									<textarea rows="4" class="form-control" name="notes" style="height: 124px;"></textarea>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Warehouse</label>
+											<select class="form-control" name="warehouse" id="select-warehouse-c"></select>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Reserve Qty</label>
+											<input type="text" name="reserve_qty" class="form-control" value="0">
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Stock UoM</label>
+											<input type="text" name="stock_uom" class="form-control" id="stock-uom-c">
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Reservation Type</label>
+											<select name="type" class="form-control" id="select-type-c">
+												<option value="">Select Type</option>
+												<option value="In-house">In-house</option>
+												<option value="Online Shop">Online Shop</option>
+											</select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-online-shop-type d-none">
+											<label>Valid until</label>
+											<input type="text" name="valid_until" class="form-control" id="date-valid-until-c">
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Sales Person</label>
+											<select class="form-control" name="sales_person" id="select-sales-person-c"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Project</label>
+											<select class="form-control" name="project" id="select-project-c"></select>
+										</div>
+									</div>
+								</div>                                        
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> SAVE</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<div class="modal fade" id="cancel-stock-reservation-modal">
+		<form id="cancel-reservation-form" method="POST" action="/cancel_reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Cancel Stock Reservation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<input type="hidden" name="stock_reservation_id">
+						<h5 class="text-center">Cancel Stock Reservation No. <span class="font-weight-bold reservation-id">-</span>?</h5>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> CONFIRM</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
   <!-- Main Footer -->
   <footer class="main-footer">
     <!-- To the right -->
@@ -597,6 +724,168 @@
 
 	<script>
 		$(document).ready(function(){
+			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
+				e.preventDefault();
+
+				var reservation_id = $(this).data('reservation-id');
+
+				$('#cancel-stock-reservation-modal .reservation-id').text(reservation_id);
+				$('#cancel-stock-reservation-modal input[name="stock_reservation_id"]').val(reservation_id);
+
+				$('#cancel-stock-reservation-modal').modal('show');
+			});
+
+			$('#stock-reservation-form').submit(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.error) {
+							$('#myModal').modal('show'); 
+							$('#myModalLabel').html(response.modal_title);
+							$('#desc').html(response.modal_message);
+							
+							return false;
+						}else{
+							get_stock_reservation($('#selected-item-code').text());
+							$('#myModal1').modal('show'); 
+							$('#myModalLabel1').html(response.modal_title);
+							$('#desc1').html(response.modal_message);
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						console.log(jqXHR);
+						console.log(textStatus);
+						console.log(errorThrown);
+					}
+				});
+			});
+
+			$('#cancel-reservation-form').submit(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.error) {
+							$('#myModal').modal('show'); 
+							$('#myModalLabel').html(response.modal_title);
+							$('#desc').html(response.modal_message);
+							
+							return false;
+						}else{
+							get_stock_reservation($('#selected-item-code').text());
+							$('#myModal1').modal('show'); 
+							$('#myModalLabel1').html(response.modal_title);
+							$('#desc1').html(response.modal_message);
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						console.log(jqXHR);
+						console.log(textStatus);
+						console.log(errorThrown);
+					}
+				});
+			});
+
+			$('#add-stock-reservation-btn').click(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: "GET",
+					url: "/get_item_details/" + $('#selected-item-code').text() + "?json=true",
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#item-code-c').val(data.name);
+						$('#description-c').val(data.description);
+						$('#stock-uom-c').val(data.stock_uom);
+						
+						$('#add-stock-reservation-modal').modal('show');
+					}
+				});
+			});
+
+			$('#select-warehouse-c').select2({
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/warehouses',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-type-c').change(function(){
+				if($(this).val()) {
+					if($(this).val() == 'In-house') {
+						$('.for-in-house-type').removeClass('d-none');
+						$('.for-online-shop-type').addClass('d-none');
+					} else {
+						$('.for-in-house-type').addClass('d-none');
+						$('.for-online-shop-type').removeClass('d-none');
+					}
+				}
+			});
+
+			$('#select-project-c').select2({
+				placeholder: 'Select Project',
+				ajax: {
+					url: '/projects',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-sales-person-c').select2({
+				placeholder: 'Select Sales Person',
+				ajax: {
+					url: '/sales_persons',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#date-valid-until-c').datepicker({
+				autoclose: true
+			});
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
                 event.preventDefault();
@@ -611,7 +900,7 @@
 				}
 			});
 
-			count_ste_for_issue('Material Issue', '#material-issue');
+				count_ste_for_issue('Material Issue', '#material-issue');
 				count_ste_for_issue('Material Transfer', '#material-transfer');
 				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
 				count_ps_for_issue();
@@ -820,6 +1109,8 @@
 			$('#myModal1').on('hide.bs.modal', function(){
 				$('#update-item-modal').modal('hide');
 				$('#update-item-return-modal').modal('hide');
+				$('#add-stock-reservation-modal').modal('hide');
+				$('#cancel-stock-reservation-modal').modal('hide');
 			});
 			
 			$('#myModal').on("hidden.bs.modal", function () {
@@ -878,6 +1169,13 @@
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
 				get_athena_transactions(item_code, page);
+			});
+
+			$(document).on('click', '#stock-reservations-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+				var page = $(this).attr('href').split('page=')[1];
+				get_stock_reservation(item_code, page);
 			});
 
 			function get_stock_ledger(item_code, page){
