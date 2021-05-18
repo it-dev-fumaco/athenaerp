@@ -69,4 +69,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/projects', 'MainController@get_projects');
     Route::get('/stock_reservation', 'StockReservationController@view_form');
     Route::post('/create_reservation', 'StockReservationController@create_reservation');
+
+    Route::get('/get_stock_reservation/{item_code?}', 'StockReservationController@get_stock_reservation');
 });

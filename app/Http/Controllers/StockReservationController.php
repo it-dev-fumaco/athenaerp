@@ -71,6 +71,14 @@ class StockReservationController extends Controller
       }
    }
 
+   public function get_stock_reservation(Request $request, $item_code = null){
+      $list = StockReservation::when($item_code, function($q) use ($item_code){
+         $q->where('item_code', $item_code);
+      })->paginate(10);
+
+      return view('stock_reservation.list', compact('list'));
+   }
+
    public function update_reservation(){
 
    }
