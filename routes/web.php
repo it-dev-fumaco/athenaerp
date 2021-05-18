@@ -65,11 +65,14 @@ Route::group(['middleware' => 'auth'], function(){
     // stock reservation
     // Route::get('/items', 'MainController@get_items');
     Route::get('/warehouses', 'MainController@get_warehouses');
+    
     Route::get('/sales_persons', 'MainController@get_sales_persons');
     Route::get('/projects', 'MainController@get_projects');
     // Route::get('/stock_reservation', 'StockReservationController@view_form');
     Route::post('/create_reservation', 'StockReservationController@create_reservation');
     Route::post('/cancel_reservation', 'StockReservationController@cancel_reservation');
+
+    Route::get('/get_stock_reservation_details/{id}', 'StockReservationController@get_stock_reservation_details');
 
     Route::get('/get_stock_reservation/{item_code?}', 'StockReservationController@get_stock_reservation');
 });

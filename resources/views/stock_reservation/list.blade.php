@@ -35,6 +35,7 @@
             </td>
             <td class="text-center align-middle">{{ $row->created_by }}</td>
             <td class="text-center align-middle">
+                <button type="button" class="btn btn-info edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}">Edit</button>
                 <button type="button" class="btn btn-danger cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}">Cancel</button>
             </td>
         </tr>

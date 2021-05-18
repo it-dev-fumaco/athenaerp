@@ -8,7 +8,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   {{--  <!-- Google Font: Source Sans Pro -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
+  <link rel="stylesheet" href="{{ asset('/updated/plugins/font.css') }}">
   {{--  <!-- Font Awesome Icons -->  --}}
   <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
   {{--  <!-- Ekko Lightbox -->  --}}
@@ -601,7 +601,7 @@
 								</div>
 								<div class="form-group">
 									<label for="">Description</label>
-									<textarea rows="4" name="item_description" class="form-control" style="height: 124px;" id="description-c"></textarea>
+									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-c"></textarea>
 								</div>
 								<div class="form-group">
 									<label for="">Notes</label>
@@ -669,6 +669,93 @@
 		</form>
 	</div>
 
+	<div class="modal fade" id="edit-stock-reservation-modal">
+		<form id="edit-reservation-form" method="POST" action="/update_reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Edit Stock Reservation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div class="row m-2">
+							<div class="col-md-6">
+								<div class="form-group">
+									<input type="hidden" name="id" id="stock-reservation-id-e">
+									<label for="">Item Code</label>
+									<input type="text" class="form-control" name="item_code" id="item-code-e">
+								</div>
+								<div class="form-group">
+									<label for="">Description</label>
+									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-e"></textarea>
+								</div>
+								<div class="form-group">
+									<label for="">Notes</label>
+									<textarea rows="4" class="form-control" name="notes" id="notes-c" style="height: 124px;"></textarea>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Warehouse</label>
+											<select class="form-control" name="warehouse" id="select-warehouse-e"></select>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Reserve Qty</label>
+											<input type="text" name="reserve_qty" class="form-control" value="0" id="reserve-qty-e">
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Stock UoM</label>
+											<input type="text" name="stock_uom" class="form-control" id="stock-uom-e">
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Reservation Type</label>
+											<select name="type" class="form-control" id="select-type-e">
+												<option value="">Select Type</option>
+												<option value="In-house">In-house</option>
+												<option value="Online Shop">Online Shop</option>
+											</select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-online-shop-type d-none">
+											<label>Valid until</label>
+											<input type="text" name="valid_until" class="form-control" id="date-valid-until-e">
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Sales Person</label>
+											<select class="form-control" name="sales_person" id="select-sales-person-e"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Project</label>
+											<select class="form-control" name="project" id="select-project-e"></select>
+										</div>
+									</div>
+								</div>                                        
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> UPDATE</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
 	<div class="modal fade" id="cancel-stock-reservation-modal">
 		<form id="cancel-reservation-form" method="POST" action="/cancel_reservation" autocomplete="off">
 			@csrf
@@ -714,7 +801,7 @@
 <!-- AdminLTE App -->
 <script src="{{ asset('/updated/dist/js/adminlte.min.js') }}"></script>
 <!-- Select2 -->
-<script src="{{ asset('/updated/plugins/select2/js/select2.full.min.js') }}"></script>
+<script src="{{ asset('/updated/plugins/select2/js/select2.min.js') }}"></script>
 <!-- bootstrap datepicker -->
 <script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
 
@@ -724,6 +811,7 @@
 
 	<script>
 		$(document).ready(function(){
+			
 			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
 				e.preventDefault();
 
@@ -811,6 +899,78 @@
 				});
 			});
 
+			$('#select-warehouse-e').select2({
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/warehouses',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-type-e').change(function(){
+				if($(this).val()) {
+					if($(this).val() == 'In-house') {
+						$('.for-in-house-type').removeClass('d-none');
+						$('.for-online-shop-type').addClass('d-none');
+					} else {
+						$('.for-in-house-type').addClass('d-none');
+						$('.for-online-shop-type').removeClass('d-none');
+					}
+				}
+			});
+
+			$('#select-project-e').select2({
+				placeholder: 'Select Project',
+				ajax: {
+					url: '/projects',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-sales-person-e').select2({
+				placeholder: 'Select Sales Person',
+				ajax: {
+					url: '/sales_persons',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
 			$('#select-warehouse-c').select2({
 				placeholder: 'Select Warehouse',
 				ajax: {
@@ -885,6 +1045,36 @@
 
 			$('#date-valid-until-c').datepicker({
 				autoclose: true
+			});
+
+			$(document).on('click', '.edit-stock-reservation-btn', function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: "GET",
+					url: "/get_stock_reservation_details/" + $(this).data('reservation-id'),
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#stock-reservation-id-e').val(data.name);
+						$('#item-code-e').val(data.item_code);
+						$('#description-e').val(data.description);
+						$('#stock-uom-e').val(data.stock_uom);
+						$('#notes-e').val(data.notes);
+						$('#select-type-e').val(data.type);
+						$('#reserve-qty-e').val(data.reserve_qty);
+						$('#status-e').val(data.status);
+						$('#select-warehouse-e').val(data.warehouse);
+						$('#select-warehouse-e').trigger('change');
+						$('#select-sales-person-e').val(data.sales_person);
+						$('#select-sales-person-e').trigger('change');
+						$('#select-project-e').val(data.project);
+						$('#select-project-e').trigger('change');
+						$('#valid-until-e').val(data.valid_until);
+
+						$('#edit-stock-reservation-modal').modal('show');
+					}
+				});
 			});
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
