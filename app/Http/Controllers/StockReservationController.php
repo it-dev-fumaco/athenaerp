@@ -11,9 +11,9 @@ use Auth;
 
 class StockReservationController extends Controller
 {
-   public function view_form(){
-      return view('stock_reservation.form');
-   }
+   // public function view_form(){
+   //    return view('stock_reservation.form');
+   // }
 
    public function create_reservation(Request $request){
       DB::connection('mysql')->beginTransaction();
@@ -65,7 +65,7 @@ class StockReservationController extends Controller
 
          DB::connection('mysql')->commit();
 
-         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stocks for ' . $request->item_code . 'has been reserved.']);
+         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $new_id . ' has been created.']);
       } catch (Exception $e) {
          DB::connection('mysql')->rollback();
       }
@@ -74,9 +74,46 @@ class StockReservationController extends Controller
    public function get_stock_reservation(Request $request, $item_code = null){
       $list = StockReservation::when($item_code, function($q) use ($item_code){
          $q->where('item_code', $item_code);
-      })->paginate(10);
+      })->paginate(4);
 
-      return view('stock_reservation.list', compact('list'));
+      return view('stock_reservation.list', compact('list', 'item_code'));
+   }
+
+   public function cancel_reservation(Request $request){
+      DB::connection('mysql')->beginTransaction();
+      try {
+         $now = Carbon::now();
+         $stock_reservation = StockReservation::find($request->stock_reservation_id);
+         $stock_reservation->modified = $now->toDateTimeString();
+         $stock_reservation->modified_by = Auth::user()->wh_user;
+         $stock_reservation->status = 'Cancelled';
+         $stock_reservation->save();
+
+         if($stock_reservation->type == 'Online Shop'){
+            $bin_details = DB::connection('mysql')->table('tabBin')
+               ->where('item_code', $stock_reservation->item_code)
+               ->where('warehouse', $stock_reservation->warehouse)
+               ->first();
+
+            if($bin_details) {
+               $new_reserved_qty = $bin_details->reserved_qty - $stock_reservation->reserve_qty;
+
+               $values = [
+                  "modified" => Carbon::now()->toDateTimeString(),
+                  "modified_by" => Auth::user()->wh_user,
+                  "e_commerce_reserve_qty" => $new_reserved_qty,
+               ];
+      
+               DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
+            }
+         }
+
+         DB::connection('mysql')->commit();
+
+         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $request->stock_reservation_id . ' has been cancelled.']);
+      } catch (Exception $e) {
+         DB::connection('mysql')->rollback();
+      }
    }
 
    public function update_reservation(){

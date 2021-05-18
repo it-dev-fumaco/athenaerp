@@ -1120,8 +1120,12 @@ class MainController extends Controller
         }
     }
 
-    public function get_item_details($item_code){
+    public function get_item_details(Request $request, $item_code){
         $item_details = DB::table('tabItem')->where('name', $item_code)->first();
+
+        if($request->json){
+            return response()->json($item_details);
+        }
 
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->get();
 

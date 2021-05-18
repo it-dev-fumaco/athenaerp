@@ -115,34 +115,34 @@
 @section('script')
 <script>
     $(function () {
-        $('#reservation-form').submit(function(e){
-				e.preventDefault();
+        $('#stock-reservation-form').submit(function(e){
+            e.preventDefault();
 
-				$.ajax({
-					type: 'POST',
-					url: $(this).attr('action'),
-					data: $(this).serialize(),
-					success: function(response){
-					  if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
-						}else{
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
-						}
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
-					}
-				});
-			});
-            
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        $('#myModal').modal('show'); 
+                        $('#myModalLabel').html(response.modal_title);
+                        $('#desc').html(response.modal_message);
+                        
+                        return false;
+                    }else{
+                        $('#myModal1').modal('show'); 
+                        $('#myModalLabel1').html(response.modal_title);
+                        $('#desc1').html(response.modal_message);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log(jqXHR);
+                    console.log(textStatus);
+                    console.log(errorThrown);
+                }
+            });
+        });
+        
         $(document).on('select2:select', '#select-item-code-c', function(e){
             var data = e.params.data;
             $('#stock-uom-c').val(data.stock_uom);
