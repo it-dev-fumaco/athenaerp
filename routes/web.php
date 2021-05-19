@@ -71,6 +71,7 @@ Route::group(['middleware' => 'auth'], function(){
     // Route::get('/stock_reservation', 'StockReservationController@view_form');
     Route::post('/create_reservation', 'StockReservationController@create_reservation');
     Route::post('/cancel_reservation', 'StockReservationController@cancel_reservation');
+    Route::post('/update_reservation', 'StockReservationController@update_reservation');
 
     Route::get('/get_stock_reservation_details/{id}', 'StockReservationController@get_stock_reservation_details');
 

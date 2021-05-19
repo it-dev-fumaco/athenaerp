@@ -8,7 +8,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   {{--  <!-- Google Font: Source Sans Pro -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/font.css') }}">
+  <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
   {{--  <!-- Font Awesome Icons -->  --}}
   <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
   {{--  <!-- Ekko Lightbox -->  --}}
@@ -1056,6 +1056,28 @@
 					dataType: 'json',
 					contentType: 'application/json',
 					success: function (data) {
+						var selected_warehouse = $('#select-warehouse-e');
+						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
+						selected_warehouse.append(selected_warehouse_option).trigger('change');
+						
+						var selected_sales_person = $('#select-sales-person-e');
+						var selected_sales_person_option = new Option(data.sales_person, data.sales_person, true, true);
+						selected_sales_person.append(selected_sales_person_option).trigger('change');
+
+						var selected_project = $('#select-project-e');
+						var selected_project_option = new Option(data.project, data.project, true, true);
+						selected_project.append(selected_project_option).trigger('change');
+
+						if(data.type == 'In-house'){
+							$('#select-sales-person-e').parent().removeClass('d-none');
+							$('#select-project-e').parent().removeClass('d-none');
+							$('#valid-until-e').parent().addClass('d-none');
+						}else{
+							$('#select-sales-person-e').parent().addClass('d-none');
+							$('#select-project-e').parent().addClass('d-none');
+							$('#valid-until-e').parent().removeClass('d-none');
+						}
+
 						$('#stock-reservation-id-e').val(data.name);
 						$('#item-code-e').val(data.item_code);
 						$('#description-e').val(data.description);
@@ -1064,12 +1086,6 @@
 						$('#select-type-e').val(data.type);
 						$('#reserve-qty-e').val(data.reserve_qty);
 						$('#status-e').val(data.status);
-						$('#select-warehouse-e').val(data.warehouse);
-						$('#select-warehouse-e').trigger('change');
-						$('#select-sales-person-e').val(data.sales_person);
-						$('#select-sales-person-e').trigger('change');
-						$('#select-project-e').val(data.project);
-						$('#select-project-e').trigger('change');
 						$('#valid-until-e').val(data.valid_until);
 
 						$('#edit-stock-reservation-modal').modal('show');

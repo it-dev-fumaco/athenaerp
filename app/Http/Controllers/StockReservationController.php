@@ -74,7 +74,7 @@ class StockReservationController extends Controller
    public function get_stock_reservation(Request $request, $item_code = null){
       $list = StockReservation::when($item_code, function($q) use ($item_code){
          $q->where('item_code', $item_code);
-      })->paginate(4);
+      })->paginate(10);
 
       return view('stock_reservation.list', compact('list', 'item_code'));
    }
@@ -168,7 +168,7 @@ class StockReservationController extends Controller
 
          DB::connection('mysql')->commit();
 
-         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $new_id . ' has been created.']);
+         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $request->id . ' has been updated.']);
       } catch (Exception $e) {
          DB::connection('mysql')->rollback();
       }
