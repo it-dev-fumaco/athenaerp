@@ -12,8 +12,8 @@
             <img src="{{ asset('storage') }}{{ $img }}" style="float:left;width: 60px; height: 60px;margin-right: 10px;">
         <b>{{ $item->name }}</b>
         <br>{{ $item->description }}
-        <a class="pull-right btn btn-default" href="/?searchString={{ $item->name }}&search=">
-            <i class="glyphicon glyphicon-circle-arrow-right"></i></a>
+        <a class="pull-right btn btn-default" href="?searchString={{ $item->name }}&search=">
+            <i class="fa fa-arrow-right"></i></a>
     </li>
     @empty
     <li class="no-hover" style="padding: 10px;">

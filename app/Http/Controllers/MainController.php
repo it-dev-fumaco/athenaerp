@@ -54,12 +54,13 @@ class MainController extends Controller
         $item_list = [];
         foreach ($items as $row) {
             $item_inventory = DB::table('tabBin')->where('item_code', $row->name)
-                ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom')->get();
+                ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'e_commerce_reserve_qty')->get();
 
             $inv = [];
             foreach ($item_inventory as $value) {
                 $inv[] = [
                     'warehouse' => $value->warehouse,
+                    'e_commerce_reserve_qty' => $value->e_commerce_reserve_qty,
                     'actual_qty' => $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse),
                     'stock_uom' => $value->stock_uom,
                 ];
