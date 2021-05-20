@@ -19,13 +19,15 @@
   <link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
   <!-- bootstrap datepicker -->
   <link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
+   <!-- iCheck for checkboxes and radio inputs -->
+   <link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
 </head>
 <body class="hold-transition layout-top-nav">
 	<div class="wrapper">
 		{{--  <!-- Navbar -->  --}}
 		<nav class="main-header navbar navbar-expand-md navbar-light navbar-navy">
 			<div class="container-fluid">
-				<form role="search" method="GET" action="/">
+				<form role="search" method="GET" action="/" id="search-form">
 					<div class="d-flex flex-grow-1">
 						<div class="col-md-3 text-center">
 							<a href="/" class="navbar-brand">
@@ -39,21 +41,21 @@
 										<i class="fas fa-sync"></i>
 									</button>
 								</div>
-								<div class="col-md-7 div-search-box" style="min-height: 40px;">
+								<div class="col-md-8 div-search-box" style="min-height: 40px;">
 									<input type="text" class="form-control" placeholder="Search Item..." name="searchString" id="searchid" autocomplete="off" value="{{ request('searchString') }}">
 									<div id="suggesstion-box"></div>
 								</div>
-								<div class="col-md-4">
+								<div class="col-md-3">
 									<div class="row">
-										<div class="col-md-6 div-cb-remove text-white" style="min-height: 40px;">
+										<div class="col-md-6 div-cb-remove text-white d-none" style="min-height: 40px;">
 											<label style="font-size: 8pt;">
 												<div class="d-inline-block">
-													<input type="checkbox" name="check_qty" {{ (request('check_qty')) ? 'checked' : null }} style="width: 15px; height: 15px;">
+													<input type="checkbox" name="check_qty" {{ (request('check_qty')) ? 'checked' : null }} style="width: 15px; height: 15px;" id="cb-1">
 												</div>
 												<div style="width: 70%;" class="cb_remove_zero_qty d-inline-block text-center">Remove zero-qty items</div>
 											</label>
 										</div>
-										<div class="col-md-6 div-search" style="min-height: 40px;">
+										<div class="col-md-12 div-search" style="min-height: 40px;">
 											<button class="btn btn-block btn-default" type="submit" name="search">
 												<i class="fas fa-search"></i> Search
 											</button>
@@ -804,6 +806,8 @@
 <script src="{{ asset('/updated/plugins/select2/js/select2.min.js') }}"></script>
 <!-- bootstrap datepicker -->
 <script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
+<!-- iCheck 1.0.1 -->
+<script src="{{ asset('/updated/plugins/iCheck/icheck.min.js') }}"></script>
 
 <script src="{{ asset('/js/angular.min.js') }}"></script>
 
@@ -811,7 +815,22 @@
 
 	<script>
 		$(document).ready(function(){
-			
+
+			$('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
+				checkboxClass: 'icheckbox_minimal-blue',
+				radioClass: 'iradio_minimal-blue'
+			});
+
+			$('#cb-2').on('ifChecked', function(event){
+				$("#cb-1").prop("checked", true);
+				$('#search-form').submit();
+			});
+
+			$('#cb-2').on('ifUnchecked', function(event){
+				$("#cb-1").prop("checked", false);
+				$('#search-form').submit();
+			});
+						
 			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
 				e.preventDefault();
 
