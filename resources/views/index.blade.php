@@ -32,7 +32,7 @@
 							</div>
 						</div>
 						<div class="card-body table-responsive p-0">
-							<table class="table table-sm table-bordered">
+							<table class="table table-sm table-bordered" id="item-list-table">
 								<col style="width: 15%;">
 								<col style="width: 45%;">
 								<col style="width: 32%;">
@@ -46,7 +46,7 @@
 									</tr>
 								</thead>
 								@forelse ($item_list as $row)
-								<tbody>
+								<tbody class="tbl-custom-hover">
 									<tr>
 										<td class="text-center align-middle">
 											@php
@@ -79,7 +79,7 @@
 												@forelse($row['item_inventory'] as $inv)
 												<tr>
 													<td>{{ $inv['warehouse'] }}</td>
-													<td class="text-center">{{ $inv['e_commerce_reserve_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
+													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
 													<td class="text-center">{{ $inv['actual_qty'] * 1 }} {{ $inv['stock_uom'] }}</td>
 												</tr>
 												@empty
@@ -88,6 +88,47 @@
 												</tr>
 												@endforelse
 											</table>
+											@if($row['consignment_warehouse_count'] > 0)
+											<div class="text-center p-2">
+												<a href="#" class="uppercase" data-toggle="modal" data-target="#vcw{{ $row['name'] }}">View Consignment Warehouse</a>
+											</div>
+
+											<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+												<div class="modal-dialog" role="document">
+													<div class="modal-content">
+														<div class="modal-header">
+															<h4 class="modal-title">{{ $row['name'] }}</h4>
+															<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+														</div>
+														<form></form>
+														<div class="modal-body">
+															<table class="table table-hover m-0">
+																<col style="width: 70%;">
+																<col style="width: 30%;">
+																<tr>
+																	<th class="text-center">Warehouse</th>
+																	<th class="text-center">Available Qty</th>
+																</tr>
+																@forelse($row['consignment_warehouses'] as $con)
+																<tr>
+																	<td>{{ $con['warehouse'] }}</td>
+																	<td class="text-center">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</td>
+																</tr>
+																@empty
+																<tr>
+																	<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																</tr>
+																@endforelse
+															</table>
+														</div>
+														<div class="modal-footer">
+															<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+														</div>
+													</div>
+												</div>
+											</div>
+												
+											@endif
 										</td>
 										<td class="text-center align-middle">
 											<a href="#" class="btn btn-app view-item-details bg-info" data-item-code="{{ $row['name'] }}">
@@ -126,7 +167,7 @@
 
 
 <style>
-	tbody:hover,
+	.tbl-custom-hover:hover,
 		th.hover,
 		td.hover,
 		tr.hoverable:hover {

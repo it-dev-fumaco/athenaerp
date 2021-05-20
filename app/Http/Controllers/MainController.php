@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\StockReservation;
 use Auth;
 use DB;
 
@@ -53,17 +54,32 @@ class MainController extends Controller
 
         $item_list = [];
         foreach ($items as $row) {
-            $item_inventory = DB::table('tabBin')->where('item_code', $row->name)
-                ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'e_commerce_reserve_qty')->get();
+            $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $row->name)
+                ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'is_consignment_warehouse')->get();
 
-            $inv = [];
+            $site_warehouses = [];
+            $consignment_warehouses = [];
+            $consignment_warehouse_count = 0;
             foreach ($item_inventory as $value) {
-                $inv[] = [
-                    'warehouse' => $value->warehouse,
-                    'e_commerce_reserve_qty' => $value->e_commerce_reserve_qty,
-                    'actual_qty' => $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse),
-                    'stock_uom' => $value->stock_uom,
-                ];
+                $reserved_qty = StockReservation::where('item_code', $value->item_code)
+                    ->where('warehouse', $value->warehouse)->sum('reserve_qty');
+
+                $consignment_warehouse_count += $value->is_consignment_warehouse;
+                if($value->is_consignment_warehouse < 1) {
+                    $site_warehouses[] = [
+                        'warehouse' => $value->warehouse,
+                        'reserved_qty' => $reserved_qty,
+                        'actual_qty' => $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse),
+                        'stock_uom' => $value->stock_uom,
+                    ];
+                }else{
+                    $consignment_warehouses[] = [
+                        'warehouse' => $value->warehouse,
+                        'reserved_qty' => $reserved_qty,
+                        'actual_qty' => $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse),
+                        'stock_uom' => $value->stock_uom,
+                    ];
+                }
             }
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $row->name)->pluck('supplier_part_no');
@@ -78,7 +94,9 @@ class MainController extends Controller
                 'item_group' => $row->item_group,
                 'stock_uom' => $row->stock_uom,
                 'item_classification' => $row->item_classification,
-                'item_inventory' => $inv
+                'item_inventory' => $site_warehouses,
+                'consignment_warehouses' => $consignment_warehouses,
+                'consignment_warehouse_count' => $consignment_warehouse_count
             ];
         }
 
