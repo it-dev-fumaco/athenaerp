@@ -96,7 +96,9 @@ class StockReservationController extends Controller
                ->first();
 
             if($bin_details) {
-               $new_reserved_qty = $bin_details->reserved_qty - $stock_reservation->reserve_qty;
+               $new_reserved_qty = $bin_details->e_commerce_reserve_qty - $stock_reservation->reserve_qty;
+
+               $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
 
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),
@@ -151,8 +153,10 @@ class StockReservationController extends Controller
                }
 
                if($stock_reservation->reserve_qty < $request->reserve_qty){
-                  $new_reserved_qty = $bin_details->reserved_qty + $reserved_qty;
+                  $new_reserved_qty = $bin_details->e_commerce_reserve_qty + $reserved_qty;
                }
+
+               $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
 
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),

@@ -691,7 +691,7 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order')
             ->first();
 
         if(!$q){
@@ -744,6 +744,7 @@ class MainController extends Controller
             'description' => $q->description,
             'item_code' => $q->item_code,
             'name' => $q->name,
+            'sales_order' => $q->sales_order,
             'status' => $q->status,
             'stock_uom' => $q->stock_uom,
             'qty' => $q->qty,
@@ -1020,6 +1021,27 @@ class MainController extends Controller
                     'modal_title' => 'Invalid Qty', 
                     'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
                 ]);
+            }
+
+            $sales_order = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
+            if($sales_order && in_array($sales_order->order_type, ['Shopping Cart', 'Online Shop'])) {
+                $bin_details = DB::connection('mysql')->table('tabBin')
+                    ->where('item_code', $request->item_code)
+                    ->where('warehouse', $request->s_warehouse)
+                    ->first();
+
+                if($bin_details) {
+                    $new_reserved_qty = $bin_details->e_commerce_reserve_qty - $request->qty;
+                    $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
+
+                    $values = [
+                        "modified" => Carbon::now()->toDateTimeString(),
+                        "modified_by" => Auth::user()->wh_user,
+                        "e_commerce_reserve_qty" => $new_reserved_qty,
+                    ];
+            
+                    DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
+                }
             }
 
             if($request->is_bundle){
