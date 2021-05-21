@@ -12,11 +12,7 @@ use DB;
 class MainController extends Controller
 {
     public function index(Request $request){
-        $user = Auth::user()->frappe_userid;
-
-        $allowed_warehouses = DB::table('tabWarehouse Access')->where('parent', $user)->distinct()->pluck('warehouse_name')->toArray();
-
-        return view('index', compact('allowed_warehouses'));
+        return view('index');
     }
 
     public function search_results(Request $request){
@@ -834,6 +830,18 @@ class MainController extends Controller
                     'error' => 1, 
                     'modal_title' => 'Invalid Qty', 
                     'modal_message' => 'Qty cannot be greater than ' . $request->requested_qty * 1 . ' for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
+                ]);
+            }
+
+            $reserved_qty = $this->get_reserved_qty($request->item_code, $request->s_warehouse);
+
+            $available_qty = $request->balance - $reserved_qty;
+
+            if($available_qty < $request->qty){
+                return response()->json([
+                    'error' => 1,
+                    'modal_title' => 'Insufficient Stock', 
+                    'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b><br><br>Reserved qty is <b>' . $reserved_qty . '</b>'
                 ]);
             }
     
@@ -2234,10 +2242,19 @@ class MainController extends Controller
             'd_picking_slips' => $picking_slips,
             'd_feedbacks' => $feedbacks,
             'd_purchase_receipts' => $purchase_receipts,
-
             'p_purchase_receipts' => $purchase_orders,
             'p_replacements' => collect($pending_stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
             'p_returns' => $pending_stock_entries_for_return + $pending_sales_returns,
         ];
+    }
+
+    public function get_reserved_qty($item_code, $warehouse){
+        $reserved_qty_for_website = DB::table('tabBin')->where('item_code', $item_code)
+            ->where('warehouse', $warehouse)->sum('e_commerce_reserve_qty');
+
+        $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
+            ->where('warehouse', $warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
+
+        return $reserved_qty_for_website + $stock_reservation_qty;
     }
 }

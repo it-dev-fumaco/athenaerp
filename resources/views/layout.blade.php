@@ -843,6 +843,35 @@
 				$('#cancel-stock-reservation-modal').modal('show');
 			});
 
+			$('#edit-reservation-form').submit(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.error) {
+							$('#myModal').modal('show'); 
+							$('#myModalLabel').html(response.modal_title);
+							$('#desc').html(response.modal_message);
+							
+							return false;
+						}else{
+							get_stock_reservation($('#selected-item-code').text());
+							$('#myModal1').modal('show'); 
+							$('#myModalLabel1').html(response.modal_title);
+							$('#desc1').html(response.modal_message);
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						console.log(jqXHR);
+						console.log(textStatus);
+						console.log(errorThrown);
+					}
+				});
+			});
+
 			$('#stock-reservation-form').submit(function(e){
 				e.preventDefault();
 
@@ -1064,6 +1093,14 @@
 			});
 
 			$('#date-valid-until-c').datepicker({
+				startDate: new Date(),
+				format: 'yyyy-mm-dd',
+				autoclose: true
+			});
+
+			$('#date-valid-until-e').datepicker({
+				startDate: new Date(),
+				format: 'yyyy-mm-dd',
 				autoclose: true
 			});
 
@@ -1091,11 +1128,11 @@
 						if(data.type == 'In-house'){
 							$('#select-sales-person-e').parent().removeClass('d-none');
 							$('#select-project-e').parent().removeClass('d-none');
-							$('#valid-until-e').parent().addClass('d-none');
+							$('#date-valid-until-e').parent().addClass('d-none');
 						}else{
 							$('#select-sales-person-e').parent().addClass('d-none');
 							$('#select-project-e').parent().addClass('d-none');
-							$('#valid-until-e').parent().removeClass('d-none');
+							$('#date-valid-until-e').parent().removeClass('d-none');
 						}
 
 						$('#stock-reservation-id-e').val(data.name);
@@ -1106,7 +1143,7 @@
 						$('#select-type-e').val(data.type);
 						$('#reserve-qty-e').val(data.reserve_qty);
 						$('#status-e').val(data.status);
-						$('#valid-until-e').val(data.valid_until);
+						$('#date-valid-until-e').val(data.valid_until);
 
 						$('#edit-stock-reservation-modal').modal('show');
 					}
@@ -1337,12 +1374,13 @@
 				$('#update-item-return-modal').modal('hide');
 				$('#add-stock-reservation-modal').modal('hide');
 				$('#cancel-stock-reservation-modal').modal('hide');
+				$('#edit-stock-reservation-modal').modal('hide');
 			});
 			
 			$('#myModal').on("hidden.bs.modal", function () {
 				$("body").addClass("modal-open");
 			});
-		
+
 			$('.modal').on("hidden.bs.modal", function () {
 				$(this).find('form')[0].reset();
 			});
