@@ -1,162 +1,175 @@
 @extends('layout', [
     'namePage' => 'ERPInventory',
-    'activePage' => 'index',
+    'activePage' => 'dashboard',
 ])
 
 @section('content')
 <div class="content">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
-			<div class="row">
+			<div class="row mt-3">
 				<div class="col-sm-12">
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
-							<h5 class="card-title mt-2 ml-4 font-weight-bold">List of Item(s)</h5>
-							<div class="card-tools p-0 m-0">
-								<div class="pull-right m-0 p-0">
-									<div class="d-flex flex-row bd-highlight p-0">
-										<div class="p-1 bd-highlight">
-											<div class="form-group m-0 pr-3">
-												<label>
-												  <input type="checkbox" class="minimal" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
-												  Remove zero-qty items
-												</label>
-											  </div>
-										</div>
-										<div class="p-1 bd-highlight">
-											<span class="font-weight-bold m-1">TOTAL:</span>
-											<span class="badge bg-info mr-2" style="font-size: 14pt;">{{ number_format($items->total()) }}</span>
-										</div>
+							<div class="row m-0">
+								<div class="col-md-6 p-2">
+									<h2 class=" m-0 font-weight-bold text-uppercase">Warehouse Dashboard</h2>
+								</div>
+								<div class="col-md-6 p-2">
+									<div class="float-right m-0 p-0">
+										<span class="h4 mr-4">{{ date('l, M d, Y') }}</span>
+										<span class="h4 mr-3" id="current-time">--:--:-- --</span>
 									</div>
 								</div>
 							</div>
 						</div>
-						<div class="card-body table-responsive p-0">
-							<table class="table table-sm table-bordered" id="item-list-table">
-								<col style="width: 15%;">
-								<col style="width: 45%;">
-								<col style="width: 32%;">
-								<col style="width: 8%;">
-								<thead class="bg-light">
-									<tr>
-										<th scope="col" class="text-center">IMAGE</th>
-										<th scope="col" class="text-center">ITEM DESCRIPTION</th>
-										<th scope="col" class="text-center">STOCK LEVEL</th>
-										<th scope="col" class="text-center">ACTION</th>
-									</tr>
-								</thead>
-								@forelse ($item_list as $row)
-								<tbody class="tbl-custom-hover">
-									<tr>
-										<td class="text-center align-middle">
-											@php
-											$img = ($row['item_image_path']) ? "/img/" . $row['item_image_path'] : "/icon/no_img.png";
-											@endphp
-											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-												<img src="{{ asset('storage/') }}{{ $img }}" class="img-thumbnail" width="200">
-											</a>
-										 </td>
-										 <td>
-											<dl class="row">
-												<dt class="col-sm-12">{{ $row['name'] }}</dt>
-												<dd class="col-sm-12 text-justify">{!! $row['description'] !!}</dd>
-												<dt class="col-sm-3 pb-1">Item Classification</dt>
-												<dd class="col-sm-9 pb-1 m-0">{{ $row['item_classification'] }}</dd>
-												<dt class="col-sm-3 pb-1">Part No(s)</dt>
-												<dd class="col-sm-9 pb-1 m-0">{{ ($row['part_nos']) ? $row['part_nos'] : '-' }}</dd>
-											</dl>
-										</td>
-										<td class="p-0">
-											<table class="table table-sm m-0">
-												<col style="width: 40%;">
-												<col style="width: 30%;">
-												<col style="width: 30%;">
-												<tr>
-													<th class="text-center">Warehouse</th>
-													<th class="text-center">Reserved Qty</th>
-													<th class="text-center">Available Qty</th>
-												</tr>
-												@forelse($row['item_inventory'] as $inv)
-												<tr>
-													<td>{{ $inv['warehouse'] }}</td>
-													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-													<td class="text-center">{{ $inv['actual_qty'] * 1 }} {{ $inv['stock_uom'] }}</td>
-												</tr>
-												@empty
-												<tr>
-													<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
-												</tr>
-												@endforelse
-											</table>
-											@if($row['consignment_warehouse_count'] > 0)
-											<div class="text-center p-2">
-												<a href="#" class="uppercase" data-toggle="modal" data-target="#vcw{{ $row['name'] }}">View Consignment Warehouse</a>
-											</div>
-
-											<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-												<div class="modal-dialog" role="document">
-													<div class="modal-content">
-														<div class="modal-header">
-															<h4 class="modal-title">{{ $row['name'] }}</h4>
-															<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<div class="card-body p-0" style="min-height: 900px;">
+							<div class="nav-tabs-custom m-3">
+								<ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+									<li class="nav-item">
+										<a class="nav-link active" id="pills-1-tab" data-toggle="pill" href="#pills-1" role="tab" aria-controls="pills-1" aria-selected="true">Task(s) Today</a>
+									</li>
+									<li class="nav-item">
+										<a class="nav-link" id="pills-2-tab" data-toggle="pill" href="#pills-2" role="tab" aria-controls="pills-2" aria-selected="false">Stock Level Alert</a>
+									</li>
+									<li class="nav-item">
+										<a class="nav-link" id="pills-3-tab" data-toggle="pill" href="#pills-3" role="tab" aria-controls="pills-3" aria-selected="false">Stock Adjustments</a>
+									</li>
+								</ul>
+								
+								  <div class="tab-content" id="pills-tabContent">
+									<div class="tab-pane fade show active" id="pills-1" role="tabpanel" aria-labelledby="pills-1-tab">
+										<div class="row">
+											<div class="col-md-6 border-right">
+												<div class="container pr-5 pl-5">
+													<h3 class="text-uppercase text-center mb-3">Incoming Stocks</h3>
+												<div class="row">
+													<div class="col-md-6 pr-5 pl-5">
+														<div class="card card-info card-outline">
+															<div class="card-header h5 pt-1 pb-1 pl-4">Returns</div>
+															<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="p-returns">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-returns">-</span></span>
+																</h4>
+															</div>
 														</div>
-														<form></form>
-														<div class="modal-body">
-															<table class="table table-hover m-0">
-																<col style="width: 70%;">
-																<col style="width: 30%;">
-																<tr>
-																	<th class="text-center">Warehouse</th>
-																	<th class="text-center">Available Qty</th>
-																</tr>
-																@forelse($row['consignment_warehouses'] as $con)
-																<tr>
-																	<td>{{ $con['warehouse'] }}</td>
-																	<td class="text-center">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</td>
-																</tr>
-																@empty
-																<tr>
-																	<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
-																</tr>
-																@endforelse
-															</table>
+													</div>
+													<div class="col-md-6 pr-5 pl-5">
+														<div class="card card-info card-outline">
+															<div class="card-header h5 pt-1 pb-1 pl-4">Feedback</div>
+															<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="material-receipt">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-material-receipt">-</span></span>
+																</h4>
+															</div>
 														</div>
-														<div class="modal-footer">
-															<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+													</div>
+													<div class="col-md-6 pr-5 pl-5 pt-4">
+														<div class="card card-info card-outline">
+															<div class="card-header h5 pt-1 pb-1 pl-4">Internal Transfers</div>
+															<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="material-transfer">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-material-transfer">-</span></span>
+																</h4>
+															</div>
+														</div>
+													</div>
+													<div class="col-md-6 pr-5 pl-5 pt-4">
+														<div class="card card-info card-outline">
+															<div class="card-header h5 pt-1 pb-1 pl-4">PO Receipts</div>
+															<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="p-purchase-receipts">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-purchase-receipts">-</span></span>
+																</h4>
+															</div>
 														</div>
 													</div>
 												</div>
-											</div>
+												</div>
 												
-											@endif
-										</td>
-										<td class="text-center align-middle">
-											<a href="#" class="btn btn-app view-item-details bg-info" data-item-code="{{ $row['name'] }}">
-												<i class="fa fa-file"></i> Details
-											</a>
-											<a href="#" class="btn btn-app bg-warning" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-												<i class="fa fa-barcode"></i> Barcode
-											</a>
-											{{--  <div class="imgButton m-1">
-												<img src="{{ asset('storage/icon/barcode.png') }}" class="img-circle mr-2" id="btn" name="barcode" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;" width="40px">
-												<img src="{{ asset('storage/icon/report.png') }}" class="img-circle view-item-details mr-2" name="history" id="btn" data-item-code="{{ $row['name'] }}" width="40px">
-												<img src="{{ asset('storage/icon/upload.png') }}" class="img-circle upload-item-image" name="upload" id="btn" value="Upload Image" data-item-code="{{ $row['name'] }}" width="40px" data-image="{{ asset('storage/') }}{{ $img }}">
-											</div>  --}}
-										</td>
-									</tr>
-								</tbody>
-								<tr class="nohover">
-									<td colspan="4">&nbsp;</td>
-								</tr>
-								@empty
-								<tr class="nohover">
-									<td colspan="4" class="text-center"><br><label style="font-size: 16pt;">No result(s) found.</label><br>&nbsp;</td>
-								</tr>
-								@endforelse
-							</table>
-							<div class="ml-3 clearfix" style="font-size: 16pt;">
-								{{ $items->links() }}
-							</div>
+												
+											</div>
+											<div class="col-md-6 border-left">
+												<div class="container pr-5 pl-5">
+													<h3 class="text-uppercase text-center mb-3">Outgoing Stocks</h3>
+													<div class="row">
+														<div class="col-md-6 pr-5 pl-5">
+															<div class="card card-info card-outline">
+																<div class="card-header h5 pt-1 pb-1 pl-4">Production Withdrawals</div>
+																<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="material-manufacture">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-withdrawals">-</span></span>
+																</h4>
+															</div>
+															</div>
+														</div>
+														<div class="col-md-6 pr-5 pl-5">
+															<div class="card card-info card-outline">
+																<div class="card-header h5 pt-1 pb-1 pl-4">Material Issue</div>
+																<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="material-issue">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-material-issues">-</span></span>
+																</h4>
+															</div>
+															</div>
+														</div>
+														<div class="col-md-6 pr-5 pl-5 pt-4">
+															<div class="card card-info card-outline">
+																<div class="card-header h5 pt-1 pb-1 pl-4">Picking / For Delivery</div>
+																<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="picking-slip">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-picking-slips">-</span></span>
+																</h4>
+															</div>
+															</div>
+														</div>
+														<div class="col-md-6 pr-5 pl-5 pt-4">
+															<div class="card card-info card-outline">
+																<div class="card-header h5 pt-1 pb-1 pl-4">Order Replacement</div>
+																<div class="card-body pt-2 pb-2">
+																<h3 class="mb-1">
+																	<span class="pr-4 pl-4 pt-2 pb-2 badge badge-pill badge-warning">Pending:<span class="ml-3" id="p-replacements">-</span></span>
+																</h3>
+																<h4 class="mb-1">
+																	<span class="pr-4 pl-4 badge badge-pill badge-success">Done:<span class="ml-3" id="d-replacements">-</span></span>
+																</h4>
+															</div>
+															</div>
+														</div>
+													</div>
+												</div>
+												
+											</div>
+										</div>
+									</div>
+									<div class="tab-pane fade" id="pills-2" role="tabpanel" aria-labelledby="pills-2-tab">...</div>
+									<div class="tab-pane fade" id="pills-3" role="tabpanel" aria-labelledby="pills-3-tab">...</div>
+								  </div>
+							
+					
+							  </div>
+						
 						</div>
 					</div>
 				</div>
@@ -166,20 +179,37 @@
 </div>
 
 
-<style>
-	.tbl-custom-hover:hover,
-		th.hover,
-		td.hover,
-		tr.hoverable:hover {
-			background-color: #DCDCDC;
-		}
-
-		.nohover:hover {
-		background-color: #fff;
-		}
-</style>
 @endsection
 
 @section('script')
+<script>
+	
+	dashboard_data();
+	setInterval(function () {
+		dashboard_data();
+	}, 60000);
+
+	function dashboard_data(purpose, div){
+		$.ajax({
+			type: "GET",
+			url: "/dashboard_data",
+			dataType: 'json',
+			contentType: 'application/json',
+			success: function (data) {
+				$('#d-material-receipt').text(data.d_feedbacks);
+				$('#d-purchase-receipts').text(data.d_purchase_receipts);
+				$('#p-purchase-receipts').text(data.p_purchase_receipts);
+				$('#d-replacements').text(data.d_replacements);
+				$('#p-replacements').text(data.p_replacements);
+				$('#d-returns').text(data.d_returns);
+				$('#p-returns').text(data.p_returns);
+				$('#d-material-transfer').text(data.d_internal_transfers);
+				$('#d-picking-slips').text(data.d_picking_slips);
+				$('#d-withdrawals').text(data.d_withdrawals);
+				$('#d-material-issues').text(data.d_material_issues);
+			}
+		});
+	}
+</script>
 
 @endsection

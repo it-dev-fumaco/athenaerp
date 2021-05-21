@@ -12,6 +12,14 @@ use DB;
 class MainController extends Controller
 {
     public function index(Request $request){
+        $user = Auth::user()->frappe_userid;
+
+        $allowed_warehouses = DB::table('tabWarehouse Access')->where('parent', $user)->distinct()->pluck('warehouse_name')->toArray();
+
+        return view('index', compact('allowed_warehouses'));
+    }
+
+    public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
         $items = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
@@ -100,7 +108,7 @@ class MainController extends Controller
             ];
         }
 
-        return view('index', compact('item_list', 'items'));
+        return view('search_results', compact('item_list', 'items'));
     }
 
     public function count_ste_for_issue($purpose){
@@ -2169,5 +2177,67 @@ class MainController extends Controller
             })
             ->select('name as id', 'name as text')
             ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function dashboard_data(){
+        $start = Carbon::now()->startOfDay()->toDateTimeString();
+		$end = Carbon::now()->endOfDay()->toDateTimeString();
+
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', '<', 2)->where('sed.status', '!=', 'For Checking')
+            ->whereBetween('sed.date_modified', [$start, $end])
+            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->get();
+
+        $stock_entries_for_return = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.t_warehouse', $allowed_warehouses)->where('se.docstatus', '<', 2)->where('sed.status', '!=', 'For Checking')
+            ->where('transfer_as', 'For Return')->whereBetween('sed.date_modified', [$start, $end])
+            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->count();
+
+        $picking_slips = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+            ->where('psi.session_user', Auth::user()->full_name)->where('ps.docstatus', '<', 2)->where('psi.status', '!=', 'For Checking')
+            ->whereBetween('psi.date_modified', [$start, $end])->count();
+
+        $feedbacks = DB::table('tabStock Entry as ste')->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
+            ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 1)->whereIn('pro.fg_warehouse', $allowed_warehouses)
+            ->whereBetween('ste.posting_date', [$start, $end])->count();
+
+        $sales_returns = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
+            ->where('dn.is_return', 1)->where('dn.docstatus', 1)->whereIn('dni.warehouse', $allowed_warehouses)
+            ->whereBetween('dn.posting_date', [$start, $end])->count();
+
+        $purchase_receipts = DB::table('tabPurchase Receipt as pr')->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')
+            ->where('pr.docstatus', 1)->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.posting_date', [$start, $end])->count();
+
+        $purchase_orders = DB::table('tabPurchase Order as pr')->join('tabPurchase Order Item as pri', 'pr.name', 'pri.parent')
+            ->where('pr.docstatus', 1)->whereRaw('pri.received_qty < pri.qty')->whereIn('pri.warehouse', $allowed_warehouses)->count();
+
+        $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
+            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->get();
+
+        $pending_stock_entries_for_return = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.t_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
+            ->where('transfer_as', 'For Return')->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->count();
+
+        $pending_sales_returns = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
+            ->where('dn.is_return', 1)->where('dn.docstatus', 0)->whereIn('dni.warehouse', $allowed_warehouses)->count();
+
+        return [
+            'd_withdrawals' => collect($stock_entries)->where('purpose', 'Material Transfer for Manufacture')->count(),
+            'd_material_issues' => collect($stock_entries)->where('purpose', 'Material Issue')->where('issue_as', '!=', 'Customer Replacement')->count(),
+            'd_replacements' => collect($stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
+            'd_internal_transfers' => collect($stock_entries)->where('purpose', 'Material Transfer')->where('transfer_as', '!=', 'For Return')->count(),
+            'd_returns' => $stock_entries_for_return + $sales_returns,
+            'd_picking_slips' => $picking_slips,
+            'd_feedbacks' => $feedbacks,
+            'd_purchase_receipts' => $purchase_receipts,
+
+            'p_purchase_receipts' => $purchase_orders,
+            'p_replacements' => collect($pending_stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
+            'p_returns' => $pending_stock_entries_for_return + $pending_sales_returns,
+        ];
     }
 }

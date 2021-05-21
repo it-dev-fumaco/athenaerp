@@ -27,11 +27,11 @@
 		{{--  <!-- Navbar -->  --}}
 		<nav class="main-header navbar navbar-expand-md navbar-light navbar-navy">
 			<div class="container-fluid">
-				<form role="search" method="GET" action="/" id="search-form">
+				<form role="search" method="GET" action="/search_results" id="search-form">
 					<div class="d-flex flex-grow-1">
 						<div class="col-md-3 text-center">
 							<a href="/" class="navbar-brand">
-								<span class="brand-text text-white" style="font-size: 28pt;"><b>ERP</b>Inventory</span>
+								<span class="brand-text text-white" style="font-size: 28pt;">Athena<b>ERP</b> Inventory</span>
 							</a>
 						</div>
 						<div class="col-md-6">
@@ -271,6 +271,7 @@
 	</style>
 
   	<div class="content-wrapper">
+		@if($activePage != 'dashboard')
 		<div class="content-header pb-0">
 			<div class="container-fluid m-0">
 				<div class="row text-uppercase">
@@ -322,6 +323,7 @@
 				</div>
 			</div>
     	</div>
+		@endif
 		 <!-- /.content-header -->
 	 
     	<!-- Main content -->
@@ -808,7 +810,6 @@
 <script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
 <!-- iCheck 1.0.1 -->
 <script src="{{ asset('/updated/plugins/iCheck/icheck.min.js') }}"></script>
-
 <script src="{{ asset('/js/angular.min.js') }}"></script>
 
 	@yield('script')
@@ -1131,13 +1132,13 @@
 				count_ps_for_issue();
 				count_production_to_receive();
 
-			// setInterval(function () {
-			// 	count_ste_for_issue('Material Issue', '#material-issue');
-			// 	count_ste_for_issue('Material Transfer', '#material-transfer');
-			// 	count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
-			// 	count_ps_for_issue();
-			// 	count_production_to_receive();
-			// }, 60000);
+			setInterval(function () {
+				count_ste_for_issue('Material Issue', '#material-issue');
+				count_ste_for_issue('Material Transfer', '#material-transfer');
+				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
+				count_ps_for_issue();
+				count_production_to_receive();
+			}, 60000);
 			
 			function count_ste_for_issue(purpose, div){
 				$.ajax({
@@ -1475,6 +1476,28 @@
 			$('#view-item-details-modal').on("hidden.bs.modal", function () {
 				$('#item-tabs a[href="#tab_1"]').tab('show');
 			});
+
+			setInterval(updateClock, 1000);
+			function updateClock(){
+				var currentTime = new Date();
+				var currentHours = currentTime.getHours();
+				var currentMinutes = currentTime.getMinutes();
+				var currentSeconds = currentTime.getSeconds();
+				// Pad the minutes and seconds with leading zeros, if required
+				currentMinutes = (currentMinutes < 10 ? "0" : "") + currentMinutes;
+				currentSeconds = (currentSeconds < 10 ? "0" : "") + currentSeconds;
+				// Choose either "AM" or "PM" as appropriate
+				var timeOfDay = (currentHours < 12) ? "AM" : "PM";
+				// Convert the hours component to 12-hour format if needed
+				currentHours = (currentHours > 12) ? currentHours - 12 : currentHours;
+				// Convert an hours component of "0" to "12"
+				currentHours = (currentHours === 0) ? 12 : currentHours;
+				currentHours = (currentHours < 10 ? "0" : "") + currentHours;
+				// Compose the string for display
+				var currentTimeString = currentHours + ":" + currentMinutes + " " + timeOfDay;
+
+				$("#current-time").html(currentTimeString);
+			}
 		});
 	</script>
 </body>
