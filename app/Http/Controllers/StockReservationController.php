@@ -39,7 +39,7 @@ class StockReservationController extends Controller
          $stock_reservation->warehouse = $request->warehouse;
          $stock_reservation->type = $request->type;
          $stock_reservation->reserve_qty = $request->reserve_qty;
-         $stock_reservation->valid_until = ($request->type == 'Online Shop') ? $request->valid_until : null;
+         $stock_reservation->valid_until = ($request->type == 'Online Shop') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
          $stock_reservation->sales_person = ($request->type == 'In-house') ? $request->sales_person : null;
          $stock_reservation->project = ($request->type == 'In-house') ? $request->project : null;
          $stock_reservation->save();
@@ -96,7 +96,9 @@ class StockReservationController extends Controller
                ->first();
 
             if($bin_details) {
-               $new_reserved_qty = $bin_details->reserved_qty - $stock_reservation->reserve_qty;
+               $new_reserved_qty = $bin_details->e_commerce_reserve_qty - $stock_reservation->reserve_qty;
+
+               $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
 
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),
@@ -131,7 +133,7 @@ class StockReservationController extends Controller
          $stock_reservation->warehouse = $request->warehouse;
          $stock_reservation->type = $request->type;
          $stock_reservation->reserve_qty = $request->reserve_qty;
-         $stock_reservation->valid_until = ($request->type == 'Online Shop') ? $request->valid_until : null;
+         $stock_reservation->valid_until = ($request->type == 'Online Shop') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
          $stock_reservation->sales_person = ($request->type == 'In-house') ? $request->sales_person : null;
          $stock_reservation->project = ($request->type == 'In-house') ? $request->project : null;
 
@@ -151,8 +153,10 @@ class StockReservationController extends Controller
                }
 
                if($stock_reservation->reserve_qty < $request->reserve_qty){
-                  $new_reserved_qty = $bin_details->reserved_qty + $reserved_qty;
+                  $new_reserved_qty = $bin_details->e_commerce_reserve_qty + $reserved_qty;
                }
+
+               $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
 
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),

@@ -12,11 +12,7 @@ use DB;
 class MainController extends Controller
 {
     public function index(Request $request){
-        $user = Auth::user()->frappe_userid;
-
-        $allowed_warehouses = DB::table('tabWarehouse Access')->where('parent', $user)->distinct()->pluck('warehouse_name')->toArray();
-
-        return view('index', compact('allowed_warehouses'));
+        return view('index');
     }
 
     public function search_results(Request $request){
@@ -695,7 +691,7 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order')
             ->first();
 
         if(!$q){
@@ -748,6 +744,7 @@ class MainController extends Controller
             'description' => $q->description,
             'item_code' => $q->item_code,
             'name' => $q->name,
+            'sales_order' => $q->sales_order,
             'status' => $q->status,
             'stock_uom' => $q->stock_uom,
             'qty' => $q->qty,
@@ -834,6 +831,18 @@ class MainController extends Controller
                     'error' => 1, 
                     'modal_title' => 'Invalid Qty', 
                     'modal_message' => 'Qty cannot be greater than ' . $request->requested_qty * 1 . ' for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
+                ]);
+            }
+
+            $reserved_qty = $this->get_reserved_qty($request->item_code, $request->s_warehouse);
+
+            $available_qty = $request->balance - $reserved_qty;
+
+            if($available_qty < $request->qty){
+                return response()->json([
+                    'error' => 1,
+                    'modal_title' => 'Insufficient Stock', 
+                    'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b><br><br>Reserved qty is <b>' . $reserved_qty . '</b>'
                 ]);
             }
     
@@ -1012,6 +1021,27 @@ class MainController extends Controller
                     'modal_title' => 'Invalid Qty', 
                     'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
                 ]);
+            }
+
+            $sales_order = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
+            if($sales_order && in_array($sales_order->order_type, ['Shopping Cart', 'Online Shop'])) {
+                $bin_details = DB::connection('mysql')->table('tabBin')
+                    ->where('item_code', $request->item_code)
+                    ->where('warehouse', $request->s_warehouse)
+                    ->first();
+
+                if($bin_details) {
+                    $new_reserved_qty = $bin_details->e_commerce_reserve_qty - $request->qty;
+                    $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
+
+                    $values = [
+                        "modified" => Carbon::now()->toDateTimeString(),
+                        "modified_by" => Auth::user()->wh_user,
+                        "e_commerce_reserve_qty" => $new_reserved_qty,
+                    ];
+            
+                    DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
+                }
             }
 
             if($request->is_bundle){
@@ -2234,10 +2264,19 @@ class MainController extends Controller
             'd_picking_slips' => $picking_slips,
             'd_feedbacks' => $feedbacks,
             'd_purchase_receipts' => $purchase_receipts,
-
             'p_purchase_receipts' => $purchase_orders,
             'p_replacements' => collect($pending_stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
             'p_returns' => $pending_stock_entries_for_return + $pending_sales_returns,
         ];
+    }
+
+    public function get_reserved_qty($item_code, $warehouse){
+        $reserved_qty_for_website = DB::table('tabBin')->where('item_code', $item_code)
+            ->where('warehouse', $warehouse)->sum('e_commerce_reserve_qty');
+
+        $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
+            ->where('warehouse', $warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
+
+        return $reserved_qty_for_website + $stock_reservation_qty;
     }
 }
