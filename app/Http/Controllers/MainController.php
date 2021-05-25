@@ -478,36 +478,51 @@ class MainController extends Controller
     public function get_pending_item_request_for_issue(){
         $q = DB::table('tabProduction Order as pro')
             ->join('tabProduction Order Item as prod_item', 'pro.name', 'prod_item.parent')
-            ->where('pro.status', '!=', 'Completed')->where('pro.sales_order', '!=', '')
-            ->select('pro.sales_order', 'pro.customer', 'pro.qty as qty_to_manufacture', 'prod_item.item_code as bom_item', DB::raw('required_qty - transferred_qty as pending1'), 'pro.name as production_order', 'prod_item.transferred_qty', 'prod_item.description', 'prod_item.required_qty')
-            ->whereRaw('required_qty > transferred_qty')
-            ->where('transferred_qty', '>', 0)
-            ->get();
+            ->whereNotIn('pro.status', ['Completed', 'Stopped'])->where('pro.docstatus', 1)
+            ->whereRaw('pro.qty > pro.produced_qty')
+            ->select('pro.sales_order', 'pro.customer', 'pro.qty as qty_to_manufacture', 'prod_item.item_code as bom_item', DB::raw('required_qty - transferred_qty as balance_qty'), 'pro.name as production_order', 'prod_item.transferred_qty', 'prod_item.description', 'prod_item.required_qty', 'pro.owner', 'pro.creation', 'pro.status', 'pro.material_request')
+            ->whereRaw('required_qty > transferred_qty')->where('transferred_qty', '>', 0)->orderBy('pro.creation', 'asc')->get();
 
         $list = [];
         foreach ($q as $r) {
-            $ste_nos = DB::table('tabStock Entry as ste')->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('purpose', 'Material Transfer for Manufacture')->where('ste.docstatus', 1)
-                ->where('production_order', $r->production_order)->where('sted.item_code', $r->bom_item)->pluck('ste.name', 'ste.owner');
-            $ste = '';
-            $owners = '';
-            foreach($ste_nos as $owner => $ste_no){
-                $ste .= $ste_no . ' ';
-                $owners .= $owner . ' ';
+            $owner = ucwords(str_replace('.', ' ', explode('@', $r->owner)[0]));
+
+            if($r->sales_order) {
+                $not_delivered_so = DB::table('tabSales Order')->where('name', $r->sales_order)->where('per_delivered', '<', 100)->first();
+                if($not_delivered_so) {
+                    $list[] = [
+                        'sales_order' => $r->sales_order,
+                        'material_request' => $r->material_request,
+                        'status' => $r->status,
+                        'customer' => $r->customer,
+                        'qty_to_manufacture' => $r->qty_to_manufacture,
+                        'bom_item' => $r->bom_item,
+                        'balance_qty' => $r->balance_qty,
+                        'production_order' => $r->production_order,
+                        'transferred_qty' => $r->transferred_qty,
+                        'description' => $r->description,
+                        'required_qty' => $r->required_qty,
+                        'created_by' => $owner,
+                        'creation' => Carbon::parse($r->creation)->format('Y-m-d h:i:A')
+                    ];
+                }
+            } else {
+                $list[] = [
+                    'sales_order' => $r->sales_order,
+                    'material_request' => $r->material_request,
+                    'status' => $r->status,
+                    'customer' => $r->customer,
+                    'qty_to_manufacture' => $r->qty_to_manufacture,
+                    'bom_item' => $r->bom_item,
+                    'balance_qty' => $r->balance_qty,
+                    'production_order' => $r->production_order,
+                    'transferred_qty' => $r->transferred_qty,
+                    'description' => $r->description,
+                    'required_qty' => $r->required_qty,
+                    'created_by' => $owner,
+                    'creation' => Carbon::parse($r->creation)->format('Y-m-d h:i:A')
+                ];
             }
-            $list[] = [
-                'sales_order' => $r->sales_order,
-                'customer' => $r->customer,
-                'qty_to_manufacture' => $r->qty_to_manufacture,
-                'bom_item' => $r->bom_item,
-                'pending1' => $r->pending1,
-                'production_order' => $r->production_order,
-                'transferred_qty' => $r->transferred_qty,
-                'description' => $r->description,
-                'required_qty' => $r->required_qty,
-                'ste_nos' => $ste,
-                'rqst' => $owners
-            ];
         }
 
         return response()->json(['pending' => $list]);

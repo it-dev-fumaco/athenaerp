@@ -124,41 +124,44 @@
                         <!-- Pending Item Request for Issue -->
                         <table class="table table-hover">
                           <col style="width: 10%;">
-                          <col style="width: 10%;">
-                          <col style="width: 10%;">
-                          <col style="width: 10%;">
                           <col style="width: 20%;">
+                          <col style="width: 30%;">
                           <col style="width: 10%;">
                           <col style="width: 10%;">
                           <col style="width: 10%;">
                           <col style="width: 10%;">
                           <thead>
                             <tr>
-                              <th scope="col" class="text-center">Sales Order</th>
-                              <th scope="col" class="text-center">Customer</th>
                               <th scope="col" class="text-center">Prod. Order</th>
-                              <th scope="col" class="text-center">Stock Entry</th>
-                              <th scope="col">Item Description</th>
+                              <th scope="col" class="text-center">Reference</th>
+                              <th scope="col" class="text-center">Item Description</th>
                               <th scope="col" class="text-center">Required Qty</th>
                               <th scope="col" class="text-center">Transferred Qty</th>
                               <th scope="col" class="text-center">Pending Qty</th>
-                              <th scope="col" class="text-center">Requested by</th>
+                              <th scope="col" class="text-center">Created by</th>
                             </tr>
                           </thead>
                           <tbody>
-                            <tr ng-repeat="z in pmtfm_filtered = (pmtfm_items | filter:searchText | filter: fltr)" ng-if="z.pending1 > 0">
-                              <td class="text-center">@{{ z.sales_order }}</td>
-                              <td class="text-center">@{{ z.customer }}</td>
-                              <td class="text-center">@{{ z.production_order }}</td>
-                              <td class="text-center">@{{ z.ste_nos }}</td>
-                              <td class="text-justify">
-                                <span class="d-block">@{{ z.bom_item }}</span>
+                            <tr ng-repeat="z in pmtfm_filtered = (pmtfm_items | filter:searchText | filter: fltr)" ng-if="z.balance_qty > 0">
+                              <td class="text-center align-middle">
+                                <span class="d-block font-weight-bold">@{{ z.production_order }}</span>
+                                <span style="font-size: 12pt;" class="badge badge-@{{ z.status === 'In Process' ? 'warning' : 'danger' }}">@{{ z.status }}</span>
+                              </td>
+                              <td class="text-center align-middle">
+                                <span class="d-block font-weight-bold">@{{ z.sales_order }}@{{ z.material_request }}</span>
+                                <span class="d-block">@{{ z.customer }}</span>
+                              </td>
+                              <td class="text-justify align-middle">
+                                <span class="d-block font-weight-bold">@{{ z.bom_item }}</span>
                                 <span class="d-block">@{{ z.description }}</span>
                               </td>
-                              <td class="text-center">@{{ z.required_qty * 1 }}</td>
-                              <td class="text-center">@{{ z.transferred_qty * 1 }}</td>
-                              <td class="text-center">@{{ z.pending1 * 1 }}</td>
-                              <td class="text-center"><p>@{{ z.rqst }}</p></td>
+                              <td class="text-center align-middle" style="font-size: 14pt;">@{{ z.required_qty * 1 }}</td>
+                              <td class="text-center align-middle" style="font-size: 14pt;">@{{ z.transferred_qty * 1 }}</td>
+                              <td class="text-center align-middle" style="font-size: 14pt;">@{{ z.balance_qty * 1 }}</td>
+                              <td class="text-center align-middle">
+                                <span class="d-block">@{{ z.created_by }}</span>
+                                <span class="d-block font-italic">@{{ z.creation }}</span>
+                              </td>
                             </tr>
                           </tbody>
                         </table>
