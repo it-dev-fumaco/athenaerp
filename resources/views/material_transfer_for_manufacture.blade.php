@@ -95,7 +95,7 @@
                                 <span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
                                 <span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
                               </td>
-                              <td class="text-center">@{{ x.ref_no }}<br><br><span style="font-size: 10pt;">@{{ x.customer }}</span><br><span style="font-size: 10pt;">Delivery Date: @{{ x.delivery_date }}</span></td>
+                              <td class="text-center">@{{ x.ref_no }}<br><br><span style="font-size: 10pt;">@{{ x.customer }}</span><br><span style="font-size: 10pt;">Delivery Date: @{{ x.delivery_date }}</span><br><span style="font-size: 10pt;">@{{ x.delivery_status }}</span></td>
                               <td class="text-center" ng-if="x.status === 'Issued'"><span class="badge badge-success">@{{ x.status }}</span></td>
                               <td class="text-center" ng-if="x.status === 'For Checking'"><span class="badge badge-warning">@{{ x.status }}</span></td>
                               <td class="text-center">

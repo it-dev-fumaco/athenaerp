@@ -304,18 +304,33 @@ class MainController extends Controller
             $production_order = DB::table('tabProduction Order')->where('name', $d->production_order)->first();
 
             $delivery_date = $production_order->delivery_date;
+            $order_status = 'Unknown Status';
             if($production_order){
-                $per_item_delivery_date = DB::table('tabSales Order Item')->where('parent', $production_order->sales_order)
-                    ->where('item_code', $production_order->parent_item_code)->first();
+                if($production_order->sales_order) {
+                    $per_item_delivery_date = DB::table('tabSales Order Item')->where('parent', $production_order->sales_order)
+                        ->where('item_code', $production_order->parent_item_code)->first();
 
-                if($per_item_delivery_date){
-                    $delivery_date = $per_item_delivery_date->rescheduled_delivery_date;
+                    if($per_item_delivery_date){
+                        $delivery_date = $per_item_delivery_date->rescheduled_delivery_date;
+                    }
+
+                    $sales_order_query = DB::table('tabSales Order')->where('name', $production_order->sales_order)->first();
+                    if($sales_order_query) {
+                        $order_status = ($sales_order_query->per_delivered > 0 && $sales_order_query->per_delivered < 100) ? 'Partially Delivered' : 'Fully Delivered';
+                        $order_status = ($sales_order_query->per_delivered <= 0) ? 'To Deliver' : $order_status;
+                    }
+                } else {
+                    $material_request_query = DB::table('tabMaterial Request')->where('name', $production_order->material_request)->first();
+                    if($material_request_query) {
+                        $order_status = $material_request_query->status;
+                    }
                 }
             }
 
             $list[] = [
                 'delivery_date' => Carbon::parse($delivery_date)->format('M-d-Y'),
                 'customer' => $d->so_customer_name,
+                'delivery_status' => $order_status,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
