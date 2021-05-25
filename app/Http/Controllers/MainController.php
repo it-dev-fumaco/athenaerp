@@ -61,7 +61,7 @@ class MainController extends Controller
             $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $row->name)
                 ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'is_consignment_warehouse')->get();
 
-            $item_image_path = DB::table('tabItem Images')->where('parent', $row->name)->first();
+            $item_image_paths = DB::table('tabItem Images')->where('parent', $row->name)->get();
 
             $site_warehouses = [];
             $consignment_warehouses = [];
@@ -95,7 +95,7 @@ class MainController extends Controller
             $item_list[] = [
                 'name' => $row->name,
                 'description' => $row->description,
-                'item_image_path' => ($item_image_path) ? $item_image_path->image_path : null,
+                'item_image_paths' => $item_image_paths,
                 'part_nos' => $part_nos,
                 'item_group' => $row->item_group,
                 'stock_uom' => $row->stock_uom,

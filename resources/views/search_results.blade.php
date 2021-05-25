@@ -49,12 +49,14 @@
 								<tbody class="tbl-custom-hover">
 									<tr>
 										<td class="text-center align-middle">
+											@foreach ($row['item_image_paths'] as $item_image)
 											@php
-											$img = ($row['item_image_path']) ? "/img/" . $row['item_image_path'] : "/icon/no_img.png";
+											$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
 											@endphp
-											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
+											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
 												<img src="{{ asset('storage/') }}{{ $img }}" class="img-thumbnail" width="200">
 											</a>
+											@endforeach
 										 </td>
 										 <td>
 											<dl class="row">
