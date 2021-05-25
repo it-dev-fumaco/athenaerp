@@ -78,4 +78,9 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_stock_reservation_details/{id}', 'StockReservationController@get_stock_reservation_details');
 
     Route::get('/get_stock_reservation/{item_code?}', 'StockReservationController@get_stock_reservation');
+
+    Route::get('/get_item_images/{item_code}', 'MainController@get_item_images');
+
+
+    
 });

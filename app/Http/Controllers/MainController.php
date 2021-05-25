@@ -61,6 +61,8 @@ class MainController extends Controller
             $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $row->name)
                 ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'is_consignment_warehouse')->get();
 
+            $item_image_path = DB::table('tabItem Images')->where('parent', $row->name)->first();
+
             $site_warehouses = [];
             $consignment_warehouses = [];
             $consignment_warehouse_count = 0;
@@ -93,7 +95,7 @@ class MainController extends Controller
             $item_list[] = [
                 'name' => $row->name,
                 'description' => $row->description,
-                'item_image_path' => $row->item_image_path,
+                'item_image_path' => ($item_image_path) ? $item_image_path->image_path : null,
                 'part_nos' => $part_nos,
                 'item_group' => $row->item_group,
                 'stock_uom' => $row->stock_uom,
@@ -1188,7 +1190,9 @@ class MainController extends Controller
 
         $stock_level = DB::table('tabBin')->where('item_code', $item_code)->get(); 
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'stock_level'));
+        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
+
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'stock_level', 'item_images'));
     }
 
     public function get_athena_transactions($item_code){
@@ -1304,24 +1308,55 @@ class MainController extends Controller
     }
 
     public function upload_item_image(Request $request){
-        if($request->hasFile('item_image')){
-            $file = $request->file('item_image');
-            //get filename with extension
-            $filenamewithextension = $file->getClientOriginalName();
-            //get filename without extension
-            $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-            //get file extension
-            $extension = $file->getClientOriginalExtension();
-            //filename to store
-            $filenametostore = round(microtime(true)) . '-'. $request->item_code . '.' . $extension;
-            // Storage::put('public/employees/'. $filenametostore, fopen($file, 'r+'));
-            Storage::put('public/img/'. $filenametostore, fopen($file, 'r+'));
+        // get item removed image file names for delete
+        $removed_images = DB::table('tabItem Images')->where('parent', $request->item_code)
+            ->whereNotIn('name', $request->existing_images)->pluck('image_path');
 
-            DB::table('tabItem')->where('name', $request->item_code)->update(['item_image_path' => $filenametostore]);
+        foreach($removed_images as $img) {
+            // delete from file directory
+            Storage::delete('/public/img/' . $img);
+        } 
+
+        // delete from table item images
+        DB::table('tabItem Images')->where('parent', $request->item_code)
+            ->whereNotIn('name', $request->existing_images)->delete();
+
+        $now = Carbon::now();
+        if($request->hasFile('item_image')){
+            $files = $request->file('item_image');
+
+            $item_images_arr = [];
+            foreach ($files as $i => $file) {
+               //get filename with extension
+                $filenamewithextension = $file->getClientOriginalName();
+                //get filename without extension
+                $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
+                //get file extension
+                $extension = $file->getClientOriginalExtension();
+                //filename to store
+                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.' . $extension;
+                // Storage::put('public/employees/'. $filenametostore, fopen($file, 'r+'));
+                Storage::put('public/img/'. $filenametostore, fopen($file, 'r+'));
+
+                $item_images_arr[] = [
+                    'name' => uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'idx' => $i + 1,
+                    'parent' => $request->item_code,
+                    'parentfield' => 'item_images',
+                    'parenttype' => 'Item',
+                    'image_path' => $filenametostore
+                ];
+            }
+
+            DB::table('tabItem Images')->insert($item_images_arr);
 
             return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been uploaded.']);
         }else{
-            return response()->json(['message' => 'No changes made.']);
+            return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been updated.']);
         }
     }
 
@@ -2278,5 +2313,9 @@ class MainController extends Controller
             ->where('warehouse', $warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
 
         return $reserved_qty_for_website + $stock_reservation_qty;
+    }
+
+    public function get_item_images($item_code){
+        return DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path', 'name');
     }
 }
