@@ -12,6 +12,8 @@ use DB;
 class MainController extends Controller
 {
     public function index(Request $request){
+        $this->set_reservation_as_expired();
+        
         return view('index');
     }
 
@@ -2317,5 +2319,11 @@ class MainController extends Controller
 
     public function get_item_images($item_code){
         return DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path', 'name');
+    }
+
+    public function set_reservation_as_expired(){
+        return DB::table('tabStock Reservation')->where('type', 'In-house')
+            ->where('status', 'Active')->whereDate('valid_until', '<=', Carbon::now())
+            ->update(['status' => 'Expired']);
     }
 }
