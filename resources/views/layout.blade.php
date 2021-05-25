@@ -333,6 +333,25 @@
 	</div>
 	<!-- /.content-wrapper -->
 
+	<style>
+
+.remove{
+     position: absolute;
+    top: 15%;
+    right: 0;
+    transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    background-color: #d9534f;
+    color: white;
+    font-size: 16px;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    text-align: center;
+}
+	</style>
+
   	@if($activePage != 'picking-slip')
 	<div class="modal fade" id="update-item-modal">
 		<form id="update-ste-form" method="POST" action="/checkout_ste_item">
@@ -535,7 +554,7 @@
 	<div class="modal fade" id="upload-image-modal" tabindex="-1" role="dialog" aria-labelledby="Upload Image">
 		<form method="POST" action="/upload_item_image" enctype="multipart/form-data">
 			@csrf
-			<div class="modal-dialog" role="document">
+			<div class="modal-dialog modal-lg" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
 						<h4 class="modal-title">Upload Image</h4>
@@ -546,16 +565,13 @@
 						<div class="row">
 							<div class="col-md-12">
 								<div class="form-group" id="upload_edit_form">
-									<div style="text-align: center;">
-								<input type="hidden" name="item_code">
-								
-											<div>
-											<img src="{{ asset('storage/icon/no_img.png') }}" width="250" height="250" class="imgPreview" id="image-preview">
-											</div>
-											<div class="fileUpload btn btn-warning upload-btn" style="margin-top: 8px;">
-											<span>Choose File..</span>
-											<input type="file" name="item_image" class="upload" id="browse-img" />
-										</div>                  
+									<input type="hidden" name="item_code" class="item-code">
+									<div class="fileUpload btn btn-primary upload-btn mb-3">
+										<span>Browse Image(s)</span>
+										<input type="file" name="item_image[]" class="upload" id="browse-img" multiple />
+									</div>
+									<div class="row">
+										<div class="col-md-12" id="image-previews"></div>
 									</div>
 								</div>
 							</div>
@@ -1461,26 +1477,68 @@
 
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
+
+				$('.img_upload').remove();
 				
 				var item_code = $(this).data('item-code');
+				
+				get_item_images(item_code);
 				
 				$('#upload-image-modal input[name="item_code"]').val(item_code);
 				$('#image-preview').attr('src', $(this).data('image'));
 				$('#upload-image-modal').modal('show');
 			});
 
-			$("#browse-img").change(function () {
-				if (this.files && this.files[0]) {
-					var reader = new FileReader();
-					reader.onload = function (e) {
-						 $('#image-preview').attr('src', e.target.result);
+			function get_item_images(item_code){
+				var storage = "{{ asset('storage/img/') }}";
+				$.ajax({
+					type: 'GET',
+					url: '/get_item_images/' + item_code,
+					success: function(response){
+						$.each(response, function(i, d){
+							var image_src = storage + '/' + d;
+							$("<div class=\"col-md-4 pip img_upload\">" +
+							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
+							"<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
+							"<span class=\"add-fav remove\">&times;</span>" +
+							"</div>").insertAfter("#image-previews");
+						});
 					}
-					reader.readAsDataURL(this.files[0]);
-				}
+				});
+			}
+
+			$(document).on('click', '.remove', function(){
+				$(this).parent(".pip").remove();
 			});
+
+			if (window.File && window.FileList && window.FileReader) {
+				$("#browse-img").on("change", function(e) {
+					var files = e.target.files,
+					filesLength = files.length;
+					for (var i = 0; i < filesLength; i++) {
+						var f = files[i]
+						var fileReader = new FileReader();
+						fileReader.onload = (function(e) {
+							var file = e.target;
+							$("<div class=\"col-md-4 pip img_upload\">" +
+								"<input type=\"hidden\" name=\"existing_images[]\">" +
+							"<img class=\"img-thumbnail\" src=\"" + e.target.result + "\">" +
+							"<span class=\"add-fav remove\">&times;</span>" +
+							"</div>").insertAfter("#image-previews");
+							$(".remove").click(function(){
+								$(this).parent(".pip").remove();
+							});
+						});
+						fileReader.readAsDataURL(f);
+					}
+				});
+			} else {
+				alert("Your browser doesn't support to File API");
+			}
 
 			$('#upload-image-modal form').submit(function(e){
 				e.preventDefault();
+				var item_code = $(this).find('.item-code').eq(0).val();
 				$.ajax({
 					type: 'POST',
 					url: $(this).attr('action'),
@@ -1492,6 +1550,8 @@
 						$('#myModal').modal('show'); 
 						$('#myModalLabel').html('Message');
 						$('#desc').html(response.message);
+
+						view_item_details(item_code);
 
 						$('#upload-image-modal').modal('hide');
 					},
