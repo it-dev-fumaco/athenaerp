@@ -835,6 +835,18 @@
 
 	<script>
 		$(document).ready(function(){
+
+			get_low_stock_level_items();
+			function get_low_stock_level_items(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_low_stock_level_items?page=" + page,
+					success: function (data) {
+						$('#low-level-stock-table').html(data);
+					}
+				});
+			}
+			
 			$('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
 				checkboxClass: 'icheckbox_minimal-blue',
 				radioClass: 'iradio_minimal-blue'
@@ -1438,6 +1450,12 @@
 					}
 				});
 			}
+
+			$(document).on('click', '#low-level-stocks-pagination a', function(event){
+				event.preventDefault();
+				var page = $(this).attr('href').split('page=')[1];
+				get_low_stock_level_items(page);
+			});
 
 			$(document).on('click', '#athena-transactions-pagination a', function(event){
 				event.preventDefault();

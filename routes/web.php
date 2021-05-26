@@ -79,6 +79,10 @@ Route::group(['middleware' => 'auth'], function(){
 
     Route::get('/get_item_images/{item_code}', 'MainController@get_item_images');
 
+    Route::get('/get_low_stock_level_items', 'MainController@get_low_stock_level_items');
+
+    
+
 
     
 });

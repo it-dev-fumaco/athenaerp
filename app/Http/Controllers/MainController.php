@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use App\StockReservation;
 use Auth;
@@ -12,8 +13,6 @@ use DB;
 class MainController extends Controller
 {
     public function index(Request $request){
-        $this->set_reservation_as_expired();
-        
         return view('index');
     }
 
@@ -2355,5 +2354,43 @@ class MainController extends Controller
         return DB::table('tabStock Reservation')->where('type', 'In-house')
             ->where('status', 'Active')->whereDate('valid_until', '<=', Carbon::now())
             ->update(['status' => 'Expired']);
+    }
+
+    public function get_low_stock_level_items(Request $request){
+        $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
+            ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom')->get();
+
+        $low_level_stocks = [];
+        foreach ($query as $a) {
+            $actual_qty = $this->get_actual_qty($a->item_code, $a->warehouse);
+
+            if($actual_qty <= $a->warehouse_reorder_level) {
+                $low_level_stocks[] = [
+                    'item_code' => $a->item_code,
+                    'description' => $a->description,
+                    'stock_uom' => $a->stock_uom,
+                    'warehouse' => $a->warehouse,
+                    'warehouse_reorder_level' => $a->warehouse_reorder_level,
+                    'actual_qty' => $actual_qty
+                ];
+            }
+        }
+
+        // Get current page form url e.x. &page=1
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data
+        $itemCollection = collect($low_level_stocks);
+        // Define how many items we want to be visible in each page
+        $perPage = 10;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+
+        $low_level_stocks = $paginatedItems;
+
+        return view('tbl_low_level_stocks', compact('low_level_stocks'));
     }
 }

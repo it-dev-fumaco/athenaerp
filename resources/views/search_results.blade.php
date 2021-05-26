@@ -141,7 +141,7 @@
 												<i class="fa fa-file"></i> Details
 											</a>
 											<a href="#" class="btn btn-app bg-warning" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-												<i class="fa fa-barcode"></i> Barcode
+												<i class="fa fa-qrcode"></i> QR
 											</a>
 											{{--  <div class="imgButton m-1">
 												<img src="{{ asset('storage/icon/barcode.png') }}" class="img-circle mr-2" id="btn" name="barcode" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;" width="40px">
