@@ -746,7 +746,7 @@
 										</div>
 									</div>
 									<div class="col-md-12">
-										<div class="form-group for-online-shop-type d-none">
+										<div class="form-group for-in-house-type d-none">
 											<label>Valid until</label>
 											<input type="text" name="valid_until" class="form-control" id="date-valid-until-e">
 										</div>
