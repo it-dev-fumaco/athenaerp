@@ -1065,13 +1065,13 @@ class MainController extends Controller
                     ->first();
 
                 if($bin_details) {
-                    $new_reserved_qty = $bin_details->e_commerce_reserve_qty - $request->qty;
+                    $new_reserved_qty = $bin_details->website_reserved_qty - $request->qty;
                     $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
 
                     $values = [
                         "modified" => Carbon::now()->toDateTimeString(),
                         "modified_by" => Auth::user()->wh_user,
-                        "e_commerce_reserve_qty" => $new_reserved_qty,
+                        "website_reserved_qty" => $new_reserved_qty,
                     ];
             
                     DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
@@ -2339,7 +2339,7 @@ class MainController extends Controller
 
     public function get_reserved_qty($item_code, $warehouse){
         $reserved_qty_for_website = DB::table('tabBin')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->sum('e_commerce_reserve_qty');
+            ->where('warehouse', $warehouse)->sum('website_reserved_qty');
 
         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
             ->where('warehouse', $warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');

@@ -654,14 +654,8 @@
 											<select name="type" class="form-control" id="select-type-c">
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
-												<option value="Online Shop">Online Shop</option>
+												<option value="Website Stocks">Website Stocks</option>
 											</select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-online-shop-type d-none">
-											<label>Valid until</label>
-											<input type="text" name="valid_until" class="form-control" id="date-valid-until-c">
 										</div>
 									</div>
 									<div class="col-md-12">
@@ -674,6 +668,12 @@
 										<div class="form-group for-in-house-type d-none">
 											<label for="">Project</label>
 											<select class="form-control" name="project" id="select-project-c"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label>Valid until</label>
+											<input type="text" name="valid_until" class="form-control" id="date-valid-until-c">
 										</div>
 									</div>
 								</div>                                        
@@ -741,14 +741,8 @@
 											<select name="type" class="form-control" id="select-type-e">
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
-												<option value="Online Shop">Online Shop</option>
+												<option value="Website Stocks">Website Stocks</option>
 											</select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-in-house-type d-none">
-											<label>Valid until</label>
-											<input type="text" name="valid_until" class="form-control" id="date-valid-until-e">
 										</div>
 									</div>
 									<div class="col-md-12">
@@ -761,6 +755,12 @@
 										<div class="form-group for-in-house-type d-none">
 											<label for="">Project</label>
 											<select class="form-control" name="project" id="select-project-e"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label>Valid until</label>
+											<input type="text" name="valid_until" class="form-control" id="date-valid-until-e">
 										</div>
 									</div>
 								</div>                                        
@@ -808,6 +808,7 @@
     <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
+
 <!-- ./wrapper -->
 
 <!-- REQUIRED SCRIPTS -->
@@ -826,13 +827,14 @@
 <script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
 <!-- iCheck 1.0.1 -->
 <script src="{{ asset('/updated/plugins/iCheck/icheck.min.js') }}"></script>
+
 <script src="{{ asset('/js/angular.min.js') }}"></script>
+<script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
 
 	@yield('script')
 
 	<script>
 		$(document).ready(function(){
-
 			$('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
 				checkboxClass: 'icheckbox_minimal-blue',
 				radioClass: 'iradio_minimal-blue'
@@ -868,16 +870,11 @@
 					data: $(this).serialize(),
 					success: function(response){
 						if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
+							showNotification("danger", response.modal_message, "fa fa-info");
 						}else{
 							get_stock_reservation($('#selected-item-code').text());
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#edit-stock-reservation-modal').modal('hide');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
@@ -897,16 +894,11 @@
 					data: $(this).serialize(),
 					success: function(response){
 						if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
+							showNotification("danger", response.modal_message, "fa fa-info");
 						}else{
 							get_stock_reservation($('#selected-item-code').text());
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#add-stock-reservation-modal').modal('hide');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
@@ -926,16 +918,11 @@
 					data: $(this).serialize(),
 					success: function(response){
 						if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
+							showNotification("danger", response.modal_message, "fa fa-info");
 						}else{
 							get_stock_reservation($('#selected-item-code').text());
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#cancel-stock-reservation-modal').modal('hide');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
@@ -965,6 +952,7 @@
 			});
 
 			$('#select-warehouse-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
 				placeholder: 'Select Warehouse',
 				ajax: {
 					url: '/warehouses',
@@ -997,6 +985,7 @@
 			});
 
 			$('#select-project-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
 				placeholder: 'Select Project',
 				ajax: {
 					url: '/projects',
@@ -1017,6 +1006,7 @@
 			});
 
 			$('#select-sales-person-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
 				placeholder: 'Select Sales Person',
 				ajax: {
 					url: '/sales_persons',
@@ -1037,6 +1027,7 @@
 			});
 
 			$('#select-warehouse-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
 				placeholder: 'Select Warehouse',
 				ajax: {
 					url: '/warehouses',
@@ -1069,6 +1060,7 @@
 			});
 
 			$('#select-project-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
 				placeholder: 'Select Project',
 				ajax: {
 					url: '/projects',
@@ -1089,6 +1081,7 @@
 			});
 
 			$('#select-sales-person-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
 				placeholder: 'Select Sales Person',
 				ajax: {
 					url: '/sales_persons',
@@ -1399,6 +1392,8 @@
 
 			$('.modal').on("hidden.bs.modal", function () {
 				$(this).find('form')[0].reset();
+				$('.for-in-house-type').addClass('d-none');
+				$('.for-online-shop-type').addClass('d-none');
 			});
 
 			$(document).on('click', '.view-item-details', function(e){
@@ -1575,6 +1570,10 @@
 				$('#item-tabs a[href="#tab_1"]').tab('show');
 			});
 
+			$(document).on('hidden.bs.modal', '.modal', function () {
+				$('.modal:visible').length && $(document.body).addClass('modal-open');
+			});
+
 			setInterval(updateClock, 1000);
 			function updateClock(){
 				var currentTime = new Date();
@@ -1595,6 +1594,21 @@
 				var currentTimeString = currentHours + ":" + currentMinutes + " " + timeOfDay;
 
 				$("#current-time").html(currentTimeString);
+			}
+
+			function showNotification(color, message, icon){
+				$.notify({
+				  icon: icon,
+				  message: message
+				},{
+				  type: color,
+				  timer: 500,
+				  z_index: 1060,
+				  placement: {
+					from: 'top',
+					align: 'center'
+				  }
+				});
 			}
 		});
 	</script>

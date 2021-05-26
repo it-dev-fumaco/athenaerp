@@ -18,6 +18,10 @@ class StockReservationController extends Controller
    public function create_reservation(Request $request){
       DB::connection('mysql')->beginTransaction();
       try {
+         if($request->reserve_qty <= 0) {
+            return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than or equal to 0.']);
+         }
+
          $latest_name = StockReservation::max('name');
 			$latest_name_exploded = explode("-", $latest_name);
 			$new_id = (!$latest_name) ? 1 : $latest_name_exploded[1] + 1;
@@ -44,7 +48,7 @@ class StockReservationController extends Controller
          $stock_reservation->project = ($request->type == 'In-house') ? $request->project : null;
          $stock_reservation->save();
 
-         if($request->type == 'Online Shop'){
+         if($request->type == 'Website Stocks'){
             $bin_details = DB::connection('mysql')->table('tabBin')
                ->where('item_code', $request->item_code)
                ->where('warehouse', $request->warehouse)
@@ -56,7 +60,7 @@ class StockReservationController extends Controller
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),
                   "modified_by" => Auth::user()->wh_user,
-                  "e_commerce_reserve_qty" => $new_reserved_qty,
+                  "website_reserved_qty" => $new_reserved_qty,
                ];
       
                DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
@@ -68,6 +72,8 @@ class StockReservationController extends Controller
          return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $new_id . ' has been created.']);
       } catch (Exception $e) {
          DB::connection('mysql')->rollback();
+
+         return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem creating Stock Reservation.']);
       }
    }
 
@@ -89,21 +95,21 @@ class StockReservationController extends Controller
          $stock_reservation->status = 'Cancelled';
          $stock_reservation->save();
 
-         if($stock_reservation->type == 'Online Shop'){
+         if($stock_reservation->type == 'Website Stocks'){
             $bin_details = DB::connection('mysql')->table('tabBin')
                ->where('item_code', $stock_reservation->item_code)
                ->where('warehouse', $stock_reservation->warehouse)
                ->first();
 
             if($bin_details) {
-               $new_reserved_qty = $bin_details->e_commerce_reserve_qty - $stock_reservation->reserve_qty;
+               $new_reserved_qty = $bin_details->website_reserved_qty - $stock_reservation->reserve_qty;
 
                $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
 
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),
                   "modified_by" => Auth::user()->wh_user,
-                  "e_commerce_reserve_qty" => $new_reserved_qty,
+                  "website_reserved_qty" => $new_reserved_qty,
                ];
       
                DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
@@ -115,6 +121,8 @@ class StockReservationController extends Controller
          return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $request->stock_reservation_id . ' has been cancelled.']);
       } catch (Exception $e) {
          DB::connection('mysql')->rollback();
+
+         return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem cancelling Stock Reservation.']);
       }
    }
 
@@ -125,6 +133,10 @@ class StockReservationController extends Controller
    public function update_reservation(Request $request){
       DB::connection('mysql')->beginTransaction();
       try {
+         if($request->reserve_qty <= 0) {
+            return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than or equal to 0.']);
+         }
+
          $now = Carbon::now();
          $stock_reservation = StockReservation::find($request->id);
          $stock_reservation->modified = $now->toDateTimeString();
@@ -137,7 +149,7 @@ class StockReservationController extends Controller
          $stock_reservation->sales_person = ($request->type == 'In-house') ? $request->sales_person : null;
          $stock_reservation->project = ($request->type == 'In-house') ? $request->project : null;
 
-         if($request->type == 'Online Shop'){
+         if($request->type == 'Website Stocks'){
 
             $reserved_qty = abs($stock_reservation->reserve_qty - $request->reserve_qty);
 
@@ -153,7 +165,7 @@ class StockReservationController extends Controller
                }
 
                if($stock_reservation->reserve_qty < $request->reserve_qty){
-                  $new_reserved_qty = $bin_details->e_commerce_reserve_qty + $reserved_qty;
+                  $new_reserved_qty = $bin_details->website_reserved_qty + $reserved_qty;
                }
 
                $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
@@ -161,7 +173,7 @@ class StockReservationController extends Controller
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),
                   "modified_by" => Auth::user()->wh_user,
-                  "e_commerce_reserve_qty" => $new_reserved_qty,
+                  "website_reserved_qty" => $new_reserved_qty,
                ];
       
                DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
@@ -175,6 +187,8 @@ class StockReservationController extends Controller
          return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $request->id . ' has been updated.']);
       } catch (Exception $e) {
          DB::connection('mysql')->rollback();
+
+         return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem updating Stock Reservation.']);
       }
    }
 }
