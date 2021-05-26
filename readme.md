@@ -6,7 +6,7 @@ Instructions using GUI and Commands
     Open CMD and change directory to your Local project folder
     Type copy .env.example .env
     Setup database connections in .env file
-            - host = 10.0.48.85
+            - host = 10.0.48.84
             - database name = '3f2ec5a818bccb73'
             - username = erp
             - password = 'fumaco'
