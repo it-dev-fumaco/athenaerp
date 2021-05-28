@@ -11,21 +11,21 @@
 				<div class="col-sm-12">
 					<div class="card card-outline">
 						<div class="card-body p-0" style="min-height: 900px;">
-							<div class="row pt-2">
-								<div class="col-md-6">
+							<div class="row pt-2 m-0">
+								<div class="col-md-5 offset-md-1 col-xl-6 col-lg-5 offset-xl-0 offset-lg-1">
 									<div class="container pr-0 pl-0">
-										<h5 class="text-uppercase text-center mb-3 font-italic">Incoming Stocks</h5>
+										<h5 class="text-uppercase text-center mb-2 font-italic">Incoming Stocks</h5>
 									<div class="row m-0 pl-2 pr-2">
 										<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
 											<div class="card card-info card-outline">
-												<div class="card-header h5 pt-1 pb-1 pl-4">Returns</div>
-												<div class="card-body p-2">
+												<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">Returns</div>
+												<div class="card-body p-0">
 													<div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle text-center align-self-center w-50">
-															<img src="{{ asset('storage/icon-dashboard/return.jpg') }}" style="width: 40%;">
+														<div class="p-0 align-middle text-center align-self-center w-50 d-inline-block" style="height: 58px;">
+															<img src="{{ asset('storage/icon-dashboard/return.jpg') }}" style="max-width: 100%; max-height: 100%;">
 														</div>
 														<div class="p-0 align-middle text-center align-self-center w-50">
-															<h3 class="display-4 m-0 p-1">
+															<h3 class="custom-font m-0 p-1">
 																<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-returns">-</span>
 															</h3>
 														</div>
@@ -37,9 +37,9 @@
 															</h5>
 														</div>
 														<div class="p-1 align-middle text-center align-self-center w-50">
-															<h3 class="mb-1">
+															<h5 class="mb-1">
 																<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-															</h3>
+															</h5>
 														</div>
 													</div>
 												</div>
@@ -47,14 +47,15 @@
 										</div>
 										<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
 											<div class="card card-info card-outline">
-												<div class="card-header h5 pt-1 pb-1 pl-4">Feedback</div>
-												<div class="card-body p-2">
+												<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">Feedback</div>
+												<div class="card-body p-0">
 													<div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle text-center align-self-center w-50">
-															<img src="{{ asset('storage/icon-dashboard/feedback.png') }}" style="width: 35%;">
+														<div class="p-0 align-middle text-center align-self-center w-50" style="height: 58px;">
+															<img src="{{ asset('storage/icon-dashboard/feedback.png') }}" style="max-width: 100%;
+															max-height: 100%;">
 														</div>
 														<div class="p-0 align-middle text-center align-self-center w-50">
-															<h3 class="display-4 m-0 p-1">
+															<h3 class="custom-font m-0 p-1">
 																<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-receipt">-</span>
 															</h3>
 														</div>
@@ -66,9 +67,9 @@
 															</h5>
 														</div>
 														<div class="p-1 align-middle text-center align-self-center w-50">
-															<h3 class="mb-1">
+															<h5 class="mb-1">
 																<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-															</h3>
+															</h5>
 														</div>
 													</div>
 												</div>
@@ -76,14 +77,15 @@
 										</div>
 										<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
 											<div class="card card-info card-outline">
-												<div class="card-header h5 pt-1 pb-1 pl-4">Internal Transfers</div>
-												<div class="card-body p-2">
+												<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">Internal Transfers</div>
+												<div class="card-body p-0">
 													<div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle text-center align-self-center w-50">
-															<img src="{{ asset('storage/icon-dashboard/transfer.png') }}" style="width: 40%;">
+														<div class="p-0 align-middle text-center align-self-center w-50" style="height: 58px;">
+															<img src="{{ asset('storage/icon-dashboard/transfer.png') }}" style="max-width: 100%;
+															max-height: 100%;">
 														</div>
 														<div class="p-0 align-middle text-center align-self-center w-50">
-															<h3 class="display-4 m-0 p-1">
+															<h3 class="custom-font m-0 p-1">
 																<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-transfer">-</span>
 															</h3>
 														</div>
@@ -95,9 +97,9 @@
 															</h5>
 														</div>
 														<div class="p-1 align-middle text-center align-self-center w-50">
-															<h3 class="mb-1">
+															<h5 class="mb-1">
 																<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-															</h3>
+															</h5>
 														</div>
 													</div>
 												</div>
@@ -105,14 +107,15 @@
 										</div>
 										<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
 											<div class="card card-info card-outline">
-												<div class="card-header h5 pt-1 pb-1 pl-4">PO Receipts</div>
-												<div class="card-body p-2">
+												<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">PO Receipts</div>
+												<div class="card-body p-0">
 													<div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle text-center align-self-center w-50">
-															<img src="{{ asset('storage/icon-dashboard/receive_po.png') }}" style="width: 40%;">
+														<div class="p-0 align-middle text-center align-self-center w-50" style="height: 58px;">
+															<img src="{{ asset('storage/icon-dashboard/receive_po.png') }}" style="max-width: 100%;
+															max-height: 100%;">
 														</div>
 														<div class="p-0 align-middle text-center align-self-center w-50">
-															<h3 class="display-4 m-0 p-1">
+															<h3 class="custom-font m-0 p-1">
 																<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-purchase-receipts">-</span>
 															</h3>
 														</div>
@@ -124,9 +127,9 @@
 															</h5>
 														</div>
 														<div class="p-1 align-middle text-center align-self-center w-50">
-															<h3 class="mb-1">
+															<h5 class="mb-1">
 																<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-															</h3>
+															</h5>
 														</div>
 													</div>
 												</div>
@@ -137,20 +140,21 @@
 									
 									
 								</div>
-								<div class="col-md-6">
+								<div class="col-md-5 col-xl-6 col-lg-5">
 									<div class="container pr-0 pl-0">
-										<h5 class="text-uppercase text-center mb-3 font-italic">Outgoing Stocks</h5>
+										<h5 class="text-uppercase text-center mb-2 font-italic">Outgoing Stocks</h5>
 										<div class="row m-0 pl-2 pr-2">
 											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
 												<div class="card card-info card-outline">
-													<div class="card-header h5 pt-1 pb-1 pl-4">Production Withdrawals</div>
-													<div class="card-body p-2">
+													<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">Production Withdrawals</div>
+													<div class="card-body p-0">
 														<div class="d-flex flex-row flex-wrap">
-															<div class="p-0 align-middle text-center align-self-center w-50">
-																<img src="{{ asset('storage/icon-dashboard/production.png') }}" style="width: 23%;">
+															<div class="p-1 align-middle text-center align-self-center w-50" style="height: 58px;">
+																<img src="{{ asset('storage/icon-dashboard/production.png') }}"  style="max-width: 100%;
+																max-height: 100%;"> {{-- 13px --}}
 															</div>
 															<div class="p-0 align-middle text-center align-self-center w-50">
-																<h3 class="display-4 m-0 p-1">
+																<h3 class="custom-font m-0 p-1">
 																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-manufacture">-</span>
 																</h3>
 															</div>
@@ -162,9 +166,9 @@
 																</h5>
 															</div>
 															<div class="p-1 align-middle text-center align-self-center w-50">
-																<h3 class="mb-1">
+																<h5 class="mb-1">
 																	<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-																</h3>
+																</h5>
 															</div>
 														</div>
 													</div>
@@ -172,14 +176,15 @@
 											</div>
 											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
 												<div class="card card-info card-outline">
-													<div class="card-header h5 pt-1 pb-1 pl-4">Material Issue</div>
-													<div class="card-body p-2">
+													<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">Material Issue</div>
+													<div class="card-body p-0">
 														<div class="d-flex flex-row flex-wrap">
-															<div class="p-0 align-middle text-center align-self-center w-50">
-																<img src="{{ asset('storage/icon-dashboard/issue.png') }}" style="width: 38%;">
+															<div class="p-0 align-middle text-center align-self-center w-50" style="height: 58px;">
+																<img src="{{ asset('storage/icon-dashboard/issue.png') }}" style="max-width: 100%;
+																max-height: 100%;">
 															</div>
 															<div class="p-0 align-middle text-center align-self-center w-50">
-																<h3 class="display-4 m-0 p-1">
+																<h3 class="custom-font m-0 p-1">
 																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-issue">-</span>
 																</h3>
 															</div>
@@ -191,9 +196,9 @@
 																</h5>
 															</div>
 															<div class="p-1 align-middle text-center align-self-center w-50">
-																<h3 class="mb-1">
+																<h5 class="mb-1">
 																	<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-																</h3>
+																</h5>
 															</div>
 														</div>
 													</div>
@@ -201,14 +206,15 @@
 											</div>
 											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
 												<div class="card card-info card-outline">
-													<div class="card-header h5 pt-1 pb-1 pl-4">Picking / For Delivery</div>
-													<div class="card-body p-2">
+													<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">Picking / For Delivery</div>
+													<div class="card-body p-0">
 														<div class="d-flex flex-row flex-wrap">
-															<div class="p-0 align-middle text-center align-self-center w-50">
-																<img src="{{ asset('storage/icon-dashboard/delivery.jpg') }}" style="width: 50%;">
+															<div class="p-0 align-middle text-center align-self-center w-50" style="height: 58px;">
+																<img src="{{ asset('storage/icon-dashboard/delivery.jpg') }}" style="max-width: 100%;
+																max-height: 100%;">
 															</div>
 															<div class="p-0 align-middle text-center align-self-center w-50">
-																<h3 class="display-4 m-0 p-1">
+																<h3 class="custom-font m-0 p-1">
 																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="picking-slip">-</span>
 																</h3>
 															</div>
@@ -220,9 +226,9 @@
 																</h5>
 															</div>
 															<div class="p-1 align-middle text-center align-self-center w-50">
-																<h3 class="mb-1">
+																<h5 class="mb-1">
 																	<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-																</h3>
+																</h5>
 															</div>
 														</div>
 													</div>
@@ -230,14 +236,15 @@
 											</div>
 											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
 												<div class="card card-info card-outline">
-													<div class="card-header h5 pt-1 pb-1 pl-4">Order Replacement</div>
-													<div class="card-body p-2">
+													<div class="card-header h5 pt-1 pb-1 pl-4 font-weight-bold">Order Replacement</div>
+													<div class="card-body p-0">
 														<div class="d-flex flex-row flex-wrap">
-															<div class="p-0 align-middle text-center align-self-center w-50">
-																<img src="{{ asset('storage/icon-dashboard/replacement.png') }}" style="width: 30%;">
+															<div class="p-0 align-middle text-center align-self-center w-50" style="height: 58px;">
+																<img src="{{ asset('storage/icon-dashboard/replacement.png') }}" style="max-width: 100%;
+																max-height: 100%;">
 															</div>
 															<div class="p-0 align-middle text-center align-self-center w-50">
-																<h3 class="display-4 m-0 p-1">
+																<h3 class="custom-font m-0 p-1">
 																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-replacements">-</span>
 																</h3>
 															</div>
@@ -249,9 +256,9 @@
 																</h5>
 															</div>
 															<div class="p-1 align-middle text-center align-self-center w-50">
-																<h3 class="mb-1">
+																<h5 class="mb-1">
 																	<span class="pr-4 pl-4 badge badge-pill badge-warning">Pending</span>
-																</h3>
+																</h5>
 															</div>
 														</div>
 														
@@ -285,6 +292,43 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+	.custom-font{
+	
+	}
+}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+	.custom-font{
+		
+	}
+}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+	.custom-font{
+		font-size: 3rem;
+	}
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+	.custom-font{
+		font-size: 3.2rem;
+	}
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+	.custom-font{
+		font-size: 3.3rem;
+	}
+}
+</style>
 
 
 @endsection

@@ -1,17 +1,17 @@
 @extends('layout', [
     'namePage' => 'ERPInventory',
-    'activePage' => 'index',
+    'activePage' => 'search_results',
 ])
 
 @section('content')
 <div class="content">
-	<div class="content-header pt-0">
+	<div class="content-header pt-3">
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
-							<h5 class="card-title mt-2 ml-4 font-weight-bold">List of Item(s)</h5>
+							<h5 class="card-title mt-2 ml-4 font-weight-bold">Search result(s) for "{{ request('searchString') }}"</h5>
 							<div class="card-tools p-0 m-0">
 								<div class="pull-right m-0 p-0">
 									<div class="d-flex flex-row bd-highlight p-0">

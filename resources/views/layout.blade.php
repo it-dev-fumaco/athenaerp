@@ -24,7 +24,7 @@
 </head>
 <body class="hold-transition layout-top-nav">
 	<div class="wrapper">
-		<nav class="navbar fixed-t1op navbar-expand-lg navbar-light navbar-navy">
+		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
 					<div class="row w-100">
@@ -215,7 +215,7 @@
 	</style>
 
   	<div class="content-wrapper">
-		@if($activePage != 'dashboard')
+		@if(!in_array($activePage, ['search_results', 'dashboard']))
 		<div class="content-header pb-0">
 			<div class="container-fluid m-0">
 				<div class="row text-uppercase">
