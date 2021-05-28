@@ -1,88 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ERP Inventory</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ERP Inventory</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="csrf-token" content="{{ csrf_token() }}">
 
-  {{--  <!-- Google Font: Source Sans Pro -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
-  {{--  <!-- Font Awesome Icons -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
-  {{--  <!-- Ekko Lightbox -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
-  {{--  <!-- Theme style -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
-  <!-- Select2 -->
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
-  <!-- bootstrap datepicker -->
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
-   <!-- iCheck for checkboxes and radio inputs -->
-   <link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
+	{{--  <!-- Google Font: Source Sans Pro -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
+	{{--  <!-- Font Awesome Icons -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
+	{{--  <!-- Ekko Lightbox -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
+	{{--  <!-- Theme style -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
+	<!-- Select2 -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
+	<!-- bootstrap datepicker -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
+	<!-- iCheck for checkboxes and radio inputs -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
 </head>
 <body class="hold-transition layout-top-nav">
 	<div class="wrapper">
-		{{--  <!-- Navbar -->  --}}
-		<nav class="main-header navbar navbar-expand-md navbar-light navbar-navy">
+		<nav class="navbar fixed-t1op navbar-expand-lg navbar-light navbar-navy">
 			<div class="container-fluid">
-				<form role="search" method="GET" action="/search_results" id="search-form">
-					<div class="d-flex flex-grow-1">
-						<div class="col-md-3 text-center">
-							<a href="/" class="navbar-brand">
-								<span class="brand-text text-white" style="font-size: 28pt;">Athena<b>ERP</b> Inventory</span>
-							</a>
-						</div>
-						<div class="col-md-6">
+				<div class="d-flex flex-grow-1">
+					<div class="row w-100">
+						<div class="col-xl-9 col-lg-10 col-md-10">
 							<div class="row">
-								<div class="col-md-1 div-reset" style="min-height: 40px;">
-									<button class="btn btn-default d-inline-block" type="button" onclick="document.getElementById('searchid').value = ''">
-										<i class="fas fa-sync"></i>
-									</button>
+								<div class="col-md-12 col-xl-4 col-lg-3 text-center">
+									<a href="/" class="navbar-brand">
+										<span class="brand-text text-white" style="font-size: 28pt;">Athena<b>ERP</b><span class="d-md-inline-block d-lg-none d-xl-inline-block">Inventory</span></span>
+									</a>
 								</div>
-								<div class="col-md-8 div-search-box" style="min-height: 40px;">
-									<input type="text" class="form-control" placeholder="Search Item..." name="searchString" id="searchid" autocomplete="off" value="{{ request('searchString') }}">
-									<div id="suggesstion-box"></div>
-								</div>
-								<div class="col-md-3">
-									<div class="row">
-										<div class="col-md-6 div-cb-remove text-white d-none" style="min-height: 40px;">
-											<label style="font-size: 8pt;">
-												<div class="d-inline-block">
-													<input type="checkbox" name="check_qty" {{ (request('check_qty')) ? 'checked' : null }} style="width: 15px; height: 15px;" id="cb-1">
-												</div>
-												<div style="width: 70%;" class="cb_remove_zero_qty d-inline-block text-center">Remove zero-qty items</div>
-											</label>
+								<div class="col-md-12 col-xl-8 col-lg-9">
+									<form role="search" method="GET" action="/search_results" id="search-form">
+										<div class="input-group p-2">
+											<input type="text" class="form-control form-control-lg advancedAuto1Complete" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
+											<div class="input-group-append">
+												<button class="btn btn-default btn-lg" type="submit">
+													<i class="fas fa-search"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Search</span>
+												</button>
+											</div>
 										</div>
-										<div class="col-md-12 div-search" style="min-height: 40px;">
-											<button class="btn btn-block btn-default" type="submit" name="search">
-												<i class="fas fa-search"></i> Search
-											</button>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-4 div-select1" style="min-height: 40px;">
-									<select class="form-control" id="group" name="group" style="width: 100%;"></select>
-								</div>
-								<div class="col-md-4 div-select2" style="min-height: 40px;">
-									<select class="form-control" id="classification" name="classification" style="width: 100%;"></select>
-								</div>
-								<div class="col-md-4 div-select3" style="min-height: 40px;">
-									<select class="form-control" id="warehouse-search" name="wh" style="width: 100%;"></select>
+									</form>
+									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
 							</div>
 						</div>
-						<div class="col-md-3 text-center">
+						<div class="col-xl-3 col-lg-2 col-md-2 p-2 text-center align-middle">
 							<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
-							<span class="text-white" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
-							<a href="/logout" class="btn btn-default ml-1"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+							<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
+							<a href="/logout" class="btn btn-default btn-lg ml-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
 						</div>
 					</div>
-				</form>
+				</div>
 			</div>
 		</nav>
-		{{--  <!-- /.navbar -->  --}}
 
 	<style>
 		.col-md-13 {
@@ -147,10 +123,10 @@
 
 		#suggesstion-box {
 			position:absolute;
-			width:95%;
+			width: 95%;
 			display:none;
 			overflow:hidden;
-			border:1px #CCC solid;
+			padding: 0;
 			background-color: white;
 			display: block;
 			z-index: 11;
@@ -177,38 +153,6 @@
 		.div-cb-remove{
 			padding: 0;
 		}
-	
-		@media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) {
-			/* For landscape layouts only */
-			.cb_remove_zero_qty{
-				font-size: 0.75em;
-			}
-			.div-search, .div-cb-remove{
-				padding: 0; 
-			}
-			#suggesstion-box{
-				width:98%;
-			}
-			.div-select1{
-				padding: 3px 5px 0 0 ;
-			}
-			.div-select2{
-				padding: 3px 5px 0 5px;
-			}
-			.div-select3{
-				padding: 3px 0 0 5px;
-			}
-			.div-search-box{
-				padding: 0 5px 0 0;
-			}
-			.ste-purpose-txt{
-				font-size: 14pt;
-			}
-			.div-ste{
-				padding-right: 0;
-			}
-		}
-
 		#d {
 			display: inline-block;
 			border: 0;
@@ -835,7 +779,6 @@
 
 	<script>
 		$(document).ready(function(){
-
 			get_low_stock_level_items();
 			function get_low_stock_level_items(page) {
 				$.ajax({
