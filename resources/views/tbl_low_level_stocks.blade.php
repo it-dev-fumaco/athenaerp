@@ -1,4 +1,9 @@
 <table class="table table-bordered">
+    <col style="width: 5%;">
+    <col style="width: 37%;">
+    <col style="width: 28%;">
+    <col style="width: 15%;">
+    <col style="width: 15%;">
     <thead>
         <th class="text-center">No.</th>
         <th class="text-center">Item Description</th>

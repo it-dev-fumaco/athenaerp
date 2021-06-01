@@ -12,265 +12,242 @@
 					<div class="card bg-light">
 						<div class="card-body p-0" style="min-height: 900px;">
 							<div class="row pt-2 m-0">
-								<div class="col-md-5 offset-md-1 col-xl-6 col-lg-5 offset-xl-0 offset-lg-1">
+								<div class="col-md-12 col-xl-6 col-lg-12">
 									<div class="container pr-0 pl-0">
-
-										
-
-										<h5 class="text-uppercase text-center mb-2 font-italic">Incoming Stocks</h5>
-
-										<div class="row m-0 pl-2 pr-2">
-											<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
+										<div class="row">
+											<div class="col-md-12 col-xl-10 col-lg-12 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
+												<h5 class="text-uppercase text-center mb-2 font-italic">Incoming Stocks</h5>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
 												<div class="info-box">
-													<span class="info-box-icon bg-primary" style="width: 35%;"><i class="fas fa-undo"></i></span>
-									  
+													<span class="info-box-icon bg-primary" style="width: 30%;"><i class="fas fa-undo"></i></span>
 													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase">Returns</span>
-													  <div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-returns">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
+														<span class="info-box-text font-weight-bold text-uppercase">Returns</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-returns">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
 														</div>
 													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-returns">-</span></span>
-															</h5>
-														</div>
-													</div>
-													</div>
-													<!-- /.info-box-content -->
 												</div>
 											</div>
-											<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<div class="info-box">
-													<span class="info-box-icon bg-info" style="width: 35%;"><i class="far fa-check-circle"></i></span>
-									  
+													<span class="info-box-icon bg-info" style="width: 30%;"><i class="far fa-check-circle"></i></span>
 													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase">Feedback</span>
-													  <div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-receipt">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
+														<span class="info-box-text font-weight-bold text-uppercase">Feedback</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-receipt">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
 														</div>
 													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-material-receipt">-</span></span>
-															</h5>
-														</div>
-													</div>
-													</div>
-													<!-- /.info-box-content -->
 												</div>
 											</div>
-											<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
+											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
 												<div class="info-box">
-													<span class="info-box-icon bg-secondary" style="width: 35%;"><i class="fas fa-exchange-alt"></i></span>
-									  
+													<span class="info-box-icon bg-secondary" style="width: 30%;"><i class="fas fa-exchange-alt"></i></span>
 													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase">Internal Transfers</span>
-													  <div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-transfer">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
+														<span class="info-box-text font-weight-bold text-uppercase">Internal Transfers</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-transfer">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
 														</div>
 													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-material-transfer">-</span></span>
-															</h5>
-														</div>
-													</div>
-													</div>
-													<!-- /.info-box-content -->
 												</div>
 											</div>
-											<div class="col-md-12 col-xl-6 col-lg-12 pl-5 pr-md-3 pr-lg-4 pr-xl-5">
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<div class="info-box">
-													<span class="info-box-icon bg-maroon" style="width: 35%;"><i class="fas fa-boxes"></i></span>
-									  
+													<span class="info-box-icon bg-maroon" style="width: 30%;"><i class="fas fa-boxes"></i></span>
 													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase">PO Receipts</span>
-													  <div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-purchase-receipts">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
+														<span class="info-box-text font-weight-bold text-uppercase">PO Receipts</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-purchase-receipts">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
 														</div>
 													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-purchase-receipts">-</span></span>
-															</h5>
-														</div>
-													</div>
-													</div>
-													<!-- /.info-box-content -->
 												</div>
-											</div>
-										</div>
-
-								</div>
-									
-									
-								</div>
-								<div class="col-md-5 col-xl-6 col-lg-5">
-									<div class="container pr-0 pl-0">
-										<h5 class="text-uppercase text-center mb-2 font-italic">Outgoing Stocks</h5>
-										<div class="row m-0 pl-2 pr-2">
-											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
-												<div class="info-box">
-													<span class="info-box-icon bg-olive" style="width: 35%;"><i class="fas fa-tasks"></i></span>
-									  
-													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase"><span class="d-md-inline-block d-lg-none d-xl-inline-block">Production</span> Withdrawals</span>
-													  <div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-manufacture">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
-														</div>
-													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-withdrawals">-</span></span>
-															</h5>
-														</div>
-													</div>
-													</div>
-													<!-- /.info-box-content -->
-												</div>
-											
-											</div>
-											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
-												<div class="info-box">
-													<span class="info-box-icon bg-indigo" style="width: 35%;"><i class="fas fa-dolly"></i></span>
-									  
-													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase">Material Issue</span>
-													  <div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-issue">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
-														</div>
-														
-													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-material-issues">-</span></span>
-															</h5>
-														</div>
-													</div>
-													</div>
-													<!-- /.info-box-content -->
-												</div>
-												
-											</div>
-											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
-												<div class="info-box">
-													<span class="info-box-icon bg-teal" style="width: 35%;"><i class="fas fa-truck"></i></span>
-									  
-													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase">Picking / For Delivery</span>
-													  <div class="d-flex flex-row flex-wrap">
-														
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="picking-slip">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
-														</div>
-													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-picking-slips">-</span></span>
-															</h5>
-														
-														</div>
-														
-													</div>
-													</div>
-													<!-- /.info-box-content -->
-												</div>
-												
-											</div>
-											<div class="col-md-12 col-xl-6 col-lg-12 pr-5 pl-md-3 pl-lg-4 pl-xl-5">
-												<div class="info-box">
-													<span class="info-box-icon bg-orange" style="width: 35%;"><i class="fas fa-retweet"></i></span>
-									  
-													<div class="info-box-content">
-													  <span class="info-box-text font-weight-bold text-uppercase">Order Replacement</span>
-													  <div class="d-flex flex-row flex-wrap">
-														<div class="p-0 align-middle align-self-center w-100">
-															<h3 class="custom-font m-0 p-1">
-																<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-replacements">-</span>
-															</h3>
-															<h5 class="mb-1">
-																<span class="pr-2 pl-2">Pending</span>
-															</h5>
-														</div>
-													</div>
-													<div class="d-flex flex-row flex-wrap">
-														<div class="p-1 align-middle align-self-center w-100">
-															<h5 class="mb-1">
-																<span class="pr-3 pl-3 badge badge-pill badge-success">Done:<span class="ml-3" id="d-replacements">-</span></span>
-															</h5>
-														</div>
-														
-													</div>
-													</div>
-													<!-- /.info-box-content -->
-												</div>
-												
 											</div>
 										</div>
 									</div>
-									
+								</div>	
+								<div class="col-md-12 col-xl-6 col-lg-12">
+									<div class="container pr-0 pl-0">
+										<div class="row">
+											<div class="col-md-12 col-xl-10 col-lg-12 pr-4 pl-4">
+												<h5 class="text-uppercase text-center mb-2 font-italic">Outgoing Stocks</h5>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-olive" style="width: 30%;"><i class="fas fa-tasks"></i></span>
+														<div class="info-box-content text-truncate d-inline-block">
+														<span class="info-box-text font-weight-bold text-uppercase"><span class="d-md-inline-block d-lg-none d-xl-inline-block">Production</span> Withdrawals</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-manufacture">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-indigo" style="width: 30%;"><i class="fas fa-dolly"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Material Issue</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-issue">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-teal" style="width: 30%;"><i class="fas fa-truck"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Picking / For Delivery</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="picking-slip">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-orange" style="width: 30%;"><i class="fas fa-retweet"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Order Replacement</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-replacements">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
 								</div>
 							</div>
 							<div class="row">
-								<div class="col-md-12 pl-5 pr-5 pt-3">
-									<h5 class="text-uppercase text-cent1er mb-3 font-weight-bold">Low Stock Level</h5>
+								<div class="col-md-12 col-xl-8 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-2 pl-xl-5">
+									<h5 class="text-uppercase mb-2 font-weight-bold">Low Stock Level</h5>
 									<div class="card card-secondary card-outline">
-										<div class="card-body p-0" id="low-level-stock-table">
-											
-									</div>
-									</div>
+										<div class="card-body p-0" id="low-level-stock-table"></div>
+									</div>	
+								</div>
+								<div class="col-md-12 col-xl-4 col-lg-12 pl-5 pr-5 pt-3">
+									<div class="row mt-3">
+										<div class="col-xl-12 col-lg-6 col-md-12 col-sm-12 col-12">
+											<div class="info-box bg-info">
+												<span class="info-box-icon"><i class="far fa-bookmark"></i></span>
+												<div class="info-box-content">
+													<span class="info-box-text">Bookmarks</span>
+													<span class="info-box-number">41,410</span>
 
-									
-									
+													<div class="progress">
+														<div class="progress-bar" style="width: 70%"></div>
+													</div>
+													<span class="progress-description">70% Increase in 30 Days</span>
+												</div>
+										<!-- /.info-box-content -->
+										</div>
+										<!-- /.info-box -->
+									</div>
+									<!-- /.col -->
+									<div class="col-xl-12  col-lg-6 col-md-12 col-sm-12 col-12">
+										<div class="info-box bg-success">
+										<span class="info-box-icon"><i class="far fa-thumbs-up"></i></span>
+
+										<div class="info-box-content">
+											<span class="info-box-text">Likes</span>
+											<span class="info-box-number">41,410</span>
+
+											<div class="progress">
+											<div class="progress-bar" style="width: 70%"></div>
+											</div>
+											<span class="progress-description">
+											70% Increase in 30 Days
+											</span>
+										</div>
+										<!-- /.info-box-content -->
+										</div>
+										<!-- /.info-box -->
+									</div>
+									<div class="col-xl-12  col-lg-6 col-md-12 col-sm-12 col-12">
+										<div class="card card-danger">
+											<div class="card-header">
+											<h3 class="card-title">Donut Chart</h3>
+							
+											<div class="card-tools">
+												<button type="button" class="btn btn-tool" data-card-widget="collapse">
+												<i class="fas fa-minus"></i>
+												</button>
+												<button type="button" class="btn btn-tool" data-card-widget="remove">
+												<i class="fas fa-times"></i>
+												</button>
+											</div>
+											</div>
+											<div class="card-body">
+											<canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+											</div>
+											<!-- /.card-body -->
+										</div>
+										<!-- /.card -->
+							
+									</div>
+									<!-- /.col -->
+									<!-- /.col -->
+									<!-- /.col -->
+									</div>
+									<!-- /.row -->
+
 								</div>
 							</div>
 						
@@ -301,21 +278,21 @@
 /* Medium devices (landscape tablets, 768px and up) */
 @media only screen and (min-width: 768px) {
 	.custom-font{
-		font-size: 2rem;
+		font-size: 1.3rem;
 	}
 }
 
 /* Large devices (laptops/desktops, 992px and up) */
 @media only screen and (min-width: 992px) {
 	.custom-font{
-		font-size: 2rem;
+		font-size: 1.5rem;
 	}
 }
 
 /* Extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1200px) {
 	.custom-font{
-		font-size: 3rem;
+		font-size: 2rem;
 	}
 }
 </style>
