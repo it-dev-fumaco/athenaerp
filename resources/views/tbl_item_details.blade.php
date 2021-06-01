@@ -29,10 +29,10 @@
                     <div class="card-header border-bottom-0">
                         <h3 class="card-title"><i class="fa fa-box-open"></i> Stock Level</h3>
         
-                        <div class="card-tools">
+                        {{-- <div class="card-tools">
                             <span class="font-weight-bold m-1">Total Remaining Qty:</span>
                             <span class="badge bg-info" style="font-size: 12pt;">{{ number_format((float)$stock_level->sum('actual_qty'), 2, '.', '') }} {{ $item_details->stock_uom }}</span>
-                        </div>
+                        </div> --}}
                       </div>
                     <div class="box box-solid">
                         <div class="box-header with-border">
@@ -40,12 +40,16 @@
                                 <table class="table table-striped table-bordered table-hover">
                                     <thead>
                                         <th scope="col" >Warehouse</th>
+                                        <th scope="col" class="text-center">Reserved Qty</th>
                                         <th scope="col" class="text-center">Actual Qty</th>
+                                        <th scope="col" class="text-center">Available Qty</th>
                                     </thead>
                                     @forelse ($stock_level as $stock)
                                     <tr>
-                                        <td>{{ $stock->warehouse }}</td>
-                                        <td class="text-center">{{ number_format((float)$stock->actual_qty, 2, '.', '') }} {{ $stock->stock_uom }}</td>
+                                        <td>{{ $stock['warehouse'] }}</td>
+                                        <td class="text-center">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
+                                        <td class="text-center">{{ number_format((float)$stock['actual_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
+                                        <td class="text-center">{{ number_format((float)$stock['available_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
                                     </tr>
                                     @empty
                                     <tr>
