@@ -823,7 +823,7 @@ class MainController extends Controller
     public function checkout_ste_item(Request $request){
         DB::beginTransaction();
         try {
-
+            $now = Carbon::now();
             $item_details = DB::table('tabItem')->where('name', $request->item_code)->first();
             if(!$item_details){
                 return response()->json(['error' => 1, 'modal_title' => 'Not Found', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> not found.']);
@@ -867,18 +867,54 @@ class MainController extends Controller
                 ]);
             }
 
-            $reserved_qty = $this->get_reserved_qty($request->item_code, $request->s_warehouse);
-
-            $available_qty = $request->balance - $reserved_qty;
-
-            if($available_qty < $request->qty){
+            $ste_details = DB::table('tabStock Entry')->where('name', $request->ste_name)->first();
+            if(!$ste_details){
                 return response()->json([
-                    'error' => 1,
-                    'modal_title' => 'Insufficient Stock', 
-                    'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b><br><br>Reserved qty is <b>' . $reserved_qty . '</b>'
-                ]);
+                    'error' => 1, 
+                    'modal_title' => 'Not Found', 
+                    'modal_message' => 'Stock Entry ' . $request->ste_name . ' does not exist'
+                    ]);
             }
+                
+            $so_details = DB::table('tabSales Order')->where('name', $ste_details->sales_order_no)->first();
+            $sales_person = ($so_details) ? $so_details->sales_person : null;
+            
+            // check if sales person & project has reserved qty
+            $stock_reservation = DB::table('tabStock Reservation')
+                ->where('item_code', $request->item_code)->where('warehouse', $request->s_warehouse)
+                ->where('project', $ste_details->project)->where('sales_person', $sales_person)
+                ->where('status', 'Active')->first();
+
+            if($stock_reservation){
+                $remaining_reserved_qty = $stock_reservation->reserve_qty - $stock_reservation->consumed_qty;
+                $remaining_reserved_qty = $remaining_reserved_qty - $request->qty;
+                $remaining_reserved_qty = ($remaining_reserved_qty > 0) ? $remaining_reserved_qty : 0;
+
+                $consumed_qty = $stock_reservation->consumed_qty + $request->qty;
+                $consumed_qty = ($consumed_qty > $stock_reservation->reserve_qty) ? $stock_reservation->reserve_qty : $consumed_qty;
+
+                $data = [
+                    'modified_by' => Auth::user()->wh_user,
+                    'modified' => $now->toDateTimeString(),
+                    'reserve_qty' => $remaining_reserved_qty,
+                    'consumed_qty' => $consumed_qty
+                ];
+
+                DB::table('tabStock Reservation')->where('name', $stock_reservation->name)->update($data);
+            }else{
+                $reserved_qty = $this->get_reserved_qty($request->item_code, $request->s_warehouse);
+
+                $available_qty = $request->balance - $reserved_qty;
     
+                if($available_qty < $request->qty){
+                    return response()->json([
+                        'error' => 1,
+                        'modal_title' => 'Insufficient Stock', 
+                        'modal_message' => 'Qty not available for <b>' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b><br><br>Reserved qty is <b>' . $reserved_qty . '</b>'
+                    ]);
+                }
+            }
+
             $status = ($request->transfer_as == 'For Return') ? 'Returned' : 'Issued';
 
             $now = Carbon::now();
