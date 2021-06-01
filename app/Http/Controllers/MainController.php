@@ -69,7 +69,7 @@ class MainController extends Controller
             $consignment_warehouse_count = 0;
             foreach ($item_inventory as $value) {
                 $reserved_qty = StockReservation::where('item_code', $value->item_code)
-                    ->where('warehouse', $value->warehouse)->sum('reserve_qty');
+                    ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
 
                 $consignment_warehouse_count += $value->is_consignment_warehouse;
                 if($value->is_consignment_warehouse < 1) {
