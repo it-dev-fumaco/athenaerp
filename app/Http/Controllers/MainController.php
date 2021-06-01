@@ -1219,7 +1219,22 @@ class MainController extends Controller
 
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->get();
 
-        $stock_level = DB::table('tabBin')->where('item_code', $item_code)->get(); 
+        $item_inventory = DB::table('tabBin')->where('item_code', $item_code)->get(); 
+        $stock_level = [];
+        foreach ($item_inventory as $value) {
+            $reserved_qty = StockReservation::where('item_code', $value->item_code)
+                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
+
+            $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+
+            $stock_level[] = [
+                'warehouse' => $value->warehouse,
+                'reserved_qty' => $reserved_qty,
+                'actual_qty' => $actual_qty,
+                'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                'stock_uom' => $value->stock_uom,
+            ];
+        }
 
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
 
