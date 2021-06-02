@@ -35,7 +35,11 @@
             </td>
             <td class="text-center align-middle">{{ $row->created_by }}</td>
             <td class="text-center align-middle">
-                <button type="button" class="btn btn-danger cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}">Cancel</button>
+                @php
+                    $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+                @endphp
+                <button type="button" class="btn btn-info edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }}>Edit</button>
+                <button type="button" class="btn btn-danger cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }}>Cancel</button>
             </td>
         </tr>
         @empty

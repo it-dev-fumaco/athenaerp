@@ -58,11 +58,28 @@ class MainController extends Controller
 
             $inv = [];
             foreach ($item_inventory as $value) {
-                $inv[] = [
-                    'warehouse' => $value->warehouse,
-                    'actual_qty' => $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse),
-                    'stock_uom' => $value->stock_uom,
-                ];
+                $reserved_qty = StockReservation::where('item_code', $value->item_code)
+                    ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
+
+                $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+                $consignment_warehouse_count += $value->is_consignment_warehouse;
+                if($value->is_consignment_warehouse < 1) {
+                    $site_warehouses[] = [
+                        'warehouse' => $value->warehouse,
+                        'reserved_qty' => $reserved_qty,
+                        'actual_qty' => $actual_qty,
+                        'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                        'stock_uom' => $value->stock_uom,
+                    ];
+                }else{
+                    $consignment_warehouses[] = [
+                        'warehouse' => $value->warehouse,
+                        'reserved_qty' => $reserved_qty,
+                        'actual_qty' => $actual_qty,
+                        'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                        'stock_uom' => $value->stock_uom,
+                    ];
+                }
             }
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $row->name)->pluck('supplier_part_no');

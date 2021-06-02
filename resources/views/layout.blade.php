@@ -471,8 +471,11 @@
 									<div class="tab-pane" id="tab_4">
 										<div class="row">
 											<div class="col-md-12">
+												@php
+													$attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+												@endphp
 												<div class="float-right m-2">
-													<button class="btn btn-primary" id="add-stock-reservation-btn">New Stock Reservation</button>
+													<button class="btn btn-primary" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
 												</div>
 												<div class="box-body table-responsive no-padding" id="stock-reservation-table"></div>
 											</div>
@@ -597,15 +600,19 @@
 							<div class="col-md-6">
 								<div class="form-group">
 									<label for="">Item Code</label>
-									<input type="text" class="form-control" name="item_code" id="item-code-c">
+									<input type="text" class="form-control" name="item_code" id="item-code-c" readonly>
 								</div>
 								<div class="form-group">
 									<label for="">Description</label>
-									<textarea rows="4" name="item_description" class="form-control" style="height: 124px;" id="description-c"></textarea>
+									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-c" readonly></textarea>
 								</div>
 								<div class="form-group">
 									<label for="">Notes</label>
 									<textarea rows="4" class="form-control" name="notes" style="height: 124px;"></textarea>
+								</div>
+								<div class="form-group for-in-house-type d-none">
+									<label for="validity-c">Validity in Day(s)</label>
+									<input type="number" class="form-control" id="validity-c" min="0" value="0">
 								</div>
 							</div>
 							<div class="col-md-6">
@@ -625,7 +632,7 @@
 									<div class="col-md-6">
 										<div class="form-group">
 											<label for="">Stock UoM</label>
-											<input type="text" name="stock_uom" class="form-control" id="stock-uom-c">
+											<input type="text" name="stock_uom" class="form-control" id="stock-uom-c" readonly>
 										</div>
 									</div>
 									<div class="col-md-12">
@@ -642,6 +649,79 @@
 										<div class="form-group for-online-shop-type d-none">
 											<label>Valid until</label>
 											<input type="text" name="valid_until" class="form-control" id="date-valid-until-c">
+										</div>
+									</div>
+								</div>                                        
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> SAVE</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<div class="modal fade" id="edit-stock-reservation-modal">
+		<form id="edit-reservation-form" method="POST" action="/update_reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Edit Stock Reservation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div class="row m-2">
+							<div class="col-md-6">
+								<div class="form-group">
+									<input type="hidden" name="id" id="stock-reservation-id-e">
+									<label for="">Item Code</label>
+									<input type="text" class="form-control" name="item_code" id="item-code-e" readonly>
+								</div>
+								<div class="form-group">
+									<label for="">Description</label>
+									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-e" readonly></textarea>
+								</div>
+								<div class="form-group">
+									<label for="">Notes</label>
+									<textarea rows="4" class="form-control" name="notes" id="notes-e" style="height: 124px;"></textarea>
+								</div>
+								<div class="form-group for-in-house-type d-none">
+									<label for="validity-e">Validity in Day(s)</label>
+									<input type="number" class="form-control" id="validity-e" min="0" value="0">
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Warehouse</label>
+											<select class="form-control" name="warehouse" id="select-warehouse-e"></select>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Reserve Qty</label>
+											<input type="text" name="reserve_qty" class="form-control" value="0" id="reserve-qty-e">
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Stock UoM</label>
+											<input type="text" name="stock_uom" class="form-control" id="stock-uom-e" readonly>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Reservation Type</label>
+											<select name="type" class="form-control" id="select-type-e">
+												<option value="">Select Type</option>
+												<option value="In-house">In-house</option>
+												<option value="Website Stocks">Website Stocks</option>
+											</select>
 										</div>
 									</div>
 									<div class="col-md-12">
@@ -796,6 +876,8 @@
 			$('#add-stock-reservation-btn').click(function(e){
 				e.preventDefault();
 
+				$("#date-valid-until-c").datepicker("update", new Date());
+
 				$.ajax({
 					type: "GET",
 					url: "/get_item_details/" + $('#selected-item-code').text() + "?json=true",
@@ -811,14 +893,91 @@
 				});
 			});
 
-			$('#select-warehouse-c').select2({
+			$('#select-warehouse-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
 				placeholder: 'Select Warehouse',
 				ajax: {
-					url: '/warehouses',
+					url: '/warehouses_with_stocks',
 					method: 'GET',
 					dataType: 'json',
 					data: function (data) {
 						return {
+							item_code: $('#item-code-e').val(),
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-type-e').change(function(){
+				if($(this).val()) {
+					if($(this).val() == 'In-house') {
+						$('.for-in-house-type').removeClass('d-none');
+						$('.for-online-shop-type').addClass('d-none');
+					} else {
+						$('.for-in-house-type').addClass('d-none');
+						$('.for-online-shop-type').removeClass('d-none');
+					}
+				}
+			});
+
+			$('#select-project-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
+				placeholder: 'Select Project',
+				ajax: {
+					url: '/projects',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-sales-person-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
+				placeholder: 'Select Sales Person',
+				ajax: {
+					url: '/sales_persons',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-warehouse-c').select2({
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/warehouses_with_stocks',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							item_code: $('#item-code-c').val(),
 							q: data.term // search term
 						};
 					},
@@ -883,8 +1042,72 @@
 				}
 			});
 
+			$("#validity-c").bind('keyup mouseup', function () {
+				var newdate = new Date();
+				newdate.setDate(newdate.getDate() + parseInt($(this).val()));
+				$('#date-valid-until-c').datepicker('setDate', newdate);
+			});
+
+			$("#validity-e").bind('keyup mouseup', function () {
+				var newdate = new Date();
+				newdate.setDate(newdate.getDate() + parseInt($(this).val()));
+				$('#date-valid-until-e').datepicker('setDate', newdate);
+			});
+
 			$('#date-valid-until-c').datepicker({
 				autoclose: true
+			});
+
+			$('#date-valid-until-e').datepicker({
+				startDate: new Date(),
+				format: 'yyyy-mm-dd',
+				autoclose: true
+			});
+
+			$(document).on('click', '.edit-stock-reservation-btn', function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: "GET",
+					url: "/get_stock_reservation_details/" + $(this).data('reservation-id'),
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						var selected_warehouse = $('#select-warehouse-e');
+						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
+						selected_warehouse.append(selected_warehouse_option).trigger('change');
+						
+						var selected_sales_person = $('#select-sales-person-e');
+						var selected_sales_person_option = new Option(data.sales_person, data.sales_person, true, true);
+						selected_sales_person.append(selected_sales_person_option).trigger('change');
+
+						var selected_project = $('#select-project-e');
+						var selected_project_option = new Option(data.project, data.project, true, true);
+						selected_project.append(selected_project_option).trigger('change');
+
+						if(data.type == 'In-house'){
+							$('#select-sales-person-e').parent().removeClass('d-none');
+							$('#select-project-e').parent().removeClass('d-none');
+							$('#date-valid-until-e').parent().removeClass('d-none');
+						}else{
+							$('#select-sales-person-e').parent().addClass('d-none');
+							$('#select-project-e').parent().addClass('d-none');
+							$('#date-valid-until-e').parent().addClass('d-none');
+						}
+
+						$('#stock-reservation-id-e').val(data.name);
+						$('#item-code-e').val(data.item_code);
+						$('#description-e').val(data.description);
+						$('#stock-uom-e').val(data.stock_uom);
+						$('#notes-e').val(data.notes);
+						$('#select-type-e').val(data.type);
+						$('#reserve-qty-e').val(data.reserve_qty);
+						$('#status-e').val(data.status);
+						$('#date-valid-until-e').val(data.valid_until);
+
+						$('#edit-stock-reservation-modal').modal('show');
+					}
+				});
 			});
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
@@ -906,13 +1129,13 @@
 				count_ps_for_issue();
 				count_production_to_receive();
 
-			// setInterval(function () {
-			// 	count_ste_for_issue('Material Issue', '#material-issue');
-			// 	count_ste_for_issue('Material Transfer', '#material-transfer');
-			// 	count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
-			// 	count_ps_for_issue();
-			// 	count_production_to_receive();
-			// }, 60000);
+			setInterval(function () {
+				count_ste_for_issue('Material Issue', '#material-issue');
+				count_ste_for_issue('Material Transfer', '#material-transfer');
+				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
+				count_ps_for_issue();
+				count_production_to_receive();
+			}, 60000);
 			
 			function count_ste_for_issue(purpose, div){
 				$.ajax({
@@ -964,41 +1187,41 @@
 				});
 			}
 
-			get_select_filters();
-			function get_select_filters(){
-				$('#group').empty();
-				$('#classification').empty();
-				$('#wh').empty();
+			// get_select_filters();
+			// function get_select_filters(){
+			// 	$('#group').empty();
+			// 	$('#classification').empty();
+			// 	$('#wh').empty();
 
-				var group = '<option value="">All Item Groups</option>';
-				var classification = '<option value="">All Item Classification</option>';
-				var wh = '<option value="">All Warehouse</option>';
-				$.ajax({
-					url: "/get_select_filters",
-					type:"GET",
-					success: function(data){
-						$.each(data.warehouses, function(i, v){
-							wh += '<option value="' + v + '">' + v + '</option>';
-						});
+			// 	var group = '<option value="">All Item Groups</option>';
+			// 	var classification = '<option value="">All Item Classification</option>';
+			// 	var wh = '<option value="">All Warehouse</option>';
+			// 	$.ajax({
+			// 		url: "/get_select_filters",
+			// 		type:"GET",
+			// 		success: function(data){
+			// 			$.each(data.warehouses, function(i, v){
+			// 				wh += '<option value="' + v + '">' + v + '</option>';
+			// 			});
 
-						$.each(data.item_groups, function(i, v){
-							group += '<option value="' + v + '">' + v + '</option>';
-						});
+			// 			$.each(data.item_groups, function(i, v){
+			// 				group += '<option value="' + v + '">' + v + '</option>';
+			// 			});
 
-						$.each(data.item_classification, function(i, v){
-							classification += '<option value="' + v + '">' + v + '</option>';
-						});
+			// 			$.each(data.item_classification, function(i, v){
+			// 				classification += '<option value="' + v + '">' + v + '</option>';
+			// 			});
 
-						$('#group').append(group);
-						$('#classification').append(classification);
-						$('#warehouse-search').append(wh);
+			// 			$('#group').append(group);
+			// 			$('#classification').append(classification);
+			// 			$('#warehouse-search').append(wh);
 
-						$('#group').val('{{ request("group") }}');
-						$('#classification').val('{{ request("classification") }}');
-						$('#warehouse-search').val('{{ request("wh") }}');
-					}
-				});
-			}
+			// 			$('#group').val('{{ request("group") }}');
+			// 			$('#classification').val('{{ request("classification") }}');
+			// 			$('#warehouse-search').val('{{ request("wh") }}');
+			// 		}
+			// 	});
+			// }
 
 			$("#searchid").keyup(function () {
 				load_suggestion_box();
