@@ -6,12 +6,44 @@
             </div>
             <div class="row">
                 @php
-                    $img = ($item_details->item_image_path) ? '/img/' . $item_details->item_image_path : '/icon/no_img.png';
+                    $img_1 = (array_key_exists(0, $item_images)) ? '/img/' . $item_images[0] : '/icon/no_img.png';
+                    $img_2 = (array_key_exists(1, $item_images)) ? '/img/' . $item_images[1] : '/icon/no_img.png';
+                    $img_3 = (array_key_exists(2, $item_images)) ? '/img/' . $item_images[2] : '/icon/no_img.png';
+                    $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . $item_images[3] : '/icon/no_img.png';
                 @endphp
                 <div class="col-md-4">
-                    <a class='sample' data-height='720' data-lighter="{{ asset('storage/') }}{{ $img }}" data-width="1280" href="{{ asset('storage/') }}{{ $img }}">
-                        <img src="{{ asset('storage/') }}{{ $img }}" style="width: 100%;">
-                    </a>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <a href="{{ asset('storage/') }}{{ $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <img src="{{ asset('storage/') }}{{ $img_1 }}" class="img-thumbnail">
+                            </a>
+                        </div>
+                        <div class="col-md-4 mt-2">
+                            <a href="{{ asset('storage/') }}{{ $img_2 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <img src="{{ asset('storage/') }}{{ $img_2 }}" class="img-thumbnail" style="margin: 1px;">
+                            </a>
+                        </div>
+                        <div class="col-md-4 mt-2">
+                            <a href="{{ asset('storage/') }}{{ $img_3 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <img src="{{ asset('storage/') }}{{ $img_3 }}" class="img-thumbnail" style="margin: 1px;">
+                            </a>
+                        </div>
+                        <div class="col-md-4 mt-2">
+                            <a href="{{ asset('storage/') }}{{ $img_4 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <div class="text-white">
+                                    <img src="{{ asset('storage/') }}{{ $img_4 }}" class="img-thumbnail" style="margin: 1px;">
+                                    @if(count($item_images) > 4)
+                                    <div class="card-img-overlay text-center">
+                                        <h5 class="card-title m-1 font-weight-bold">MORE</h5>
+                                    </div>
+                                    @endif
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-12 text-center pt-3">
+                            <button class="btn btn-primary btn-sm upload-item-image" data-item-code="{{ $item_details->name }}">Upload Image(s)</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-8">
                     <dl>

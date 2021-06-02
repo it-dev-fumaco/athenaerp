@@ -1,86 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ERP Inventory</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ERP Inventory</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="csrf-token" content="{{ csrf_token() }}">
 
-  {{--  <!-- Google Font: Source Sans Pro -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
-  {{--  <!-- Font Awesome Icons -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
-  {{--  <!-- Ekko Lightbox -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
-  {{--  <!-- Theme style -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
-  <!-- Select2 -->
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
-  <!-- bootstrap datepicker -->
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
+	{{--  <!-- Google Font: Source Sans Pro -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
+	{{--  <!-- Font Awesome Icons -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
+	{{--  <!-- Ekko Lightbox -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
+	{{--  <!-- Theme style -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
+	<!-- Select2 -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
+	<!-- bootstrap datepicker -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
+	<!-- iCheck for checkboxes and radio inputs -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
 </head>
 <body class="hold-transition layout-top-nav">
 	<div class="wrapper">
-		{{--  <!-- Navbar -->  --}}
-		<nav class="main-header navbar navbar-expand-md navbar-light navbar-navy">
+		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
 			<div class="container-fluid">
-				<form role="search" method="GET" action="/">
-					<div class="d-flex flex-grow-1">
-						<div class="col-md-3 text-center">
-							<a href="/" class="navbar-brand">
-								<span class="brand-text text-white" style="font-size: 28pt;"><b>ERP</b>Inventory</span>
-							</a>
-						</div>
-						<div class="col-md-6">
+				<div class="d-flex flex-grow-1">
+					<div class="row w-100">
+						<div class="col-xl-9 col-lg-10 col-md-10">
 							<div class="row">
-								<div class="col-md-1 div-reset" style="min-height: 40px;">
-									<button class="btn btn-default d-inline-block" type="button" onclick="document.getElementById('searchid').value = ''">
-										<i class="fas fa-sync"></i>
-									</button>
+								<div class="col-md-12 col-xl-4 col-lg-3 text-center">
+									<a href="/" class="navbar-brand">
+										<span class="brand-text text-white" style="font-size: 28pt;">Athena<b>ERP</b><span class="d-md-inline-block d-lg-none d-xl-inline-block">Inventory</span></span>
+									</a>
 								</div>
-								<div class="col-md-7 div-search-box" style="min-height: 40px;">
-									<input type="text" class="form-control" placeholder="Search Item..." name="searchString" id="searchid" autocomplete="off" value="{{ request('searchString') }}">
-									<div id="suggesstion-box"></div>
-								</div>
-								<div class="col-md-4">
-									<div class="row">
-										<div class="col-md-6 div-cb-remove text-white" style="min-height: 40px;">
-											<label style="font-size: 8pt;">
-												<div class="d-inline-block">
-													<input type="checkbox" name="check_qty" {{ (request('check_qty')) ? 'checked' : null }} style="width: 15px; height: 15px;">
-												</div>
-												<div style="width: 70%;" class="cb_remove_zero_qty d-inline-block text-center">Remove zero-qty items</div>
-											</label>
+								<div class="col-md-12 col-xl-8 col-lg-9">
+									<form role="search" method="GET" action="/search_results" id="search-form">
+										<div class="input-group p-2">
+											<input type="text" class="form-control form-control-lg advancedAuto1Complete" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
+											<div class="input-group-append">
+												<button class="btn btn-default btn-lg" type="submit">
+													<i class="fas fa-search"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Search</span>
+												</button>
+											</div>
 										</div>
-										<div class="col-md-6 div-search" style="min-height: 40px;">
-											<button class="btn btn-block btn-default" type="submit" name="search">
-												<i class="fas fa-search"></i> Search
-											</button>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-4 div-select1" style="min-height: 40px;">
-									<select class="form-control" id="group" name="group" style="width: 100%;"></select>
-								</div>
-								<div class="col-md-4 div-select2" style="min-height: 40px;">
-									<select class="form-control" id="classification" name="classification" style="width: 100%;"></select>
-								</div>
-								<div class="col-md-4 div-select3" style="min-height: 40px;">
-									<select class="form-control" id="warehouse-search" name="wh" style="width: 100%;"></select>
+									</form>
+									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
 							</div>
 						</div>
-						<div class="col-md-3 text-center">
+						<div class="col-xl-3 col-lg-2 col-md-2 p-2 text-center align-middle">
 							<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
-							<span class="text-white" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
-							<a href="/logout" class="btn btn-default ml-1"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+							<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
+							<a href="/logout" class="btn btn-default btn-lg ml-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
 						</div>
 					</div>
-				</form>
+				</div>
 			</div>
 		</nav>
-		{{--  <!-- /.navbar -->  --}}
 
 	<style>
 		.col-md-13 {
@@ -145,10 +123,10 @@
 
 		#suggesstion-box {
 			position:absolute;
-			width:95%;
+			width: 95%;
 			display:none;
 			overflow:hidden;
-			border:1px #CCC solid;
+			padding: 0;
 			background-color: white;
 			display: block;
 			z-index: 11;
@@ -175,38 +153,6 @@
 		.div-cb-remove{
 			padding: 0;
 		}
-	
-		@media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) {
-			/* For landscape layouts only */
-			.cb_remove_zero_qty{
-				font-size: 0.75em;
-			}
-			.div-search, .div-cb-remove{
-				padding: 0; 
-			}
-			#suggesstion-box{
-				width:98%;
-			}
-			.div-select1{
-				padding: 3px 5px 0 0 ;
-			}
-			.div-select2{
-				padding: 3px 5px 0 5px;
-			}
-			.div-select3{
-				padding: 3px 0 0 5px;
-			}
-			.div-search-box{
-				padding: 0 5px 0 0;
-			}
-			.ste-purpose-txt{
-				font-size: 14pt;
-			}
-			.div-ste{
-				padding-right: 0;
-			}
-		}
-
 		#d {
 			display: inline-block;
 			border: 0;
@@ -269,6 +215,7 @@
 	</style>
 
   	<div class="content-wrapper">
+		@if(!in_array($activePage, ['search_results', 'dashboard']))
 		<div class="content-header pb-0">
 			<div class="container-fluid m-0">
 				<div class="row text-uppercase">
@@ -320,6 +267,7 @@
 				</div>
 			</div>
     	</div>
+		@endif
 		 <!-- /.content-header -->
 	 
     	<!-- Main content -->
@@ -328,6 +276,25 @@
 		
 	</div>
 	<!-- /.content-wrapper -->
+
+	<style>
+
+.remove{
+     position: absolute;
+    top: 15%;
+    right: 0;
+    transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    background-color: #d9534f;
+    color: white;
+    font-size: 16px;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    text-align: center;
+}
+	</style>
 
   	@if($activePage != 'picking-slip')
 	<div class="modal fade" id="update-item-modal">
@@ -534,7 +501,7 @@
 	<div class="modal fade" id="upload-image-modal" tabindex="-1" role="dialog" aria-labelledby="Upload Image">
 		<form method="POST" action="/upload_item_image" enctype="multipart/form-data">
 			@csrf
-			<div class="modal-dialog" role="document">
+			<div class="modal-dialog modal-lg" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
 						<h4 class="modal-title">Upload Image</h4>
@@ -545,16 +512,13 @@
 						<div class="row">
 							<div class="col-md-12">
 								<div class="form-group" id="upload_edit_form">
-									<div style="text-align: center;">
-								<input type="hidden" name="item_code">
-								
-											<div>
-											<img src="{{ asset('storage/icon/no_img.png') }}" width="250" height="250" class="imgPreview" id="image-preview">
-											</div>
-											<div class="fileUpload btn btn-warning upload-btn" style="margin-top: 8px;">
-											<span>Choose File..</span>
-											<input type="file" name="item_image" class="upload" id="browse-img" />
-										</div>                  
+									<input type="hidden" name="item_code" class="item-code">
+									<div class="fileUpload btn btn-primary upload-btn mb-3">
+										<span>Browse Image(s)</span>
+										<input type="file" name="item_image[]" class="upload" id="browse-img" multiple />
+									</div>
+									<div class="row">
+										<div class="col-md-12" id="image-previews"></div>
 									</div>
 								</div>
 							</div>
@@ -641,12 +605,24 @@
 											<select name="type" class="form-control" id="select-type-c">
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
-												<option value="Online Shop">Online Shop</option>
+												<option value="Website Stocks">Website Stocks</option>
 											</select>
 										</div>
 									</div>
 									<div class="col-md-12">
-										<div class="form-group for-online-shop-type d-none">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Sales Person</label>
+											<select class="form-control" name="sales_person" id="select-sales-person-c"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Project</label>
+											<select class="form-control" name="project" id="select-project-c"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
 											<label>Valid until</label>
 											<input type="text" name="valid_until" class="form-control" id="date-valid-until-c">
 										</div>
@@ -727,13 +703,19 @@
 									<div class="col-md-12">
 										<div class="form-group for-in-house-type d-none">
 											<label for="">Sales Person</label>
-											<select class="form-control" name="sales_person" id="select-sales-person-c"></select>
+											<select class="form-control" name="sales_person" id="select-sales-person-e"></select>
 										</div>
 									</div>
 									<div class="col-md-12">
 										<div class="form-group for-in-house-type d-none">
 											<label for="">Project</label>
-											<select class="form-control" name="project" id="select-project-c"></select>
+											<select class="form-control" name="project" id="select-project-e"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label>Valid until</label>
+											<input type="text" name="valid_until" class="form-control" id="date-valid-until-e">
 										</div>
 									</div>
 								</div>                                        
@@ -741,7 +723,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> SAVE</button>
+						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> UPDATE</button>
 						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
 					</div>
 				</div>
@@ -781,6 +763,7 @@
     <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
+
 <!-- ./wrapper -->
 
 <!-- REQUIRED SCRIPTS -->
@@ -794,16 +777,50 @@
 <!-- AdminLTE App -->
 <script src="{{ asset('/updated/dist/js/adminlte.min.js') }}"></script>
 <!-- Select2 -->
-<script src="{{ asset('/updated/plugins/select2/js/select2.full.min.js') }}"></script>
+<script src="{{ asset('/updated/plugins/select2/js/select2.min.js') }}"></script>
 <!-- bootstrap datepicker -->
 <script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
+<!-- iCheck 1.0.1 -->
+<script src="{{ asset('/updated/plugins/iCheck/icheck.min.js') }}"></script>
+<!-- ChartJS -->
+<script src="{{ asset('/updated/plugins/chart.js/Chart.min.js') }}"></script>
 
 <script src="{{ asset('/js/angular.min.js') }}"></script>
+<script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
 
 	@yield('script')
 
 	<script>
 		$(document).ready(function(){
+
+
+
+			get_low_stock_level_items();
+			function get_low_stock_level_items(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_low_stock_level_items?page=" + page,
+					success: function (data) {
+						$('#low-level-stock-table').html(data);
+					}
+				});
+			}
+			
+			$('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
+				checkboxClass: 'icheckbox_minimal-blue',
+				radioClass: 'iradio_minimal-blue'
+			});
+
+			$('#cb-2').on('ifChecked', function(event){
+				$("#cb-1").prop("checked", true);
+				$('#search-form').submit();
+			});
+
+			$('#cb-2').on('ifUnchecked', function(event){
+				$("#cb-1").prop("checked", false);
+				$('#search-form').submit();
+			});
+						
 			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
 				e.preventDefault();
 
@@ -815,6 +832,30 @@
 				$('#cancel-stock-reservation-modal').modal('show');
 			});
 
+			$('#edit-reservation-form').submit(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.error) {
+							showNotification("danger", response.modal_message, "fa fa-info");
+						}else{
+							get_stock_reservation($('#selected-item-code').text());
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#edit-stock-reservation-modal').modal('hide');
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						console.log(jqXHR);
+						console.log(textStatus);
+						console.log(errorThrown);
+					}
+				});
+			});
+
 			$('#stock-reservation-form').submit(function(e){
 				e.preventDefault();
 
@@ -824,16 +865,11 @@
 					data: $(this).serialize(),
 					success: function(response){
 						if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
+							showNotification("danger", response.modal_message, "fa fa-info");
 						}else{
 							get_stock_reservation($('#selected-item-code').text());
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#add-stock-reservation-modal').modal('hide');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
@@ -853,16 +889,11 @@
 					data: $(this).serialize(),
 					success: function(response){
 						if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
+							showNotification("danger", response.modal_message, "fa fa-info");
 						}else{
 							get_stock_reservation($('#selected-item-code').text());
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#cancel-stock-reservation-modal').modal('hide');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
@@ -970,6 +1001,7 @@
 			});
 
 			$('#select-warehouse-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
 				placeholder: 'Select Warehouse',
 				ajax: {
 					url: '/warehouses_with_stocks',
@@ -1003,6 +1035,7 @@
 			});
 
 			$('#select-project-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
 				placeholder: 'Select Project',
 				ajax: {
 					url: '/projects',
@@ -1023,6 +1056,7 @@
 			});
 
 			$('#select-sales-person-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
 				placeholder: 'Select Sales Person',
 				ajax: {
 					url: '/sales_persons',
@@ -1055,6 +1089,8 @@
 			});
 
 			$('#date-valid-until-c').datepicker({
+				startDate: new Date(),
+				format: 'yyyy-mm-dd',
 				autoclose: true
 			});
 
@@ -1334,14 +1370,17 @@
 				$('#update-item-return-modal').modal('hide');
 				$('#add-stock-reservation-modal').modal('hide');
 				$('#cancel-stock-reservation-modal').modal('hide');
+				$('#edit-stock-reservation-modal').modal('hide');
 			});
 			
 			$('#myModal').on("hidden.bs.modal", function () {
 				$("body").addClass("modal-open");
 			});
-		
+
 			$('.modal').on("hidden.bs.modal", function () {
 				$(this).find('form')[0].reset();
+				$('.for-in-house-type').addClass('d-none');
+				$('.for-online-shop-type').addClass('d-none');
 			});
 
 			$(document).on('click', '.view-item-details', function(e){
@@ -1387,6 +1426,12 @@
 				});
 			}
 
+			$(document).on('click', '#low-level-stocks-pagination a', function(event){
+				event.preventDefault();
+				var page = $(this).attr('href').split('page=')[1];
+				get_low_stock_level_items(page);
+			});
+
 			$(document).on('click', '#athena-transactions-pagination a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
@@ -1420,26 +1465,68 @@
 
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
+
+				$('.img_upload').remove();
 				
 				var item_code = $(this).data('item-code');
+				
+				get_item_images(item_code);
 				
 				$('#upload-image-modal input[name="item_code"]').val(item_code);
 				$('#image-preview').attr('src', $(this).data('image'));
 				$('#upload-image-modal').modal('show');
 			});
 
-			$("#browse-img").change(function () {
-				if (this.files && this.files[0]) {
-					var reader = new FileReader();
-					reader.onload = function (e) {
-						 $('#image-preview').attr('src', e.target.result);
+			function get_item_images(item_code){
+				var storage = "{{ asset('storage/img/') }}";
+				$.ajax({
+					type: 'GET',
+					url: '/get_item_images/' + item_code,
+					success: function(response){
+						$.each(response, function(i, d){
+							var image_src = storage + '/' + d;
+							$("<div class=\"col-md-4 pip img_upload\">" +
+							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
+							"<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
+							"<span class=\"add-fav remove\">&times;</span>" +
+							"</div>").insertAfter("#image-previews");
+						});
 					}
-					reader.readAsDataURL(this.files[0]);
-				}
+				});
+			}
+
+			$(document).on('click', '.remove', function(){
+				$(this).parent(".pip").remove();
 			});
+
+			if (window.File && window.FileList && window.FileReader) {
+				$("#browse-img").on("change", function(e) {
+					var files = e.target.files,
+					filesLength = files.length;
+					for (var i = 0; i < filesLength; i++) {
+						var f = files[i]
+						var fileReader = new FileReader();
+						fileReader.onload = (function(e) {
+							var file = e.target;
+							$("<div class=\"col-md-4 pip img_upload\">" +
+								"<input type=\"hidden\" name=\"existing_images[]\">" +
+							"<img class=\"img-thumbnail\" src=\"" + e.target.result + "\">" +
+							"<span class=\"add-fav remove\">&times;</span>" +
+							"</div>").insertAfter("#image-previews");
+							$(".remove").click(function(){
+								$(this).parent(".pip").remove();
+							});
+						});
+						fileReader.readAsDataURL(f);
+					}
+				});
+			} else {
+				alert("Your browser doesn't support to File API");
+			}
 
 			$('#upload-image-modal form').submit(function(e){
 				e.preventDefault();
+				var item_code = $(this).find('.item-code').eq(0).val();
 				$.ajax({
 					type: 'POST',
 					url: $(this).attr('action'),
@@ -1451,6 +1538,8 @@
 						$('#myModal').modal('show'); 
 						$('#myModalLabel').html('Message');
 						$('#desc').html(response.message);
+
+						view_item_details(item_code);
 
 						$('#upload-image-modal').modal('hide');
 					},
@@ -1473,6 +1562,47 @@
 			$('#view-item-details-modal').on("hidden.bs.modal", function () {
 				$('#item-tabs a[href="#tab_1"]').tab('show');
 			});
+
+			$(document).on('hidden.bs.modal', '.modal', function () {
+				$('.modal:visible').length && $(document.body).addClass('modal-open');
+			});
+
+			setInterval(updateClock, 1000);
+			function updateClock(){
+				var currentTime = new Date();
+				var currentHours = currentTime.getHours();
+				var currentMinutes = currentTime.getMinutes();
+				var currentSeconds = currentTime.getSeconds();
+				// Pad the minutes and seconds with leading zeros, if required
+				currentMinutes = (currentMinutes < 10 ? "0" : "") + currentMinutes;
+				currentSeconds = (currentSeconds < 10 ? "0" : "") + currentSeconds;
+				// Choose either "AM" or "PM" as appropriate
+				var timeOfDay = (currentHours < 12) ? "AM" : "PM";
+				// Convert the hours component to 12-hour format if needed
+				currentHours = (currentHours > 12) ? currentHours - 12 : currentHours;
+				// Convert an hours component of "0" to "12"
+				currentHours = (currentHours === 0) ? 12 : currentHours;
+				currentHours = (currentHours < 10 ? "0" : "") + currentHours;
+				// Compose the string for display
+				var currentTimeString = currentHours + ":" + currentMinutes + " " + timeOfDay;
+
+				$("#current-time").html(currentTimeString);
+			}
+
+			function showNotification(color, message, icon){
+				$.notify({
+				  icon: icon,
+				  message: message
+				},{
+				  type: color,
+				  timer: 500,
+				  z_index: 1060,
+				  placement: {
+					from: 'top',
+					align: 'center'
+				  }
+				});
+			}
 		});
 	</script>
 </body>

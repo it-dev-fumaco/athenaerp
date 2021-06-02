@@ -1,96 +1,257 @@
 @extends('layout', [
     'namePage' => 'ERPInventory',
-    'activePage' => 'index',
+    'activePage' => 'dashboard',
 ])
 
 @section('content')
-<div class="content">
+<div class="content bg-white">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
-			<div class="row">
+			<div class="row pt-3">
 				<div class="col-sm-12">
-					<div class="card card-gray card-outline">
-						<div class="card-header">
-							<h5 class="card-title m-0 font-weight-bold">List of Item(s)</h5>
-							<div class="card-tools">
-								<div class="pull-right">
-									<span class="font-weight-bold m-1">TOTAL:</span>
-									<span class="badge bg-info" style="font-size: 14pt;">{{ number_format($items->total()) }}</span>
+					<div class="card bg-light">
+						<div class="card-body p-0" style="min-height: 900px;">
+							<div class="row pt-2 m-0">
+								<div class="col-md-12 col-xl-6 col-lg-12">
+									<div class="container pr-0 pl-0">
+										<div class="row">
+											<div class="col-md-12 col-xl-10 col-lg-12 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
+												<h5 class="text-uppercase text-center mb-2 font-italic">Incoming Stocks</h5>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-primary" style="width: 30%;"><i class="fas fa-undo"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Returns</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-returns">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-info" style="width: 30%;"><i class="far fa-check-circle"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Feedback</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-receipt">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-secondary" style="width: 30%;"><i class="fas fa-exchange-alt"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Internal Transfers</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-transfer">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-maroon" style="width: 30%;"><i class="fas fa-boxes"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">PO Receipts</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-purchase-receipts">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>	
+								<div class="col-md-12 col-xl-6 col-lg-12">
+									<div class="container pr-0 pl-0">
+										<div class="row">
+											<div class="col-md-12 col-xl-10 col-lg-12 pr-4 pl-4">
+												<h5 class="text-uppercase text-center mb-2 font-italic">Outgoing Stocks</h5>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-olive" style="width: 30%;"><i class="fas fa-tasks"></i></span>
+														<div class="info-box-content text-truncate d-inline-block">
+														<span class="info-box-text font-weight-bold text-uppercase"><span class="d-md-inline-block d-lg-none d-xl-inline-block">Production</span> Withdrawals</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-manufacture">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-indigo" style="width: 30%;"><i class="fas fa-dolly"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Material Issue</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="material-issue">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-teal" style="width: 30%;"><i class="fas fa-truck"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Picking / For Delivery</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="picking-slip">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<div class="info-box">
+													<span class="info-box-icon bg-orange" style="width: 30%;"><i class="fas fa-retweet"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text font-weight-bold text-uppercase">Order Replacement</span>
+														<div class="d-flex flex-row flex-wrap">
+															<div class="p-0 align-middle align-self-center w-100">
+																<h3 class="custom-font m-0 p-1">
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-replacements">-</span>
+																</h3>
+																<h5 class="mb-1">
+																	<small class="pr-2 pl-2">Pending</small>
+																</h5>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
 								</div>
 							</div>
-						</div>
-						<div class="card-body table-responsive p-0">
-							<table class="table table-sm">
-								<col style="width: 13%;">
-								<col style="width: 41%;">
-								<col style="width: 15%;">
-								<col style="width: 15%;">
-								<col style="width: 16%;">
-								<thead class="bg-light">
-									<tr>
-										<th scope="col" class="text-center">IMAGE</th>
-										<th scope="col" class="text-center">ITEM DESCRIPTION</th>
-										<th scope="col" class="text-center">ITEM GROUP</th>
-										<th scope="col" class="text-center">UOM</th>
-										<th scope="col" class="text-center">CLASSIFICATION</th>
-									</tr>
-								</thead>
+							<div class="row">
+								<div class="col-md-12 col-xl-8 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-2 pl-xl-5">
+									<h5 class="text-uppercase mb-2 font-weight-bold">Low Stock Level</h5>
+									<div class="card card-secondary card-outline">
+										<div class="card-body p-0" id="low-level-stock-table"></div>
+									</div>	
+								</div>
+								<div class="col-md-12 col-xl-4 col-lg-12 pl-5 pr-5 pt-3">
+									<div class="row mt-3">
+										<div class="col-xl-12 col-lg-6 col-md-12 col-sm-12 col-12">
+											<div class="info-box bg-info">
+												<span class="info-box-icon"><i class="far fa-bookmark"></i></span>
+												<div class="info-box-content">
+													<span class="info-box-text">Bookmarks</span>
+													<span class="info-box-number">41,410</span>
+
+													<div class="progress">
+														<div class="progress-bar" style="width: 70%"></div>
+													</div>
+													<span class="progress-description">70% Increase in 30 Days</span>
+												</div>
+										<!-- /.info-box-content -->
+										</div>
+										<!-- /.info-box -->
+									</div>
+									<!-- /.col -->
+									<div class="col-xl-12  col-lg-6 col-md-12 col-sm-12 col-12">
+										<div class="info-box bg-success">
+										<span class="info-box-icon"><i class="far fa-thumbs-up"></i></span>
+
+										<div class="info-box-content">
+											<span class="info-box-text">Likes</span>
+											<span class="info-box-number">41,410</span>
+
+											<div class="progress">
+											<div class="progress-bar" style="width: 70%"></div>
+											</div>
+											<span class="progress-description">
+											70% Increase in 30 Days
+											</span>
+										</div>
+										<!-- /.info-box-content -->
+										</div>
+										<!-- /.info-box -->
+									</div>
+									<div class="col-xl-12  col-lg-6 col-md-12 col-sm-12 col-12">
+										<div class="card card-danger">
+											<div class="card-header">
+											<h3 class="card-title">Donut Chart</h3>
 							
-								@forelse ($item_list as $row)
-								@php
-									$count_wh = count($row['item_inventory']);
-									$rowspan = ($count_wh > 0) ? ($count_wh + 2) : 3;
-								@endphp
-								<tbody>
-									<tr>
-										<td rowspan="{{ $rowspan }}" class="text-center">
-											@php
-											$img = ($row['item_image_path']) ? "/img/" . $row['item_image_path'] : "/icon/no_img.png";
-											@endphp
-											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-												<img src="{{ asset('storage/') }}{{ $img }}" class="img-fluid" width="200">
-											</a>
-												  <div class="imgButton">
-													<img src="{{ asset('storage/icon/barcode.png') }}" class="img-circle" id="btn" name="barcode" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;"
-														 width="40px">
-													&nbsp;&nbsp;
-													<img src="{{ asset('storage/icon/report.png') }}" class="img-circle view-item-details" name="history" id="btn" data-item-code="{{ $row['name'] }}" width="40px">
-													&nbsp;&nbsp;
-													<img src="{{ asset('storage/icon/upload.png') }}" class="img-circle upload-item-image" name="upload" id="btn" value="Upload Image" data-item-code="{{ $row['name'] }}" width="40px" data-image="{{ asset('storage/') }}{{ $img }}">
-											  </div>
-										 </td>
-										 <td rowspan="{{ $rowspan }}"><b>{{ $row['name'] }}</b><br>{!! $row['description'] !!}<br><br><b>Part No(s):{{ $row['part_nos'] }}</b></td>
-										 <td class="text-center" rowspan="{{ $rowspan }}">{{ $row['item_group'] }}</td>
-										 <td class="text-center">{{ $row['stock_uom'] }}</td>
-										 <td class="text-center">{{ $row['item_classification'] }}</td>
-									</tr>
-									<tr>
-										 <th style="text-align:center;">Warehouse</th>
-										 <th style="text-align:center;">Quantity</th>
-									</tr>
-									@forelse($row['item_inventory'] as $inv)
-									<tr>
-										<td>{{ $inv['warehouse'] }}</td>
-										<td style="text-align:center;">{{ $inv['actual_qty'] * 1 }} {{ $inv['stock_uom'] }}</td>
-									</tr>
-									@empty
-									<tr><td colspan="5" style="text-align:center;">NO WAREHOUSE ASSIGNED</td></tr>
-										
-									@endforelse
-									
-								  </tbody>
-								  <tr class="nohover">
-									<td colspan="5">&nbsp;</td>
-								  </tr>
-								@empty
-								<tr class="nohover">
-									<td colspan="5" style="text-align: center;"><br><label style="font-size: 16pt;">No result(s) found.</label><br>&nbsp;</td>
-								</tr>
-								@endforelse
-							</table>
-							<div class="ml-3 clearfix" style="font-size: 16pt;">
-								{{ $items->links() }}
+											<div class="card-tools">
+												<button type="button" class="btn btn-tool" data-card-widget="collapse">
+												<i class="fas fa-minus"></i>
+												</button>
+												<button type="button" class="btn btn-tool" data-card-widget="remove">
+												<i class="fas fa-times"></i>
+												</button>
+											</div>
+											</div>
+											<div class="card-body">
+											<canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+											</div>
+											<!-- /.card-body -->
+										</div>
+										<!-- /.card -->
+							
+									</div>
+									<!-- /.col -->
+									<!-- /.col -->
+									<!-- /.col -->
+									</div>
+									<!-- /.row -->
+
+								</div>
 							</div>
+						
+						
 						</div>
 					</div>
 				</div>
@@ -99,22 +260,112 @@
 	</div>
 </div>
 
-
 <style>
-	tbody:hover,
+	/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+	.custom-font{
+	
+	}
+}
 
-		th.hover,
-		td.hover,
-		tr.hoverable:hover {
-			background-color: #DCDCDC;
-		}
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+	.custom-font{
+		
+	}
+}
 
-		.nohover:hover {
-		background-color: #fff;
-		}
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+	.custom-font{
+		font-size: 1.3rem;
+	}
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+	.custom-font{
+		font-size: 1.5rem;
+	}
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+	.custom-font{
+		font-size: 2rem;
+	}
+}
 </style>
+
+
 @endsection
 
 @section('script')
+<script>
+	
+	dashboard_data();
+	setInterval(function () {
+		dashboard_data();
+	}, 60000);
+
+	
+			 //-------------
+    //- DONUT CHART -
+    //-------------
+    // Get context with jQuery - using jQuery's .get() method.
+    var donutChartCanvas = $('#donutChart').get(0).getContext('2d')
+    var donutData        = {
+      labels: [
+          'Chrome',
+          'IE',
+          'FireFox',
+          'Safari',
+          'Opera',
+          'Navigator',
+      ],
+      datasets: [
+        {
+          data: [700,500,400,600,300,100],
+          backgroundColor : ['#f56954', '#00a65a', '#f39c12', '#00c0ef', '#3c8dbc', '#d2d6de'],
+        }
+      ]
+    }
+    var donutOptions     = {
+      maintainAspectRatio : false,
+      responsive : true,
+	  legend: {
+         position: 'right'
+      }
+    }
+    //Create pie or douhnut chart
+    // You can switch between pie and douhnut using the method below.
+    new Chart(donutChartCanvas, {
+      type: 'doughnut',
+      data: donutData,
+      options: donutOptions
+    })
+
+	function dashboard_data(purpose, div){
+		$.ajax({
+			type: "GET",
+			url: "/dashboard_data",
+			dataType: 'json',
+			contentType: 'application/json',
+			success: function (data) {
+				$('#d-material-receipt').text(data.d_feedbacks);
+				$('#d-purchase-receipts').text(data.d_purchase_receipts);
+				$('#p-purchase-receipts').text(data.p_purchase_receipts);
+				$('#d-replacements').text(data.d_replacements);
+				$('#p-replacements').text(data.p_replacements);
+				$('#d-returns').text(data.d_returns);
+				$('#p-returns').text(data.p_returns);
+				$('#d-material-transfer').text(data.d_internal_transfers);
+				$('#d-picking-slips').text(data.d_picking_slips);
+				$('#d-withdrawals').text(data.d_withdrawals);
+				$('#d-material-issues').text(data.d_material_issues);
+			}
+		});
+	}
+</script>
 
 @endsection

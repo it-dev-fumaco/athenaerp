@@ -143,7 +143,6 @@
 											<a href="#" class="btn btn-app bg-warning" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
 												<i class="fa fa-qrcode"></i> QR
 											</a>
-											
 										</td>
 									</tr>
 								</tbody>
