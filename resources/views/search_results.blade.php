@@ -86,7 +86,7 @@
 												<tr>
 													<td>{{ $inv['warehouse'] }}</td>
 													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-													<td class="text-center">{{ $inv['actual_qty'] * 1 }} {{ $inv['stock_uom'] }}</td>
+													<td class="text-center">{{ $inv['available_qty'] * 1 }} {{ $inv['stock_uom'] }}</td>
 												</tr>
 												@empty
 												<tr>
@@ -143,11 +143,6 @@
 											<a href="#" class="btn btn-app bg-warning" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
 												<i class="fa fa-qrcode"></i> QR
 											</a>
-											{{--  <div class="imgButton m-1">
-												<img src="{{ asset('storage/icon/barcode.png') }}" class="img-circle mr-2" id="btn" name="barcode" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;" width="40px">
-												<img src="{{ asset('storage/icon/report.png') }}" class="img-circle view-item-details mr-2" name="history" id="btn" data-item-code="{{ $row['name'] }}" width="40px">
-												<img src="{{ asset('storage/icon/upload.png') }}" class="img-circle upload-item-image" name="upload" id="btn" value="Upload Image" data-item-code="{{ $row['name'] }}" width="40px" data-image="{{ asset('storage/') }}{{ $img }}">
-											</div>  --}}
 										</td>
 									</tr>
 								</tbody>

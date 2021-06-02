@@ -66,7 +66,7 @@ Route::group(['middleware' => 'auth'], function(){
 
     // stock reservation
     Route::get('/warehouses', 'MainController@get_warehouses');
-    
+    Route::get('/warehouses_with_stocks', 'StockReservationController@get_warehouse_with_stocks');
     Route::get('/sales_persons', 'MainController@get_sales_persons');
     Route::get('/projects', 'MainController@get_projects');
     Route::post('/create_reservation', 'StockReservationController@create_reservation');

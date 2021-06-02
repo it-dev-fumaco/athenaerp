@@ -11,15 +11,31 @@ use Auth;
 
 class StockReservationController extends Controller
 {
-   // public function view_form(){
-   //    return view('stock_reservation.form');
-   // }
-
    public function create_reservation(Request $request){
       DB::connection('mysql')->beginTransaction();
       try {
          if($request->reserve_qty <= 0) {
-            return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than or equal to 0.']);
+            return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than or equal to 0.']);
+         }
+
+         $bin_details = DB::connection('mysql')->table('tabBin')
+            ->where('item_code', $request->item_code)
+            ->where('warehouse', $request->warehouse)
+            ->first();
+
+         if(!$bin_details) {
+            return response()->json(['error' => 1, 'modal_title' => 'No Stock', 'modal_message' => 'No available stock.']);
+         }
+
+         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $request->item_code)
+            ->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
+
+         $total_reserved_qty = $stock_reservation_qty + $bin_details->website_reserved_qty;
+
+         $available_qty = $bin_details->actual_qty - $total_reserved_qty;
+
+         if($available_qty < $request->reserve_qty) {
+            return response()->json(['error' => 1, 'modal_title' => 'Insufficient Stock', 'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->reserve_qty . '</b>']);
          }
 
          $latest_name = StockReservation::max('name');
@@ -49,11 +65,6 @@ class StockReservationController extends Controller
          $stock_reservation->save();
 
          if($request->type == 'Website Stocks'){
-            $bin_details = DB::connection('mysql')->table('tabBin')
-               ->where('item_code', $request->item_code)
-               ->where('warehouse', $request->warehouse)
-               ->first();
-
             if($bin_details) {
                $new_reserved_qty = $request->reserve_qty + $bin_details->reserved_qty;
 
@@ -137,6 +148,26 @@ class StockReservationController extends Controller
             return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than or equal to 0.']);
          }
 
+         $bin_details = DB::connection('mysql')->table('tabBin')
+            ->where('item_code', $request->item_code)
+            ->where('warehouse', $request->warehouse)
+            ->first();
+
+         if(!$bin_details) {
+            return response()->json(['error' => 1, 'modal_title' => 'No Stock', 'modal_message' => 'No available stock.']);
+         }
+
+         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $request->item_code)
+            ->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
+
+         $total_reserved_qty = $stock_reservation_qty + $bin_details->website_reserved_qty;
+
+         $available_qty = $bin_details->actual_qty - $total_reserved_qty;
+
+         if($available_qty < $request->reserve_qty) {
+            return response()->json(['error' => 1, 'modal_title' => 'Insufficient Stock', 'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->reserve_qty . '</b>']);
+         }
+
          $now = Carbon::now();
          $stock_reservation = StockReservation::find($request->id);
          $stock_reservation->modified = $now->toDateTimeString();
@@ -152,11 +183,6 @@ class StockReservationController extends Controller
          if($request->type == 'Website Stocks'){
 
             $reserved_qty = abs($stock_reservation->reserve_qty - $request->reserve_qty);
-
-            $bin_details = DB::connection('mysql')->table('tabBin')
-               ->where('item_code', $request->item_code)
-               ->where('warehouse', $request->warehouse)
-               ->first();
 
             if($bin_details) {
                $new_reserved_qty = $bin_details->reserved_qty;
@@ -187,8 +213,17 @@ class StockReservationController extends Controller
          return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $request->id . ' has been updated.']);
       } catch (Exception $e) {
          DB::connection('mysql')->rollback();
-
          return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem updating Stock Reservation.']);
       }
+
+  public function get_warehouse_with_stocks(Request $request){
+      return DB::table('tabWarehouse as w')->join('tabBin as b', 'b.warehouse', 'w.name')
+            ->where('w.disabled', 0)->where('w.is_group', 0)
+            ->where('b.item_code', $request->item_code)
+            ->when($request->q, function($q) use ($request){
+				   return $q->where('w.name', 'like', '%'.$request->q.'%');
+            })
+            ->select('w.name as id', 'w.name as text')
+            ->orderBy('w.modified', 'desc')->limit(10)->get();
    }
 }
