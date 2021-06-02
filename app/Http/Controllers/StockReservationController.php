@@ -215,8 +215,9 @@ class StockReservationController extends Controller
          DB::connection('mysql')->rollback();
          return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem updating Stock Reservation.']);
       }
-
-  public function get_warehouse_with_stocks(Request $request){
+   }
+   
+   public function get_warehouse_with_stocks(Request $request){
       return DB::table('tabWarehouse as w')->join('tabBin as b', 'b.warehouse', 'w.name')
             ->where('w.disabled', 0)->where('w.is_group', 0)
             ->where('b.item_code', $request->item_code)
