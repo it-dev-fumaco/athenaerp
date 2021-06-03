@@ -91,7 +91,9 @@
 												<tr>
 													<td>{{ $inv['warehouse'] }}</td>
 													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-													<td class="text-center">{{ $inv['available_qty'] * 1 }} {{ $inv['stock_uom'] }}</td>
+													<td class="text-center">
+														<span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+													</td>
 												</tr>
 												@empty
 												<tr>

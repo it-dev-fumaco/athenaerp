@@ -5,6 +5,7 @@
             <th class="text-center">Reserved Qty</th>
             <th class="text-center">Warehouse</th>
             <th class="text-center">Reservation Type</th>
+            <th class="text-center">Date Reserved</th>
             <th class="text-center">Validity</th>
             <th class="text-center">Status</th>
             <th class="text-center">Created by</th>
@@ -29,6 +30,7 @@
             <td class="text-center align-middle">{{ $row->reserve_qty . ' ' . $row->stock_uom }}</td>
             <td class="text-center align-middle">{{ $row->warehouse }}</td>
             <td class="text-center align-middle">{{ $row->type }}</td>
+            <td class="text-center align-middle">{{ date('Y-m-d', strtotime($row->creation)) }}</td>
             <td class="text-center align-middle">{{ ($row->valid_until) ? $row->valid_until : '-' }}</td>
             <td class="text-center align-middle">
                 <span class="badge {{ $badge }}" style="font-size: 10pt;">{{ $row->status }}</span>

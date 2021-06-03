@@ -81,7 +81,9 @@
                                         <td>{{ $stock['warehouse'] }}</td>
                                         <td class="text-center">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
                                         <td class="text-center">{{ number_format((float)$stock['actual_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
-                                        <td class="text-center">{{ number_format((float)$stock['available_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
+                                        <td class="text-center">
+                                            <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
+                                        </td>
                                     </tr>
                                     @empty
                                     <tr>

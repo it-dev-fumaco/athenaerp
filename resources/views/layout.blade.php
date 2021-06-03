@@ -28,14 +28,14 @@
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
 					<div class="row w-100">
-						<div class="col-xl-9 col-lg-10 col-md-10">
+						<div class="col-xl-8 col-lg-10 col-md-10">
 							<div class="row">
-								<div class="col-md-12 col-xl-4 col-lg-3 text-center">
+								<div class="col-md-12 col-xl-6 col-lg-3 text-center">
 									<a href="/" class="navbar-brand">
 										<span class="brand-text text-white" style="font-size: 28pt;">Athena<b>ERP</b><span class="d-md-inline-block d-lg-none d-xl-inline-block">Inventory</span></span>
 									</a>
 								</div>
-								<div class="col-md-12 col-xl-8 col-lg-9">
+								<div class="col-md-12 col-xl-6 col-lg-9">
 									<form role="search" method="GET" action="/search_results" id="search-form">
 										<input type="checkbox" id="cb-1" name="check_qty" hidden>
 										<div class="input-group p-2">
@@ -51,7 +51,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-xl-3 col-lg-2 col-md-2 p-2 text-center align-middle">
+						<div class="col-xl-4 col-lg-2 col-md-2 p-2 text-center align-middle pl-5">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
 								<li class="nav-item dropdown">
 									<a class="nav-link text-white text-center" data-toggle="dropdown" href="#">
@@ -66,11 +66,11 @@
 												<i class="fas fa-info-circle mr-2"></i>	No warehouse assigned	  
 											</a>
 										</div>
-										<div class="dropdown-divider"></div>
-										<a href="/logout" class="float-right btn btn-default mt-3 mb-2 mr-2">
-											<i class="fas fa-sign-out-alt"></i> Sign Out
-										</a>
 									</div>
+									
+								</li>
+								<li class="nav-item dropdown">
+									<a href="/logout" class="btn btn-default btn-lg ml-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
 								</li>
 							</ul>
 						</div>

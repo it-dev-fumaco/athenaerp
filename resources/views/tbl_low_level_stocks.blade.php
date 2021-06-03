@@ -18,7 +18,9 @@
             <td class="text-justify">{{ $row['item_code'] . ' - ' . $row['description'] }} </td>
             <td class="text-center">{{ $row['warehouse'] }}</td>
             <td class="text-center">{{ $row['warehouse_reorder_level'] * 1 . ' ' . $row['stock_uom'] }}</td>
-            <td class="text-center">{{ $row['actual_qty'] * 1 . ' ' . $row['stock_uom'] }}</td>
+            <td class="text-center">
+                <span class="badge badge-{{ ($row['actual_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $row['actual_qty'] * 1 . ' ' . $row['stock_uom'] }}</span>
+            </td>
         </tr>
         @empty
             <tr>

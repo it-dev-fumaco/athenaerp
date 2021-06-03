@@ -37,6 +37,7 @@
 												</div>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<a href="/production_to_receive" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-info" style="width: 30%;"><i class="far fa-check-circle"></i></span>
 													<div class="info-box-content">
@@ -53,8 +54,10 @@
 														</div>
 													</div>
 												</div>
+											</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
+												<a href="/material_transfer" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-secondary" style="width: 30%;"><i class="fas fa-exchange-alt"></i></span>
 													<div class="info-box-content">
@@ -71,6 +74,7 @@
 														</div>
 													</div>
 												</div>
+											</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<div class="info-box">
@@ -100,6 +104,7 @@
 												<h5 class="text-uppercase text-center mb-2 font-italic">Outgoing Stocks</h5>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<a href="/material_transfer_for_manufacture" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-olive" style="width: 30%;"><i class="fas fa-tasks"></i></span>
 														<div class="info-box-content text-truncate d-inline-block">
@@ -116,8 +121,10 @@
 														</div>
 													</div>
 												</div>
+												</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<a href="/material_issue" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-indigo" style="width: 30%;"><i class="fas fa-dolly"></i></span>
 													<div class="info-box-content">
@@ -134,8 +141,10 @@
 														</div>
 													</div>
 												</div>
+												</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<a href="/picking_slip" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-teal" style="width: 30%;"><i class="fas fa-truck"></i></span>
 													<div class="info-box-content">
@@ -152,6 +161,7 @@
 														</div>
 													</div>
 												</div>
+												</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<div class="info-box">
@@ -176,10 +186,10 @@
 								</div>
 							</div>
 							<div class="row">
-								<div class="col-md-12 col-xl-8 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-2 pl-xl-5 mt-2">
+								<div class="col-md-12 col-xl-9 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-2 pl-xl-5 mt-2">
 									<div class="card card-danger">
 										<div class="card-header">
-											<h3 class="card-title text-uppercase font-weight-bold">Low Stock Level</h3>
+											<h3 class="card-title text-uppercase font-weight-bold">Stock Level Alerts</h3>
 							
 											<div class="card-tools">
 											  <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -191,7 +201,7 @@
 										<div class="card-body p-0" id="low-level-stock-table"></div>
 									</div>	
 								</div>
-								<div class="col-md-12 col-xl-4 col-lg-12 pl-5 pr-5">
+								<div class="col-md-12 col-xl-3 col-lg-12 pl-5 pr-5">
 									<div class="row mt-3">
 										<div class="col-xl-12 col-lg-6 col-md-12 col-sm-12 col-12">
 											<div class="info-box bg-info">
@@ -210,7 +220,7 @@
 										<!-- /.info-box -->
 									</div>
 									<!-- /.col -->
-									<div class="col-xl-12  col-lg-6 col-md-12 col-sm-12 col-12">
+									<div class="col-xl-12 col-lg-3 col-md-12 col-sm-12 col-12">
 										<div class="info-box bg-success">
 										<span class="info-box-icon"><i class="far fa-thumbs-up"></i></span>
 
@@ -229,7 +239,7 @@
 										</div>
 										<!-- /.info-box -->
 									</div>
-									<div class="col-xl-12  col-lg-6 col-md-12 col-sm-12 col-12">
+									<div class="col-xl-12  col-lg-3 col-md-12 col-sm-12 col-12">
 										<div class="card card-danger">
 											<div class="card-header">
 											<h3 class="card-title">Donut Chart</h3>
