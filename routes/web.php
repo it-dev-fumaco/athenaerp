@@ -72,17 +72,9 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/create_reservation', 'StockReservationController@create_reservation');
     Route::post('/cancel_reservation', 'StockReservationController@cancel_reservation');
     Route::post('/update_reservation', 'StockReservationController@update_reservation');
-
     Route::get('/get_stock_reservation_details/{id}', 'StockReservationController@get_stock_reservation_details');
-
     Route::get('/get_stock_reservation/{item_code?}', 'StockReservationController@get_stock_reservation');
-
     Route::get('/get_item_images/{item_code}', 'MainController@get_item_images');
-
     Route::get('/get_low_stock_level_items', 'MainController@get_low_stock_level_items');
-
-    
-
-
-    
+    Route::get('/allowed_parent_warehouses', 'MainController@allowed_parent_warehouses');    
 });

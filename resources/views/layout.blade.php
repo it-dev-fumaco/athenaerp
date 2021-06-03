@@ -51,15 +51,32 @@
 							</div>
 						</div>
 						<div class="col-xl-3 col-lg-2 col-md-2 p-2 text-center align-middle">
-							<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
-							<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
-							<a href="/logout" class="btn btn-default btn-lg ml-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
+							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
+								<li class="nav-item dropdown">
+									<a class="nav-link text-white text-center" data-toggle="dropdown" href="#">
+										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
+										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span> <i class="fas fa-caret-down ml-2"></i>
+									</a>
+								  	<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+										<span class="dropdown-header">Warehouse(s)</span>
+										<div id="allowed-warehouse-div">
+											<div class="dropdown-divider"></div>
+											<a href="#" class="dropdown-item text-center">
+												<i class="fas fa-info-circle mr-2"></i>	No warehouse assigned	  
+											</a>
+										</div>
+										<div class="dropdown-divider"></div>
+										<a href="/logout" class="float-right btn btn-default mt-3 mb-2 mr-2">
+											<i class="fas fa-sign-out-alt"></i> Sign Out
+										</a>
+									</div>
+								</li>
+							</ul>
 						</div>
 					</div>
 				</div>
 			</div>
 		</nav>
-
 	<style>
 		.col-md-13 {
 			width: 19%;
@@ -792,7 +809,23 @@
 
 	<script>
 		$(document).ready(function(){
+			allowed_parent_warehouses();
+			function allowed_parent_warehouses(){
+				$.ajax({
+					type: 'GET',
+					url: '/allowed_parent_warehouses',
+					success: function(response){
+						var r = '';
+						$.each(response, function(i, d){
+							r += '<div class="dropdown-divider"></div>' +
+								'<a href="#" class="dropdown-item">' +
+								'<i class="fas fa-warehouse mr-2"></i>' + d + '</a>'
+						});
 
+						$('#allowed-warehouse-div').html(r);
+					}
+				});
+			}
 
 
 			get_low_stock_level_items();
@@ -1222,42 +1255,6 @@
 					}
 				});
 			}
-
-			// get_select_filters();
-			// function get_select_filters(){
-			// 	$('#group').empty();
-			// 	$('#classification').empty();
-			// 	$('#wh').empty();
-
-			// 	var group = '<option value="">All Item Groups</option>';
-			// 	var classification = '<option value="">All Item Classification</option>';
-			// 	var wh = '<option value="">All Warehouse</option>';
-			// 	$.ajax({
-			// 		url: "/get_select_filters",
-			// 		type:"GET",
-			// 		success: function(data){
-			// 			$.each(data.warehouses, function(i, v){
-			// 				wh += '<option value="' + v + '">' + v + '</option>';
-			// 			});
-
-			// 			$.each(data.item_groups, function(i, v){
-			// 				group += '<option value="' + v + '">' + v + '</option>';
-			// 			});
-
-			// 			$.each(data.item_classification, function(i, v){
-			// 				classification += '<option value="' + v + '">' + v + '</option>';
-			// 			});
-
-			// 			$('#group').append(group);
-			// 			$('#classification').append(classification);
-			// 			$('#warehouse-search').append(wh);
-
-			// 			$('#group').val('{{ request("group") }}');
-			// 			$('#classification').val('{{ request("classification") }}');
-			// 			$('#warehouse-search').val('{{ request("wh") }}');
-			// 		}
-			// 	});
-			// }
 
 			$("#searchid").keyup(function () {
 				load_suggestion_box();

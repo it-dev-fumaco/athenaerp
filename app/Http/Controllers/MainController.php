@@ -12,6 +12,12 @@ use DB;
 
 class MainController extends Controller
 {
+    public function allowed_parent_warehouses(){
+        $user = Auth::user()->frappe_userid;
+        return DB::table('tabWarehouse Access')
+            ->where('parent', $user)->pluck('warehouse');
+    }
+
     public function index(Request $request){
         return view('index');
     }

@@ -176,13 +176,22 @@
 								</div>
 							</div>
 							<div class="row">
-								<div class="col-md-12 col-xl-8 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-2 pl-xl-5">
-									<h5 class="text-uppercase mb-2 font-weight-bold">Low Stock Level</h5>
-									<div class="card card-secondary card-outline">
+								<div class="col-md-12 col-xl-8 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-2 pl-xl-5 mt-2">
+									<div class="card card-danger">
+										<div class="card-header">
+											<h3 class="card-title text-uppercase font-weight-bold">Low Stock Level</h3>
+							
+											<div class="card-tools">
+											  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+												<i class="fas fa-minus"></i>
+											  </button>
+											</div>
+											<!-- /.card-tools -->
+										  </div>
 										<div class="card-body p-0" id="low-level-stock-table"></div>
 									</div>	
 								</div>
-								<div class="col-md-12 col-xl-4 col-lg-12 pl-5 pr-5 pt-3">
+								<div class="col-md-12 col-xl-4 col-lg-12 pl-5 pr-5">
 									<div class="row mt-3">
 										<div class="col-xl-12 col-lg-6 col-md-12 col-sm-12 col-12">
 											<div class="info-box bg-info">
