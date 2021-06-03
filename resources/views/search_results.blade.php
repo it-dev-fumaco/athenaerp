@@ -11,7 +11,12 @@
 				<div class="col-sm-12">
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
-							<h5 class="card-title mt-2 ml-4 font-weight-bold">Search result(s) for "{{ request('searchString') }}"</h5>
+							<h5 class="card-title mt-2 ml-4 font-weight-bold">
+								@if(request('searchString') && request('searchString') != '') 
+								Search result(s) for "{{ request('searchString') }}"
+							@else
+								Item List
+							@endif</h5>
 							<div class="card-tools p-0 m-0">
 								<div class="pull-right m-0 p-0">
 									<div class="d-flex flex-row bd-highlight p-0">

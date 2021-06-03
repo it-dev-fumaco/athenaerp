@@ -37,6 +37,7 @@
 								</div>
 								<div class="col-md-12 col-xl-8 col-lg-9">
 									<form role="search" method="GET" action="/search_results" id="search-form">
+										<input type="checkbox" id="cb-1" name="check_qty" hidden>
 										<div class="input-group p-2">
 											<input type="text" class="form-control form-control-lg advancedAuto1Complete" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
 											<div class="input-group-append">
