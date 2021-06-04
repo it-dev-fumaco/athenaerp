@@ -169,7 +169,8 @@ class MainController extends Controller
 
     public function get_select_filters(){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 1)
-            ->where('parent_warehouse', 'All Warehouses - FI')->orderBy('name', 'asc')->pluck('name');
+            ->where('parent_warehouse', 'All Warehouses - FI')
+            ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
         $item_groups = DB::table('tabItem Group')->where('is_group', 0)
             ->where('show_in_erpinventory', 1)->orderBy('name', 'asc')->pluck('name');
@@ -2452,5 +2453,15 @@ class MainController extends Controller
         $low_level_stocks = $paginatedItems;
 
         return view('tbl_low_level_stocks', compact('low_level_stocks'));
+    }
+
+    public function get_count_per_item_classification(){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        return DB::table('tabBin as b')->join('tabItem as i', 'b.item_code', 'i.item_code')
+            ->whereIn('b.warehouse', $allowed_warehouses)
+            ->where('i.disabled', 0)->selectRaw('count(i.item_code) as count, i.item_classification')
+            ->groupBy('i.item_classification')->get();
     }
 }

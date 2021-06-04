@@ -38,6 +38,7 @@
 								<div class="col-md-12 col-xl-6 col-lg-9">
 									<form role="search" method="GET" action="/search_results" id="search-form">
 										<input type="checkbox" id="cb-1" name="check_qty" hidden>
+										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<div class="input-group p-2">
 											<input type="text" class="form-control form-control-lg advancedAuto1Complete" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
 											<div class="input-group-append">
@@ -810,6 +811,35 @@
 
 	<script>
 		$(document).ready(function(){
+
+			$('#warehouse-filter').select2({
+				dropdownParent: $('#warehouse-filter-parent'),
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.warehouses
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#warehouse-filter', function(e){
+					var data = e.params.data;
+
+					$('#wh-1').val(data.id);
+					$('#search-form').submit();
+				});
+
 			allowed_parent_warehouses();
 			function allowed_parent_warehouses(){
 				$.ajax({

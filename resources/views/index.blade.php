@@ -242,7 +242,7 @@
 									<div class="col-xl-12  col-lg-3 col-md-12 col-sm-12 col-12">
 										<div class="card card-danger">
 											<div class="card-header">
-											<h3 class="card-title">Donut Chart</h3>
+											<h3 class="card-title">Item Classification</h3>
 							
 											<div class="card-tools">
 												<button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -327,25 +327,43 @@
 		dashboard_data();
 	}, 60000);
 
-	
-			 //-------------
+
+var labels = [];
+var value = [];
+var bg_color = [];
+function getRandomColor() {
+  var letters = '0123456789ABCDEF';
+  var color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+var donutChartCanvas = $('#donutChart').get(0).getContext('2d')
+	$.ajax({
+					type: "GET",
+					url: "/get_count_per_item_classification",
+					success: function (data) {
+						$.each(data, function(i, d){
+							labels.push(d.item_classification);
+							value.push(d.count);
+							bg_color.push(getRandomColor());
+						});
+
+						console.log(labels, value);
+
+								 //-------------
     //- DONUT CHART -
     //-------------
     // Get context with jQuery - using jQuery's .get() method.
-    var donutChartCanvas = $('#donutChart').get(0).getContext('2d')
+    
     var donutData        = {
-      labels: [
-          'Chrome',
-          'IE',
-          'FireFox',
-          'Safari',
-          'Opera',
-          'Navigator',
-      ],
+      labels: labels,
       datasets: [
         {
-          data: [700,500,400,600,300,100],
-          backgroundColor : ['#f56954', '#00a65a', '#f39c12', '#00c0ef', '#3c8dbc', '#d2d6de'],
+          data: value,
+          backgroundColor : bg_color,
         }
       ]
     }
@@ -353,7 +371,8 @@
       maintainAspectRatio : false,
       responsive : true,
 	  legend: {
-         position: 'right'
+         position: 'bottom',
+		 display: false,
       }
     }
     //Create pie or douhnut chart
@@ -363,6 +382,11 @@
       data: donutData,
       options: donutOptions
     })
+					}
+				});
+
+	
+	
 
 	function dashboard_data(purpose, div){
 		$.ajax({

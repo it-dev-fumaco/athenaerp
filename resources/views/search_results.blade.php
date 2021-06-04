@@ -11,30 +11,41 @@
 				<div class="col-sm-12">
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
-							<h5 class="card-title mt-2 ml-4 font-weight-bold">
-								@if(request('searchString') && request('searchString') != '') 
-								Search result(s) for "{{ request('searchString') }}"
-							@else
-								Item List
-							@endif</h5>
-							<div class="card-tools p-0 m-0">
-								<div class="pull-right m-0 p-0">
-									<div class="d-flex flex-row bd-highlight p-0">
-										<div class="p-1 bd-highlight">
-											<div class="form-group m-0 pr-3">
+							<div class="row">
+								<div class="col-md-6">
+									<h5 class="card-title mt-2 ml-4 font-weight-bold">
+										@if(request('searchString') && request('searchString') != '') 
+										Search result(s) for "{{ request('searchString') }}"
+									@else
+										Item List
+									@endif</h5>
+								</div>
+								<div class="col-md-6">
+									<div class="row">
+										<div class="col-md-6 p-1">
+												<div class="float-right form-group m-0 w-75" id="warehouse-filter-parent">
+													<select name="warehouse" id="warehouse-filter" class="form-control">
+														
+													</select>
+												  </div>
+										</div>
+										<div class="col-md-3 p-1 text-center">
+											<div class="form-group m-0">
 												<label>
 												  <input type="checkbox" class="minimal" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
 												  Remove zero-qty items
 												</label>
 											  </div>
 										</div>
-										<div class="p-1 bd-highlight">
+										<div class="col-md-3 text-right p-1">
 											<span class="font-weight-bold m-1">TOTAL:</span>
 											<span class="badge bg-info mr-2" style="font-size: 14pt;">{{ number_format($items->total()) }}</span>
 										</div>
 									</div>
 								</div>
 							</div>
+							
+							
 						</div>
 						<div class="card-body table-responsive p-0">
 							<table class="table table-sm table-bordered" id="item-list-table">
