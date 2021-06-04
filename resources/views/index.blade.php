@@ -19,6 +19,7 @@
 												<h5 class="text-uppercase text-center mb-2 font-italic">Incoming Stocks</h5>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
+												<a href="/returns" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-primary" style="width: 30%;"><i class="fas fa-undo"></i></span>
 													<div class="info-box-content">
@@ -35,6 +36,7 @@
 														</div>
 													</div>
 												</div>
+												</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/production_to_receive" class="text-dark">
@@ -77,6 +79,7 @@
 											</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<a href="/receipts" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-maroon" style="width: 30%;"><i class="fas fa-boxes"></i></span>
 													<div class="info-box-content">
@@ -93,6 +96,7 @@
 														</div>
 													</div>
 												</div>
+												</a>
 											</div>
 										</div>
 									</div>
@@ -164,6 +168,7 @@
 												</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
+												<a href="/replacements" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-orange" style="width: 30%;"><i class="fas fa-retweet"></i></span>
 													<div class="info-box-content">
@@ -180,95 +185,104 @@
 														</div>
 													</div>
 												</div>
+												</a>
 											</div>
 										</div>
 									</div>
 								</div>
 							</div>
 							<div class="row">
-								<div class="col-md-12 col-xl-9 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-2 pl-xl-5 mt-2">
-									<div class="card card-danger">
-										<div class="card-header">
-											<h3 class="card-title text-uppercase font-weight-bold">Stock Level Alerts</h3>
-							
-											<div class="card-tools">
-											  <button type="button" class="btn btn-tool" data-card-widget="collapse">
-												<i class="fas fa-minus"></i>
-											  </button>
-											</div>
-											<!-- /.card-tools -->
-										  </div>
-										<div class="card-body p-0" id="low-level-stock-table"></div>
-									</div>	
-								</div>
-								<div class="col-md-12 col-xl-3 col-lg-12 pl-5 pr-5">
-									<div class="row mt-3">
-										<div class="col-xl-12 col-lg-6 col-md-12 col-sm-12 col-12">
-											<div class="info-box bg-info">
-												<span class="info-box-icon"><i class="far fa-bookmark"></i></span>
-												<div class="info-box-content">
-													<span class="info-box-text">Bookmarks</span>
-													<span class="info-box-number">41,410</span>
+								<div class="col-md-10 offset-md-1">
 
-													<div class="progress">
-														<div class="progress-bar" style="width: 70%"></div>
-													</div>
-													<span class="progress-description">70% Increase in 30 Days</span>
+									<div class="row">
+										
+										<div class="col-md-12 col-xl-3 col-lg-12 pl-4 pr-2">
+											<div class="row mt-2">
+												<div class="col-xl-12 col-lg-6 col-md-12 col-sm-12 col-12">
+													<div class="info-box bg-info">
+														<span class="info-box-icon"><i class="far fa-bookmark"></i></span>
+														<div class="info-box-content">
+															<span class="info-box-text">Bookmarks</span>
+															<span class="info-box-number">41,410</span>
+		
+															<div class="progress">
+																<div class="progress-bar" style="width: 70%"></div>
+															</div>
+															<span class="progress-description">70% Increase in 30 Days</span>
+														</div>
+												<!-- /.info-box-content -->
 												</div>
-										<!-- /.info-box-content -->
-										</div>
-										<!-- /.info-box -->
-									</div>
-									<!-- /.col -->
-									<div class="col-xl-12 col-lg-3 col-md-12 col-sm-12 col-12">
-										<div class="info-box bg-success">
-										<span class="info-box-icon"><i class="far fa-thumbs-up"></i></span>
-
-										<div class="info-box-content">
-											<span class="info-box-text">Likes</span>
-											<span class="info-box-number">41,410</span>
-
-											<div class="progress">
-											<div class="progress-bar" style="width: 70%"></div>
+												<!-- /.info-box -->
 											</div>
-											<span class="progress-description">
-											70% Increase in 30 Days
-											</span>
-										</div>
-										<!-- /.info-box-content -->
-										</div>
-										<!-- /.info-box -->
-									</div>
-									<div class="col-xl-12  col-lg-3 col-md-12 col-sm-12 col-12">
-										<div class="card card-danger">
-											<div class="card-header">
-											<h3 class="card-title">Item Classification</h3>
-							
-											<div class="card-tools">
-												<button type="button" class="btn btn-tool" data-card-widget="collapse">
-												<i class="fas fa-minus"></i>
-												</button>
-												<button type="button" class="btn btn-tool" data-card-widget="remove">
-												<i class="fas fa-times"></i>
-												</button>
+											<!-- /.col -->
+											<div class="col-xl-12 col-lg-3 col-md-12 col-sm-12 col-12">
+												<div class="info-box bg-success">
+												<span class="info-box-icon"><i class="far fa-thumbs-up"></i></span>
+		
+												<div class="info-box-content">
+													<span class="info-box-text">Likes</span>
+													<span class="info-box-number">41,410</span>
+		
+													<div class="progress">
+													<div class="progress-bar" style="width: 70%"></div>
+													</div>
+													<span class="progress-description">
+													70% Increase in 30 Days
+													</span>
+												</div>
+												<!-- /.info-box-content -->
+												</div>
+												<!-- /.info-box -->
 											</div>
+											<div class="col-xl-12  col-lg-3 col-md-12 col-sm-12 col-12">
+												<div class="card card-danger">
+													<div class="card-header">
+													<h3 class="card-title">Item Classification</h3>
+									
+													<div class="card-tools">
+														<button type="button" class="btn btn-tool" data-card-widget="collapse">
+														<i class="fas fa-minus"></i>
+														</button>
+														<button type="button" class="btn btn-tool" data-card-widget="remove">
+														<i class="fas fa-times"></i>
+														</button>
+													</div>
+													</div>
+													<div class="card-body">
+													<canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+													</div>
+													<!-- /.card-body -->
+												</div>
+												<!-- /.card -->
+									
 											</div>
-											<div class="card-body">
-											<canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+											<!-- /.col -->
+											<!-- /.col -->
+											<!-- /.col -->
 											</div>
-											<!-- /.card-body -->
+											<!-- /.row -->
+		
 										</div>
-										<!-- /.card -->
-							
+										<div class="col-md-12 col-xl-9 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-4 pl-xl-2 mt-2">
+											<div class="card card-danger">
+												<div class="card-header">
+													<h3 class="card-title text-uppercase font-weight-bold">Stock Level Alerts</h3>
+									
+													<div class="card-tools">
+													  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+														<i class="fas fa-minus"></i>
+													  </button>
+													</div>
+													<!-- /.card-tools -->
+												  </div>
+												<div class="card-body p-0" id="low-level-stock-table"></div>
+											</div>	
+										</div>
 									</div>
-									<!-- /.col -->
-									<!-- /.col -->
-									<!-- /.col -->
-									</div>
-									<!-- /.row -->
 
 								</div>
 							</div>
+							
 						
 						
 						</div>

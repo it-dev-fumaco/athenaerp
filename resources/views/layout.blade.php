@@ -235,7 +235,7 @@
 
   	<div class="content-wrapper">
 		@if(!in_array($activePage, ['search_results', 'dashboard']))
-		<div class="content-header pb-0">
+		<div class="content-header pb-0 d-none">
 			<div class="container-fluid m-0">
 				<div class="row text-uppercase">
 					<div class="col-md-13">

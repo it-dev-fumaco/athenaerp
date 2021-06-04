@@ -1471,47 +1471,47 @@ class MainController extends Controller
 
         return [];
         
-        // $user = Auth::user()->frappe_userid;
-        // $allowed_warehouses = $this->user_allowed_warehouse($user);
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        // $q = DB::table('tabStock Entry as ste')
-        //     ->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
-        //     ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 0)
-        //     ->select('ste.*', 'pro.production_item', 'pro.description', 'pro.stock_uom')
-        //     ->whereIn('pro.fg_warehouse', $allowed_warehouses)
-        //     ->get();
+        $q = DB::table('tabStock Entry as ste')
+            ->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
+            ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 0)
+            ->select('ste.*', 'pro.production_item', 'pro.description', 'pro.stock_uom')
+            ->whereIn('pro.fg_warehouse', $allowed_warehouses)
+            ->get();
 
-        // $list = [];
-        // foreach ($q as $row) {
-        //     $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
+        $list = [];
+        foreach ($q as $row) {
+            $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
 
-        //     $owner = DB::table('tabUser')->where('email', $row->owner)->first();
-        //     $owner = ($owner) ? $owner->full_name : null;
+            $owner = DB::table('tabUser')->where('email', $row->owner)->first();
+            $owner = ($owner) ? $owner->full_name : null;
 
-        //     $operation_id = DB::connection('mysql_mes')->table('production_order')->where('production_order', $row->production_order)->first();
-        //     $operation_id = ($operation_id) ? $operation_id->operation_id : 0;
-        //     $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
-        //     $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
+            $operation_id = DB::connection('mysql_mes')->table('production_order')->where('production_order', $row->production_order)->first();
+            $operation_id = ($operation_id) ? $operation_id->operation_id : 0;
+            $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
+            $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
 
-        //     $list[] = [
-        //         'ste_no' => $row->name,
-        //         'production_order' => $row->production_order,
-        //         'fg_warehouse' => $row->to_warehouse,
-        //         'sales_order_no' => $row->sales_order_no,
-        //         'material_request' => $row->material_request,
-        //         'customer' => $row->so_customer_name,
-        //         'item_code' => $row->production_item,
-        //         'description' => $row->description,
-        //         'qty_to_receive' => $row->fg_completed_qty * 1,
-        //         'stock_uom' => $row->stock_uom,
-        //         'parent_warehouse' => $parent_warehouse,
-        //         'owner' => $owner,
-        //         'created_at' =>  Carbon::parse($row->creation)->format('m-d-Y h:i A'),
-        //         'operation_name' => $operation_name
-        //     ];
-        // }
+            $list[] = [
+                'ste_no' => $row->name,
+                'production_order' => $row->production_order,
+                'fg_warehouse' => $row->to_warehouse,
+                'sales_order_no' => $row->sales_order_no,
+                'material_request' => $row->material_request,
+                'customer' => $row->so_customer_name,
+                'item_code' => $row->production_item,
+                'description' => $row->description,
+                'qty_to_receive' => $row->fg_completed_qty * 1,
+                'stock_uom' => $row->stock_uom,
+                'parent_warehouse' => $parent_warehouse,
+                'owner' => $owner,
+                'created_at' =>  Carbon::parse($row->creation)->format('m-d-Y h:i A'),
+                'operation_name' => $operation_name
+            ];
+        }
 
-        // return response()->json(['records' => $list]);
+        return response()->json(['records' => $list]);
     }
 
     public function create_stock_ledger_entry($stock_entry){
@@ -2463,5 +2463,17 @@ class MainController extends Controller
             ->whereIn('b.warehouse', $allowed_warehouses)
             ->where('i.disabled', 0)->selectRaw('count(i.item_code) as count, i.item_classification')
             ->groupBy('i.item_classification')->get();
+    }
+
+    public function returns(){
+        return view('returns');
+    }
+
+    public function replacements(){
+        return view('replacement');
+    }
+
+    public function receipts(){
+        return view('receipt');
     }
 }

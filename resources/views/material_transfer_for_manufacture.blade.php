@@ -6,11 +6,13 @@
 @section('content')
 
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
-  <div class="content-header pt-0">
+  <div class="content-header">
 		<div class="container-fluid">
 			<div class="row mb-2">
 				<div class="col-sm-6">
-					<h2>Material Transfer for Manufacture</h2>
+					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
+						<i class="fas fa-home"></i>
+					  </a>Production Withdrawals <small>Outgoing</small></h2>
 				</div>
 				<div class="col-sm-1">
 					<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
