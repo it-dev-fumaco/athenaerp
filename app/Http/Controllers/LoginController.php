@@ -13,6 +13,8 @@ use App\LdapClasses\adLDAP;
 class LoginController extends Controller
 {
     public function view_login(){
+
+        return 1;
         return view('login');
     }
 
