@@ -30,3 +30,10 @@ Instructions on how to add php runtime to windows path environment variable
     Click New then paste your PHP installation directory path
     Click OK, then restart your XAMPP
     
+Instructions to enable LDAP support for PHP
+
+    Go xampp > htdocs > php folder
+    Open php.ini
+    Find "extension=ldap"
+    Remove ";" to uncomment the line
+    Save and restart apache
