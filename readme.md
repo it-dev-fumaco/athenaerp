@@ -1,3 +1,5 @@
+PHP version 7.3.0
+
 Instructions using GUI and Commands
 
     Download GitHub Desktop
