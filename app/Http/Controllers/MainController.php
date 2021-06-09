@@ -24,6 +24,12 @@ class MainController extends Controller
 
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
+
+        // $itemClass = DB::table('tabItem')->select('item_classification')->distinct('created_at')->get(); // Shows all classification
+        $itemClass = DB::table('tabItem')->select('item_classification')->where('description', 'LIKE', "%".$request->searchString."%" )->orderby('item_classification','asc')->distinct('created_at')->get();
+        $getFirst = $itemClass->keys()->first();
+        $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
+
         $items = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -116,9 +122,8 @@ class MainController extends Controller
             ];
         }
 
-        return view('search_results', compact('item_list', 'items'));
+        return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
-
     public function count_ste_for_issue($purpose){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);

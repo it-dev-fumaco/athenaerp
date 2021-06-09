@@ -9,6 +9,26 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-12">
+					<div class="container-fluid itemClassContainer">
+						@foreach($itemClass as $itemClass)
+							<!-- <button onclick="redirectClass(this)" class="itemClassBubble" value="{{$itemClass->item_classification}}">{{$itemClass->item_classification}}</button> -->
+							<a class="itemClassBubble" href="/search_results?wh=&searchString={{$itemClass->item_classification}}">
+								<div class="col-md-2 col-sm-6 col-xs-12 infoBoxContainer">
+									<div class="infoBox">
+									<!-- <div class="info-box infoBox"> -->
+										<span class="info-box-icon abbrBG" style="display: inline-block !important;">
+											<i>{{substr($itemClass->item_classification, 0, 2)}}</i>
+										</span>
+										<div class="info-box-content" style="display: inline-block !important;"> 
+											<span class="info-box-text">
+												{{substr($itemClass->item_classification, 4)}}
+											</span>
+										</div>
+									</div>
+								</div>
+							</a>
+						@endforeach
+					</div>	
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
 							<div class="row">
@@ -47,6 +67,7 @@
 							
 							
 						</div>
+						
 						<div class="card-body table-responsive p-0">
 							<table class="table table-sm table-bordered" id="item-list-table">
 								<col style="width: 15%;">
@@ -186,6 +207,42 @@
 
 
 <style>
+	.itemClassContainer{
+		min-height: 60px;
+		overflow: auto;
+		white-space: nowrap;
+	}
+	.itemClassBubble{
+		color: #000;
+		text-decoration: none !important;
+		text-transform: none !important;
+		transition: .4s;
+	}
+	.itemClassBubble:hover{
+		color: #A6A6BF;
+	}
+	.abbrBG{
+		background-color: #00C0EF;
+		border-top-left-radius: 2px;
+		border-bottom-left-radius: 2px;
+		height: 50px !important;
+		padding: 15px !important;
+	}
+	.infoBoxContainer{
+		display: inline-block;
+		min-height: 50px !important;
+		margin-left: 1px;
+	}
+	.infoBox{
+		background-color: #fff;
+		padding: 1px !important;
+		height: 50px !important;
+		min-width: 210px;
+		margin: 2px !important;
+		box-shadow: 2px 2px 8px #DCDCDC;
+		border-radius: 2px;
+	}
+
 	.tbl-custom-hover:hover,
 		th.hover,
 		td.hover,
