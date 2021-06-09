@@ -78,16 +78,16 @@
                       <span class="view-item-details font-weight-bold d-block" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
                       <span class="d-block">@{{ x.description }}</span>
                       <span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-                      <span class="d-block mt-2 font-italic" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }} - @{{ x.creation }}</span>
+                      <!-- <span class="d-block mt-2 font-italic" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }} - @{{ x.creation }}</span> -->
                     </td>
                     <td class="text-center">
                       <span class="d-block">@{{ x.qty | number:2 }}</span>
                       <span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
                       <span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
                     </td>
-                    <td class="text-center">@{{ x.sales_order_no }}</td>
+                    <!-- <td class="text-center">@{{ x.sales_order_no }}</td>
                     <td class="text-center" ng-if="x.status === 'Issued'"><span class="badge badge-success">@{{ x.status }}</span></td>
-                    <td class="text-center" ng-if="x.status === 'For Checking'"><span class="badge badge-warning">@{{ x.status }}</span></td>
+                    <td class="text-center" ng-if="x.status === 'For Checking'"><span class="badge badge-warning">@{{ x.status }}</span></td> -->
                     <td class="text-center">
                       <img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}">
                     </td>
