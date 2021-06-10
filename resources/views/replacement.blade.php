@@ -1,46 +1,44 @@
 @extends('layout', [
-    'namePage' => 'Material Issue',
-    'activePage' => 'material-issue',
+	'namePage' => 'Order Replacements',
+    'activePage' => 'replacements',
+	'nameDesc' => 'Outgoing'
 ])
 
 @section('content')
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
-	<div class="content-header">
+	<div class="content-header pt-0">
 		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
-						<i class="fas fa-home"></i>
-					  </a>Order Replacements <small>Outgoing</small></h2>
-				</div>
-				<div class="col-sm-1">
-					<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
-				</div>
-				<div class="col-sm-3">
-					<div class="form-group">
-						<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
-					</div>
-				</div>
-				<div class="col-sm-2">
-					<div class="form-group">
-						<select class="form-control" ng-model="searchText">
-							<option></option>
-							<option ng-repeat="y in wh">@{{ y.name }}</option>
-						</select>
-					</div>
-				</div>
-			</div>
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="card card-info card-outline">
-						<div class="card-header">
-							  <h5 class="card-title m-0 font-weight-bold">Order Replacements</h5>
-							  <div class="card-tools">
-								<div class="pull-right">
-									<span class="font-weight-bold m-1">TOTAL RESULT:</span>
-									<span class="badge bg-info" style="font-size: 14pt;">@{{ mi_filtered.length }}</span>
+					<div class="card card-orange card-outline">
+						<div class="card-header p-0 m-0">
+							<div class="row m-1">
+							  <div class="col-xl-4">
+								<h5 class="card-title m-1 font-weight-bold">Order Replacements</h5>
+							  </div>
+							  <div class="col-xl-1">
+								<button type="button" class="btn btn-block btn-primary m-0" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+							  </div>
+							  <div class="col-xl-3">
+								<div class="form-group mb-1">
+								  <input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
 								</div>
-							 </div>
+							  </div>
+							  <div class="col-xl-2">
+								<div class="form-group mb-1">
+								  <select class="form-control" ng-model="searchText">
+									<option></option>
+									<option ng-repeat="y in wh">@{{ y.name }}</option>
+								  </select>
+								</div>
+							  </div>
+							  <div class="col-xl-2">
+												  <div class="text-center m-1">
+													 <span class="font-weight-bold">TOTAL RESULT:</span>
+													 <span class="badge bg-info" style="font-size: 12pt;">@{{ mi_filtered.length }}</span>
+												  </div>
+												</div>
+							</div>
 						</div>
 						<div class="alert m-3 text-center" ng-show="custom_loading_spinner">
 							<h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
@@ -80,7 +78,7 @@
 											<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
 											<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
 										</td>
-										<td class="text-center">@{{ x.sales_order_no }}</td>
+										<td class="text-center">@{{ x.ref_no }}</td>
 										<td class="text-center" ng-if="x.status === 'Issued'"><span class="badge badge-success">@{{ x.status }}</span></td>
 										<td class="text-center" ng-if="x.status === 'For Checking'"><span class="badge badge-warning">@{{ x.status }}</span></td>
 										<td class="text-center"><img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}"></td>
@@ -106,13 +104,13 @@
 		
 		$scope.loadData = function(){
 			$scope.custom_loading_spinner = true;
-			$http.get("/material_issue?arr=1").then(function (response) {
+			$http.get("/replacements?arr=1").then(function (response) {
 				$scope.mi = response.data.records;
 				$scope.custom_loading_spinner = false;
 			});
 		}
-		
-		// $scope.loadData();
+
+		$scope.loadData();
 	});
 </script>
 @endsection

@@ -1,58 +1,62 @@
 @extends('layout', [
   'namePage' => 'Picking Slip',
   'activePage' => 'picking-slip',
+  'nameDesc' => 'Outgoing'
 ])
 
 @section('content')
 
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
-	<div class="content-header">
+	<div class="content-header pt-0">
 		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-          <h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
-						<i class="fas fa-home"></i>
-					  </a>Picking Slip <small>Outgoing</small></h2>
-				</div>
-				<div class="col-sm-1">
-					<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
-				</div>
-				<div class="col-sm-3">
-					<div class="form-group">
-						<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
-					</div>
-				</div>
-				<div class="col-sm-2">
-					<div class="form-group">
-            <select class="form-control" ng-model="searchText">
-              <option selected></option>
-              <option ng-repeat="y in wh">@{{ y.name }}</option>
-            </select>
-          </div>
-				</div>
-			</div>
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="card card-info card-outline">
+					<div class="card card-teal card-outline">
 						<div class="card-header p-0 pt-1 border-bottom-0">
-							<ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist">
+							<div class="row">
+								<div class="col-xl-1 offset-xl-4">
+									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+								</div>
+								<div class="col-xl-3">
+									<div class="form-group">
+										<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
+									</div>
+								</div>
+								<div class="col-xl-2">
+									<div class="form-group">
+										<select class="form-control" ng-model="searchText">
+											<option></option>
+											<option ng-repeat="y in wh">@{{ y.name }}</option>
+										</select>
+									</div>
+								</div>
+								<div class="col-xl-2">
+									<div class="text-center m-1 d-none" id="total-result-picking-slip">
+                    <span class="font-weight-bold">TOTAL RESULT:</span>
+                    <span class="badge bg-info" style="font-size: 12pt;">@{{ ps_filtered.length }}</span>
+                  </div>
+                  <div class="text-center m-1 d-none" id="total-result-picking-slip-return">
+                    <span class="font-weight-bold">TOTAL RESULT:</span>
+                    <span class="badge bg-info" style="font-size: 12pt;">@{{ ret_filtered.length }}</span>
+                  </div>
+								  </div>
+	
+							</div>
+							<ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist" style="margin-top: -53px;">
                 <li class="nav-item">
-                  <a class="nav-link active font-weight-bold" id="custom-tabs-three-home-tab" data-toggle="pill" href="#custom-tabs-three-1" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Picking Slip</a>
+                  <a class="nav-link active font-weight-bold" id="picking-slip-tab" data-toggle="pill" href="#custom-tabs-three-1" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Picking Slip</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link font-weight-bold" id="custom-tabs-three-profile-tab" data-toggle="pill" href="#custom-tabs-three-2" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Return</a>
+                  <a class="nav-link font-weight-bold" id="picking-slip-return-tab" data-toggle="pill" href="#custom-tabs-three-2" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Return</a>
                 </li>
               </ul>
 						</div>
 						<div class="card-body p-0">
               <div class="tab-content" id="custom-tabs-three-tabContent">
-                <div class="tab-pane fade show active" id="custom-tabs-three-1" role="tabpanel" aria-labelledby="custom-tabs-three-home-tab">
+                <div class="tab-pane fade show active" id="custom-tabs-three-1" role="tabpanel" aria-labelledby="picking-slip-tab">
                   <div class="row m-0 p-0">
                     <div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
-                      <div class="text-right">
-                        <span class="font-weight-bold">TOTAL RESULT:</span>
-                        <span class="badge bg-info" style="font-size: 12pt;">@{{ ps_filtered.length }}</span>
-                      </div>
+                      
                     </div>
                     <div class="col-md-12 m-0 p-0">
                       <div class="alert m-3 text-center" ng-show="custom_loading_spinner_1">
@@ -106,14 +110,8 @@
                     </div>
                   </div>
                 </div>
-                <div class="tab-pane fade" id="custom-tabs-three-2" role="tabpanel" aria-labelledby="custom-tabs-three-profile-tab">
+                <div class="tab-pane fade" id="custom-tabs-three-2" role="tabpanel" aria-labelledby="picking-slip-return-tab">
                   <div class="row m-0 p-0">
-                    <div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
-                      <div class="text-right">
-                        <span class="font-weight-bold">TOTAL RESULT:</span>
-                        <span class="badge bg-info" style="font-size: 12pt;">@{{ ret_filtered.length }}</span>
-                      </div>
-                    </div>
                     <div class="col-md-12 m-0 p-0">
                       <div class="alert m-3 text-center" ng-show="custom_loading_spinner_2">
                         <h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
@@ -337,6 +335,27 @@
 
 <script>
 	$(document).ready(function(){
+
+    var active_tab = $("ul.nav-tabs li a.active").attr('id');
+    if(active_tab == 'picking-slip-tab'){
+      $('#total-result-picking-slip').removeClass('d-none');
+      $('#total-result-picking-slip-return').addClass('d-none');
+    }else{
+      $('#total-result-picking-slip').addClass('d-none');
+      $('#total-result-picking-slip-return').removeClass('d-none');
+    }
+
+    $('ul.nav-tabs li a').click(function(){
+
+    if($(this).attr('id') == 'picking-slip-tab'){
+      $('#total-result-picking-slip').removeClass('d-none');
+      $('#total-result-picking-slip-return').addClass('d-none');
+    }else{
+      $('#total-result-picking-slip').addClass('d-none');
+      $('#total-result-picking-slip-return').removeClass('d-none');
+    }
+      
+    });
     $.ajaxSetup({
         headers: {
           'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

@@ -131,7 +131,7 @@
 												<a href="/material_issue" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-indigo" style="width: 30%;"><i class="fas fa-dolly"></i></span>
-													<div class="info-box-content">
+													<div class="info-box-content text-truncate d-inline-block">
 														<span class="info-box-text font-weight-bold text-uppercase">Material Issue</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -151,7 +151,7 @@
 												<a href="/picking_slip" class="text-dark">
 												<div class="info-box">
 													<span class="info-box-icon bg-teal" style="width: 30%;"><i class="fas fa-truck"></i></span>
-													<div class="info-box-content">
+													<div class="info-box-content text-truncate d-inline-block">
 														<span class="info-box-text font-weight-bold text-uppercase">Picking / For Delivery</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -193,98 +193,104 @@
 							</div>
 							<div class="row">
 								<div class="col-md-10 offset-md-1">
-
 									<div class="row">
-										
-										<div class="col-md-12 col-xl-3 col-lg-12 pl-4 pr-2">
-											<div class="row mt-2">
-												<div class="col-xl-12 col-lg-6 col-md-12 col-sm-12 col-12">
-													<div class="info-box bg-info">
-														<span class="info-box-icon"><i class="far fa-bookmark"></i></span>
-														<div class="info-box-content">
-															<span class="info-box-text">Bookmarks</span>
-															<span class="info-box-number">41,410</span>
-		
-															<div class="progress">
-																<div class="progress-bar" style="width: 70%"></div>
-															</div>
-															<span class="progress-description">70% Increase in 30 Days</span>
-														</div>
-												<!-- /.info-box-content -->
-												</div>
-												<!-- /.info-box -->
-											</div>
-											<!-- /.col -->
-											<div class="col-xl-12 col-lg-3 col-md-12 col-sm-12 col-12">
-												<div class="info-box bg-success">
-												<span class="info-box-icon"><i class="far fa-thumbs-up"></i></span>
-		
-												<div class="info-box-content">
-													<span class="info-box-text">Likes</span>
-													<span class="info-box-number">41,410</span>
-		
-													<div class="progress">
-													<div class="progress-bar" style="width: 70%"></div>
-													</div>
-													<span class="progress-description">
-													70% Increase in 30 Days
-													</span>
-												</div>
-												<!-- /.info-box-content -->
-												</div>
-												<!-- /.info-box -->
-											</div>
-											<div class="col-xl-12  col-lg-3 col-md-12 col-sm-12 col-12">
-												<div class="card card-danger">
-													<div class="card-header">
-													<h3 class="card-title">Item Classification</h3>
-									
+										<div class="col-xl-8">
+											<div class="card card-danger card-outline">
+												<div class="card-header">
+													<h3 class="card-title font-weight-bold">Stock Level Alert</h3>
 													<div class="card-tools">
 														<button type="button" class="btn btn-tool" data-card-widget="collapse">
-														<i class="fas fa-minus"></i>
+															<i class="fas fa-minus"></i>
 														</button>
 														<button type="button" class="btn btn-tool" data-card-widget="remove">
-														<i class="fas fa-times"></i>
+															<i class="fas fa-times"></i>
 														</button>
 													</div>
-													</div>
-													<div class="card-body">
-													<canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
-													</div>
-													<!-- /.card-body -->
 												</div>
-												<!-- /.card -->
-									
-											</div>
-											<!-- /.col -->
-											<!-- /.col -->
-											<!-- /.col -->
-											</div>
-											<!-- /.row -->
-		
-										</div>
-										<div class="col-md-12 col-xl-9 col-lg-12 pl-lg-4 pr-lg-4 pr-xl-4 pl-xl-2 mt-2">
-											<div class="card card-danger">
-												<div class="card-header">
-													<h3 class="card-title text-uppercase font-weight-bold">Stock Level Alerts</h3>
-									
-													<div class="card-tools">
-													  <button type="button" class="btn btn-tool" data-card-widget="collapse">
-														<i class="fas fa-minus"></i>
-													  </button>
-													</div>
-													<!-- /.card-tools -->
-												  </div>
 												<div class="card-body p-0" id="low-level-stock-table"></div>
-											</div>	
+											</div>
+										</div>
+										<div class="col-xl-4">
+											<div class="row">
+												<div class="col-xl-12">
+													<div class="card card-info card-outline">
+														<div class="card-header">
+															<h3 class="card-title font-weight-bold">Inventory Accuracy</h3>
+															<div class="card-tools">
+																<button type="button" class="btn btn-tool" data-card-widget="collapse">
+																	<i class="fas fa-minus"></i>
+																</button>
+																<button type="button" class="btn btn-tool" data-card-widget="remove">
+																	<i class="fas fa-times"></i>
+																</button>
+															</div>
+														</div>
+														<div class="card-body p-2">
+															<div class="box">
+																<div class="text-center">Monthly Inventory Accuracy: 
+																	<select style="width: 15%;" id="monthly-inv-month" class="filter-inv-accuracy">
+																		<option value="">-</option>
+																		<option value="01" {{ date('m') == '01' ? 'selected' : '' }}>Jan</option>
+																		<option value="02" {{ date('m') == '02' ? 'selected' : '' }}>Feb</option>
+																		<option value="03" {{ date('m') == '03' ? 'selected' : '' }}>Mar</option>
+																		<option value="04" {{ date('m') == '04' ? 'selected' : '' }}>Apr</option>
+																		<option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
+																		<option value="06" {{ date('m') == '06' ? 'selected' : '' }}>Jun</option>
+																		<option value="07" {{ date('m') == '07' ? 'selected' : '' }}>Jul</option>
+																		<option value="08" {{ date('m') == '08' ? 'selected' : '' }}>Aug</option>
+																		<option value="09" {{ date('m') == '09' ? 'selected' : '' }}>Sept</option>
+																		<option value="10" {{ date('m') == '10' ? 'selected' : '' }}>Oct</option>
+																		<option value="11" {{ date('m') == '11' ? 'selected' : '' }}>Nov</option>
+																		<option value="12" {{ date('m') == '12' ? 'selected' : '' }}>Dec</option>
+																	</select>
+																	<select style="width: 15%;" id="monthly-inv-year" class="filter-inv-accuracy">
+																		<option value="2018" {{ date('Y') == 2018 ? 'selected' : '' }}>2018</option>
+																		<option value="2019" {{ date('Y') == 2019 ? 'selected' : '' }}>2019</option>
+																		<option value="2020" {{ date('Y') == 2020 ? 'selected' : '' }}>2020</option>
+																		<option value="2021" {{ date('Y') == 2021 ? 'selected' : '' }}>2021</option>
+																		<option value="2022" {{ date('Y') == 2022 ? 'selected' : '' }}>2022</option>
+																	</select>
+																</div>
+																<table class="table table-bordered mt-2" id="monthly-inv-chart">
+																	<col style="width: 30%;">
+																	<col style="width: 30%;">
+																	<col style="width: 20%;">
+																	<col style="width: 20%;">
+																	<thead>
+																		<tr>
+																			<th class="text-center pr-0 pl-0 align-middle">Classification</th>
+																			<th class="text-center pr-0 pl-0 align-middle">Warehouse</th>
+																			<th class="text-center pr-0 pl-0 align-middle">Accuracy</th>
+																			<th class="text-center pr-0 pl-0 align-middle">Target</th>
+																		</tr>
+																	</thead>
+																	<tbody class="item-classification"></tbody>
+																</table>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="col-xl-12">
+													<div class="card card-success card-outline">
+														<div class="card-header">
+															<h3 class="card-title font-weight-bold">Recently Added Items</h3>
+															<div class="card-tools">
+																<button type="button" class="btn btn-tool" data-card-widget="collapse">
+																	<i class="fas fa-minus"></i>
+																</button>
+																<button type="button" class="btn btn-tool" data-card-widget="remove">
+																	<i class="fas fa-times"></i>
+																</button>
+															</div>
+														</div>
+														<div class="card-body pt-0 pb-0 pl-1 pr-1" id="recently-added-items-div"></div>
+													</div>
+												</div>
+											</div>
 										</div>
 									</div>
-
 								</div>
 							</div>
-							
-						
-						
 						</div>
 					</div>
 				</div>
@@ -334,95 +340,69 @@
 @endsection
 
 @section('script')
+
 <script>
-	
-	dashboard_data();
-	setInterval(function () {
-		dashboard_data();
-	}, 60000);
-
-
-var labels = [];
-var value = [];
-var bg_color = [];
-function getRandomColor() {
-  var letters = '0123456789ABCDEF';
-  var color = '#';
-  for (var i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-}
-
-var donutChartCanvas = $('#donutChart').get(0).getContext('2d')
-	$.ajax({
+	$(document).ready(function(){
+		recently_added_items();
+		function recently_added_items(){
+				$.ajax({
 					type: "GET",
-					url: "/get_count_per_item_classification",
+					url: "/get_recently_added_items",
 					success: function (data) {
-						$.each(data, function(i, d){
-							labels.push(d.item_classification);
-							value.push(d.count);
-							bg_color.push(getRandomColor());
-						});
-
-						console.log(labels, value);
-
-								 //-------------
-    //- DONUT CHART -
-    //-------------
-    // Get context with jQuery - using jQuery's .get() method.
-    
-    var donutData        = {
-      labels: labels,
-      datasets: [
-        {
-          data: value,
-          backgroundColor : bg_color,
-        }
-      ]
-    }
-    var donutOptions     = {
-      maintainAspectRatio : false,
-      responsive : true,
-	  legend: {
-         position: 'bottom',
-		 display: false,
-      }
-    }
-    //Create pie or douhnut chart
-    // You can switch between pie and douhnut using the method below.
-    new Chart(donutChartCanvas, {
-      type: 'doughnut',
-      data: donutData,
-      options: donutOptions
-    })
+						$('#recently-added-items-div').html(data);
 					}
 				});
-
-	
-	
-
-	function dashboard_data(purpose, div){
-		$.ajax({
-			type: "GET",
-			url: "/dashboard_data",
-			dataType: 'json',
-			contentType: 'application/json',
-			success: function (data) {
-				$('#d-material-receipt').text(data.d_feedbacks);
-				$('#d-purchase-receipts').text(data.d_purchase_receipts);
-				$('#p-purchase-receipts').text(data.p_purchase_receipts);
-				$('#d-replacements').text(data.d_replacements);
-				$('#p-replacements').text(data.p_replacements);
-				$('#d-returns').text(data.d_returns);
-				$('#p-returns').text(data.p_returns);
-				$('#d-material-transfer').text(data.d_internal_transfers);
-				$('#d-picking-slips').text(data.d_picking_slips);
-				$('#d-withdrawals').text(data.d_withdrawals);
-				$('#d-material-issues').text(data.d_material_issues);
 			}
-		});
-	}
+
+		$('.filter-inv-accuracy').on('change', function(){
+      monthlyInvAccuracyTbl();
+   });
+
+
+		monthlyInvAccuracyTbl();
+   function monthlyInvAccuracyTbl(){
+      var year = $('#monthly-inv-year').val();
+      var month = $('#monthly-inv-month').val();
+
+      $('#monthly-inv-chart .item-classification').empty();
+      $.ajax({
+         url: "/inv_accuracy/"+ year,
+         method: "GET",
+         success: function(data) {
+            var row = '';
+            $.each(data, function(i, d){
+               if (d.month_no == month) {
+                  if (d.audit_per_month.length > 0) {
+
+                     $.each(d.audit_per_month, function(i, v){
+                        var target = parseFloat(v.percentage_sku);
+                        var percentage = parseFloat(v.average_accuracy_rate);
+                        stat = (percentage >= v.percentage_sku) ? 'fa-thumbs-up' : 'fa-thumbs-down';
+                        color = (percentage >= v.percentage_sku) ? 'green' : 'red';
+                        row += '<tr>' +
+                           '<td>' + v.item_classification + '</td>' +
+                           '<td>' + v.warehouse + '</td>' + 
+                           '<td class="text-center"><i class="fa '+stat+'" style="color:'+color+';"></i> ' + percentage.toFixed(2) + '%</td>' + 
+                           '<td class="text-center">' + target.toFixed(2) + '%</td>' +
+                           '</tr>';
+                     });
+                  }else{
+                     row += '<tr>' +
+                           '<td colspan="4" class="text-center">No Records Found.</td>' +
+                           '</tr>';
+
+                  }
+               }
+            });
+
+            $('#monthly-inv-chart .item-classification').append(row);
+         },
+         error: function(data) {
+            alert('Error fetching data!');
+         }
+      });
+   }
+	});
 </script>
 
 @endsection

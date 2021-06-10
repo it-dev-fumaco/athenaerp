@@ -1,46 +1,41 @@
 @extends('layout', [
-    'namePage' => 'To Receive',
-    'activePage' => 'material-receipt',
+	'namePage' => 'Feedback',
+    'activePage' => 'feedback',
+	'nameDesc' => 'Incoming'
 ])
 
 @section('content')
 
 
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
-	<div class="content-header">
+	<div class="content-header pt-0">
 		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-md-6">
-					
-					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
-						<i class="fas fa-home"></i>
-					  </a>Feedback <small>Incoming</small></h2>
-				</div>
-				
-				<div class="col-sm-1">
-					<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
-				</div>
-				<div class="col-sm-3">
-					<div class="form-group">
-						<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
-					</div>
-				</div>
-				<div class="col-sm-2">
-					<div class="form-group">
-						<select class="form-control" ng-model="searchText">
-							<option></option>
-							<option ng-repeat="y in wh">@{{ y.name }}</option>
-						</select>
-					</div>
-				</div>
-			</div>
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="card card-info card-outline">
-						<div class="card-header p-0 pt-1 border-bottom-0">
-							<div class="row m-0 p-0">
-								<div class="col-md-4 offset-md-8 p-1">
-								  <div class="text-right">
+						<div class="card-header p-0 m-0">
+							<div class="row m-1">
+								<div class="col-xl-4">
+									<h5 class="card-title m-1 font-weight-bold">Feedback</h5>
+								  </div>
+								<div class="col-xl-1">
+									<button type="button" class="btn btn-block btn-primary m-0" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+								</div>
+								<div class="col-xl-3">
+									<div class="form-group mb-1">
+										<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
+									</div>
+								</div>
+								<div class="col-xl-2">
+									<div class="form-group mb-1">
+										<select class="form-control" ng-model="searchText">
+											<option></option>
+											<option ng-repeat="y in wh">@{{ y.name }}</option>
+										</select>
+									</div>
+								</div>
+								<div class="col-xl-2">
+								  <div class="text-center m-1">
 									 <span class="font-weight-bold">TOTAL RESULT:</span>
 									 <span class="badge bg-info" style="font-size: 12pt;">@{{ mt_filtered.length }}</span>
 								  </div>
@@ -99,7 +94,7 @@
 													</td>
 													<td class="text-center"><span class="badge badge-warning">To Receive</span></td>
 													<td class="text-center">
-														<img src="dist/img/check.png" class="img-circle receive-item checkout" data-ste="@{{ x.ste_no }}">
+														<img src="dist/img/check.png" class="img-circle receive-1item checkout" data-ste="@{{ x.ste_no }}">
 													</td>
 												</tr>
 											</tbody>
@@ -197,90 +192,6 @@
 	</div>
 </div>
 
-<div class="modal fade" id="update-item-return-modal">
-	<form method="POST" action="/checkout_ste_item">
-		 @csrf
-		 <div class="modal-dialog" style="min-width: 35%;">
-			  <div class="modal-content">
-					<div class="modal-header">
-					  <h4 class="modal-title"><span class="parent"></span> <small class="purpose"></small></h4>
-						 <button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-					<div class="modal-body">
-						 <div class="row">
-							  <input type="hidden" value="1" name="is_material_receipt">
-							  <input type="hidden" value="-" name="user">
-							  <input type="hidden" class="transfer_as" value="For Return" name="transfer_as">
-							  <input type="hidden" class="id" name="sted_id">
-							  <input type="hidden" class="total_issued_qty" name="balance">
-							  <input type="hidden" class="item_code" name="item_code">
-							  <input type="hidden" class="requested_qty" name="requested_qty">
-							  <div class="col-md-12">
-									<div class="box-header with-border">
-										 <h4 class="box-title"><span class="t_warehouse_txt"></span></h4>
-									</div>
-									<div class="box-body" style="font-size: 12pt;">
-										 <div class="row">
-											  <div class="col-md-6">
-													<label>Barcode</label>
-													<input type="text" class="form-control barcode" name="barcode" placeholder="Barcode" required>
-											  </div>
-											  <div class="col-md-6">
-													<label>Qty</label>
-													<input type="text" class="form-control qty" name="qty" placeholder="Qty">
-											  </div>
-											  <div class="col-md-12">
-													<div class="row">
-														 <div class="col-md-5 mt-2">
-															  <a class='sample item_image_link' data-height='720' data-lighter='samples/sample-01.jpg' data-width='1280' href="#">
-																	<img src="{{ asset('storage/icon/no_img.png') }}" style="width: 100%;" class="item_image">
-															  </a>
-														 </div>
-														 <div class="col-md-7 mt-2">
-															  <span class="item_code_txt" style="display: block; font-weight: bold;"></span>
-															  <p class="description"></p>
-															  <dl>
-																	<dt>Return Qty</dt>
-																	<dd>
-																		 <p class="badge lbl-color" style="font-size: 12pt;">
-																			  <span class="total_issued_qty_txt"></span> <span class="stock_uom"></span>
-																		 </p>
-																	</dd>
-															  </dl>
-														 </div>
-													</div>
-											  </div>
-											  <div class="col-md-5 mt-2">
-													<dl>
-														 <dt>Reference No:</dt>
-														 <dd class="ref_no"></dd>
-														 <dt style="padding-top: 2%;">Status:</dt>
-														 <dd class="status"></dd>
-													</dl>
-											  </div>
-											  <div class="col-md-7 mt-2">
-													<dl>
-														 <dt>Requested by:</dt>
-														 <dd class="owner"></dd>
-														 <dt style="padding-top: 2%;">Remarks:</dt>
-														 <dd>
-															  <textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks"></textarea>
-														 </dd>
-													</dl>
-											  </div>
-										 </div>
-									</div>
-							  </div>
-						 </div>
-					</div>
-					<div class="modal-footer">
-						 <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> RETURN</button>
-						 <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-					</div>
-			  </div>
-		 </div>
-	</form>
- </div>
 
 @endsection
 

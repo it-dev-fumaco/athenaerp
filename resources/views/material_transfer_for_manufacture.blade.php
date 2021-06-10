@@ -1,59 +1,60 @@
 @extends('layout', [
-    'namePage' => 'Material Transfer for Manufacture',
+    'namePage' => 'Production Withdrawals',
     'activePage' => 'material-transfer-for-manufacture',
+    'nameDesc' => 'Outgoing'
 ])
 
 @section('content')
 
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
-  <div class="content-header">
+  <div class="content-header pt-0">
 		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
-						<i class="fas fa-home"></i>
-					  </a>Production Withdrawals <small>Outgoing</small></h2>
-				</div>
-				<div class="col-sm-1">
-					<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
-				</div>
-				<div class="col-sm-3">
-					<div class="form-group">
-						<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
-					</div>
-				</div>
-				<div class="col-sm-2">
-					<div class="form-group">
-            <select class="form-control" ng-model="searchText">
-              <option selected></option>
-              <option ng-repeat="y in wh">@{{ y.name }}</option>
-            </select>
-          </div>
-				</div>
-			</div>
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="card card-danger card-outline">
+					<div class="card card-olive card-outline">
 						<div class="card-header p-0 pt-1 border-bottom-0">
-							<ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist">
+							<div class="row">
+								<div class="col-xl-1 offset-xl-4">
+									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+								</div>
+								<div class="col-xl-3">
+									<div class="form-group">
+										<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
+									</div>
+								</div>
+								<div class="col-xl-2">
+									<div class="form-group">
+										<select class="form-control" ng-model="searchText">
+											<option></option>
+											<option ng-repeat="y in wh">@{{ y.name }}</option>
+										</select>
+									</div>
+								</div>
+								<div class="col-xl-2">
+									<div class="text-center m-1 d-none" id="total-result-withdrawals">
+									   <span class="font-weight-bold">TOTAL RESULT:</span>
+									   <span class="badge bg-info" style="font-size: 12pt;">@{{ mtfm_filtered.length }}</span>
+									</div>
+                  <div class="text-center m-1 d-none" id="total-result-pending">
+                    <span class="font-weight-bold">TOTAL RESULT:</span>
+                    <span class="badge bg-info" style="font-size: 12pt;">@{{ pmtfm_filtered.length }}</span>
+                  </div>
+								  </div>
+	
+							</div>
+							<ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist" style="margin-top: -53px;">
                 <li class="nav-item">
-                  <a class="nav-link active font-weight-bold" id="custom-tabs-three-home-tab" data-toggle="pill" href="#custom-tabs-three-home" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Material Transfer for Manufacture</a>
+                  <a class="nav-link active font-weight-bold" id="withdrawals-tab" data-toggle="pill" href="#custom-tabs-three-home" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Production Withdrawals</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link font-weight-bold" id="custom-tabs-three-profile-tab" data-toggle="pill" href="#custom-tabs-three-profile" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Pending Item Request for Issue</a>
+                  <a class="nav-link font-weight-bold" id="pending-withdrawals-tab" data-toggle="pill" href="#custom-tabs-three-profile" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Pending Item Request for Issue</a>
                 </li>
               </ul>
 						</div>
 						<div class="card-body p-0">
               <div class="tab-content" id="custom-tabs-three-tabContent">
-                <div class="tab-pane fade show active" id="custom-tabs-three-home" role="tabpanel" aria-labelledby="custom-tabs-three-home-tab">
+                <div class="tab-pane fade show active" id="custom-tabs-three-home" role="tabpanel" aria-labelledby="withdrawals-tab">
                   <div class="row m-0 p-0">
-                    <div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
-                      <div class="text-right">
-                        <span class="font-weight-bold">TOTAL RESULT:</span>
-                        <span class="badge bg-info" style="font-size: 12pt;">@{{ mtfm_filtered.length }}</span>
-                      </div>
-                    </div>
                     <div class="col-md-12 m-0 p-0">
                       <div class="alert m-3 text-center" ng-show="custom_loading_spinner_1">
                         <h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
@@ -110,14 +111,8 @@
                     </div>
                   </div>
                 </div>
-                <div class="tab-pane fade" id="custom-tabs-three-profile" role="tabpanel" aria-labelledby="custom-tabs-three-profile-tab">
+                <div class="tab-pane fade" id="custom-tabs-three-profile" role="tabpanel" aria-labelledby="pending-withdrawals-tab">
                   <div class="row m-0 p-0">
-                    <div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
-                      <div class="text-right">
-                        <span class="font-weight-bold">TOTAL RESULT:</span>
-                        <span class="badge bg-info" style="font-size: 12pt;">@{{ pmtfm_filtered.length }}</span>
-                      </div>
-                    </div>
                     <div class="col-md-12 m-0 p-0">
                       <div class="alert m-3 text-center" ng-show="custom_loading_spinner_2">
                         <h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
@@ -188,6 +183,28 @@
 
 @section('script')
 <script>
+
+  $(document).ready(function(){
+    var active_tab = $("ul.nav-tabs li a.active").attr('id');
+    if(active_tab == 'withdrawals-tab'){
+      $('#total-result-withdrawals').removeClass('d-none');
+      $('#total-result-pending').addClass('d-none');
+    }else{
+      $('#total-result-withdrawals').addClass('d-none');
+      $('#total-result-pending').removeClass('d-none');
+    }
+
+    $('ul.nav-tabs li a').click(function(){
+
+    if($(this).attr('id') == 'withdrawals-tab'){
+      $('#total-result-withdrawals').removeClass('d-none');
+      $('#total-result-pending').addClass('d-none');
+    }else{
+      $('#total-result-withdrawals').addClass('d-none');
+      $('#total-result-pending').removeClass('d-none');
+    }
+  });
+});
   var app = angular.module('myApp', []);
   app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
     $http.get("/get_parent_warehouses").then(function (response) {

@@ -1,11 +1,9 @@
 <table class="table table-bordered">
-    <col style="width: 5%;">
-    <col style="width: 37%;">
+    <col style="width: 42%;">
     <col style="width: 28%;">
     <col style="width: 15%;">
     <col style="width: 15%;">
     <thead>
-        <th class="text-center">No.</th>
         <th class="text-center">Item Description</th>
         <th class="text-center">Warehouse</th>
         <th class="text-center">Min. Stock Qty</th>
@@ -14,7 +12,6 @@
     <tbody>
         @forelse ($low_level_stocks as $n => $row)
         <tr>
-            <td class="text-center">{{ $n + 1 }}</td>
             <td class="text-justify">{{ $row['item_code'] . ' - ' . $row['description'] }} </td>
             <td class="text-center">{{ $row['warehouse'] }}</td>
             <td class="text-center">{{ $row['warehouse_reorder_level'] * 1 . ' ' . $row['stock_uom'] }}</td>

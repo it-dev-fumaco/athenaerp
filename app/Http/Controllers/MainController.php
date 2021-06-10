@@ -403,7 +403,7 @@ class MainController extends Controller
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $allowed_warehouses)->where('ste.transfer_as', '!=', 'For Return')
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation')
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -440,6 +440,7 @@ class MainController extends Controller
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
                 't_warehouse' => $d->t_warehouse,
+                'transfer_as' => $d->transfer_as,
                 'actual_qty' => $actual_qty,
                 'uom' => $d->uom,
                 'name' => $d->name,
@@ -1468,45 +1469,40 @@ class MainController extends Controller
         if(!$request->arr){
             return view('production_to_receive');
         }
-
-        return [];
         
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $q = DB::table('tabStock Entry as ste')
-            ->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
-            ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 0)
-            ->select('ste.*', 'pro.production_item', 'pro.description', 'pro.stock_uom')
-            ->whereIn('pro.fg_warehouse', $allowed_warehouses)
-            ->get();
+        $q = DB::connection('mysql_mes')->table('production_order AS po')
+            ->whereNotIn('po.status', ['Cancelled'])
+            ->where('po.produced_qty', '>', 0)
+            ->whereRaw('po.produced_qty > feedback_qty')
+            ->select('po.*')->get();
 
         $list = [];
         foreach ($q as $row) {
-            $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
+            $parent_warehouse = $this->get_warehouse_parent($row->fg_warehouse);
 
-            $owner = DB::table('tabUser')->where('email', $row->owner)->first();
+            $owner = DB::table('tabUser')->where('email', $row->created_by)->first();
             $owner = ($owner) ? $owner->full_name : null;
 
-            $operation_id = DB::connection('mysql_mes')->table('production_order')->where('production_order', $row->production_order)->first();
-            $operation_id = ($operation_id) ? $operation_id->operation_id : 0;
+            $operation_id = ($row->operation_id) ? $row->operation_id : 0;
             $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
             $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
 
             $list[] = [
-                'ste_no' => $row->name,
                 'production_order' => $row->production_order,
-                'fg_warehouse' => $row->to_warehouse,
-                'sales_order_no' => $row->sales_order_no,
+                'fg_warehouse' => $row->fg_warehouse,
+                'sales_order_no' => $row->sales_order,
                 'material_request' => $row->material_request,
-                'customer' => $row->so_customer_name,
-                'item_code' => $row->production_item,
+                'customer' => $row->customer,
+                'item_code' => $row->item_code,
                 'description' => $row->description,
-                'qty_to_receive' => $row->fg_completed_qty * 1,
+                'qty_to_receive' => $row->produced_qty - $row->feedback_qty,
                 'stock_uom' => $row->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'owner' => $owner,
-                'created_at' =>  Carbon::parse($row->creation)->format('m-d-Y h:i A'),
+                'created_at' =>  Carbon::parse($row->created_at)->format('m-d-Y h:i A'),
                 'operation_name' => $operation_name
             ];
         }
@@ -2455,25 +2451,242 @@ class MainController extends Controller
         return view('tbl_low_level_stocks', compact('low_level_stocks'));
     }
 
-    public function get_count_per_item_classification(){
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
+    public function get_recently_added_items(){
+        $list = DB::table('tabItem')->where('disabled', 0)
+            ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->orderBy('creation', 'desc')->limit(5)->get();
 
-        return DB::table('tabBin as b')->join('tabItem as i', 'b.item_code', 'i.item_code')
-            ->whereIn('b.warehouse', $allowed_warehouses)
-            ->where('i.disabled', 0)->selectRaw('count(i.item_code) as count, i.item_classification')
-            ->groupBy('i.item_classification')->get();
+        return view('recently_added_items', compact('list'));
+    }
+
+    public function invAccuracyChart($year){
+        $chart_data = [];
+        $months = ['0', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $month_no = $year == date('Y') ? date('m') : 12;
+        for ($i = 1; $i <= $month_no; $i++) {
+            $inv_audit = DB::table('tabMonthly Inventory Audit')
+                ->select('name', 'item_classification', 'average_accuracy_rate', 'warehouse', 'percentage_sku')
+                ->whereYear('from', $year)->whereMonth('from', $i)
+                ->where('docstatus', '<', 2)->get();
+
+            $average = collect($inv_audit)->avg('average_accuracy_rate');
+
+            $chart_data[] = [
+                'month_no' => $i,
+                'month' => $months[$i],
+                'audit_per_month' => $inv_audit,
+                'average' => round($average, 2),
+            ];
+        }
+
+        return response()->json($chart_data);
     }
 
     public function returns(){
         return view('returns');
     }
 
-    public function replacements(){
-        return view('replacement');
+    public function replacements(Request $request){
+        if(!$request->arr){
+            return view('replacement');
+         }
+         
+         $user = Auth::user()->frappe_userid;
+         $allowed_warehouses = $this->user_allowed_warehouse($user);
+ 
+         $q = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
+            ->where('se.purpose', 'Material Issue')->where('se.issue_as', 'Customer Replacement')
+            ->select('sed.status', 'sed.validate_item_code', 'se.sales_order_no', 'sed.parent', 'sed.name', 'sed.t_warehouse', 'sed.s_warehouse', 'sed.item_code', 'sed.description', 'sed.uom', 'sed.qty', 'sed.owner', 'se.material_request', 'se.creation')
+            ->orderByRaw("FIELD(sed.status, 'For Checking', 'Issued') ASC")
+            ->get();
+ 
+         $list = [];
+         foreach ($q as $d) {
+             $actual_qty = $this->get_actual_qty($d->item_code, $d->s_warehouse);
+ 
+             $total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+                 ->where('item_code', $d->item_code)->where('s_warehouse', $d->s_warehouse)->sum('qty');
+             
+             $balance = $actual_qty - $total_issued;
+ 
+             if($d->material_request){
+                 $customer = DB::table('tabMaterial Request')->where('name', $d->material_request)->first();
+             }else{
+                 $customer = DB::table('tabSales Order')->where('name', $d->sales_order_no)->first();
+             }
+ 
+             $ref_no = ($customer) ? $customer->name : null;
+             $customer = ($customer) ? $customer->customer : null;
+ 
+             $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+             $part_nos = implode(', ', $part_nos->toArray());
+ 
+             $owner = DB::table('tabUser')->where('email', $d->owner)->first();
+             $owner = ($owner) ? $owner->full_name : null;
+ 
+             $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+ 
+             $list[] = [
+                 'customer' => $customer,
+                 'item_code' => $d->item_code,
+                 'description' => $d->description,
+                 's_warehouse' => $d->s_warehouse,
+                 't_warehouse' => $d->t_warehouse,
+                 'actual_qty' => $actual_qty,
+                 'uom' => $d->uom,
+                 'name' => $d->name,
+                 'owner' => $owner,
+                 'parent' => $d->parent,
+                 'part_nos' => $part_nos,
+                 'qty' => $d->qty,
+                 'validate_item_code' => $d->validate_item_code,
+                 'status' => $d->status,
+                 'balance' => $balance,
+                 'ref_no' => $ref_no,
+                 'parent_warehouse' => $parent_warehouse,
+                 'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+             ];
+         }
+
+         return response()->json(['records' => $list]);
     }
 
-    public function receipts(){
-        return view('receipt');
+    public function receipts(Request $request){
+        if(!$request->arr){
+           return view('receipt');
+        }
+        
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $q = DB::table('tabPurchase Receipt as pr')
+            ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')->where('pr.docstatus', 0)
+            ->whereIn('pri.warehouse', $allowed_warehouses)
+            ->select('pri.parent', 'pri.name', 'pri.warehouse', 'pri.item_code', 'pri.description', 'pri.uom', 'pri.qty', 'pri.owner', 'pr.creation', 'pr.purchase_order')
+            ->get();
+
+        $list = [];
+        foreach ($q as $d) {
+            $actual_qty = $this->get_actual_qty($d->item_code, $d->warehouse);
+
+            $total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+                ->where('item_code', $d->item_code)->where('s_warehouse', $d->warehouse)->sum('qty');
+            
+            $balance = $actual_qty - $total_issued;
+
+            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+            $part_nos = implode(', ', $part_nos->toArray());
+
+            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
+            $owner = ($owner) ? $owner->full_name : null;
+
+            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
+
+            $list[] = [
+                'item_code' => $d->item_code,
+                'description' => $d->description,
+                'warehouse' => $d->warehouse,
+                'actual_qty' => $actual_qty,
+                'uom' => $d->uom,
+                'name' => $d->name,
+                'owner' => $owner,
+                'parent' => $d->parent,
+                'part_nos' => $part_nos,
+                'qty' => $d->qty,
+                'status' => 'To Receive',
+                'balance' => $balance,
+                'ref_no' => $d->purchase_order,
+                'parent_warehouse' => $parent_warehouse,
+                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+            ];
+        }
+        
+        return response()->json(['records' => $list]);
+    }
+
+    public function update_received_item(Request $request){
+        return $request->all();
+        DB::beginTransaction();
+        try {
+            if($request->barcode != $request->item_code){
+                return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+            }
+
+            if($request->qty <= 0){
+                return response()->json([
+                    'error' => 1, 
+                    'modal_title' => 'Invalid Qty', 
+                    'modal_message' => 'Received qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
+                ]);
+            }
+
+            $now = Carbon::now();
+            $values = [
+                'warehouse_personnel' => Auth::user()->full_name,
+                'status' => 'Received',
+                'barcode' => $request->barcode,
+                'date_received' => $now->toDateTimeString()
+            ];
+
+            DB::table('tabPurchase Receipt Item')->where('name', $request->psi_id)
+                ->where('docstatus', 0)->update($values);
+
+            $this->insert_transaction_log('Purchase Receipt', $request->psi_id);
+            $this->update_pending_ps_item_status();
+
+            DB::commit();
+
+            return response()->json([
+                'error' => 0, 
+                'modal_title' => 'Item Received', 
+                'modal_message' => 'Item ' . $request->item_code . 'has been received.'
+            ]);
+        } catch (Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'error' => 1, 
+                'modal_title' => 'Error', 
+                'modal_message' => 'Error creating transaction.'
+            ]);
+        }
+    }
+
+    public function get_purchase_receipt_details($id){
+        $q = DB::table('tabPurchase Receipt as pr')
+            ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')
+            ->where('pri.name', $id)->first();
+
+        $ref_no = ($q->purchase_order) ? $q->purchase_order : null;
+
+        $owner = DB::table('tabUser')->where('email', $q->owner)->first();
+        $owner = ($owner) ? $owner->full_name : null;
+
+        $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
+
+        $actual_qty = $this->get_actual_qty($q->item_code, $q->warehouse);
+
+        $total_issued = $this->get_issued_qty($q->item_code, $q->warehouse);
+        
+        $balance = $actual_qty - $total_issued;
+
+        $data = [
+            'purchase_receipt' => $q->name,
+            'parent' => $q->parent,
+            'name' => $q->name,
+            'warehouse' => $q->warehouse,
+            'total_issued_qty' => $balance,
+            'item_code' => $q->item_code,
+            'img' => $img,
+            'qty' => $q->qty,
+            'description' => $q->description,
+            'owner' => $owner,
+            'ref_no' => $ref_no,
+            'status' => $q->status,
+            'stock_uom' => $q->stock_uom,
+            'remarks' => $q->remarks,
+        ];
+
+        return response()->json($data);
     }
 }
