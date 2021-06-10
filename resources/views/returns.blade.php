@@ -8,35 +8,15 @@
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
-			{{-- <div class="row mb-0">
-				<div class="col-sm-6">
-					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
-						<i class="fas fa-home"></i>
-					  </a>Returns <small>Incoming</small></h2>
-				</div>
-				<div class="col-sm-1">
-					<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
-				</div>
-				<div class="col-sm-3">
-					<div class="form-group">
-						<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
-					</div>
-				</div>
-				<div class="col-sm-2">
-					<div class="form-group">
-						<select class="form-control" ng-model="searchText">
-							<option></option>
-							<option ng-repeat="y in wh">@{{ y.name }}</option>
-						</select>
-					</div>
-				</div>
-			</div> --}}
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="card card-primary card-outline">
 						<div class="card-header p-0 pt-1 border-bottom-0">
-							<div class="row">
-								<div class="col-xl-1 offset-xl-4">
+							<div class="row m-1">
+								<div class="col-xl-4">
+									<h5 class="card-title m-1 font-weight-bold">Returns</h5>
+								  </div>
+								<div class="col-xl-1">
 									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
 								</div>
 								<div class="col-xl-3">
@@ -53,223 +33,92 @@
 									</div>
 								</div>
 								<div class="col-xl-2">
-									<div class="text-center m-1 d-none" id="total-result-internal-return">
+									<div class="text-center m-1">
 									   <span class="font-weight-bold">TOTAL RESULT:</span>
-									   <span class="badge bg-info" style="font-size: 12pt;">@{{ return_filtered.length }}</span>
+									   <span class="badge bg-info" style="font-size: 12pt;">@{{ return_filtered.length + mr_ret_filtered.length}}</span>
 									</div>
 
-									<div class="text-center m-1 d-none" id="total-result-sales-return">
-										<span class="font-weight-bold">TOTAL RESULT:</span>
-										<span class="badge bg-info" style="font-size: 12pt;">@{{ mr_ret_filtered.length }}</span>
-									  </div>
 								  </div>
 	
 							</div>
 
-							
-							<ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist" style="margin-top: -53px;">
-               
-                <li class="nav-item">
-                  <a class="nav-link active font-weight-bold" id="internal-return-tab" data-toggle="pill" href="#custom-tabs-three-2" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Internal Return</a>
-				</li>
-				<li class="nav-item">
-					<a class="nav-link font-weight-bold" id="sales-return-tab" data-toggle="pill" href="#custom-tabs-three-3" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Sales Return</a>
-				</li>
-              </ul>
+					
 						</div>
+						<div class="alert m-3 text-center" ng-show="custom_loading_spinner_2">
+							<h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
+						  </div>
 						<div class="card-body p-0">
-							<div class="tab-content" id="custom-tabs-three-tabContent">
-								{{-- <div class="tab-pane fade show active" id="custom-tabs-three-1" role="tabpanel" aria-labelledby="custom-tabs-three-home-tab">
-									<div class="row m-0 p-0">
-										<div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
-										  <div class="text-right">
-											 <span class="font-weight-bold">TOTAL RESULT:</span>
-											 <span class="badge bg-info" style="font-size: 12pt;">@{{ mt_filtered.length }}</span>
-										  </div>
-										</div>
-										<div class="col-md-12 m-0 p-0">
-											<div class="alert m-3 text-center" ng-show="custom_loading_spinner_1">
-												<h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
-											  </div>
-											<div class="table-responsive p-0">
-												<!-- Production Order to Receive -->
-												<table class="table table-hover">
-													<col style="width: 10%;">
-													<col style="width: 12%;">
-													<col style="width: 12%;">
-													<col style="width: 30%;">
-													<col style="width: 10%;">
-													<col style="width: 10%;">
-													<col style="width: 8%;">
-													<col style="width: 8%;">
-													<thead>
-														<tr>
-															<th scope="col" class="text-center">Production Order</th>
-															<th scope="col" class="text-center">Source</th>
-															<th scope="col" class="text-center">Target Warehouse</th>
-															<th scope="col">Item Description</th>
-															<th scope="col" class="text-center">Qty</th>
-															<th scope="col" class="text-center">Ref. No.</th>
-															<th scope="col" class="text-center">Status</th>
-															<th scope="col" class="text-center">Actions</th>
-														</tr>
-													</thead>
-													<tbody>
-														<tr ng-repeat="x in mt_filtered = (pr | filter:searchText | filter: fltr)">
-															<td class="text-center">
-																<span class="production-order">@{{ x.production_order }}</span>
-															</td>
-															<td class="text-center">
-																<span>@{{ x.operation_name }}</span>
-															</td>
-															<td class="text-center">
-																<span class="target-warehouse">@{{ x.fg_warehouse }}</span>
-															</td>
-															<td class="text-justify">
-																<span class="view-item-details item-code" data-item-code="@{{ x.item_code }}"><b>@{{ x.item_code }}</b></span>
-																<span class="description" style="display: block;">@{{ x.description }}</span>
-																<br>
-																<span style="display: block; font-size: 10pt;"><b>Created by:</b> @{{ x.owner }} - @{{ x.created_at }}</span>
-															</td>
-															<td class="text-center">
-																<span class="qty">@{{ x.qty_to_receive }}</span>
-															</td>
-															<td class="text-center">
-																<span class="reference-no">@{{ x.sales_order_no }}@{{ x.material_request }}</span>
-																<br>
-																<span class="customer">@{{ x.customer }}</span>
-															</td>
-															<td class="text-center"><span class="badge badge-warning">To Receive</span></td>
-															<td class="text-center">
-																<img src="dist/img/check.png" class="img-circle receive-item checkout" data-ste="@{{ x.ste_no }}">
-															</td>
-														</tr>
-													</tbody>
-												</table>
-											</div>
-										</div>
-									</div>
-								</div> --}}
-								<div class="tab-pane show active fade" id="custom-tabs-three-2" role="tabpanel" aria-labelledby="internal-return-tab">
-									<div class="row m-0 p-0">
-										
-										{{-- <div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
-										  <div class="text-right">
-											 <span class="font-weight-bold">TOTAL RESULT:</span>
-											 <span class="badge bg-info" style="font-size: 12pt;">@{{ return_filtered.length }}</span>
-										  </div>
-										</div> --}}
-										<div class="col-md-12 m-0 p-0">
-											<div class="alert m-3 text-center" ng-show="custom_loading_spinner_2">
-												<h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
-											  </div>
-											<div class="table-responsive p-0">
-												<!-- Items for Return -->
-												<table class="table table-hover">
-													<col style="width: 10%;">
-													<col style="width: 12%;">
-													<col style="width: 12%;">
-													<col style="width: 30%;">
-													<col style="width: 10%;">
-													<col style="width: 10%;">
-													<col style="width: 8%;">
-													<col style="width: 8%;">
-													<thead>
-														<tr>
-															<th scope="col" class="text-center">STE No.</th>
-															<th scope="col" class="text-center">Source Warehouse</th>
-															<th scope="col" class="text-center">Target Warehouse</th>
-															<th scope="col">Item Description</th>
-															<th scope="col" class="text-center">Qty</th>
-															<th scope="col" class="text-center">Ref. No.</th>
-															<th scope="col" class="text-center">Status</th>
-															<th scope="col" class="text-center">Actions</th>
-														</tr>
-													</thead>
-													<tbody>
-														<tr ng-repeat="y in return_filtered = (return_items | filter:searchText | filter: fltr)">
-														<td class="text-center">@{{ y.parent }}</td>
-														<td class="text-center">@{{ y.s_warehouse }}</td>
-														<td class="text-center">@{{ y.t_warehouse }}</td>
-														<td class="text-justify">
-															<span class="d-block font-weight-bold">@{{ y.item_code }}</span>
-															<span class="d-block">@{{ y.description }}</span>
-															<span class="d-block mt-3" ng-hide="y.part_nos == ''"><b>Part No(s):</b> @{{ y.part_nos }}</span>
-															<span class="d-block mt-2" ng-hide="y.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ y.owner }}</span>
-														</td>
-														<td class="text-center">@{{ y.qty * 1 }}</td>
-														<td class="text-center">@{{ y.sales_order_no }}</td>
-														<td class="text-center" ng-if="y.status === 'Returned'"><span class="badge badge-primary">@{{ y.status }}</span></td>
-														<td class="text-center" ng-if="y.status === 'Issued'"><span class="badge badge-success">@{{ y.status }}</span></td>
-														<td class="text-center" ng-if="y.status === 'For Checking'"><span class="badge badge-warning">@{{ y.status }}</span></td>
-														<td class="text-center">
-															<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ y.name }}">
-														</td>
-														</tr>
-													</tbody>
-												</table>
-											</div>
-										</div>
-									</div>
-								</div>
-								<div class="tab-pane fade" id="custom-tabs-three-3" role="tabpanel" aria-labelledby="sales-return-tab">
-									<div class="row m-0 p-0">
-									  <div class="col-md-4 offset-md-8 p-1" style="margin-top: -40px;">
-										{{-- <div class="text-right">
-										  <span class="font-weight-bold">TOTAL RESULT:</span>
-										  <span class="badge bg-info" style="font-size: 12pt;">@{{ mr_ret_filtered.length }}</span>
-										</div> --}}
-									  </div>
-									  <div class="col-md-12 m-0 p-0">
-										<div class="alert m-3 text-center" ng-show="custom_loading_spinner_3">
-										  <h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
-										</div>
-										<div class="table-responsive p-0">
-										  <table class="table table-hover">
-											<col style="width: 10%;">
-											<col style="width: 15%;">
-											<col style="width: 33%;">
-											<col style="width: 10%;">
-											<col style="width: 16%;">
-											<col style="width: 8%;">
-											<col style="width: 8%;">
-											<thead>
-											  <tr>
-												<th scope="col" class="text-center">STE No.</th>
-												<th scope="col" class="text-center">Target Warehouse</th>
-												<th scope="col">Item Description</th>
-												<th scope="col" class="text-center">Qty</th>
-												<th scope="col" class="text-center">Ref. No.</th>
-												<th scope="col" class="text-center">Status</th>
-												<th scope="col" class="text-center">Actions</th>
-											  </tr>
-											</thead>
-											<tbody>
-											  <tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr)">
-												<td class="text-center">@{{ r.name }}</td>
-												<td class="text-center">@{{ r.t_warehouse }}</td>
-												<td class="text-justify">
-												  <span class="d-block font-weight-bold view-item-details" data-item-code="@{{ x.item_code }}">@{{ r.item_code }}</span>
-												  <span class="d-block">@{{ r.description }}</span>
-												  <span class="d-block mt-3" ng-hide="r.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ r.owner }}</span>
-												</td>
-												<td class="text-center">@{{ r.transfer_qty | number:2 }}</td>
-												<td class="text-center">
-												  <span class="d-block">@{{ r.sales_order_no }}</span>
-												  <span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>
-												</td>
-												<td class="text-center" ng-if="r.status === 'Returned'"><span class="badge badge-success">@{{ r.status }}</span></td>
-												<td class="text-center" ng-if="r.status === 'For Checking'"><span class="badge badge-warning">@{{ r.status }}</span></td>
-												<td class="text-center">
-												  <img src="dist/img/icon.png" class="img-circle checkout update-item-return" data-id="@{{ r.stedname }}">
-												</td>
-											  </tr>
-											</tbody>
-										  </table>
-										</div>
-									  </div>
-									</div>
-								  </div>
+							<div class="table-responsive p-0">
+								<!-- Items for Return -->
+								<table class="table table-hover">
+									<col style="width: 10%;">
+									<col style="width: 12%;">
+									<col style="width: 12%;">
+									<col style="width: 30%;">
+									<col style="width: 10%;">
+									<col style="width: 10%;">
+									<col style="width: 8%;">
+									<col style="width: 8%;">
+									<thead>
+										<tr>
+											<th scope="col" class="text-center">STE No.</th>
+											<th scope="col" class="text-center">Source Warehouse</th>
+											<th scope="col" class="text-center">Target Warehouse</th>
+											<th scope="col">Item Description</th>
+											<th scope="col" class="text-center">Qty</th>
+											<th scope="col" class="text-center">Ref. No.</th>
+											<th scope="col" class="text-center">Category</th>
+											<th scope="col" class="text-center">Status</th>
+											<th scope="col" class="text-center">Actions</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr ng-repeat="y in return_filtered = (return_items | filter:searchText | filter: fltr)">
+										<td class="text-center">@{{ y.parent }}</td>
+										<td class="text-center">@{{ y.s_warehouse }}</td>
+										<td class="text-center">@{{ y.t_warehouse }}</td>
+										<td class="text-justify">
+											<span class="d-block font-weight-bold">@{{ y.item_code }}</span>
+											<span class="d-block">@{{ y.description }}</span>
+											<span class="d-block mt-3" ng-hide="y.part_nos == ''"><b>Part No(s):</b> @{{ y.part_nos }}</span>
+											<span class="d-block mt-2" ng-hide="y.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ y.owner }}</span>
+										</td>
+										<td class="text-center">@{{ y.qty * 1 }}</td>
+										<td class="text-center">@{{ y.sales_order_no }}</td>
+										<td class="text-center">Internal Transfer</td>
+										<td class="text-center" ng-if="y.status === 'Returned'"><span class="badge badge-primary">@{{ y.status }}</span></td>
+										<td class="text-center" ng-if="y.status === 'Issued'"><span class="badge badge-success">@{{ y.status }}</span></td>
+										<td class="text-center" ng-if="y.status === 'For Checking'"><span class="badge badge-warning">@{{ y.status }}</span></td>
+										<td class="text-center">
+											<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ y.name }}">
+										</td>
+										</tr>
+									</tbody>
+									<tbody>
+										<tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr)">
+										  <td class="text-center">@{{ r.name }}</td>
+										  <td class="text-center">-</td>
+										  <td class="text-center">@{{ r.t_warehouse }}</td>
+										  <td class="text-justify">
+											<span class="d-block font-weight-bold view-item-details" data-item-code="@{{ x.item_code }}">@{{ r.item_code }}</span>
+											<span class="d-block">@{{ r.description }}</span>
+											<span class="d-block mt-3" ng-hide="r.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ r.owner }}</span>
+										  </td>
+										  <td class="text-center">@{{ r.transfer_qty | number:2 }}</td>
+										  <td class="text-center">
+											<span class="d-block">@{{ r.sales_order_no }}</span>
+											<span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>
+										  </td>
+										  <td class="text-center">Sales Return</td>
+										  <td class="text-center" ng-if="r.status === 'Returned'"><span class="badge badge-success">@{{ r.status }}</span></td>
+										  <td class="text-center" ng-if="r.status === 'For Checking'"><span class="badge badge-warning">@{{ r.status }}</span></td>
+										  <td class="text-center">
+											<img src="dist/img/icon.png" class="img-circle checkout update-item-return" data-id="@{{ r.stedname }}">
+										  </td>
+										</tr>
+									  </tbody>
+								</table>
+							</div>
 							</div>
 						</div>
 					</div>

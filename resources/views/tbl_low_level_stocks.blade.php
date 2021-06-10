@@ -12,11 +12,14 @@
     <tbody>
         @forelse ($low_level_stocks as $n => $row)
         <tr>
-            <td class="text-justify">{{ $row['item_code'] . ' - ' . $row['description'] }} </td>
-            <td class="text-center">{{ $row['warehouse'] }}</td>
-            <td class="text-center">{{ $row['warehouse_reorder_level'] * 1 . ' ' . $row['stock_uom'] }}</td>
-            <td class="text-center">
-                <span class="badge badge-{{ ($row['actual_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $row['actual_qty'] * 1 . ' ' . $row['stock_uom'] }}</span>
+            <td class="text-justify p-2 align-middle">
+                <span class="d-block font-weight-bold">{{ $row['item_code'] }}</span>
+                <small class="font-italic">{{ $row['description'] }}</small>
+            </td>
+            <td class="text-center p-1 align-middle">{{ $row['warehouse'] }}</td>
+            <td class="text-center p-1 align-middle">{{ $row['warehouse_reorder_level'] * 1 . ' ' . $row['stock_uom'] }}</td>
+            <td class="text-center p-1 align-middle">
+                <span class="badge badge-{{ ($row['actual_qty'] > $row['warehouse_reorder_level']) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $row['actual_qty'] * 1 . ' ' . $row['stock_uom'] }}</span>
             </td>
         </tr>
         @empty

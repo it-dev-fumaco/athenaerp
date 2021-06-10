@@ -776,7 +776,7 @@ class MainController extends Controller
                     'item_code' => $row->item_code,
                     'description' => $row->description,
                     'uom' => $row->uom,
-                    'qty' => ($row->qty * $q->qty),
+                    'qty' => ($row->qty),
                     'available_qty' => $available_qty,
                     'warehouse' => $row->warehouse
                 ];
