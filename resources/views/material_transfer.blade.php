@@ -79,7 +79,7 @@
                       <span class="view-item-details font-weight-bold d-block" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
                       <span class="d-block">@{{ x.description }}</span>
                       <span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-                      <span class="d-block mt-2 font-italic" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }} - @{{ x.creation }}</span>
+                      <!-- <span class="d-block mt-2 font-italic" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }} - @{{ x.creation }}</span> -->
                     </td>
                     <td class="text-center">
                       <span class="d-block" style="font-size: 15pt;">@{{ x.qty | number:2 }}</span>
