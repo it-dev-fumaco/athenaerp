@@ -2457,9 +2457,20 @@ class MainController extends Controller
     }
 
     public function get_recently_added_items(){
-        $list = DB::table('tabItem')->where('disabled', 0)
+        $q = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
             ->orderBy('creation', 'desc')->limit(5)->get();
+
+        $list = [];
+        foreach($q as $row){
+            $item_image_path = DB::table('tabItem Images')->where('parent', $row->name)->first();
+
+            $list[] = [
+                'item_code' => $row->item_code,
+                'description' => $row->description,
+                'image' => ($item_image_path) ? $item_image_path->image_path : null
+            ];
+        }
 
         return view('recently_added_items', compact('list'));
     }

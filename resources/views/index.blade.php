@@ -197,7 +197,7 @@
 										<div class="col-xl-8">
 											<div class="card card-danger card-outline">
 												<div class="card-header">
-													<h3 class="card-title font-weight-bold">Stock Level Alert</h3>
+													<h3 class="card-title font-weight-bold"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</h3>
 													<div class="card-tools">
 														<button type="button" class="btn btn-tool" data-card-widget="collapse">
 															<i class="fas fa-minus"></i>
