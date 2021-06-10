@@ -19,6 +19,10 @@ class MainController extends Controller
     }
 
     public function index(Request $request){
+        if(Auth::user()->user_group == 'User'){
+            return redirect('/search_results');
+        }
+
         return view('index');
     }
 
