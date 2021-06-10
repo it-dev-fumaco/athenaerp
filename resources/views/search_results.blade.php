@@ -12,25 +12,15 @@
 					<div class="container-fluid itemClassContainer">
 						@foreach($itemClass as $itemClass)
 							<!-- <button onclick="redirectClass(this)" class="itemClassBubble" value="{{$itemClass->item_classification}}">{{$itemClass->item_classification}}</button> -->
-							<a class="itemClassBubble" href="/search_results?wh=&searchString={{$itemClass->item_classification}}">
-								<!-- <div class="col-md-2 col-sm-6 col-xs-12 infoBoxContainer" style="margin: 0 auto !important">
-									<div class="infoBox">
-										<span class="abbrBG" style="display: inline-block !important;">
-											<i>{{substr($itemClass->item_classification, 0, 2)}}</i>
-										</span>
-										<div class="" style="display: inline-block !important;"> 
-											<span class="info-box-text">
-												{{substr($itemClass->item_classification, 4)}}
-											</span>
-										</div>
-									</div>
-								</div> -->
-								<div class="col-md-1 classPanel">
+							<!-- <a class="itemClassBubble" href="/search_results?wh=&searchString={{$itemClass->item_classification}}"> -->
+							<a id="itemClassBtn" class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass])) }}" +>	
+								<div class="classPanel">
 									<div class="classPanelAbbr">
 										<i>{{substr($itemClass->item_classification, 0, 2)}}</i>
 									</div>
 									<div class="classPanelName">
-										<i>{{substr(Illuminate\Support\Str::limit($itemClass->item_classification,15), 4)}}</i>
+										<!-- <i>{{substr(Illuminate\Support\Str::limit($itemClass->item_classification,15), 4)}}</i> -->
+										<i>{{substr($itemClass->item_classification, 4)}}</i>
 									</div>
 								</div>
 							</a>
@@ -221,12 +211,19 @@
 	}
 	.itemClassBubble{
 		color: #000;
-		text-decoration: none !important;
-		text-transform: none !important;
+		/* text-decoration: none !important;
+		text-transform: none !important; */
 		transition: .4s;
+		padding: 1px;
+		background-color: rgba(255,255,255, 0);
+		border: none;
 	}
-	.itemClassBubble:hover{
+	.itemClassBubble:visited{
 		color: #A6A6BF;
+	}
+
+	.active{
+		background-color: #000;
 	}
 
 	.classPanel{
@@ -235,6 +232,8 @@
 		display: inline-block; 
 		margin: 5px; 
 		background-color: white;
+		padding-right: 5px;
+		border-radius: 5px;
 	}
 
 	.classPanelAbbr{
@@ -250,8 +249,8 @@
 		background-color: #f2f2f2; 
 		padding: 15px;
 		font-weight: 700;
-		border-top-left: 5px;
-		border-bottom-left: 5px;
+		border-top-left-radius: 5px;
+		border-bottom-left-radius: 5px;
 	}
 
 	.classPanelName{
@@ -260,6 +259,7 @@
 		display: inline-block;
 		text-align: center;
 	}
+
 	/* .infoBoxContainer{
 		display: inline-block;
 		min-height: 50px !important;
@@ -274,6 +274,7 @@
 		box-shadow: 2px 2px 8px #DCDCDC;
 		border-radius: 2px;
 	} */
+
 
 	.tbl-custom-hover:hover,
 		th.hover,
