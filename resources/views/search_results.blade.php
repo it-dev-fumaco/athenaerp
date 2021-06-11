@@ -10,21 +10,23 @@
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="container-fluid itemClassContainer">
+						<input type="text" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden="">
 						@foreach($itemClass as $itemClass)
-							<!-- <button onclick="redirectClass(this)" class="itemClassBubble" value="{{$itemClass->item_classification}}">{{$itemClass->item_classification}}</button> -->
-							<!-- <a class="itemClassBubble" href="/search_results?wh=&searchString={{$itemClass->item_classification}}"> -->
-							<a id="itemClassBtn" class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass])) }}" +>	
+							<!-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass])) }}"> 
+							<a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass]) }}"> - array	 -->
+							<a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass->item_classification]) }}">	
 								<div class="classPanel">
 									<div class="classPanelAbbr">
 										<i>{{substr($itemClass->item_classification, 0, 2)}}</i>
 									</div>
 									<div class="classPanelName">
-										<!-- <i>{{substr(Illuminate\Support\Str::limit($itemClass->item_classification,15), 4)}}</i> -->
-										<i>{{substr($itemClass->item_classification, 4)}}</i>
+										<!-- <i>{{substr(Illuminate\Support\Str::limit($itemClass->item_classification,15), 4)}}</i> Ellipsis  -->
+										<!-- <i>{{substr($itemClass->item_classification, 4)}}</i> -->
+										<input type="text" class="classPanelBtn" name="text[]" value="{{substr($itemClass->item_classification, 4)}}" readonly>
 									</div>
 								</div>
 							</a>
-						@endforeach
+ 						@endforeach
 					</div>	
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
@@ -211,19 +213,12 @@
 	}
 	.itemClassBubble{
 		color: #000;
-		/* text-decoration: none !important;
-		text-transform: none !important; */
+		text-decoration: none !important;
+		text-transform: none !important;
 		transition: .4s;
 		padding: 1px;
 		background-color: rgba(255,255,255, 0);
 		border: none;
-	}
-	.itemClassBubble:visited{
-		color: #A6A6BF;
-	}
-
-	.active{
-		background-color: #000;
 	}
 
 	.classPanel{
@@ -237,20 +232,17 @@
 	}
 
 	.classPanelAbbr{
-		/* background-color: #00C0EF;
-		border-top-left-radius: 2px;
-		border-bottom-left-radius: 2px;
-		height: 50px !important;
-		padding: 15px !important; */
-		background-color: #00C0EF !important;
-		width: 50px;
-		height: 50px; 
+		background-color: #001F3F !important;
+		min-width: 50px;
+		height: 53px; 
 		display: inline-block; 
-		background-color: #f2f2f2; 
-		padding: 15px;
+		color: #fff; 
+		padding: 11px;
 		font-weight: 700;
+		font-size: 21px;
 		border-top-left-radius: 5px;
 		border-bottom-left-radius: 5px;
+		margin-right: -2px;
 	}
 
 	.classPanelName{
@@ -259,21 +251,21 @@
 		display: inline-block;
 		text-align: center;
 	}
-
-	/* .infoBoxContainer{
-		display: inline-block;
-		min-height: 50px !important;
-		margin-left: 1px;
+	
+	.classPanelBtn{
+		color: #000;
+		border: white;
+		border-top-right-radius: 5px;
+		border-bottom-right-radius: 5px;
+		min-height: 50px;
+		min-width: 100px !important;
+		display: inline-block !important;
+		cursor: pointer;
 	}
-	.infoBox{
-		background-color: #fff;
-		padding: 1px !important;
-		height: 50px !important;
-		min-width: 210px;
-		margin: 2px !important;
-		box-shadow: 2px 2px 8px #DCDCDC;
-		border-radius: 2px;
-	} */
+	
+	.classPanelBtn:focus{
+		outline: none !important;
+	}
 
 
 	.tbl-custom-hover:hover,
@@ -287,6 +279,27 @@
 		background-color: #fff;
 		}
 </style>
+
+<script>
+	function activeBtn(){
+		var values = [];
+		$('input:text').each(
+			function() {
+				if (values.indexOf(this.value) >= 0) {
+					// $(this).css("border-color", "#00C0EF");
+					$(this).css("box-shadow", "8px 1px 12px #001F3F");
+					// $(".classPanelAbbr").css("box-shadow", "6px 1px 12px #00C0EF");
+					// $(".classPanel").appendTo(".active");
+					// $(this).css("border-color", "red");
+				} else {
+					$(this).css("border-color", "");
+					values.push(this.value);
+				}
+			}
+		);
+	}
+	window.onload=activeBtn;
+</script>
 @endsection
 
 @section('script')

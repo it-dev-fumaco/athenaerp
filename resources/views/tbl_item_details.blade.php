@@ -1,4 +1,4 @@
-<div class="row p-1">
+<div class="row p-1 bg-white">
     <div class="col-md-8">
         <div class="box box-solid">
             <div class="box-header">
