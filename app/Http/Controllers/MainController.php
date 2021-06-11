@@ -302,7 +302,7 @@ class MainController extends Controller
                 'balance' => $balance,
                 'sales_order_no' => $d->sales_order_no,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
 
@@ -393,7 +393,7 @@ class MainController extends Controller
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->production_order,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
         
@@ -411,7 +411,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
-            ->whereIn('s_warehouse', $allowed_warehouses)->where('ste.transfer_as', '!=', 'For Return')
+            ->whereIn('s_warehouse', $allowed_warehouses)
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
@@ -462,7 +462,7 @@ class MainController extends Controller
                 'balance' => $balance,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
         
@@ -514,7 +514,7 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'stock_uom' => $d->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
         
@@ -664,7 +664,7 @@ class MainController extends Controller
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Receipt')
             ->where('ste.receive_as', 'Sales Return')
-            ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner')
+            ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
             ->get();
 
         $list = [];
@@ -676,6 +676,7 @@ class MainController extends Controller
                 'stedname' => $d->stedname,
                 'owner' => $owner,
                 'name' => $d->name,
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i A'),
                 't_warehouse' => $d->t_warehouse,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
@@ -1511,7 +1512,7 @@ class MainController extends Controller
                 'stock_uom' => $row->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'owner' => $owner,
-                'created_at' =>  Carbon::parse($row->created_at)->format('m-d-Y h:i A'),
+                'created_at' =>  Carbon::parse($row->created_at)->format('M-d-Y h:i A'),
                 'operation_name' => $operation_name
             ];
         }
@@ -2565,7 +2566,7 @@ class MainController extends Controller
                  'balance' => $balance,
                  'ref_no' => $ref_no,
                  'parent_warehouse' => $parent_warehouse,
-                 'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
              ];
          }
 
@@ -2618,7 +2619,7 @@ class MainController extends Controller
                 'balance' => $balance,
                 'ref_no' => $d->purchase_order,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
         

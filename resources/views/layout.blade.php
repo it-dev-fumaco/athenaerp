@@ -28,14 +28,14 @@
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
 					<div class="row w-100">
-						<div class="col-xl-8 col-lg-10 col-md-10">
+						<div class="col-xl-8 col-lg-9 col-md-9">
 							<div class="row">
-								<div class="col-md-12 col-xl-6 col-lg-3 text-center">
+								<div class="col-md-12 col-xl-6 col-lg-4 text-center">
 									<a href="/" class="navbar-brand">
 										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP</b><span class="d-md-inline-block d-lg-none d-xl-inline-block">Inventory</span></span>
 									</a>
 								</div>
-								<div class="col-md-12 col-xl-6 col-lg-9 align-middle">
+								<div class="col-md-12 col-xl-6 col-lg-8 align-middle">
 									<form role="search" method="GET" action="/search_results" id="search-form">
 										<input type="checkbox" id="cb-1" name="check_qty" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
@@ -52,10 +52,10 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-xl-4 col-lg-2 col-md-2 text-right align-middle pl-5 pb-0">
-							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-5 mb-0">
-								<li class="nav-item dropdown">
-									<a class="nav-link text-white text-center" data-toggle="dropdown" href="#">
+						<div class="col-xl-4 col-lg-3 col-md-3 align-middle pb-0">
+							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
+								<li class="nav-item dropdown col-8 text-right">
+									<a class="nav-link text-white" data-toggle="dropdown" href="#">
 										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
 										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span> <i class="fas fa-caret-down ml-2"></i>
 									</a>
@@ -367,8 +367,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> CHECK OUT</button>
 						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK OUT</button>
 					</div>
 				</div>
 			</div>
@@ -513,8 +513,8 @@
 						
 					</div>
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary">Upload</button>
 						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="submit" class="btn btn-primary btn-lg">Upload</button>
 					</div>
 				</div>
 			</div>
@@ -619,8 +619,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> SAVE</button>
 						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> SAVE</button>
 					</div>
 				</div>
 			</div>
@@ -710,8 +710,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> UPDATE</button>
 						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> UPDATE</button>
 					</div>
 				</div>
 			</div>
@@ -732,8 +732,8 @@
 						<h5 class="text-center">Cancel Stock Reservation No. <span class="font-weight-bold reservation-id">-</span>?</h5>
 					</div>
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> CONFIRM</button>
 						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CONFIRM</button>
 					</div>
 				</div>
 			</div>

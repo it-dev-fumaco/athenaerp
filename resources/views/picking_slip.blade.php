@@ -6,6 +6,7 @@
 
 @section('content')
 
+
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
@@ -14,18 +15,18 @@
 					<div class="card card-teal card-outline">
 						<div class="card-header p-0 pt-1 border-bottom-0">
 							<div class="row m-1">
-                <div class="col-xl-4">
-                  <h5 class="card-title m-1 font-weight-bold">Picking Slip</h5>
-                  </div>
-								<div class="col-xl-1">
+								<div class="col-xl-4 d-md-none d-lg-none d-xl-inline-block">
+									<h5 class="card-title m-1 font-weight-bold">Picking Slip</h5>
+								</div>
+								<div class="col-xl-1 col-lg-2 col-md-2">
 									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
 								</div>
-								<div class="col-xl-3">
+								<div class="col-xl-3 col-lg-5 col-md-5">
 									<div class="form-group">
 										<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
 									</div>
 								</div>
-								<div class="col-xl-2">
+								<div class="col-xl-2 col-lg-2 col-md-2">
 									<div class="form-group">
 										<select class="form-control" ng-model="searchText">
 											<option></option>
@@ -33,32 +34,19 @@
 										</select>
 									</div>
 								</div>
-								<div class="col-xl-2">
-                  <div class="text-center m-1">
-                    <span class="font-weight-bold">TOTAL RESULT:</span>
-                    <span class="badge bg-info" style="font-size: 12pt;">@{{ ps_filtered.length }}</span>
-                  </div>
-{{--                   
-									<div class="text-center m-1 d-none" id="total-result-picking-slip">
-                    <span class="font-weight-bold">TOTAL RESULT:</span>
-                    <span class="badge bg-info" style="font-size: 12pt;">@{{ ps_filtered.length }}</span>
-                  </div>
-                  <div class="text-center m-1 d-none" id="total-result-picking-slip-return">
-                    <span class="font-weight-bold">TOTAL RESULT:</span>
-                    <span class="badge bg-info" style="font-size: 12pt;">@{{ ret_filtered.length }}</span>
-                  </div> --}}
+								<div class="col-xl-2 col-lg-3 col-md-3">
+									<div class="text-center m-1">
+									   <span class="font-weight-bold">TOTAL RESULT:</span>
+									   <span class="badge bg-info" style="font-size: 12pt;">@{{ ps_filtered.length }}</span>
+									</div>
+
 								  </div>
 	
 							</div>
-							{{-- <ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist">
-                <li class="nav-item">
-                  <a class="nav-link active font-weight-bold" id="picking-slip-tab" data-toggle="pill" href="#custom-tabs-three-1" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Picking Slip</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link font-weight-bold" id="picking-slip-return-tab" data-toggle="pill" href="#custom-tabs-three-2" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Return</a>
-                </li>
-              </ul> --}}
+
+					
 						</div>
+
             <div class="alert m-3 text-center" ng-show="custom_loading_spinner_1">
               <h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
             </div>
@@ -66,32 +54,36 @@
                <!-- Picking Slip -->
                <div class="table-responsive p-0">
                 <table class="table table-hover">
-                  <col style="width: 10%;">
+                  <col style="width: 17%;">
+                  <col style="width: 43%;">
                   <col style="width: 15%;">
-                  <col style="width: 33%;">
+                  <col style="width: 15%;">
                   <col style="width: 10%;">
-                  <col style="width: 16%;">
-                  <col style="width: 8%;">
-                  <col style="width: 8%;">
                   <thead>
                     <tr>
-                      <th scope="col" class="text-center">PS No.</th>
-                      <th scope="col" class="text-center">Source Warehouse</th>
-                      <th scope="col">Item Description</th>
-                      <th scope="col" class="text-center">Qty</th>
-                      <th scope="col" class="text-center">Ref. No.</th>
-                      <th scope="col" class="text-center">Status</th>
-                      <th scope="col" class="text-center">Actions</th>
+                    <th scope="col" class="text-center">Transaction</th>
+                    <th scope="col" class="text-center">Item Description</th>
+                    <th scope="col" class="text-center">Qty</th>
+                    <th scope="col" class="text-center">Ref. No.</th>
+                    <th scope="col" class="text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr ng-repeat="x in ps_filtered = (ps | filter:searchText | filter: fltr)">
-                      <td class="text-center">@{{ x.name }}</td>
-                      <td class="text-center">@{{ x.warehouse }}</td>
+                      <td class="text-center">
+                        <span class="d-block font-weight-bold">@{{ x.creation }}</span>
+													<small class="d-block mt-1">@{{ x.name }}</small>
+                        </td>
                       <td class="text-justify">
-                        <span class="d-block font-weight-bold view-item-details" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
-                        <span class="d-block">@{{ x.description }}</span>
-                        <span class="d-block mt-3 font-italic" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }} - @{{ x.creation }}</span>
+
+                        <span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
+								  <span class="badge badge-success mr-2" ng-if="x.status === 'Issued'">@{{ x.status }}</span>
+								  <span class="badge badge-warning mr-2" ng-if="x.status === 'For Checking'">@{{ x.status }}</span>
+								  <i class="fas fa-arrow-right ml-2 mr-2"></i> 
+								  <span>@{{ x.warehouse }}</span>
+								<span class="d-block">@{{ x.description }}</span>
+								<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
+								<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
                       </td>
                       <td class="text-center">@{{ x.qty | number:2 }}</td>
                       <td class="text-center">
@@ -99,8 +91,6 @@
                         <span class="d-block">@{{ x.sales_order }}</span>
                         <span class="mt-3" style="font-size: 10pt;">@{{ x.customer }}</span>
                       </td>
-                      <td class="text-center" ng-if="x.status === 'Issued'"><span class="badge badge-success">@{{ x.status }}</span></td>
-                      <td class="text-center" ng-if="x.status === 'For Checking'"><span class="badge badge-warning">@{{ x.status }}</span></td>
                       <td class="text-center">
                         <img src="dist/img/icon.png" class="img-circle checkout update-ps"  data-id="@{{ x.id }}">
                       </td>

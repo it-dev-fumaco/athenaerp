@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'Returns',
+    'namePage' => 'Sales Returns',
     'activePage' => 'returns',
 	'nameDesc' => 'Incoming'
 ])
@@ -13,18 +13,20 @@
 					<div class="card card-primary card-outline">
 						<div class="card-header p-0 pt-1 border-bottom-0">
 							<div class="row m-1">
-								<div class="col-xl-4">
-									<h5 class="card-title m-1 font-weight-bold">Returns</h5>
-								  </div>
-								<div class="col-xl-1">
-									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+								<div class="col-xl-4 d-md-none d-lg-none d-xl-inline-block">
+									<h5 class="card-title m-1 font-weight-bold">Sales Returns</h5>
 								</div>
-								<div class="col-xl-3">
+								<div class="col-xl-1 col-lg-2 col-md-2">
+									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()">
+										<i class="fas fa-sync-alt"></i> Refresh
+									</button>
+								</div>
+								<div class="col-xl-3 col-lg-5 col-md-5">
 									<div class="form-group">
 										<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
 									</div>
 								</div>
-								<div class="col-xl-2">
+								<div class="col-xl-2 col-lg-2 col-md-2">
 									<div class="form-group">
 										<select class="form-control" ng-model="searchText">
 											<option></option>
@@ -32,93 +34,62 @@
 										</select>
 									</div>
 								</div>
-								<div class="col-xl-2">
+								<div class="col-xl-2 col-lg-3 col-md-3">
 									<div class="text-center m-1">
 									   <span class="font-weight-bold">TOTAL RESULT:</span>
 									   <span class="badge bg-info" style="font-size: 12pt;">@{{ return_filtered.length + mr_ret_filtered.length}}</span>
 									</div>
-
-								  </div>
-	
+								</div>
 							</div>
-
-					
 						</div>
-						<div class="alert m-3 text-center" ng-show="custom_loading_spinner_2">
+						<div class="alert m-3 text-center" ng-show="custom_loading_spinner_1">
 							<h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
-						  </div>
+						</div>
 						<div class="card-body p-0">
 							<div class="table-responsive p-0">
 								<!-- Items for Return -->
 								<table class="table table-hover">
+									<col style="width: 17%;">
+									<col style="width: 43%;">
+									<col style="width: 15%;">
+									<col style="width: 15%;">
 									<col style="width: 10%;">
-									<col style="width: 12%;">
-									<col style="width: 12%;">
-									<col style="width: 30%;">
-									<col style="width: 10%;">
-									<col style="width: 10%;">
-									<col style="width: 8%;">
-									<col style="width: 8%;">
 									<thead>
 										<tr>
-											<th scope="col" class="text-center">STE No.</th>
-											<th scope="col" class="text-center">Source Warehouse</th>
-											<th scope="col" class="text-center">Target Warehouse</th>
-											<th scope="col">Item Description</th>
+											<th scope="col" class="text-center">Transaction</th>
+											<th scope="col" class="text-center">Item Description</th>
 											<th scope="col" class="text-center">Qty</th>
 											<th scope="col" class="text-center">Ref. No.</th>
-											<th scope="col" class="text-center">Category</th>
-											<th scope="col" class="text-center">Status</th>
 											<th scope="col" class="text-center">Actions</th>
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="y in return_filtered = (return_items | filter:searchText | filter: fltr)">
-										<td class="text-center">@{{ y.parent }}</td>
-										<td class="text-center">@{{ y.s_warehouse }}</td>
-										<td class="text-center">@{{ y.t_warehouse }}</td>
-										<td class="text-justify">
-											<span class="d-block font-weight-bold">@{{ y.item_code }}</span>
-											<span class="d-block">@{{ y.description }}</span>
-											<span class="d-block mt-3" ng-hide="y.part_nos == ''"><b>Part No(s):</b> @{{ y.part_nos }}</span>
-											<span class="d-block mt-2" ng-hide="y.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ y.owner }}</span>
-										</td>
-										<td class="text-center">@{{ y.qty * 1 }}</td>
-										<td class="text-center">@{{ y.sales_order_no }}</td>
-										<td class="text-center">Internal Transfer</td>
-										<td class="text-center" ng-if="y.status === 'Returned'"><span class="badge badge-primary">@{{ y.status }}</span></td>
-										<td class="text-center" ng-if="y.status === 'Issued'"><span class="badge badge-success">@{{ y.status }}</span></td>
-										<td class="text-center" ng-if="y.status === 'For Checking'"><span class="badge badge-warning">@{{ y.status }}</span></td>
-										<td class="text-center">
-											<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ y.name }}">
-										</td>
+										<tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr)">
+										  	<td class="text-center">
+											  	<span class="d-block font-weight-bold">@{{ r.creation }}</span>
+											  	<small class="d-block mt-1">@{{ r.name }}</small>
+											</td>
+										  	<td class="text-justify">
+												<div class="d-block font-weight-bold">
+													@{{ r.item_code }}
+													<span class="badge badge-success" ng-if="r.status === 'Returned'">@{{ r.status }}</span>
+													<span class="badge badge-warning" ng-if="r.status === 'For Checking'">@{{ r.status }}</span>
+													<i class="fas fa-arrow-right ml-3 mr-2"></i> @{{ r.t_warehouse }}
+												</div>
+												<span class="d-block">@{{ r.description }}</span>
+												<span class="d-block mt-2" ng-hide="r.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ r.owner }}</span>
+											</td>
+											<td class="text-center">@{{ r.transfer_qty | number:2 }}</td>
+											<td class="text-center">
+												<span class="d-block">@{{ r.sales_order_no }}</span>
+												<span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>
+											</td>
+											<td class="text-center">
+												<img src="dist/img/icon.png" class="img-circle checkout update-item-return" data-id="@{{ r.stedname }}">
+											</td>
 										</tr>
 									</tbody>
-									<tbody>
-										<tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr)">
-										  <td class="text-center">@{{ r.name }}</td>
-										  <td class="text-center">-</td>
-										  <td class="text-center">@{{ r.t_warehouse }}</td>
-										  <td class="text-justify">
-											<span class="d-block font-weight-bold view-item-details" data-item-code="@{{ x.item_code }}">@{{ r.item_code }}</span>
-											<span class="d-block">@{{ r.description }}</span>
-											<span class="d-block mt-3" ng-hide="r.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ r.owner }}</span>
-										  </td>
-										  <td class="text-center">@{{ r.transfer_qty | number:2 }}</td>
-										  <td class="text-center">
-											<span class="d-block">@{{ r.sales_order_no }}</span>
-											<span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>
-										  </td>
-										  <td class="text-center">Sales Return</td>
-										  <td class="text-center" ng-if="r.status === 'Returned'"><span class="badge badge-success">@{{ r.status }}</span></td>
-										  <td class="text-center" ng-if="r.status === 'For Checking'"><span class="badge badge-warning">@{{ r.status }}</span></td>
-										  <td class="text-center">
-											<img src="dist/img/icon.png" class="img-circle checkout update-item-return" data-id="@{{ r.stedname }}">
-										  </td>
-										</tr>
-									  </tbody>
 								</table>
-							</div>
 							</div>
 						</div>
 					</div>
@@ -127,9 +98,6 @@
 		</div>
 	</div>
 </div>
-
-
-
 
 <div class="modal fade" id="receive-item-modal">
 	<form id="submit-receive-form" method="POST" action="#">
@@ -181,8 +149,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> SUBMIT</button>
 					<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+					<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> SUBMIT</button>
 				</div>
 			</div>
 		</div>
@@ -285,8 +253,8 @@
 						 </div>
 					</div>
 					<div class="modal-footer">
-						 <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> RETURN</button>
-						 <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						 <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> RETURN</button>
 					</div>
 			  </div>
 		 </div>
@@ -299,28 +267,6 @@
 
 <script>
 	$(document).ready(function(){
-
-    var active_tab = $("ul.nav-tabs li a.active").attr('id');
-    if(active_tab == 'internal-return-tab'){
-      $('#total-result-internal-return').removeClass('d-none');
-      $('#total-result-sales-return').addClass('d-none');
-    }else{
-      $('#total-result-internal-return').addClass('d-none');
-      $('#total-result-sales-return').removeClass('d-none');
-    }
-
-    $('ul.nav-tabs li a').click(function(){
-
-    if($(this).attr('id') == 'internal-return-tab'){
-      $('#total-result-internal-return').removeClass('d-none');
-      $('#total-result-sales-return').addClass('d-none');
-    }else{
-      $('#total-result-internal-return').addClass('d-none');
-      $('#total-result-sales-return').removeClass('d-none');
-    }
-  });
-
-
 
 		$.ajaxSetup({
 			headers: {
@@ -425,22 +371,10 @@
 		
           $scope.loadData = function(){
 			$scope.custom_loading_spinner_1 = true;
-			$scope.custom_loading_spinner_2 = true;
-			$scope.custom_loading_spinner_3 = true;
-			$http.get("/production_to_receive?arr=1").then(function (response) {
-				$scope.pr = response.data.records;
-				$scope.custom_loading_spinner_1 = false;
-        
-			});
-
-			$http.get("/get_items_for_return").then(function (response) {
-				$scope.return_items = response.data.return;
-				$scope.custom_loading_spinner_2 = false;
-			  });  
 
 			  $http.get("/get_mr_sales_return").then(function (response) {
 				$scope.mr_ret = response.data.mr_return;
-				$scope.custom_loading_spinner_3 = false;
+				$scope.custom_loading_spinner_1 = false;
 			  });
 		 }
 	 
