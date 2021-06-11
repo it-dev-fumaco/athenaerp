@@ -700,7 +700,7 @@ class MainController extends Controller
                     'item_code' => $row->item_code,
                     'description' => $row->description,
                     'uom' => $row->uom,
-                    'qty' => ($row->qty * $q->qty),
+                    'qty' => ($row->qty),
                     'available_qty' => $available_qty,
                     'warehouse' => $row->warehouse
                 ];
@@ -971,7 +971,7 @@ class MainController extends Controller
                 return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
             }
 
-            if($request->balance < $request->qty && !$request->is_bundle){
+            if($request->balance < $request->qty && $request->is_bundle != false){
                 return response()->json([
                     'error' => 1,
                     'modal_title' => 'Insufficient Stock', 
@@ -990,7 +990,7 @@ class MainController extends Controller
             if($request->is_bundle){
                 $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
                 foreach ($query as $row) {
-                    $bundle_item_qty = $row->qty * $request->qty;
+                    $bundle_item_qty = $row->qty;
                    
                     $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
     
