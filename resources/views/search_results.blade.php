@@ -76,7 +76,7 @@
 												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-												<img src="{{ asset('storage/') }}{{ $img }}" style="display:block">
+												<img src="{{ asset('storage/') }}{{ $img }}" style="display:block" width="200">
 											</a>
 										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">

@@ -377,7 +377,7 @@
 	@endif
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
-		<div class="modal-dialog" role="document" style="min-width: 70%;">
+		<div class="modal-dialog" role="document" style="min-width: 80%;">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title">Item Inquiry</h4>

@@ -2476,7 +2476,7 @@ class MainController extends Controller
         // Create a new Laravel collection from the array data
         $itemCollection = collect($low_level_stocks);
         // Define how many items we want to be visible in each page
-        $perPage = 10;
+        $perPage = 6;
         // Slice the collection to get the items to display in current page
         $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
         // Create our paginator and pass it to the view
