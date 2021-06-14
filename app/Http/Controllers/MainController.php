@@ -2448,11 +2448,8 @@ class MainController extends Controller
     }
 
     public function get_low_stock_level_items(Request $request){
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
-
         $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
-            ->whereIn('ir.warehouse', $allowed_warehouses)->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty')->get();
+            ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty')->get();
 
         $low_level_stocks = [];
         foreach ($query as $a) {
@@ -2490,12 +2487,8 @@ class MainController extends Controller
     }
 
     public function get_recently_added_items(){
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
-
         $q = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
-            ->whereIn('default_warehouse', $allowed_warehouses)
             ->orderBy('creation', 'desc')->limit(5)->get();
 
         $list = [];
