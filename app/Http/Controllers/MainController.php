@@ -124,9 +124,16 @@ class MainController extends Controller
                 'consignment_warehouses' => $consignment_warehouses,
                 'consignment_warehouse_count' => $consignment_warehouse_count
             ];
+
         }
 
-        return view('search_results', compact('item_list', 'items', 'itemClass'));
+        $count = count($item_list);
+        $half = $count/2;
+        $itemList1 = array_slice($item_list, 0, $half);
+        $itemList2 = array_slice($item_list, $half);
+
+        // return view('search_results', compact('item_list', 'items', 'itemClass'));
+        return view('search_results', compact('itemList1', 'itemList2', 'items', 'itemClass'));
     }
     public function count_ste_for_issue($purpose){
         $user = Auth::user()->frappe_userid;
