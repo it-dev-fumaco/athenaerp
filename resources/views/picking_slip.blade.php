@@ -1,5 +1,5 @@
 @extends('layout', [
-  'namePage' => 'Picking Slip',
+  'namePage' => 'Deliveries',
   'activePage' => 'picking-slip',
   'nameDesc' => 'Outgoing'
 ])
@@ -16,7 +16,7 @@
 						<div class="card-header p-0 pt-1 border-bottom-0">
 							<div class="row m-1">
 								<div class="col-xl-4 d-md-none d-lg-none d-xl-inline-block">
-									<h5 class="card-title m-1 font-weight-bold">Picking Slip</h5>
+									<h5 class="card-title m-1 font-weight-bold">Deliveries</h5>
 								</div>
 								<div class="col-xl-1 col-lg-2 col-md-2">
 									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
@@ -256,7 +256,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+                  <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
                   <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK OUT</button>
                 </div>
             </div>
@@ -323,8 +323,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="submit" class="btn btn-primary" ><i class="fa fa-check"></i> RETURN</button>
-        <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+        <button type="submit" class="btn btn-primary btn-lg" ><i class="fa fa-check"></i> RETURN</button>
       </div>
     </div>
   </div>

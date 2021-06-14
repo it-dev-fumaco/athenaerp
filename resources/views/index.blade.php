@@ -152,7 +152,7 @@
 												<div class="info-box">
 													<span class="info-box-icon bg-teal" style="width: 30%;"><i class="fas fa-truck"></i></span>
 													<div class="info-box-content text-truncate d-inline-block">
-														<span class="info-box-text font-weight-bold text-uppercase">Picking / For Delivery</span>
+														<span class="info-box-text font-weight-bold text-uppercase">Deliveries</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
 																<h3 class="custom-font m-0 p-1">

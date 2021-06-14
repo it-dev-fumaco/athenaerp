@@ -267,7 +267,8 @@ class MainController extends Controller
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Issue')
             ->whereIn('s_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.creation')
+            ->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample Item'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.creation', 'ste.issue_as')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -308,6 +309,7 @@ class MainController extends Controller
                 'status' => $d->status,
                 'balance' => $balance,
                 'sales_order_no' => $d->sales_order_no,
+                'issue_as' => $d->issue_as,
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
@@ -2431,8 +2433,11 @@ class MainController extends Controller
     }
 
     public function get_low_stock_level_items(Request $request){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
         $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
-            ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom')->get();
+            ->whereIn('ir.warehouse', $allowed_warehouses)->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty')->get();
 
         $low_level_stocks = [];
         foreach ($query as $a) {
@@ -2445,6 +2450,7 @@ class MainController extends Controller
                     'stock_uom' => $a->stock_uom,
                     'warehouse' => $a->warehouse,
                     'warehouse_reorder_level' => $a->warehouse_reorder_level,
+                    'warehouse_reorder_qty' => $a->warehouse_reorder_qty,
                     'actual_qty' => $actual_qty
                 ];
             }
@@ -2469,8 +2475,12 @@ class MainController extends Controller
     }
 
     public function get_recently_added_items(){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
         $q = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->whereIn('default_warehouse', $allowed_warehouses)
             ->orderBy('creation', 'desc')->limit(5)->get();
 
         $list = [];
@@ -2488,11 +2498,15 @@ class MainController extends Controller
     }
 
     public function invAccuracyChart($year){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
         $chart_data = [];
         $months = ['0', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         $month_no = $year == date('Y') ? date('m') : 12;
         for ($i = 1; $i <= $month_no; $i++) {
             $inv_audit = DB::table('tabMonthly Inventory Audit')
+                ->whereIn('warehouse', $allowed_warehouses)
                 ->select('name', 'item_classification', 'average_accuracy_rate', 'warehouse', 'percentage_sku')
                 ->whereYear('from', $year)->whereMonth('from', $i)
                 ->where('docstatus', '<', 2)->get();

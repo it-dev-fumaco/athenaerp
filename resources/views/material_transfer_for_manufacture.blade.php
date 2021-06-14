@@ -61,7 +61,7 @@
                     <col style="width: 10%;">
                     <thead>
                       <tr>
-                        <th scope="col" class="text-center">Transaction</th>
+                        <th scope="col" class="text-center">Production Order</th>
                         <th scope="col" class="text-center">Item Description</th>
                         <th scope="col" class="text-center">Qty</th>
                         <th scope="col" class="text-center">Ref. No.</th>

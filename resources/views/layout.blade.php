@@ -115,7 +115,7 @@
 				</a>
 				<a class="btn btn-app bg-teal" href="/picking_slip">
 				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
-				  <i class="fas fa-truck"></i> Picking Slips
+				  <i class="fas fa-truck"></i> Deliveries
 				</a>
 				<a class="btn btn-app bg-orange" href="/replacements">
 				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
@@ -343,7 +343,7 @@
 												</div>
 											</div>
 										</div>
-										<div class="col-md-5 mt-2">
+										<div class="col-md-4 mt-2">
 											<dl>
 												<dt>Reference No:</dt>
 												<dd class="ref_no"></dd>
@@ -351,10 +351,10 @@
 												<dd class="status d-none"></dd>
 											</dl>
 										</div>
-										<div class="col-md-7 mt-2">
+										<div class="col-md-8 mt-2">
 											<dl>
-												<dt class="d-none">Requested by:</dt>
-												<dd class="owner d-none"></dd>
+												<dt>Requested by:</dt>
+												<dd class="owner"></dd>
 												<dt class="pt-2">Remarks:</dt>
 												<dd>
 													<textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks" id="remarks"></textarea>
@@ -367,7 +367,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
 						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK OUT</button>
 					</div>
 				</div>
@@ -619,7 +619,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
 						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> SAVE</button>
 					</div>
 				</div>
@@ -710,7 +710,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
 						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> UPDATE</button>
 					</div>
 				</div>
@@ -732,7 +732,7 @@
 						<h5 class="text-center">Cancel Stock Reservation No. <span class="font-weight-bold reservation-id">-</span>?</h5>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
 						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CONFIRM</button>
 					</div>
 				</div>
