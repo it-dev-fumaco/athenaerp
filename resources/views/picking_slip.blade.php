@@ -256,8 +256,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> CHECK OUT</button>
-                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+                  <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+                  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK OUT</button>
                 </div>
             </div>
         </div>

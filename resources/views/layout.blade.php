@@ -324,12 +324,12 @@
 										</div>
 										<div class="col-md-12">
 											<div class="row">
-												<div class="col-md-5 mt-3">
+												<div class="col-md-4 mt-3">
 													<a class='sample item_image_link' data-height='720' data-lighter='samples/sample-01.jpg' data-width='1280' href="#">
 														<img src="{{ asset('storage/icon/no_img.png') }}" style="width: 100%;" class="item_image">
 													</a>
 												</div>
-												<div class="col-md-7 mt-3">
+												<div class="col-md-8 mt-3">
 													<span class="item_code_txt d-block font-weight-bold"></span>
 													<p class="description"></p>
 													<dl>
@@ -347,14 +347,14 @@
 											<dl>
 												<dt>Reference No:</dt>
 												<dd class="ref_no"></dd>
-												<dt class="pt-2">Status:</dt>
-												<dd class="status"></dd>
+												<dt class="pt-2 d-none">Status:</dt>
+												<dd class="status d-none"></dd>
 											</dl>
 										</div>
 										<div class="col-md-7 mt-2">
 											<dl>
-												<dt>Requested by:</dt>
-												<dd class="owner"></dd>
+												<dt class="d-none">Requested by:</dt>
+												<dd class="owner d-none"></dd>
 												<dt class="pt-2">Remarks:</dt>
 												<dd>
 													<textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks" id="remarks"></textarea>
