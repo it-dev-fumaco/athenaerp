@@ -43,7 +43,7 @@
 									<div class="row">
 										<div class="col-md-6 p-1">
 												<div class="float-right form-group m-0 w-55" id="warehouse-filter-parent">
-													<select name="warehouse" id="warehouse-filter" class="form-control">
+													<select name="warehouse" id="warehouse-filter" class="form-control" style="width: 20000px; font-size: 20px !important;">
 														
 													</select>
 												  </div>
@@ -64,250 +64,114 @@
 									</div>
 								</div>
 							</div>
-							
-							
 						</div>
 						
-						<div class="card-body table-responsive p-0">
-						<!-- Column 1 -->
-							<table class="table table-sm table-bordered" id="item-list-table" style="width: 50% !important; display: inline-block !important; float: left !important;">
-								<!-- <col style="width: 15%;">
-								<col style="width: 45%;">
-								<col style="width: 32%;">
-								<col style="width: 8%;"> -->
-
-								<!-- <col style="width: 15%;"> -->
-								<!-- <col style="width: 100%;"> -->
-								<col style="width: 20%;">
-								<col style="width: 80%;">
-								<!-- <col style="width: 15%;"> -->
-
-								<thead class="bg-light">
-									<tr>
-										<!-- <th scope="col" class="text-center" style="font-size: 13px;">IMAGE</th> -->
-										<th scope="col"></th>
-										<th scope="col" class="text-center" style="font-size: 13px;">ITEM DESCRIPTION</th>
-										<!-- <th scope="col" class="text-center">STOCK LEVEL</th> -->
-										<!-- <th scope="col" class="text-center" style="font-size: 13px;">ACTION</th> -->
-									</tr>
-								</thead>
-								@forelse ($itemList1 as $row)
-								<tbody class="tbl-custom-hover">
-									<tr>
-										<!-- Image <td class="text-center align-middle" style="padding: 10px;">
-											@forelse ($row['item_image_paths'] as $item_image)
+						<div class="container-fluid"><!-- new table -->
+							<div class="row">
+							@forelse ($item_list as $row)
+								<div class="col-md-6" style="border: 1px solid #CDCDCD;">
+									<div class="col-md-3" style="display: inline-block; float: left; padding: 5px;">
+										@forelse ($row['item_image_paths'] as $item_image)
 											@php
-											$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
+												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-												<img src="{{ asset('storage/') }}{{ $img }}" class="img-thumbnail" width="200">
+												<img src="{{ asset('storage/') }}{{ $img }}" style="display:block">
 											</a>
-											@empty
+										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
 												<img src="{{ asset('storage/icon/no_img.png') }}" class="img-thumbnail" width="200">
 											</a>
-											@endforelse
-										 </td> -->
-										<td style="height: 400px; padding: 10px;">
-											<dl class="row">
-												<dd class="col-sm-12 text-center align-middle">
-													@forelse ($row['item_image_paths'] as $item_image)
-														@php
-															$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
-														@endphp
-														<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-															<img src="{{ asset('storage/') }}{{ $img }}" style="display:block">
-														</a>
-														@empty
-														<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-															<img src="{{ asset('storage/icon/no_img.png') }}" class="img-thumbnail" width="200">
-														</a>
-													@endforelse
-													<div style="margin: 1px;"><br/>
-														<a href="#" class="cLink view-item-details" data-item-code="{{ $row['name'] }}">
-															<div class="btn btn-primary">
-																<i class="fa fa-file"></i>
-															</div>
-														</a>
-														<a href="#" class="cLink" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-															<div class="btn btn-warning">
-																<i class="fa fa-qrcode"></i>
-															</div>
-														</a>
-													</div>
-												</dd>
-											</dl><!-- ! -->
-										</td><!-- ! -->	
-
-										<td><!-- ! -->
-											<dl class="row"><!-- ! -->
-												<dd class="col-sm-12 text-justify" style="font-size: 12px;">
-													<b>{{ $row['name'] }}</b> {!! $row['description'] !!}<br/>
-													<b>Item Classification</b> {{ $row['item_classification'] }}<br/>
-													<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }}
-												</dd>
-												<!-- <dt class="col-sm-4 pb-1">Item Classification</dt>
-												<dd class="col-sm-4 pb-1 m-0">{{ $row['item_classification'] }}</dd>
-												<dt class="col-sm-4 pb-1">Part No(s)</dt>
-												<dd class="col-sm-4 pb-1 m-0">{{ ($row['part_nos']) ? $row['part_nos'] : '-' }}</dd>
-												@forelse($row['item_inventory'] as $inv)
-												<dt class="col-sm-8 pb-1">{{ $inv['warehouse'] }}</dt>
-													<dd class="col-sm-4 pb-1 m-0">
-														<span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-													</dd>
-													@empty
-													<dd class="col-sm-12 pb-1 m-0 text-center">NO WAREHOUSE ASSIGNED</dd>
-												@endforelse -->
-												<dd class="col-sm-12" style="height: 10px;"></dd>
-												<dt class="col-sm-5 pb-1 qtyBorder boldTxt">&nbsp;Warehouse</dt>
-												<dt class="col-sm-3 pb-1 qtyBorder boldTxt">&nbsp;Reserved Qty</dt>
-												<dt class="col-sm-4 pb-1 qtyBorder boldTxt rightB">&nbsp;Available Qty</dt>
-												@forelse($row['item_inventory'] as $inv)
-													<dt class="col-sm-5 pb-1 qtyBorder">&nbsp;{{ $inv['warehouse'] }}</dt>
-													<dt class="col-sm-3 pb-1 qtyBorder text-center">&nbsp;{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</dt>
-													<dt class="col-sm-4 pb-1 m-0 qtyBorder rightB" style="padding: 5px;">
-														<span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 10px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-													</dt>
-													@empty
-													<dd class="col-sm-12 pb-1 m-0 text-center">NO WAREHOUSE ASSIGNED</dd>
-												@endforelse
-												<dd class="col-sm-12" style="height: 10px;"></dd>
-												
-												<!-- <dt class="col-sm-3 pb-1">Item Classification</dt>
-												<dd class="col-sm-9 pb-1 m-0">{{ $row['item_classification'] }}</dd>
-												<dt class="col-sm-3 pb-1">Part No(s)</dt>
-												<dd class="col-sm-9 pb-1 m-0">{{ ($row['part_nos']) ? $row['part_nos'] : '-' }}</dd> -->
-											</dl>
-										</td>
-
-										<!--<td class="text-center align-middle" style="padding: 1px;">
-											Original <a href="#" class="btn btn-app view-item-details bg-info" data-item-code="{{ $row['name'] }}">
-												<i class="fa fa-file"></i> Details
-											</a>
-											<a href="#" class="btn btn-app bg-warning" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-												<i class="fa fa-qrcode"></i> QR
-											</a> -->
-											<!-- <a href="#" class="cLink view-item-details" data-item-code="{{ $row['name'] }}">
-												<div class="detailsBtn actionBtn">
+										@endforelse
+										<div class="text-center" style="margin: 1px;"><br/>
+											<a href="#" class="cLink view-item-details" data-item-code="{{ $row['name'] }}">
+												<div class="btn btn-primary">
 													<i class="fa fa-file"></i>
-													<br/>Details
 												</div>
 											</a>
-											<br/><br/>
 											<a href="#" class="cLink" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-												<div class="qrBtn actionBtn">
+												<div class="btn btn-warning">
 													<i class="fa fa-qrcode"></i>
-													<br/>QR
 												</div>
-											</a> -->
-											<!-- <dd class="col-sm-3 text-center">
-												<a href="#" class="cLink view-item-details" data-item-code="{{ $row['name'] }}">
-													<div class="btn btn-primary" style="min-width: 80px; height: 80px; padding: 18px;">
-														<i class="fa fa-file"style="font-size: 18px;"><br/>Details</i>
-													</div>
-												</a>
-											</dd>
-											<dd class="col-sm-3 text-center">
-												<a href="#" class="cLink" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-													<div class="btn btn-warning" style="min-width: 90px; height: 80px; padding: 20px;">
-														<i class="fa fa-qrcode" style="font-size: 18px;"><br/>QR</i>
-													</div>
-												</a>
-											</dd>
-										</td> -->
-									</tr>
-								</tbody>
-								<tr class="nohover">
-									<td colspan="4">&nbsp;</td>
-								</tr>
-								@empty
-								<tr class="nohover">
-									<td colspan="4" class="text-center"><br><label style="font-size: 16pt;">No result(s) found.</label><br>&nbsp;</td>
-								</tr>
-								@endforelse
-							</table>
-							<!-- Column 1 -->
+											</a>
+										</div>	
+									</div>
+									<div class="col-md-9" style="display: inline-block; float: right; padding: 5px;">
+										<div class="col-md-12" style="padding: 5px;">
+											<span style="font-style: italic; font-size: 12px;">{{ $row['item_classification'] }}</span><br/>
+											<b>{{ $row['name'] }}</b> {!! $row['description'] !!}<br/>
+											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }}
+										</div>
+										<table class="table table-sm table-bordered">
+											<tr>
+												<th class="col-sm-6">Warehouse</th>
+												<th class="col-sm-3">Reserved Qty</th>
+												<th class="col-sm-3">Available Qty</th>
+											</tr>
+											@forelse($row['item_inventory'] as $inv)
+												<tr>
+													<td>{{ $inv['warehouse'] }}</td>
+													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
+													<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 10px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span></td>
+												</tr>
+											@empty
+												<tr>
+													<td class="col-sm-6 text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
+												</tr>
+											@endforelse
+										</table>
+										<div class="col-md-12"><!-- View Consignment Warehouse -->
+											@if($row['consignment_warehouse_count'] > 0)
+											<div class="text-center">
+												<a href="#" class="uppercase" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 12px;">View Consignment Warehouse</a>
+											</div>
 
-							<!-- Column 2 -->
-							<table class="table table-sm table-bordered" id="item-list-table" style="width: 50% !important; display: inline-block !important;">
-								<col style="width: 20%;">
-								<col style="width: 80%;">
-								<thead class="bg-light">
-									<tr>
-										<th scope="col" class="text-center" style="font-size: 13px;"></th>
-										<th scope="col" class="text-center" style="font-size: 13px;">ITEM DESCRIPTION</th>
-									</tr>
-								</thead>
-								@forelse ($itemList2 as $row2)
-								<tbody class="tbl-custom-hover">
-									<tr>
-										<td style="height: 400px; padding: 10px;">
-											<dl class="row">
-												<dd class="col-sm-12 text-center align-middle">
-													@forelse ($row2['item_image_paths'] as $item_image2)
-														@php
-															$img = ($item_image2->image_path) ? "/img/" . $item_image2->image_path : "/icon/no_img.png";
-														@endphp
-														<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row2['name'] }}" data-title="{{ $row2['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-															<img src="{{ asset('storage/') }}{{ $img }}" style="display:block">
-														</a>
-														@empty
-														<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row2['name'] }}" data-title="{{ $row2['name'] }}">
-															<img src="{{ asset('storage/icon/no_img.png') }}" class="img-thumbnail" width="200">
-														</a>
-													@endforelse
-													<div style="margin: 1px;"><br/>
-														<a href="#" class="cLink view-item-details" data-item-code="{{ $row2['name'] }}">
-															<div class="btn btn-primary">
-																<i class="fa fa-file"></i>
-															</div>
-														</a>
-														<a href="#" class="cLink" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row2['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-															<div class="btn btn-warning">
-																<i class="fa fa-qrcode"></i>
-															</div>
-														</a>
+											<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+												<div class="modal-dialog" role="document">
+													<div class="modal-content">
+														<div class="modal-header">
+															<h4 class="modal-title">{{ $row['name'] }}</h4>
+															<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+														</div>
+														<form></form>
+														<div class="modal-body">
+															<table class="table table-hover m-0">
+																<col style="width: 70%;">
+																<col style="width: 30%;">
+																<tr>
+																	<th class="text-center">Warehouse</th>
+																	<th class="text-center">Available Qty</th>
+																</tr>
+																@forelse($row['consignment_warehouses'] as $con)
+																<tr>
+																	<td>{{ $con['warehouse'] }}</td>
+																	<td class="text-center">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</td>
+																</tr>
+																@empty
+																<tr>
+																	<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																</tr>
+																@endforelse
+															</table>
+														</div>
+														<div class="modal-footer">
+															<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+														</div>
 													</div>
-												</dd>
-											</dl>
-										</td>
+												</div>
+											</div>
+											@endif
+										</div>
+									</div><!-- View Consignment Warehouse -->
+								</div>
+							@empty
+								<div class="col-md-12 text-center" style="padding: 25px;">
+									<h5>No result(s) found.</h5>
+								</div>
+							@endforelse
+							</div>
+						</div><!-- new table -->
 
-										<td>
-											<dl class="row">
-												<dd class="col-sm-12 text-justify" style="font-size: 12px;">
-													<b>{{ $row2['name'] }}</b> {!! $row2['description'] !!}<br/>
-													<b>Item Classification</b> {{ $row2['item_classification'] }}<br/>
-													<b>Part No(s)</b> {{ ($row2['part_nos']) ? $row2['part_nos'] : '-' }}
-												</dd>
-												<dd class="col-sm-12" style="height: 10px;"></dd>
-												<dt class="col-sm-5 pb-1 qtyBorder boldTxt">&nbsp;Warehouse</dt>
-												<dt class="col-sm-3 pb-1 qtyBorder boldTxt">&nbsp;Reserved Qty</dt>
-												<dt class="col-sm-4 pb-1 qtyBorder boldTxt rightB">&nbsp;Available Qty</dt>
-												@forelse($row2['item_inventory'] as $inv2)
-													<dt class="col-sm-5 pb-1 qtyBorder">&nbsp;{{ $inv2['warehouse'] }}</dt>
-													<dt class="col-sm-3 pb-1 qtyBorder text-center">&nbsp;{{ $inv2['reserved_qty'] * 1 }}  {{ $inv2['stock_uom'] }}</dt>
-													<dt class="col-sm-4 pb-1 m-0 qtyBorder rightB" style="padding: 5px;">
-														<span class="badge badge-{{ ($inv2['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 10px; margin: 0 auto;">{{ $inv2['available_qty'] * 1 . ' ' . $inv2['stock_uom'] }}</span>
-													</dt>
-													@empty
-													<dd class="col-sm-12 pb-1 m-0 text-center">NO WAREHOUSE ASSIGNED</dd>
-												@endforelse
-												<dd class="col-sm-12" style="height: 10px;"></dd>
-											</dl>
-										</td>
-									</tr>
-								</tbody>
-								<tr class="nohover">
-									<td colspan="4">&nbsp;</td>
-								</tr>
-								@empty
-								<tr class="nohover">
-									<td colspan="4" class="text-center"><br><label style="font-size: 16pt;">No result(s) found.</label><br>&nbsp;</td>
-								</tr>
-								@endforelse
-							</table>
-							<!-- Column 2 -->	
-						</div>
 						<div class="ml-3 clearfix" style="font-size: 16pt; display: block;">
 							{{ $items->links() }}
 						</div>
@@ -321,7 +185,7 @@
 
 <style>
 	.itemClassContainer{
-		min-height: 100px;
+		min-height: 1px;
 		overflow: auto;
 		white-space: nowrap;
 	}
@@ -391,7 +255,6 @@
 		border-bottom: 1px solid #DEE2E6;
 		border-right: 1px solid #DEE2E6;
 		font-weight: normal;
-		padding: 2px;
 	}
 
 	.rightB{
