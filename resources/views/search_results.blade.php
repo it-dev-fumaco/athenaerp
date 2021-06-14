@@ -76,7 +76,7 @@
 												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-												<img src="{{ asset('storage/') }}{{ $img }}" style="display:block" width="200">
+												<img src="{{ asset('storage/') }}{{ $img }}" style="display:block;" width="150">
 											</a>
 										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
@@ -112,7 +112,7 @@
 												<tr>
 													<td>{{ $inv['warehouse'] }}</td>
 													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-													<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 10px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span></td>
+													<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 13px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span></td>
 												</tr>
 											@empty
 												<tr>
@@ -298,6 +298,10 @@
 	.cLink{
 		text-decoration: none !important;
 		text-transform: none !important;
+	}
+
+	.select2-selection{
+		width: 300px !important;
 	}
 
 	.tbl-custom-hover:hover,
