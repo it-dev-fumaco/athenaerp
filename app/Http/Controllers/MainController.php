@@ -30,9 +30,25 @@ class MainController extends Controller
         $search_str = explode(' ', $request->searchString);
 
         // $itemClass = DB::table('tabItem')->select('item_classification')->distinct('created_at')->get(); // Shows all classification
-        $itemClass = DB::table('tabItem')->select('item_classification')->where('description', 'LIKE', "%".$request->searchString."%" )->orderby('item_classification','asc')->distinct('created_at')->get();
-        $getFirst = $itemClass->keys()->first();
-        $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
+        // $itemClass = DB::table('tabItem')->select('item_classification')->where('description', 'LIKE', "%".$request->searchString."%" )->orWhere('name', "%".$request->searchString."%")->orderby('item_classification','asc')->distinct('created_at')->get();
+        $itemClass = DB::table('tabItem')->select('item_classification')
+            ->where('description', 'LIKE', "%".$request->searchString."%" )
+            ->orWhere('name', 'LIKE', "%".$request->searchString."%")
+            ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
+            ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
+            ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
+            ->orderby('item_classification','asc')
+            ->distinct('created_at')
+            ->get();
+        // $getFirst = $itemClass->keys()->first();
+        // $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
+        
+        $itemClassCount = count($itemClass);
+
+        if($itemClassCount > 3){
+            $getFirst = $itemClass->keys()->first();
+            $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
+        }
 
         $items = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
@@ -127,13 +143,12 @@ class MainController extends Controller
 
         }
 
-        $count = count($item_list);
-        $half = $count/2;
-        $itemList1 = array_slice($item_list, 0, $half);
-        $itemList2 = array_slice($item_list, $half);
+        // $count = count($item_list);
+        // $half = $count/2;
+        // $itemList1 = array_slice($item_list, $half);
+        // $itemList2 = array_slice($item_list, 0, $half);
 
-        // return view('search_results', compact('item_list', 'items', 'itemClass'));
-        return view('search_results', compact('itemList1', 'itemList2', 'items', 'itemClass'));
+        return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
     public function count_ste_for_issue($purpose){
         $user = Auth::user()->frappe_userid;
