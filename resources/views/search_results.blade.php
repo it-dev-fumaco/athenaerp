@@ -135,7 +135,7 @@
 												<div class="modal-dialog" role="document">
 													<div class="modal-content">
 														<div class="modal-header">
-															<h4 class="modal-title">{{ $row['name'] }}</h4>
+															<h4 class="modal-title">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
 															<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 														</div>
 														<form></form>
@@ -150,7 +150,7 @@
 																@forelse($row['consignment_warehouses'] as $con)
 																<tr>
 																	<td>{{ $con['warehouse'] }}</td>
-																	<td class="text-center">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</td>
+																	<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
 																</tr>
 																@empty
 																<tr>
