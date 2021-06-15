@@ -136,8 +136,9 @@
                                 <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}">
                                     <div class="p-1 text-justify">
                                         <span class="font-weight-bold">{{ $a['item_code'] }}</span>
-                                        <small class="font-italic">{{ str_limit($a['description'], $limit = 130, $end = '...') }}</small>
-                                        {{-- <small class="d-block">Available Qty</small> <span class="badge badge-success">10 Piece(s)</span> --}}
+                                        <small class="font-italic">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
+                                        <br>
+                                        <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'danger' }}">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                     </div>
                                 </a>
                             </div>

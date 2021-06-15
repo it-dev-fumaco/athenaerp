@@ -1323,33 +1323,62 @@ class MainController extends Controller
 
         // get item images
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
-
-        $item_alternatives = [];
         // get item alternatives from production order item table in erp
-        $production_item_alternatives = DB::table('tabProduction Order Item')->where('item_alternative_for', $item_details->name)->get();
+        $item_alternatives = [];
+        $production_item_alternatives = DB::table('tabProduction Order Item')->where('item_alternative_for', $item_details->name)->where('item_code', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
         foreach($production_item_alternatives as $a){
             $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
 
-            $item_alternatives[] = [
-                'item_code' => $a->item_code,
-                'description' => $a->description,
-                'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null
-            ];
+            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+
+            if(count($item_alternatives) < 7){
+                $item_alternatives[] = [
+                    'item_code' => $a->item_code,
+                    'description' => $a->description,
+                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                    'actual_stocks' => $actual_stocks
+                ];
+            }
         }
 
         // get item alternatives based on parent item code
         if(count($item_alternatives) <= 0) {
-            $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->limit(5)->get();
+            $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
             foreach($q as $a){
                 $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
-    
-                $item_alternatives[] = [
-                    'item_code' => $a->item_code,
-                    'description' => $a->description,
-                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null
-                ];
+
+                $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+
+                if(count($item_alternatives) < 7){
+                    $item_alternatives[] = [
+                        'item_code' => $a->item_code,
+                        'description' => $a->description,
+                        'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                        'actual_stocks' => $actual_stocks
+                    ];
+                }
             }
         }
+
+        if(count($item_alternatives) <= 0) {
+            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+            foreach($q as $a){
+                $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+
+                $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+
+                if(count($item_alternatives) < 7){
+                    $item_alternatives[] = [
+                        'item_code' => $a->item_code,
+                        'description' => $a->description,
+                        'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                        'actual_stocks' => $actual_stocks
+                    ];
+                }
+            }
+        }
+
+        $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
         return view('tbl_item_details', compact('item_details', 'item_attributes', 'stock_level', 'item_images', 'item_alternatives'));
     }
