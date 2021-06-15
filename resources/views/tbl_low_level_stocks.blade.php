@@ -1,19 +1,19 @@
 <table class="table table-bordered">
-    <col style="width: 35%;">
+    <col style="width: 33%;">
     <col style="width: 10%;">
     <col style="width: 15%;">
-    <col style="width: 10%;">
-    <col style="width: 10%;">
+    <col style="width: 11%;">
+    <col style="width: 11%;">
     <col style="width: 10%;">
     <col style="width: 10%;">
     <thead>
-        <th class="text-center">Item Description</th>
-        <th class="text-center">Stock UoM</th>
-        <th class="text-center">Warehouse</th>
-        <th class="text-center">Re-order Qty</th>
-        <th class="text-center">Min. Stock Qty</th>
-        <th class="text-center">Actual Qty</th>
-        <th class="text-center">Action</th>
+        <th class="text-center align-middle">Item Description</th>
+        <th class="text-center align-middle">Stock UoM</th>
+        <th class="text-center align-middle">Warehouse</th>
+        <th class="text-center align-middle p-1">Re-order Qty</th>
+        <th class="text-center align-middle p-1">Min. Stock Qty</th>
+        <th class="text-center align-middle">Actual Qty</th>
+        <th class="text-center align-middle">Action</th>
     </thead>
     <tbody>
         @forelse ($low_level_stocks as $n => $row)

@@ -20,10 +20,10 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
 												<a href="/returns" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-primary" style="width: 30%;"><i class="fas fa-undo"></i></span>
-													<div class="info-box-content">
-														<span class="info-box-text font-weight-bold text-uppercase">Returns</span>
+												<div class="info-box bg-primary p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-undo"></i></span>
+													<div class="info-box-content pt-1 pb-1">
+														<span class="info-box-text font-weight-bold text-uppercase">Sales Returns</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
 																<h3 class="custom-font m-0 p-1">
@@ -40,9 +40,9 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/production_to_receive" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-info" style="width: 30%;"><i class="far fa-check-circle"></i></span>
-													<div class="info-box-content">
+												<div class="info-box bg-info p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="far fa-check-circle"></i></span>
+													<div class="info-box-content pt-1 pb-1">
 														<span class="info-box-text font-weight-bold text-uppercase">Feedback</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -60,9 +60,9 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
 												<a href="/material_transfer" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-secondary" style="width: 30%;"><i class="fas fa-exchange-alt"></i></span>
-													<div class="info-box-content">
+												<div class="info-box bg-secondary p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-exchange-alt"></i></span>
+													<div class="info-box-content pt-1 pb-1">
 														<span class="info-box-text font-weight-bold text-uppercase">Internal Transfers</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -80,9 +80,9 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/receipts" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-maroon" style="width: 30%;"><i class="fas fa-boxes"></i></span>
-													<div class="info-box-content">
+												<div class="info-box bg-maroon p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-boxes"></i></span>
+													<div class="info-box-content pt-1 pb-1">
 														<span class="info-box-text font-weight-bold text-uppercase">PO Receipts</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -109,9 +109,9 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/material_transfer_for_manufacture" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-olive" style="width: 30%;"><i class="fas fa-tasks"></i></span>
-														<div class="info-box-content text-truncate d-inline-block">
+												<div class="info-box bg-olive p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-tasks"></i></span>
+														<div class="info-box-content text-truncate d-inline-block pt-1 pb-1">
 														<span class="info-box-text font-weight-bold text-uppercase"><span class="d-md-inline-block d-lg-none d-xl-inline-block">Production</span> Withdrawals</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -129,9 +129,9 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/material_issue" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-indigo" style="width: 30%;"><i class="fas fa-dolly"></i></span>
-													<div class="info-box-content text-truncate d-inline-block">
+												<div class="info-box bg-indigo p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-dolly"></i></span>
+													<div class="info-box-content pb-1 pt-1 text-truncate d-inline-block">
 														<span class="info-box-text font-weight-bold text-uppercase">Material Issue</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -149,9 +149,9 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/picking_slip" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-teal" style="width: 30%;"><i class="fas fa-truck"></i></span>
-													<div class="info-box-content text-truncate d-inline-block">
+												<div class="info-box bg-teal p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-truck"></i></span>
+													<div class="info-box-content pt-1 pb-1 text-truncate d-inline-block">
 														<span class="info-box-text font-weight-bold text-uppercase">Deliveries</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
@@ -169,9 +169,9 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/replacements" class="text-dark">
-												<div class="info-box">
-													<span class="info-box-icon bg-orange" style="width: 30%;"><i class="fas fa-retweet"></i></span>
-													<div class="info-box-content">
+												<div class="info-box bg-orange p-0">
+													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-retweet"></i></span>
+													<div class="info-box-content pt-1 pb-1">
 														<span class="info-box-text font-weight-bold text-uppercase">Order Replacement</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
