@@ -88,40 +88,6 @@
                         </div>
                     </div>
                 </div>
-                {{-- <div class="col-md-12">
-                    <div class="card-header border-bottom-0">
-                        <h3 class="card-title"><i class="fa fa-box-open"></i> Stock Level</h3>
-                    </div>
-                    <div class="box box-solid">
-                        <div class="box-header with-border">
-                            <div class="box-body table-responsive pr-4 pl-4">
-                                <table class="table table-striped table-bordered table-hover">
-                                    <thead>
-                                        <th scope="col" >Warehouse</th>
-                                        <th scope="col" class="text-center">Reserved Qty</th>
-                                        <th scope="col" class="text-center">Actual Qty</th>
-                                        <th scope="col" class="text-center">Available Qty</th>
-                                    </thead>
-                                    @forelse ($stock_level as $stock)
-                                    <tr>
-                                        <td>{{ $stock['warehouse'] }}</td>
-                                        <td class="text-center">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
-                                        <td class="text-center">{{ number_format((float)$stock['actual_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
-                                        <td class="text-center">
-                                            <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="2">No stocks.</td>
-                                    </tr>
-                                    @endforelse
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div> --}}
-        
             </div>
         </div>
     </div>
@@ -153,78 +119,33 @@
     <div class="col-md-12">
         <div class="card-header border-bottom-0">
             <h3 class="card-title"><i class="fas fa-filter"></i> Item Alternatives</h3>
-          </div>
+        </div>
           
         <div class="row">
+            @forelse($item_alternatives as $a)
             <div class="col-md-4">
                 <div class="card card-default">
-        
                     <div class="card-body p-0">
-                      <div class="col-12">
-                        <div class="d-flex flex-row">
-                            <div class="p-2">
-                                <a href="{{ asset('storage/img/1603270517-LC00319.jpg') }}" class="img-thumbnail">
-                                        <img src="{{ asset('storage/img/1603270517-LC00319.jpg') }}" class="img1-size-50 d-inline-block" width="100">
-                                </a>
+                        <div class="col-12">
+                            <div class="d-flex flex-row">
+                                <div class="p-2">
+                                    <a href="{{ asset('storage/img/1603270517-LC00319.jpg') }}" class="img-thumbnail">
+                                        <img src="{{ asset('storage/img/1603270517-LC00319.jpg') }}" class="d-inline-block" width="100">
+                                    </a>
+                                </div>
+                                <div class="p-2">
+                                    <span class="d-block font-weight-bold">{{ $a['item_code'] }}</span>
+                                    <small class="d-block font-italic">{{ $a['description'] }}</small>
+                                    <small class="d-inline-block">Available Qty</small> <span class="badge badge-success">10 Piece(s)</span>
+                                </div>
                             </div>
-                            <div class="p-2">
-                                <span class="d-block font-weight-bold">LR00124</span>
-                            <small class="d-block font-italic">PHILIPS LED DIMMABLE, LED, 12-75W, 2200K-2700K, 25000h</small>
-                            <small class="d-inline-block">Available Qty</small> <span class="badge badge-success">10 Piece(s)</span>
-                            </div>
-                          </div>
-                      </div>
-                     
+                        </div>
                     </div>
-                    <!-- /.card-body -->
-                  </div>
+                </div>
             </div>
-            <div class="col-md-4">
-                <div class="card card-default">
-        
-                    <div class="card-body p-0">
-                      <div class="col-12">
-                        <div class="d-flex flex-row">
-                            <div class="p-2">
-                                <a href="{{ asset('storage/img/1603776110-LC00317.jpg') }}" class="img-thumbnail">
-                                        <img src="{{ asset('storage/img/1603776110-LC00317.jpg') }}" class="1img-size-50 d-inline-block" width="100">
-                                </a>
-                            </div>
-                            <div class="p-2">
-                                <span class="d-block font-weight-bold">LR00317</span>
-                            <small class=" d-block font-italic">BRILLIANT MR16, 7.5w, 2700K, 85%, 460lm, 1000h, 12v, 36D</small>
-                            <small class="d-inline-block">Available Qty</small> <span class="badge badge-success">110 Piece(s)</span>
-                            </div>
-                          </div>
-                      </div>
-                     
-                    </div>
-                    <!-- /.card-body -->
-                  </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card card-default">
-        
-                    <div class="card-body p-0">
-                      <div class="col-12">
-                        <div class="d-flex flex-row">
-                            <div class="p-2">
-                                <a href="{{ asset('storage/img/1603270791-LC00318.jpg') }}" class="img-thumbnail">
-                                        <img src="{{ asset('storage/img/1603270791-LC00318.jpg') }}" class="img1-size-50 d-inline-block" width="100">
-                                </a>
-                            </div>
-                            <div class="p-2">
-                                <span class="d-block font-weight-bold">LR00320</span>
-                            <small class="d-block font-italic">Soraa Vivid 2, 7.5w, 10D, 4000K, 1000h, 380lm, 12v, MR16</small>
-                            <small class="d-inline-block">Available Qty</small> <span class="badge badge-success">102 Piece(s)</span>
-                            </div>
-                          </div>
-                      </div>
-                     
-                    </div>
-                    <!-- /.card-body -->
-                  </div>
-            </div>
+            @empty
+                
+            @endforelse
         </div>
     </div>
 </div>

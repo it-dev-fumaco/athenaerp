@@ -1300,8 +1300,9 @@ class MainController extends Controller
 
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->get();
 
-        $item_inventory = DB::table('tabBin')->where('item_code', $item_code)->get(); 
+        // get item inventory stock list
         $stock_level = [];
+        $item_inventory = DB::table('tabBin')->where('item_code', $item_code)->get(); 
         foreach ($item_inventory as $value) {
             $reserved_qty = StockReservation::where('item_code', $value->item_code)
                 ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
@@ -1317,6 +1318,7 @@ class MainController extends Controller
             ];
         }
 
+        // get item images
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
 
         $item_alternatives = [];
@@ -1325,7 +1327,7 @@ class MainController extends Controller
         foreach($production_item_alternatives as $a){
             $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
 
-            $item_alternatives = [
+            $item_alternatives[] = [
                 'item_code' => $a->item_code,
                 'description' => $a->description,
                 'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null
@@ -1333,12 +1335,20 @@ class MainController extends Controller
         }
 
         // get item alternatives based on parent item code
+        if(count($item_alternatives) <= 0) {
+            $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->limit(5)->get();
+            foreach($q as $a){
+                $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+    
+                $item_alternatives[] = [
+                    'item_code' => $a->item_code,
+                    'description' => $a->description,
+                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null
+                ];
+            }
+        }
 
-        return $item_alternatives;
-
-        return $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->limit(5)->get();
-
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'stock_level', 'item_images'));
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'stock_level', 'item_images', 'item_alternatives'));
     }
 
     public function get_athena_transactions($item_code){
