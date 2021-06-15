@@ -377,7 +377,7 @@
 	@endif
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
-		<div class="modal-dialog" role="document" style="min-width: 80%;">
+		<div class="modal-dialog" role="document" style="min-width: 90%;">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title">Item Inquiry</h4>
@@ -390,9 +390,9 @@
 					<div class="row">
 						<div class="col-md-12">
 							<div class="nav-tabs-custom">
-								<ul class="nav nav-tabs" role="tablist">
+								<ul class="nav nav-tabs" id="item-tabs" role="tablist">
 									<li class="nav-item">
-										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">Overview</a>
+										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">Item Info</a>
 									</li>
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_2" role="tab" aria-controls="custom-tabs-three-2" aria-selected="false">Athena Transactions</a>
@@ -1409,6 +1409,9 @@
 				e.preventDefault();
 
 				var item_code = $(this).data('item-code');
+				var item_classification = $(this).data('item-classification');
+
+				$('#view-item-details-modal .modal-title').text(item_classification);
 
 				view_item_details(item_code);
 			});

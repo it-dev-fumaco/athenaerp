@@ -1,9 +1,6 @@
 <div class="row p-1 bg-white">
     <div class="col-md-8">
-        <div class="box box-solid">
-            <div class="box-header">
-                <h4 class="box-title"><i class="fas fa-info-circle"></i> Item Info</h4>
-            </div>
+        <div class="box box-solid mt-2">
             <div class="row">
                 @php
                     $img_1 = (array_key_exists(0, $item_images)) ? '/img/' . $item_images[0] : '/icon/no_img.png';
@@ -14,24 +11,24 @@
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-md-12">
-                            <a href="{{ asset('storage/') }}{{ $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <img src="{{ asset('storage/') }}{{ $img_1 }}" class="img-thumbnail">
+                            <a href="{{ asset('storage/') .''. $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <img src="{{ asset('storage/') .''. $img_1 }}" class="img-thumbnail">
                             </a>
                         </div>
                         <div class="col-md-4 mt-2">
-                            <a href="{{ asset('storage/') }}{{ $img_2 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <img src="{{ asset('storage/') }}{{ $img_2 }}" class="img-thumbnail" style="margin: 1px;">
+                            <a href="{{ asset('storage/') .''. $img_2 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <img src="{{ asset('storage/') .''. $img_2 }}" class="img-thumbnail" style="margin: 1px;">
                             </a>
                         </div>
                         <div class="col-md-4 mt-2">
-                            <a href="{{ asset('storage/') }}{{ $img_3 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <img src="{{ asset('storage/') }}{{ $img_3 }}" class="img-thumbnail" style="margin: 1px;">
+                            <a href="{{ asset('storage/') .''. $img_3 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <img src="{{ asset('storage/') .''. $img_3 }}" class="img-thumbnail" style="margin: 1px;">
                             </a>
                         </div>
                         <div class="col-md-4 mt-2">
-                            <a href="{{ asset('storage/') }}{{ $img_4 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                            <a href="{{ asset('storage/') .''. $img_4 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 <div class="text-white">
-                                    <img src="{{ asset('storage/') }}{{ $img_4 }}" class="img-thumbnail" style="margin: 1px;">
+                                    <img src="{{ asset('storage/') .''. $img_4 }}" class="img-thumbnail" style="margin: 1px;">
                                     @if(count($item_images) > 4)
                                     <div class="card-img-overlay text-center">
                                         <h5 class="card-title m-1 font-weight-bold">MORE</h5>
@@ -47,14 +44,8 @@
                 </div>
                 <div class="col-md-9">
                     <dl>
-                        <dt style="font-size: 15pt;" id="selected-item-code">{{ $item_details->name }} {{ $item_details->brand }}</dt>
+                        <dt style="font-size: 15pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                         <dd style="font-size: 13pt;" class="text-justify mb-2">{{ $item_details->description }}</dd>
-                        {{-- <dt>Classification</dt>
-                        <dd>{{ $item_details->item_classification }}</dd> --}}
-                        {{-- <dt>Brand</dt>
-                        <dd>{{ $item_details->brand }}</dd> --}}
-                        {{-- <dt>Stock UoM</dt>
-                        <dd>{{ $item_details->stock_uom }}</dd> --}}
                     </dl>
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0"><i class="fa fa-box-open"></i> Stock Level</h3>
@@ -72,15 +63,15 @@
                                     @forelse ($stock_level as $stock)
                                     <tr>
                                         <td class="p-1">{{ $stock['warehouse'] }}</td>
-                                        <td class="text-center p-1">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
-                                        <td class="text-center p-1">{{ number_format((float)$stock['actual_qty'], 2, '.', '') }} {{ $stock['stock_uom'] }}</td>
+                                        <td class="text-center p-1">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
+                                        <td class="text-center p-1">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                         <td class="text-center p-1">
                                             <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="2">No stocks.</td>
+                                        <td colspan="4" class="text-center">No Stock(s)</td>
                                     </tr>
                                     @endforelse
                                 </table>
@@ -109,7 +100,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="2">No item attributes.</td>
+                        <td colspan="2" class="text-center">No Item Attribute(s)</td>
                     </tr>
                     @endforelse
                 </table>
@@ -120,31 +111,44 @@
         <div class="card-header border-bottom-0">
             <h3 class="card-title"><i class="fas fa-filter"></i> Item Alternatives</h3>
         </div>
-          
-        <div class="row">
+
+        <style>
+        .custom-body {
+            min-width: 406px;
+            max-width: 406px;
+        }
+        </style>
+        <div class="d-flex flex-row flex-nowrap overflow-auto">
             @forelse($item_alternatives as $a)
-            <div class="col-md-4">
+            <div class="custom-body m-1">
                 <div class="card card-default">
                     <div class="card-body p-0">
                         <div class="col-12">
                             <div class="d-flex flex-row">
-                                <div class="p-2">
-                                    <a href="{{ asset('storage/img/1603270517-LC00319.jpg') }}" class="img-thumbnail">
-                                        <img src="{{ asset('storage/img/1603270517-LC00319.jpg') }}" class="d-inline-block" width="100">
+                                <div class="pt-2 pb-2 pr-1 pl-1">
+                                    @php
+                                        $img = ($a['item_alternative_image']) ? '/img/' . $a['item_alternative_image'] : '/icon/no_img.png';
+                                    @endphp
+                                    <a href="{{ asset('storage') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
+                                        <img src="{{ asset('storage') . '' . $img }}" class="rounded" width="80" height="80">
                                     </a>
                                 </div>
-                                <div class="p-2">
-                                    <span class="d-block font-weight-bold">{{ $a['item_code'] }}</span>
-                                    <small class="d-block font-italic">{{ $a['description'] }}</small>
-                                    <small class="d-inline-block">Available Qty</small> <span class="badge badge-success">10 Piece(s)</span>
-                                </div>
+                                <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}">
+                                    <div class="p-1 text-justify">
+                                        <span class="font-weight-bold">{{ $a['item_code'] }}</span>
+                                        <small class="font-italic">{{ str_limit($a['description'], $limit = 130, $end = '...') }}</small>
+                                        {{-- <small class="d-block">Available Qty</small> <span class="badge badge-success">10 Piece(s)</span> --}}
+                                    </div>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             @empty
-                
+            <div class="col-md-12">
+                <h5 class="text-center">No Item Alternative(s)</h5>
+            </div>
             @endforelse
         </div>
     </div>

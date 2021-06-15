@@ -27,7 +27,7 @@
 								</div>
 							</a>
  						@endforeach
-					</div>	
+					</div>
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
 							<div class="row">
@@ -84,7 +84,7 @@
 											</a>
 										@endforelse
 										<div class="text-center" style="margin: 1px;"><br/>
-											<a href="#" class="cLink view-item-details" data-item-code="{{ $row['name'] }}">
+											<a href="#" class="cLink view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 												<div class="btn btn-primary">
 													<i class="fa fa-file"></i>
 												</div>
