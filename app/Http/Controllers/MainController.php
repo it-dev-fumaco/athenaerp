@@ -148,8 +148,6 @@ class MainController extends Controller
 
         // $default_wh = DB::table('tabItem')->select('default_warehouse')->addselect('name')->get();
 
-        // $lastTransaction = DB::table('tabItem')->select('')
-
         return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
     public function count_ste_for_issue($purpose){
@@ -2486,7 +2484,8 @@ class MainController extends Controller
         $allowed_warehouses = $this->user_allowed_warehouse($user);
         
         $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
-            ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty')->get();
+            ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty')
+            ->whereIn('default_warehouse', $allowed_warehouses)->get();
 
         $low_level_stocks = [];
         foreach ($query as $a) {
