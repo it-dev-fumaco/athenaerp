@@ -45,7 +45,7 @@ class MainController extends Controller
         
         $itemClassCount = count($itemClass);
 
-        if($itemClassCount > 3){
+        if($itemClassCount >= 2){
             $getFirst = $itemClass->keys()->first();
             $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
         }
@@ -136,6 +136,7 @@ class MainController extends Controller
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
+                'default_warehouse' => $row->default_warehouse
             ];
 
         }
@@ -144,6 +145,8 @@ class MainController extends Controller
         // $half = $count/2;
         // $itemList1 = array_slice($item_list, $half);
         // $itemList2 = array_slice($item_list, 0, $half);
+
+        // $default_wh = DB::table('tabItem')->select('default_warehouse')->addselect('name')->get();
 
         return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
@@ -2509,6 +2512,8 @@ class MainController extends Controller
     public function get_recently_added_items(){
         $q = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->whereIn('default_warehouse', $allowed_warehouses)
+            // ->whereIn('parent_warehouse', $allowed_warehouses)
             ->orderBy('creation', 'desc')->limit(5)->get();
 
         $list = [];

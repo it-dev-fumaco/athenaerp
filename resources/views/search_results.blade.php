@@ -10,7 +10,7 @@
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="container-fluid itemClassContainer">
-						<input type="text" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden="">
+						<input type="button" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden="">
 						@foreach($itemClass as $itemClass)
 							<!-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass])) }}"> 
 							<a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass]) }}"> - array	 -->
@@ -22,7 +22,7 @@
 									<div class="classPanelName">
 										<!-- <i>{{substr(Illuminate\Support\Str::limit($itemClass->item_classification,15), 4)}}</i> Ellipsis  -->
 										<!-- <i>{{substr($itemClass->item_classification, 4)}}</i> -->
-										<input type="text" class="classPanelBtn" name="text[]" value="{{substr($itemClass->item_classification, 4)}}" readonly>
+										<input type="button" class="classPanelBtn bg-white" name="text[]" value="{{substr($itemClass->item_classification, 4)}}" readonly>
 									</div>
 								</div>
 							</a>
@@ -69,14 +69,14 @@
 						<div class="container-fluid"><!-- new table -->
 							<div class="row">
 							@forelse ($item_list as $row)
-								<div class="col-md-6" style="border: 1px solid #CDCDCD;">
-									<div class="col-md-3" style="display: inline-block; float: left; padding: 5px;">
+								<div class="col-md-6 border border-color-secondary">
+									<div class="col-md-3 display-inline-block float-left p-2 text-center">
 										@forelse ($row['item_image_paths'] as $item_image)
 											@php
 												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-												<img src="{{ asset('storage/') }}{{ $img }}" style="display:block;" width="150">
+												<img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" width="150">
 											</a>
 										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
@@ -96,21 +96,26 @@
 											</a>
 										</div>	
 									</div>
-									<div class="col-md-9" style="display: inline-block; float: right; padding: 5px;">
-										<div class="col-md-12" style="padding: 5px;">
-											<span style="font-style: italic; font-size: 12px;">{{ $row['item_classification'] }}</span><br/>
-											<b>{{ $row['name'] }}</b> {!! $row['description'] !!}<br/>
-											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }}
+									<div class="col-md-9 display-inline-block float-right p-2">
+										<div class="col-md-12 p-2">
+											<span class="font-italic" style="font-size: 12px;">{{ $row['item_classification'] }}</span><br/>
+											<span style="font-size: 14px;"><b>{{ $row['name'] }}</b> {!! $row['description'] !!}</span><br/>
+											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }} 
 										</div>
 										<table class="table table-sm table-bordered">
 											<tr>
-												<th class="col-sm-6">Warehouse</th>
-												<th class="col-sm-3">Reserved Qty</th>
-												<th class="col-sm-3">Available Qty</th>
+												<th class="col-sm-6 text-center">Warehouse</th>
+												<th class="col-sm-3 text-center">Reserved Qty</th>
+												<th class="col-sm-3 text-center">Available Qty</th>
 											</tr>
 											@forelse($row['item_inventory'] as $inv)
 												<tr>
-													<td>{{ $inv['warehouse'] }}</td>
+													<td class="text-center">
+														{{ $inv['warehouse'] }}
+														@if($inv['warehouse'] == $row['default_warehouse'])
+															<span class="font-italic"><small>- default</small></span>
+														@endif
+													</td>
 													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
 													<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span></td>
 												</tr>
@@ -123,7 +128,7 @@
 										<div class="col-md-12"><!-- View Consignment Warehouse -->
 											@if(count($row['consignment_warehouses']) > 0)
 											<div class="text-center">
-												<a href="#" class="uppercase" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 12px;">View Consignment Warehouse</a>
+												<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 12px;">View Consignment Warehouse</a>
 											</div>
 
 											<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
@@ -201,7 +206,7 @@
 
 	.classPanel{
 		min-width: 150px; 
-		height: 50px; 
+		height: 58px; 
 		display: inline-block; 
 		margin: 5px; 
 		background-color: white;
@@ -212,7 +217,7 @@
 	.classPanelAbbr{
 		background-color: #001F3F !important;
 		min-width: 50px;
-		height: 53px; 
+		height: 55px; 
 		display: inline-block; 
 		color: #fff; 
 		padding: 11px;
@@ -225,7 +230,7 @@
 
 	.classPanelName{
 		min-width: 100px;
-		min-height: 50px;
+		min-height: 60px;
 		display: inline-block;
 		text-align: center;
 	}
@@ -236,7 +241,7 @@
 		border-top-right-radius: 5px;
 		border-bottom-right-radius: 5px;
 		min-height: 50px;
-		min-width: 100px !important;
+		min-width: 150px !important;
 		display: inline-block !important;
 		cursor: pointer;
 		transition: .4s;
@@ -250,58 +255,9 @@
 		outline: none !important;
 	}
 
-	.qtyBorder{
-		/* border-top: 1px solid #DEE2E6; */
-		border-bottom: 1px solid #DEE2E6;
-		border-right: 1px solid #DEE2E6;
-		font-weight: normal;
-	}
-
-	.rightB{
-		border-right: none;
-	}
-
-	.boldTxt{
-		font-weight: 700;
-	}
-
-	/* .actionBtn{
-		width: 50px;
-		height: 50px !important;
-		padding: 10px;
-		font-size: 10px;
-		margin: 0 auto;
-		border-radius: 5px;
-		text-transform: none !important;
-		text-decoration: none !important;
-		transition: .4s;
-	}
-
-	.detailsBtn{
-		color: #fff;
-		background-color: #17A2B8;
-	}
-
-	.detailsBtn:hover{
-		background-color: #0A7484;
-	}
-
-	.qrBtn{
-		color: #000;
-		background-color: #FFC107;
-	}
-
-	.qrBtn:hover{
-		background-color: #C99C13;
-	} */
-
 	.cLink{
 		text-decoration: none !important;
 		text-transform: none !important;
-	}
-
-	.select2-selection{
-		width: 300px !important;
 	}
 
 	.tbl-custom-hover:hover,
@@ -319,7 +275,7 @@
 <script>
 	function activeBtn(){
 		var values = [];
-		$('input:text').each(
+		$('input:button').each(
 			function() {
 				if (values.indexOf(this.value) >= 0) {
 					$(this).css("box-shadow", "8px 1px 12px #001F3F");
