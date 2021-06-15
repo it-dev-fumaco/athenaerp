@@ -2510,10 +2510,12 @@ class MainController extends Controller
     }
 
     public function get_recently_added_items(){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
         $q = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
             ->whereIn('default_warehouse', $allowed_warehouses)
-            // ->whereIn('parent_warehouse', $allowed_warehouses)
             ->orderBy('creation', 'desc')->limit(5)->get();
 
         $list = [];
@@ -2523,6 +2525,7 @@ class MainController extends Controller
             $list[] = [
                 'item_code' => $row->item_code,
                 'description' => $row->description,
+                'default_warehouse' => $row->default_warehouse, //CCCCC
                 'image' => ($item_image_path) ? $item_image_path->image_path : null
             ];
         }
