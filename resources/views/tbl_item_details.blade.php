@@ -152,7 +152,7 @@
     </div>
     <div class="col-md-12">
         <div class="card-header border-bottom-0">
-            <h3 class="card-title"><i class="fa fa-box-open"></i> Item Alternatives</h3>
+            <h3 class="card-title"><i class="fas fa-filter"></i> Item Alternatives</h3>
           </div>
           
         <div class="row">

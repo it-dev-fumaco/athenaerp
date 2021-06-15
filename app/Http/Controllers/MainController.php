@@ -92,21 +92,19 @@ class MainController extends Controller
         $item_list = [];
         foreach ($items as $row) {
             $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $row->name)
-                ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'is_consignment_warehouse')->get();
+                ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
 
             $item_image_paths = DB::table('tabItem Images')->where('parent', $row->name)->get();
 
             $site_warehouses = [];
             $consignment_warehouses = [];
-            $consignment_warehouse_count = 0;
             foreach ($item_inventory as $value) {
                 $reserved_qty = StockReservation::where('item_code', $value->item_code)
                     ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
 
                 $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
-                $consignment_warehouse_count += $value->is_consignment_warehouse;
-                if($value->is_consignment_warehouse < 1) {
-                    $site_warehouses[] = [
+                if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
+                    $consignment_warehouses[] = [
                         'warehouse' => $value->warehouse,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $actual_qty,
@@ -114,7 +112,7 @@ class MainController extends Controller
                         'stock_uom' => $value->stock_uom,
                     ];
                 }else{
-                    $consignment_warehouses[] = [
+                    $site_warehouses[] = [
                         'warehouse' => $value->warehouse,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $actual_qty,
@@ -138,7 +136,6 @@ class MainController extends Controller
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
-                'consignment_warehouse_count' => $consignment_warehouse_count
             ];
 
         }
@@ -1319,6 +1316,25 @@ class MainController extends Controller
 
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
 
+        $item_alternatives = [];
+        // get item alternatives from production order item table in erp
+        $production_item_alternatives = DB::table('tabProduction Order Item')->where('item_alternative_for', $item_details->name)->get();
+        foreach($production_item_alternatives as $a){
+            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+
+            $item_alternatives = [
+                'item_code' => $a->item_code,
+                'description' => $a->description,
+                'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null
+            ];
+        }
+
+        // get item alternatives based on parent item code
+
+        return $item_alternatives;
+
+        return $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->limit(5)->get();
+
         return view('tbl_item_details', compact('item_details', 'item_attributes', 'stock_level', 'item_images'));
     }
 
@@ -2456,6 +2472,9 @@ class MainController extends Controller
             $actual_qty = $this->get_actual_qty($a->item_code, $a->warehouse);
 
             if($actual_qty <= $a->warehouse_reorder_level) {
+
+                $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+
                 $low_level_stocks[] = [
                     'item_code' => $a->item_code,
                     'description' => $a->description,
@@ -2463,7 +2482,8 @@ class MainController extends Controller
                     'warehouse' => $a->warehouse,
                     'warehouse_reorder_level' => $a->warehouse_reorder_level,
                     'warehouse_reorder_qty' => $a->warehouse_reorder_qty,
-                    'actual_qty' => $actual_qty
+                    'actual_qty' => $actual_qty,
+                    'image' => ($item_image_path) ? $item_image_path->image_path : null
                 ];
             }
         }

@@ -121,7 +121,7 @@
 											@endforelse
 										</table>
 										<div class="col-md-12"><!-- View Consignment Warehouse -->
-											@if($row['consignment_warehouse_count'] > 0)
+											@if(count($row['consignment_warehouses']) > 0)
 											<div class="text-center">
 												<a href="#" class="uppercase" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 12px;">View Consignment Warehouse</a>
 											</div>
