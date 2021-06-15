@@ -1454,6 +1454,7 @@ class MainController extends Controller
                 'ref_no' => $ref_no,
                 'date_modified' => $date_modified,
                 'session_user' => $session_user,
+                'posting_date' => $row->posting_date,//cccc
             ];
         }
 
