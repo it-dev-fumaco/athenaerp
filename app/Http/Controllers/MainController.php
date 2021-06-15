@@ -148,6 +148,8 @@ class MainController extends Controller
 
         // $default_wh = DB::table('tabItem')->select('default_warehouse')->addselect('name')->get();
 
+        // $lastTransaction = DB::table('tabItem')->select('')
+
         return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
     public function count_ste_for_issue($purpose){
@@ -1292,6 +1294,9 @@ class MainController extends Controller
     }
 
     public function get_item_details(Request $request, $item_code){
+        // $user = Auth::user()->frappe_userid;
+        // $allowed_warehouses = $this->user_allowed_warehouse($user);
+
         $item_details = DB::table('tabItem')->where('name', $item_code)->first();
 
         if($request->json){
@@ -2477,6 +2482,9 @@ class MainController extends Controller
     }
 
     public function get_low_stock_level_items(Request $request){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+        
         $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
             ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty')->get();
 
