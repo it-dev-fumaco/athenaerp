@@ -94,11 +94,11 @@ class StockReservationController extends Controller
       })->paginate(10);
 
       $webList = StockReservation::when($item_code, function($q) use ($item_code){
-         $q->where('item_code', $item_code)->where('type', 'Online Shop');
+         $q->where('item_code', $item_code)->where('type', 'Online Shop')->orderby('valid_until', 'desc');
       })->paginate(10);
 
       $inhouseList = StockReservation::when($item_code, function($q) use ($item_code){
-         $q->where('item_code', $item_code)->where('type', 'In-house');
+         $q->where('item_code', $item_code)->where('type', 'In-house')->orderby('valid_until', 'desc');
       })->paginate(10);
 
       // return view('stock_reservation.list', compact('list', 'item_code'));

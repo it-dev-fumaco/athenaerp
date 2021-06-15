@@ -1,6 +1,6 @@
 <div id="webTable">
-<div class="col-md-12"><p><b>Online Shop Reservations</b></p></div>
-<table class="table table-striped">
+<div class="col-md-12"><p><b>Online Shop Reservations {{date('Y')}}</b></p></div>
+<table id="onlineShopTable" class="table table-striped">
     <thead>
         <tr>
             <th class="text-center">ID</th>
@@ -62,7 +62,7 @@
 </table>
 </div><!-- webTable -->
 <div class="col-md-12"><p><b>In-house Reservations</b></p></div>
-<table class="table table-striped">
+<table id="inHouseTable" class="table table-striped">
     <thead>
         <tr>
             <th class="text-center">ID</th>
@@ -76,7 +76,7 @@
             <th class="text-center">Action</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="lcTable">
     @forelse ($inhouseList as $row2)<!-- In-house -->
         @php
             if ($row2->status == 'Active') {
@@ -97,7 +97,18 @@
             <td class="text-center align-middle">{{ date('Y-m-d', strtotime($row2->creation)) }}</td>
             <td class="text-center align-middle">{{ ($row2->valid_until) ? $row2->valid_until : '-' }}</td>
             <td class="text-center align-middle">
-                <span class="badge {{ $badge }}" style="font-size: 10pt;">{{ $row2->status }}</span>
+                <!-- <span class="badge {{ $badge }}" style="font-size: 10pt;">{{ $row2->status }}</span> -->
+                @if($row2->reserve_qty == round($row2->consumed_qty))
+                    <span class="badge badge-secondary" style="font-size: 10pt;">Issued</span>
+                @elseif($row2->valid_until < Carbon\Carbon::today())
+                    <span class="badge badge-warning" style="font-size: 10pt;">Expired</span>
+                @elseif(round($row2->consumed_qty) > 0)                    
+                    <span class="badge badge-info" style="font-size: 10pt;">Partially Issued</span>
+                @elseif($row2->status == 'Cancelled')
+                    <span class="badge badge-danger" style="font-size: 10pt;">Cancelled</span>
+                @else
+                    <span class="badge badge-primary" style="font-size: 10pt;">Active</span>
+                @endif
             </td>
             <td class="text-center align-middle">{{ $row2->created_by }}</td>
             <td class="text-center align-middle">
@@ -114,7 +125,8 @@
         </tr>
         @endforelse<!-- In-house -->
     </tbody>
-</table>
+    <input type="text" id="sortStatus" value="asc" hidden=""/>
+ </table>
 <div class="box-footer clearfix" id="stock-reservations-pagination" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
 	{{ $list->links() }}
 </div>
