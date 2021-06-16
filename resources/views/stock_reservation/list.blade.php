@@ -37,7 +37,18 @@
             <td class="text-center align-middle">{{ date('Y-m-d', strtotime($row->creation)) }}</td>
             <td class="text-center align-middle">{{ ($row->valid_until) ? $row->valid_until : '-' }}</td>
             <td class="text-center align-middle">
-                <span class="badge {{ $badge }}" style="font-size: 10pt;">{{ $row->status }}</span>
+                <!-- <span class="badge {{ $badge }}" style="font-size: 10pt;">{{ $row->status }}</span> -->
+                @if($row->reserve_qty == round($row->consumed_qty))
+                    <span class="badge badge-secondary" style="font-size: 10pt;">Issued</span>
+                @elseif($row->valid_until < Carbon\Carbon::today())
+                    <span class="badge badge-warning" style="font-size: 10pt;">Expired</span>
+                @elseif(round($row->consumed_qty) > 0)                    
+                    <span class="badge badge-info" style="font-size: 10pt;">Partially Issued</span>
+                @elseif($row->status == 'Cancelled')
+                    <span class="badge badge-danger" style="font-size: 10pt;">Cancelled</span>
+                @else
+                    <span class="badge badge-primary" style="font-size: 10pt;">Active</span>
+                @endif
             </td>
             <td class="text-center align-middle">{{ $row->created_by }}</td>
             <td class="text-center align-middle">
@@ -53,9 +64,12 @@
             <td colspan="12" class="text-center">No record(s) found.</td>
         </tr> -->
         <script>
-            $(document).on('click', function(){
-                $('#webTable').css("display", "none");
-            })
+            // $(document).on('click', function(){
+            //     $('#webTable').css("display", "none");
+            // })
+            $(document).ready(function(){
+                $('#webTable').hide();
+            });
         </script>
         @endforelse<!-- Web -->
     </tbody>
@@ -121,7 +135,7 @@
         </tr>
         @empty
         <tr>
-            <td colspan="8" class="text-center">No record(s) found.</td>
+            <td colspan="12" class="text-center">No record(s) found.</td>
         </tr>
         @endforelse<!-- In-house -->
     </tbody>
