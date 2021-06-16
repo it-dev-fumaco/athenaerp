@@ -22,6 +22,14 @@
 	<!-- iCheck for checkboxes and radio inputs -->
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
 </head>
+
+<style>
+	@font-face { font-family: 'Montserrat'; src: url({{ asset('font/Montserrat/Montserrat-Regular.ttf') }}); } 
+	*{
+		font-family: 'Montserrat' !important;
+	}
+</style>
+
 <body class="hold-transition layout-top-nav">
 	<div class="wrapper">
 		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
@@ -80,57 +88,57 @@
 		</nav>
 
 
-  	<div class="content-wrapper">
-		@if(!in_array($activePage, ['search_results', 'dashboard']))
-		<div class="row m-0 pb-0">
-			<div class="col-xl-5 p-3">
-				<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
-					<i class="fas fa-home"></i>
-				  </a>{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
+		<div class="content-wrapper">
+			@if(!in_array($activePage, ['search_results', 'dashboard']))
+			<div class="row m-0 pb-0">
+				<div class="col-xl-5 p-3">
+					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
+						<i class="fas fa-home"></i>
+					</a>{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
+				</div>
+				<div class="col-xl-7 pr-4 pt-2 text-right">
+				<a class="btn btn-app bg-primary" href="/returns">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
+					<i class="fas fa-undo"></i> Returns
+					</a>
+					<a class="btn btn-app bg-info" href="/production_to_receive">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
+					<i class="far fa-check-circle"></i> Feedback
+					</a>
+					<a class="btn btn-app bg-secondary" href="/material_transfer">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
+					<i class="fas fa-exchange-alt"></i> Transfer
+					</a>
+					<a class="btn btn-app bg-maroon" href="/receipts">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
+					<i class="fas fa-boxes"></i> PO Receipts
+					</a>
+					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
+					<i class="fas fa-tasks"></i> Withdrawals
+					</a>
+					<a class="btn btn-app bg-indigo" href="/material_issue">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
+					<i class="fas fa-dolly"></i> Material Issue
+					</a>
+					<a class="btn btn-app bg-teal" href="/picking_slip">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
+					<i class="fas fa-truck"></i> Deliveries
+					</a>
+					<a class="btn btn-app bg-orange" href="/replacements">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
+					<i class="fas fa-retweet"></i> Replacements
+					</a>
+				</div>
 			</div>
-			<div class="col-xl-7 pr-4 pt-2 text-right">
-			  <a class="btn btn-app bg-primary" href="/returns">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
-				  <i class="fas fa-undo"></i> Returns
-				</a>
-				<a class="btn btn-app bg-info" href="/production_to_receive">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
-				  <i class="far fa-check-circle"></i> Feedback
-				</a>
-				<a class="btn btn-app bg-secondary" href="/material_transfer">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
-				  <i class="fas fa-exchange-alt"></i> Transfer
-				</a>
-				<a class="btn btn-app bg-maroon" href="/receipts">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
-				  <i class="fas fa-boxes"></i> PO Receipts
-				</a>
-				<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
-				  <i class="fas fa-tasks"></i> Withdrawals
-				</a>
-				<a class="btn btn-app bg-indigo" href="/material_issue">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
-				  <i class="fas fa-dolly"></i> Material Issue
-				</a>
-				<a class="btn btn-app bg-teal" href="/picking_slip">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
-				  <i class="fas fa-truck"></i> Deliveries
-				</a>
-				<a class="btn btn-app bg-orange" href="/replacements">
-				  <span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
-				  <i class="fas fa-retweet"></i> Replacements
-				</a>
-			</div>
-		</div>
-		@endif
-		 <!-- /.content-header -->
-	 
-    	<!-- Main content -->
-		@yield('content')
-		<!-- /.content -->
+			@endif
+			<!-- /.content-header -->
 		
-	</div>
+			<!-- Main content -->
+			@yield('content')
+			<!-- /.content -->
+			
+		</div>
 	<!-- /.content-wrapper -->
 
 	<style>
@@ -576,8 +584,8 @@
 									</div>
 									<div class="col-md-6">
 										<div class="form-group">
-											<label for="">Reserve Qty</label>
-											<input type="text" name="reserve_qty" class="form-control" value="0">
+											<label for="">Available Qty</label>
+											<input type="text" class="form-control" id="available-qty-c" value="0" readonly>
 										</div>
 									</div>
 									<div class="col-md-6">
@@ -586,7 +594,13 @@
 											<input type="text" name="stock_uom" class="form-control" id="stock-uom-c" readonly>
 										</div>
 									</div>
-									<div class="col-md-12">
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Reserve Qty</label>
+											<input type="text" name="reserve_qty" class="form-control" value="0">
+										</div>
+									</div>
+									<div class="col-md-6">
 										<div class="form-group">
 											<label for="">Reservation Type</label>
 											<select name="type" class="form-control" id="select-type-c">
@@ -667,8 +681,8 @@
 									</div>
 									<div class="col-md-6">
 										<div class="form-group">
-											<label for="">Reserve Qty</label>
-											<input type="text" name="reserve_qty" class="form-control" value="0" id="reserve-qty-e">
+											<label for="">Available Qty</label>
+											<input type="text" class="form-control" id="available-qty-e" value="0" readonly>
 										</div>
 									</div>
 									<div class="col-md-6">
@@ -677,7 +691,13 @@
 											<input type="text" name="stock_uom" class="form-control" id="stock-uom-e" readonly>
 										</div>
 									</div>
-									<div class="col-md-12">
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Reserve Qty</label>
+											<input type="text" name="reserve_qty" class="form-control" value="0" id="reserve-qty-e">
+										</div>
+									</div>
+									<div class="col-md-6">
 										<div class="form-group">
 											<label for="">Reservation Type</label>
 											<select name="type" class="form-control" id="select-type-e">
@@ -779,32 +799,60 @@
 
 	<script>
 		$(document).ready(function(){
+			$(document).on('select2:select', '#select-warehouse-c', function(e){
+				var data = e.params.data;
+				var warehouse = data.id;
+				var item_code = $('#item-code-c').val();
+
+				$.ajax({
+					type: 'GET',
+					url: '/get_available_qty/' + item_code + '/' + warehouse,
+					success: function(response){
+						$('#available-qty-c').val(response);
+					}
+				});
+			});
+
+			$(document).on('select2:select', '#select-warehouse-e', function(e){
+				var data = e.params.data;
+				var warehouse = data.id;
+				var item_code = $('#item-code-e').val();
+
+				$.ajax({
+					type: 'GET',
+					url: '/get_available_qty/' + item_code + '/' + warehouse,
+					success: function(response){
+						$('#available-qty-e').val(response);
+					}
+				});
+			});
+
 			dashboard_data();
-	setInterval(function () {
-		dashboard_data();
-	}, 60000);
+			setInterval(function () {
+				dashboard_data();
+			}, 60000);
 
 			function dashboard_data(purpose, div){
-		$.ajax({
-			type: "GET",
-			url: "/dashboard_data",
-			dataType: 'json',
-			contentType: 'application/json',
-			success: function (data) {
-				$('#d-material-receipt').text(data.d_feedbacks);
-				$('#d-purchase-receipts').text(data.d_purchase_receipts);
-				$('#p-purchase-receipts').text(data.p_purchase_receipts);
-				$('#d-replacements').text(data.d_replacements);
-				$('#p-replacements').text(data.p_replacements);
-				$('#d-returns').text(data.d_returns);
-				$('#p-returns').text(data.p_returns);
-				$('#d-material-transfer').text(data.d_internal_transfers);
-				$('#d-picking-slips').text(data.d_picking_slips);
-				$('#d-withdrawals').text(data.d_withdrawals);
-				$('#d-material-issues').text(data.d_material_issues);
+				$.ajax({
+					type: "GET",
+					url: "/dashboard_data",
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#d-material-receipt').text(data.d_feedbacks);
+						$('#d-purchase-receipts').text(data.d_purchase_receipts);
+						$('#p-purchase-receipts').text(data.p_purchase_receipts);
+						$('#d-replacements').text(data.d_replacements);
+						$('#p-replacements').text(data.p_replacements);
+						$('#d-returns').text(data.d_returns);
+						$('#p-returns').text(data.p_returns);
+						$('#d-material-transfer').text(data.d_internal_transfers);
+						$('#d-picking-slips').text(data.d_picking_slips);
+						$('#d-withdrawals').text(data.d_withdrawals);
+						$('#d-material-issues').text(data.d_material_issues);
+					}
+				});
 			}
-		});
-	}
 
 			$('#warehouse-filter').select2({
 				dropdownParent: $('#warehouse-filter-parent'),
@@ -828,11 +876,11 @@
 			});
 
 			$(document).on('select2:select', '#warehouse-filter', function(e){
-					var data = e.params.data;
+				var data = e.params.data;
 
-					$('#wh-1').val(data.id);
-					$('#search-form').submit();
-				});
+				$('#wh-1').val(data.id);
+				$('#search-form').submit();
+			});
 
 			allowed_parent_warehouses();
 			function allowed_parent_warehouses(){
@@ -964,6 +1012,10 @@
 
 			$('#add-stock-reservation-btn').click(function(e){
 				e.preventDefault();
+
+				$('#select-warehouse-c').val(null).trigger('change');
+				$('#select-sales-person-c').val(null).trigger('change');
+				$('#select-project-c').val(null).trigger('change');
 
 				$("#date-valid-until-c").datepicker("update", new Date());
 
@@ -1170,14 +1222,18 @@
 						var selected_warehouse = $('#select-warehouse-e');
 						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
 						selected_warehouse.append(selected_warehouse_option).trigger('change');
-						
-						var selected_sales_person = $('#select-sales-person-e');
-						var selected_sales_person_option = new Option(data.sales_person, data.sales_person, true, true);
-						selected_sales_person.append(selected_sales_person_option).trigger('change');
 
-						var selected_project = $('#select-project-e');
-						var selected_project_option = new Option(data.project, data.project, true, true);
-						selected_project.append(selected_project_option).trigger('change');
+						if(data.sales_person) {
+							var selected_sales_person = $('#select-sales-person-e');
+							var selected_sales_person_option = new Option(data.sales_person, data.sales_person, true, true);
+							selected_sales_person.append(selected_sales_person_option).trigger('change');
+						}
+
+						if(data.project) {
+							var selected_project = $('#select-project-e');
+							var selected_project_option = new Option(data.project, data.project, true, true);
+							selected_project.append(selected_project_option).trigger('change');
+						}
 
 						if(data.type == 'In-house'){
 							$('#select-sales-person-e').parent().removeClass('d-none');
@@ -1188,6 +1244,14 @@
 							$('#select-project-e').parent().addClass('d-none');
 							$('#date-valid-until-e').parent().addClass('d-none');
 						}
+
+						$.ajax({
+							type: 'GET',
+							url: '/get_available_qty/' + data.item_code + '/' + data.warehouse,
+							success: function(response){
+								$('#available-qty-e').val(response);
+							}
+						});
 
 						$('#stock-reservation-id-e').val(data.name);
 						$('#item-code-e').val(data.item_code);
