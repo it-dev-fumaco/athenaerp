@@ -150,6 +150,7 @@ class MainController extends Controller
 
         return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
+    
     public function count_ste_for_issue($purpose){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
@@ -2812,5 +2813,12 @@ class MainController extends Controller
         ];
 
         return response()->json($data);
+    }
+
+    public function get_available_qty($item_code, $warehouse){
+        $reserved_qty = $this->get_reserved_qty($item_code, $warehouse);
+        $actual_qty = $this->get_actual_qty($item_code, $warehouse);
+
+        return ($actual_qty - $reserved_qty);
     }
 }

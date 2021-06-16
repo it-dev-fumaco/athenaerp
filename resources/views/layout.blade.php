@@ -25,7 +25,7 @@
 
 <style>
 	@font-face { font-family: 'Montserrat'; src: url({{ asset('font/Montserrat/Montserrat-Regular.ttf') }}); } 
-	*{
+	*:not(i):not(.fa){
 		font-family: 'Montserrat' !important;
 	}
 </style>
@@ -584,23 +584,27 @@
 									</div>
 									<div class="col-md-6">
 										<div class="form-group">
-											<label for="">Available Qty</label>
-											<input type="text" class="form-control" id="available-qty-c" value="0" readonly>
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
-											<label for="">Stock UoM</label>
-											<input type="text" name="stock_uom" class="form-control" id="stock-uom-c" readonly>
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
 											<label for="">Reserve Qty</label>
 											<input type="text" name="reserve_qty" class="form-control" value="0">
 										</div>
 									</div>
 									<div class="col-md-6">
+										<div class="form-group">
+											<label for="" class="d-block">Available Qty</label>
+											<span class="badge badge-danger">
+												<span id="available-qty-c-text">0</span>
+												<span id="stock-uom-c-text"></span>
+											</span>
+											<input type="hidden" class="form-control" id="available-qty-c" value="0">
+										</div>
+									</div>
+									<div class="col-md-6 d-none">
+										<div class="form-group">
+											<label for="">Stock UoM</label>
+											<input type="hidden" name="stock_uom" class="form-control" id="stock-uom-c" readonly>
+										</div>
+									</div>
+									<div class="col-md-12">
 										<div class="form-group">
 											<label for="">Reservation Type</label>
 											<select name="type" class="form-control" id="select-type-c">
@@ -676,19 +680,7 @@
 									<div class="col-md-12">
 										<div class="form-group">
 											<label for="">Warehouse</label>
-											<select class="form-control" name="warehouse" id="select-warehouse-e"></select>
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
-											<label for="">Available Qty</label>
-											<input type="text" class="form-control" id="available-qty-e" value="0" readonly>
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
-											<label for="">Stock UoM</label>
-											<input type="text" name="stock_uom" class="form-control" id="stock-uom-e" readonly>
+											<select class="form-control" name="warehouse" id="select-warehouse-e" disabled></select>
 										</div>
 									</div>
 									<div class="col-md-6">
@@ -699,8 +691,24 @@
 									</div>
 									<div class="col-md-6">
 										<div class="form-group">
+											<label for="" class="d-block">Available Qty</label>
+											<span class="badge badge-danger">
+												<span id="available-qty-e-text">0</span>
+												<span id="stock-uom-e-text"></span>
+											</span>
+											<input type="hidden" class="form-control" name="available_qty" id="available-qty-e" value="0" readonly>
+										</div>
+									</div>
+									<div class="col-md-6 d-none">
+										<div class="form-group">
+											<label for="">Stock UoM</label>
+											<input type="text" name="stock_uom" class="form-control" id="stock-uom-e" readonly>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group">
 											<label for="">Reservation Type</label>
-											<select name="type" class="form-control" id="select-type-e">
+											<select name="type" class="form-control" id="select-type-e" disabled>
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
 												<option value="Website Stocks">Website Stocks</option>
@@ -809,6 +817,8 @@
 					url: '/get_available_qty/' + item_code + '/' + warehouse,
 					success: function(response){
 						$('#available-qty-c').val(response);
+						var badge_color = (response > 0) ? 'badge-success' : 'badge-danger';
+						$('#available-qty-c-text').text(response).parent().removeClass('badge-danger badge-success').addClass(badge_color);
 					}
 				});
 			});
@@ -823,6 +833,8 @@
 					url: '/get_available_qty/' + item_code + '/' + warehouse,
 					success: function(response){
 						$('#available-qty-e').val(response);
+						var badge_color = (response > 0) ? 'badge-success' : 'badge-danger';
+						$('#available-qty-e-text').text(response).parent().removeClass('badge-danger badge-success').addClass(badge_color);
 					}
 				});
 			});
@@ -1028,6 +1040,7 @@
 						$('#item-code-c').val(data.name);
 						$('#description-c').val(data.description);
 						$('#stock-uom-c').val(data.stock_uom);
+						$('#stock-uom-c-text').text(data.stock_uom);
 						
 						$('#add-stock-reservation-modal').modal('show');
 					}
@@ -1249,7 +1262,10 @@
 							type: 'GET',
 							url: '/get_available_qty/' + data.item_code + '/' + data.warehouse,
 							success: function(response){
-								$('#available-qty-e').val(response);
+								var available_qty = parseInt(response) + (data.reserve_qty - data.consumed_qty);
+								var badge_color = (available_qty > 0) ? 'badge-success' : 'badge-danger';
+								$('#available-qty-e-text').text(available_qty).parent().removeClass('badge-danger badge-success').addClass(badge_color);
+								$('#available-qty-e').val(available_qty);
 							}
 						});
 
@@ -1257,6 +1273,7 @@
 						$('#item-code-e').val(data.item_code);
 						$('#description-e').val(data.description);
 						$('#stock-uom-e').val(data.stock_uom);
+						$('#stock-uom-e-text').text(data.stock_uom);
 						$('#notes-e').val(data.notes);
 						$('#select-type-e').val(data.type);
 						$('#reserve-qty-e').val(data.reserve_qty);

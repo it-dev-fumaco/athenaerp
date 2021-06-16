@@ -89,4 +89,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/inv_accuracy/{year}', 'MainController@invAccuracyChart');
 
     Route::get('/get_recently_added_items', 'MainController@get_recently_added_items');
+    Route::get('/get_available_qty/{item_code}/{warehouse}', 'MainController@get_available_qty');
 });

@@ -11,11 +11,20 @@ use Auth;
 
 class StockReservationController extends Controller
 {
+   public function user_allowed_warehouse($user){
+      $allowed_parent_warehouses = DB::table('tabWarehouse Access')
+          ->where('parent', $user)->pluck('warehouse');
+
+      return DB::table('tabWarehouse')
+          ->whereIn('parent_warehouse', $allowed_parent_warehouses)->pluck('name');
+   }
+
    public function create_reservation(Request $request){
       DB::connection('mysql')->beginTransaction();
       try {
+         // restrict zero qty
          if($request->reserve_qty <= 0) {
-            return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than or equal to 0.']);
+            return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than 0.']);
          }
 
          $bin_details = DB::connection('mysql')->table('tabBin')
@@ -36,6 +45,21 @@ class StockReservationController extends Controller
 
          if($available_qty < $request->reserve_qty) {
             return response()->json(['error' => 1, 'modal_title' => 'Insufficient Stock', 'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->reserve_qty . '</b>']);
+         }
+
+         if($request->type == 'In-house'){
+            if(Carbon::createFromFormat('Y-m-d', $request->valid_until) <= Carbon::now()){
+               return response()->json(['error' => 1, 'modal_title' => 'Invalid Date', 'modal_message' => 'Validity date cannot be less than or equal to date today.']);
+            }
+         }
+
+         $existing_stock_reservation = StockReservation::where('item_code', $request->item_code)
+            ->where('warehouse', $request->warehouse)->where('sales_person', $request->sales_person)
+            ->where('type', $request->type)->where('project', $request->project)->whereIn('status', ['Active', 'Partially Issued'])
+            ->exists();
+         
+         if($existing_stock_reservation){
+            return response()->json(['error' => 1, 'modal_title' => 'Already Exists', 'modal_message' => 'Stock Reservation already exists.']);
          }
 
          $latest_name = StockReservation::max('name');
@@ -66,7 +90,7 @@ class StockReservationController extends Controller
 
          if($request->type == 'Website Stocks'){
             if($bin_details) {
-               $new_reserved_qty = $request->reserve_qty + $bin_details->reserved_qty;
+               $new_reserved_qty = $request->reserve_qty + $bin_details->website_reserved_qty;
 
                $values = [
                   "modified" => Carbon::now()->toDateTimeString(),
@@ -156,38 +180,33 @@ class StockReservationController extends Controller
          if(!$bin_details) {
             return response()->json(['error' => 1, 'modal_title' => 'No Stock', 'modal_message' => 'No available stock.']);
          }
-
+         // get total reserved qty from stock reservation table
          $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $request->item_code)
             ->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
-
+         // total reserved qty = total reserved qty from stock reservation table + website reserved qty from tabbin table
          $total_reserved_qty = $stock_reservation_qty + $bin_details->website_reserved_qty;
-
-         $available_qty = $bin_details->actual_qty - $total_reserved_qty;
-
-         if($available_qty < $request->reserve_qty) {
-            return response()->json(['error' => 1, 'modal_title' => 'Insufficient Stock', 'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->reserve_qty . '</b>']);
-         }
 
          $now = Carbon::now();
          $stock_reservation = StockReservation::find($request->id);
          $stock_reservation->modified = $now->toDateTimeString();
          $stock_reservation->modified_by = Auth::user()->wh_user;
          $stock_reservation->notes = $request->notes;
-         $stock_reservation->warehouse = $request->warehouse;
-         $stock_reservation->type = $request->type;
-         $stock_reservation->reserve_qty = $request->reserve_qty;
-         $stock_reservation->valid_until = ($request->type == 'In-house') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
-         $stock_reservation->sales_person = ($request->type == 'In-house') ? $request->sales_person : null;
-         $stock_reservation->project = ($request->type == 'In-house') ? $request->project : null;
+         
+         // calculate reserved qty
+         $reserved_qty = ($stock_reservation->type == 'In house') ? $stock_reservation->reserve_qty : $bin_details->website_reserved_qty;
+         $available_qty = ($request->available_qty + ($reserved_qty - $stock_reservation->consumed_qty));
 
-         if($request->type == 'Website Stocks'){
+         if($available_qty < $request->reserve_qty) {
+            return response()->json(['error' => 1, 'modal_title' => 'Insufficient Stock', 'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->reserve_qty . '</b>']);
+         }
 
+         if($stock_reservation->type == 'Website Stocks'){
             $reserved_qty = abs($stock_reservation->reserve_qty - $request->reserve_qty);
-
+            
             if($bin_details) {
-               $new_reserved_qty = $bin_details->reserved_qty;
+               $new_reserved_qty = $bin_details->website_reserved_qty;
                if($stock_reservation->reserve_qty > $request->reserve_qty){
-                  $new_reserved_qty = $bin_details->reserved_qty - $reserved_qty;
+                  $new_reserved_qty = $bin_details->website_reserved_qty - $reserved_qty;
                }
 
                if($stock_reservation->reserve_qty < $request->reserve_qty){
@@ -206,6 +225,11 @@ class StockReservationController extends Controller
             }
          }
 
+         $stock_reservation->warehouse = $request->warehouse;
+         $stock_reservation->reserve_qty = $request->reserve_qty;
+         $stock_reservation->valid_until = ($stock_reservation->type == 'In-house') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
+         $stock_reservation->sales_person = ($stock_reservation->type == 'In-house') ? $request->sales_person : null;
+         $stock_reservation->project = ($stock_reservation->type == 'In-house') ? $request->project : null;
          $stock_reservation->save();
 
          DB::connection('mysql')->commit();
@@ -218,13 +242,17 @@ class StockReservationController extends Controller
    }
    
    public function get_warehouse_with_stocks(Request $request){
+      $user = Auth::user()->frappe_userid;
+      $allowed_warehouses = $this->user_allowed_warehouse($user);
+
       return DB::table('tabWarehouse as w')->join('tabBin as b', 'b.warehouse', 'w.name')
-            ->where('w.disabled', 0)->where('w.is_group', 0)
-            ->where('b.item_code', $request->item_code)
-            ->when($request->q, function($q) use ($request){
-				   return $q->where('w.name', 'like', '%'.$request->q.'%');
-            })
-            ->select('w.name as id', 'w.name as text')
-            ->orderBy('w.modified', 'desc')->limit(10)->get();
+         ->where('w.disabled', 0)->where('w.is_group', 0)
+         ->whereIn('w.name', $allowed_warehouses)
+         ->where('b.item_code', $request->item_code)
+         ->when($request->q, function($q) use ($request){
+            return $q->where('w.name', 'like', '%'.$request->q.'%');
+         })
+         ->select('w.name as id', 'w.name as text')
+         ->orderBy('w.modified', 'desc')->limit(10)->get();
    }
 }
