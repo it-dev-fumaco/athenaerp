@@ -8,7 +8,7 @@
     <col style="width: 10%;">
     <thead style="font-size: 0.82rem;">
         <th class="text-center align-middle">Item Description</th>
-        <th class="text-center align-middle">Stock UoM</th>
+        <th class="text-center align-middle">UoM</th>
         <th class="text-center align-middle">Warehouse</th>
         <th class="text-center align-middle p-1">Re-order Qty</th>
         <th class="text-center align-middle p-1">Min. Stock Qty</th>
@@ -39,8 +39,8 @@
             <td class="text-center p-1 align-middle">
                 <small>{{ $row['warehouse'] }}</small>
             </td>
-            <td class="text-center p-1 align-middle">{{ $row['warehouse_reorder_qty'] * 1 }}</td>
-            <td class="text-center p-1 align-middle">{{ $row['warehouse_reorder_level'] * 1 }}</td>
+            <td class="text-center p-1 align-middle" style="font-size:12px">{{ $row['warehouse_reorder_qty'] * 1 }}</td>
+            <td class="text-center p-1 align-middle"><strong>{{ $row['warehouse_reorder_level'] * 1 }}</strong></td>
             <td class="text-center p-1 align-middle">
                 <span class="badge badge-{{ ($row['actual_qty'] > $row['warehouse_reorder_level']) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $row['actual_qty'] * 1 }}</span>
             </td>

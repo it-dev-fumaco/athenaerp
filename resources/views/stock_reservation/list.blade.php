@@ -1,6 +1,6 @@
 <div id="webTable">
-<div class="col-md-12"><p><b>Website Stock Reservations</b></p></div>
-<table class="table table-striped">
+<div class="col-md-12" ><p><b>Website Stock Reservations</b></p></div>
+<table class="table table-striped" style="font-size: 11pt;">
     <thead>
         <tr>
             <th class="text-center">ID</th>
@@ -64,7 +64,7 @@
 </table>
 </div><!-- webTable -->
 <div class="col-md-12"><p><b>In-house Reservations</b></p></div>
-<table class="table table-striped">
+<table class="table table-striped" style="font-size: 11pt;">
     <thead>
         <tr>
             <th class="text-center">ID</th>

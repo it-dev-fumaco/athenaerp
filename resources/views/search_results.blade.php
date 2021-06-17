@@ -99,10 +99,10 @@
 									<div class="col-md-9 display-inline-block float-right p-2">
 										<div class="col-md-12 p-2 text-justify">
 											<span class="font-italic" style="font-size: 12px;">{{ $row['item_classification'] }}</span><br/>
-											<span class="text-justify" style="font-size: 14px;"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}</span><br/>
-											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }} 
+											<span class="text-justify" style="font-size: 13px;"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}<br/>
+											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }} </span>
 										</div>
-										<table class="table table-sm table-bordered">
+										<table class="table table-sm table-bordered" style="font-size: 13px;">
 											<tr>
 												<th class="col-sm-6 text-center">Warehouse</th>
 												<th class="col-sm-3 text-center">Reserved Qty</th>
@@ -110,7 +110,7 @@
 											</tr>
 											@forelse($row['item_inventory'] as $inv)
 												<tr>
-													<td class="text-center">
+													<td class="text-center" >
 														{{ $inv['warehouse'] }}
 														@if($inv['warehouse'] == $row['default_warehouse'])
 															<span class="font-italic"><small>- default</small></span>

@@ -8,6 +8,7 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="csrf-token" content="{{ csrf_token() }}">
 		<title>ERP Inventory</title>
+    <link rel="icon" type="image/png" href="/icon/favicon.png"/>
 		<!-- Tell the browser to be responsive to screen width -->
 		<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 
@@ -79,7 +80,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #286aaf;
+      background-color: #0f6eb5;
       z-index: -1;
       display: flex;
       overflow: hidden;

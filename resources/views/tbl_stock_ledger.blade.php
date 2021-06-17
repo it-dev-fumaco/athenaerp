@@ -1,4 +1,4 @@
-<table class="table table-hover">
+<table class="table table-hover" style="font-size: 11pt;">
     <thead>
       <tr>
         <th scope="col" class="col-xs-2" style="text-align:center;">Transaction No.</th>
