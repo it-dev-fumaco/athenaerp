@@ -28,10 +28,10 @@
         @endphp
         <tr>
             <td class="text-center align-middle">{{ $row->name }}</td>
-            <td class="text-center align-middle">{{ $row->reserve_qty . ' ' . $row->stock_uom }}</td>
-            <td class="text-center align-middle">{{ round($row->consumed_qty) }}</td>
+            <td class="text-center align-middle text-break">{{ $row->reserve_qty . ' ' . $row->stock_uom }}</td>
+            <td class="text-center align-middle text-break">{{ round($row->consumed_qty) }}</td>
             <td class="text-center align-middle">{{ $row->warehouse }}</td>
-            <td class="text-center align-middle">{{ date('Y-m-d', strtotime($row->creation)) }}</td>
+            <td class="text-center align-middle text-break">{{ date('Y-m-d', strtotime($row->creation)) }}</td>
             <td class="text-center align-middle">
                 @if($row->reserve_qty == round($row->consumed_qty))
                     <span class="badge badge-secondary" style="font-size: 10pt;">Issued</span>
@@ -92,11 +92,11 @@
         @endphp
         <tr>
             <td class="text-center align-middle">{{ $row2->name }}</td>
-            <td class="text-center align-middle">{{ $row2->reserve_qty . ' ' . $row2->stock_uom }}</td>
-            <td class="text-center align-middle">{{ round($row2->consumed_qty) }}</td>
+            <td class="text-center align-middle text-break">{{ $row2->reserve_qty . ' ' . $row2->stock_uom }}</td>
+            <td class="text-center align-middle text-break">{{ round($row2->consumed_qty) }}</td>
             <td class="text-center align-middle">{{ $row2->warehouse }}</td>
-            <td class="text-center align-middle">{{ date('Y-m-d', strtotime($row2->creation)) }}</td>
-            <td class="text-center align-middle">{{ ($row2->valid_until) ? $row2->valid_until : '-' }}</td>
+            <td class="text-center align-middle text-break">{{ date('Y-m-d', strtotime($row2->creation)) }}</td>
+            <td class="text-center align-middle text-break">{{ ($row2->valid_until) ? $row2->valid_until : '-' }}</td>
             <td class="text-center align-middle">
                 @if($row2->reserve_qty == round($row2->consumed_qty))
                     <span class="badge badge-secondary" style="font-size: 10pt;">Issued</span>

@@ -9,7 +9,7 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="container-fluid itemClassContainer">
+					<div class="container-fluid itemClassContainer overflow-auto">
 						<input type="button" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden="">
 						@foreach($itemClass as $itemClass)
 							<!-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass])) }}"> 
@@ -32,7 +32,7 @@
 						<div class="card-header p-0">
 							<div class="row">
 								<div class="col-md-6">
-									<h5 class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 15px;">
+									<h5 class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 14px;">
 										@if(request('searchString') && request('searchString') != '') 
 										Search result(s) for "{{ request('searchString') }}"
 									@else
@@ -43,7 +43,7 @@
 									<div class="row">
 										<div class="col-md-6 p-1">
 												<div class="float-right form-group m-0 w-55" id="warehouse-filter-parent">
-													<select name="warehouse" id="warehouse-filter" class="form-control" style="width: 200px; font-size: 20px !important;">
+													<select name="warehouse" id="warehouse-filter" class="form-control" style="width: 200px; font-size: 19px !important;">
 														
 													</select>
 												  </div>
@@ -53,13 +53,13 @@
 												<label>
 												  <input type="checkbox" class="minimal" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
 												  
-												  <span style="font-size: 13px;">Remove zero-qty items</span>
+												  <span style="font-size: 12px;">Remove zero-qty items</span>
 												</label>
 											  </div>
 										</div>
 										<div class="col-md-3 text-right p-1">
 											<span class="font-weight-bold m-1">TOTAL:</span>
-											<span class="badge bg-info mr-2" style="font-size: 14pt;">{{ number_format($items->total()) }}</span>
+											<span class="badge bg-info mr-2" style="font-size: 13pt;">{{ number_format($items->total()) }}</span>
 										</div>
 									</div>
 								</div>
@@ -97,9 +97,9 @@
 										</div>	
 									</div>
 									<div class="col-md-9 display-inline-block float-right p-2">
-										<div class="col-md-12 p-2">
+										<div class="col-md-12 p-2 text-justify">
 											<span class="font-italic" style="font-size: 12px;">{{ $row['item_classification'] }}</span><br/>
-											<span style="font-size: 14px;"><b>{{ $row['name'] }}</b> {!! $row['description'] !!}</span><br/>
+											<span class="text-justify" style="font-size: 14px;"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}</span><br/>
 											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }} 
 										</div>
 										<table class="table table-sm table-bordered">
@@ -119,24 +119,24 @@
 													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
 													<td class="text-center">
 														@if($inv['available_qty'] == 0)
-															<span class="badge badge-danger" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+															<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
 														@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-															<span class="badge badge-warning" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+															<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
 														@else
-															<span class="badge badge-success" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+															<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
 														@endif
 													</td>
 												</tr>
 											@empty
 												<tr>
-													<td class="col-sm-6 text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
+													<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
 												</tr>
 											@endforelse
 										</table>
 										<div class="col-md-12"><!-- View Consignment Warehouse -->
 											@if(count($row['consignment_warehouses']) > 0)
 											<div class="text-center">
-												<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 12px;">View Consignment Warehouse</a>
+												<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
 											</div>
 
 											<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
@@ -158,7 +158,7 @@
 																@forelse($row['consignment_warehouses'] as $con)
 																<tr>
 																	<td>{{ $con['warehouse'] }}</td>
-																	<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+																	<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 11px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
 																</tr>
 																@empty
 																<tr>
@@ -185,7 +185,7 @@
 							</div>
 						</div><!-- new table -->
 
-						<div class="ml-3 clearfix" style="font-size: 16pt; display: block;">
+						<div class="ml-3 clearfix" style="font-size: 15pt; display: block;">
 							{{ $items->links() }}
 						</div>
 					</div>
@@ -199,8 +199,9 @@
 <style>
 	.itemClassContainer{
 		min-height: 1px;
-		overflow: auto;
+		/* overflow: auto; */
 		white-space: nowrap;
+		z-index: -9999;
 	}
 	.itemClassBubble{
 		color: #000;
@@ -230,7 +231,7 @@
 		color: #fff; 
 		padding: 11px;
 		font-weight: 700;
-		font-size: 21px;
+		font-size: 20px;
 		border-top-left-radius: 5px;
 		border-bottom-left-radius: 5px;
 		margin-right: -2px;
