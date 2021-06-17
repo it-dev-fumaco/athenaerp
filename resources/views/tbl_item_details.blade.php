@@ -84,19 +84,15 @@
     </div>
     <div class="col-md-4">
         <div class="box box-solid">
-            <div class="box-header">
-                <h4 class="box-title"><i class="fas fa-list-alt"></i> Specification</h4>
-            </div>
             <div class="box-body table-responsive no-padding">
                 <table class="table table-sm table-bordered" style="font-size: 11pt;">
                     <thead>
-                        <th scope="col" >Attribute</th>
-                        <th scope="col" >Attribute Value</th>
+                        <th scope="col" colspan ="2"  class="text-center" style="font-size: 14pt;"><i class="fas fa-list-alt"></i> Specification</th>
                     </thead>
                     @forelse ($item_attributes as $attr)
                     <tr>
                         <td>{{ $attr->attribute }}</td>
-                        <td>{{ $attr->attribute_value }}</td>
+                        <td class="text-center" >{{ $attr->attribute_value }}</td>
                     </tr>
                     @empty
                     <tr>
