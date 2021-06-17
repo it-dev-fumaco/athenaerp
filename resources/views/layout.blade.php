@@ -768,6 +768,29 @@
 		</form>
 	</div>
 
+	<div class="modal fade" id="confirmation-modal">
+		<form id="deduct-reservation-form" method="POST" action="/cancel_1reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Confirmation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<input type="hidden" name="stock_reservation_id">
+						<h5 class="text-center">Get quantity from reserved stocks?</h5>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CANCEL</button>
+						<button type="submit" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-ban"></i> NO</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> YES</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
   <!-- Main Footer -->
   <footer class="main-footer">
     <!-- To the right -->
