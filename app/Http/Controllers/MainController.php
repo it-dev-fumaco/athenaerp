@@ -1326,7 +1326,9 @@ class MainController extends Controller
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
-        $production_item_alternatives = DB::table('tabProduction Order Item')->where('item_alternative_for', $item_details->name)->where('item_code', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+        $production_item_alternatives = DB::table('tabProduction Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
+            ->where('p.item_code', $item_details->name)->where('p.item_alternative_for', '!=', $item_details->name)
+            ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get();
         foreach($production_item_alternatives as $a){
             $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
 
@@ -1343,21 +1345,19 @@ class MainController extends Controller
         }
 
         // get item alternatives based on parent item code
-        if(count($item_alternatives) <= 0) {
-            $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
-            foreach($q as $a){
-                $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+        $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+        foreach($q as $a){
+            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
 
-                $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
 
-                if(count($item_alternatives) < 7){
-                    $item_alternatives[] = [
-                        'item_code' => $a->item_code,
-                        'description' => $a->description,
-                        'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
-                        'actual_stocks' => $actual_stocks
-                    ];
-                }
+            if(count($item_alternatives) < 7){
+                $item_alternatives[] = [
+                    'item_code' => $a->item_code,
+                    'description' => $a->description,
+                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                    'actual_stocks' => $actual_stocks
+                ];
             }
         }
 
