@@ -44,8 +44,8 @@
                 </div>
                 <div class="col-md-9">
                     <dl>
-                        <dt style="font-size: 15pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
-                        <dd style="font-size: 13pt;" class="text-justify mb-2">{{ $item_details->description }}</dd>
+                        <dt style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
+                        <dd style="font-size: 11pt;" class="text-justify mb-2">{{ $item_details->description }}</dd>
                     </dl>
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0"><i class="fa fa-box-open"></i> Stock Level</h3>
@@ -53,7 +53,7 @@
                     <div class="box box-solid p-0">
                         <div class="box-header with-border">
                             <div class="box-body table-responsive">
-                                <table class="table table-striped table-bordered table-hover">
+                                <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
                                     <thead>
                                         <th scope="col" class="text-center p-1">Warehouse</th>
                                         <th scope="col" class="text-center p-1">Reserved Qty</th>
@@ -132,7 +132,7 @@
                                 <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}">
                                     <div class="p-1 text-justify">
                                         <span class="font-weight-bold">{{ $a['item_code'] }}</span>
-                                        <small class="font-italic">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
+                                        <small class="font-italic" style="font-size: 9pt;">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
                                         <br>
                                         <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'danger' }}">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                     </div>
