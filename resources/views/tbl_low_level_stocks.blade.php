@@ -6,7 +6,7 @@
     <col style="width: 11%;">
     <col style="width: 10%;">
     <col style="width: 10%;">
-    <thead>
+    <thead style="font-size: 0.82rem;">
         <th class="text-center align-middle">Item Description</th>
         <th class="text-center align-middle">Stock UoM</th>
         <th class="text-center align-middle">Warehouse</th>

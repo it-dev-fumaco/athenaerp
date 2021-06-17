@@ -82,7 +82,7 @@
 														<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
 													</td>
 													<td class="text-center">
-														<span class="qty">@{{ x.qty_to_receive }}</span>
+														<span class="qty" style="font-size: 14pt;">@{{ x.qty_to_receive }}</span>
 													</td>
 													<td class="text-center">
 														<span class="reference-no">@{{ x.sales_order_no }}@{{ x.material_request }}</span>

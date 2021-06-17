@@ -85,7 +85,7 @@
 								<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
 								<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
                       </td>
-                      <td class="text-center">@{{ x.qty | number:2 }}</td>
+                      <td class="text-center" style="font-size: 14pt;">@{{ x.qty | number:2 }}</td>
                       <td class="text-center">
                         <span class="d-block">@{{ x.delivery_note }}</span>
                         <span class="d-block">@{{ x.sales_order }}</span>

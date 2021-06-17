@@ -82,7 +82,7 @@
 	
 											</td>
 											<td class="text-center">
-												<span class="d-block">@{{ x.qty | number:2 }}</span>
+												<span class="d-block" style="font-size: 13pt;">@{{ x.qty | number:2 }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
 												<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
 											</td>

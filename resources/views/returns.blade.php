@@ -79,7 +79,7 @@
 												<span class="d-block">@{{ r.description }}</span>
 												<span class="d-block mt-2" ng-hide="r.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ r.owner }}</span>
 											</td>
-											<td class="text-center">@{{ r.transfer_qty | number:2 }}</td>
+											<td class="text-center" style="font-size: 14pt;">@{{ r.transfer_qty | number:2 }}</td>
 											<td class="text-center">
 												<span class="d-block">@{{ r.sales_order_no }}</span>
 												<span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>

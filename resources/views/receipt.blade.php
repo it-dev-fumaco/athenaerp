@@ -82,7 +82,7 @@
 							<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Created by:</b> @{{ x.owner }}</span>
 											</td>
 											<td class="text-center">
-												<span class="d-block" style="font-size: 1.15rem;">@{{ x.qty | number:2 }}</span>
+												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
 												<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
 											</td>
