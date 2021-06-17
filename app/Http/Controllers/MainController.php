@@ -19,6 +19,8 @@ class MainController extends Controller
     }
 
     public function index(Request $request){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
         if(Auth::user()->user_group == 'User'){
             return redirect('/search_results');
         }
@@ -26,11 +28,9 @@ class MainController extends Controller
         return view('index');
     }
 
-    public function search_results(Request $request){
+    public function search_results(Request $request){        
         $search_str = explode(' ', $request->searchString);
 
-        // $itemClass = DB::table('tabItem')->select('item_classification')->distinct('created_at')->get(); // Shows all classification
-        // $itemClass = DB::table('tabItem')->select('item_classification')->where('description', 'LIKE', "%".$request->searchString."%" )->orWhere('name', "%".$request->searchString."%")->orderby('item_classification','asc')->distinct('created_at')->get();
         $itemClass = DB::table('tabItem')->select('item_classification')
             ->where('description', 'LIKE', "%".$request->searchString."%" )
             ->orWhere('name', 'LIKE', "%".$request->searchString."%")
@@ -40,9 +40,7 @@ class MainController extends Controller
             ->orderby('item_classification','asc')
             ->distinct('created_at')
             ->get();
-        // $getFirst = $itemClass->keys()->first();
-        // $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
-        
+
         $itemClassCount = count($itemClass);
 
         if($itemClassCount >= 2){
@@ -67,8 +65,7 @@ class MainController extends Controller
                 });
             })
             ->when($request->wh, function($q) use ($request){
-                $warehouses = DB::table('tabWarehouse')->where('parent_warehouse', $request->wh)->pluck('name');
-				return $q->whereIn('default_warehouse', $warehouses);
+				return $q->where('default_warehouse', $request->wh);
             })
             ->when($request->group, function($q) use ($request){
 				return $q->where('item_group', $request->group);
@@ -103,14 +100,22 @@ class MainController extends Controller
                     ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
 
                 $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+
+                $lowLevelStock = DB::table('tabItem Reorder')->select('parent', 'warehouse')
+                        ->where('parent', $value->item_code)
+                        ->where('warehouse', $value->warehouse)->sum('warehouse_reorder_level');
+                        
                 if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
+                    
                     $consignment_warehouses[] = [
                         'warehouse' => $value->warehouse,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                         'stock_uom' => $value->stock_uom,
+                        'warehouse_reorder_level' => $lowLevelStock,
                     ];
+                    
                 }else{
                     $site_warehouses[] = [
                         'warehouse' => $value->warehouse,
@@ -118,6 +123,7 @@ class MainController extends Controller
                         'actual_qty' => $actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                         'stock_uom' => $value->stock_uom,
+                        'warehouse_reorder_level' => $lowLevelStock,
                     ];
                 }
             }
@@ -138,16 +144,8 @@ class MainController extends Controller
                 'consignment_warehouses' => $consignment_warehouses,
                 'default_warehouse' => $row->default_warehouse
             ];
-
+            
         }
-
-        // $count = count($item_list);
-        // $half = $count/2;
-        // $itemList1 = array_slice($item_list, $half);
-        // $itemList2 = array_slice($item_list, 0, $half);
-
-        // $default_wh = DB::table('tabItem')->select('default_warehouse')->addselect('name')->get();
-
         return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
     public function count_ste_for_issue($purpose){
@@ -199,8 +197,8 @@ class MainController extends Controller
     }
 
     public function get_select_filters(){
-        $warehouses = DB::table('tabWarehouse')->where('is_group', 1)
-            ->where('parent_warehouse', 'All Warehouses - FI')
+        $warehouses = DB::table('tabWarehouse')->where('is_group', 0)
+            ->where('category', 'Physical')
             ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
         $item_groups = DB::table('tabItem Group')->where('is_group', 0)
@@ -210,6 +208,7 @@ class MainController extends Controller
             ->orderBy('name', 'asc')->pluck('name');
 
         return response()->json([
+            // 'parent_warehouses' => $allowed_warehouses,
             'warehouses' => $warehouses,
             'item_groups' => $item_groups,
             'item_classification' => $item_classification,

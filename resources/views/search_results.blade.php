@@ -43,7 +43,7 @@
 									<div class="row">
 										<div class="col-md-6 p-1">
 												<div class="float-right form-group m-0 w-55" id="warehouse-filter-parent">
-													<select name="warehouse" id="warehouse-filter" class="form-control" style="width: 20000px; font-size: 20px !important;">
+													<select name="warehouse" id="warehouse-filter" class="form-control" style="width: 200px; font-size: 20px !important;">
 														
 													</select>
 												  </div>
@@ -117,7 +117,15 @@
 														@endif
 													</td>
 													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-													<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span></td>
+													<td class="text-center">
+														@if($inv['available_qty'] == 0)
+															<span class="badge badge-danger" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+														@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
+															<span class="badge badge-warning" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+														@else
+															<span class="badge badge-success" style="font-size: 15px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+														@endif
+													</td>
 												</tr>
 											@empty
 												<tr>
