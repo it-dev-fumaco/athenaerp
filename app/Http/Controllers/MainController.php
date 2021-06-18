@@ -3003,4 +3003,8 @@ class MainController extends Controller
         
         return response()->json(['picking' => $list]);
     }
+
+    public function view_picking_slip() {
+        return view('picking_slip');
+    }
 }
