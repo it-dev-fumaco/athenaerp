@@ -15,6 +15,9 @@ Route::get('/login', 'LoginController@view_login')->name('login');
 Route::post('/login_user', 'LoginController@login');
 
 Route::group(['middleware' => 'auth'], function(){
+    Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
+    Route::get('/item_attribute', 'ItemAttributeController@item_attribute_search');
+
     Route::get('/', 'MainController@index');
     Route::get('/search_results', 'MainController@search_results');
     Route::get('/dashboard_data', 'MainController@dashboard_data');
