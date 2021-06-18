@@ -368,6 +368,19 @@
 												</dd>
 											</dl>
 										</div>
+										<div class="col-md-12 mt-2 d-none">
+											<div class="callout callout-info">
+											  <h6><i class="icon fas fa-info"></i> Reservation found on this item</h6>
+											  <dl class="row" id="sr-d">
+												<dt class="col-sm-4">Sales Person</dt>
+												<dd class="col-sm-8">-</dd>
+												<dt class="col-sm-4">Project</dt>
+												<dd class="col-sm-8">-</dd>
+												<dt class="col-sm-4">Reserved Qty</dt>
+												<dd class="col-sm-8">-</dd>
+											  </dl>
+											</div>
+										  </div>
 									</div>
 								</div>
 							</div>
@@ -766,7 +779,7 @@
 		</form>
 	</div>
 
-	<div class="modal fade" id="confirmation-modal">
+	{{-- <div class="modal fade" id="confirmation-modal">
 		<form id="deduct-reservation-form" autocomplete="off">
 			@csrf
 			<div class="modal-dialog">
@@ -795,7 +808,7 @@
 				</div>
 			</div>
 		</form>
-	</div>
+	</div> --}}
 
   <!-- Main Footer -->
   <footer class="main-footer">
@@ -951,6 +964,17 @@
 					url: "/get_low_stock_level_items?page=" + page,
 					success: function (data) {
 						$('#low-level-stock-table').html(data);
+					}
+				});
+			}
+
+			get_athena_logs();
+			function get_athena_logs(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_athena_logs?page=" + page,
+					success: function (data) {
+						$('#athena-logs-table').html(data);
 					}
 				});
 			}
@@ -1399,6 +1423,25 @@
 
 			// update item modal
 			$(document).on('click', '.update-item', function(){
+
+				$.ajax({
+						type: 'GET',
+						url: '/validate_if_reservation_exists',
+						data: $('#update-ste-form').serialize(),
+						success: function(response){
+							if(response.status == 1){
+                $('#sr-d').parent().parent().removeClass('d-none');
+								$('#sr-d dd').eq(0).text(response.modal_message.sales_person);
+								$('#sr-d dd').eq(1).text(response.modal_message.project);
+								$('#sr-d dd').eq(2).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
+							} else {
+                $('#sr-d').parent().parent().addClass('d-none');
+              }
+						},
+						error: function(jqXHR, textStatus, errorThrown) {
+						}
+					});
+
 				var id = $(this).data('id');
 				$.ajax({
 				  type: 'GET',

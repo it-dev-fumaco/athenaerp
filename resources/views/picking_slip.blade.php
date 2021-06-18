@@ -223,24 +223,25 @@
                                                             <span class="actual"></span> <span class="stock_uom"></span>
                                                         </p>
                                                     </dd>
+                                                    <dt>Reference No:</dt>
+                                                  <dd class="ref_no"></dd>
                                                 </dl>
                                             </div>
+                                           
                                         </div>
                                     </div>
-                                    <div class="col-md-4 mt-2">
-                                        <dl>
-                                            <dt>Reference No:</dt>
-                                            <dd class="ref_no"></dd>
+                                    <div class="col-md-12 mt-2 d-none">
+                                      <div class="callout callout-info">
+                                        <h6><i class="icon fas fa-info"></i> Reservation found on this item</h6>
+                                        <dl class="row" id="sr-d">
+                                          <dt class="col-sm-4">Sales Person</dt>
+                                          <dd class="col-sm-8">-</dd>
+                                          <dt class="col-sm-4">Project</dt>
+                                          <dd class="col-sm-8">-</dd>
+                                          <dt class="col-sm-4">Reserved Qty</dt>
+                                          <dd class="col-sm-8">-</dd>
                                         </dl>
-                                    </div>
-                                    <div class="col-md-8 mt-2">
-                                      <dl>
-                                        
-                                         <dt>Remarks:</dt>
-                                         <dd>
-                                            <textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks"></textarea>
-                                         </dd>
-                                      </dl>
+                                      </div>
                                     </div>
                                     <div class="col-md-12 mt-2">
                                       <h5 class="text-center font-weight-bold text-uppercase">Product Bundle Item(s)</h5>
@@ -261,9 +262,11 @@
                         </div>
                     </div>
                 </div>
+                <input type="hidden" name="deduct_reserve" value="0">
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-                  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK OUT</button>
+                  {{-- <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button> --}}
+                  <button type="button" class="btn btn-warning" id="btn-deduct-res"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
+                  <button type="button" class="btn btn-primary btn-lg" id="btn-check-out"><i class="fa fa-check"></i> CHECK OUT</button>
                 </div>
             </div>
         </div>
@@ -349,7 +352,37 @@
         }
     });
 
+    $('#btn-deduct-res').click(function(){
+      $('#update-ps-modal input[name="deduct_reserve"]').val(1);
+      $('#update-ps-form').submit();
+    });
+
+    $('#btn-check-out').click(function(){
+      $('#update-ps-modal input[name="deduct_reserve"]').val(0);
+      $('#update-ps-form').submit();
+    });
+
     $(document).on('click', '.update-ps', function(){
+
+      $.ajax({
+						type: 'GET',
+						url: '/validate_if_reservation_exists',
+						data: $('#update-ps-form').serialize(),
+						success: function(response){
+							if(response.status == 1){
+                $('#sr-d').parent().parent().removeClass('d-none');
+								$('#sr-d dd').eq(0).text(response.modal_message.sales_person);
+								$('#sr-d dd').eq(1).text(response.modal_message.project);
+								$('#sr-d dd').eq(2).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
+							} else {
+                $('#sr-d').parent().parent().addClass('d-none');
+              }
+						},
+						error: function(jqXHR, textStatus, errorThrown) {
+						}
+					});
+
+
       $.ajax({
         type: 'GET',
         url: '/get_ps_details/' + $(this).data('id'),
@@ -464,29 +497,7 @@
 					$(element).removeClass('is-invalid');
 				},
 				submitHandler: function(form) {
-					$.ajax({
-						type: 'GET',
-						url: '/validate_if_reservation_exists',
-						data: $(form).serialize(),
-						success: function(response){
-							if (response.status == 0) {
-								$('#myModal').modal('show'); 
-								$('#myModalLabel').html(response.modal_title);
-								$('#desc').html(response.modal_message);
-								
-								return false;
-							}else if(response.status == 1){
-								$('#confirmation-modal').modal('show');
-								$('#deduct-reservation-form .form-id').text('#' + $(form).attr('id'));
-								$('#deduct-reservation-form .form-action').text($(form).attr('action'));
-
-								$('#deduct-reservation-form dd').eq(0).text(response.modal_message.sales_person);
-								$('#deduct-reservation-form dd').eq(2).text(response.modal_message.project);
-								$('#deduct-reservation-form dd').eq(1).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
-
-								return false;
-							} else {
-								$.ajax({
+          $.ajax({
 									type: 'POST',
 									url: $(form).attr('action'),
 									data: $(form).serialize(),
@@ -506,13 +517,6 @@
 									error: function(jqXHR, textStatus, errorThrown) {
 									}
 								});
-							}
-
-							
-						},
-						error: function(jqXHR, textStatus, errorThrown) {
-						}
-					});
 				}
 			});
 

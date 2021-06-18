@@ -196,18 +196,22 @@
 									<div class="row">
 										<div class="col-xl-8">
 											<div class="card card-danger card-outline">
-												<div class="card-header">
-													<h3 class="card-title font-weight-bold"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</h3>
-													<div class="card-tools">
-														<button type="button" class="btn btn-tool" data-card-widget="collapse">
-															<i class="fas fa-minus"></i>
-														</button>
-														<button type="button" class="btn btn-tool" data-card-widget="remove">
-															<i class="fas fa-times"></i>
-														</button>
+												<div class="card-header d-flex p-0">
+													<ul class="nav nav-pills p-2">
+													  <li class="nav-item"><a class="nav-link active" href="#tab_1" data-toggle="tab"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a></li>
+													  <li class="nav-item"><a class="nav-link" href="#tab_2" data-toggle="tab"><i class="fas fa-list-alt"></i> Stock Movement(s)</a></li>
+													</ul>
+												</div>
+												<div class="card-body p-0">
+													<div class="tab-content">
+													  <div class="tab-pane active" id="tab_1">
+														<div id="low-level-stock-table" style="margin-top: -32px;"></div>
+													  </div>
+													  <div class="tab-pane" id="tab_2">
+														<div id="athena-logs-table"></div>
+													  </div>
 													</div>
 												</div>
-												<div class="card-body p-0" id="low-level-stock-table"></div>
 											</div>
 										</div>
 										<div class="col-xl-4">

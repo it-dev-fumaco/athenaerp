@@ -99,6 +99,11 @@ class MainController extends Controller
                 $reserved_qty = StockReservation::where('item_code', $value->item_code)
                     ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
 
+                $consumed_qty = StockReservation::where('item_code', $value->item_code)
+                    ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('consumed_qty');
+
+                $reserved_qty = $reserved_qty - $consumed_qty;
+
                 $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
 
                 $lowLevelStock = DB::table('tabItem Reorder')->select('parent', 'warehouse')
@@ -1172,6 +1177,40 @@ class MainController extends Controller
                 }
             }
 
+            $so_details = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
+            $sales_person = ($so_details) ? $so_details->sales_person : null;
+            
+            // check if sales person & project has reserved qty
+            $stock_reservation = DB::table('tabStock Reservation')
+                ->where('item_code', $request->item_code)->where('warehouse', $request->s_warehouse)
+                ->where('project', $so_details ->project)->where('sales_person', $sales_person)
+                ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
+
+            if($stock_reservation && $request->deduct_reserve == 1){
+                $consumed_qty = $stock_reservation->consumed_qty + $request->qty;
+                $consumed_qty = ($consumed_qty > $stock_reservation->reserve_qty) ? $stock_reservation->reserve_qty : $consumed_qty;
+
+                $data = [
+                    'modified_by' => Auth::user()->wh_user,
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'consumed_qty' => $consumed_qty
+                ];
+
+                DB::table('tabStock Reservation')->where('name', $stock_reservation->name)->update($data);
+            }else{
+                $reserved_qty = $this->get_reserved_qty($request->item_code, $request->s_warehouse);
+
+                $available_qty = $request->balance - $reserved_qty;
+    
+                if($available_qty < $request->qty){
+                    return response()->json([
+                        'error' => 1,
+                        'modal_title' => 'Insufficient Stock', 
+                        'modal_message' => 'Qty not available for <b>' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b><br><br>Reserved qty is <b>' . $reserved_qty . '</b>'
+                    ]);
+                }
+            }
+
             $now = Carbon::now();
             $values = [
                 'session_user' => Auth::user()->full_name,
@@ -1189,10 +1228,18 @@ class MainController extends Controller
 
             DB::commit();
 
+            if($request->deduct_reserve == 1) {
+                return response()->json([
+                    'error' => 0, 
+                    'modal_title' => 'Checked Out', 
+                    'modal_message' => 'Item ' . $request->item_code . ' has been deducted from reservation.'
+                ]);
+            }
+
             return response()->json([
                 'error' => 0, 
                 'modal_title' => 'Checked Out', 
-                'modal_message' => 'Item ' . $request->item_code . 'has been checked out.'
+                'modal_message' => 'Item ' . $request->item_code . ' has been checked out.'
             ]);
         } catch (Exception $e) {
             DB::rollback();
@@ -1304,6 +1351,11 @@ class MainController extends Controller
         foreach ($item_inventory as $value) {
             $reserved_qty = StockReservation::where('item_code', $value->item_code)
                 ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
+
+            $consumed_qty = StockReservation::where('item_code', $value->item_code)
+                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('consumed_qty');
+
+            $reserved_qty = $reserved_qty - $consumed_qty;
 
             $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
             if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
@@ -2837,43 +2889,43 @@ class MainController extends Controller
             return response()->json(['status' => 0, 'modal_title' => 'Not Stock Item', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> is not a stock item.']);
         }
 
-        if($request->barcode != $request->item_code){
-            return response()->json(['status' => 0, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
-        }
+        // if($request->barcode != $request->item_code){
+        //     return response()->json(['status' => 0, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+        // }
 
-        if($request->barcode != $request->item_code){
-            return response()->json(['status' => 0, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
-        }
+        // if($request->barcode != $request->item_code){
+        //     return response()->json(['status' => 0, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+        // }
 
-        if(!$request->is_material_receipt){
-            if($request->balance < $request->qty && $request->transfer_as != 'For Return'){
-                return response()->json([
-                    'status' => 0,
-                    'modal_title' => 'Insufficient Stock', 
-                    'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $request->balance . '</b>, you need <b>' . $request->qty . '</b>'
-                ]);
-            }
-        }
+        // if(!$request->is_material_receipt){
+        //     if($request->balance < $request->qty && $request->transfer_as != 'For Return'){
+        //         return response()->json([
+        //             'status' => 0,
+        //             'modal_title' => 'Insufficient Stock', 
+        //             'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $request->balance . '</b>, you need <b>' . $request->qty . '</b>'
+        //         ]);
+        //     }
+        // }
 
-        if($request->qty <= 0){
-            return response()->json([
-                'status' => 0, 
-                'modal_title' => 'Invalid Qty', 
-                'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
-            ]);
-        }
+        // if($request->qty <= 0){
+        //     return response()->json([
+        //         'status' => 0, 
+        //         'modal_title' => 'Invalid Qty', 
+        //         'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
+        //     ]);
+        // }
 
-        if($request->qty > ($request->requested_qty * 1)){
-            return response()->json([
-                'status' => 0, 
-                'modal_title' => 'Invalid Qty', 
-                'modal_message' => 'Qty cannot be greater than ' . $request->requested_qty * 1 . ' for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
-            ]);
-        }
+        // if($request->qty > ($request->requested_qty * 1)){
+        //     return response()->json([
+        //         'status' => 0, 
+        //         'modal_title' => 'Invalid Qty', 
+        //         'modal_message' => 'Qty cannot be greater than ' . $request->requested_qty * 1 . ' for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
+        //     ]);
+        // }
 
         $sales_order = null;
         $warehouse = null;
-        if($request->type && $request->type != 'picking_slip') {
+        if($request->type != 'picking_slip') {
             $ste_details = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->sted_id)->first();
             if(!$ste_details){
                 return response()->json([
@@ -3006,5 +3058,22 @@ class MainController extends Controller
 
     public function view_picking_slip() {
         return view('picking_slip');
+    }
+
+    public function get_athena_logs() {
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $date = Carbon::now();
+
+        $startOfYear = $date->copy()->startOfYear();
+        $endOfYear   = $date->copy()->endOfYear();
+
+        $list = DB::table('tabAthena Transactions')->whereIn('source_warehouse', $allowed_warehouses)
+            ->whereBetween('transaction_date', [$startOfYear, $endOfYear])
+            ->select('transaction_date', 'item_code', 'description', 'issued_qty', 'uom', 'source_warehouse', 'warehouse_user', 'reference_no', 'reference_parent')
+            ->orderBy('transaction_date', 'desc')->get();
+
+        return view('tbl_athena_logs', compact('list'));
     }
 }
