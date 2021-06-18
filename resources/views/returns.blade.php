@@ -73,7 +73,7 @@
 										  	<td class="text-justify">
 												<div class="d-block font-weight-bold">
 													@{{ r.item_code }}
-													<span class="badge badge-success" ng-if="r.status === 'Received'">@{{ r.status }}</span>
+													<span class="badge badge-success" ng-if="r.status === 'Returned'">@{{ r.status }}</span>
 													<span class="badge badge-warning" ng-if="r.status === 'For Checking'">@{{ r.status }}</span>
 													<i class="fas fa-arrow-right ml-3 mr-2"></i> @{{ r.t_warehouse }}
 												</div>

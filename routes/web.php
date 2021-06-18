@@ -88,4 +88,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_available_qty/{item_code}/{warehouse}', 'MainController@get_available_qty');
     Route::get('/validate_if_reservation_exists', 'MainController@validate_if_reservation_exists');
     Route::post('/submit_sales_return', 'MainController@submit_sales_return');
+    Route::get('/view_deliveries', 'MainController@view_deliveries');
 });

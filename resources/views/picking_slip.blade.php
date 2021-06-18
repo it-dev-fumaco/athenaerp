@@ -92,7 +92,8 @@
                         <span class="mt-3" style="font-size: 10pt;">@{{ x.customer }}</span>
                       </td>
                       <td class="text-center">
-                        <img src="dist/img/icon.png" class="img-circle checkout update-ps"  data-id="@{{ x.id }}">
+                        <img src="dist/img/icon.png" ng-hide="x.type != 'picking_slip'" class="img-circle checkout update-ps"  data-id="@{{ x.id }}">
+                        <img src="dist/img/icon.png"  ng-hide="x.type != 'stock_entry'" class="img-circle update-item checkout" data-id="@{{ x.id }}">
                       </td>
                     </tr>
                   </tbody>
@@ -176,7 +177,7 @@
         <div class="modal-dialog" style="min-width: 35%;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"><span class="parent"></span></h4>
+                  <h4 class="modal-title">Deliveries <small class="status"></small></h4>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -194,14 +195,16 @@
                                 <input type="hidden" class="is_bundle" name="is_bundle">
                                 <input type="hidden" class="dri-name" name="dri_name">
                                 <input type="hidden" class="sales-order" name="sales_order">
+                                <input type="hidden" name="type" value="picking_slip">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 form-group">
                                         <label>Barcode</label>
                                         <input type="text" class="form-control barcode" name="barcode" placeholder="Barcode" required>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 form-group">
                                         <label>Qty</label>
-                                        <input type="text" class="form-control qty" name="qty" placeholder="Qty">
+                                        <input type="text" class="form-control qty" name="qty" placeholder="Qty" required>
+                                        <input type="hidden" name="requested_qty">
                                     </div>
                                     <div class="col-md-12">
                                         <div class="row">
@@ -231,10 +234,13 @@
                                         </dl>
                                     </div>
                                     <div class="col-md-8 mt-2">
-                                        <dl>
-                                            <dt>Status:</dt>
-                                            <dd class="status"></dd>
-                                        </dl>
+                                      <dl>
+                                        
+                                         <dt>Remarks:</dt>
+                                         <dd>
+                                            <textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks"></textarea>
+                                         </dd>
+                                      </dl>
                                     </div>
                                     <div class="col-md-12 mt-2">
                                       <h5 class="text-center font-weight-bold text-uppercase">Product Bundle Item(s)</h5>
@@ -337,27 +343,6 @@
 
 <script>
 	$(document).ready(function(){
-
-    // var active_tab = $("ul.nav-tabs li a.active").attr('id');
-    // if(active_tab == 'picking-slip-tab'){
-    //   $('#total-result-picking-slip').removeClass('d-none');
-    //   $('#total-result-picking-slip-return').addClass('d-none');
-    // }else{
-    //   $('#total-result-picking-slip').addClass('d-none');
-    //   $('#total-result-picking-slip-return').removeClass('d-none');
-    // }
-
-    // $('ul.nav-tabs li a').click(function(){
-
-    // if($(this).attr('id') == 'picking-slip-tab'){
-    //   $('#total-result-picking-slip').removeClass('d-none');
-    //   $('#total-result-picking-slip-return').addClass('d-none');
-    // }else{
-    //   $('#total-result-picking-slip').addClass('d-none');
-    //   $('#total-result-picking-slip-return').removeClass('d-none');
-    // }
-      
-    // });
     $.ajaxSetup({
         headers: {
           'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -377,9 +362,13 @@
             return false;
           }
 
+          var statuses = ['Issued'];
+					var badge = (statuses.includes(response.status)) ? 'badge badge-success' : 'badge badge-warning';
+					$('#update-ps-modal .status').text(response.status).removeClass('badge badge-success badge-warning').addClass(badge);
+          $('#update-ps-modal input[name="requested_qty"]').val(response.qty);
+
           $('#update-ps-modal .id').val(response.id);
           $('#update-ps-modal .wh').val(response.wh);
-          $('#update-ps-modal .parent').text(response.name);
           $('#update-ps-modal .warehouse').text(response.wh);
           $('#update-ps-modal .barcode').val(response.barcode);
           $('#update-ps-modal .qty').val(Number(response.qty));
@@ -445,35 +434,117 @@
         $('#update-ret-modal input[name="barcode"]').focus();
     });
 
-    $('#update-ps-form').submit(function(e){
-        e.preventDefault();
-        
-        $.ajax({
-          type: 'POST',
-          url: '/checkout_picking_slip_item',
-          data: $(this).serialize(),
-          success: function(response){
-            if (response.error) {
-              $('#myModal').modal('show'); 
-              $('#myModalLabel').html(response.modal_title);
-              $('#desc').html(response.modal_message);
-              
-              return false;
-            }else{
-              $('#myModal1').modal('show'); 
-              $('#myModalLabel1').html(response.modal_title);
-              $('#desc1').html(response.modal_message);
 
-              $('#update-ps-modal').modal('hide');
-            }
-          },
-          error: function(jqXHR, textStatus, errorThrown) {
-            console.log(jqXHR);
-            console.log(textStatus);
-            console.log(errorThrown);
-          }
-        });
-    });
+    $('#update-ps-form').validate({
+				rules: {
+					barcode: {
+						required: true,
+					},
+          qty: {
+						required: true,
+					},
+				},
+				messages: {
+					barcode: {
+						required: "Please enter barcode",
+					},
+          qty: {
+						required: "Please enter quantity",
+					},
+				},
+				errorElement: 'span',
+				errorPlacement: function (error, element) {
+					error.addClass('invalid-feedback');
+					element.closest('.form-group').append(error);
+				},
+				highlight: function (element, errorClass, validClass) {
+					$(element).addClass('is-invalid');
+				},
+				unhighlight: function (element, errorClass, validClass) {
+					$(element).removeClass('is-invalid');
+				},
+				submitHandler: function(form) {
+					$.ajax({
+						type: 'GET',
+						url: '/validate_if_reservation_exists',
+						data: $(form).serialize(),
+						success: function(response){
+							if (response.status == 0) {
+								$('#myModal').modal('show'); 
+								$('#myModalLabel').html(response.modal_title);
+								$('#desc').html(response.modal_message);
+								
+								return false;
+							}else if(response.status == 1){
+								$('#confirmation-modal').modal('show');
+								$('#deduct-reservation-form .form-id').text('#' + $(form).attr('id'));
+								$('#deduct-reservation-form .form-action').text($(form).attr('action'));
+
+								$('#deduct-reservation-form dd').eq(0).text(response.modal_message.sales_person);
+								$('#deduct-reservation-form dd').eq(2).text(response.modal_message.project);
+								$('#deduct-reservation-form dd').eq(1).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
+
+								return false;
+							} else {
+								$.ajax({
+									type: 'POST',
+									url: $(form).attr('action'),
+									data: $(form).serialize(),
+									success: function(response){
+									if (response.error) {
+											$('#myModal').modal('show'); 
+											$('#myModalLabel').html(response.modal_title);
+											$('#desc').html(response.modal_message);
+											
+											return false;
+										}else{
+											$('#myModal1').modal('show'); 
+											$('#myModalLabel1').html(response.modal_title);
+											$('#desc1').html(response.modal_message);
+										}
+									},
+									error: function(jqXHR, textStatus, errorThrown) {
+									}
+								});
+							}
+
+							
+						},
+						error: function(jqXHR, textStatus, errorThrown) {
+						}
+					});
+				}
+			});
+
+    // $('#update-ps-form').submit(function(e){
+    //     e.preventDefault();
+        
+    //     $.ajax({
+    //       type: 'POST',
+    //       url: '/checkout_picking_slip_item',
+    //       data: $(this).serialize(),
+    //       success: function(response){
+    //         if (response.error) {
+    //           $('#myModal').modal('show'); 
+    //           $('#myModalLabel').html(response.modal_title);
+    //           $('#desc').html(response.modal_message);
+              
+    //           return false;
+    //         }else{
+    //           $('#myModal1').modal('show'); 
+    //           $('#myModalLabel1').html(response.modal_title);
+    //           $('#desc1').html(response.modal_message);
+
+    //           $('#update-ps-modal').modal('hide');
+    //         }
+    //       },
+    //       error: function(jqXHR, textStatus, errorThrown) {
+    //         console.log(jqXHR);
+    //         console.log(textStatus);
+    //         console.log(errorThrown);
+    //       }
+    //     });
+    // });
 
     $(document).on('click', '.update-ret', function(){
       $.ajax({
@@ -541,7 +612,7 @@
       $scope.loadData = function(){
         $scope.custom_loading_spinner_1 = true;
         $scope.custom_loading_spinner_2 = true;
-        $http.get("/picking_slip?arr=1").then(function (response) {
+        $http.get("/view_deliveries?arr=1").then(function (response) {
           $scope.ps = response.data.picking;
           $scope.custom_loading_spinner_1 = false;
         });

@@ -291,7 +291,6 @@
 		}
 	</style>
 
-  	@if($activePage != 'picking-slip')
 	<div class="modal fade" id="update-item-modal">
 		<form id="update-ste-form" method="POST" action="/checkout_ste_item">
 			@csrf
@@ -382,7 +381,6 @@
 			</div>
 		</form>
 	</div>
-	@endif
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
 		<div class="modal-dialog" role="document" style="min-width: 90%;">
@@ -1412,9 +1410,13 @@
 
 					$('#update-item-modal input[name="requested_qty"]').val(response.qty);
 
-
-					if(response.purpose == 'Material Transfer') {
+					var transfer_as = ['Consignment', 'Sample Item'];
+					if(response.purpose == 'Material Transfer' && !transfer_as.includes(response.transfer_as)) {
 						$('#update-item-modal .parent').text('Internal Transfer');
+					}
+
+					if(response.purpose == 'Material Transfer' && transfer_as.includes(response.transfer_as)) {
+						$('#update-item-modal .parent').text('Deliveries');
 					}
 
 					if(response.purpose == 'Material Issue') {
@@ -1480,10 +1482,16 @@
 					barcode: {
 						required: true,
 					},
+          qty: {
+						required: true,
+					},
 				},
 				messages: {
 					barcode: {
 						required: "Please enter barcode",
+					},
+          qty: {
+						required: "Please enter quantity",
 					},
 				},
 				errorElement: 'span',
@@ -1581,11 +1589,13 @@
 
 			$('#myModal1').on('hide.bs.modal', function(){
 				$('#update-item-modal').modal('hide');
+				$('#update-ps-modal').modal('hide');
 				$('#update-item-return-modal').modal('hide');
 				$('#add-stock-reservation-modal').modal('hide');
 				$('#cancel-stock-reservation-modal').modal('hide');
 				$('#edit-stock-reservation-modal').modal('hide');
 				$('#confirmation-modal').modal('hide');
+				$('#sales-return-modal').modal('hide');
 			});
 			
 			$('#myModal').on("hidden.bs.modal", function () {

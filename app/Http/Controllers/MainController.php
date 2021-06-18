@@ -493,58 +493,6 @@ class MainController extends Controller
         return response()->json(['records' => $list]);
     }
 
-    public function view_picking_slip(Request $request){
-        if(!$request->arr){
-            return view('picking_slip');
-        }
-        
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
-
-        $q = DB::table('tabPacking Slip as ps')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
-                ->where('ps.docstatus', 0)
-                ->where('dri.docstatus', 0)
-                ->whereIn('dri.warehouse', $allowed_warehouses)
-                ->select('ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->groupBy('ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")->get();
-
-        $list = [];
-        foreach ($q as $d) {
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-
-            $part_nos = implode(', ', $part_nos->toArray());
-
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
-
-            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
-
-            $list[] = [
-                'owner' => $owner,
-                'warehouse' => $d->warehouse,
-                'customer' => $d->customer,
-                'sales_order' => $d->sales_order,
-                'id' => $d->id,
-                'status' => $d->status,
-                'name' => $d->name,
-                'delivery_note' => $d->delivery_note,
-                'item_code' => $d->item_code,
-                'description' => $d->description,
-                'qty' => $d->qty,
-                'stock_uom' => $d->stock_uom,
-                'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
-            ];
-        }
-        
-        return response()->json(['picking' => $list]);
-    }
-
     public function get_pending_item_request_for_issue(){
         $q = DB::table('tabProduction Order as pro')
             ->join('tabProduction Order Item as prod_item', 'pro.name', 'prod_item.parent')
@@ -892,7 +840,7 @@ class MainController extends Controller
             $now = Carbon::now();
             $values = [
                 'session_user' => Auth::user()->full_name,
-                'status' => 'Received', 
+                'status' => 'Returned', 
                 'transfer_qty' => $request->returned_qty, 
                 'qty' => $request->returned_qty, 
                 'issued_qty' => $request->returned_qty, 
@@ -2923,25 +2871,32 @@ class MainController extends Controller
             ]);
         }
 
-        $ste_details = DB::table('tabStock Entry')->where('name', $request->ste_name)->first();
-        if(!$ste_details){
-            return response()->json([
-                'status' => 0, 
-                'modal_title' => 'Not Found', 
-                'modal_message' => 'Stock Entry ' . $request->ste_name . ' does not exist.'
-            ]);
-         }
-         
-        // get stock entry detail
-        $sed_details = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->sted_id)->first();
+        $sales_order = null;
+        $warehouse = null;
+        if($request->type && $request->type != 'picking_slip') {
+            $ste_details = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->sted_id)->first();
+            if(!$ste_details){
+                return response()->json([
+                    'status' => 0, 
+                    'modal_title' => 'Not Found', 
+                    'modal_message' => 'Stock Entry ' . $request->ste_name . ' does not exist.'
+                ]);
+            }
 
-        if($sed_details->sales_order_no) {
+            $sales_order = $ste_details->sales_order_no;
+            $warehouse = $ste_details->s_warehouse;
+        }
+
+        $sales_order = ($request->type == 'picking_slip') ? $request->sales_order : $sales_order;
+        $warehouse = ($request->type == 'picking_slip') ? $request->s_warehouse : $warehouse;
+
+        if($sales_order) {
             // get sales order details
-            $so_details = DB::table('tabSales Order')->where('name', $sed_details->sales_order_no)->select('sales_person', 'project')->first();
+            $so_details = DB::table('tabSales Order')->where('name', $sales_order)->select('sales_person', 'project')->first();
 
             if($so_details) {
                 $stock_reservation_details = DB::table('tabStock Reservation')->where('sales_person', $so_details->sales_person)->where('project', $so_details->project)
-                    ->where('item_code', $sed_details->item_code)->where('warehouse', $sed_details->s_warehouse)
+                    ->where('item_code', $request->item_code)->where('warehouse', $warehouse)
                     ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
 
                 return response()->json([
@@ -3004,9 +2959,47 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'stock_uom' => $d->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+                'type' => 'picking_slip'
             ];
         }
+
+        $q = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
+            ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
+            ->get();
+
+            foreach ($q as $d) {
+                $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+    
+                $part_nos = implode(', ', $part_nos->toArray());
+    
+                $owner = DB::table('tabUser')->where('email', $d->owner)->first();
+                $owner = ($owner) ? $owner->full_name : null;
+    
+                $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+    
+                $list[] = [
+                    'owner' => $owner,
+                    'warehouse' => $d->s_warehouse,
+                    'customer' => $d->customer_1,
+                    'sales_order' => $d->sales_order_no,
+                    'id' => $d->id,
+                    'status' => $d->status,
+                    'name' => $d->name,
+                    'delivery_note' => null,
+                    'item_code' => $d->item_code,
+                    'description' => $d->description,
+                    'qty' => $d->qty,
+                    'stock_uom' => $d->stock_uom,
+                    'parent_warehouse' => $parent_warehouse,
+                    'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+                    'type' => 'stock_entry'
+                ];
+            }
         
         return response()->json(['picking' => $list]);
     }
