@@ -150,7 +150,7 @@
 																@forelse($row['consignment_warehouses'] as $con)
 																<tr>
 																	<td>{{ $con['warehouse'] }}</td>
-																	<td class="text-center"><span class="badge badge-{{ ($inv['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+																	<td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
 																</tr>
 																@empty
 																<tr>

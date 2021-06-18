@@ -60,7 +60,7 @@
                                         <th scope="col" class="text-center p-1">Actual Qty</th>
                                         <th scope="col" class="text-center p-1">Available Qty</th>
                                     </thead>
-                                    @forelse ($stock_level as $stock)
+                                    @forelse ($site_warehouses as $stock)
                                     <tr>
                                         <td class="p-1">{{ $stock['warehouse'] }}</td>
                                         <td class="text-center p-1">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
@@ -75,6 +75,46 @@
                                     </tr>
                                     @endforelse
                                 </table>
+                                @if(count($consignment_warehouses) > 0)
+											<div class="text-center">
+												<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcww{{ $item_details->name }}" style="font-size: 12px;">View Consignment Warehouse</a>
+											</div>
+
+											<div class="modal fade" id="vcww{{ $item_details->name }}" tabindex="-1" role="dialog">
+												<div class="modal-dialog" role="document">
+													<div class="modal-content">
+														<div class="modal-header">
+															<h4 class="modal-title">{{ $item_details->name }} - Consignment Warehouse(s) </h4>
+															<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+														</div>
+														<form></form>
+														<div class="modal-body">
+															<table class="table table-hover m-0">
+																<col style="width: 70%;">
+																<col style="width: 30%;">
+																<tr>
+																	<th class="text-center">Warehouse</th>
+																	<th class="text-center">Available Qty</th>
+																</tr>
+																@forelse($consignment_warehouses as $con)
+																<tr>
+																	<td>{{ $con['warehouse'] }}</td>
+																	<td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+																</tr>
+																@empty
+																<tr>
+																	<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																</tr>
+																@endforelse
+															</table>
+														</div>
+														<div class="modal-footer">
+															<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+														</div>
+													</div>
+												</div>
+											</div>
+											@endif
                             </div>
                         </div>
                     </div>

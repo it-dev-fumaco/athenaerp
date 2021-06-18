@@ -1,3 +1,6 @@
+<div class="float-right mr-3 mt-1 mb-1">
+    Total: <span class="badge badge-info">{{ $low_level_stocks->total() }}</span>
+</div>
 <table class="table table-bordered">
     <col style="width: 33%;">
     <col style="width: 10%;">
@@ -26,13 +29,15 @@
             <div class="d-flex flex-row">
                 <div class="p-1">
                     <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
-                    <img src="{{ asset('storage/') }}{{ $img }}" class="img-size-50 d-inline-block">
-                </a></div>
-                <div class="p-1"><span class="d-block font-weight-bold">{{ $row['item_code'] }}</span>
-                    <small class="font-italic">{{ $row['description'] }}</small></div>
+                        <img src="{{ asset('storage/') }}{{ $img }}" class="img-size-50 d-inline-block">
+                    </a>
+                </div>
+                <div class="p-1">
+                    <a href="#" class="view-item-details" data-item-code="{{ $row['item_code'] }}" data-item-classification="{{ $row['item_classification'] }}">
+                        <span class="d-block font-weight-bold text-dark">{{ $row['item_code'] }}</span>
+                    </a>
+                    <small class="font-italic">{{ str_limit($row['description'], $limit = 80, $end = '...') }}</small></div>
               </div>
-
-                
             </td>
             <td class="text-center p-1 align-middle">
                 <small>{{ $row['stock_uom'] }}</small></td>
@@ -45,7 +50,8 @@
                 <span class="badge badge-{{ ($row['actual_qty'] > $row['warehouse_reorder_level']) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $row['actual_qty'] * 1 }}</span>
             </td>
             <td class="text-center p-1 align-middle">
-                <button class="btn btn-primary btn-sm">Create MR</button></td>
+                <button class="btn btn-primary btn-sm">Create MR</button>
+            </td>
         </tr>
         @empty
             <tr>

@@ -322,11 +322,11 @@
 								</div>
 								<div class="box-body" style="font-size: 12pt;">
 									<div class="row">
-										<div class="col-md-6">
+										<div class="col-md-6 form-group">
 											<label>Barcode</label>
 											<input type="text" class="form-control barcode" id="barcode" name="barcode" placeholder="Barcode" required>
 										</div>
-										<div class="col-md-6">
+										<div class="col-md-6 form-group">
 											<label>Qty</label>
 											<input type="text" class="form-control qty" id="qty" name="qty" placeholder="Qty">
 										</div>
@@ -362,7 +362,7 @@
 										<div class="col-md-8 mt-2">
 											<dl>
 												<dt>Requested by:</dt>
-												<dd class="owner"></dd>
+												<dd class="owner">-</dd>
 												<dt class="pt-2">Remarks:</dt>
 												<dd>
 													<textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks" id="remarks"></textarea>
@@ -769,22 +769,30 @@
 	</div>
 
 	<div class="modal fade" id="confirmation-modal">
-		<form id="deduct-reservation-form" method="POST" action="/cancel_1reservation" autocomplete="off">
+		<form id="deduct-reservation-form" autocomplete="off">
 			@csrf
-			<div class="modal-dialog" style="min-width: 40%;">
+			<div class="modal-dialog">
 		  		<div class="modal-content">
 					<div class="modal-header">
 						<h4 class="modal-title">Confirmation</h4>
 			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
 					</div>
 					<div class="modal-body">
-						<input type="hidden" name="stock_reservation_id">
-						<h5 class="text-center">Get quantity from reserved stocks?</h5>
+						<span class="form-id d-none"></span>
+						<span class="form-action d-none"></span>
+						<h5 class="text-center">Reserved Stocks found on this item.</h5>
+						<dl class="row mt-3">
+							<dt class="col-xl-6">Sales Person</dt>
+							<dt class="col-xl-6 text-center">Rem. Reserved Qty</dt>
+							<dd class="col-xl-6">-</dd>
+							<dd class="col-xl-6 text-center">0</dd>
+							<dt class="col-xl-12">Project</dt>
+							<dd class="col-xl-12">-</dd>
+						  </dl>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CANCEL</button>
-						<button type="submit" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-ban"></i> NO</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> YES</button>
+						<button type="button" class="btn btn-danger confirm-btn" data-confirm="0"><i class="fa fa-ban"></i> Cancel</button>
+						<button type="button" class="btn btn-primary btn-lg confirm-btn" data-confirm="1"><i class="fa fa-check"></i> Proceed</button>
 					</div>
 				</div>
 			</div>
@@ -825,6 +833,9 @@
 
 <script src="{{ asset('/js/angular.min.js') }}"></script>
 <script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
+<!-- jquery-validation -->
+<script src="{{ asset('/updated/plugins/jquery-validation/jquery.validate.min.js') }}"></script>
+<script src="{{ asset('/updated/plugins/jquery-validation/additional-methods.min.js') }}"></script>
 
 	@yield('script')
 
@@ -935,7 +946,6 @@
 				});
 			}
 
-
 			get_low_stock_level_items();
 			function get_low_stock_level_items(page) {
 				$.ajax({
@@ -990,9 +1000,6 @@
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
 					}
 				});
 			});
@@ -1014,9 +1021,6 @@
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
 					}
 				});
 			});
@@ -1038,9 +1042,6 @@
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
 					}
 				});
 			});
@@ -1321,11 +1322,11 @@
 				}
 			});
 
-				count_ste_for_issue('Material Issue', '#material-issue');
-				count_ste_for_issue('Material Transfer', '#material-transfer');
-				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
-				count_ps_for_issue();
-				count_production_to_receive();
+			count_ste_for_issue('Material Issue', '#material-issue');
+			count_ste_for_issue('Material Transfer', '#material-transfer');
+			count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
+			count_ps_for_issue();
+			count_production_to_receive();
 
 			setInterval(function () {
 				count_ste_for_issue('Material Issue', '#material-issue');
@@ -1390,7 +1391,7 @@
 		  	});
 
 			$('body').click(function () {
-					$("#suggesstion-box").hide();
+				$("#suggesstion-box").hide();
 			});
 
 			$(document).on('click', '.selected-item', function(e){
@@ -1411,8 +1412,21 @@
 
 					$('#update-item-modal input[name="requested_qty"]').val(response.qty);
 
-					$('#update-item-modal .parent').text(response.parent);
-					$('#update-item-modal .purpose').text(response.purpose);
+
+					if(response.purpose == 'Material Transfer') {
+						$('#update-item-modal .parent').text('Internal Transfer');
+					}
+
+					if(response.purpose == 'Material Issue') {
+						$('#update-item-modal .parent').text(response.purpose);
+					}
+
+					if(response.purpose == 'Material Transfer for Manufacture') {
+						$('#update-item-modal .parent').text('Production Withdrawal');
+					}
+					
+					var badge = (response.status == 'Issued') ? 'badge badge-success' : 'badge badge-warning';
+					$('#update-item-modal .purpose').text(response.status).removeClass('badge badge-success badge-warning').addClass(badge);
 			
 					$('#update-item-modal .transfer_as').val(response.transfer_as);
 					$('#update-item-modal .id').val(response.name);
@@ -1459,19 +1473,96 @@
 					$('#update-item-modal').modal('show');
 				  }
 				});
-			
-				
 			});
 
-			$('#update-ste-form').submit(function(e){
+			$('#update-ste-form').validate({
+				rules: {
+					barcode: {
+						required: true,
+					},
+				},
+				messages: {
+					barcode: {
+						required: "Please enter barcode",
+					},
+				},
+				errorElement: 'span',
+				errorPlacement: function (error, element) {
+					error.addClass('invalid-feedback');
+					element.closest('.form-group').append(error);
+				},
+				highlight: function (element, errorClass, validClass) {
+					$(element).addClass('is-invalid');
+				},
+				unhighlight: function (element, errorClass, validClass) {
+					$(element).removeClass('is-invalid');
+				},
+				submitHandler: function(form) {
+					$.ajax({
+						type: 'GET',
+						url: '/validate_if_reservation_exists',
+						data: $(form).serialize(),
+						success: function(response){
+							if (response.status == 0) {
+								$('#myModal').modal('show'); 
+								$('#myModalLabel').html(response.modal_title);
+								$('#desc').html(response.modal_message);
+								
+								return false;
+							}else if(response.status == 1){
+								$('#confirmation-modal').modal('show');
+								$('#deduct-reservation-form .form-id').text('#' + $(form).attr('id'));
+								$('#deduct-reservation-form .form-action').text($(form).attr('action'));
+
+								$('#deduct-reservation-form dd').eq(0).text(response.modal_message.sales_person);
+								$('#deduct-reservation-form dd').eq(2).text(response.modal_message.project);
+								$('#deduct-reservation-form dd').eq(1).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
+
+								return false;
+							} else {
+								$.ajax({
+									type: 'POST',
+									url: $(form).attr('action'),
+									data: $(form).serialize(),
+									success: function(response){
+									if (response.error) {
+											$('#myModal').modal('show'); 
+											$('#myModalLabel').html(response.modal_title);
+											$('#desc').html(response.modal_message);
+											
+											return false;
+										}else{
+											$('#myModal1').modal('show'); 
+											$('#myModalLabel1').html(response.modal_title);
+											$('#desc1').html(response.modal_message);
+										}
+									},
+									error: function(jqXHR, textStatus, errorThrown) {
+									}
+								});
+							}
+
+							
+						},
+						error: function(jqXHR, textStatus, errorThrown) {
+						}
+					});
+				}
+			});
+
+			$('#deduct-reservation-form .confirm-btn').click(function(e){
 				e.preventDefault();
+
+				var is_confirm = $(this).data('confirm');
+				var form_id = $('#deduct-reservation-form .form-id').text();
+				var form_action = $('#deduct-reservation-form .form-action').text();
 
 				$.ajax({
 					type: 'POST',
-					url: '/checkout_ste_item',
-					data: $(this).serialize(),
+					url: form_action,
+					data: $(form_id).serialize() + '&deduct_reserve=' + is_confirm,
 					success: function(response){
-					  if (response.error) {
+					  	if (response.error) {
 							$('#myModal').modal('show'); 
 							$('#myModalLabel').html(response.modal_title);
 							$('#desc').html(response.modal_message);
@@ -1484,9 +1575,6 @@
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
 					}
 				});
 			});
@@ -1497,6 +1585,7 @@
 				$('#add-stock-reservation-modal').modal('hide');
 				$('#cancel-stock-reservation-modal').modal('hide');
 				$('#edit-stock-reservation-modal').modal('hide');
+				$('#confirmation-modal').modal('hide');
 			});
 			
 			$('#myModal').on("hidden.bs.modal", function () {
@@ -1673,9 +1762,6 @@
 						$('#upload-image-modal').modal('hide');
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
 					}
 				});
 			});
