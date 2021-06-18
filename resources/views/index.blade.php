@@ -16,7 +16,7 @@
 									<div class="container pr-0 pl-0">
 										<div class="row">
 											<div class="col-md-12 col-xl-10 col-lg-12 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
-												<h5 class="text-uppercase text-center mb-2 font-italic">Incoming Stocks</h5>
+												<h6 class="text-uppercase text-center mb-2 font-italic">Check In Item(s)</h6>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 offset-lg-0 offset-md-0 offset-xl-2 pr-4 pl-4">
 												<a href="/returns" class="text-dark">
@@ -105,7 +105,7 @@
 									<div class="container pr-0 pl-0">
 										<div class="row">
 											<div class="col-md-12 col-xl-10 col-lg-12 pr-4 pl-4">
-												<h5 class="text-uppercase text-center mb-2 font-italic">Outgoing Stocks</h5>
+												<h6 class="text-uppercase text-center mb-2 font-italic">Check Out Item(s)</h6>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/material_transfer_for_manufacture" class="text-dark">
