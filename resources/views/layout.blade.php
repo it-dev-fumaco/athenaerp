@@ -346,11 +346,13 @@
 																<span class="total_issued_qty_txt"></span> <span class="stock_uom"></span>
 															</p>
 														</dd>
+														<dt>Reference No:</dt>
+												<dd class="ref_no"></dd>
 													</dl>
 												</div>
 											</div>
 										</div>
-										<div class="col-md-4 mt-2">
+										<div class="col-md-4 mt-2 d-none">
 											<dl>
 												<dt>Reference No:</dt>
 												<dd class="ref_no"></dd>
@@ -358,7 +360,7 @@
 												<dd class="status d-none"></dd>
 											</dl>
 										</div>
-										<div class="col-md-8 mt-2">
+										<div class="col-md-8 mt-2 d-none">
 											<dl>
 												<dt>Requested by:</dt>
 												<dd class="owner">-</dd>
@@ -368,7 +370,7 @@
 												</dd>
 											</dl>
 										</div>
-										<div class="col-md-12 mt-2 d-none">
+										<div class="col-md-12 mt-2 d-non1e">
 											<div class="callout callout-info">
 											  <h6><i class="icon fas fa-info"></i> Reservation found on this item</h6>
 											  <dl class="row" id="sr-d">
@@ -386,9 +388,11 @@
 							</div>
 						</div>
 					</div>
+					<input type="hidden" name="deduct_reserve" value="0">
 					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK OUT</button>
+						<button type="button" class="btn btn-warning" id="btn-deduct-res-1"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
+						{{-- <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button> --}}
+						<button type="submit" class="btn btn-primary btn-lg" id="btn-check-out-1"><i class="fa fa-check"></i> CHECK OUT</button>
 					</div>
 				</div>
 			</div>
@@ -1424,23 +1428,6 @@
 			// update item modal
 			$(document).on('click', '.update-item', function(){
 
-				$.ajax({
-						type: 'GET',
-						url: '/validate_if_reservation_exists',
-						data: $('#update-ste-form').serialize(),
-						success: function(response){
-							if(response.status == 1){
-                $('#sr-d').parent().parent().removeClass('d-none');
-								$('#sr-d dd').eq(0).text(response.modal_message.sales_person);
-								$('#sr-d dd').eq(1).text(response.modal_message.project);
-								$('#sr-d dd').eq(2).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
-							} else {
-                $('#sr-d').parent().parent().addClass('d-none');
-              }
-						},
-						error: function(jqXHR, textStatus, errorThrown) {
-						}
-					});
 
 				var id = $(this).data('id');
 				$.ajax({
@@ -1516,9 +1503,40 @@
 					$('#update-item-modal .remarks').text(response.remarks);
 
 					$('#update-item-modal').modal('show');
+
+			
+				$.ajax({
+						type: 'GET',
+						url: '/validate_if_reservation_exists',
+						data: $('#update-ste-form').serialize(),
+						success: function(response){
+							if(response.status == 1){
+                $('#sr-d').parent().parent().removeClass('d-1none');
+								$('#sr-d dd').eq(0).text(response.modal_message.sales_person);
+								$('#sr-d dd').eq(1).text(response.modal_message.project);
+								$('#sr-d dd').eq(2).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
+							} else {
+                $('#sr-d').parent().parent().addClass('d-no1ne');
+              }
+						},
+						error: function(jqXHR, textStatus, errorThrown) {
+						}
+					});
 				  }
 				});
+
+				
 			});
+
+			$('#btn-deduct-res-1').click(function(){
+      $('#update-item-modal input[name="deduct_reserve"]').val(1);
+      $('#update-ste-form').submit();
+    });
+
+    $('#btn-check-out-1').click(function(){
+      $('#update-item-modal input[name="deduct_reserve"]').val(0);
+      $('#update-ste-form').submit();
+    });
 
 			$('#update-ste-form').validate({
 				rules: {
@@ -1550,28 +1568,6 @@
 				},
 				submitHandler: function(form) {
 					$.ajax({
-						type: 'GET',
-						url: '/validate_if_reservation_exists',
-						data: $(form).serialize(),
-						success: function(response){
-							if (response.status == 0) {
-								$('#myModal').modal('show'); 
-								$('#myModalLabel').html(response.modal_title);
-								$('#desc').html(response.modal_message);
-								
-								return false;
-							}else if(response.status == 1){
-								$('#confirmation-modal').modal('show');
-								$('#deduct-reservation-form .form-id').text('#' + $(form).attr('id'));
-								$('#deduct-reservation-form .form-action').text($(form).attr('action'));
-
-								$('#deduct-reservation-form dd').eq(0).text(response.modal_message.sales_person);
-								$('#deduct-reservation-form dd').eq(2).text(response.modal_message.project);
-								$('#deduct-reservation-form dd').eq(1).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
-
-								return false;
-							} else {
-								$.ajax({
 									type: 'POST',
 									url: $(form).attr('action'),
 									data: $(form).serialize(),
@@ -1591,13 +1587,6 @@
 									error: function(jqXHR, textStatus, errorThrown) {
 									}
 								});
-							}
-
-							
-						},
-						error: function(jqXHR, textStatus, errorThrown) {
-						}
-					});
 				}
 			});
 

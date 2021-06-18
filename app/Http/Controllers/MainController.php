@@ -1002,6 +1002,14 @@ class MainController extends Controller
 
             DB::commit();
 
+            if($request->deduct_reserve == 1) {
+                return response()->json([
+                    'error' => 0, 
+                    'modal_title' => 'Checked Out', 
+                    'modal_message' => 'Item ' . $request->item_code . ' has been deducted from reservation.'
+                ]);
+            }
+
             if ($request->transfer_as == 'For Return') {
                 return response()->json([
                     'error' => 0, 
