@@ -15,7 +15,7 @@
             </form>
         </div>
 
-        <div class="col-md-8 card bg-white p-2 m-2" style="margin: 0 auto !important;">
+        <div class="col-md-8 card bg-white p-2" style="margin: 0 auto !important;">
             @if (\Session::has('success'))
                 <div class="col-md-12 alert alert-success text-center" style="margin: 0 auto !important;">
                     <span id="successMessage">{!! \Session::get('success') !!}</span>
@@ -31,7 +31,6 @@
                 <div class="box-header with-border">
                     <h3 class="box-title">{{ request('item_code') }} - Item Attributes</h3>
                 </div>
-                <!-- /.box-header -->
                 <div class="box-body">
                     <table class="table table-bordered">
                         <tbody>
@@ -47,7 +46,10 @@
                                     <input type="text" name="attribName[]" value="{{ $itemAttribute->attribute }}" readonly hidden/>
                                     <tr>
                                         <td>{{ $itemAttribute->attribute }}</td>
-                                        <td>{{ $itemAttribute->attribute_value }}</td>
+                                        <td>
+                                            <input type="text" name="currentAttrib[]" value="{{ $itemAttribute->attribute_value }}" readonly hidden/>
+                                            {{ $itemAttribute->attribute_value }}
+                                        </td>
                                         <td class="p-1"><input type="text" id="attribVal" class="form-control" name="attrib[]" value="{{ $itemAttribute->attribute_value }}" required/></td>
                                     </tr>
                                 @empty
@@ -76,7 +78,6 @@
     if(document.getElementById('emptyVal').value === ""){
         document.getElementById('submitBtn').style.display = "none";
     }
-
 </script>
 
 @endsection

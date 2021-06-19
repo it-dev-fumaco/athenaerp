@@ -26,15 +26,29 @@ class ItemAttributeController extends Controller
     public function item_attribute_update(Request $request){
 
         $attribVal = [];
+        $attribVal2 = [];
         $attribName = $request->attribName;
         $newAttrib = $request->attrib;
+
+        $currentAttrib = $request->currentAttrib;
         for($i=0; $i < count($newAttrib); $i++){
             $attribVal = [
-                'attribute_value' => $request->attrib[$i],
-                'attribute' => $request->attribName[$i]
+                'attribute_value' => $request->attrib[$i]
             ];
-            $updateAttrib = DB::table('tabItem Variant Attribute')->where('parent', $request->itemCode)->where('attribute', $attribName[$i])->update($attribVal);
+            $updateAttrib = DB::table('tabItem Variant Attribute')
+                ->where('attribute', $attribName[$i])
+                ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
+        }
 
+        for($h=0; $h < count($currentAttrib); $h++){
+            $attribVal2 = [
+                'attribute_value' => $request->attrib[$h]
+            ];
+
+            $updateNewAttrib = DB::table('tabItem Attribute Value')
+                ->where('parent', $attribName[$h])
+                ->where('attribute_value', $currentAttrib[$h])
+                ->update($attribVal2);
         }
         
         return redirect()->back()->with('success','Attribute Updated!');
