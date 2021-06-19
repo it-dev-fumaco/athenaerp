@@ -89,7 +89,7 @@
 											<td class="text-center">
 												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
-												<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
+												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }}</span>
 											</td>
 											<td class="text-center">@{{ x.ref_no }}</td>
 											<td class="text-center"><img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}"></td>
@@ -106,10 +106,111 @@
 		</div>
 	</div>
 </div>
+
+<div class="modal fade" id="ste-modal">
+	<form method="POST" action="/submit_transaction">
+		@csrf
+		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+	</form>
+</div>
 @endsection
 
 @section('script')
 <script>
+	$(document).ready(function(){
+		$(document).on('click', '#btn-deduct-res', function(e){
+			e.preventDefault();
+			$('#ste-modal input[name="deduct_reserve"]').val(1);
+      		$('#ste-modal form').submit();
+		});
+
+		$(document).on('click', '#btn-check-out', function(e){
+			e.preventDefault();
+			$('#ste-modal input[name="deduct_reserve"]').val(0);
+      		$('#ste-modal form').submit();
+		});
+
+		$.ajaxSetup({
+			headers: {
+			  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+			}
+		});
+
+		$(document).on('click', '.update-item', function(){
+			var id = $(this).data('id');
+			$.ajax({
+				type: 'GET',
+				url: '/get_ste_details/' + id,
+				success: function(response){
+					$('#ste-modal').modal('show');
+					$('#ste-modal .modal-dialog').html(response);
+				}
+			});
+		});
+
+		$('#ste-modal form').validate({
+			rules: {
+				barcode: {
+					required: true,
+				},
+          		qty: {
+					required: true,
+				},
+			},
+			messages: {
+				barcode: {
+					required: "Please enter barcode",
+				},
+				qty: {
+					required: "Please enter quantity",
+				},
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.form-group').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			},
+			submitHandler: function(form) {
+				$.ajax({
+					type: 'POST',
+					url: $(form).attr('action'),
+					data: $(form).serialize(),
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							$('#ste-modal').modal('hide');
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			}
+		});
+
+		function showNotification(color, message, icon){
+			$.notify({
+				icon: icon,
+				message: message
+			},{
+				type: color,
+				timer: 500,
+				z_index: 1060,
+				placement: {
+					from: 'top',
+					align: 'center'
+				}
+			});
+		}
+	});
+
 	var app = angular.module('myApp', []);
 	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
 		$http.get("/get_parent_warehouses").then(function (response) {

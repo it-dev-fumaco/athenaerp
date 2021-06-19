@@ -5,7 +5,6 @@
 ])
 
 @section('content')
-@include('modal.sales_return')
 <div class="content" ng-app="myApp" ng-controller="stockCtrl">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
@@ -86,7 +85,7 @@
 												<span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>
 											</td>
 											<td class="text-center">
-												<img src="dist/img/icon.png" class="img-circle checkout edit-sales-return" data-id="@{{ r.stedname }}">
+												<img src="dist/img/icon.png" class="img-circle checkout update-item" data-id="@{{ r.stedname }}">
 											</td>
 										</tr>
 									</tbody>
@@ -99,137 +98,114 @@
 		</div>
 	</div>
 </div>
+
+<div class="modal fade" id="ste-modal">
+	<form method="POST" action="/submit_transaction">
+		@csrf
+		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+	</form>
+</div>
 @endsection
 
 @section('script')
-
 <script>
 	$(document).ready(function(){
-		
-
-		$(document).on('click', '.edit-sales-return', function(){
-			var id = $(this).data('id');
-			$.ajax({
-			  type: 'GET',
-			  url: '/get_ste_details/' + id,
-			  success: function(response){
-					$('#sales-return-modal').modal('show');
-
-					var statuses = ['Received', 'Issued'];
-					var badge = (statuses.includes(response.status)) ? 'badge badge-success' : 'badge badge-warning';
-					$('#sales-return-modal .sales-return-status').text(response.status).removeClass('badge badge-success badge-warning').addClass(badge);
-			
-					$('#sales-return-modal input[name="id"]').val(response.name);
-					$('#sales-return-modal .target-warehouse-display').text(response.t_warehouse);
-
-					var img = (response.img) ? '/img/' + response.img : '/icon/no_img.png';
-					img = "{{ asset('storage/') }}" + img;
-			
-					$('#sales-return-modal .item_image').attr('src', img);
-					$('#sales-return-modal .item_image_link').removeAttr('href').attr('href', img);
-					$('#sales-return-modal input[name="returned_qty"]').val(Number(response.qty));
-					$('#sales-return-modal .item-code-display').text(response.item_code);
-					$('#sales-return-modal .item-description-display').text(response.description);
-					$('#sales-return-modal .ref_no').text(response.ref_no);
-					
-					if (response.qty <= 0) {
-						$('#sales-return-modal .lbl-color').addClass('badge-danger').removeClass('badge-success');
-					}else{
-						$('#sales-return-modal .lbl-color').addClass('badge-success').removeClass('badge-danger');
-					}
-			
-					$('#sales-return-modal .for-return-qty-display').text(Number(response.qty));
-					$('#sales-return-modal .stock-uom-display').text(response.stock_uom);
-					$('#sales-return-modal .remarks').text(response.remarks);
-				}
-			});
-		});
-
-		$('#sales-return-form').validate({
-				rules: {
-					barcode: {
-						required: true,
-					},
-				},
-				messages: {
-					barcode: {
-						required: "Please enter barcode",
-					},
-				},
-				errorElement: 'span',
-				errorPlacement: function (error, element) {
-					error.addClass('invalid-feedback');
-					element.closest('.form-group').append(error);
-				},
-				highlight: function (element, errorClass, validClass) {
-					$(element).addClass('is-invalid');
-				},
-				unhighlight: function (element, errorClass, validClass) {
-					$(element).removeClass('is-invalid');
-				},
-				submitHandler: function(form) {
-					$.ajax({
-						type: 'POST',
-						url: $(form).attr('action'),
-						data: $(form).serialize(),
-						success: function(response){
-							if (response.status < 1) {
-								showNotification("danger", response.message, "fa fa-info");
-							}else{
-								showNotification("success", response.message, "fa fa-check");
-								$('#sales-return-modal').modal('show');
-							}
-						},
-						error: function(jqXHR, textStatus, errorThrown) {
-							console.log(jqXHR);
-							console.log(textStatus);
-							console.log(errorThrown);
-						}
-					});
-				}
-			});
-
-			function showNotification(color, message, icon){
-				$.notify({
-				  icon: icon,
-				  message: message
-				},{
-				  type: color,
-				  timer: 500,
-				  z_index: 1060,
-				  placement: {
-					from: 'top',
-					align: 'center'
-				  }
-				});
-			}
-
-
 		$.ajaxSetup({
 			headers: {
 			  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
 			}
 		});
 
+		$(document).on('click', '.update-item', function(){
+			var id = $(this).data('id');
+			$.ajax({
+				type: 'GET',
+				url: '/get_ste_details/' + id,
+				success: function(response){
+					$('#ste-modal').modal('show');
+					$('#ste-modal .modal-dialog').html(response);
+				}
+			});
+		});
+
+		$('#ste-modal form').validate({
+			rules: {
+				barcode: {
+					required: true,
+				},
+          		qty: {
+					required: true,
+				},
+			},
+			messages: {
+				barcode: {
+					required: "Please enter barcode",
+				},
+				qty: {
+					required: "Please enter quantity",
+				},
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.form-group').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			},
+			submitHandler: function(form) {
+				$.ajax({
+					type: 'POST',
+					url: $(form).attr('action'),
+					data: $(form).serialize(),
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							$('#ste-modal').modal('hide');
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			}
+		});
+
+		function showNotification(color, message, icon){
+			$.notify({
+				icon: icon,
+				message: message
+			},{
+				type: color,
+				timer: 500,
+				z_index: 1060,
+				placement: {
+					from: 'top',
+					align: 'center'
+				}
+			});
+		}
 	});
 
 	var app = angular.module('myApp', []);
 	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
         $http.get("/get_parent_warehouses").then(function (response) {
-            $scope.wh = response.data.wh;
-          });
+			$scope.wh = response.data.wh;
+        });
 		
-          $scope.loadData = function(){
+		$scope.loadData = function(){
 			$scope.custom_loading_spinner_1 = true;
-
-			  $http.get("/get_mr_sales_return").then(function (response) {
+			$http.get("/get_mr_sales_return").then(function (response) {
 				$scope.mr_ret = response.data.mr_return;
 				$scope.custom_loading_spinner_1 = false;
-			  });
-		 }
+			});
+		}
 	 
 		$scope.loadData();
-
 	 });
 </script>
 @endsection

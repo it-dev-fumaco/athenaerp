@@ -291,7 +291,7 @@
 		}
 	</style>
 
-	<div class="modal fade" id="update-item-modal">
+	{{-- <div class="modal fade" id="update-item-modal">
 		<form id="update-ste-form" method="POST" action="/checkout_ste_item">
 			@csrf
 			<div class="modal-dialog" style="min-width: 35%;">
@@ -391,13 +391,12 @@
 					<input type="hidden" name="deduct_reserve" value="0">
 					<div class="modal-footer">
 						<button type="button" class="btn btn-warning" id="btn-deduct-res-1"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
-						{{-- <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button> --}}
 						<button type="submit" class="btn btn-primary btn-lg" id="btn-check-out-1"><i class="fa fa-check"></i> CHECK OUT</button>
 					</div>
 				</div>
 			</div>
 		</form>
-	</div>
+	</div> --}}
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
 		<div class="modal-dialog" role="document" style="min-width: 90%;">
@@ -1020,7 +1019,7 @@
 						if (response.error) {
 							showNotification("danger", response.modal_message, "fa fa-info");
 						}else{
-							get_stock_reservation($('#selected-item-code').text());
+							view_item_details($('#selected-item-code').text());
 							showNotification("success", response.modal_message, "fa fa-check");
 							$('#edit-stock-reservation-modal').modal('hide');
 						}
@@ -1041,7 +1040,7 @@
 						if (response.error) {
 							showNotification("danger", response.modal_message, "fa fa-info");
 						}else{
-							get_stock_reservation($('#selected-item-code').text());
+							view_item_details($('#selected-item-code').text());
 							showNotification("success", response.modal_message, "fa fa-check");
 							$('#add-stock-reservation-modal').modal('hide');
 						}
@@ -1425,200 +1424,6 @@
 				$("#suggesstion-box").hide();
 			});
 
-			// update item modal
-			$(document).on('click', '.update-item', function(){
-
-
-				var id = $(this).data('id');
-				$.ajax({
-				  type: 'GET',
-				  url: '/get_ste_details/' + id,
-				  success: function(response){
-					$('#update-item-modal input[name="ste_name"]').val(response.parent);
-					$('#update-item-modal input[name="production_order"]').val(response.production_order);
-					$('#update-item-modal input[name="purpose"]').val(response.purpose);
-
-					$('#update-item-modal input[name="requested_qty"]').val(response.qty);
-
-					var transfer_as = ['Consignment', 'Sample Item'];
-					if(response.purpose == 'Material Transfer' && !transfer_as.includes(response.transfer_as)) {
-						$('#update-item-modal .parent').text('Internal Transfer');
-					}
-
-					if(response.purpose == 'Material Transfer' && transfer_as.includes(response.transfer_as)) {
-						$('#update-item-modal .parent').text('Deliveries');
-					}
-
-					if(response.purpose == 'Material Issue') {
-						$('#update-item-modal .parent').text(response.purpose);
-					}
-
-					if(response.purpose == 'Material Transfer for Manufacture') {
-						$('#update-item-modal .parent').text('Production Withdrawal');
-					}
-					
-					var badge = (response.status == 'Issued') ? 'badge badge-success' : 'badge badge-warning';
-					$('#update-item-modal .purpose').text(response.status).removeClass('badge badge-success badge-warning').addClass(badge);
-			
-					$('#update-item-modal .transfer_as').val(response.transfer_as);
-					$('#update-item-modal .id').val(response.name);
-					$('#update-item-modal .s_warehouse').val(response.s_warehouse);
-					$('#update-item-modal .total_issued_qty').val(response.total_issued_qty);
-					$('#update-item-modal .item_code').val(response.item_code);
-			
-					$('#update-item-modal .s_warehouse_txt').text(response.s_warehouse);
-					$('#update-item-modal .t_warehouse_txt').text(response.t_warehouse);
-			
-					var barcode_value = (response.transfer_as == 'For Return') ? '' : response.validate_item_code;
-					var img = (response.img) ? '/img/' + response.img : '/icon/no_img.png';
-					img = "{{ asset('storage/') }}" + img;
-
-					$('#update-item-modal .item_image').attr('src', img);
-					$('#update-item-modal .item_image_link').removeAttr('href').attr('href', img);
-				
-					// hide "transfer to" field
-					if (response.purpose != 'Material Issue') {
-					  $('#update-item-modal .transfer_to_div').show();
-					}else{
-					  $('#update-item-modal .transfer_to_div').hide();
-					}
-			
-					$('#update-item-modal .qty').val(Number(response.qty));
-					$('#update-item-modal .item_code_txt').text(response.item_code);
-					$('#update-item-modal .description').text(response.description);
-					$('#update-item-modal .owner').text(response.owner);
-					$('#update-item-modal .t_warehouse').val(response.t_warehouse);
-					$('#update-item-modal .barcode').val(barcode_value);
-					$('#update-item-modal .ref_no').text(response.ref_no);
-					$('#update-item-modal .status').text(response.status);
-			
-					if (response.total_issued_qty <= 0) {
-					  $('#update-item-modal .lbl-color').addClass('badge-danger').removeClass('badge-success');
-					}else{
-					  $('#update-item-modal .lbl-color').addClass('badge-success').removeClass('badge-danger');
-					}
-			
-					$('#update-item-modal .total_issued_qty_txt').text(response.total_issued_qty);
-					$('#update-item-modal .stock_uom').text(response.stock_uom);
-					$('#update-item-modal .remarks').text(response.remarks);
-
-					$('#update-item-modal').modal('show');
-
-			
-				$.ajax({
-						type: 'GET',
-						url: '/validate_if_reservation_exists',
-						data: $('#update-ste-form').serialize(),
-						success: function(response){
-							if(response.status == 1){
-                $('#sr-d').parent().parent().removeClass('d-1none');
-								$('#sr-d dd').eq(0).text(response.modal_message.sales_person);
-								$('#sr-d dd').eq(1).text(response.modal_message.project);
-								$('#sr-d dd').eq(2).text((response.modal_message.reserve_qty - response.modal_message.consumed_qty) + ' ' + response.modal_message.stock_uom);
-							} else {
-                $('#sr-d').parent().parent().addClass('d-no1ne');
-              }
-						},
-						error: function(jqXHR, textStatus, errorThrown) {
-						}
-					});
-				  }
-				});
-
-				
-			});
-
-			$('#btn-deduct-res-1').click(function(){
-      $('#update-item-modal input[name="deduct_reserve"]').val(1);
-      $('#update-ste-form').submit();
-    });
-
-    $('#btn-check-out-1').click(function(){
-      $('#update-item-modal input[name="deduct_reserve"]').val(0);
-      $('#update-ste-form').submit();
-    });
-
-			$('#update-ste-form').validate({
-				rules: {
-					barcode: {
-						required: true,
-					},
-          qty: {
-						required: true,
-					},
-				},
-				messages: {
-					barcode: {
-						required: "Please enter barcode",
-					},
-          qty: {
-						required: "Please enter quantity",
-					},
-				},
-				errorElement: 'span',
-				errorPlacement: function (error, element) {
-					error.addClass('invalid-feedback');
-					element.closest('.form-group').append(error);
-				},
-				highlight: function (element, errorClass, validClass) {
-					$(element).addClass('is-invalid');
-				},
-				unhighlight: function (element, errorClass, validClass) {
-					$(element).removeClass('is-invalid');
-				},
-				submitHandler: function(form) {
-					$.ajax({
-									type: 'POST',
-									url: $(form).attr('action'),
-									data: $(form).serialize(),
-									success: function(response){
-									if (response.error) {
-											$('#myModal').modal('show'); 
-											$('#myModalLabel').html(response.modal_title);
-											$('#desc').html(response.modal_message);
-											
-											return false;
-										}else{
-											$('#myModal1').modal('show'); 
-											$('#myModalLabel1').html(response.modal_title);
-											$('#desc1').html(response.modal_message);
-										}
-									},
-									error: function(jqXHR, textStatus, errorThrown) {
-									}
-								});
-				}
-			});
-
-			$('#deduct-reservation-form .confirm-btn').click(function(e){
-				e.preventDefault();
-
-				var is_confirm = $(this).data('confirm');
-				var form_id = $('#deduct-reservation-form .form-id').text();
-				var form_action = $('#deduct-reservation-form .form-action').text();
-
-				$.ajax({
-					type: 'POST',
-					url: form_action,
-					data: $(form_id).serialize() + '&deduct_reserve=' + is_confirm,
-					success: function(response){
-					  	if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
-						}else{
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
-						}
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-					}
-				});
-			});
-
 			$('#myModal1').on('hide.bs.modal', function(){
 				$('#update-item-modal').modal('hide');
 				$('#update-ps-modal').modal('hide');
@@ -1646,7 +1451,7 @@
 				var item_code = $(this).data('item-code');
 				var item_classification = $(this).data('item-classification');
 
-				$('#view-item-details-modal .modal-title').text(item_classification);
+				$('#view-item-details-modal .modal-title').text(item_code + " [" + item_classification + "]");
 
 				view_item_details(item_code);
 			});
@@ -1823,28 +1628,6 @@
 			$(document).on('hidden.bs.modal', '.modal', function () {
 				$('.modal:visible').length && $(document.body).addClass('modal-open');
 			});
-
-			setInterval(updateClock, 1000);
-			function updateClock(){
-				var currentTime = new Date();
-				var currentHours = currentTime.getHours();
-				var currentMinutes = currentTime.getMinutes();
-				var currentSeconds = currentTime.getSeconds();
-				// Pad the minutes and seconds with leading zeros, if required
-				currentMinutes = (currentMinutes < 10 ? "0" : "") + currentMinutes;
-				currentSeconds = (currentSeconds < 10 ? "0" : "") + currentSeconds;
-				// Choose either "AM" or "PM" as appropriate
-				var timeOfDay = (currentHours < 12) ? "AM" : "PM";
-				// Convert the hours component to 12-hour format if needed
-				currentHours = (currentHours > 12) ? currentHours - 12 : currentHours;
-				// Convert an hours component of "0" to "12"
-				currentHours = (currentHours === 0) ? 12 : currentHours;
-				currentHours = (currentHours < 10 ? "0" : "") + currentHours;
-				// Compose the string for display
-				var currentTimeString = currentHours + ":" + currentMinutes + " " + timeOfDay;
-
-				$("#current-time").html(currentTimeString);
-			}
 
 			function showNotification(color, message, icon){
 				$.notify({
