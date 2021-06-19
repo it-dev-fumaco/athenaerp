@@ -13,8 +13,13 @@ use DB;
 class ItemAttributeController extends Controller
 {
     public function item_attribute_search(Request $request){
-        $itemAttrib = DB::table('tabItem Variant Attribute')->where('parent', $request->item_code)->orderby('idx', 'asc')->get();
-
+        $itemAttrib = DB::table('tabItem Variant Attribute as tva')
+            ->join('tabItem as ti', 'tva.parent', 'ti.name')
+            ->where('tva.parent', $request->item_code)
+            ->where('ti.is_stock_item', 1)->where('ti.has_variants', 0)->where('ti.disabled', 0)
+            ->orderby('tva.idx', 'asc')
+            ->get();
+        
         return view('item_attribute', compact('itemAttrib'));
     }
     
@@ -28,11 +33,10 @@ class ItemAttributeController extends Controller
                 'attribute_value' => $request->attrib[$i],
                 'attribute' => $request->attribName[$i]
             ];
-
             $updateAttrib = DB::table('tabItem Variant Attribute')->where('parent', $request->itemCode)->where('attribute', $attribName[$i])->update($attribVal);
 
         }
         
-        return view('item_attribute_NNN');
+        return redirect()->back()->with('success','Attribute Updated!');
     }
 }

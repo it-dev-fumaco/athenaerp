@@ -6,8 +6,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="text-center" style="margin: 0 auto !important;">
-            <h3>Attribute Updated</h3>
+            <h3>Attribute Updated!</h3>
         </div>
+      
     </div>
     <script type="text/javascript">
         window.onload = function() {
