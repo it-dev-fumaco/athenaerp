@@ -683,9 +683,17 @@ class MainController extends Controller
         
         try {
             $steDetails = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->child_tbl_id)
-                ->select('se.name as parent_se', 'se.*', 'sed.*')->first();
+                ->select('se.name as parent_se', 'se.*', 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status')->first();
             if(!$steDetails){
                 return response()->json(['status' => 0, 'message' => 'Record not found.']);
+            }
+
+            if(in_array($steDetails->per_item_status, ['Issued', 'Returned'])){
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.']);
+            }
+
+            if($steDetails->se_status == 1){
+                return response()->json(['status' => 0, 'message' => 'Item already issued.']);
             }
 
             $itemDetails = DB::table('tabItem')->where('name', $steDetails->item_code)->first();
@@ -900,9 +908,17 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
             $ps_details = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')->where('psi.name', $request->child_tbl_id)
-            ->select('ps.name as parent_ps', 'ps.*', 'psi.*')->first();
+            ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status')->first();
             if(!$ps_details){
                 return response()->json(['status' => 0, 'message' => 'Record not found.']);
+            }
+
+            if(in_array($ps_details->per_item_status, ['Issued', 'Returned'])){
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.']);
+            }
+
+            if($ps_details->ps_status == 1){
+                return response()->json(['status' => 0, 'message' => 'Item already submitted.']);
             }
             
             $itemDetails = DB::table('tabItem')->where('name', $ps_details->item_code)->first();
