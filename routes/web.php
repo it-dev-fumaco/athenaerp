@@ -16,6 +16,8 @@ Route::post('/login_user', 'LoginController@login');
 
 Route::group(['middleware' => 'auth'], function(){
     Route::get('/', 'MainController@index');
+    Route::get('/search_results', 'MainController@search_results');
+    Route::get('/dashboard_data', 'MainController@dashboard_data');
     
     Route::get('/logout', 'LoginController@logout');
         
@@ -61,4 +63,33 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/upload_item_image', 'MainController@upload_item_image');
 
     Route::post('/update_stock_entry', 'MainController@update_stock_entry');
+
+    Route::get('/returns', 'MainController@returns');
+    Route::get('/replacements', 'MainController@replacements');
+    Route::get('/receipts', 'MainController@receipts');
+
+    // stock reservation
+    Route::get('/warehouses', 'MainController@get_warehouses');
+    Route::get('/warehouses_with_stocks', 'StockReservationController@get_warehouse_with_stocks');
+    Route::get('/sales_persons', 'MainController@get_sales_persons');
+    Route::get('/projects', 'MainController@get_projects');
+    Route::post('/create_reservation', 'StockReservationController@create_reservation');
+    Route::post('/cancel_reservation', 'StockReservationController@cancel_reservation');
+    Route::post('/update_reservation', 'StockReservationController@update_reservation');
+    Route::get('/get_stock_reservation_details/{id}', 'StockReservationController@get_stock_reservation_details');
+    Route::get('/get_stock_reservation/{item_code?}', 'StockReservationController@get_stock_reservation');
+    Route::get('/get_item_images/{item_code}', 'MainController@get_item_images');
+    Route::get('/get_low_stock_level_items', 'MainController@get_low_stock_level_items');
+    Route::get('/allowed_parent_warehouses', 'MainController@allowed_parent_warehouses');
+    Route::get('/get_purchase_receipt_details/{id}', 'MainController@get_purchase_receipt_details');
+    Route::post('/update_received_item', 'MainController@update_received_item');
+    Route::get('/inv_accuracy/{year}', 'MainController@invAccuracyChart');
+    Route::get('/get_recently_added_items', 'MainController@get_recently_added_items');
+    Route::get('/get_available_qty/{item_code}/{warehouse}', 'MainController@get_available_qty');
+    Route::get('/validate_if_reservation_exists', 'MainController@validate_if_reservation_exists');
+    Route::post('/submit_sales_return', 'MainController@submit_sales_return');
+    Route::get('/view_deliveries', 'MainController@view_deliveries');
+    Route::get('/get_athena_logs', 'MainController@get_athena_logs');
+
+    Route::post('/submit_transaction', 'MainController@submit_transaction');
 });

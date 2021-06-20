@@ -1,4 +1,4 @@
-<table class="table">
+<table class="table" style="font-size: 11pt;">
     <thead>
     <tr>
         <th scope="col" class="text-center">Transaction No.</th>
