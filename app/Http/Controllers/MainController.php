@@ -973,7 +973,7 @@ class MainController extends Controller
             if($request->is_bundle){
                 $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
                 foreach ($query as $row) {
-                    $bundle_item_qty = $row->qty * $request->qty;
+                    $bundle_item_qty = $row->qty;
                    
                     $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
     
