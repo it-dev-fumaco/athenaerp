@@ -2295,9 +2295,10 @@ class MainController extends Controller
         $purchase_receipts = DB::table('tabPurchase Receipt as pr')->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')
             ->where('pr.docstatus', 1)->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->whereBetween('pr.posting_date', [$start, $end])->count();
 
-        $purchase_orders = DB::table('tabPurchase Order as pr')->join('tabPurchase Order Item as pri', 'pr.name', 'pri.parent')
-            ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])
-            ->where('pr.docstatus', 1)->whereRaw('pri.received_qty < pri.qty')->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
+        $purchase_orders = DB::table('tabPurchase Receipt as pr')
+            ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')->where('pr.docstatus', 0)
+            ->whereIn('pri.warehouse', $allowed_warehouses)
+            ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
 
         $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
