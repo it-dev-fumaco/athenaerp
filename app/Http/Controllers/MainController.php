@@ -4,14 +4,50 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
+use App\StockReservation;
 use Auth;
 use DB;
 
 class MainController extends Controller
 {
+    public function allowed_parent_warehouses(){
+        $user = Auth::user()->frappe_userid;
+        return DB::table('tabWarehouse Access')
+            ->where('parent', $user)->pluck('warehouse');
+    }
+
     public function index(Request $request){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+        if(Auth::user()->user_group == 'User'){
+            return redirect('/search_results');
+        }
+
+        return view('index');
+    }
+
+    public function search_results(Request $request){        
         $search_str = explode(' ', $request->searchString);
+
+        $itemClass = DB::table('tabItem')->select('item_classification')
+            ->where('description', 'LIKE', "%".$request->searchString."%" )
+            ->orWhere('name', 'LIKE', "%".$request->searchString."%")
+            ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
+            ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
+            ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
+            ->orderby('item_classification','asc')
+            ->distinct('created_at')
+            ->get();
+
+        $itemClassCount = count($itemClass);
+
+        if($itemClassCount >= 2){
+            $getFirst = $itemClass->keys()->first();
+            $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
+        }
+
         $items = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -29,8 +65,7 @@ class MainController extends Controller
                 });
             })
             ->when($request->wh, function($q) use ($request){
-                $warehouses = DB::table('tabWarehouse')->where('parent_warehouse', $request->wh)->pluck('name');
-				return $q->whereIn('default_warehouse', $warehouses);
+				return $q->where('default_warehouse', $request->wh);
             })
             ->when($request->group, function($q) use ($request){
 				return $q->where('item_group', $request->group);
@@ -53,16 +88,49 @@ class MainController extends Controller
 
         $item_list = [];
         foreach ($items as $row) {
-            $item_inventory = DB::table('tabBin')->where('item_code', $row->name)
-                ->where('actual_qty', '>', 0)->select('item_code', 'warehouse', 'actual_qty', 'stock_uom')->get();
+            $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $row->name)
+                ->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
 
-            $inv = [];
+            $item_image_paths = DB::table('tabItem Images')->where('parent', $row->name)->get();
+
+            $site_warehouses = [];
+            $consignment_warehouses = [];
             foreach ($item_inventory as $value) {
-                $inv[] = [
-                    'warehouse' => $value->warehouse,
-                    'actual_qty' => $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse),
-                    'stock_uom' => $value->stock_uom,
-                ];
+                $reserved_qty = StockReservation::where('item_code', $value->item_code)
+                    ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
+
+                $consumed_qty = StockReservation::where('item_code', $value->item_code)
+                    ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('consumed_qty');
+
+                $reserved_qty = $reserved_qty - $consumed_qty;
+
+                $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+
+                $lowLevelStock = DB::table('tabItem Reorder')->select('parent', 'warehouse')
+                        ->where('parent', $value->item_code)
+                        ->where('warehouse', $value->warehouse)->sum('warehouse_reorder_level');
+                        
+                if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
+                    
+                    $consignment_warehouses[] = [
+                        'warehouse' => $value->warehouse,
+                        'reserved_qty' => $reserved_qty,
+                        'actual_qty' => $actual_qty,
+                        'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                        'stock_uom' => $value->stock_uom,
+                        'warehouse_reorder_level' => $lowLevelStock,
+                    ];
+                    
+                }else{
+                    $site_warehouses[] = [
+                        'warehouse' => $value->warehouse,
+                        'reserved_qty' => $reserved_qty,
+                        'actual_qty' => $actual_qty,
+                        'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                        'stock_uom' => $value->stock_uom,
+                        'warehouse_reorder_level' => $lowLevelStock,
+                    ];
+                }
             }
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $row->name)->pluck('supplier_part_no');
@@ -72,18 +140,20 @@ class MainController extends Controller
             $item_list[] = [
                 'name' => $row->name,
                 'description' => $row->description,
-                'item_image_path' => $row->item_image_path,
+                'item_image_paths' => $item_image_paths,
                 'part_nos' => $part_nos,
                 'item_group' => $row->item_group,
                 'stock_uom' => $row->stock_uom,
                 'item_classification' => $row->item_classification,
-                'item_inventory' => $inv
+                'item_inventory' => $site_warehouses,
+                'consignment_warehouses' => $consignment_warehouses,
+                'default_warehouse' => $row->default_warehouse
             ];
+            
         }
-
-        return view('index', compact('item_list', 'items'));
+        return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
-
+    
     public function count_ste_for_issue($purpose){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
@@ -158,8 +228,9 @@ class MainController extends Controller
     }
 
     public function get_select_filters(){
-        $warehouses = DB::table('tabWarehouse')->where('is_group', 1)
-            ->where('parent_warehouse', 'All Warehouses - FI')->orderBy('name', 'asc')->pluck('name');
+        $warehouses = DB::table('tabWarehouse')->where('is_group', 0)
+            ->where('category', 'Physical')
+            ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
         $item_groups = DB::table('tabItem Group')->where('is_group', 0)
             ->where('show_in_erpinventory', 1)->orderBy('name', 'asc')->pluck('name');
@@ -168,6 +239,7 @@ class MainController extends Controller
             ->orderBy('name', 'asc')->pluck('name');
 
         return response()->json([
+            // 'parent_warehouses' => $allowed_warehouses,
             'warehouses' => $warehouses,
             'item_groups' => $item_groups,
             'item_classification' => $item_classification,
@@ -182,17 +254,9 @@ class MainController extends Controller
     public function get_issued_qty($item_code, $warehouse){
         $total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
             ->where('item_code', $item_code)->where('s_warehouse', $warehouse)->sum('qty');
-        
-        // $total_issued += DB::table('tabPacking Slip as ps')
-        //     ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-        //     ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-        //     ->whereRaw(('dri.item_code = psi.item_code'))
-        //     ->where('ps.docstatus', 0)->where('dri.docstatus', 0)->where('psi.status', 'Issued')
-        //     ->where('psi.item_code', $item_code)->where('dri.warehouse', $warehouse)->sum('psi.qty');
 
         $total_issued += DB::table('tabAthena Transactions as at')
             ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-            // ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
             ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
@@ -240,7 +304,8 @@ class MainController extends Controller
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Issue')
             ->whereIn('s_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.creation')
+            ->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.creation', 'ste.issue_as')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -281,8 +346,9 @@ class MainController extends Controller
                 'status' => $d->status,
                 'balance' => $balance,
                 'sales_order_no' => $d->sales_order_no,
+                'issue_as' => $d->issue_as,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
 
@@ -329,18 +395,33 @@ class MainController extends Controller
             $production_order = DB::table('tabProduction Order')->where('name', $d->production_order)->first();
 
             $delivery_date = $production_order->delivery_date;
+            $order_status = 'Unknown Status';
             if($production_order){
-                $per_item_delivery_date = DB::table('tabSales Order Item')->where('parent', $production_order->sales_order)
-                    ->where('item_code', $production_order->parent_item_code)->first();
+                if($production_order->sales_order) {
+                    $per_item_delivery_date = DB::table('tabSales Order Item')->where('parent', $production_order->sales_order)
+                        ->where('item_code', $production_order->parent_item_code)->first();
 
-                if($per_item_delivery_date){
-                    $delivery_date = $per_item_delivery_date->rescheduled_delivery_date;
+                    if($per_item_delivery_date){
+                        $delivery_date = $per_item_delivery_date->rescheduled_delivery_date;
+                    }
+
+                    $sales_order_query = DB::table('tabSales Order')->where('name', $production_order->sales_order)->first();
+                    if($sales_order_query) {
+                        $order_status = ($sales_order_query->per_delivered > 0 && $sales_order_query->per_delivered < 100) ? 'Partially Delivered' : 'Fully Delivered';
+                        $order_status = ($sales_order_query->per_delivered <= 0) ? 'To Deliver' : $order_status;
+                    }
+                } else {
+                    $material_request_query = DB::table('tabMaterial Request')->where('name', $production_order->material_request)->first();
+                    if($material_request_query) {
+                        $order_status = $material_request_query->status;
+                    }
                 }
             }
 
             $list[] = [
                 'delivery_date' => Carbon::parse($delivery_date)->format('M-d-Y'),
                 'customer' => $d->so_customer_name,
+                'delivery_status' => $order_status,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
@@ -358,7 +439,7 @@ class MainController extends Controller
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->production_order,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
         
@@ -376,8 +457,8 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
-            ->whereIn('s_warehouse', $allowed_warehouses)->where('ste.transfer_as', '!=', 'For Return')
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation')
+            ->whereIn('s_warehouse', $allowed_warehouses)->whereNotin('transfer_as', ['Consignment', 'Sample Item'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -414,6 +495,7 @@ class MainController extends Controller
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
                 't_warehouse' => $d->t_warehouse,
+                'transfer_as' => $d->transfer_as,
                 'actual_qty' => $actual_qty,
                 'uom' => $d->uom,
                 'name' => $d->name,
@@ -426,186 +508,11 @@ class MainController extends Controller
                 'balance' => $balance,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
         
         return response()->json(['records' => $list]);
-    }
-
-    public function view_picking_slip(Request $request){
-        if(!$request->arr){
-            return view('picking_slip');
-        }
-        
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
-
-        $q = DB::table('tabPacking Slip as ps')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
-                ->where('ps.docstatus', 0)
-                ->where('dri.docstatus', 0)
-                ->whereIn('dri.warehouse', $allowed_warehouses)
-                ->select('ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->groupBy('ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")->get();
-
-        $list = [];
-        foreach ($q as $d) {
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-
-            $part_nos = implode(', ', $part_nos->toArray());
-
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
-
-            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
-
-            $list[] = [
-                'owner' => $owner,
-                'warehouse' => $d->warehouse,
-                'customer' => $d->customer,
-                'sales_order' => $d->sales_order,
-                'id' => $d->id,
-                'status' => $d->status,
-                'name' => $d->name,
-                'delivery_note' => $d->delivery_note,
-                'item_code' => $d->item_code,
-                'description' => $d->description,
-                'qty' => $d->qty,
-                'stock_uom' => $d->stock_uom,
-                'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('Y-m-d h:i:A')
-            ];
-        }
-        
-        return response()->json(['picking' => $list]);
-    }
-
-    public function get_pending_item_request_for_issue(){
-        $q = DB::table('tabProduction Order as pro')
-            ->join('tabProduction Order Item as prod_item', 'pro.name', 'prod_item.parent')
-            ->where('pro.status', '!=', 'Completed')->where('pro.sales_order', '!=', '')
-            ->select('pro.sales_order', 'pro.customer', 'pro.qty as qty_to_manufacture', 'prod_item.item_code as bom_item', DB::raw('required_qty - transferred_qty as pending1'), 'pro.name as production_order', 'prod_item.transferred_qty', 'prod_item.description', 'prod_item.required_qty')
-            ->whereRaw('required_qty > transferred_qty')
-            ->where('transferred_qty', '>', 0)
-            ->get();
-
-        $list = [];
-        foreach ($q as $r) {
-            $ste_nos = DB::table('tabStock Entry as ste')->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('purpose', 'Material Transfer for Manufacture')->where('ste.docstatus', 1)
-                ->where('production_order', $r->production_order)->where('sted.item_code', $r->bom_item)->pluck('ste.name', 'ste.owner');
-            $ste = '';
-            $owners = '';
-            foreach($ste_nos as $owner => $ste_no){
-                $ste .= $ste_no . ' ';
-                $owners .= $owner . ' ';
-            }
-            $list[] = [
-                'sales_order' => $r->sales_order,
-                'customer' => $r->customer,
-                'qty_to_manufacture' => $r->qty_to_manufacture,
-                'bom_item' => $r->bom_item,
-                'pending1' => $r->pending1,
-                'production_order' => $r->production_order,
-                'transferred_qty' => $r->transferred_qty,
-                'description' => $r->description,
-                'required_qty' => $r->required_qty,
-                'ste_nos' => $ste,
-                'rqst' => $owners
-            ];
-        }
-
-        return response()->json(['pending' => $list]);
-    }
-
-    public function get_items_for_return(){
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
-
-        $q = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)->whereIn('purpose', ['Material Transfer', 'Material Transfer for Manufacture'])
-            ->where('ste.transfer_as', 'For Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'ste.material_request', 'ste.owner', 'ste.transfer_as', 'ste.so_customer_name')
-            ->orderBy('sted.status', 'asc')->get();
-
-        $list = [];
-        foreach ($q as $d) {
-            $actual_qty = $this->get_actual_qty($d->item_code, $d->s_warehouse);
-
-            $total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
-                ->where('item_code', $d->item_code)->where('s_warehouse', $d->s_warehouse)->sum('qty');
-            
-            $balance = $actual_qty - $total_issued;
-
-            $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
-
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-
-            $part_nos = implode(', ', $part_nos->toArray());
-
-            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
-
-            $parent_warehouse = $this->get_warehouse_parent($d->t_warehouse);
-
-            $list[] = [
-                'customer' => $d->so_customer_name,
-                'item_code' => $d->item_code,
-                'description' => $d->description,
-                's_warehouse' => $d->s_warehouse,
-                't_warehouse' => $d->t_warehouse,
-                'actual_qty' => $actual_qty,
-                'uom' => $d->uom,
-                'name' => $d->name,
-                'owner' => $owner,
-                'transfer_as' => $d->transfer_as,
-                'parent' => $d->parent,
-                'part_nos' => $part_nos,
-                'qty' => $d->qty,
-                'validate_item_code' => $d->validate_item_code,
-                'status' => $d->status,
-                'sales_order_no' => $d->sales_order_no,
-                'balance' => $balance,
-                'ref_no' => $ref_no,
-                'parent_warehouse' => $parent_warehouse
-            ];
-        }
-        
-        return response()->json(['return' => $list]);
-    }
-
-    public function get_dr_return(){
-        $q = DB::table('tabDelivery Note as dr')
-            ->join('tabDelivery Note Item as dri', 'dr.name', 'dri.parent')
-            ->where('dr.is_return', 1)->where('dr.docstatus', 0)
-            ->select('dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.owner')->get();
-
-        $list = [];
-        foreach ($q as $d) {
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
-
-            $list[] = [
-                'owner' => $owner,
-                'c_name' => $d->c_name,
-                'name' => $d->name,
-                'customer' => $d->customer,
-                'item_code' => $d->item_code,
-                'description' => $d->description,
-                'warehouse' => $d->warehouse,
-                'qty' => $d->qty,
-                'against_sales_order' => $d->against_sales_order,
-                'dr_ref_no' => $d->dr_ref_no,
-                'item_status' => $d->item_status,
-            ];
-        }
-        
-        return response()->json(['return' => $list]);
     }
 
     public function get_mr_sales_return(){
@@ -628,6 +535,7 @@ class MainController extends Controller
                 'stedname' => $d->stedname,
                 'owner' => $owner,
                 'name' => $d->name,
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i A'),
                 't_warehouse' => $d->t_warehouse,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
@@ -645,45 +553,76 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('sted.name', $id)
-            ->select('ste.production_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request')
+            ->select('ste.production_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request', 'ste.issue_as')
             ->first();
 
         $ref_no = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
 
-        $owner = DB::table('tabUser')->where('email', $q->owner)->first();
-        $owner = ($owner) ? $owner->full_name : null;
+        $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
         $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
 
-        $actual_qty = $this->get_actual_qty($q->item_code, $q->s_warehouse);
-
-        $total_issued = $this->get_issued_qty($q->item_code, $q->s_warehouse);
-        
-        $balance = $actual_qty - $total_issued;
+        $available_qty = $this->get_available_qty($q->item_code, $q->s_warehouse);
+    
+        $stock_reservation_details = [];
+        $so_details = DB::table('tabSales Order')->where('name', $ref_no)->first();
+        if($so_details) {
+            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->s_warehouse, $so_details->sales_person, $so_details->project);
+        }
 
         $data = [
-            'production_order' => $q->production_order,
-            'parent' => $q->parent,
-            'purpose' => $q->purpose,
             'name' => $q->name,
+            'purpose' => $q->purpose,
             's_warehouse' => $q->s_warehouse,
-            'total_issued_qty' => $balance,
-            'item_code' => $q->item_code,
             't_warehouse' => $q->t_warehouse,
-            'transfer_as' => $q->transfer_as,
+            'available_qty' => $available_qty,
             'validate_item_code' => $q->validate_item_code,
             'img' => $img,
-            'qty' => $q->qty,
+            'item_code' => $q->item_code,
             'description' => $q->description,
-            'owner' => $owner,
-            't_warehouse' => $q->t_warehouse,
-            'ref_no' => $ref_no,
-            'status' => $q->status,
+            'ref_no' => ($ref_no) ? $ref_no : '-',
             'stock_uom' => $q->stock_uom,
-            'remarks' => $q->remarks,
+            'qty' => ($q->qty * 1),
+            'transfer_as' => $q->transfer_as,
+            'owner' => $owner,
+            'status' => $q->status,
+            'stock_reservation' => $stock_reservation_details
         ];
 
+        if($q->purpose == 'Material Transfer for Manufacture') {
+            return view('production_withdrawals_modal_content', compact('data'));
+        }
+
+        if($q->purpose == 'Material Issue') {
+            if($q->issue_as == 'Customer Replacement') {
+                return view('order_replacement_modal_content', compact('data'));    
+            } else {
+                return view('material_issue_modal_content', compact('data'));
+            }
+        }
+
+        if(in_array($q->transfer_as, ['Consignment', 'Sample Item'])) {
+            $is_stock_entry = true;
+            return view('deliveries_modal_content', compact('data', 'is_stock_entry'));
+        }
+
+        if($q->purpose == 'Material Receipt'){
+            return view('return_modal_content', compact('data'));
+        }
+
+        if($q->purpose == 'Material Transfer'){
+            return view('internal_transfer_modal_content', compact('data'));
+        }
+
         return response()->json($data);
+    }
+
+    public function get_stock_reservation($item_code, $warehouse, $sales_person, $project){
+        $query = DB::table('tabStock Reservation')->where('sales_person', $sales_person)->where('project', $project)
+            ->where('item_code', $item_code)->where('warehouse', $warehouse)
+            ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
+
+        return ($query) ? $query : [];
     }
 
     public function get_ps_details($id){
@@ -696,7 +635,7 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order')
             ->first();
 
         if(!$q){
@@ -728,18 +667,20 @@ class MainController extends Controller
                     'item_code' => $row->item_code,
                     'description' => $row->description,
                     'uom' => $row->uom,
-                    'qty' => ($row->qty * $q->qty),
+                    'qty' => ($row->qty * 1),
                     'available_qty' => $available_qty,
                     'warehouse' => $row->warehouse
                 ];
             }
         }
 
-        $actual_qty = $this->get_actual_qty($q->item_code, $q->warehouse);
+        $available_qty = $this->get_available_qty($q->item_code, $q->warehouse);
 
-        $total_issued = $this->get_issued_qty($q->item_code, $q->warehouse);
-        
-        $balance = $actual_qty - $total_issued;
+        $stock_reservation_details = [];
+        $so_details = DB::table('tabSales Order')->where('name', $q->sales_order)->first();
+        if($so_details) {
+            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->warehouse, $so_details->sales_person, $so_details->project);
+        }
 
         $data = [
             'id' => $q->id,
@@ -749,159 +690,148 @@ class MainController extends Controller
             'description' => $q->description,
             'item_code' => $q->item_code,
             'name' => $q->name,
+            'sales_order' => $q->sales_order,
             'status' => $q->status,
             'stock_uom' => $q->stock_uom,
-            'qty' => $q->qty,
-            'wh' => $q->warehouse,
-            'actual_qty' => $actual_qty * 1,
+            'qty' => ($q->qty * 1),
+            'warehouse' => $q->warehouse,
+            'available_qty' => $available_qty,
             'is_bundle' => $is_bundle,
             'product_bundle_items' => $product_bundle_items,
-            'dri_name' => $q->dri_name
+            'dri_name' => $q->dri_name,
+            'stock_reservation' => $stock_reservation_details
         ];
 
-        return response()->json($data);
+        $is_stock_entry = false;
+        return view('deliveries_modal_content', compact('data', 'is_stock_entry'));
     }
 
-    public function get_dr_return_details($id){
-        $q = DB::table('tabDelivery Note as dr')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', 'dr.name')
-            ->where('dr.is_return', 1)
-            ->where('dr.docstatus', 0)
-            ->where('dri.name', $id)
-            ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status')
-            ->first();
-
-        $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
-
-        $data = [
-            'barcode_return' => $q->barcode_return,
-            'c_name' => $q->c_name,
-            'name' => $q->name,
-            'item_image' => $img,
-            'customer' => $q->customer,
-            'description' => $q->description,
-            'item_code' => $q->item_code,
-            'warehouse' => $q->warehouse,
-            'dr_ref_no' => $q->dr_ref_no,
-            'qty' => $q->qty,
-            'item_status' => $q->item_status,
-            'against_sales_order' => $q->against_sales_order,
-        ];
-
-        return response()->json($data);
-    }
-
-    public function checkout_ste_item(Request $request){
+    public function submit_transaction(Request $request){
         DB::beginTransaction();
+        
         try {
-
-            $item_details = DB::table('tabItem')->where('name', $request->item_code)->first();
-            if(!$item_details){
-                return response()->json(['error' => 1, 'modal_title' => 'Not Found', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> not found.']);
+            $steDetails = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->child_tbl_id)
+                ->select('se.name as parent_se', 'se.*', 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status')->first();
+            if(!$steDetails){
+                return response()->json(['status' => 0, 'message' => 'Record not found.']);
             }
 
-            if($item_details->is_stock_item == 0){
-                return response()->json(['error' => 1, 'modal_title' => 'Not Stock Item', 'modal_message' => 'Item  <b>' . $request->item_code . '</b> is not a stock item.']);
+            if(in_array($steDetails->per_item_status, ['Issued', 'Returned'])){
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.']);
             }
 
-            if($request->barcode != $request->item_code){
-                return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+            if($steDetails->se_status == 1){
+                return response()->json(['status' => 0, 'message' => 'Item already issued.']);
             }
 
-            if($request->barcode != $request->item_code){
-                return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+            $itemDetails = DB::table('tabItem')->where('name', $steDetails->item_code)->first();
+            if(!$itemDetails){
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> not found.']);
             }
 
-            if(!$request->is_material_receipt){
-                if($request->balance < $request->qty && $request->transfer_as != 'For Return'){
-                    return response()->json([
-                        'error' => 1,
-                        'modal_title' => 'Insufficient Stock', 
-                        'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $request->balance . '</b>, you need <b>' . $request->qty . '</b>'
-                    ]);
-                }
+            if($itemDetails->is_stock_item == 0){
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> is not a stock item.']);
+            }
+
+            if($request->barcode != $itemDetails->item_code){
+                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.']);
             }
 
             if($request->qty <= 0){
-                return response()->json([
-                    'error' => 1, 
-                    'modal_title' => 'Invalid Qty', 
-                    'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
-                ]);
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
             }
 
-            if($request->qty > ($request->requested_qty * 1)){
-                return response()->json([
-                    'error' => 1, 
-                    'modal_title' => 'Invalid Qty', 
-                    'modal_message' => 'Qty cannot be greater than ' . $request->requested_qty * 1 . ' for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
-                ]);
+            if($request->qty > $steDetails->qty){
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
             }
-    
-            $status = ($request->transfer_as == 'For Return') ? 'Returned' : 'Issued';
 
-            $now = Carbon::now();
+            $available_qty = $this->get_available_qty($steDetails->item_code, $steDetails->s_warehouse);
+            if($steDetails->purpose != 'Material Receipt'){
+                if($request->qty > $available_qty){
+                    return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><
+                    br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
+                }
+            }
+
+            $status = $steDetails->status;
+            if($steDetails->purpose == 'Material Receipt' && $steDetails->receive_as == 'Sales Return') {
+                $status = 'Returned';
+            }else {
+                $status = 'Issued';
+            }
+
             $values = [
                 'session_user' => Auth::user()->full_name,
                 'status' => $status, 
                 'transfer_qty' => $request->qty, 
                 'qty' => $request->qty, 
                 'issued_qty' => $request->qty, 
-                'remarks' => $request->remarks, 
                 'validate_item_code' => $request->barcode, 
-                'date_modified' => $now->toDateTimeString()
+                'date_modified' => Carbon::now()->toDateTimeString()
             ];
 
-            DB::table('tabStock Entry Detail')->where('name', $request->sted_id)->update($values);
+            DB::table('tabStock Entry Detail')->where('name', $request->child_tbl_id)->update($values);
 
-            $this->insert_transaction_log('Stock Entry', $request->sted_id);
+            $this->insert_transaction_log('Stock Entry', $request->child_tbl_id);
 
             $status_result = $this->update_pending_ste_item_status();
 
-            if ($request->purpose == 'Material Transfer for Manufacture') {
-                $production_order_details = DB::table('tabProduction Order')
-                    ->where('name', $request->production_order)->first();
+            if ($steDetails->purpose == 'Material Transfer for Manufacture') {
+                $cancelled_production_order = DB::table('tabProduction Order')
+                    ->where('name', $steDetails->production_order)->where('docstatus', 2)->first();
 
-                if($production_order_details && $production_order_details->docstatus > 1){
-                    return response()->json([
-                        'error' => 1, 
-                        'modal_title' => 'Message', 
-                        'modal_message' => 'Production Order ' . $request->production_order . ' was cancelled. Please reload the page.'
-                    ]);
+                if($cancelled_production_order){
+                    return response()->json(['status' => 0, 'message' => 'Production Order ' . $cancelled_production_order->name . ' was cancelled. Please reload the page.']);
                 }
 
-                $this->submit_stock_entry($request->ste_name);
-                $this->generate_stock_entry($request->production_order);
+                $this->submit_stock_entry($steDetails->parent_se);
+                $this->generate_stock_entry($steDetails->production_order);
             }
 
-            if ($request->purpose == 'Material Transfer') {
-                if($request->transfer_as == 'For Return' && $status_result == 'Returned'){
-                    $this->submit_stock_entry($request->ste_name);
+            if ($steDetails->purpose == 'Material Transfer') {
+                if($steDetails->transfer_as == 'For Return' && $status_result == 'Returned'){
+                    $this->submit_stock_entry($steDetails->parent_se);
                 }
             }
 
+            $stock_reservation_details = [];
+            if($request->has_reservation && $request->has_reservation == 1) {
+                $ref_no = ($steDetails->sales_order_no) ? $steDetails->sales_order_no : $steDetails->material_request;
+                
+                $so_details = DB::table('tabSales Order')->where('name', $ref_no)->first();
+                if($so_details) {
+                    $stock_reservation_details = $this->get_stock_reservation($steDetails->item_code, $steDetails->s_warehouse, $so_details->sales_person, $so_details->project);
+                }
+
+                if($stock_reservation_details && $request->deduct_reserve == 1){
+                    $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
+                    $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+
+                    $data = [
+                        'modified_by' => Auth::user()->wh_user,
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'consumed_qty' => $consumed_qty
+                    ];
+
+                    DB::table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
+                }
+            }
+        
             DB::commit();
 
-            if ($request->transfer_as == 'For Return') {
-                return response()->json([
-                    'error' => 0, 
-                    'modal_title' => 'Returned', 
-                    'modal_message' => 'Item ' . $request->item_code . ' has been returned.'
-                ]);
+            if($request->deduct_reserve == 1) {
+                return response()->json(['status' => 1, 'message' => 'Item ' . $steDetails->item_code . ' has been deducted from reservation.']);
+            }
+
+            if (($steDetails->transfer_as == 'For Return') || $steDetails->purpose == 'Material Receipt') {
+                return response()->json(['status' => 1, 'message' => 'Item <b>' . $steDetails->item_code . '</b> has been returned.']);
             }else{
-                return response()->json([
-                    'error' => 0, 
-                    'modal_title' => 'Checked Out', 
-                    'modal_message' => 'Item ' . $request->item_code . ' has been checked out.'
-                ]);
+                return response()->json(['status' => 1, 'message' => 'Item <b>' . $steDetails->item_code . '</b> has been checked out.']);
             }
         } catch (Exception $e) {
             DB::rollback();
-            return response()->json([
-                'error' => 1, 
-                'modal_title' => 'Error', 
-                'modal_message' => 'Error creating transaction.'
-            ]);
+
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
         }
     }
 
@@ -911,10 +841,11 @@ class MainController extends Controller
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
                 ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
-                ->where('ps.item_status', 'For Checking')->where('dri.docstatus', 0)->where('psi.name', $id)
-                ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user')
-               ->first();
+                ->whereRaw(('dri.item_code = psi.item_code'))->where('ps.item_status', 'For Checking')->where('dri.docstatus', 0)->where('psi.name', $id)
+                ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
+                ->first();
+            $type = 'Check Out';
+            $purpose = 'Picking Slip';
             $barcode = $q->barcode;
             $remarks = null;
             $s_warehouse = $q->warehouse;
@@ -923,9 +854,11 @@ class MainController extends Controller
         }else{
             $q = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')->where('sted.name', $id)
-                ->select('sted.*', 'ste.sales_order_no', 'ste.material_request')
+                ->select('sted.*', 'ste.sales_order_no', 'ste.material_request', 'ste.purpose', 'ste.transfer_as')
                 ->first();
 
+            $type = ($q->purpose == 'Material Receipt' || $q->transfer_as == 'For Return') ? 'Check In' : 'Check Out';
+            $purpose = $q->purpose;
             $barcode = $q->validate_item_code;
             $remarks = $q->remarks;
             $s_warehouse = $q->s_warehouse;
@@ -950,7 +883,14 @@ class MainController extends Controller
             'source_warehouse' => $s_warehouse,
             'target_warehouse' => $t_warehouse,
             'description' => $q->description,
-            'reference_no' => $reference_no
+            'reference_no' => $reference_no,
+            'creation' => $now->toDateTimeString(),
+            'modified' => $now->toDateTimeString(),
+            'modified_by' => Auth::user()->wh_user,
+            'owner' => Auth::user()->wh_user,
+            'uom' => $q->stock_uom,
+            'purpose' => $purpose,
+            'transaction_type' => $type
         ];
 
         $existing_log = DB::table('tabAthena Transactions')
@@ -995,30 +935,73 @@ class MainController extends Controller
     public function checkout_picking_slip_item(Request $request){
         DB::beginTransaction();
         try {
-            if($request->barcode != $request->item_code){
-                return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
+            $ps_details = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')->where('psi.name', $request->child_tbl_id)
+            ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status')->first();
+            if(!$ps_details){
+                return response()->json(['status' => 0, 'message' => 'Record not found.']);
             }
 
-            if($request->balance < $request->qty && !$request->is_bundle){
-                return response()->json([
-                    'error' => 1,
-                    'modal_title' => 'Insufficient Stock', 
-                    'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $request->balance . '</b>, you need <b>' . $request->qty . '</b>'
-                ]);
+            if(in_array($ps_details->per_item_status, ['Issued', 'Returned'])){
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.']);
             }
 
+            if($ps_details->ps_status == 1){
+                return response()->json(['status' => 0, 'message' => 'Item already submitted.']);
+            }
+            
+            $itemDetails = DB::table('tabItem')->where('name', $ps_details->item_code)->first();
+            if(!$itemDetails){
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $ps_details->item_code . '</b> not found.']);
+            }
+            if($request->is_bundle == 0) {
+                if($itemDetails->is_stock_item == 0){
+                    return response()->json(['status' => 0, 'message' => 'Item  <b>' . $ps_details->item_code . '</b> is not a stock item.']);
+                }
+            }
+            
+            if($request->barcode != $itemDetails->item_code){
+                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.']);
+            }
+            
             if($request->qty <= 0){
-                return response()->json([
-                    'error' => 1, 
-                    'modal_title' => 'Invalid Qty', 
-                    'modal_message' => 'Qty cannot be less than or equal to 0 for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b>'
-                ]);
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
+            }
+            
+            if($request->qty > $ps_details->qty){
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($ps_details->qty * 1) .'.']);
+            }
+
+            $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
+            if($request->qty > $available_qty && $request->is_bundle == false){
+                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
+                br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
+            }
+
+            $sales_order = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
+            if($sales_order && in_array($sales_order->order_type, ['Shopping Cart', 'Online Shop'])) {
+                $bin_details = DB::connection('mysql')->table('tabBin')
+                    ->where('item_code', $ps_details->item_code)
+                    ->where('warehouse', $request->warehouse)
+                    ->first();
+
+                if($bin_details) {
+                    $new_reserved_qty = $bin_details->website_reserved_qty - $request->qty;
+                    $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
+
+                    $values = [
+                        "modified" => Carbon::now()->toDateTimeString(),
+                        "modified_by" => Auth::user()->wh_user,
+                        "website_reserved_qty" => $new_reserved_qty,
+                    ];
+            
+                    DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
+                }
             }
 
             if($request->is_bundle){
                 $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
                 foreach ($query as $row) {
-                    $bundle_item_qty = $row->qty * $request->qty;
+                    $bundle_item_qty = $row->qty;
                    
                     $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
     
@@ -1027,12 +1010,29 @@ class MainController extends Controller
                     $available_qty = $actual_qty - $total_issued;
 
                     if($available_qty < $bundle_item_qty){
-                        return response()->json([
-                            'error' => 1,
-                            'modal_title' => 'Insufficient Stock', 
-                            'modal_message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>'
-                        ]);
+                        return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
                     }
+                }
+            }
+
+            $stock_reservation_details = [];
+            if($request->has_reservation && $request->has_reservation == 1) {
+                $so_details = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
+                if($so_details) {
+                    $stock_reservation_details = $this->get_stock_reservation($ps_details->item_code, $request->warehouse, $so_details->sales_person, $so_details->project);
+                }
+
+                if($stock_reservation_details && $request->deduct_reserve == 1){
+                    $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
+                    $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+
+                    $data = [
+                        'modified_by' => Auth::user()->wh_user,
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'consumed_qty' => $consumed_qty
+                    ];
+
+                    DB::table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
                 }
             }
 
@@ -1044,20 +1044,20 @@ class MainController extends Controller
                 'date_modified' => $now->toDateTimeString()
             ];
 
-            DB::table('tabPacking Slip Item')->where('name', $request->psi_id)
+            DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
                 ->where('docstatus', 0)->update($values);
 
-            $this->insert_transaction_log('Picking Slip', $request->psi_id);
+            $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
 
             $this->update_pending_ps_item_status();
 
             DB::commit();
 
-            return response()->json([
-                'error' => 0, 
-                'modal_title' => 'Checked Out', 
-                'modal_message' => 'Item ' . $request->item_code . 'has been checked out.'
-            ]);
+            if($request->deduct_reserve == 1) {
+                return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been deducted from reservation.']);
+            }
+
+            return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been checked out.']);
         } catch (Exception $e) {
             DB::rollback();
             return response()->json([
@@ -1093,69 +1093,109 @@ class MainController extends Controller
         }
     }
 
-    public function return_dr_item(Request $request){
-        DB::beginTransaction();
-        try {
-            if($request->barcode != $request->item_code){
-                return response()->json(['error' => 1, 'modal_title' => 'Invalid Barcode', 'modal_message' => 'Invalid barcode for ' . $request->item_code]);
-            }
-
-            $now = Carbon::now();
-            $values = [
-                'session_user' => Auth::user()->full_name,
-                'item_status' => 'Returned',
-                'barcode_return' => $request->barcode,
-                'date_modified' => $now->toDateTimeString()
-            ];
-
-            DB::table('tabDelivery Note Item')->where('name', $request->dri_id)->where('docstatus', 0)->update($values);
-
-            $this->update_pending_dr_item_status();
-
-            DB::commit();
-
-            return response()->json([
-                'error' => 0, 
-                'modal_title' => 'Checked Out', 
-                'modal_message' => 'Item ' . $request->item_code . ' has been received.'
-            ]);
-        } catch (Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'error' => 1, 
-                'modal_title' => 'Error', 
-                'modal_message' => 'Error creating transaction.'
-            ]);
-        }
-    }
-
-    public function update_pending_dr_item_status(){
-        try {
-            $for_return_dr = DB::table('tabDelivery Note')
-                ->where('return_status', 'For Return')->where('docstatus', 0)
-                ->pluck('name');
-
-            foreach($for_return_dr as $dr){
-                $items_for_return = DB::table('tabDelivery Note Item')
-                    ->where('parent', $dr)->where('item_status', 'For Return')->exists();
-
-                if(!$items_for_return){
-                    DB::table('tabDelivery Note')->where('name', $dr)->where('docstatus', 0)->update(['return_status' => 'Returned']);
-                }
-            }
-
-        } catch (Exception $e) {
-        }
-    }
-
-    public function get_item_details($item_code){
+    public function get_item_details(Request $request, $item_code){
         $item_details = DB::table('tabItem')->where('name', $item_code)->first();
+
+        if($request->json){
+            return response()->json($item_details);
+        }
 
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->get();
 
-        $stock_level = DB::table('tabBin')->where('item_code', $item_code)->get(); 
+        // get item inventory stock list
+        $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
+                ->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
+        $site_warehouses = [];
+        $consignment_warehouses = [];
+        foreach ($item_inventory as $value) {
+            $reserved_qty = StockReservation::where('item_code', $value->item_code)
+                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'stock_level'));
+            $consumed_qty = StockReservation::where('item_code', $value->item_code)
+                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('consumed_qty');
+
+            $reserved_qty = $reserved_qty - $consumed_qty;
+
+            $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+            if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
+                $consignment_warehouses[] = [
+                    'warehouse' => $value->warehouse,
+                    'reserved_qty' => $reserved_qty,
+                    'actual_qty' => $actual_qty,
+                    'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                    'stock_uom' => $value->stock_uom,
+                ];
+            }else{
+                $site_warehouses[] = [
+                    'warehouse' => $value->warehouse,
+                    'reserved_qty' => $reserved_qty,
+                    'actual_qty' => $actual_qty,
+                    'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                    'stock_uom' => $value->stock_uom,
+                ];
+            }
+        }
+
+        // get item images
+        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
+        // get item alternatives from production order item table in erp
+        $item_alternatives = [];
+        $production_item_alternatives = DB::table('tabProduction Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
+            ->where('p.item_code', $item_details->name)->where('p.item_alternative_for', '!=', $item_details->name)
+            ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get();
+        foreach($production_item_alternatives as $a){
+            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+
+            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+
+            if(count($item_alternatives) < 7){
+                $item_alternatives[] = [
+                    'item_code' => $a->item_code,
+                    'description' => $a->description,
+                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                    'actual_stocks' => $actual_stocks
+                ];
+            }
+        }
+
+        // get item alternatives based on parent item code
+        $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+        foreach($q as $a){
+            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+
+            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+
+            if(count($item_alternatives) < 7){
+                $item_alternatives[] = [
+                    'item_code' => $a->item_code,
+                    'description' => $a->description,
+                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                    'actual_stocks' => $actual_stocks
+                ];
+            }
+        }
+
+        if(count($item_alternatives) <= 0) {
+            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+            foreach($q as $a){
+                $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+
+                $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+
+                if(count($item_alternatives) < 7){
+                    $item_alternatives[] = [
+                        'item_code' => $a->item_code,
+                        'description' => $a->description,
+                        'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                        'actual_stocks' => $actual_stocks
+                    ];
+                }
+            }
+        }
+
+        $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
+
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses'));
     }
 
     public function get_athena_transactions($item_code){
@@ -1258,6 +1298,7 @@ class MainController extends Controller
                 'ref_no' => $ref_no,
                 'date_modified' => $date_modified,
                 'session_user' => $session_user,
+                'posting_date' => $row->posting_date,//cccc
             ];
         }
 
@@ -1271,24 +1312,55 @@ class MainController extends Controller
     }
 
     public function upload_item_image(Request $request){
-        if($request->hasFile('item_image')){
-            $file = $request->file('item_image');
-            //get filename with extension
-            $filenamewithextension = $file->getClientOriginalName();
-            //get filename without extension
-            $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-            //get file extension
-            $extension = $file->getClientOriginalExtension();
-            //filename to store
-            $filenametostore = round(microtime(true)) . '-'. $request->item_code . '.' . $extension;
-            // Storage::put('public/employees/'. $filenametostore, fopen($file, 'r+'));
-            Storage::put('public/img/'. $filenametostore, fopen($file, 'r+'));
+        // get item removed image file names for delete
+        $removed_images = DB::table('tabItem Images')->where('parent', $request->item_code)
+            ->whereNotIn('name', $request->existing_images)->pluck('image_path');
 
-            DB::table('tabItem')->where('name', $request->item_code)->update(['item_image_path' => $filenametostore]);
+        foreach($removed_images as $img) {
+            // delete from file directory
+            Storage::delete('/public/img/' . $img);
+        } 
+
+        // delete from table item images
+        DB::table('tabItem Images')->where('parent', $request->item_code)
+            ->whereNotIn('name', $request->existing_images)->delete();
+
+        $now = Carbon::now();
+        if($request->hasFile('item_image')){
+            $files = $request->file('item_image');
+
+            $item_images_arr = [];
+            foreach ($files as $i => $file) {
+               //get filename with extension
+                $filenamewithextension = $file->getClientOriginalName();
+                //get filename without extension
+                $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
+                //get file extension
+                $extension = $file->getClientOriginalExtension();
+                //filename to store
+                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.' . $extension;
+                // Storage::put('public/employees/'. $filenametostore, fopen($file, 'r+'));
+                Storage::put('public/img/'. $filenametostore, fopen($file, 'r+'));
+
+                $item_images_arr[] = [
+                    'name' => uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'idx' => $i + 1,
+                    'parent' => $request->item_code,
+                    'parentfield' => 'item_images',
+                    'parenttype' => 'Item',
+                    'image_path' => $filenametostore
+                ];
+            }
+
+            DB::table('tabItem Images')->insert($item_images_arr);
 
             return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been uploaded.']);
         }else{
-            return response()->json(['message' => 'No changes made.']);
+            return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been updated.']);
         }
     }
 
@@ -1308,50 +1380,44 @@ class MainController extends Controller
         if(!$request->arr){
             return view('production_to_receive');
         }
-
-        return [];
         
-        // $user = Auth::user()->frappe_userid;
-        // $allowed_warehouses = $this->user_allowed_warehouse($user);
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        // $q = DB::table('tabStock Entry as ste')
-        //     ->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
-        //     ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 0)
-        //     ->select('ste.*', 'pro.production_item', 'pro.description', 'pro.stock_uom')
-        //     ->whereIn('pro.fg_warehouse', $allowed_warehouses)
-        //     ->get();
+        $q = DB::connection('mysql_mes')->table('production_order AS po')
+            ->whereNotIn('po.status', ['Cancelled'])
+            ->where('po.produced_qty', '>', 0)
+            ->whereRaw('po.produced_qty > feedback_qty')
+            ->select('po.*')->get();
 
-        // $list = [];
-        // foreach ($q as $row) {
-        //     $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
+        $list = [];
+        foreach ($q as $row) {
+            $parent_warehouse = $this->get_warehouse_parent($row->fg_warehouse);
 
-        //     $owner = DB::table('tabUser')->where('email', $row->owner)->first();
-        //     $owner = ($owner) ? $owner->full_name : null;
+            $owner = ucwords(str_replace('.', ' ', explode('@', $row->created_by)[0]));
 
-        //     $operation_id = DB::connection('mysql_mes')->table('production_order')->where('production_order', $row->production_order)->first();
-        //     $operation_id = ($operation_id) ? $operation_id->operation_id : 0;
-        //     $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
-        //     $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
+            $operation_id = ($row->operation_id) ? $row->operation_id : 0;
+            $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
+            $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
 
-        //     $list[] = [
-        //         'ste_no' => $row->name,
-        //         'production_order' => $row->production_order,
-        //         'fg_warehouse' => $row->to_warehouse,
-        //         'sales_order_no' => $row->sales_order_no,
-        //         'material_request' => $row->material_request,
-        //         'customer' => $row->so_customer_name,
-        //         'item_code' => $row->production_item,
-        //         'description' => $row->description,
-        //         'qty_to_receive' => $row->fg_completed_qty * 1,
-        //         'stock_uom' => $row->stock_uom,
-        //         'parent_warehouse' => $parent_warehouse,
-        //         'owner' => $owner,
-        //         'created_at' =>  Carbon::parse($row->creation)->format('m-d-Y h:i A'),
-        //         'operation_name' => $operation_name
-        //     ];
-        // }
+            $list[] = [
+                'production_order' => $row->production_order,
+                'fg_warehouse' => $row->fg_warehouse,
+                'sales_order_no' => $row->sales_order,
+                'material_request' => $row->material_request,
+                'customer' => $row->customer,
+                'item_code' => $row->item_code,
+                'description' => $row->description,
+                'qty_to_receive' => $row->produced_qty - $row->feedback_qty,
+                'stock_uom' => $row->stock_uom,
+                'parent_warehouse' => $parent_warehouse,
+                'owner' => $owner,
+                'created_at' =>  Carbon::parse($row->created_at)->format('M-d-Y h:i A'),
+                'operation_name' => $operation_name
+            ];
+        }
 
-        // return response()->json(['records' => $list]);
+        return response()->json(['records' => $list]);
     }
 
     public function create_stock_ledger_entry($stock_entry){
@@ -2135,5 +2201,457 @@ class MainController extends Controller
 
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => 'There was a problem creating transaction.']);
         }
+    }
+
+    public function get_items(Request $request){
+        return DB::table('tabItem')->where('disabled', 0)
+            ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->selectRaw('name as id, name as text, description, stock_uom')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function get_warehouses(Request $request){
+        return DB::table('tabWarehouse')
+            ->where('disabled', 0)->where('is_group', 0)
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function get_projects(Request $request){
+        return DB::table('tabProject')
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function get_sales_persons(Request $request){
+        return DB::table('tabSales Person')
+            ->where('enabled', 1)->where('is_group', 0)
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function dashboard_data(){
+        $start = Carbon::now()->startOfDay()->toDateTimeString();
+		$end = Carbon::now()->endOfDay()->toDateTimeString();
+
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', '<', 2)->where('sed.status', '!=', 'For Checking')
+            ->whereBetween('sed.date_modified', [$start, $end])
+            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->get();
+
+        $stock_entries_for_return = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.t_warehouse', $allowed_warehouses)->where('se.docstatus', '<', 2)->where('sed.status', '!=', 'For Checking')
+            ->where('transfer_as', 'For Return')->whereBetween('sed.date_modified', [$start, $end])
+            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->count();
+
+        $picking_slips = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+            ->where('psi.session_user', Auth::user()->full_name)->where('ps.docstatus', '<', 2)->where('psi.status', '!=', 'For Checking')
+            ->whereBetween('psi.date_modified', [$start, $end])->count();
+
+        $feedbacks = DB::table('tabStock Entry as ste')->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
+            ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 1)->whereIn('pro.fg_warehouse', $allowed_warehouses)
+            ->whereBetween('ste.posting_date', [$start, $end])->count();
+
+        $sales_returns = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
+            ->where('dn.is_return', 1)->where('dn.docstatus', 1)->whereIn('dni.warehouse', $allowed_warehouses)
+            ->whereBetween('dn.posting_date', [$start, $end])->count();
+
+        $purchase_receipts = DB::table('tabPurchase Receipt as pr')->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')
+            ->where('pr.docstatus', 1)->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->whereBetween('pr.posting_date', [$start, $end])->count();
+
+        $purchase_orders = DB::table('tabPurchase Order as pr')->join('tabPurchase Order Item as pri', 'pr.name', 'pri.parent')
+            ->where('pr.docstatus', 1)->whereRaw('pri.received_qty < pri.qty')->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
+
+        $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
+            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->get();
+
+        $pending_stock_entries_for_return = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.t_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
+            ->where('transfer_as', 'For Return')->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->count();
+
+        $pending_sales_returns = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
+            ->where('dn.is_return', 1)->where('dn.docstatus', 0)->whereIn('dni.warehouse', $allowed_warehouses)->count();
+
+        return [
+            'd_withdrawals' => collect($stock_entries)->where('purpose', 'Material Transfer for Manufacture')->count(),
+            'd_material_issues' => collect($stock_entries)->where('purpose', 'Material Issue')->where('issue_as', '!=', 'Customer Replacement')->count(),
+            'd_replacements' => collect($stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
+            'd_internal_transfers' => collect($stock_entries)->where('purpose', 'Material Transfer')->where('transfer_as', '!=', 'For Return')->count(),
+            'd_returns' => $stock_entries_for_return + $sales_returns,
+            'd_picking_slips' => $picking_slips,
+            'd_feedbacks' => $feedbacks,
+            'd_purchase_receipts' => $purchase_receipts,
+            'p_purchase_receipts' => $purchase_orders,
+            'p_replacements' => collect($pending_stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
+            'p_returns' => $pending_stock_entries_for_return + $pending_sales_returns,
+        ];
+    }
+
+    public function get_reserved_qty($item_code, $warehouse){
+        $reserved_qty_for_website = DB::table('tabBin')->where('item_code', $item_code)
+            ->where('warehouse', $warehouse)->sum('website_reserved_qty');
+
+        $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
+            ->where('warehouse', $warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
+
+        return $reserved_qty_for_website + $stock_reservation_qty;
+    }
+
+    public function get_item_images($item_code){
+        return DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path', 'name');
+    }
+
+    public function set_reservation_as_expired(){
+        return DB::table('tabStock Reservation')->where('type', 'In-house')
+            ->where('status', 'Active')->whereDate('valid_until', '<=', Carbon::now())
+            ->update(['status' => 'Expired']);
+    }
+
+    public function get_low_stock_level_items(Request $request){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+        
+        $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
+            ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty', 'i.item_classification')
+            ->whereIn('default_warehouse', $allowed_warehouses)->get();
+
+        $low_level_stocks = [];
+        foreach ($query as $a) {
+            $actual_qty = $this->get_actual_qty($a->item_code, $a->warehouse);
+
+            if($actual_qty <= $a->warehouse_reorder_level) {
+
+                $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+
+                $low_level_stocks[] = [
+                    'item_code' => $a->item_code,
+                    'description' => $a->description,
+                    'item_classification' => $a->item_classification,
+                    'stock_uom' => $a->stock_uom,
+                    'warehouse' => $a->warehouse,
+                    'warehouse_reorder_level' => $a->warehouse_reorder_level,
+                    'warehouse_reorder_qty' => $a->warehouse_reorder_qty,
+                    'actual_qty' => $actual_qty,
+                    'image' => ($item_image_path) ? $item_image_path->image_path : null
+                ];
+            }
+        }
+
+        // Get current page form url e.x. &page=1
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data
+        $itemCollection = collect($low_level_stocks);
+        // Define how many items we want to be visible in each page
+        $perPage = 6;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+
+        $low_level_stocks = $paginatedItems;
+
+        return view('tbl_low_level_stocks', compact('low_level_stocks'));
+    }
+
+    public function get_recently_added_items(){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $q = DB::table('tabItem')->where('disabled', 0)
+            ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->whereIn('default_warehouse', $allowed_warehouses)
+            ->orderBy('creation', 'desc')->limit(5)->get();
+
+        $list = [];
+        foreach($q as $row){
+            $item_image_path = DB::table('tabItem Images')->where('parent', $row->name)->first();
+
+            $list[] = [
+                'item_code' => $row->item_code,
+                'description' => $row->description,
+                'default_warehouse' => $row->default_warehouse, //CCCCC
+                'image' => ($item_image_path) ? $item_image_path->image_path : null
+            ];
+        }
+
+        return view('recently_added_items', compact('list'));
+    }
+
+    public function invAccuracyChart($year){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $chart_data = [];
+        $months = ['0', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $month_no = $year == date('Y') ? date('m') : 12;
+        for ($i = 1; $i <= $month_no; $i++) {
+            $inv_audit = DB::table('tabMonthly Inventory Audit')
+                ->whereIn('warehouse', $allowed_warehouses)
+                ->select('name', 'item_classification', 'average_accuracy_rate', 'warehouse', 'percentage_sku')
+                ->whereYear('from', $year)->whereMonth('from', $i)
+                ->where('docstatus', '<', 2)->get();
+
+            $average = collect($inv_audit)->avg('average_accuracy_rate');
+
+            $chart_data[] = [
+                'month_no' => $i,
+                'month' => $months[$i],
+                'audit_per_month' => $inv_audit,
+                'average' => round($average, 2),
+            ];
+        }
+
+        return response()->json($chart_data);
+    }
+
+    public function returns(){
+        return view('returns');
+    }
+
+    public function replacements(Request $request){
+        if(!$request->arr){
+            return view('replacement');
+         }
+         
+         $user = Auth::user()->frappe_userid;
+         $allowed_warehouses = $this->user_allowed_warehouse($user);
+ 
+         $q = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)
+            ->where('se.purpose', 'Material Issue')->where('se.issue_as', 'Customer Replacement')
+            ->select('sed.status', 'sed.validate_item_code', 'se.sales_order_no', 'sed.parent', 'sed.name', 'sed.t_warehouse', 'sed.s_warehouse', 'sed.item_code', 'sed.description', 'sed.uom', 'sed.qty', 'sed.owner', 'se.material_request', 'se.creation')
+            ->orderByRaw("FIELD(sed.status, 'For Checking', 'Issued') ASC")
+            ->get();
+ 
+         $list = [];
+         foreach ($q as $d) {
+             $available_qty = $this->get_available_qty($d->item_code, $d->s_warehouse);
+ 
+             if($d->material_request){
+                 $customer = DB::table('tabMaterial Request')->where('name', $d->material_request)->first();
+             }else{
+                 $customer = DB::table('tabSales Order')->where('name', $d->sales_order_no)->first();
+             }
+ 
+             $ref_no = ($customer) ? $customer->name : null;
+             $customer = ($customer) ? $customer->customer : null;
+ 
+             $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+             $part_nos = implode(', ', $part_nos->toArray());
+ 
+             $owner = DB::table('tabUser')->where('email', $d->owner)->first();
+             $owner = ($owner) ? $owner->full_name : null;
+ 
+             $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+ 
+             $list[] = [
+                 'customer' => $customer,
+                 'item_code' => $d->item_code,
+                 'description' => $d->description,
+                 's_warehouse' => $d->s_warehouse,
+                 't_warehouse' => $d->t_warehouse,
+                 'uom' => $d->uom,
+                 'name' => $d->name,
+                 'owner' => $owner,
+                 'parent' => $d->parent,
+                 'part_nos' => $part_nos,
+                 'qty' => $d->qty,
+                 'validate_item_code' => $d->validate_item_code,
+                 'status' => $d->status,
+                 'available_qty' => $available_qty,
+                 'ref_no' => $ref_no,
+                 'parent_warehouse' => $parent_warehouse,
+                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
+             ];
+         }
+
+         return response()->json(['records' => $list]);
+    }
+
+    public function receipts(Request $request){
+        if(!$request->arr){
+           return view('receipt');
+        }
+        
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $q = DB::table('tabPurchase Receipt as pr')
+            ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')->where('pr.docstatus', 0)
+            ->whereIn('pri.warehouse', $allowed_warehouses)
+            ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])
+            ->select('pri.parent', 'pri.name', 'pri.warehouse', 'pri.item_code', 'pri.description', 'pri.uom', 'pri.qty', 'pri.owner', 'pr.creation', 'pr.purchase_order')
+            ->get();
+
+        $list = [];
+        foreach ($q as $d) {
+            $available_qty = $this->get_available_qty($d->item_code, $d->warehouse);
+
+            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+            $part_nos = implode(', ', $part_nos->toArray());
+
+            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
+            $owner = ($owner) ? $owner->full_name : null;
+
+            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
+
+            $list[] = [
+                'item_code' => $d->item_code,
+                'description' => $d->description,
+                'warehouse' => $d->warehouse,
+                'uom' => $d->uom,
+                'name' => $d->name,
+                'owner' => $owner,
+                'parent' => $d->parent,
+                'part_nos' => $part_nos,
+                'qty' => $d->qty,
+                'status' => 'To Receive',
+                'available_qty' => $available_qty,
+                'ref_no' => $d->purchase_order,
+                'parent_warehouse' => $parent_warehouse,
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
+            ];
+        }
+        
+        return response()->json(['records' => $list]);
+    }
+
+    public function get_available_qty($item_code, $warehouse){
+        $reserved_qty = $this->get_reserved_qty($item_code, $warehouse);
+        $actual_qty = $this->get_actual_qty($item_code, $warehouse);
+        $issued_qty = $this->get_issued_qty($item_code, $warehouse);
+
+        $available_qty = ($actual_qty - $issued_qty);
+        $available_qty = ($available_qty - $reserved_qty);
+
+        return ($available_qty < 0) ? 0 : $available_qty;
+    }
+
+    public function view_deliveries(Request $request){
+        if(!$request->arr){
+            return view('picking_slip');
+        }
+        
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $q = DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
+                ->whereRaw(('dri.item_code = psi.item_code'))
+                ->where('ps.docstatus', 0)
+                ->where('dri.docstatus', 0)
+                ->whereIn('dri.warehouse', $allowed_warehouses)
+                ->select('ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->groupBy('ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")->get();
+
+        $list = [];
+        foreach ($q as $d) {
+            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+
+            $part_nos = implode(', ', $part_nos->toArray());
+
+            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
+            $owner = ($owner) ? $owner->full_name : null;
+
+            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
+
+            $list[] = [
+                'owner' => $owner,
+                'warehouse' => $d->warehouse,
+                'customer' => $d->customer,
+                'sales_order' => $d->sales_order,
+                'id' => $d->id,
+                'status' => $d->status,
+                'name' => $d->name,
+                'delivery_note' => $d->delivery_note,
+                'item_code' => $d->item_code,
+                'description' => $d->description,
+                'qty' => $d->qty,
+                'stock_uom' => $d->stock_uom,
+                'parent_warehouse' => $parent_warehouse,
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+                'type' => 'picking_slip'
+            ];
+        }
+
+        $q = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
+            ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
+            ->get();
+
+            foreach ($q as $d) {
+                $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+    
+                $part_nos = implode(', ', $part_nos->toArray());
+    
+                $owner = DB::table('tabUser')->where('email', $d->owner)->first();
+                $owner = ($owner) ? $owner->full_name : null;
+    
+                $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+    
+                $list[] = [
+                    'owner' => $owner,
+                    'warehouse' => $d->s_warehouse,
+                    'customer' => $d->customer_1,
+                    'sales_order' => $d->sales_order_no,
+                    'id' => $d->id,
+                    'status' => $d->status,
+                    'name' => $d->name,
+                    'delivery_note' => null,
+                    'item_code' => $d->item_code,
+                    'description' => $d->description,
+                    'qty' => $d->qty,
+                    'stock_uom' => $d->stock_uom,
+                    'parent_warehouse' => $parent_warehouse,
+                    'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+                    'type' => 'stock_entry'
+                ];
+            }
+        
+        return response()->json(['picking' => $list]);
+    }
+
+    public function view_picking_slip() {
+        return view('picking_slip');
+    }
+
+    public function get_athena_logs() {
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $date = Carbon::now();
+
+        $startOfYear = $date->copy()->startOfYear();
+        $endOfYear   = $date->copy()->endOfYear();
+
+        $list = DB::table('tabAthena Transactions')->whereIn('source_warehouse', $allowed_warehouses)
+            ->whereBetween('transaction_date', [$startOfYear, $endOfYear])
+            ->orderBy('transaction_date', 'desc')->get();
+
+        return view('tbl_athena_logs', compact('list'));
     }
 }

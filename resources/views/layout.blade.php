@@ -1,85 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ERP Inventory</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ERP Inventory</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="csrf-token" content="{{ csrf_token() }}">
 
-  {{--  <!-- Google Font: Source Sans Pro -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
-  {{--  <!-- Font Awesome Icons -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
-  {{--  <!-- Ekko Lightbox -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
-  {{--  <!-- Theme style -->  --}}
-  <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
+	{{--  <!-- Google Font: Source Sans Pro -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
+	{{--  <!-- Font Awesome Icons -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
+	{{--  <!-- Ekko Lightbox -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
+	{{--  <!-- Theme style -->  --}}
+	<link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
+	<!-- Select2 -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
+	<!-- bootstrap datepicker -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
+	<!-- iCheck for checkboxes and radio inputs -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
 </head>
+
+<style>
+	@font-face { font-family: 'Montserrat'; src: url({{ asset('font/Montserrat/Montserrat-Regular.ttf') }}); } 
+	*:not(i):not(.fa){
+		font-family: 'Montserrat' !important;
+	}
+</style>
+
 <body class="hold-transition layout-top-nav">
 	<div class="wrapper">
-		{{--  <!-- Navbar -->  --}}
-		<nav class="main-header navbar navbar-expand-md navbar-light navbar-navy">
+		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
 			<div class="container-fluid">
-				<form role="search" method="GET" action="/">
-					<div class="d-flex flex-grow-1">
-						<div class="col-md-3 text-center">
-							<a href="/" class="navbar-brand">
-								<span class="brand-text text-white" style="font-size: 28pt;"><b>ERP</b>Inventory</span>
-							</a>
-						</div>
-						<div class="col-md-6">
+				<div class="d-flex flex-grow-1">
+					<div class="row w-100">
+						<div class="col-xl-8 col-lg-9 col-md-9">
 							<div class="row">
-								<div class="col-md-1 div-reset" style="min-height: 40px;">
-									<button class="btn btn-default d-inline-block" type="button" onclick="document.getElementById('searchid').value = ''">
-										<i class="fas fa-sync"></i>
-									</button>
+								<div class="col-md-12 col-xl-6 col-lg-4 text-center">
+									<a href="/" class="navbar-brand">
+										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP</b><span class="d-md-inline-block d-lg-none d-xl-inline-block">Inventory</span></span>
+									</a>
 								</div>
-								<div class="col-md-7 div-search-box" style="min-height: 40px;">
-									<input type="text" class="form-control" placeholder="Search Item..." name="searchString" id="searchid" autocomplete="off" value="{{ request('searchString') }}">
-									<div id="suggesstion-box"></div>
-								</div>
-								<div class="col-md-4">
-									<div class="row">
-										<div class="col-md-6 div-cb-remove text-white" style="min-height: 40px;">
-											<label style="font-size: 8pt;">
-												<div class="d-inline-block">
-													<input type="checkbox" name="check_qty" {{ (request('check_qty')) ? 'checked' : null }} style="width: 15px; height: 15px;">
-												</div>
-												<div style="width: 70%;" class="cb_remove_zero_qty d-inline-block text-center">Remove zero-qty items</div>
-											</label>
+								<div class="col-md-12 col-xl-6 col-lg-8 align-middle">
+									<form role="search" method="GET" action="/search_results" id="search-form">
+										<input type="checkbox" id="cb-1" name="check_qty" hidden>
+										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
+										<div class="input-group p-1">
+											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
+											<div class="input-group-append">
+												<button class="btn btn-default" type="submit">
+													<i class="fas fa-search"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Search</span>
+												</button>
+											</div>
 										</div>
-										<div class="col-md-6 div-search" style="min-height: 40px;">
-											<button class="btn btn-block btn-default" type="submit" name="search">
-												<i class="fas fa-search"></i> Search
-											</button>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-4 div-select1" style="min-height: 40px;">
-									<select class="form-control" id="group" name="group" style="width: 100%;"></select>
-								</div>
-								<div class="col-md-4 div-select2" style="min-height: 40px;">
-									<select class="form-control" id="classification" name="classification" style="width: 100%;"></select>
-								</div>
-								<div class="col-md-4 div-select3" style="min-height: 40px;">
-									<select class="form-control" id="warehouse-search" name="wh" style="width: 100%;"></select>
+									</form>
+									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
 							</div>
 						</div>
-						<div class="col-md-3 text-center">
-							<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
-							<span class="text-white" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
-							<a href="/logout" class="btn btn-default ml-1"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+						<div class="col-xl-4 col-lg-3 col-md-3 align-middle pb-0">
+							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
+								<li class="nav-item dropdown col-8 text-right">
+									<a class="nav-link text-white" data-toggle="dropdown" href="#">
+										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
+										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span> <i class="fas fa-caret-down ml-2"></i>
+									</a>
+								  	<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+										<span class="dropdown-header">Warehouse Access</span>
+										<div id="allowed-warehouse-div">
+											<div class="dropdown-divider"></div>
+											<a href="#" class="dropdown-item text-center">
+												<i class="fas fa-info-circle mr-2"></i>	No warehouse assigned	  
+											</a>
+										</div>
+									</div>
+								</li>
+								<li class="nav-item dropdown text-right">
+									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
+								</li>
+							</ul>
 						</div>
 					</div>
-				</form>
+				</div>
 			</div>
 		</nav>
-		{{--  <!-- /.navbar -->  --}}
+
+
+		<div class="content-wrapper">
+			@if(!in_array($activePage, ['search_results', 'dashboard']))
+			<div class="row m-0 pb-0">
+				<div class="col-xl-5 p-3">
+					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
+						<i class="fas fa-home"></i>
+					</a>{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
+				</div>
+				<div class="col-xl-7 pr-4 pt-2 text-right">
+				<a class="btn btn-app bg-primary" href="/returns">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
+					<i class="fas fa-undo"></i> Returns
+					</a>
+					<a class="btn btn-app bg-info" href="/production_to_receive">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
+					<i class="far fa-check-circle"></i> Feedback
+					</a>
+					<a class="btn btn-app bg-secondary" href="/material_transfer">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
+					<i class="fas fa-exchange-alt"></i> Transfer
+					</a>
+					<a class="btn btn-app bg-maroon" href="/receipts">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
+					<i class="fas fa-boxes"></i> PO Receipts
+					</a>
+					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
+					<i class="fas fa-tasks"></i> Withdrawals
+					</a>
+					<a class="btn btn-app bg-indigo" href="/material_issue">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
+					<i class="fas fa-dolly"></i> Material Issue
+					</a>
+					<a class="btn btn-app bg-teal" href="/picking_slip">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
+					<i class="fas fa-truck"></i> Deliveries
+					</a>
+					<a class="btn btn-app bg-orange" href="/replacements">
+					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
+					<i class="fas fa-retweet"></i> Replacements
+					</a>
+				</div>
+			</div>
+			@endif
+			<!-- /.content-header -->
+		
+			<!-- Main content -->
+			@yield('content')
+			<!-- /.content -->
+			
+		</div>
+	<!-- /.content-wrapper -->
 
 	<style>
-		.col-md-13 {
+
+.remove{
+     position: absolute;
+    top: 15%;
+    right: 0;
+    transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    background-color: #d9534f;
+    color: white;
+    font-size: 16px;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    text-align: center;
+}
+
+.col-md-13 {
 			width: 19%;
 			margin: 0.5%;
 		}
@@ -141,68 +221,15 @@
 
 		#suggesstion-box {
 			position:absolute;
-			width:95%;
+			width: 95%;
 			display:none;
 			overflow:hidden;
-			border:1px #CCC solid;
+			padding: 0;
 			background-color: white;
 			display: block;
 			z-index: 11;
 		}
-
-		.div-select1{
-			padding: 3px 5px 0 0 ;
-		}
-		.div-select2{
-			padding: 3px 5px 0 5px;
-		}
-		.div-select3{
-			padding: 3px 0 0 5px;
-		}
-		.div-search-box{
-			padding: 0 5px 0 0;
-		}
-			.div-search{
-			padding: 0; 
-		}
-		.div-reset{
-			padding: 0; 
-		}
-		.div-cb-remove{
-			padding: 0;
-		}
-	
-		@media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) {
-			/* For landscape layouts only */
-			.cb_remove_zero_qty{
-				font-size: 0.75em;
-			}
-			.div-search, .div-cb-remove{
-				padding: 0; 
-			}
-			#suggesstion-box{
-				width:98%;
-			}
-			.div-select1{
-				padding: 3px 5px 0 0 ;
-			}
-			.div-select2{
-				padding: 3px 5px 0 5px;
-			}
-			.div-select3{
-				padding: 3px 0 0 5px;
-			}
-			.div-search-box{
-				padding: 0 5px 0 0;
-			}
-			.ste-purpose-txt{
-				font-size: 14pt;
-			}
-			.div-ste{
-				padding-right: 0;
-			}
-		}
-
+		
 		#d {
 			display: inline-block;
 			border: 0;
@@ -264,69 +291,7 @@
 		}
 	</style>
 
-  	<div class="content-wrapper">
-		<div class="content-header pb-0">
-			<div class="container-fluid m-0">
-				<div class="row text-uppercase">
-					<div class="col-md-13">
-						<div class="info-box {{ ($activePage == 'material-issue') ? 'active_dash' : '' }}" onclick="location.href='/material_issue';" style="cursor: pointer;">
-							<span class="info-box-icon bg-info elevation-1"><i class="fas fa-shopping-cart"></i></span>
-							<div class="info-box-content">
-								<span class="info-box-text">Material Issue</span>
-								<span class="info-box-number" id="material-issue" style="font-size: 30pt;">0</span>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-13">
-						<div class="info-box {{ ($activePage == 'material-transfer-for-manufacture') ? 'active_dash' : '' }}" onclick="location.href='/material_transfer_for_manufacture';" style="cursor: pointer;">
-							<span class="info-box-icon bg-red"><i class="fas fa-shopping-cart"></i></span>
-							<div class="info-box-content d-block text-truncate text-nowrap">
-								<span class="info-box-text">Material Transfer for Manufacture</span>
-								<span class="info-box-number" id="material-manufacture" style="font-size: 30pt;">0</span>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-13">
-						<div class="info-box {{ ($activePage == 'material-transfer') ? 'active_dash' : '' }}" onclick="location.href='/material_transfer';" style="cursor: pointer;">
-							<span class="info-box-icon bg-green"><i class="fas fa-shopping-cart"></i></span>
-							<div class="info-box-content">
-								<span class="info-box-text">Material Transfer</span>
-								<span class="info-box-number" id="material-transfer" style="font-size: 30pt;">0</span>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-13">
-						<div class="info-box {{ ($activePage == 'picking-slip') ? 'active_dash' : '' }}" onclick="location.href='/picking_slip';" style="cursor: pointer;">
-							<span class="info-box-icon bg-yellow"><i class="fas fa-shopping-cart"></i></span>
-							<div class="info-box-content">
-								<span class="info-box-text">Picking Slip</span>
-								<span class="info-box-number" id="picking-slip" style="font-size: 30pt;">0</span>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-13">
-						<div class="info-box {{ ($activePage == 'material-receipt') ? 'active_dash' : '' }}" onclick="location.href='/production_to_receive';" style="cursor: pointer;">
-							<span class="info-box-icon" style="background-color: #605ca8;"><i class="fas fa-shopping-cart"></i></span>
-							<div class="info-box-content">
-								<span class="info-box-text">To Receive</span>
-								<span class="info-box-number" id="material-receipt" style="font-size: 30pt;">0</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-    	</div>
-		 <!-- /.content-header -->
-	 
-    	<!-- Main content -->
-		@yield('content')
-		<!-- /.content -->
-		
-	</div>
-	<!-- /.content-wrapper -->
-
-  	@if($activePage != 'picking-slip')
-	<div class="modal fade" id="update-item-modal">
+	{{-- <div class="modal fade" id="update-item-modal">
 		<form id="update-ste-form" method="POST" action="/checkout_ste_item">
 			@csrf
 			<div class="modal-dialog" style="min-width: 35%;">
@@ -356,22 +321,22 @@
 								</div>
 								<div class="box-body" style="font-size: 12pt;">
 									<div class="row">
-										<div class="col-md-6">
+										<div class="col-md-6 form-group">
 											<label>Barcode</label>
 											<input type="text" class="form-control barcode" id="barcode" name="barcode" placeholder="Barcode" required>
 										</div>
-										<div class="col-md-6">
+										<div class="col-md-6 form-group">
 											<label>Qty</label>
 											<input type="text" class="form-control qty" id="qty" name="qty" placeholder="Qty">
 										</div>
 										<div class="col-md-12">
 											<div class="row">
-												<div class="col-md-5 mt-3">
+												<div class="col-md-4 mt-3">
 													<a class='sample item_image_link' data-height='720' data-lighter='samples/sample-01.jpg' data-width='1280' href="#">
 														<img src="{{ asset('storage/icon/no_img.png') }}" style="width: 100%;" class="item_image">
 													</a>
 												</div>
-												<div class="col-md-7 mt-3">
+												<div class="col-md-8 mt-3">
 													<span class="item_code_txt d-block font-weight-bold"></span>
 													<p class="description"></p>
 													<dl>
@@ -381,45 +346,60 @@
 																<span class="total_issued_qty_txt"></span> <span class="stock_uom"></span>
 															</p>
 														</dd>
+														<dt>Reference No:</dt>
+												<dd class="ref_no"></dd>
 													</dl>
 												</div>
 											</div>
 										</div>
-										<div class="col-md-5 mt-2">
+										<div class="col-md-4 mt-2 d-none">
 											<dl>
 												<dt>Reference No:</dt>
 												<dd class="ref_no"></dd>
-												<dt class="pt-2">Status:</dt>
-												<dd class="status"></dd>
+												<dt class="pt-2 d-none">Status:</dt>
+												<dd class="status d-none"></dd>
 											</dl>
 										</div>
-										<div class="col-md-7 mt-2">
+										<div class="col-md-8 mt-2 d-none">
 											<dl>
 												<dt>Requested by:</dt>
-												<dd class="owner"></dd>
+												<dd class="owner">-</dd>
 												<dt class="pt-2">Remarks:</dt>
 												<dd>
 													<textarea class="form-control remarks" rows="2" placeholder="Remarks" name="remarks" id="remarks"></textarea>
 												</dd>
 											</dl>
 										</div>
+										<div class="col-md-12 mt-2 d-non1e">
+											<div class="callout callout-info">
+											  <h6><i class="icon fas fa-info"></i> Reservation found on this item</h6>
+											  <dl class="row" id="sr-d">
+												<dt class="col-sm-4">Sales Person</dt>
+												<dd class="col-sm-8">-</dd>
+												<dt class="col-sm-4">Project</dt>
+												<dd class="col-sm-8">-</dd>
+												<dt class="col-sm-4">Reserved Qty</dt>
+												<dd class="col-sm-8">-</dd>
+											  </dl>
+											</div>
+										  </div>
 									</div>
 								</div>
 							</div>
 						</div>
 					</div>
+					<input type="hidden" name="deduct_reserve" value="0">
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> CHECK OUT</button>
-						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="button" class="btn btn-warning" id="btn-deduct-res-1"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
+						<button type="submit" class="btn btn-primary btn-lg" id="btn-check-out-1"><i class="fa fa-check"></i> CHECK OUT</button>
 					</div>
 				</div>
 			</div>
 		</form>
-	</div>
-	@endif
+	</div> --}}
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
-		<div class="modal-dialog" role="document" style="min-width: 70%;">
+		<div class="modal-dialog" role="document" style="min-width: 90%;">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title">Item Inquiry</h4>
@@ -432,15 +412,18 @@
 					<div class="row">
 						<div class="col-md-12">
 							<div class="nav-tabs-custom">
-								<ul class="nav nav-tabs" role="tablist">
+								<ul class="nav nav-tabs" id="item-tabs" role="tablist">
 									<li class="nav-item">
-										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">Overview</a>
+										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">Item Info</a>
 									</li>
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_2" role="tab" aria-controls="custom-tabs-three-2" aria-selected="false">Athena Transactions</a>
 									</li>
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">ERP Submitted Transaction Histories</a>
+									</li>
+									<li class="nav-item">
+										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">Stock Reservations</a>
 									</li>
 								</ul>
 								<div class="tab-content">
@@ -458,6 +441,19 @@
 										<div class="row">
 											<div class="col-md-12">
 												<div class="box-body table-responsive no-padding" id="stock-ledger-table"></div>
+											</div>
+										</div>
+									</div>
+									<div class="tab-pane" id="tab_4">
+										<div class="row">
+											<div class="col-md-12">
+												@php
+													$attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+												@endphp
+												<div class="float-right m-2">
+													<button class="btn btn-primary" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
+												</div>
+												<div class="box-body table-responsive no-padding" id="stock-reservation-table"></div>
 											</div>
 										</div>
 									</div>
@@ -514,7 +510,7 @@
 	<div class="modal fade" id="upload-image-modal" tabindex="-1" role="dialog" aria-labelledby="Upload Image">
 		<form method="POST" action="/upload_item_image" enctype="multipart/form-data">
 			@csrf
-			<div class="modal-dialog" role="document">
+			<div class="modal-dialog modal-lg" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
 						<h4 class="modal-title">Upload Image</h4>
@@ -525,16 +521,13 @@
 						<div class="row">
 							<div class="col-md-12">
 								<div class="form-group" id="upload_edit_form">
-									<div style="text-align: center;">
-								<input type="hidden" name="item_code">
-								
-											<div>
-											<img src="{{ asset('storage/icon/no_img.png') }}" width="250" height="250" class="imgPreview" id="image-preview">
-											</div>
-											<div class="fileUpload btn btn-warning upload-btn" style="margin-top: 8px;">
-											<span>Choose File..</span>
-											<input type="file" name="item_image" class="upload" id="browse-img" />
-										</div>                  
+									<input type="hidden" name="item_code" class="item-code">
+									<div class="fileUpload btn btn-primary upload-btn mb-3">
+										<span>Browse Image(s)</span>
+										<input type="file" name="item_image[]" class="upload" id="browse-img" multiple />
+									</div>
+									<div class="row">
+										<div class="col-md-12" id="image-previews"></div>
 									</div>
 								</div>
 							</div>
@@ -542,13 +535,283 @@
 						
 					</div>
 					<div class="modal-footer">
-						<button type="submit" class="btn btn-primary">Upload</button>
 						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="submit" class="btn btn-primary btn-lg">Upload</button>
 					</div>
 				</div>
 			</div>
 		</form>
 	</div>
+
+	<style>
+		.select2{
+			width: 100% !important;
+		}
+		.select2-selection__rendered {
+			line-height: 31px !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 37px !important;
+			padding-top: 1.5%;
+		}
+		.select2-selection__arrow {
+			height: 36px !important;
+		}
+	</style>
+
+	<div class="modal fade" id="add-stock-reservation-modal">
+		<form id="stock-reservation-form" method="POST" action="/create_reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">New Stock Reservation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div class="row m-2">
+							<div class="col-md-6">
+								<div class="form-group">
+									<label for="">Item Code</label>
+									<input type="text" class="form-control" name="item_code" id="item-code-c" readonly>
+								</div>
+								<div class="form-group">
+									<label for="">Description</label>
+									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-c" readonly></textarea>
+								</div>
+								<div class="form-group">
+									<label for="">Notes</label>
+									<textarea rows="4" class="form-control" name="notes" style="height: 124px;"></textarea>
+								</div>
+								<div class="form-group for-in-house-type d-none">
+									<label for="validity-c">Validity in Day(s)</label>
+									<input type="number" class="form-control" id="validity-c" min="0" value="0">
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Warehouse</label>
+											<select class="form-control" name="warehouse" id="select-warehouse-c"></select>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Reserve Qty</label>
+											<input type="text" name="reserve_qty" class="form-control" value="0">
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="" class="d-block">Available Qty</label>
+											<span class="badge badge-danger">
+												<span id="available-qty-c-text">0</span>
+												<span id="stock-uom-c-text"></span>
+											</span>
+											<input type="hidden" class="form-control" id="available-qty-c" value="0">
+										</div>
+									</div>
+									<div class="col-md-6 d-none">
+										<div class="form-group">
+											<label for="">Stock UoM</label>
+											<input type="hidden" name="stock_uom" class="form-control" id="stock-uom-c" readonly>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Reservation Type</label>
+											<select name="type" class="form-control" id="select-type-c">
+												<option value="">Select Type</option>
+												<option value="In-house">In-house</option>
+												<option value="Website Stocks">Website Stocks</option>
+											</select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Sales Person</label>
+											<select class="form-control" name="sales_person" id="select-sales-person-c"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Project</label>
+											<select class="form-control" name="project" id="select-project-c"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label>Valid until</label>
+											<input type="text" name="valid_until" class="form-control" id="date-valid-until-c">
+										</div>
+									</div>
+								</div>                                        
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> SAVE</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<div class="modal fade" id="edit-stock-reservation-modal">
+		<form id="edit-reservation-form" method="POST" action="/update_reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Edit Stock Reservation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div class="row m-2">
+							<div class="col-md-6">
+								<div class="form-group">
+									<input type="hidden" name="id" id="stock-reservation-id-e">
+									<label for="">Item Code</label>
+									<input type="text" class="form-control" name="item_code" id="item-code-e" readonly>
+								</div>
+								<div class="form-group">
+									<label for="">Description</label>
+									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-e" readonly></textarea>
+								</div>
+								<div class="form-group">
+									<label for="">Notes</label>
+									<textarea rows="4" class="form-control" name="notes" id="notes-e" style="height: 124px;"></textarea>
+								</div>
+								<div class="form-group for-in-house-type d-none">
+									<label for="validity-e">Validity in Day(s)</label>
+									<input type="number" class="form-control" id="validity-e" min="0" value="0">
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Warehouse</label>
+											<select class="form-control" name="warehouse" id="select-warehouse-e" disabled></select>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="">Reserve Qty</label>
+											<input type="text" name="reserve_qty" class="form-control" value="0" id="reserve-qty-e">
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="" class="d-block">Available Qty</label>
+											<span class="badge badge-danger">
+												<span id="available-qty-e-text">0</span>
+												<span id="stock-uom-e-text"></span>
+											</span>
+											<input type="hidden" class="form-control" name="available_qty" id="available-qty-e" value="0" readonly>
+										</div>
+									</div>
+									<div class="col-md-6 d-none">
+										<div class="form-group">
+											<label for="">Stock UoM</label>
+											<input type="text" name="stock_uom" class="form-control" id="stock-uom-e" readonly>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group">
+											<label for="">Reservation Type</label>
+											<select name="type" class="form-control" id="select-type-e" disabled>
+												<option value="">Select Type</option>
+												<option value="In-house">In-house</option>
+												<option value="Website Stocks">Website Stocks</option>
+											</select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Sales Person</label>
+											<select class="form-control" name="sales_person" id="select-sales-person-e"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label for="">Project</label>
+											<select class="form-control" name="project" id="select-project-e"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-in-house-type d-none">
+											<label>Valid until</label>
+											<input type="text" name="valid_until" class="form-control" id="date-valid-until-e">
+										</div>
+									</div>
+								</div>                                        
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> UPDATE</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<div class="modal fade" id="cancel-stock-reservation-modal">
+		<form id="cancel-reservation-form" method="POST" action="/cancel_reservation" autocomplete="off">
+			@csrf
+			<div class="modal-dialog" style="min-width: 40%;">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Cancel Stock Reservation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<input type="hidden" name="stock_reservation_id">
+						<h5 class="text-center">Cancel Stock Reservation No. <span class="font-weight-bold reservation-id">-</span>?</h5>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CONFIRM</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	{{-- <div class="modal fade" id="confirmation-modal">
+		<form id="deduct-reservation-form" autocomplete="off">
+			@csrf
+			<div class="modal-dialog">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Confirmation</h4>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<span class="form-id d-none"></span>
+						<span class="form-action d-none"></span>
+						<h5 class="text-center">Reserved Stocks found on this item.</h5>
+						<dl class="row mt-3">
+							<dt class="col-xl-6">Sales Person</dt>
+							<dt class="col-xl-6 text-center">Rem. Reserved Qty</dt>
+							<dd class="col-xl-6">-</dd>
+							<dd class="col-xl-6 text-center">0</dd>
+							<dt class="col-xl-12">Project</dt>
+							<dd class="col-xl-12">-</dd>
+						  </dl>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-danger confirm-btn" data-confirm="0"><i class="fa fa-ban"></i> Cancel</button>
+						<button type="button" class="btn btn-primary btn-lg confirm-btn" data-confirm="1"><i class="fa fa-check"></i> Proceed</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div> --}}
 
   <!-- Main Footer -->
   <footer class="main-footer">
@@ -560,6 +823,7 @@
     <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
+
 <!-- ./wrapper -->
 
 <!-- REQUIRED SCRIPTS -->
@@ -572,10 +836,20 @@
 <script src="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.min.js') }}"></script>
 <!-- AdminLTE App -->
 <script src="{{ asset('/updated/dist/js/adminlte.min.js') }}"></script>
-<!-- AdminLTE for demo purposes -->
-{{--  <script src="../../dist/js/demo.js"></script>  --}}
+<!-- Select2 -->
+<script src="{{ asset('/updated/plugins/select2/js/select2.min.js') }}"></script>
+<!-- bootstrap datepicker -->
+<script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
+<!-- iCheck 1.0.1 -->
+<script src="{{ asset('/updated/plugins/iCheck/icheck.min.js') }}"></script>
+<!-- ChartJS -->
+<script src="{{ asset('/updated/plugins/chart.js/Chart.min.js') }}"></script>
 
 <script src="{{ asset('/js/angular.min.js') }}"></script>
+<script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
+<!-- jquery-validation -->
+<script src="{{ asset('/updated/plugins/jquery-validation/jquery.validate.min.js') }}"></script>
+<script src="{{ asset('/updated/plugins/jquery-validation/additional-methods.min.js') }}"></script>
 
 	@yield('script')
 
@@ -1085,14 +1359,7 @@
 				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
 				count_ps_for_issue();
 				count_production_to_receive();
-
-			// setInterval(function () {
-			// 	count_ste_for_issue('Material Issue', '#material-issue');
-			// 	count_ste_for_issue('Material Transfer', '#material-transfer');
-			// 	count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
-			// 	count_ps_for_issue();
-			// 	count_production_to_receive();
-			// }, 60000);
+			}, 60000);
 			
 			function count_ste_for_issue(purpose, div){
 				$.ajax({
@@ -1144,48 +1411,12 @@
 				});
 			}
 
-			get_select_filters();
-			function get_select_filters(){
-				$('#group').empty();
-				$('#classification').empty();
-				$('#wh').empty();
-
-				var group = '<option value="">All Item Groups</option>';
-				var classification = '<option value="">All Item Classification</option>';
-				var wh = '<option value="">All Warehouse</option>';
-				$.ajax({
-					url: "/get_select_filters",
-					type:"GET",
-					success: function(data){
-						$.each(data.warehouses, function(i, v){
-							wh += '<option value="' + v + '">' + v + '</option>';
-						});
-
-						$.each(data.item_groups, function(i, v){
-							group += '<option value="' + v + '">' + v + '</option>';
-						});
-
-						$.each(data.item_classification, function(i, v){
-							classification += '<option value="' + v + '">' + v + '</option>';
-						});
-
-						$('#group').append(group);
-						$('#classification').append(classification);
-						$('#warehouse-search').append(wh);
-
-						$('#group').val('{{ request("group") }}');
-						$('#classification').val('{{ request("classification") }}');
-						$('#warehouse-search').val('{{ request("wh") }}');
-					}
-				});
-			}
-
 			$("#searchid").keyup(function () {
 				load_suggestion_box();
 		  	});
 
 			$('body').click(function () {
-					$("#suggesstion-box").hide();
+				$("#suggesstion-box").hide();
 			});
 
 			$(document).on('click', '.selected-item', function(e){
@@ -1193,116 +1424,34 @@
 				$("#suggesstion-box").hide();
 			});
 
-			// update item modal
-			$(document).on('click', '.update-item', function(){
-				var id = $(this).data('id');
-				$.ajax({
-				  type: 'GET',
-				  url: '/get_ste_details/' + id,
-				  success: function(response){
-					$('#update-item-modal input[name="ste_name"]').val(response.parent);
-					$('#update-item-modal input[name="production_order"]').val(response.production_order);
-					$('#update-item-modal input[name="purpose"]').val(response.purpose);
-
-					$('#update-item-modal input[name="requested_qty"]').val(response.qty);
-
-					$('#update-item-modal .parent').text(response.parent);
-					$('#update-item-modal .purpose').text(response.purpose);
-			
-					$('#update-item-modal .transfer_as').val(response.transfer_as);
-					$('#update-item-modal .id').val(response.name);
-					$('#update-item-modal .s_warehouse').val(response.s_warehouse);
-					$('#update-item-modal .total_issued_qty').val(response.total_issued_qty);
-					$('#update-item-modal .item_code').val(response.item_code);
-			
-					$('#update-item-modal .s_warehouse_txt').text(response.s_warehouse);
-					$('#update-item-modal .t_warehouse_txt').text(response.t_warehouse);
-			
-					var barcode_value = (response.transfer_as == 'For Return') ? '' : response.validate_item_code;
-					var img = (response.img) ? '/img/' + response.img : '/icon/no_img.png';
-					img = "{{ asset('storage/') }}" + img;
-
-					$('#update-item-modal .item_image').attr('src', img);
-					$('#update-item-modal .item_image_link').removeAttr('href').attr('href', img);
-				
-					// hide "transfer to" field
-					if (response.purpose != 'Material Issue') {
-					  $('#update-item-modal .transfer_to_div').show();
-					}else{
-					  $('#update-item-modal .transfer_to_div').hide();
-					}
-			
-					$('#update-item-modal .qty').val(Number(response.qty));
-					$('#update-item-modal .item_code_txt').text(response.item_code);
-					$('#update-item-modal .description').text(response.description);
-					$('#update-item-modal .owner').text(response.owner);
-					$('#update-item-modal .t_warehouse').val(response.t_warehouse);
-					$('#update-item-modal .barcode').val(barcode_value);
-					$('#update-item-modal .ref_no').text(response.ref_no);
-					$('#update-item-modal .status').text(response.status);
-			
-					if (response.total_issued_qty <= 0) {
-					  $('#update-item-modal .lbl-color').addClass('badge-danger').removeClass('badge-success');
-					}else{
-					  $('#update-item-modal .lbl-color').addClass('badge-success').removeClass('badge-danger');
-					}
-			
-					$('#update-item-modal .total_issued_qty_txt').text(response.total_issued_qty);
-					$('#update-item-modal .stock_uom').text(response.stock_uom);
-					$('#update-item-modal .remarks').text(response.remarks);
-
-					$('#update-item-modal').modal('show');
-				  }
-				});
-			
-				
-			});
-
-			$('#update-ste-form').submit(function(e){
-				e.preventDefault();
-
-				$.ajax({
-					type: 'POST',
-					url: '/checkout_ste_item',
-					data: $(this).serialize(),
-					success: function(response){
-					  if (response.error) {
-							$('#myModal').modal('show'); 
-							$('#myModalLabel').html(response.modal_title);
-							$('#desc').html(response.modal_message);
-							
-							return false;
-						}else{
-							$('#myModal1').modal('show'); 
-							$('#myModalLabel1').html(response.modal_title);
-							$('#desc1').html(response.modal_message);
-						}
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
-					}
-				});
-			});
-
 			$('#myModal1').on('hide.bs.modal', function(){
 				$('#update-item-modal').modal('hide');
+				$('#update-ps-modal').modal('hide');
 				$('#update-item-return-modal').modal('hide');
+				$('#add-stock-reservation-modal').modal('hide');
+				$('#cancel-stock-reservation-modal').modal('hide');
+				$('#edit-stock-reservation-modal').modal('hide');
+				$('#confirmation-modal').modal('hide');
+				$('#sales-return-modal').modal('hide');
 			});
 			
 			$('#myModal').on("hidden.bs.modal", function () {
 				$("body").addClass("modal-open");
 			});
-		
+
 			$('.modal').on("hidden.bs.modal", function () {
 				$(this).find('form')[0].reset();
+				$('.for-in-house-type').addClass('d-none');
+				$('.for-online-shop-type').addClass('d-none');
 			});
 
 			$(document).on('click', '.view-item-details', function(e){
 				e.preventDefault();
 
 				var item_code = $(this).data('item-code');
+				var item_classification = $(this).data('item-classification');
+
+				$('#view-item-details-modal .modal-title').text(item_code + " [" + item_classification + "]");
 
 				view_item_details(item_code);
 			});
@@ -1319,6 +1468,7 @@
 
 				get_athena_transactions(item_code);
 				get_stock_ledger(item_code);
+				get_stock_reservation(item_code)
 			}
 
 			function get_athena_transactions(item_code, page){
@@ -1331,11 +1481,34 @@
 				});
 			}
 
+			function get_stock_reservation(item_code, page){
+				$.ajax({
+					type: 'GET',
+					url: '/get_stock_reservation/' + item_code + '?page=' + page,
+					success: function(response){
+						$('#stock-reservation-table').html(response);
+					}
+				});
+			}
+
+			$(document).on('click', '#low-level-stocks-pagination a', function(event){
+				event.preventDefault();
+				var page = $(this).attr('href').split('page=')[1];
+				get_low_stock_level_items(page);
+			});
+
 			$(document).on('click', '#athena-transactions-pagination a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
 				get_athena_transactions(item_code, page);
+			});
+
+			$(document).on('click', '#stock-reservations-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+				var page = $(this).attr('href').split('page=')[1];
+				get_stock_reservation(item_code, page);
 			});
 
 			function get_stock_ledger(item_code, page){
@@ -1357,26 +1530,68 @@
 
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
+
+				$('.img_upload').remove();
 				
 				var item_code = $(this).data('item-code');
+				
+				get_item_images(item_code);
 				
 				$('#upload-image-modal input[name="item_code"]').val(item_code);
 				$('#image-preview').attr('src', $(this).data('image'));
 				$('#upload-image-modal').modal('show');
 			});
 
-			$("#browse-img").change(function () {
-				if (this.files && this.files[0]) {
-					var reader = new FileReader();
-					reader.onload = function (e) {
-						 $('#image-preview').attr('src', e.target.result);
+			function get_item_images(item_code){
+				var storage = "{{ asset('storage/img/') }}";
+				$.ajax({
+					type: 'GET',
+					url: '/get_item_images/' + item_code,
+					success: function(response){
+						$.each(response, function(i, d){
+							var image_src = storage + '/' + d;
+							$("<div class=\"col-md-4 pip img_upload\">" +
+							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
+							"<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
+							"<span class=\"add-fav remove\">&times;</span>" +
+							"</div>").insertAfter("#image-previews");
+						});
 					}
-					reader.readAsDataURL(this.files[0]);
-				}
+				});
+			}
+
+			$(document).on('click', '.remove', function(){
+				$(this).parent(".pip").remove();
 			});
+
+			if (window.File && window.FileList && window.FileReader) {
+				$("#browse-img").on("change", function(e) {
+					var files = e.target.files,
+					filesLength = files.length;
+					for (var i = 0; i < filesLength; i++) {
+						var f = files[i]
+						var fileReader = new FileReader();
+						fileReader.onload = (function(e) {
+							var file = e.target;
+							$("<div class=\"col-md-4 pip img_upload\">" +
+								"<input type=\"hidden\" name=\"existing_images[]\">" +
+							"<img class=\"img-thumbnail\" src=\"" + e.target.result + "\">" +
+							"<span class=\"add-fav remove\">&times;</span>" +
+							"</div>").insertAfter("#image-previews");
+							$(".remove").click(function(){
+								$(this).parent(".pip").remove();
+							});
+						});
+						fileReader.readAsDataURL(f);
+					}
+				});
+			} else {
+				alert("Your browser doesn't support to File API");
+			}
 
 			$('#upload-image-modal form').submit(function(e){
 				e.preventDefault();
+				var item_code = $(this).find('.item-code').eq(0).val();
 				$.ajax({
 					type: 'POST',
 					url: $(this).attr('action'),
@@ -1389,12 +1604,11 @@
 						$('#myModalLabel').html('Message');
 						$('#desc').html(response.message);
 
+						view_item_details(item_code);
+
 						$('#upload-image-modal').modal('hide');
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(jqXHR);
-						console.log(textStatus);
-						console.log(errorThrown);
 					}
 				});
 			});
@@ -1410,6 +1624,25 @@
 			$('#view-item-details-modal').on("hidden.bs.modal", function () {
 				$('#item-tabs a[href="#tab_1"]').tab('show');
 			});
+
+			$(document).on('hidden.bs.modal', '.modal', function () {
+				$('.modal:visible').length && $(document.body).addClass('modal-open');
+			});
+
+			function showNotification(color, message, icon){
+				$.notify({
+				  icon: icon,
+				  message: message
+				},{
+				  type: color,
+				  timer: 500,
+				  z_index: 1060,
+				  placement: {
+					from: 'top',
+					align: 'center'
+				  }
+				});
+			}
 		});
 	</script>
 </body>

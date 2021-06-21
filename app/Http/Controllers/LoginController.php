@@ -13,7 +13,7 @@ use App\LdapClasses\adLDAP;
 class LoginController extends Controller
 {
     public function view_login(){
-        return view('login');
+        return view('login_v2');
     }
 
     public function login(Request $request){
