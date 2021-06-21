@@ -422,9 +422,11 @@
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">ERP Submitted Transaction Histories</a>
 									</li>
+									@if(in_array(Auth::user()->user_group, ['Inventory Manager']))
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">Stock Reservations</a>
 									</li>
+									@endif
 								</ul>
 								<div class="tab-content">
 									<div class="tab-pane active" id="tab_1">

@@ -845,7 +845,7 @@ class MainController extends Controller
                 ->whereRaw(('dri.item_code = psi.item_code'))->where('ps.item_status', 'For Checking')->where('dri.docstatus', 0)->where('psi.name', $id)
                 ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
                 ->first();
-            $type = 'Check Out';
+            $type = 'Check Out - Delivered';
             $purpose = 'Picking Slip';
             $barcode = $q->barcode;
             $remarks = null;
@@ -855,10 +855,30 @@ class MainController extends Controller
         }else{
             $q = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')->where('sted.name', $id)
-                ->select('sted.*', 'ste.sales_order_no', 'ste.material_request', 'ste.purpose', 'ste.transfer_as')
+                ->select('sted.*', 'ste.sales_order_no', 'ste.material_request', 'ste.purpose', 'ste.transfer_as', 'ste.issue_as', 'ste.receive_as')
                 ->first();
 
-            $type = ($q->purpose == 'Material Receipt' || $q->transfer_as == 'For Return') ? 'Check In' : 'Check Out';
+            $type = null;
+            if($q->purpose == 'Material Transfer for Manufacture') {
+                $type = 'Check Out - Issued';
+            }
+
+            if($q->purpose == 'Material Transfer' && $q->transfer_as == 'Internal Transfer') {
+                $type = 'Check Out - Transferred';
+            }
+
+            if($q->purpose == 'Material Transfer' && $q->transfer_as == 'For Return') {
+                $type = 'Check In - Returned';
+            }
+
+            if($q->purpose == 'Material Issue' && $q->issue_as == 'Customer Replacement') {
+                $type = 'Check Out - Replaced';
+            }
+
+            if($q->purpose == 'Material Receipt' && $q->receive_as == 'Sales Return') {
+                $type = 'Check Out - Received';
+            }
+
             $purpose = $q->purpose;
             $barcode = $q->validate_item_code;
             $remarks = $q->remarks;
@@ -2276,6 +2296,7 @@ class MainController extends Controller
             ->where('pr.docstatus', 1)->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->whereBetween('pr.posting_date', [$start, $end])->count();
 
         $purchase_orders = DB::table('tabPurchase Order as pr')->join('tabPurchase Order Item as pri', 'pr.name', 'pri.parent')
+            ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])
             ->where('pr.docstatus', 1)->whereRaw('pri.received_qty < pri.qty')->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
 
         $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
@@ -2309,7 +2330,7 @@ class MainController extends Controller
             ->where('warehouse', $warehouse)->sum('website_reserved_qty');
 
         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
+            ->where('warehouse', $warehouse)->where('type', 'In-house')->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
 
         return $reserved_qty_for_website + $stock_reservation_qty;
     }

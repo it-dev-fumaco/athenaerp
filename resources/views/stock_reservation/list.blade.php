@@ -3,11 +3,10 @@
 <table class="table table-striped" style="font-size: 11pt;">
     <thead>
         <tr>
-            <th class="text-center">ID</th>
+            <th class="text-center">Transaction</th>
             <th class="text-center">Reserved Qty</th>
             <th class="text-center">Issued Qty</th>
             <th class="text-center">Warehouse</th>
-            <th class="text-center">Date Reserved</th>
             <th class="text-center">Status</th>
             <th class="text-center">Created by</th>
             <th class="text-center">Action</th>
@@ -27,11 +26,13 @@
             }
         @endphp
         <tr>
-            <td class="text-center align-middle">{{ $row->name }}</td>
+            <td class="text-center align-middle">
+                <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row->creation)) }}</span>
+                <small>{{ $row->name }}</small>
+            </td>
             <td class="text-center align-middle text-break">{{ $row->reserve_qty . ' ' . $row->stock_uom }}</td>
             <td class="text-center align-middle text-break">{{ round($row->consumed_qty) }}</td>
             <td class="text-center align-middle">{{ $row->warehouse }}</td>
-            <td class="text-center align-middle text-break">{{ date('Y-m-d', strtotime($row->creation)) }}</td>
             <td class="text-center align-middle">
                 @if($row->reserve_qty == round($row->consumed_qty))
                     <span class="badge badge-secondary" style="font-size: 10pt;">Issued</span>
@@ -67,11 +68,11 @@
 <table class="table table-striped" style="font-size: 11pt;">
     <thead>
         <tr>
-            <th class="text-center">ID</th>
+            <th class="text-center">Transaction</th>
             <th class="text-center">Reserved Qty</th>
             <th class="text-center">Issued Qty</th>
             <th class="text-center">Warehouse</th>
-            <th class="text-center">Date Reserved</th>
+            <th class="text-center">Sales Person</th>
             <th class="text-center">Validity</th>
             <th class="text-center">Status</th>
             <th class="text-center">Created by</th>
@@ -92,11 +93,14 @@
             }
         @endphp
         <tr>
-            <td class="text-center align-middle">{{ $row2->name }}</td>
+            <td class="text-center align-middle">
+                <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row2->creation)) }}</span>
+                <small>{{ $row2->name }}</small>
+            </td>
             <td class="text-center align-middle text-break">{{ $row2->reserve_qty . ' ' . $row2->stock_uom }}</td>
             <td class="text-center align-middle text-break">{{ round($row2->consumed_qty) }}</td>
             <td class="text-center align-middle">{{ $row2->warehouse }}</td>
-            <td class="text-center align-middle text-break">{{ date('Y-m-d', strtotime($row2->creation)) }}</td>
+            <td class="text-center align-middle text-break">{{ $row2->sales_person }}</td>
             <td class="text-center align-middle text-break">{{ ($row2->valid_until) ? $row2->valid_until : '-' }}</td>
             <td class="text-center align-middle">
                 @if($row2->reserve_qty == round($row2->consumed_qty))
