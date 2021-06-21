@@ -944,7 +944,7 @@ class MainController extends Controller
             }
 
             $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
-            if($request->qty > $available_qty && !$request->is_bundle){
+            if($request->qty > $available_qty && $request->is_bundle == false){
                 return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
                 br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
             }
