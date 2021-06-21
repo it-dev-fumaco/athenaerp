@@ -15,17 +15,6 @@
     </thead>
     <tbody>
         @forelse ($webList as $row)<!-- Web -->
-        @php
-            if ($row->status == 'Active') {
-                $badge = 'badge-primary';
-            }elseif ($row->status == 'Expired') {
-                $badge = 'badge-warning';
-            }elseif ($row->status == 'Cancelled') {
-                $badge = 'badge-danger';
-            } else {
-                $badge = 'badge-success';
-            }
-        @endphp
         <tr>
             <td class="text-center align-middle">{{ $row->name }}</td>
             <td class="text-center align-middle text-break">{{ $row->reserve_qty . ' ' . $row->stock_uom }}</td>
@@ -34,13 +23,13 @@
             <td class="text-center align-middle text-break">{{ date('Y-m-d', strtotime($row->creation)) }}</td>
             <td class="text-center align-middle">
                 @if($row->reserve_qty == round($row->consumed_qty))
-                    <span class="badge badge-secondary" style="font-size: 10pt;">Issued</span>
+                    <span class="badge badge-secondary" style="font-size: 10pt;">{{ $row->status }}</span>
                 @elseif(round($row->consumed_qty) > 0)                    
-                    <span class="badge badge-info" style="font-size: 10pt;">Partially Issued</span>
+                    <span class="badge badge-info" style="font-size: 10pt;">{{ $row->status }}</span>
                 @elseif($row->status == 'Cancelled')
-                    <span class="badge badge-danger" style="font-size: 10pt;">Cancelled</span>
+                    <span class="badge badge-danger" style="font-size: 10pt;">{{ $row->status }}</span>
                 @else
-                    <span class="badge badge-primary" style="font-size: 10pt;">Active</span>
+                    <span class="badge badge-primary" style="font-size: 10pt;">{{ $row->status }}</span>
                 @endif
             </td>
             <td class="text-center align-middle">{{ $row->created_by }}</td>
@@ -80,17 +69,6 @@
     </thead>
     <tbody>
     @forelse ($inhouseList as $row2)<!-- In-house -->
-        @php
-            if ($row2->status == 'Active') {
-                $badge = 'badge-primary';
-            }elseif ($row2->status == 'Expired') {
-                $badge = 'badge-warning';
-            }elseif ($row2->status == 'Cancelled') {
-                $badge = 'badge-danger';
-            } else {
-                $badge = 'badge-success';
-            }
-        @endphp
         <tr>
             <td class="text-center align-middle">{{ $row2->name }}</td>
             <td class="text-center align-middle text-break">{{ $row2->reserve_qty . ' ' . $row2->stock_uom }}</td>
@@ -100,15 +78,15 @@
             <td class="text-center align-middle text-break">{{ ($row2->valid_until) ? $row2->valid_until : '-' }}</td>
             <td class="text-center align-middle">
                 @if($row2->reserve_qty == round($row2->consumed_qty))
-                    <span class="badge badge-secondary" style="font-size: 10pt;">Issued</span>
+                    <span class="badge badge-secondary" style="font-size: 10pt;">{{ $row2->status }}</span>
                 @elseif($row2->valid_until < Carbon\Carbon::today())
-                    <span class="badge badge-warning" style="font-size: 10pt;">Expired</span>
+                    <span class="badge badge-warning" style="font-size: 10pt;">{{ $row2->status }}</span>
                 @elseif(round($row2->consumed_qty) > 0)                    
-                    <span class="badge badge-info" style="font-size: 10pt;">Partially Issued</span>
+                    <span class="badge badge-info" style="font-size: 10pt;">{{ $row2->status }}</span>
                 @elseif($row2->status == 'Cancelled')
-                    <span class="badge badge-danger" style="font-size: 10pt;">Cancelled</span>
+                    <span class="badge badge-danger" style="font-size: 10pt;">{{ $row2->status }}</span>
                 @else
-                    <span class="badge badge-primary" style="font-size: 10pt;">Active</span>
+                    <span class="badge badge-primary" style="font-size: 10pt;">{{ $row2->status }}</span>
                 @endif
             </td>
             <td class="text-center align-middle">{{ $row2->created_by }}</td>

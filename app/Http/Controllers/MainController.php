@@ -19,6 +19,7 @@ class MainController extends Controller
     }
 
     public function index(Request $request){
+        $this->update_reservation_status();
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
         if(Auth::user()->user_group == 'User'){
@@ -787,6 +788,8 @@ class MainController extends Controller
 
                     DB::table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
                 }
+
+                $this->update_reservation_status();
             }
         
             DB::commit();
@@ -1006,6 +1009,8 @@ class MainController extends Controller
 
                     DB::table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
                 }
+                
+                $this->update_reservation_status();
             }
 
             $now = Carbon::now();
@@ -2611,19 +2616,42 @@ class MainController extends Controller
         return view('picking_slip');
     }
 
-    public function get_athena_logs() {
+    public function get_athena_logs(Request $request) {
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
         $date = Carbon::now();
 
         $startOfYear = $date->copy()->startOfYear();
-        $endOfYear   = $date->copy()->endOfYear();
+        $endOfYear = $date->copy()->endOfYear();
+
+        $stock_adjustments_query =  DB::table('tabStock Ledger Entry as sle')
+        ->where('voucher_type', 'Stock Reconciliation')->join('tabItem as i', 'i.name', 'sle.item_code')
+            ->whereIn('sle.warehouse', $allowed_warehouses)->whereBetween('sle.creation', [$startOfYear, $endOfYear])
+            ->whereMonth('sle.creation', $request->month)
+            ->select('sle.creation as transaction_date', 'voucher_type as transaction_type', 'sle.item_code', 'i.description', 'sle.warehouse', 'sle.qty_after_transaction as qty', 'sle.voucher_no as reference_no', 'sle.voucher_no as reference_parent', 'sle.owner as user');
 
         $list = DB::table('tabAthena Transactions')->whereIn('source_warehouse', $allowed_warehouses)
             ->whereBetween('transaction_date', [$startOfYear, $endOfYear])
-            ->orderBy('transaction_date', 'desc')->get();
+            ->whereMonth('transaction_date', $request->month)
+            ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
+            ->orderBy('transaction_date', 'desc')->union($stock_adjustments_query)->orderBy('transaction_date', 'desc')->get();
 
         return view('tbl_athena_logs', compact('list'));
+    }
+
+    public function update_reservation_status(){
+        // update status expired
+        DB::table('tabStock Reservation')->whereIn('status', ['Active', 'Partially Issued'])
+            ->where('type', 'In-house')->where('valid_until', '<', Carbon::now())->update(['status' => 'Expired']);
+        // update status partially issued
+        DB::table('tabStock Reservation')
+            ->whereNotIn('status', ['Cancelled', 'Issued', 'Expired'])
+            ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty < reserve_qty')
+            ->where('type', 'In-house')->update(['status' => 'Partially Issued']);
+        // update status issued
+        DB::table('tabStock Reservation')->whereNotIn('status', ['Cancelled', 'Expired'])
+         ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty >= reserve_qty')
+         ->where('type', 'In-house')->update(['status' => 'Issued']);
     }
 }

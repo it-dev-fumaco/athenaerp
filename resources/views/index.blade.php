@@ -207,8 +207,25 @@
 													  <div class="tab-pane active" id="tab_1">
 														<div id="low-level-stock-table" style="margin-top: -32px;"></div>
 													  </div>
+													  
 													  <div class="tab-pane" id="tab_2">
 														<div id="athena-logs-table"></div>
+														<ul class="pagination pagination-month justify-content-center mt-3" id="athena-logs-pagination">
+															@for ($i = 1; $i < 13; $i++)
+															@if($i == 1)
+															<li class="page-item prev {{ (now()->month == 1) ? 'disabled' : '' }}"><a class="page-link" href="#">«</a></li>
+															@endif
+															<li class="page-item month {{ (now()->month == $i) ? 'active' : '' }}">
+																<a class="page-link" href="#" data-month="{{ $i }}">
+																	<p class="page-month">{{ date("M", mktime(0, 0, 0, $i, 1, now()->year)) }}</p>
+																	<p class="page-year">{{ now()->year }}</p>
+																</a>
+															</li>
+															@if($i == 12)
+															<li class="page-item next {{ (now()->month == 12) ? 'disabled' : '' }}"><a class="page-link" href="#">»</a></li>
+															@endif
+															@endfor
+														</ul>
 													  </div>
 													</div>
 												</div>
