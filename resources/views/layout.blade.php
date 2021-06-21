@@ -581,6 +581,482 @@
 
 	<script>
 		$(document).ready(function(){
+			$(document).on('select2:select', '#select-warehouse-c', function(e){
+				var data = e.params.data;
+				var warehouse = data.id;
+				var item_code = $('#item-code-c').val();
+
+				$.ajax({
+					type: 'GET',
+					url: '/get_available_qty/' + item_code + '/' + warehouse,
+					success: function(response){
+						$('#available-qty-c').val(response);
+						var badge_color = (response > 0) ? 'badge-success' : 'badge-danger';
+						$('#available-qty-c-text').text(response).parent().removeClass('badge-danger badge-success').addClass(badge_color);
+					}
+				});
+			});
+
+			$(document).on('select2:select', '#select-warehouse-e', function(e){
+				var data = e.params.data;
+				var warehouse = data.id;
+				var item_code = $('#item-code-e').val();
+
+				$.ajax({
+					type: 'GET',
+					url: '/get_available_qty/' + item_code + '/' + warehouse,
+					success: function(response){
+						$('#available-qty-e').val(response);
+						var badge_color = (response > 0) ? 'badge-success' : 'badge-danger';
+						$('#available-qty-e-text').text(response).parent().removeClass('badge-danger badge-success').addClass(badge_color);
+					}
+				});
+			});
+
+			dashboard_data();
+			setInterval(function () {
+				dashboard_data();
+			}, 60000);
+
+			function dashboard_data(purpose, div){
+				$.ajax({
+					type: "GET",
+					url: "/dashboard_data",
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#d-material-receipt').text(data.d_feedbacks);
+						$('#d-purchase-receipts').text(data.d_purchase_receipts);
+						$('#p-purchase-receipts').text(data.p_purchase_receipts);
+						$('#d-replacements').text(data.d_replacements);
+						$('#p-replacements').text(data.p_replacements);
+						$('#d-material-transfer').text(data.d_internal_transfers);
+						$('#d-picking-slips').text(data.d_picking_slips);
+						$('#d-withdrawals').text(data.d_withdrawals);
+						$('#d-material-issues').text(data.d_material_issues);
+					}
+				});
+			}
+
+			$('#warehouse-filter').select2({
+				dropdownParent: $('#warehouse-filter-parent'),
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.warehouses
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#warehouse-filter', function(e){
+				var data = e.params.data;
+
+				$('#wh-1').val(data.id);
+				$('#search-form').submit();
+			});
+
+			allowed_parent_warehouses();
+			function allowed_parent_warehouses(){
+				$.ajax({
+					type: 'GET',
+					url: '/allowed_parent_warehouses',
+					success: function(response){
+						var r = '';
+						$.each(response, function(i, d){
+							r += '<div class="dropdown-divider"></div>' +
+								'<a href="#" class="dropdown-item">' +
+								'<i class="fas fa-warehouse mr-2"></i>' + d + '</a>'
+						});
+
+						$('#allowed-warehouse-div').html(r);
+					}
+				});
+			}
+
+			get_low_stock_level_items();
+			function get_low_stock_level_items(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_low_stock_level_items?page=" + page,
+					success: function (data) {
+						$('#low-level-stock-table').html(data);
+					}
+				});
+			}
+
+			get_athena_logs();
+			function get_athena_logs(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_athena_logs?page=" + page,
+					success: function (data) {
+						$('#athena-logs-table').html(data);
+					}
+				});
+			}
+			
+			$('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
+				checkboxClass: 'icheckbox_minimal-blue',
+				radioClass: 'iradio_minimal-blue'
+			});
+
+			$('#cb-2').on('ifChecked', function(event){
+				$("#cb-1").prop("checked", true);
+				$('#search-form').submit();
+			});
+
+			$('#cb-2').on('ifUnchecked', function(event){
+				$("#cb-1").prop("checked", false);
+				$('#search-form').submit();
+			});
+						
+			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
+				e.preventDefault();
+
+				var reservation_id = $(this).data('reservation-id');
+
+				$('#cancel-stock-reservation-modal .reservation-id').text(reservation_id);
+				$('#cancel-stock-reservation-modal input[name="stock_reservation_id"]').val(reservation_id);
+
+				$('#cancel-stock-reservation-modal').modal('show');
+			});
+
+			$('#edit-reservation-form').submit(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.error) {
+							showNotification("danger", response.modal_message, "fa fa-info");
+						}else{
+							view_item_details($('#selected-item-code').text());
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#edit-stock-reservation-modal').modal('hide');
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			});
+
+			$('#stock-reservation-form').submit(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.error) {
+							showNotification("danger", response.modal_message, "fa fa-info");
+						}else{
+							view_item_details($('#selected-item-code').text());
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#add-stock-reservation-modal').modal('hide');
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			});
+
+			$('#cancel-reservation-form').submit(function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.error) {
+							showNotification("danger", response.modal_message, "fa fa-info");
+						}else{
+							get_stock_reservation($('#selected-item-code').text());
+							showNotification("success", response.modal_message, "fa fa-check");
+							$('#cancel-stock-reservation-modal').modal('hide');
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			});
+
+			$('#add-stock-reservation-btn').click(function(e){
+				e.preventDefault();
+
+				$('#select-warehouse-c').val(null).trigger('change');
+				$('#select-sales-person-c').val(null).trigger('change');
+				$('#select-project-c').val(null).trigger('change');
+
+				$("#date-valid-until-c").datepicker("update", new Date());
+
+				$.ajax({
+					type: "GET",
+					url: "/get_item_details/" + $('#selected-item-code').text() + "?json=true",
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#item-code-c').val(data.name);
+						$('#description-c').val(data.description);
+						$('#stock-uom-c').val(data.stock_uom);
+						$('#stock-uom-c-text').text(data.stock_uom);
+						
+						$('#add-stock-reservation-modal').modal('show');
+					}
+				});
+			});
+
+			$('#select-warehouse-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/warehouses_with_stocks',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							item_code: $('#item-code-e').val(),
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-type-e').change(function(){
+				if($(this).val()) {
+					if($(this).val() == 'In-house') {
+						$('.for-in-house-type').removeClass('d-none');
+						$('.for-online-shop-type').addClass('d-none');
+					} else {
+						$('.for-in-house-type').addClass('d-none');
+						$('.for-online-shop-type').removeClass('d-none');
+					}
+				}
+			});
+
+			$('#select-project-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
+				placeholder: 'Select Project',
+				ajax: {
+					url: '/projects',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-sales-person-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
+				placeholder: 'Select Sales Person',
+				ajax: {
+					url: '/sales_persons',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-warehouse-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/warehouses_with_stocks',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							item_code: $('#item-code-c').val(),
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-type-c').change(function(){
+				if($(this).val()) {
+					if($(this).val() == 'In-house') {
+						$('.for-in-house-type').removeClass('d-none');
+						$('.for-online-shop-type').addClass('d-none');
+					} else {
+						$('.for-in-house-type').addClass('d-none');
+						$('.for-online-shop-type').removeClass('d-none');
+					}
+				}
+			});
+
+			$('#select-project-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
+				placeholder: 'Select Project',
+				ajax: {
+					url: '/projects',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-sales-person-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
+				placeholder: 'Select Sales Person',
+				ajax: {
+					url: '/sales_persons',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$("#validity-c").bind('keyup mouseup', function () {
+				var newdate = new Date();
+				newdate.setDate(newdate.getDate() + parseInt($(this).val()));
+				$('#date-valid-until-c').datepicker('setDate', newdate);
+			});
+
+			$("#validity-e").bind('keyup mouseup', function () {
+				var newdate = new Date();
+				newdate.setDate(newdate.getDate() + parseInt($(this).val()));
+				$('#date-valid-until-e').datepicker('setDate', newdate);
+			});
+
+			$('#date-valid-until-c').datepicker({
+				startDate: new Date(),
+				format: 'yyyy-mm-dd',
+				autoclose: true
+			});
+
+			$('#date-valid-until-e').datepicker({
+				startDate: new Date(),
+				format: 'yyyy-mm-dd',
+				autoclose: true
+			});
+
+			$(document).on('click', '.edit-stock-reservation-btn', function(e){
+				e.preventDefault();
+
+				$.ajax({
+					type: "GET",
+					url: "/get_stock_reservation_details/" + $(this).data('reservation-id'),
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						var selected_warehouse = $('#select-warehouse-e');
+						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
+						selected_warehouse.append(selected_warehouse_option).trigger('change');
+
+						if(data.sales_person) {
+							var selected_sales_person = $('#select-sales-person-e');
+							var selected_sales_person_option = new Option(data.sales_person, data.sales_person, true, true);
+							selected_sales_person.append(selected_sales_person_option).trigger('change');
+						}
+
+						if(data.project) {
+							var selected_project = $('#select-project-e');
+							var selected_project_option = new Option(data.project, data.project, true, true);
+							selected_project.append(selected_project_option).trigger('change');
+						}
+
+						if(data.type == 'In-house'){
+							$('#select-sales-person-e').parent().removeClass('d-none');
+							$('#select-project-e').parent().removeClass('d-none');
+							$('#date-valid-until-e').parent().removeClass('d-none');
+						}else{
+							$('#select-sales-person-e').parent().addClass('d-none');
+							$('#select-project-e').parent().addClass('d-none');
+							$('#date-valid-until-e').parent().addClass('d-none');
+						}
+
+						$.ajax({
+							type: 'GET',
+							url: '/get_available_qty/' + data.item_code + '/' + data.warehouse,
+							success: function(response){
+								var available_qty = parseInt(response) + (data.reserve_qty - data.consumed_qty);
+								var badge_color = (available_qty > 0) ? 'badge-success' : 'badge-danger';
+								$('#available-qty-e-text').text(available_qty).parent().removeClass('badge-danger badge-success').addClass(badge_color);
+								$('#available-qty-e').val(available_qty);
+							}
+						});
+
+						$('#stock-reservation-id-e').val(data.name);
+						$('#item-code-e').val(data.item_code);
+						$('#description-e').val(data.description);
+						$('#stock-uom-e').val(data.stock_uom);
+						$('#stock-uom-e-text').text(data.stock_uom);
+						$('#notes-e').val(data.notes);
+						$('#select-type-e').val(data.type);
+						$('#reserve-qty-e').val(data.reserve_qty);
+						$('#status-e').val(data.status);
+						$('#date-valid-until-e').val(data.valid_until);
+
+						$('#edit-stock-reservation-modal').modal('show');
+					}
+				});
+			});
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
                 event.preventDefault();
@@ -596,7 +1072,16 @@
 			});
 
 			count_ste_for_issue('Material Issue', '#material-issue');
+			count_ste_for_issue('Material Transfer', '#material-transfer');
+			count_ste_for_issue('Material Receipt', '#p-returns');
+			count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
+			count_ps_for_issue();
+			count_production_to_receive();
+
+			setInterval(function () {
+				count_ste_for_issue('Material Issue', '#material-issue');
 				count_ste_for_issue('Material Transfer', '#material-transfer');
+				count_ste_for_issue('Material Receipt', '#p-returns');
 				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
 				count_ps_for_issue();
 				count_production_to_receive();

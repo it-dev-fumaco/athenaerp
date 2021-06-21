@@ -90,21 +90,46 @@ class MainController extends Controller
 
         return DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)->where('purpose', $purpose)
-            ->where('sted.status', '!=', 'Issued')
-            ->whereIn('s_warehouse', $allowed_warehouses)->count();
+            ->where('ste.docstatus', 0)
+            ->where('purpose', $purpose)
+            ->whereNotIn('sted.status', ['Issued', 'Returned'])
+            ->when($purpose == 'Material Issue', function($q){
+				return $q->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample']);
+            })
+            ->when($purpose == 'Material Transfer', function($q){
+				return $q->whereNotin('ste.transfer_as', ['Consignment', 'Sample Item']);
+            })
+            ->when($purpose == 'Material Receipt', function($q){
+				return $q->where('ste.receive_as', 'Sales Return');
+            })
+            ->whereIn('sted.s_warehouse', $allowed_warehouses)->count();
     }
 
     public function count_ps_for_issue(){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        return DB::table('tabPacking Slip as ps')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-            ->whereRaw(('dri.item_code = psi.item_code'))
-            ->where('ps.docstatus', 0)->where('psi.status', 'For Checking')
-            ->where('dri.docstatus', 0)->whereIn('dri.warehouse', $allowed_warehouses)->count();
+        $q_1 = DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
+                ->whereRaw(('dri.item_code = psi.item_code'))
+                ->where('ps.docstatus', 0)
+                ->where('dri.docstatus', 0)
+                ->whereIn('dri.warehouse', $allowed_warehouses)
+                ->select('ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->groupBy('ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->count();
+
+        $q_2 = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
+            ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
+            ->count();
+
+        return ($q_1 + $q_2);
     }
 
     public function user_allowed_warehouse($user){
@@ -584,11 +609,14 @@ class MainController extends Controller
     }
 
     public function get_mr_sales_return(){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Receipt')
-            ->where('ste.receive_as', 'Sales Return')
-            ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner')
+            ->where('ste.receive_as', 'Sales Return')->whereIn('sted.s_warehouse', $allowed_warehouses)
+            ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
             ->get();
 
         $list = [];
