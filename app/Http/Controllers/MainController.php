@@ -194,6 +194,7 @@ class MainController extends Controller
         $q_2 = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
+            ->where('sted.status', 'For Checking')
             ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
