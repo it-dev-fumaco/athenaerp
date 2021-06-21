@@ -696,7 +696,8 @@
 									<div class="col-md-12">
 										<div class="form-group">
 											<label for="">Warehouse</label>
-											<select class="form-control" name="warehouse" id="select-warehouse-e" disabled></select>
+											<select class="form-control" id="select-warehouse-e" readonly></select>
+											<input type="hidden" class="form-control" name="warehouse" id="warehouse-e">
 										</div>
 									</div>
 									<div class="col-md-6">
@@ -783,37 +784,6 @@
 			</div>
 		</form>
 	</div>
-
-	{{-- <div class="modal fade" id="confirmation-modal">
-		<form id="deduct-reservation-form" autocomplete="off">
-			@csrf
-			<div class="modal-dialog">
-		  		<div class="modal-content">
-					<div class="modal-header">
-						<h4 class="modal-title">Confirmation</h4>
-			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-					<div class="modal-body">
-						<span class="form-id d-none"></span>
-						<span class="form-action d-none"></span>
-						<h5 class="text-center">Reserved Stocks found on this item.</h5>
-						<dl class="row mt-3">
-							<dt class="col-xl-6">Sales Person</dt>
-							<dt class="col-xl-6 text-center">Rem. Reserved Qty</dt>
-							<dd class="col-xl-6">-</dd>
-							<dd class="col-xl-6 text-center">0</dd>
-							<dt class="col-xl-12">Project</dt>
-							<dd class="col-xl-12">-</dd>
-						  </dl>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-danger confirm-btn" data-confirm="0"><i class="fa fa-ban"></i> Cancel</button>
-						<button type="button" class="btn btn-primary btn-lg confirm-btn" data-confirm="1"><i class="fa fa-check"></i> Proceed</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div> --}}
 
   <!-- Main Footer -->
   <footer class="main-footer">
@@ -1284,6 +1254,7 @@
 						var selected_warehouse = $('#select-warehouse-e');
 						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
 						selected_warehouse.append(selected_warehouse_option).trigger('change');
+						selected_warehouse.select2({disabled:'readonly'});
 
 						if(data.sales_person) {
 							var selected_sales_person = $('#select-sales-person-e');
@@ -1319,6 +1290,7 @@
 						});
 
 						$('#stock-reservation-id-e').val(data.name);
+						$('#warehouse-e').val(data.warehouse);
 						$('#item-code-e').val(data.item_code);
 						$('#description-e').val(data.description);
 						$('#stock-uom-e').val(data.stock_uom);
