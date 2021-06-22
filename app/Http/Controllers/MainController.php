@@ -869,6 +869,10 @@ class MainController extends Controller
                 $type = 'Check Out - Transferred';
             }
 
+            if($q->purpose == 'Material Transfer' && in_array($q->transfer_as, ['Consignment', 'Sample Item'])) {
+                $type = 'Check Out - Delivered';
+            }
+
             if($q->purpose == 'Material Transfer' && $q->transfer_as == 'For Return') {
                 $type = 'Check In - Returned';
             }
