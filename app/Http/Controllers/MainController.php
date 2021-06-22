@@ -2364,6 +2364,11 @@ class MainController extends Controller
 
             if($actual_qty <= $a->warehouse_reorder_level) {
 
+                $existing_mr = DB::table('tabMaterial Request as mr')
+                    ->join('tabMaterial Request Item as mri', 'mr.name', 'mri.parent')
+                    ->where('mr.status', 'Pending')->where('mri.item_code', $a->item_code)
+                    ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
+
                 $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
 
                 $low_level_stocks[] = [
@@ -2376,7 +2381,8 @@ class MainController extends Controller
                     'warehouse_reorder_level' => $a->warehouse_reorder_level,
                     'warehouse_reorder_qty' => $a->warehouse_reorder_qty,
                     'actual_qty' => $actual_qty,
-                    'image' => ($item_image_path) ? $item_image_path->image_path : null
+                    'image' => ($item_image_path) ? $item_image_path->image_path : null,
+                    'existing_mr' => ($existing_mr) ? $existing_mr->name : null
                 ];
             }
         }
