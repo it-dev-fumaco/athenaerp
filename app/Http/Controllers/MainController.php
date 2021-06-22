@@ -659,18 +659,14 @@ class MainController extends Controller
         if($is_bundle){
             $query = DB::table('tabPacked Item')->where('parent_detail_docname', $q->dri_name)->get();
             foreach ($query as $row) {
-                $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
-
-                $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
-                
-                $available_qty = $actual_qty - $total_issued;
+                $available_qty_row = $this->get_available_qty($row->item_code, $row->warehouse);
 
                 $product_bundle_items[] = [
                     'item_code' => $row->item_code,
                     'description' => $row->description,
                     'uom' => $row->uom,
                     'qty' => ($row->qty * 1),
-                    'available_qty' => $available_qty,
+                    'available_qty' => $available_qty_row,
                     'warehouse' => $row->warehouse
                 ];
             }
@@ -2338,7 +2334,10 @@ class MainController extends Controller
         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
             ->where('warehouse', $warehouse)->where('type', 'In-house')->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
 
-        return $reserved_qty_for_website + $stock_reservation_qty;
+        $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
+            ->where('warehouse', $warehouse)->where('type', 'In-house')->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
+
+        return ($reserved_qty_for_website + $stock_reservation_qty) + $consumed_qty;
     }
 
     public function get_item_images($item_code){

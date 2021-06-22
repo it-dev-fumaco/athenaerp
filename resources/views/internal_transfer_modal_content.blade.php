@@ -41,7 +41,7 @@
                                     <span class="d-block font-weight-bold">{{ $data['item_code'] }}</span>
                                     <small class="d-block text-justify">{{ $data['description'] }}</small>
                                     <dl>
-                                        <dt>Actual Qty</dt>
+                                        <dt>Available Qty</dt>
                                         <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
                                         <dt class="mt-1">Reference No:</dt>
                                         <dd>{{ $data['ref_no'] }}</dd>
