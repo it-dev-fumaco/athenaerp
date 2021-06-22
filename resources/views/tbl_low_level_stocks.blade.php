@@ -34,7 +34,8 @@
                 </div>
                 <div class="p-1">
                     <a href="#" class="view-item-details" data-item-code="{{ $row['item_code'] }}" data-item-classification="{{ $row['item_classification'] }}">
-                        <span class="d-block font-weight-bold text-dark">{{ $row['item_code'] }}</span>
+                        <span class="d-block font-weight-bold text-dark item-code">{{ $row['item_code'] }}</span>
+                        <span class="d-none item-description">{{ $row['description'] }}</span>
                     </a>
                     <small class="font-italic">{{ str_limit($row['description'], $limit = 80, $end = '...') }}</small></div>
               </div>
@@ -42,15 +43,15 @@
             <td class="text-center p-1 align-middle">
                 <small>{{ $row['stock_uom'] }}</small></td>
             <td class="text-center p-1 align-middle">
-                <small>{{ $row['warehouse'] }}</small>
+                <small class="warehouse">{{ $row['warehouse'] }}</small>
             </td>
-            <td class="text-center p-1 align-middle" style="font-size:12px">{{ $row['warehouse_reorder_qty'] * 1 }}</td>
+            <td class="text-center p-1 align-middle reorder-qty" style="font-size:12px">{{ $row['warehouse_reorder_qty'] * 1 }}</td>
             <td class="text-center p-1 align-middle"><strong>{{ $row['warehouse_reorder_level'] * 1 }}</strong></td>
             <td class="text-center p-1 align-middle">
                 <span class="badge badge-{{ ($row['actual_qty'] > $row['warehouse_reorder_level']) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ $row['actual_qty'] * 1 }}</span>
             </td>
             <td class="text-center p-1 align-middle">
-                <button class="btn btn-primary btn-sm">Create MR</button>
+                <button class="btn btn-primary btn-sm create-mr-btn" data-id="{{ $row['id'] }}"><i class="fas fa-edit"></i> MR</button>
             </td>
         </tr>
         @empty

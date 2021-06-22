@@ -51,7 +51,7 @@
                         @if($data['stock_reservation'])
                         <div class="col-md-12 mt-2">
                             <div class="callout callout-info">
-                                <h6><i class="icon fas fa-info"></i> Reservation found on this item</h6>
+                                <h6 class="m-2 font-weight-bold blink-reservation text-info"><i class="icon fas fa-info"></i> Reservation found on this item</h6>
                                 <dl class="row" id="sr-d">
                                     <dt class="col-sm-4">Sales Person</dt>
                                     <dd class="col-sm-8">{{ $data['stock_reservation']->sales_person }}</dd>

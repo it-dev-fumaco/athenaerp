@@ -83,6 +83,8 @@
 												<span class="d-block">@{{ x.delivery_note }}</span>
 												<span class="d-block">@{{ x.sales_order }}</span>
 												<span class="mt-3" style="font-size: 10pt;">@{{ x.customer }}</span>
+
+												<span class="d-block mt-3" style="font-size: 10pt;">@{{ x.classification }}</span>
 											</td>
 											<td class="text-center">
 												<img src="dist/img/icon.png" ng-hide="x.type != 'picking_slip'" class="img-circle checkout update-ps"  data-id="@{{ x.id }}">
