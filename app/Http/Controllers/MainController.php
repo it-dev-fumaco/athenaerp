@@ -184,12 +184,9 @@ class MainController extends Controller
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
                 ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
-                ->where('ps.docstatus', 0)
-                ->where('dri.docstatus', 0)
-                ->whereIn('dri.warehouse', $allowed_warehouses)
-                ->select('ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->groupBy('ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->where('psi.status', 'For Checking')
+                ->whereRaw(('dri.item_code = psi.item_code'))->where('ps.docstatus', 0)
+                ->where('dri.docstatus', 0)->whereIn('dri.warehouse', $allowed_warehouses)
                 ->count();
 
         $q_2 = DB::table('tabStock Entry as ste')
