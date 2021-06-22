@@ -52,7 +52,7 @@
             </td>
             <td class="text-center p-1 align-middle">
                 @if(!$row['existing_mr'])
-                <button class="btn btn-primary btn-sm create-mr-btn" data-id="{{ $row['id'] }}"><i class="fas fa-edit"></i> MR</button>
+                <button class="btn btn-primary btn-sm create-mr-btn" data-id="{{ $row['id'] }}">Create MR</button>
                 @else
                 <button class="btn btn-success btn-sm" disabled><i class="fas fa-check"></i> MR</button>
                 <small class="d-block mt-1">{{ $row['existing_mr'] }}</small>
