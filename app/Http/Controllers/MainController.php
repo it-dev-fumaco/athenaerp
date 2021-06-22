@@ -1881,11 +1881,11 @@ class MainController extends Controller
 
                     $remaining_qty = $remaining_qty - $issued_qty;
                     if($remaining_qty > 0){
-                        $latest_ste = DB::connection('mysql')->table('tabStock Entry')->max('name');
+                        $latest_ste = DB::connection('mysql')->table('tabStock Entry')->where('name', 'like', '%step%')->max('name');
                         $latest_ste_exploded = explode("-", $latest_ste);
-                        $new_id = $latest_ste_exploded[1] + 1;
-                        $new_id = str_pad($new_id, 5, '0', STR_PAD_LEFT);
-                        $new_id = 'STEM-'.$new_id;
+                        $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
+                        $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
+                        $new_id = 'STEP-'.$new_id;
                         
                         $bom_material = DB::connection('mysql')->table('tabBOM Item')
                             ->where('parent', $production_order_details->bom_no)
