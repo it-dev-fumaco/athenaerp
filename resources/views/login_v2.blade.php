@@ -23,28 +23,27 @@
   </div>
   <div class="form">
     <form role="form" method="POST" action="/login_user">
-        @csrf
+      @csrf
+      <h3 style="margin-bottom: 3%; margin-top: 0; text-align: center;">Athena<span style="font-weight: 900;">ERP</span> Inventory</h3>
     <label for="account">Username</label>
     <div class="input-box">
-      <ion-icon class="prefix" name="person-outline"></ion-icon>
-      <input type="text" placeholder="Username..." value="{{ old('email') }}" name="email" spellcheck="false" required/>
+      <input type="text" placeholder="Username" value="{{ old('email') }}" name="email" spellcheck="false" required/>
     </div>
     <label for="password">Password</label>
     <div class="input-box">
-      <ion-icon class="prefix" name="lock-closed-outline"></ion-icon>
-      <input type="password" placeholder="Password..." name="password" spellcheck="false" required>
-      <ion-icon class="switch-btn" name="eye-off-outline"></ion-icon>
+      <input type="password" placeholder="Password" name="password" spellcheck="false" required>
     </div>
     <button type="submit" style="background-color: #3c8dbc;" class="send-btn" name="login">SIGN IN</button>
-    {{-- <div class="send-btn">login
-      <ion-icon name="arrow-forward-circle-outline"></ion-icon>
-    </div> --}}
   </div>
 
 
   
   <style>
-      @import url("https://fonts.googleapis.com/css2?family=Recursive&display=swap");
+    @font-face { font-family: 'Montserrat'; src: url({{ asset('font/Montserrat/Montserrat-Bold.ttf') }}); } 
+    *:not(i):not(.fa){
+      font-family: 'Montserrat' !important;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -64,7 +63,6 @@
       padding: 0.5rem 1rem;
       display: flex;
       align-items: center;
-      font-family: "Recursive", sans-serif;
       font-size: 0.2rem;
       position: relative;
       -webkit-user-select: none;
@@ -109,7 +107,7 @@
     .form {
       margin: auto;
       width: 5rem;
-      padding: 0.5rem;
+      padding: 0.4rem;
       color: #07417d;
       background: rgba(255, 255, 255, 0.3);
       border-radius: 1rem 0 1rem 0;
@@ -119,7 +117,8 @@
     }
     .form label {
       display: block;
-      font-weight: bold;
+      font-size: 0.16rem;
+      color:  #f4f6f7 ;
     }
     .form input {
       -webkit-appearance: none;
@@ -131,19 +130,18 @@
       border: none;
       border-radius: 0.3rem;
       padding: 0.1rem 0.3rem;
-      padding-left: 0.5rem;
+      /* padding-left: 0.5rem; */
       font-family: inherit;
     }
     .form input:focus, .form input:focus-within {
       outline: none;
       box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.5);
     }
-    .form ion-icon {
-      font-size: 1.2em;
-    }
+
     .form .input-box {
       position: relative;
     }
+
     .form .prefix {
       position: absolute;
       color: lightgrey;
@@ -168,6 +166,7 @@
       background-color: #286aaf;
       border-radius: 0.3rem;
       cursor: pointer;
+      border-collapse: collapse;
     }
     .form .send-btn ion-icon {
       vertical-align: middle;

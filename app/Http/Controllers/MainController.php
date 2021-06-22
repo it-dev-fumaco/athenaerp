@@ -743,9 +743,9 @@ class MainController extends Controller
                 return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
             }
 
-            if($request->qty > $steDetails->qty){
-                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
-            }
+            // if($request->qty > $steDetails->qty){
+            //     return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
+            // }
 
             $available_qty = $this->get_available_qty($steDetails->item_code, $steDetails->s_warehouse);
             if($steDetails->purpose != 'Material Receipt'){
@@ -991,9 +991,9 @@ class MainController extends Controller
                 return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
             }
             
-            if($request->qty > $ps_details->qty){
-                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($ps_details->qty * 1) .'.']);
-            }
+            // if($request->qty > $ps_details->qty){
+            //     return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($ps_details->qty * 1) .'.']);
+            // }
 
             $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
             if($request->qty > $available_qty && $request->is_bundle == false){
@@ -2356,7 +2356,7 @@ class MainController extends Controller
         $allowed_warehouses = $this->user_allowed_warehouse($user);
         
         $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
-            ->select('i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty', 'i.item_classification')
+            ->select('ir.name as id', 'i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty', 'i.item_classification')
             ->whereIn('default_warehouse', $allowed_warehouses)->get();
 
         $low_level_stocks = [];
@@ -2368,6 +2368,7 @@ class MainController extends Controller
                 $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
 
                 $low_level_stocks[] = [
+                    'id' => $a->id,
                     'item_code' => $a->item_code,
                     'description' => $a->description,
                     'item_classification' => $a->item_classification,
@@ -2619,7 +2620,8 @@ class MainController extends Controller
                 'stock_uom' => $d->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                'type' => 'picking_slip'
+                'type' => 'picking_slip',
+                'classification' => 'Customer Order'
             ];
         }
 
@@ -2656,7 +2658,8 @@ class MainController extends Controller
                     'stock_uom' => $d->stock_uom,
                     'parent_warehouse' => $parent_warehouse,
                     'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                    'type' => 'stock_entry'
+                    'type' => 'stock_entry',
+                    'classification' => $d->transfer_as
                 ];
             }
         
@@ -2704,5 +2707,82 @@ class MainController extends Controller
         DB::table('tabStock Reservation')->whereNotIn('status', ['Cancelled', 'Expired'])
          ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty >= reserve_qty')
          ->where('type', 'In-house')->update(['status' => 'Issued']);
+    }
+
+    public function create_material_request(Request $request){
+        DB::beginTransaction();
+        try {
+            $now = Carbon::now();
+            $latest_mr = DB::table('tabMaterial Request')->max('name');
+            $latest_mr_exploded = explode("-", $latest_mr);
+            $new_id = $latest_mr_exploded[1] + 1;
+            $new_id = str_pad($new_id, 5, '0', STR_PAD_LEFT);
+            $new_id = 'PREQ-'.$new_id;
+    
+            $itemDetails = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')->where('i.name', $request->item_code)->first();
+            if(!$itemDetails){
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> not found.']);
+            }
+    
+            if($itemDetails->is_stock_item == 0){
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $itemDetails->item_code . '</b> is not a stock item.']);
+            }
+    
+            $actual_qty = $this->get_actual_qty($itemDetails->item_code, $request->warehouse);
+    
+            $mr = [
+                'name' => $new_id,
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->email,
+                'owner' => Auth::user()->email,
+                'docstatus' => 1,
+                'naming_series' => 'PREQ-',
+                'title' => $itemDetails->material_request_type,
+                'transaction_date' => $now->toDateTimeString(),
+                'status' => 'Pending',
+                'company' => 'FUMACO Inc.',
+                'schedule_date' => $request->required_date,
+                'material_request_type' => $itemDetails->material_request_type,
+                'purchase_request' => $request->purchase_type,
+                'notes00' => 'Generated from AthenaERP',
+            ];
+    
+            $mr_item = [
+                'name' => 'mes'.uniqid(),
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->email,
+                'owner' => Auth::user()->email,
+                'docstatus' => 1,
+                'parent' => $new_id,
+                'parentfield' => 'items',
+                'parenttype' => 'Material Request',
+                'idx' => 1,
+                'stock_qty' => abs($request->qty),
+                'qty' => abs($request->qty),
+                'actual_qty' => $actual_qty,
+                'schedule_date' => $request->required_date,
+                'item_name' => $itemDetails->item_name,
+                'stock_uom' => $itemDetails->stock_uom,
+                'warehouse' => $request->warehouse,
+                'uom' => $itemDetails->stock_uom,
+                'description' => $itemDetails->description,
+                'conversion_factor' => 1,
+                'item_code' => $itemDetails->item_code,
+                'item_group' => $itemDetails->item_group,
+            ];
+    
+            DB::table('tabMaterial Request')->insert($mr);
+            DB::table('tabMaterial Request Item')->insert($mr_item);
+
+            DB::commit();
+
+            return response()->json(['status' => 1, 'message' => 'Material Request for <b>' . $itemDetails->item_code . '</b> has been created.']);
+        } catch (Exception $e) {
+            DB::rollback();
+
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+        }
     }
 }
