@@ -12,7 +12,7 @@
         <div class="product-info">
             <span class="font-weight-bold product-title">{{ $item['item_code'] }}</span>
             <span class="font-italic" style="font-size: 10px;"> - {{ $item['default_warehouse'] }}</span>
-            <small class="d-block font-italic">{{ str_limit($item['description'], $limit = 130, $end = '...') }}</small>
+            <small class="d-block font-italic">{{ str_limit($item['description'], $limit = 100, $end = '...') }}</small>
         </div>
     </li>
     @empty
