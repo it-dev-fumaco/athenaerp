@@ -688,56 +688,6 @@
 		</form>
 	</div>
 
-	<div class="modal fade" id="create-mr-modal">
-		<form id="create-mr-form" autocomplete="off" action="/create_material_request" method="post">
-			@csrf
-			<div class="modal-dialog modal-lg">
-		  		<div class="modal-content">
-					<div class="modal-header">
-						<h4 class="modal-title">Create Material Request</h4>
-			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-					<div class="modal-body">
-						<div class="row">
-							<div class="col-md-8">
-								<dl class="mt-2">
-									<dt>Item Description</dt>
-									<dd><span class="item-code-display font-weight-bold"></span> - <span class="item-description-display"></span></dd>
-									<dt>Warehouse</dt>
-									<dd class="warehouse-display">-</dd>
-								</dl>
-							</div>
-							<div class="col-md-4">
-								<div class="form-group">
-									<label>Quantity</label>
-									<input type="number" name="qty" class="form-control" placeholder="Enter quantity" required>
-								</div>
-								<div class="form-group">
-									<label>Required Date</label>
-									<input type="text" class="form-control" name="required_date" id="mr-required-date" required>
-								</div>
-								<div class="form-group">
-									<label>Purchase Type</label>
-									<select name="purchase_type" class="form-control" required>
-										<option value="Local">Local</option>
-										<option value="Imported">Imported</option>
-									</select>
-								</div>
-							</div>
-						</div>
-						<input type="hidden" name="id" required>
-						<input type="hidden" name="item_code" required>
-						<input type="hidden" name="warehouse" required>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-ban"></i> Cancel</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> Submit</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
-
   <!-- Main Footer -->
   <footer class="main-footer">
     <!-- To the right -->
@@ -780,80 +730,23 @@
 
 	<script>
 		$(document).ready(function(){
-			$('#create-mr-form').validate({
-				rules: {
-					qty: {
-						required: true,
-					},
-
-					required_date: {
-						required: true,
-					},
-
-					purchase_type: {
-						required: true,
-					},
-				},
-				messages: {
-					qty: {
-						required: "Please enter quantity",
-					},
-					required_date: {
-						required: "Please select required date",
-					},
-
-					purchase_type: {
-						required: "Please select purchase type",
-					},
-				},
-				errorElement: 'span',
-				errorPlacement: function (error, element) {
-					error.addClass('invalid-feedback');
-					element.closest('.form-group').append(error);
-				},
-				highlight: function (element, errorClass, validClass) {
-					$(element).addClass('is-invalid');
-				},
-				unhighlight: function (element, errorClass, validClass) {
-					$(element).removeClass('is-invalid');
-				},
-				submitHandler: function(form) {
-					$.ajax({
-						type: 'POST',
-						url: $(form).attr('action'),
-						data: $(form).serialize(),
-						success: function(response){
-							if (response.status) {
-								showNotification("success", response.message, "fa fa-check");
-								get_low_stock_level_items();
-								$('#create-mr-modal').modal('hide');
-							}else{
-								showNotification("danger", response.message, "fa fa-info");
-							}
-						},
-						error: function(jqXHR, textStatus, errorThrown) {
-						}
-					});
-				}
-			});
-
-			$('#mr-required-date').datepicker({
-				startDate: new Date(),
-				format: 'yyyy-mm-dd',
-				autoclose: true
-			});
-
 			$(document).on('click', '.create-mr-btn', function(e){
 				e.preventDefault();
-				var row = $(this).closest('tr');
-				$('#create-mr-form input[name="item_code"]').val(row.find('.item-code').text());
-				$('#create-mr-form .item-code-display').text(row.find('.item-code').text());
-				$('#create-mr-form .item-description-display').text(row.find('.item-description').text());
-				$('#create-mr-form .warehouse-display').text(row.find('.warehouse').text());
-				$('#create-mr-form input[name="warehouse"]').val(row.find('.warehouse').text());
-				$('#create-mr-form input[name="qty"]').val(row.find('.reorder-qty').text());
-				$('#create-mr-form input[name="id"]').val($(this).data('id'));
-				$('#create-mr-modal').modal('show');
+
+				$.ajax({
+					type: 'GET',
+					url: '/create_material_request/' + $(this).data('id'),
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							get_low_stock_level_items();
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
 			});
 
 			$(document).on('select2:select', '#select-warehouse-c', function(e){

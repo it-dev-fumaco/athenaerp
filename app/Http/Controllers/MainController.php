@@ -2378,7 +2378,7 @@ class MainController extends Controller
 
                 $existing_mr = DB::table('tabMaterial Request as mr')
                     ->join('tabMaterial Request Item as mri', 'mr.name', 'mri.parent')
-                    ->where('mr.status', 'Pending')->where('mri.item_code', $a->item_code)
+                    ->where('mr.docstatus', '<', 2)->where('mr.status', 'Pending')->where('mri.item_code', $a->item_code)
                     ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
 
                 $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
@@ -2726,7 +2726,7 @@ class MainController extends Controller
          ->where('type', 'In-house')->update(['status' => 'Issued']);
     }
 
-    public function create_material_request(Request $request){
+    public function create_material_request($id){
         DB::beginTransaction();
         try {
             $now = Carbon::now();
@@ -2736,53 +2736,54 @@ class MainController extends Controller
             $new_id = str_pad($new_id, 5, '0', STR_PAD_LEFT);
             $new_id = 'PREQ-'.$new_id;
     
-            $itemDetails = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')->where('i.name', $request->item_code)->first();
+            $itemDetails = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')->where('ir.name', $id)->first();
+            
             if(!$itemDetails){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> not found.']);
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $itemDetails->item_code . '</b> not found.']);
             }
     
             if($itemDetails->is_stock_item == 0){
                 return response()->json(['status' => 0, 'message' => 'Item  <b>' . $itemDetails->item_code . '</b> is not a stock item.']);
             }
     
-            $actual_qty = $this->get_actual_qty($itemDetails->item_code, $request->warehouse);
-    
+            $actual_qty = $this->get_actual_qty($itemDetails->item_code, $itemDetails->warehouse);
+
             $mr = [
                 'name' => $new_id,
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->email,
                 'owner' => Auth::user()->email,
-                'docstatus' => 1,
+                'docstatus' => 0,
                 'naming_series' => 'PREQ-',
                 'title' => $itemDetails->material_request_type,
                 'transaction_date' => $now->toDateTimeString(),
                 'status' => 'Pending',
                 'company' => 'FUMACO Inc.',
-                'schedule_date' => $request->required_date,
+                'schedule_date' => Carbon::now()->addDays(7)->format('Y-m-d'),
                 'material_request_type' => $itemDetails->material_request_type,
-                'purchase_request' => $request->purchase_type,
+                'purchase_request' => 'Local',
                 'notes00' => 'Generated from AthenaERP',
             ];
     
             $mr_item = [
-                'name' => 'mes'.uniqid(),
+                'name' => 'ath'.uniqid(),
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->email,
                 'owner' => Auth::user()->email,
-                'docstatus' => 1,
+                'docstatus' => 0,
                 'parent' => $new_id,
                 'parentfield' => 'items',
                 'parenttype' => 'Material Request',
                 'idx' => 1,
-                'stock_qty' => abs($request->qty),
-                'qty' => abs($request->qty),
+                'stock_qty' => abs($itemDetails->warehouse_reorder_qty),
+                'qty' => abs($itemDetails->warehouse_reorder_qty),
                 'actual_qty' => $actual_qty,
-                'schedule_date' => $request->required_date,
+                'schedule_date' => Carbon::now()->addDays(7)->format('Y-m-d'),
                 'item_name' => $itemDetails->item_name,
                 'stock_uom' => $itemDetails->stock_uom,
-                'warehouse' => $request->warehouse,
+                'warehouse' => $itemDetails->warehouse,
                 'uom' => $itemDetails->stock_uom,
                 'description' => $itemDetails->description,
                 'conversion_factor' => 1,
