@@ -1008,13 +1008,13 @@
 
 			function set_prev_next_btn_att(n){
 				$('#athena-logs-pagination .prev').removeClass('disabled');
-					$('#athena-logs-pagination .next').removeClass('disabled');
+				$('#athena-logs-pagination .next').removeClass('disabled');
 
 				if(n == 1) {
 					$('#athena-logs-pagination .prev').addClass('disabled');
 				}
 
-				if(n == 12) {
+				if(n == {{ now()->month }}) {
 					$('#athena-logs-pagination .next').addClass('disabled');
 				}
 			}

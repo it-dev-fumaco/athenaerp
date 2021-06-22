@@ -11,7 +11,7 @@
                 <th scope="col" class="text-center align-middle">Date</th>
                 <th scope="col" class="text-center align-middle">Item Description</th>
                 <th scope="col" class="text-center align-middle">Warehouse</th>
-                <th scope="col" class="text-center align-middle">Issued Qty</th>
+                <th scope="col" class="text-center align-middle">Qty</th>
                 <th scope="col" class="text-center align-middle">Ref. No.</th>
                 <th scope="col" class="text-center align-middle p-1">Transact by</th>
             </tr>

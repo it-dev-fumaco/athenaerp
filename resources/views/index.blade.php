@@ -210,19 +210,22 @@
 													  
 													  <div class="tab-pane" id="tab_2">
 														<div id="athena-logs-table"></div>
-														<ul class="pagination pagination-month justify-content-center mt-3" id="athena-logs-pagination">
-															@for ($i = 1; $i < 13; $i++)
+														<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
+															@php
+																$month_today = now()->month;
+															@endphp
+															@for ($i = 1; $i < ($month_today + 1); $i++)
 															@if($i == 1)
-															<li class="page-item prev {{ (now()->month == 1) ? 'disabled' : '' }}"><a class="page-link" href="#">«</a></li>
+															<li class="page-item prev {{ ($month_today == 1) ? 'disabled' : '' }}"><a class="page-link" href="#">«</a></li>
 															@endif
-															<li class="page-item month {{ (now()->month == $i) ? 'active' : '' }}">
+															<li class="page-item month {{ ($month_today == $i) ? 'active' : '' }}">
 																<a class="page-link" href="#" data-month="{{ $i }}">
-																	<p class="page-month">{{ date("M", mktime(0, 0, 0, $i, 1, now()->year)) }}</p>
-																	<p class="page-year">{{ now()->year }}</p>
+																	<p class="page-month" style="font-size: 0.9rem;">{{ date("M", mktime(0, 0, 0, $i, 1, now()->year)) }}</p>
+																	<p class="page-year" style="font-size: 0.8rem;">{{ now()->year }}</p>
 																</a>
 															</li>
-															@if($i == 12)
-															<li class="page-item next {{ (now()->month == 12) ? 'disabled' : '' }}"><a class="page-link" href="#">»</a></li>
+															@if($i == $month_today)
+															<li class="page-item next {{ ($i == $month_today) ? 'disabled' : '' }}"><a class="page-link" href="#">»</a></li>
 															@endif
 															@endfor
 														</ul>
