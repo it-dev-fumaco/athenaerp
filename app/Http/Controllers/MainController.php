@@ -161,21 +161,47 @@ class MainController extends Controller
 
         return DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)->where('purpose', $purpose)
-            ->where('sted.status', '!=', 'Issued')
-            ->whereIn('s_warehouse', $allowed_warehouses)->count();
+            ->where('ste.docstatus', 0)
+            ->where('purpose', $purpose)
+            ->whereNotIn('sted.status', ['Issued', 'Returned'])
+            ->when($purpose == 'Material Issue', function($q){
+				return $q->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample']);
+            })
+            ->when($purpose == 'Material Transfer', function($q){
+				return $q->whereNotin('ste.transfer_as', ['Consignment', 'Sample Item']);
+            })
+            ->when($purpose == 'Material Receipt', function($q){
+				return $q->where('ste.receive_as', 'Sales Return');
+            })
+            ->whereIn('sted.s_warehouse', $allowed_warehouses)->count();
     }
 
     public function count_ps_for_issue(){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        return DB::table('tabPacking Slip as ps')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-            ->whereRaw(('dri.item_code = psi.item_code'))
-            ->where('ps.docstatus', 0)->where('psi.status', 'For Checking')
-            ->where('dri.docstatus', 0)->whereIn('dri.warehouse', $allowed_warehouses)->count();
+        $q_1 = DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
+                ->whereRaw(('dri.item_code = psi.item_code'))
+                ->where('ps.docstatus', 0)
+                ->where('dri.docstatus', 0)
+                ->whereIn('dri.warehouse', $allowed_warehouses)
+                ->select('ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->groupBy('ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->count();
+
+        $q_2 = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
+            ->where('sted.status', 'For Checking')
+            ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
+            ->count();
+
+        return ($q_1 + $q_2);
     }
 
     public function user_allowed_warehouse($user){
@@ -492,10 +518,13 @@ class MainController extends Controller
     }
 
     public function get_mr_sales_return(){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Receipt')
-            ->where('ste.receive_as', 'Sales Return')
+            ->where('ste.receive_as', 'Sales Return')->whereIn('sted.s_warehouse', $allowed_warehouses)
             ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
             ->get();
 
@@ -819,7 +848,7 @@ class MainController extends Controller
                 ->whereRaw(('dri.item_code = psi.item_code'))->where('ps.item_status', 'For Checking')->where('dri.docstatus', 0)->where('psi.name', $id)
                 ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
                 ->first();
-            $type = 'Check Out';
+            $type = 'Check Out - Delivered';
             $purpose = 'Picking Slip';
             $barcode = $q->barcode;
             $remarks = null;
@@ -829,10 +858,30 @@ class MainController extends Controller
         }else{
             $q = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')->where('sted.name', $id)
-                ->select('sted.*', 'ste.sales_order_no', 'ste.material_request', 'ste.purpose', 'ste.transfer_as')
+                ->select('sted.*', 'ste.sales_order_no', 'ste.material_request', 'ste.purpose', 'ste.transfer_as', 'ste.issue_as', 'ste.receive_as')
                 ->first();
 
-            $type = ($q->purpose == 'Material Receipt' || $q->transfer_as == 'For Return') ? 'Check In' : 'Check Out';
+            $type = null;
+            if($q->purpose == 'Material Transfer for Manufacture') {
+                $type = 'Check Out - Issued';
+            }
+
+            if($q->purpose == 'Material Transfer' && $q->transfer_as == 'Internal Transfer') {
+                $type = 'Check Out - Transferred';
+            }
+
+            if($q->purpose == 'Material Transfer' && $q->transfer_as == 'For Return') {
+                $type = 'Check In - Returned';
+            }
+
+            if($q->purpose == 'Material Issue' && $q->issue_as == 'Customer Replacement') {
+                $type = 'Check Out - Replaced';
+            }
+
+            if($q->purpose == 'Material Receipt' && $q->receive_as == 'Sales Return') {
+                $type = 'Check Out - Received';
+            }
+
             $purpose = $q->purpose;
             $barcode = $q->validate_item_code;
             $remarks = $q->remarks;
@@ -947,7 +996,7 @@ class MainController extends Controller
             // }
 
             $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
-            if($request->qty > $available_qty && !$request->is_bundle){
+            if($request->qty > $available_qty && $request->is_bundle == false){
                 return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
                 br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
             }
@@ -2251,8 +2300,10 @@ class MainController extends Controller
         $purchase_receipts = DB::table('tabPurchase Receipt as pr')->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')
             ->where('pr.docstatus', 1)->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->whereBetween('pr.posting_date', [$start, $end])->count();
 
-        $purchase_orders = DB::table('tabPurchase Order as pr')->join('tabPurchase Order Item as pri', 'pr.name', 'pri.parent')
-            ->where('pr.docstatus', 1)->whereRaw('pri.received_qty < pri.qty')->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
+        $purchase_orders = DB::table('tabPurchase Receipt as pr')
+            ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')->where('pr.docstatus', 0)
+            ->whereIn('pri.warehouse', $allowed_warehouses)
+            ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
 
         $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
@@ -2285,7 +2336,7 @@ class MainController extends Controller
             ->where('warehouse', $warehouse)->sum('website_reserved_qty');
 
         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
+            ->where('warehouse', $warehouse)->where('type', 'In-house')->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
 
         return $reserved_qty_for_website + $stock_reservation_qty;
     }

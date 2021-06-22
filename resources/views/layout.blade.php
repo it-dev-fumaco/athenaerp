@@ -325,9 +325,11 @@
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">ERP Submitted Transaction Histories</a>
 									</li>
+									@if(in_array(Auth::user()->user_group, ['Inventory Manager']))
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">Stock Reservations</a>
 									</li>
+									@endif
 								</ul>
 								<div class="tab-content">
 									<div class="tab-pane active" id="tab_1">
@@ -597,7 +599,8 @@
 									<div class="col-md-12">
 										<div class="form-group">
 											<label for="">Warehouse</label>
-											<select class="form-control" name="warehouse" id="select-warehouse-e" disabled></select>
+											<select class="form-control" id="select-warehouse-e" readonly></select>
+											<input type="hidden" class="form-control" name="warehouse" id="warehouse-e">
 										</div>
 									</div>
 									<div class="col-md-6">
@@ -902,8 +905,6 @@
 						$('#p-purchase-receipts').text(data.p_purchase_receipts);
 						$('#d-replacements').text(data.d_replacements);
 						$('#p-replacements').text(data.p_replacements);
-						$('#d-returns').text(data.d_returns);
-						$('#p-returns').text(data.p_returns);
 						$('#d-material-transfer').text(data.d_internal_transfers);
 						$('#d-picking-slips').text(data.d_picking_slips);
 						$('#d-withdrawals').text(data.d_withdrawals);
@@ -1334,6 +1335,7 @@
 						var selected_warehouse = $('#select-warehouse-e');
 						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
 						selected_warehouse.append(selected_warehouse_option).trigger('change');
+						selected_warehouse.select2({disabled:'readonly'});
 
 						if(data.sales_person) {
 							var selected_sales_person = $('#select-sales-person-e');
@@ -1369,6 +1371,7 @@
 						});
 
 						$('#stock-reservation-id-e').val(data.name);
+						$('#warehouse-e').val(data.warehouse);
 						$('#item-code-e').val(data.item_code);
 						$('#description-e').val(data.description);
 						$('#stock-uom-e').val(data.stock_uom);
@@ -1399,6 +1402,7 @@
 
 			count_ste_for_issue('Material Issue', '#material-issue');
 			count_ste_for_issue('Material Transfer', '#material-transfer');
+			count_ste_for_issue('Material Receipt', '#p-returns');
 			count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
 			count_ps_for_issue();
 			count_production_to_receive();
@@ -1406,6 +1410,7 @@
 			setInterval(function () {
 				count_ste_for_issue('Material Issue', '#material-issue');
 				count_ste_for_issue('Material Transfer', '#material-transfer');
+				count_ste_for_issue('Material Receipt', '#p-returns');
 				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
 				count_ps_for_issue();
 				count_production_to_receive();
