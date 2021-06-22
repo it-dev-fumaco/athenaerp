@@ -744,11 +744,17 @@ class MainController extends Controller
             // }
 
             $available_qty = $this->get_available_qty($steDetails->item_code, $steDetails->s_warehouse);
-            if($steDetails->purpose != 'Material Receipt'){
+            if($steDetails->purpose != 'Material Receipt' && $request->deduct_reserve == 0){
                 if($request->qty > $available_qty){
                     return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><
                     br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
                 }
+            }
+
+            $reserved_qty = $this->get_reserved_qty($steDetails->item_code, $steDetails->s_warehouse);
+            if($request->qty > $reserved_qty && $request->deduct_reserve == 1){
+                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><
+                br><br>Available reserved qty is <b>' . $reserved_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
             }
 
             $status = $steDetails->status;
@@ -992,9 +998,15 @@ class MainController extends Controller
             // }
 
             $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
-            if($request->qty > $available_qty && $request->is_bundle == false){
+            if($request->qty > $available_qty && $request->is_bundle == false && $request->deduct_reserve == 0){
                 return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
                 br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
+            }
+
+            $reserved_qty = $this->get_reserved_qty($ps_details->item_code, $request->warehouse);
+            if($request->qty > $reserved_qty && $request->is_bundle == false && $request->deduct_reserve == 1){
+                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
+                br><br>Available reserved qty is <b>' . $reserved_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
             }
 
             $sales_order = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
