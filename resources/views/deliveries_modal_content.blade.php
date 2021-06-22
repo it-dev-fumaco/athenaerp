@@ -40,7 +40,7 @@
                                     <span class="d-block font-weight-bold">{{ $data['item_code'] }}</span>
                                     <small class="d-block text-justify">{{ $data['description'] }}</small>
                                     <dl>
-                                        <dt>Actual Qty</dt>
+                                        <dt>Available Qty</dt>
                                         <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
                                         <dt class="mt-1">Reference No:</dt>
                                         <dd>{{ $data['ref_no'] }}</dd>
@@ -126,7 +126,7 @@
                                         <span class="font-weight-bold">{{ $data['item_code'] }}</span> <span class="badge badge-info {{ ($data['is_bundle'] === false) ? 'd-none' : '' }}" style="font-size: 11pt;">Product Bundle</span>
                                         <small class="d-block text-justify">{{ $data['description'] }}</small>
                                         <dl>
-                                            <dt>Actual Qty</dt>
+                                            <dt>Available Qty</dt>
                                             <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
                                             <dt class="mt-1">Reference No:</dt>
                                             <dd> 
@@ -140,7 +140,7 @@
                             @if($data['stock_reservation'])
                             <div class="col-md-12 mt-2 p-2">
                                 <div class="callout callout-info p-1 m-0">
-                                    <h6 class="m-2 font-weight-bold"><i class="icon fas fa-info-circle"></i> Reservation found on this item</h6>
+                                    <h6 class="m-2 font-weight-bold blink-reservation text-info"><i class="icon fas fa-info-circle"></i> Reservation found on this item</h6>
                                     <dl class="row p-0 m-0" id="sr-d">
                                         <dt class="col-sm-4">Sales Person</dt>
                                         <dd class="col-sm-8">{{ $data['stock_reservation']->sales_person }}</dd>
