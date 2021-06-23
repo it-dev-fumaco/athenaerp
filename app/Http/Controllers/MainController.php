@@ -2744,16 +2744,16 @@ class MainController extends Controller
     public function update_reservation_status(){
         // update status expired
         DB::table('tabStock Reservation')->whereIn('status', ['Active', 'Partially Issued'])
-            ->where('type', 'In-house')->where('valid_until', '<', Carbon::now())->update(['status' => 'Expired']);
+            ->whereIn('type', ['In-house', 'Consignment'])->where('valid_until', '<', Carbon::now())->update(['status' => 'Expired']);
         // update status partially issued
         DB::table('tabStock Reservation')
             ->whereNotIn('status', ['Cancelled', 'Issued', 'Expired'])
             ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty < reserve_qty')
-            ->where('type', 'In-house')->update(['status' => 'Partially Issued']);
+            ->whereIn('type', ['In-house', 'Consignment'])->update(['status' => 'Partially Issued']);
         // update status issued
-        DB::table('tabStock Reservation')->whereNotIn('status', ['Cancelled', 'Expired'])
+        DB::table('tabStock Reservation')->whereNotIn('status', ['Cancelled', 'Expired', 'Issued'])
          ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty >= reserve_qty')
-         ->where('type', 'In-house')->update(['status' => 'Issued']);
+         ->whereIn('type', ['In-house', 'Consignment'])->update(['status' => 'Issued']);
     }
 
     public function create_material_request($id){
