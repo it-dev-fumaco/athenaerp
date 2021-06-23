@@ -521,7 +521,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Receipt')
-            ->where('ste.receive_as', 'Sales Return')->whereIn('sted.s_warehouse', $allowed_warehouses)
+            ->where('ste.receive_as', 'Sales Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
             ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
             ->get();
 
@@ -2376,10 +2376,10 @@ class MainController extends Controller
             $actual_qty = $this->get_actual_qty($a->item_code, $a->warehouse);
 
             if($actual_qty <= $a->warehouse_reorder_level) {
-
                 $existing_mr = DB::table('tabMaterial Request as mr')
                     ->join('tabMaterial Request Item as mri', 'mr.name', 'mri.parent')
                     ->where('mr.docstatus', '<', 2)->where('mr.status', 'Pending')->where('mri.item_code', $a->item_code)
+                    ->whereBetween('mr.transaction_date', [Carbon::now()->subDays(30)->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
                     ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
 
                 $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
