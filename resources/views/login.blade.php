@@ -51,7 +51,7 @@
 								</div>
 							</div>
 							<div class="form-bottom">
-								<form role="form" method="POST" action="/login_user">
+								<form role="form" method="POST" action="/U_login_user">
 									@csrf
 									<div class="form-group">
 										<input type="text" placeholder="Username..." value="{{ old('email') }}" class="form-username form-control" name="email">

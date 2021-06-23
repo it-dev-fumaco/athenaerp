@@ -14,10 +14,25 @@
 Route::get('/login', 'LoginController@view_login')->name('login');
 Route::post('/login_user', 'LoginController@login');
 
-Route::group(['middleware' => 'auth'], function(){
-    Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
-    Route::get('/item_attribute', 'ItemAttributeController@item_attribute_search');
+Route::get('/update', 'ItemAttributeController@update_login')->name('update_login');
+Route::post('/U_login_user', 'ItemAttributeController@login');
 
+Route::group(['middleware' => 'auth'], function(){
+    // Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
+    // Route::post('/insert_attribute', 'ItemAttributeController@item_attribute_insert');
+    // Route::get('/item_attribute', 'ItemAttributeController@item_attribute_search');
+    // Route::get('/attribute_dropdown', 'ItemAttributeController@item_attribute_dropdown');
+
+    Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
+    // Route::get('/search', 'ItemAttributeController@attribute_search');
+    Route::get('/search', 'ItemAttributeController@item_attribute_search');
+    Route::get('/update_form', 'ItemAttributeController@update_attrib_form');
+    // Route::post('/update_form', 'ItemAttributeController@update_attrib_form');
+    Route::post('/add_form', 'ItemAttributeController@add_attrib_form');
+    Route::get('/attribute_dropdown', 'ItemAttributeController@item_attribute_dropdown');
+    Route::post('/insert_attribute', 'ItemAttributeController@item_attribute_insert');
+    Route::get('/signout', 'ItemAttributeController@signout');
+    
     Route::get('/', 'MainController@index');
     Route::get('/search_results', 'MainController@search_results');
     Route::get('/dashboard_data', 'MainController@dashboard_data');
