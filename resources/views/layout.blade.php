@@ -529,6 +529,7 @@
 											<select name="type" class="form-control" id="select-type-c">
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
+												<option value="Consignment">Consignment</option>
 												<option value="Website Stocks">Website Stocks</option>
 											</select>
 										</div>
@@ -537,6 +538,12 @@
 										<div class="form-group for-in-house-type d-none">
 											<label for="">Sales Person</label>
 											<select class="form-control" name="sales_person" id="select-sales-person-c"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-consignment d-none">
+											<label for="">Branch Warehouse</label>
+											<select class="form-control" name="consignment_warehouse" id="select-branch-warehouse-c"></select>
 										</div>
 									</div>
 									<div class="col-md-12">
@@ -631,6 +638,7 @@
 											<select name="type" class="form-control" id="select-type-e" disabled>
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
+												<option value="Consignment">Consignment</option>
 												<option value="Website Stocks">Website Stocks</option>
 											</select>
 										</div>
@@ -639,6 +647,12 @@
 										<div class="form-group for-in-house-type d-none">
 											<label for="">Sales Person</label>
 											<select class="form-control" name="sales_person" id="select-sales-person-e"></select>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group for-consignment d-none">
+											<label for="">Branch Warehouse</label>
+											<select class="form-control" name="consignment_warehouse" id="select-branch-warehouse-e"></select>
 										</div>
 									</div>
 									<div class="col-md-12">
@@ -1020,6 +1034,7 @@
 
 				$('#select-warehouse-c').val(null).trigger('change');
 				$('#select-sales-person-c').val(null).trigger('change');
+				$('#select-branch-warehouse-c').val(null).trigger('change');
 				$('#select-project-c').val(null).trigger('change');
 
 				$("#date-valid-until-c").datepicker("update", new Date());
@@ -1067,9 +1082,15 @@
 					if($(this).val() == 'In-house') {
 						$('.for-in-house-type').removeClass('d-none');
 						$('.for-online-shop-type').addClass('d-none');
+						$('.for-consignment').addClass('d-none');
+					} else if ($(this).val() == 'Consignment') {
+						$('.for-in-house-type').addClass('d-none');
+						$('.for-online-shop-type').addClass('d-none');
+						$('.for-consignment').removeClass('d-none');
 					} else {
 						$('.for-in-house-type').addClass('d-none');
 						$('.for-online-shop-type').removeClass('d-none');
+						$('.for-consignment').addClass('d-none');
 					}
 				}
 			});
@@ -1079,6 +1100,27 @@
 				placeholder: 'Select Project',
 				ajax: {
 					url: '/projects',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
+			$('#select-branch-warehouse-e').select2({
+				dropdownParent: $('#edit-stock-reservation-modal'),
+				placeholder: 'Select Branch',
+				ajax: {
+					url: '/consignment_warehouses',
 					method: 'GET',
 					dataType: 'json',
 					data: function (data) {
@@ -1138,14 +1180,41 @@
 				}
 			});
 
+			$('#select-branch-warehouse-c').select2({
+				dropdownParent: $('#add-stock-reservation-modal'),
+				placeholder: 'Select Branch',
+				ajax: {
+					url: '/consignment_warehouses',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results:response
+						};
+					},
+					cache: true
+				}
+			});
+
 			$('#select-type-c').change(function(){
 				if($(this).val()) {
 					if($(this).val() == 'In-house') {
 						$('.for-in-house-type').removeClass('d-none');
 						$('.for-online-shop-type').addClass('d-none');
+						$('.for-consignment').addClass('d-none');
+					} else if ($(this).val() == 'Consignment') {
+						$('.for-in-house-type').addClass('d-none');
+						$('.for-online-shop-type').addClass('d-none');
+						$('.for-consignment').removeClass('d-none');
 					} else {
 						$('.for-in-house-type').addClass('d-none');
 						$('.for-online-shop-type').removeClass('d-none');
+						$('.for-consignment').addClass('d-none');
 					}
 				}
 			});
@@ -1229,6 +1298,13 @@
 						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
 						selected_warehouse.append(selected_warehouse_option).trigger('change');
 						selected_warehouse.select2({disabled:'readonly'});
+
+						if(data.consignment_warehouse) {
+							var selected_branch = $('#select-branch-warehouse-e');
+							var selected_branch_option = new Option(data.consignment_warehouse, data.consignment_warehouse, true, true);
+							selected_branch.append(selected_branch_option).trigger('change');
+							selected_branch.select2({disabled:'readonly'});
+						}
 
 						if(data.sales_person) {
 							var selected_sales_person = $('#select-sales-person-e');
@@ -1391,6 +1467,7 @@
 				$(this).find('form')[0].reset();
 				$('.for-in-house-type').addClass('d-none');
 				$('.for-online-shop-type').addClass('d-none');
+				$('.for-consignment').addClass('d-none');
 			});
 
 			$(document).on('click', '.view-item-details', function(e){

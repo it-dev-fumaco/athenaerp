@@ -2803,4 +2803,15 @@ class MainController extends Controller
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
         }
     }
+
+    public function consignment_warehouses(Request $request){
+        return DB::table('tabWarehouse')
+            ->where('disabled', 0)->where('is_group', 0)
+            ->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
 }

@@ -55,8 +55,8 @@ class StockReservationController extends Controller
 
          $existing_stock_reservation = StockReservation::where('item_code', $request->item_code)
             ->where('warehouse', $request->warehouse)->where('sales_person', $request->sales_person)
-            ->where('type', $request->type)->where('project', $request->project)->whereIn('status', ['Active', 'Partially Issued'])
-            ->exists();
+            ->where('type', $request->type)->where('project', $request->project)->where('consignment_warehouse', $request->consignment_warehouse)
+            ->whereIn('status', ['Active', 'Partially Issued'])->exists();
          
          if($existing_stock_reservation){
             return response()->json(['error' => 1, 'modal_title' => 'Already Exists', 'modal_message' => 'Stock Reservation already exists.']);
@@ -86,6 +86,7 @@ class StockReservationController extends Controller
          $stock_reservation->valid_until = ($request->type == 'In-house') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
          $stock_reservation->sales_person = ($request->type == 'In-house') ? $request->sales_person : null;
          $stock_reservation->project = ($request->type == 'In-house') ? $request->project : null;
+         $stock_reservation->consignment_warehouse = ($request->type == 'Consignment') ? $request->consignment_warehouse : null;
          $stock_reservation->save();
 
          if($request->type == 'Website Stocks'){
@@ -239,6 +240,7 @@ class StockReservationController extends Controller
          $stock_reservation->valid_until = ($stock_reservation->type == 'In-house') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
          $stock_reservation->sales_person = ($stock_reservation->type == 'In-house') ? $request->sales_person : null;
          $stock_reservation->project = ($stock_reservation->type == 'In-house') ? $request->project : null;
+         $stock_reservation->consignment_warehouse = ($stock_reservation->type == 'Consignment') ? $request->consignment_warehouse : null;
          $stock_reservation->save();
 
          DB::connection('mysql')->commit();

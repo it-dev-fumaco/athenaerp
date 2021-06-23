@@ -92,4 +92,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_athena_logs', 'MainController@get_athena_logs');
     Route::post('/submit_transaction', 'MainController@submit_transaction');
     Route::get('/create_material_request/{id}', 'MainController@create_material_request');
+    Route::get('/consignment_warehouses', 'MainController@consignment_warehouses');
 });
