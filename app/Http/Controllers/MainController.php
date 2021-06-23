@@ -845,7 +845,7 @@ class MainController extends Controller
                 $this->update_reservation_status();
             }
         
-            // DB::commit();
+            DB::commit();
 
             if($request->deduct_reserve == 1) {
                 return response()->json(['status' => 1, 'message' => 'Item ' . $steDetails->item_code . ' has been deducted from reservation.']);
