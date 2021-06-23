@@ -565,9 +565,17 @@ class MainController extends Controller
     
         $stock_reservation_details = [];
         $so_details = DB::table('tabSales Order')->where('name', $ref_no)->first();
-        if($so_details) {
-            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->s_warehouse, $so_details->sales_person, $so_details->project);
+
+        $sales_person = ($so_details) ? $so_details->sales_person : null;
+        $project = ($so_details) ? $so_details->project : null;
+        $consignment_warehouse = null;
+        if($q->transfer_as == 'Consignment') {
+            $sales_person = null;
+            $project = null;
+            $consignment_warehouse = $q->t_warehouse;
         }
+
+        $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->s_warehouse, $sales_person, $project, $consignment_warehouse);
 
         $data = [
             'name' => $q->name,
@@ -616,9 +624,15 @@ class MainController extends Controller
         return response()->json($data);
     }
 
-    public function get_stock_reservation($item_code, $warehouse, $sales_person, $project){
-        $query = DB::table('tabStock Reservation')->where('sales_person', $sales_person)->where('project', $project)
-            ->where('item_code', $item_code)->where('warehouse', $warehouse)
+    public function get_stock_reservation($item_code, $warehouse, $sales_person, $project, $consignment_warehouse){
+        $query = DB::table('tabStock Reservation')
+            ->when($sales_person, function($q) use ($sales_person){
+                return $q->where('sales_person', $sales_person)->where('project', $project)
+                    ->where('item_code', $item_code)->where('warehouse', $warehouse);
+            })
+            ->when($consignment_warehouse, function($q) use ($consignment_warehouse){
+				return $q->where('consignment_warehouse', $consignment_warehouse);
+            })
             ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
 
         return ($query) ? $query : [];
@@ -674,7 +688,7 @@ class MainController extends Controller
         $stock_reservation_details = [];
         $so_details = DB::table('tabSales Order')->where('name', $q->sales_order)->first();
         if($so_details) {
-            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->warehouse, $so_details->sales_person, $so_details->project);
+            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->warehouse, $so_details->sales_person, $so_details->project, null);
         }
 
         $data = [
@@ -800,9 +814,17 @@ class MainController extends Controller
                 $ref_no = ($steDetails->sales_order_no) ? $steDetails->sales_order_no : $steDetails->material_request;
                 
                 $so_details = DB::table('tabSales Order')->where('name', $ref_no)->first();
-                if($so_details) {
-                    $stock_reservation_details = $this->get_stock_reservation($steDetails->item_code, $steDetails->s_warehouse, $so_details->sales_person, $so_details->project);
+
+                $sales_person = ($so_details) ? $so_details->sales_person : null;
+                $project = ($so_details) ? $so_details->project : null;
+                $consignment_warehouse = null;
+                if($steDetails->transfer_as == 'Consignment') {
+                    $sales_person = null;
+                    $project = null;
+                    $consignment_warehouse = $steDetails->t_warehouse;
                 }
+                
+                $stock_reservation_details = $this->get_stock_reservation($steDetails->item_code, $steDetails->s_warehouse, $sales_person, $project, $consignment_warehouse);
 
                 if($stock_reservation_details && $request->deduct_reserve == 1){
                     $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
@@ -1052,7 +1074,7 @@ class MainController extends Controller
             if($request->has_reservation && $request->has_reservation == 1) {
                 $so_details = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
                 if($so_details) {
-                    $stock_reservation_details = $this->get_stock_reservation($ps_details->item_code, $request->warehouse, $so_details->sales_person, $so_details->project);
+                    $stock_reservation_details = $this->get_stock_reservation($ps_details->item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null);
                 }
 
                 if($stock_reservation_details && $request->deduct_reserve == 1){
@@ -2807,5 +2829,16 @@ class MainController extends Controller
 
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
         }
+    }
+
+    public function consignment_warehouses(Request $request){
+        return DB::table('tabWarehouse')
+            ->where('disabled', 0)->where('is_group', 0)
+            ->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+            ->when($request->q, function($q) use ($request){
+				return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
     }
 }
