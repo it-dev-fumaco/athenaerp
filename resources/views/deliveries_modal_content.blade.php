@@ -53,10 +53,15 @@
                             <div class="callout callout-info">
                                 <h6 class="m-2 font-weight-bold blink-reservation text-info"><i class="icon fas fa-info"></i> Reservation found on this item</h6>
                                 <dl class="row" id="sr-d">
+                                    @if ($data['stock_reservation']->type == 'Consignment')
+                                    <dt class="col-sm-4">Branch</dt>
+                                    <dd class="col-sm-8">{{ $data['stock_reservation']->consignment_warehouse }}</dd>
+                                    @else
                                     <dt class="col-sm-4">Sales Person</dt>
                                     <dd class="col-sm-8">{{ $data['stock_reservation']->sales_person }}</dd>
                                     <dt class="col-sm-4">Project</dt>
                                     <dd class="col-sm-8">{{ $data['stock_reservation']->project }}</dd>
+                                    @endif
                                     <dt class="col-sm-4">Reserved Qty</dt>
                                     <dd class="col-sm-8">{{ $data['stock_reservation']->reserve_qty - $data['stock_reservation']->consumed_qty }}</dd>
                                 </dl>
