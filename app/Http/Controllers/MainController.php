@@ -2608,8 +2608,8 @@ class MainController extends Controller
                 ->where('ps.docstatus', 0)
                 ->where('dri.docstatus', 0)
                 ->whereIn('dri.warehouse', $allowed_warehouses)
-                ->select('ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->groupBy('ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->select('dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->groupBy('dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
                 ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")->get();
 
         $list = [];
@@ -2639,7 +2639,9 @@ class MainController extends Controller
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                 'type' => 'picking_slip',
-                'classification' => 'Customer Order'
+                'classification' => 'Customer Order',
+                'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
+                'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null
             ];
         }
 
@@ -2647,7 +2649,7 @@ class MainController extends Controller
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
+            ->select('ste.delivery_date', 'sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -2677,7 +2679,9 @@ class MainController extends Controller
                     'parent_warehouse' => $parent_warehouse,
                     'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                     'type' => 'stock_entry',
-                    'classification' => $d->transfer_as
+                    'classification' => $d->transfer_as,
+                    'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
+                    'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null
                 ];
             }
         

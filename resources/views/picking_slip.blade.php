@@ -46,9 +46,10 @@
 						<div class="card-body p-0">
 							<div class="table-responsive p-0">
 								<table class="table table-hover">
-									<col style="width: 17%;">
-									<col style="width: 43%;">
 									<col style="width: 15%;">
+									<col style="width: 40%;">
+									<col style="width: 10%;">
+									<col style="width: 10%;">
 									<col style="width: 15%;">
 									<col style="width: 10%;">
 									<thead>
@@ -56,6 +57,7 @@
 											<th scope="col" class="text-center">Transaction</th>
 											<th scope="col" class="text-center">Item Description</th>
 											<th scope="col" class="text-center">Qty</th>
+											<th scope="col" class="text-center">Delivery Date</th>
 											<th scope="col" class="text-center">Ref. No.</th>
 											<th scope="col" class="text-center">Actions</th>
 										</tr>
@@ -80,10 +82,13 @@
 											</td>
 											<td class="text-center" style="font-size: 14pt;">@{{ x.qty | number:2 }}</td>
 											<td class="text-center">
+												<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 11pt;">@{{ x.delivery_date }}</span>
+												<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
+											</td>
+											<td class="text-center">
 												<span class="d-block">@{{ x.delivery_note }}</span>
 												<span class="d-block">@{{ x.sales_order }}</span>
-												<span class="mt-3" style="font-size: 10pt;">@{{ x.customer }}</span>
-
+												<span class="d-block mt-2" style="font-size: 10pt;">@{{ x.customer }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">@{{ x.classification }}</span>
 											</td>
 											<td class="text-center">
