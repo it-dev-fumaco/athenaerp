@@ -114,10 +114,6 @@ class StockReservationController extends Controller
    }
 
    public function get_stock_reservation(Request $request, $item_code = null){
-      $list = StockReservation::when($item_code, function($q) use ($item_code){
-         $q->where('item_code', $item_code);
-      })->paginate(10);
-
       $webList = StockReservation::when($item_code, function($q) use ($item_code){
          $q->where('item_code', $item_code)->where('type', 'Website Stocks')->orderby('creation', 'desc');
       })->paginate(10);
@@ -126,8 +122,11 @@ class StockReservationController extends Controller
          $q->where('item_code', $item_code)->where('type', 'In-house')->orderby('valid_until', 'desc');
       })->paginate(10);
 
-      // return view('stock_reservation.list', compact('list', 'item_code'));
-      return view('stock_reservation.list', compact('list', 'webList', 'inhouseList', 'item_code'));
+      $consignmentList = StockReservation::when($item_code, function($q) use ($item_code){
+         $q->where('item_code', $item_code)->where('type', 'Consignment')->orderby('valid_until', 'desc');
+      })->paginate(10);
+
+      return view('stock_reservation.list', compact('consignmentList', 'webList', 'inhouseList', 'item_code'));
    }
 
    public function cancel_reservation(Request $request){

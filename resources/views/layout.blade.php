@@ -50,7 +50,7 @@
 							<div class="row">
 								<div class="col-md-12 col-xl-6 col-lg-4 text-center">
 									<a href="/" class="navbar-brand">
-										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP</b><span class="d-md-inline-block d-lg-none d-xl-inline-block">Inventory</span></span>
+										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 									</a>
 								</div>
 								<div class="col-md-12 col-xl-6 col-lg-8 align-middle">
@@ -1529,7 +1529,21 @@
 				get_athena_transactions(item_code, page);
 			});
 
-			$(document).on('click', '#stock-reservations-pagination a', function(event){
+			$(document).on('click', '#stock-reservations-pagination-1 a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+				var page = $(this).attr('href').split('page=')[1];
+				get_stock_reservation(item_code, page);
+			});
+
+			$(document).on('click', '#stock-reservations-pagination-2 a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+				var page = $(this).attr('href').split('page=')[1];
+				get_stock_reservation(item_code, page);
+			});
+
+			$(document).on('click', '#stock-reservations-pagination-3 a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
