@@ -164,16 +164,18 @@ class MainController extends Controller
             ->where('ste.docstatus', 0)
             ->where('purpose', $purpose)
             ->whereNotIn('sted.status', ['Issued', 'Returned'])
-            ->when($purpose == 'Material Issue', function($q){
-				return $q->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample']);
+            ->when($purpose == 'Material Issue', function($q) use ($allowed_warehouses){
+				return $q->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample'])
+                    ->whereIn('sted.s_warehouse', $allowed_warehouses);
             })
-            ->when($purpose == 'Material Transfer', function($q){
-				return $q->whereNotin('ste.transfer_as', ['Consignment', 'Sample Item']);
+            ->when($purpose == 'Material Transfer', function($q) use ($allowed_warehouses){
+				return $q->whereNotin('ste.transfer_as', ['Consignment', 'Sample Item'])
+                    ->whereIn('sted.s_warehouse', $allowed_warehouses);
             })
-            ->when($purpose == 'Material Receipt', function($q){
-				return $q->where('ste.receive_as', 'Sales Return');
-            })
-            ->whereIn('sted.s_warehouse', $allowed_warehouses)->count();
+            ->when($purpose == 'Material Receipt', function($q) use ($allowed_warehouses){
+				return $q->where('ste.receive_as', 'Sales Return')
+                    ->whereIn('sted.t_warehouse', $allowed_warehouses);
+            })->count();
     }
 
     public function count_ps_for_issue(){
@@ -523,6 +525,7 @@ class MainController extends Controller
             ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Receipt')
             ->where('ste.receive_as', 'Sales Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
             ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Returned') ASC")
             ->get();
 
         $list = [];
@@ -626,9 +629,9 @@ class MainController extends Controller
 
     public function get_stock_reservation($item_code, $warehouse, $sales_person, $project, $consignment_warehouse){
         $query = DB::table('tabStock Reservation')
-            ->when($sales_person, function($q) use ($sales_person){
-                return $q->where('sales_person', $sales_person)->where('project', $project)
-                    ->where('item_code', $item_code)->where('warehouse', $warehouse);
+            ->where('warehouse', $warehouse)->where('item_code', $item_code)
+            ->when($sales_person, function($q) use ($sales_person, $project){
+                return $q->where('sales_person', $sales_person)->where('project', $project);
             })
             ->when($consignment_warehouse, function($q) use ($consignment_warehouse){
 				return $q->where('consignment_warehouse', $consignment_warehouse);
@@ -842,7 +845,7 @@ class MainController extends Controller
                 $this->update_reservation_status();
             }
         
-            DB::commit();
+            // DB::commit();
 
             if($request->deduct_reserve == 1) {
                 return response()->json(['status' => 1, 'message' => 'Item ' . $steDetails->item_code . ' has been deducted from reservation.']);
@@ -2367,10 +2370,10 @@ class MainController extends Controller
             ->where('warehouse', $warehouse)->sum('website_reserved_qty');
 
         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->where('type', 'In-house')->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
+            ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment'])->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
 
         $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->where('type', 'In-house')->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
+            ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment'])->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
 
         return ($reserved_qty_for_website + $stock_reservation_qty) + $consumed_qty;
     }

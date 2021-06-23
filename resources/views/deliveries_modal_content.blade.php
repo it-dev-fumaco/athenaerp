@@ -49,10 +49,10 @@
                             </div>
                         </div>
                         @if($data['stock_reservation'])
-                        <div class="col-md-12 mt-2">
-                            <div class="callout callout-info">
-                                <h6 class="m-2 font-weight-bold blink-reservation text-info"><i class="icon fas fa-info"></i> Reservation found on this item</h6>
-                                <dl class="row" id="sr-d">
+                        <div class="col-md-12 mt-2 p-2">
+                            <div class="callout callout-info p-1 m-0">
+                                <h6 class="m-2 font-weight-bold blink-reservation text-info"><i class="icon fas fa-info-circle"></i> Reservation found on this item</h6>
+                                <dl class="row p-0 m-0" id="sr-d">
                                     @if ($data['stock_reservation']->type == 'Consignment')
                                     <dt class="col-sm-4">Branch</dt>
                                     <dd class="col-sm-8">{{ $data['stock_reservation']->consignment_warehouse }}</dd>
@@ -63,7 +63,7 @@
                                     <dd class="col-sm-8">{{ $data['stock_reservation']->project }}</dd>
                                     @endif
                                     <dt class="col-sm-4">Reserved Qty</dt>
-                                    <dd class="col-sm-8">{{ $data['stock_reservation']->reserve_qty - $data['stock_reservation']->consumed_qty }}</dd>
+                                    <dd class="col-sm-8">{{ $data['stock_reservation']->reserve_qty - $data['stock_reservation']->consumed_qty }} {{ $data['stock_reservation']->stock_uom }}</dd>
                                 </dl>
                             </div>
                         </div>

@@ -1404,7 +1404,7 @@
 					dataType: 'json',
 					contentType: 'application/json',
 					success: function (data) {
-						$('#material-receipt').text(data);
+						$('#material-receipt').text(0);
 					}
 				});
 			}
