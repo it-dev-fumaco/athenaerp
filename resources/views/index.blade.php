@@ -198,17 +198,17 @@
 											<div class="card card-danger card-outline">
 												<div class="card-header d-flex p-0">
 													<ul class="nav nav-pills p-2">
-													  <li class="nav-item"><a class="nav-link active" href="#tab_1" data-toggle="tab"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a></li>
-													  <li class="nav-item"><a class="nav-link" href="#tab_2" data-toggle="tab"><i class="fas fa-list-alt"></i> Stock Movement(s)</a></li>
+													  <li class="nav-item"><a class="nav-link active" href="#tab_1-1" data-toggle="tab"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a></li>
+													  <li class="nav-item"><a class="nav-link" href="#tab_2-1" data-toggle="tab"><i class="fas fa-list-alt"></i> Stock Movement(s)</a></li>
 													</ul>
 												</div>
 												<div class="card-body p-0">
 													<div class="tab-content">
-													  <div class="tab-pane active" id="tab_1">
+													  <div class="tab-pane active" id="tab_1-1">
 														<div id="low-level-stock-table" style="margin-top: -32px;"></div>
 													  </div>
 													  
-													  <div class="tab-pane" id="tab_2">
+													  <div class="tab-pane" id="tab_2-1">
 														<div id="athena-logs-table"></div>
 														<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
 															@php
