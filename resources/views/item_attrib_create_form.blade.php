@@ -5,7 +5,16 @@
 
 @section('content')
     <div class="container-fluid align-center p-4">
-        
+        <div class="modal fade" id="preloader-modal" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body text-center">
+                        <h6 class="text-center m-0"><i class="fas fa-spinner"></i> Adding attribute to items. Please wait.</h6>
+                        <button type="button" class="btn btn-default mt-3 d-none btn-sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-8 align-middle">
                 <h4 class="text-left m-1 pl-5">Template Item: <span class="font-weight-bold">{{ $itemParent->name }}</span> <small style="bordeR:">{{ $itemParent->description }}</small></h4>
@@ -18,25 +27,37 @@
                 <button type="button" class="btn btn-secondary ml-2" id="reset-column"><i class="fas fa-redo"></i> Reset</button>
             </div>
             <div class="col-md-12 mt-3">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> Note:</h5>
+                    Adding new attributes and value  to an existing variant code, will require to update as well the other variants codes on the same parent code.
+                  </div>
                 @if (\Session::has('message'))
                 <div class="alert alert-success text-center mb-3 ml-3 mr-3">
                     <span>{!! \Session::get('message') !!}</span>
                 </div>
                 @endif
-                <div class="card card-primary card-outline">
+                <div class="card card-secondary card-outline">
                     <div class="card-header">
-                      <h5 class="card-title m-0">Item Variant(s)</h5>
+                        <h5 class="card-title m-0">Item Variant(s) <span class="badge badge-info">{{ collect($itemVariantsArr)->count() }}</span></h5>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                              <i class="fas fa-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                              <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body p-2">
-                        <form action="/insert_attribute" method="POST">
+                        <form action="/insert_attribute" method="POST" id="form-add">
                             @csrf
                             <input type="hidden" name="parentItem" value="{{ $itemParent->name }}">
-                            <table class="table table-bordered table-hover">
+                            <table class="table table-bordered table-hover" id="variants-table">
                                 <thead>
                                     <tr>
-                                        <th class="text-center">Item Code</th>
+                                        <th class="text-center align-middle">Item Code</th>
                                         @foreach ($itemAttributes as $itemAttribute)
-                                        <th class="text-center">{{ $itemAttribute }}</th>
+                                        <th class="text-center align-middle">{{ $itemAttribute }}</th>
                                         @endforeach
                                     </tr>
                                 </thead>
@@ -44,9 +65,9 @@
                                     @foreach ($itemVariantsArr as $row)
                                     <input type="hidden" name="itemCode[]" value="{{ $row['item_code'] }}">
                                     <tr>
-                                        <td class="text-center">{{ $row['item_code'] }}</td>
+                                        <td class="text-center align-middle">{{ $row['item_code'] }}</td>
                                         @foreach ($row['attributes'] as $attr)
-                                        <td class="text-center">{{ $attr->attribute_value }}</td>
+                                        <td class="text-center align-middle">{{ $attr->attribute_value }}</td>
                                         @endforeach
                                         <input type="hidden" name="idx[]" value="{{ $attr->idx }}">
                                     </tr>
@@ -58,8 +79,45 @@
                             </div>
                         </form>
                     </div>
-                  </div>
-                
+                </div>
+            </div>
+
+            <div class="col-md-12 mt-3">
+                <div class="card collapsed-card card-danger card-outline">
+                    <div class="card-header">
+                        <h5 class="card-title m-0">Item Variants with Incomplete Attribute(s) <span class="badge badge-danger">{{ collect($itemsIncompleteAttr)->count() }}</span></h5>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                              <i class="fas fa-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                              <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <table class="table table-bordered table-hover overflow-auto">
+                            <thead>
+                                <tr>
+                                    <th class="text-center align-middle">Item Code</th>
+                                    @foreach ($itemAttributes as $itemAttribute)
+                                    <th class="text-center align-middle">{{ $itemAttribute }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($itemsIncompleteAttr as $row)
+                                <tr>
+                                    <td class="text-center align-middle">{{ $row['item_code'] }}</td>
+                                    @foreach ($row['attributes'] as $attr)
+                                    <td class="text-center align-middle">{{ $attr->attribute_value }}</td>
+                                    @endforeach
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -81,22 +139,8 @@
 			height: 36px !important;
 		}
 	</style>
+
 @endsection
-<style>
-    .select2{
-        width: 100% !important;
-    }
-    .select2-selection__rendered {
-        line-height: 31px !important;
-    }
-    .select2-container .select2-selection--single {
-        height: 37px !important;
-        padding-top: 1.5%;
-    }
-    .select2-selection__arrow {
-        height: 36px !important;
-    }
-</style>
 
 @section('script')
     <script>
@@ -108,14 +152,14 @@
 
             if(column_name) {
                 var existing_columns = [];
-                $('table tr').find('th').each(function(){
+                $('#variants-table tr').find('th').each(function(){
                     existing_columns.push($(this).text());
                 });
 
                 if(!existing_columns.includes(column_name)){
-                    $('table').find('tr').each(function(){
+                    $('#variants-table').find('tr').each(function(){
                         $(this).find('td').last().after('<td><input type="hidden" name="newAttr[]" value="' + column_name + '"><select class="form-control custom-select2" name="newAttrVal[]" required> ' + $('#attributeValues').html() + '</select></td>');
-                        $(this).find('th').last().after('<th class="text-center">' + column_name + '</th>');
+                        $(this).find('th').last().after('<th class="text-center align-middle">' + column_name + '</th>');
                     });
                 }
 
@@ -131,7 +175,10 @@
             location.reload(); 
         });
 
-        
+        $('#preloader-modal').on('hidden.bs.modal', function (e) {
+            location.reload(); 
+        });
+
         $('#selec-item-attr').select2({
             dropdownParent: $('#selec-item-attr').parent(),
             placeholder: 'Select Item Attribute',
@@ -165,6 +212,30 @@
                     $.each(res,function(key,value){
                         $('#attributeValues').append('<option value="'+value+'">'+value+'</option>');
                     });
+                }
+            });
+        });
+
+        $('#form-add').submit(function(e){
+            e.preventDefault();
+
+            $('#preloader-modal').modal('show');
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    console.log(response);
+                    if (response.status) {
+                        $('#preloader-modal h6').html(response.message);
+                        $('#preloader-modal button').removeClass('d-none');
+                    }else{
+                        $('#preloader-modal h6').text(response.message);
+                        $('#preloader-modal button').addClass('d-none');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    alert('An error occured.');
                 }
             });
         });
