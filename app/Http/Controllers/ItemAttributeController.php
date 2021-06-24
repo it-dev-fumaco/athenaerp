@@ -79,11 +79,53 @@ class ItemAttributeController extends Controller
             ->orderby('tva.idx', 'asc')
             ->get();
 
-        $itemDesc = DB::table('tabItem')
+        $itemDesc = DB::table('tabItem')->select('description', 'variant_of')
             ->where('name', $item_code)
+            ->first();
+
+        $parentDesc = DB::table('tabItem')->select('description')
+            ->where('name', json_decode( json_encode($itemDesc->variant_of), true))
             ->get();
+
+        // $itemAttrib->attribute;
+
+        $attribute = [];
+
+        // return count($itemAttrib);
+
+        // for($i = 0; $i < count($itemAttrib); $i++){
+        //     $attribute = [
+        //         'test' => $itemAttrib[$i]
+        //     ];
+        // }
         
-        return view('item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc'));
+        // return $attribute;
+
+        // $c_attrib = DB::table('tabItem Variant Attribute')->select('attribute')->where('parent', $item_code)->get();
+        // // $c_attrib_val = DB::table('tabItem Variant Attribute')->select('attribute_value')->where('parent', $item_code)->get();
+
+        // return $c_attrib->attribute;
+
+        $attributes = [];
+        $attribute_values = [];
+
+        foreach($itemAttrib as $attrib){
+            $c_attrib = DB::table('tabItem Variant Attribute')->select('parent', 'attribute', 'attribute_value')
+                ->where('attribute', $attrib->attribute)
+                ->where('attribute_value', $attrib->attribute_value)
+                ->get();
+
+            $count = count($c_attrib);
+            $attribute_values[] = [
+                'attribute' => $attrib->attribute,
+                'attribute_value' => $attrib->attribute_value,
+                'count' => $count
+            ];
+        }
+
+        // return $attribute_values;
+
+        return view('item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc', 'parentDesc', 'attribute_values'));
     }
 
     public function add_attrib_form(Request $request, $item_code){
