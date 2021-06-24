@@ -2,7 +2,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title></title>
+        <title>Attribute Update</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="csrf-token" content="{{ csrf_token() }}">
     
@@ -20,6 +20,7 @@
         <link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
         <!-- iCheck for checkboxes and radio inputs -->
         <link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
+
     </head>
     <body class="layout-top-nav">
         <nav class="navbar navbar-expand-md navbar-light navbar-white">
@@ -35,7 +36,7 @@
         
                 <div class="collapse navbar-collapse order-3" id="navbarCollapse">
                     <!-- Left navbar links -->
-                    <ul class="navbar-nav">
+                    {{-- <ul class="navbar-nav">
                         <li class="nav-item">
                             <a href="#" class="nav-link">Contact</a>
                         </li>
@@ -72,13 +73,14 @@
                                 <!-- End Level two -->
                             </ul>
                         </li>
-                    </ul>
+                    </ul> --}}
 
                     <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
-                        {{-- <a href="/signout">
-                            <button type="button" class="btn btn-primary">Sign Out</button>
-                        </a> --}}
-						<a href="/singout" class="btn btn-default m-1">
+                        <div class="p-2">
+                            <img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
+                            <span class="d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
+                        </div>
+						<a href="/signout" class="btn btn-default m-1">
                             <i class="fas fa-sign-out-alt"></i><span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span>
                         </a>
 
@@ -89,15 +91,16 @@
           @yield('content')
 
 
-        <footer class="fixed-bottom">
-            <!-- To the right -->
-            <div class="float-right d-none d-sm-inline">
-                <a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
+        <footer class="container-fluid fixed-bottom bg-white border-top">
+            <div class="col-md-12 p-3">
+                <!-- To the right -->
+                <div class="float-right d-none d-sm-inline">
+                    <a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
+                </div>
+                <!-- Default to the left -->
+                <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
             </div>
-            <!-- Default to the left -->
-            <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
         </footer>
-
 
         <!-- jQuery -->
         <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>

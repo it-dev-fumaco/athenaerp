@@ -8,6 +8,15 @@
         <div class="col-md-8 card bg-white p-2" style="margin: 0 auto !important;">
             <div class="box">
                 <div class="box-body">
+                    <div class="col-md-12">
+                        @if (\Session::has('success'))
+                            <div class="col-md-12 alert alert-success text-center">
+                                <span id="successMessage">{!! \Session::get('success') !!}</span>
+                            </div>
+                        @endif
+                        <h3>Update {{ $item_code }} Attributes</h3>
+                        <span>Description</span>
+                    </div>
                     <table class="table table-bordered">
                         <tbody>
                             <tr>
@@ -16,8 +25,12 @@
                                 <th class="text-center">Attribute Value Update</th>
                             </tr>
                             <form id="updateForm" action="/update_attribute" method="POST">
+                                @foreach($itemDesc as $desc)
+                                    {{-- <input type="textarea" class="form-control" rows="5" name="item_description" value="{{ $desc->description }}"/> --}}
+                                    <textarea class="form-control" rows="3" name="item_description">{{ $desc->description }}</textarea>
+                                    <br/>
+                                @endforeach
                                 <input type="text" id="itemCodeValue" name="itemCode" value="{{ $item_code }}" readonly hidden/>
-                                <span>Update {{ $item_code }} Attributes</span>
                                 @csrf
                                 @forelse($itemAttrib as $itemAttribute)
                                     <tr>
@@ -47,6 +60,7 @@
             </div>
         </div>
     </div>
+    <div class="container" style="background-color: rgba(0,0,0,0); height: 100px;"></div>
 @endsection
 
 @section('script')

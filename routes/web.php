@@ -24,11 +24,9 @@ Route::group(['middleware' => 'auth'], function(){
     // Route::get('/attribute_dropdown', 'ItemAttributeController@item_attribute_dropdown');
 
     Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
-    // Route::get('/search', 'ItemAttributeController@attribute_search');
     Route::get('/search', 'ItemAttributeController@item_attribute_search');
     Route::get('/update_form', 'ItemAttributeController@update_attrib_form');
-    // Route::post('/update_form', 'ItemAttributeController@update_attrib_form');
-    Route::post('/add_form', 'ItemAttributeController@add_attrib_form');
+    Route::get('/add_form', 'ItemAttributeController@add_attrib_form');
     Route::get('/attribute_dropdown', 'ItemAttributeController@item_attribute_dropdown');
     Route::post('/insert_attribute', 'ItemAttributeController@item_attribute_insert');
     Route::get('/signout', 'ItemAttributeController@signout');

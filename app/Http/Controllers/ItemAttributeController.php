@@ -70,31 +70,38 @@ class ItemAttributeController extends Controller
     }
 
     public function update_attrib_form(Request $request){     
-        $item_code = $request->U_item_code;
+        $item_code = $request->query('u_item_code');
 
         $itemAttrib = DB::table('tabItem Variant Attribute as tva')
             ->join('tabItem as ti', 'tva.parent', 'ti.name')
-            ->where('tva.parent', $request->U_item_code)
+            ->where('tva.parent', $item_code)
             ->where('ti.is_stock_item', 1)->where('ti.has_variants', 0)->where('ti.disabled', 0)
             ->orderby('tva.idx', 'asc')
             ->get();
+
+        $itemDesc = DB::table('tabItem')
+            ->where('name', $item_code)
+            ->get();
         
-        return view('item_attrib_update_form', compact('itemAttrib', 'item_code'));
+        return view('item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc'));
     }
 
     public function add_attrib_form(Request $request){
-        $item_code = $request->C_item_code;
+        // $item_code = $request->C_item_code;
+        $item_code = $request->query('c_item_code');
 
         $itemAttrib = DB::table('tabItem Variant Attribute as tva')
             ->join('tabItem as ti', 'tva.parent', 'ti.name')
-            ->where('tva.parent', $request->C_item_code)
+            ->where('tva.parent', $item_code)
             ->where('ti.is_stock_item', 1)->where('ti.has_variants', 0)->where('ti.disabled', 0)
             ->orderby('tva.idx', 'asc')
             ->get();
 
+        
+
         $attribSelect = DB::table('tabItem Attribute Value')->select('parent')->distinct()->orderby('parent', 'asc')->get();
 
-        $idx = DB::table('tabItem Variant Attribute')->where('parent', $request->C_item_code)->orderby('creation', 'asc')->value('idx');
+        $idx = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderby('creation', 'asc')->value('idx');
 
         return view('item_attrib_create_form', compact('attribSelect', 'idx', 'itemAttrib', 'item_code'));
     }
@@ -117,6 +124,7 @@ class ItemAttributeController extends Controller
     public function item_attribute_update(Request $request){
         $attribVal = [];
         $attribVal2 = [];
+        $attribVal3 = [];
         $attribName = $request->attribName;
         $newAttrib = $request->attrib;
 
@@ -141,6 +149,13 @@ class ItemAttributeController extends Controller
                 ->update($attribVal2);
         }
 
+        $attribVal3 = [
+            'description' => $request->item_description
+        ];
+
+        $updateDesc = DB::table('tabItem')
+            ->where('name', $request->itemCode)->update($attribVal3);
+        // Original Value = 4424, Recessed Mounted, Special T-Runner, CRS, 1220 x 737 x 0.5mm
         // return redirect('/search')->with('success','Attribute Updated!');
         return redirect()->back()->with('success','Attribute Updated!');
     }
@@ -183,11 +198,11 @@ class ItemAttributeController extends Controller
 
         if(count($checkAttrib) == 0){
             $insert = DB::table('tabItem Variant Attribute')->insert($insertAttrib);
-            return redirect('/search')->with('insertSuccess','Attribute Added!');
+            return redirect()->back()->with('insertSuccess','Attribute Added!');
         }elseif(count($checkAttrib) > 0){
             $duplicate = $request->selected_attribute_name;
             // $CCItem = $request->selected_attribute_name;
-            return redirect('/search')->with('duplicateValue', '<b>'.$request->selected_attribute_name.'</b>'.' attribute already exists!');
+            return redirect()->back()->with('duplicateValue', '<b>'.$request->selected_attribute_name.'</b>'.' attribute already exists!');
         }
         
         // $insert = DB::table('tabItem Variant Attribute')->insert($insertAttrib);

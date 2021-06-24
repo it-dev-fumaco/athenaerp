@@ -10,8 +10,20 @@
                 @csrf
                 <div class="row">
                     <div class="col-md-8 text-center" style="margin: 0 auto !important;">
+                        @if (\Session::has('duplicateValue'))
+                            &nbsp;<br/>
+                            <div class="col-md-11 alert alert-warning text-center" style="margin: 0 auto;">
+                                <span id="duplicateValue">{!! \Session::get('duplicateValue') !!}</span>
+                            </div>
+                            <br/>
+                        @elseif (\Session::has('insertSuccess'))
+                            <div class="col-md-12 alert alert-success text-center">
+                                <span id="insertSuccess">{!! \Session::get('insertSuccess') !!}</span>
+                            </div>
+                            <br/>
+                        @endif
                         <span>Add New Attributes to {{ $item_code }}</span>
-
+                        
                         <table class="table table-bordered">
                             <tbody>
                                 <tr>
@@ -47,7 +59,7 @@
                         </select>
                         <br/>&nbsp;
                         <select name="selected_attribute_value" id="attributeValue" class="form-control custom-select2" required>
-                            <option value="" selected hidden disabled>- Select Attribute Value -</option>
+                            <option class="p-1" value="" selected hidden disabled>- Select Attribute Value -</option>
                         </select>
                         <br/>
                         <hr/>
@@ -59,6 +71,21 @@
         </div>
     </div>
 @endsection
+<style>
+    .select2{
+        width: 100% !important;
+    }
+    .select2-selection__rendered {
+        line-height: 31px !important;
+    }
+    .select2-container .select2-selection--single {
+        height: 37px !important;
+        padding-top: 1.5%;
+    }
+    .select2-selection__arrow {
+        height: 36px !important;
+    }
+</style>
 
 @section('script')
     <script>

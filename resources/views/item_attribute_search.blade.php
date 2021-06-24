@@ -5,35 +5,17 @@
 
 @section('content')
     <div class="container-fluid align-center">
-        <div class="col-md-10 text-center" style="margin: 0 auto !important;">
+        <div class="col-md-10 text-center bg-white" style="margin: 0 auto !important;">
             <form action="/search" class="form-inline mb-2" method="GET">
                 <div class="form-group" style="margin: 0 auto !important;">   
                     <label>Item Code </label>
-                    <input type="text" class="form-control m-2" id="itemCode" name="item_code" value="{{ request('item_code') }}"/>
+                    <input type="text" class="form-control m-2" id="itemCode" name="item_code" value="{{ request('item_code') }}" required/>
                     <button type="submit" class="btn btn-primary">Search</button>
                 </div>
             </form>
-            <div class="col-md-10 text-center" style="margin: 0 auto !important;">
-                @if (\Session::has('duplicateValue'))
-                    &nbsp;<br/>
-                    <div class="col-md-11 alert alert-warning text-center" style="margin: 0 auto;">
-                        <span id="duplicateValue">{!! \Session::get('duplicateValue') !!}</span>
-                    </div>
-                    <br/>
-                @elseif (\Session::has('insertSuccess'))
-                    <div class="col-md-12 alert alert-success text-center">
-                        <span id="insertSuccess">{!! \Session::get('insertSuccess') !!}</span>
-                    </div>
-                    <br/>
-                @elseif (\Session::has('success'))
-                    <div class="col-md-12 alert alert-success text-center">
-                        <span id="successMessage">{!! \Session::get('success') !!}</span>
-                    </div>
-                    <br/>
-                @elseif(count($itemAttrib) == 0)
-                    <div class="col-md-12 alert alert-warning text-center" style="margin: 0 auto !important;">
-                        <span>Item is not a Stock Item!</span>
-                    </div>
+            <div class="col-md-10 text-center bg-white" style="margin: 0 auto !important;">
+                @if( request('item_code') == "")
+                    <span>Enter item code to start searching</span>
                 @elseif(count($itemAttrib) > 0)
                     <div class="row">
                         <table class="table table-bordered">
@@ -53,21 +35,21 @@
                         </table>
                     </div>
                     <div class="row">
-                        <div class="col-md-4" style="margin: 0 auto !important;">
-                            {{-- <form action="/update_form" class="form-inline mb-2" method="POST">
-                                @csrf
-                                <input type="text" name="U_item_code" value="{{ request('item_code') }}" readonly hidden/>
+                        <div class="col-md-4" style="margin: 0 auto !important; z-index: 999 !important">
+                            <a href="/update_form?u_item_code={{ request('item_code') }}">
                                 <button type="submit" class="col-md-12 btn btn-primary btn-lg">Update Attribute</button>
-                            </form> --}}
-                            <a href="/update_form?item_code={{ request('item_code') }}">Try</a>
+                            </a>
                         </div>
-                        <div class="col-md-4" style="margin: 0 auto !important;">
-                            <form action="/add_form" class="form-inline mb-2" method="POST">
-                                @csrf
-                                <input type="text" name="C_item_code" value="{{ request('item_code') }}" readonly hidden/>
+                        <div class="col-md-4" style="margin: 0 auto !important; z-index: 999 !important">
+                            <a href="/add_form?c_item_code={{ request('item_code') }}">
                                 <button type="submit" class="col-md-12 btn btn-primary btn-lg">Add Attribute</button>
-                            </form>
+                            </a>
                         </div>
+                    </div>
+                    <div class="row" style="background-color: rgba(0,0,0,0); height: 100px;"></div>
+                @elseif(count($itemAttrib) == 0)
+                    <div class="col-md-12 alert alert-warning text-center" style="margin: 0 auto !important;">
+                        <span>Item is not a Stock Item!</span>
                     </div>
                 @endif
             </div>
