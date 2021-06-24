@@ -53,6 +53,10 @@ class StockReservationController extends Controller
             }
          }
 
+         if($request->type == 'Consignment' && !$request->consignment_warehouse) {
+            return response()->json(['error' => 1, 'modal_title' => 'Select Branch', 'modal_message' => 'Please select Branch.']);
+         }
+
          $existing_stock_reservation = StockReservation::where('item_code', $request->item_code)
             ->where('warehouse', $request->warehouse)->where('sales_person', $request->sales_person)
             ->where('type', $request->type)->where('project', $request->project)->where('consignment_warehouse', $request->consignment_warehouse)

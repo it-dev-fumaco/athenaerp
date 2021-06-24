@@ -1318,14 +1318,18 @@
 							selected_project.append(selected_project_option).trigger('change');
 						}
 
-						if(data.type == 'In-house'){
-							$('#select-sales-person-e').parent().removeClass('d-none');
-							$('#select-project-e').parent().removeClass('d-none');
-							$('#date-valid-until-e').parent().removeClass('d-none');
-						}else{
-							$('#select-sales-person-e').parent().addClass('d-none');
-							$('#select-project-e').parent().addClass('d-none');
-							$('#date-valid-until-e').parent().addClass('d-none');
+						if(data.type == 'In-house') {
+							$('.for-in-house-type').removeClass('d-none');
+							$('.for-online-shop-type').addClass('d-none');
+							$('.for-consignment').addClass('d-none');
+						} else if (data.type == 'Consignment') {
+							$('.for-in-house-type').addClass('d-none');
+							$('.for-online-shop-type').addClass('d-none');
+							$('.for-consignment').removeClass('d-none');
+						} else {
+							$('.for-in-house-type').addClass('d-none');
+							$('.for-online-shop-type').removeClass('d-none');
+							$('.for-consignment').addClass('d-none');
 						}
 
 						$.ajax({
