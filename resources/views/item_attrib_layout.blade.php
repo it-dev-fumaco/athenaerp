@@ -23,7 +23,8 @@
 
     </head>
     <body class="layout-top-nav">
-        <nav class="navbar navbar-expand-md navbar-light navbar-white">
+        <div class="wrapper">
+            <nav class="main-header navbar navbar-expand-md navbar-light navbar-white">
             <div class="container">
                 <a href="/search" class="navbar-brand">
                     {{-- <img src="../../dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8"> --}}
@@ -88,17 +89,16 @@
                 </div>
             </div>
         </nav>
-          @yield('content')
+        <div class="content-wrapper">
+            @yield('content')
 
-
-        <footer class="container-fluid fixed-bottom bg-white border-top">
-            <div class="col-md-12 p-3">
-                <!-- To the right -->
-                <div class="float-right d-none d-sm-inline">
-                    <a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
-                </div>
-                <!-- Default to the left -->
-                <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+        </div>
+       
+</div>
+        <footer class="fixed-bottom">
+            <!-- To the right -->
+            <div class="float-right d-none d-sm-inline">
+                <a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
             </div>
         </footer>
 

@@ -86,9 +86,32 @@ class ItemAttributeController extends Controller
         return view('item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc'));
     }
 
-    public function add_attrib_form(Request $request){
-        // $item_code = $request->C_item_code;
-        $item_code = $request->query('c_item_code');
+    public function add_attrib_form(Request $request, $item_code){
+        $itemDetails = DB::table('tabItem')->where('name', $item_code)->first();
+        if(!$itemDetails) {
+            return 'Item not found.';
+        }
+
+        $itemParent = DB::table('tabItem')->where('name', $itemDetails->variant_of)->first();
+
+        $itemAttributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->variant_of)->orderBy('idx', 'asc')->pluck('attribute');
+
+        $itemVariants = DB::table('tabItem')->where('is_stock_item', 1)->where('has_variants', 0)->where('disabled', 0)->where('variant_of', $itemDetails->variant_of)->pluck('item_code');
+
+        $itemVariantsArr = [];
+        foreach($itemVariants as $itemVariant) {
+            $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemVariant)->orderBy('idx', 'asc')->get();
+
+            $itemVariantsArr[] = [
+                'item_code' => $itemVariant,
+                'attributes' => $attributes
+            ];
+        }
+
+        // return $itemVariantsArr;
+
+
+        return view('item_attrib_create_form', compact('itemVariantsArr', 'itemDetails', 'itemAttributes', 'itemParent'));
 
         $itemAttrib = DB::table('tabItem Variant Attribute as tva')
             ->join('tabItem as ti', 'tva.parent', 'ti.name')
@@ -168,50 +191,85 @@ class ItemAttributeController extends Controller
     }
 
     public function item_attribute_insert(Request $request){
-        $now = Carbon::now();
-        $email = Auth::user()->wh_user;
+        DB::beginTransaction();
+        try {
+            $now = Carbon::now()->toDateTimeString();
+            $data = [];
+            foreach ($request->newAttr as $x => $newAttr) {
+                $data[] = [
+                    'name' => uniqid(),
+                    'creation' => $now,
+                    'modified' => $now,
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'parent' => $request->itemCode[$x],
+                    'parentfield' => 'attributes',
+                    'parenttype' => 'Item',
+                    'idx' => $request->idx[$x] + 1,
+                    'from_range' => 0,
+                    'numeric_values' => 0,
+                    'attribute' => $newAttr,
+                    'to_range' => 0,
+                    'increment' => 0,
+                    'attribute_value' => $request->newAttrVal[$x]
+                ];
+            }
 
-        $insertAttrib = [
-            'name' => uniqid(),
-            'creation' => $now,
-            'modified' => $now,
-            'modified_by' => $email,
-            'owner' => $email,
-            'docstatus' => 0,
-            'parent' => $request->item_code,
-            'parentfield' => 'attributes -test',
-            'parenttype' => 'Item',
-            'idx' => $request->new_idx,
-            'from_range' => 0,
-            'numeric_values' => 0,
-            'attribute' => $request->selected_attribute_name,
-            'to_range' => 0,
-            'increment' => 0,
-            'attribute_value' => $request->selected_attribute_value
-        ];
+            foreach (array_unique($request->newAttr) as $x => $newAttr) {
+                 $data[] = [
+                    'name' => uniqid(),
+                    'creation' => $now,
+                    'modified' => $now,
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'parent' => $request->parentItem,
+                    'parentfield' => 'attributes',
+                    'parenttype' => 'Item',
+                    'idx' => $request->idx[$x] + 1,
+                    'from_range' => 0,
+                    'numeric_values' => 0,
+                    'attribute' => $newAttr,
+                    'to_range' => 0,
+                    'increment' => 0,
+                    'attribute_value' => null
+                ];
+            }
 
-        $checkAttrib = DB::table('tabItem Variant Attribute')
-            ->where('parent', $request->item_code)
-            // ->where('attribute_value', $request->selected_attribute_value)
-            ->where('attribute', $request->selected_attribute_name)
-            ->get();
+            DB::table('tabItem Variant Attribute')->insert($data);
 
-        if(count($checkAttrib) == 0){
-            $insert = DB::table('tabItem Variant Attribute')->insert($insertAttrib);
-            return redirect()->back()->with('insertSuccess','Attribute Added!');
-        }elseif(count($checkAttrib) > 0){
-            $duplicate = $request->selected_attribute_name;
-            // $CCItem = $request->selected_attribute_name;
-            return redirect()->back()->with('duplicateValue', '<b>'.$request->selected_attribute_name.'</b>'.' attribute already exists!');
+            DB::commit();
+
+            return redirect()->back()->with('message', 'Attribute <b>'. implode(", ", array_unique($request->newAttr)) .'</b> has been added.');
+        } catch (Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->with('message', 'Error saving. Please try again.');
         }
-        
-        // $insert = DB::table('tabItem Variant Attribute')->insert($insertAttrib);
-
-        // return redirect()->back()->with('insertSuccess','Attribute Added!');
     }
 
     public function signout(){
         Auth::logout();
         return redirect('/update');
+    }
+
+    public function getAttributes(Request $request){
+        return DB::table('tabItem Attribute')
+            ->when($request->q, function($q) use ($request){
+                return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function getAttributeValues(Request $request){
+        return DB::table('tabItem Attribute Value')
+            ->where('parent', $request->attr)
+            ->when($request->q, function($q) use ($request){
+                return $q->where('name', 'like', '%'.$request->q.'%');
+            })
+            ->select('name as id', 'name as text')
+            ->orderBy('modified', 'desc')->limit(10)->get();
     }
 }

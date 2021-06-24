@@ -5,7 +5,7 @@
 
 @section('content')
     <div class="container-fluid align-center">
-        <div class="col-md-10 text-center bg-white" style="margin: 0 auto !important;">
+        <div class="col-md-10 text-center" style="margin: 0 auto !important;">
             <form action="/search" class="form-inline mb-2" method="GET">
                 <div class="form-group" style="margin: 0 auto !important;">   
                     <label>Item Code </label>
@@ -13,7 +13,7 @@
                     <button type="submit" class="btn btn-primary">Search</button>
                 </div>
             </form>
-            <div class="col-md-10 text-center bg-white" style="margin: 0 auto !important;">
+            <div class="col-md-10 text-center" style="margin: 0 auto !important;">
                 @if( request('item_code') == "")
                     <span>Enter item code to start searching</span>
                 @elseif(count($itemAttrib) > 0)
@@ -41,7 +41,7 @@
                             </a>
                         </div>
                         <div class="col-md-4" style="margin: 0 auto !important; z-index: 999 !important">
-                            <a href="/add_form?c_item_code={{ request('item_code') }}">
+                            <a href="/add_form/{{ request('item_code') }}">
                                 <button type="submit" class="col-md-12 btn btn-primary btn-lg">Add Attribute</button>
                             </a>
                         </div>
