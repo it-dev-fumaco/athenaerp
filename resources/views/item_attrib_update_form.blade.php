@@ -5,6 +5,16 @@
 
 @section('content')
     <div class="container-fluid align-center">
+        <div class="col-md-8 p-2" style="margin: 0 auto !important;">
+            <div class="alert alert-warning" role="alert">
+                Editing of Attribute Values
+                Warning:
+                <ul>
+                    <li>Items attributes will be updated, all link attributes and transactions will also be updated</li>
+                    <li>All Items using those attribute value will also update</li>
+                </ul>                
+            </div>
+        </div>
         <div class="col-md-8 card bg-white p-2" style="margin: 0 auto !important;">
             <div class="box">
                 <div class="box-body">
