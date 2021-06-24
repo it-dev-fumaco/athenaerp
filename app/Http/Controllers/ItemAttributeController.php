@@ -229,8 +229,17 @@ class ItemAttributeController extends Controller
                 }
     
                 DB::table('tabItem Variant Attribute')->insert($data);
+
+                foreach ($request->itemCode as $itemCode) {
+                    DB::table('tabItem')->where('name', $itemCode)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'description' => $this->generateItemDescription($itemCode)
+                    ]);
+                }
     
                 DB::commit();
+                
                 return response()->json(['status' => 1, 'message' => 'Attribute <b>'. implode(", ", array_unique($request->newAttr)) .'</b> has been added to <b>' . count($data). '</b> item(s).']);
             }
 
@@ -254,5 +263,18 @@ class ItemAttributeController extends Controller
             })
             ->select('name as id', 'name as text')
             ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function generateItemDescription($item_code) {
+        // generate item description based on variant attributes
+        $itemDetails = DB::table('tabItem')->where('name', $item_code)->where('is_stock_item', 1)->where('has_variants', 0)->where('disabled', 0)->first();
+        if($itemDetails) {
+            $parentItem = DB::table('tabItem')->where('name', $itemDetails->variant_of)->first();
+            if($parentItem) {
+                $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->name)->orderBy('idx', 'asc')->pluck('attribute_value');
+
+                return strip_tags($parentItem->description) . ', ' . implode(", ", $attributes->toArray());
+            }
+        }
     }
 }

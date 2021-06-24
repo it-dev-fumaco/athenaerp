@@ -225,7 +225,6 @@
                 url: $(this).attr('action'),
                 data: $(this).serialize(),
                 success: function(response){
-                    console.log(response);
                     if (response.status) {
                         $('#preloader-modal h6').html(response.message);
                         $('#preloader-modal button').removeClass('d-none');
