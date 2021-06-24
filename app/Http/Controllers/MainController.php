@@ -455,13 +455,19 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
+        $q1 = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
+            ->whereIn('s_warehouse', $allowed_warehouses)->whereNotin('transfer_as', ['Consignment', 'Sample Item', 'For Return'])
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
+
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
-            ->whereIn('s_warehouse', $allowed_warehouses)->whereNotin('transfer_as', ['Consignment', 'Sample Item'])
+            ->whereIn('t_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['For Return', 'Internal Transfer'])
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
-            ->get();
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")->union($q1)->get();
 
         $list = [];
         foreach ($q as $d) {
@@ -489,6 +495,7 @@ class MainController extends Controller
             $owner = ($owner) ? $owner->full_name : null;
 
             $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+            $parent_warehouse_target = $this->get_warehouse_parent($d->t_warehouse);
 
             $list[] = [
                 'customer' => $customer,
@@ -509,6 +516,7 @@ class MainController extends Controller
                 'balance' => $balance,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
+                'parent_warehouse_target' => $parent_warehouse_target,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
