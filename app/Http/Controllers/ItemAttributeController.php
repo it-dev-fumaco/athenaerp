@@ -96,21 +96,25 @@ class ItemAttributeController extends Controller
 
         $itemAttributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->variant_of)->orderBy('idx', 'asc')->pluck('attribute');
 
-        $itemVariants = DB::table('tabItem')->where('is_stock_item', 1)->where('has_variants', 0)->where('disabled', 0)->where('variant_of', $itemDetails->variant_of)->orderBy('creation', 'asc')->pluck('item_code');
+        $itemVariants = DB::table('tabItem')->where('is_stock_item', 1)->where('has_variants', 0)
+            ->where('variant_of', $itemDetails->variant_of)
+            ->select('item_code', 'disabled')->orderBy('creation', 'asc')->get();
 
         $itemVariantsArr = [];
         $itemsIncompleteAttr = [];
         foreach($itemVariants as $itemVariant) {
-            $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemVariant)->orderBy('idx', 'asc')->get();
+            $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemVariant->item_code)->orderBy('idx', 'asc')->get();
 
             if(count($itemAttributes) == count($attributes)){
                 $itemVariantsArr[] = [
-                    'item_code' => $itemVariant,
+                    'item_code' => $itemVariant->item_code,
+                    'disabled' => $itemVariant->disabled,
                     'attributes' => $attributes
                 ];
             } else {
                 $itemsIncompleteAttr[] = [
-                    'item_code' => $itemVariant,
+                    'item_code' => $itemVariant->item_code,
+                    'disabled' => $itemVariant->disabled,
                     'attributes' => $attributes
                 ];
             }
@@ -185,8 +189,12 @@ class ItemAttributeController extends Controller
         try {
             $now = Carbon::now()->toDateTimeString();
             $data = [];
-            if($request->newAttr) {
-                foreach ($request->newAttr as $x => $newAttr) {
+
+            $itemCodes = $request->data['itemCode'];
+            $newAttrs = (isset($request->data['newAttr'])) ? $request->data['newAttr'] : [];
+            $message = 'Items have been updated.';
+            if(count($newAttrs) > 0) {
+                foreach ($newAttrs as $x => $newAttr) {
                     $data[] = [
                         'name' => uniqid(),
                         'creation' => $now,
@@ -194,20 +202,20 @@ class ItemAttributeController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
-                        'parent' => $request->itemCode[$x],
+                        'parent' => $itemCodes[$x],
                         'parentfield' => 'attributes',
                         'parenttype' => 'Item',
-                        'idx' => $request->idx[$x] + 1,
+                        'idx' => $request->data['idx'][$x] + 1,
                         'from_range' => 0,
                         'numeric_values' => 0,
                         'attribute' => $newAttr,
                         'to_range' => 0,
                         'increment' => 0,
-                        'attribute_value' => $request->newAttrVal[$x]
+                        'attribute_value' => $request->data['newAttrVal'][$x]
                     ];
                 }
     
-                foreach (array_unique($request->newAttr) as $x => $newAttr) {
+                foreach (array_unique($newAttrs) as $x => $newAttr) {
                      $data[] = [
                         'name' => uniqid(),
                         'creation' => $now,
@@ -215,10 +223,10 @@ class ItemAttributeController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
-                        'parent' => $request->parentItem,
+                        'parent' => $request->data['parentItem'],
                         'parentfield' => 'attributes',
                         'parenttype' => 'Item',
-                        'idx' => $request->idx[$x] + 1,
+                        'idx' => $request->data['idx'][$x] + 1,
                         'from_range' => 0,
                         'numeric_values' => 0,
                         'attribute' => $newAttr,
@@ -227,23 +235,34 @@ class ItemAttributeController extends Controller
                         'attribute_value' => null
                     ];
                 }
-    
+
                 DB::table('tabItem Variant Attribute')->insert($data);
 
-                foreach ($request->itemCode as $itemCode) {
+                foreach ($itemCodes as $itemCode) {
                     DB::table('tabItem')->where('name', $itemCode)->update([
                         'modified' => Carbon::now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'description' => $this->generateItemDescription($itemCode)
+                        'item_name' => $this->generateItemDescription($itemCode)['item_name'],
+                        'description' => $this->generateItemDescription($itemCode)['description']
                     ]);
                 }
     
-                DB::commit();
-                
-                return response()->json(['status' => 1, 'message' => 'Attribute <b>'. implode(", ", array_unique($request->newAttr)) .'</b> has been added to <b>' . count($data). '</b> item(s).']);
+                $message = 'Attribute <b>'. implode(", ", array_unique($newAttrs)) .'</b> has been added to <b>' . count($data). '</b> item(s).';
+            } else {
+                $message = 'Item(s) has been updated.';
             }
 
-            return response()->json(['status' => 1, 'message' => 'No changes made.']);
+            foreach ($itemCodes as $n => $itemCode) {
+                DB::table('tabItem')->where('name', $itemCode)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'disabled' => $request->data['is_disabled'][$n]
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json(['status' => 1, 'message' => $message]);
         } catch (Exception $e) {
             DB::rollback();
 
@@ -271,9 +290,20 @@ class ItemAttributeController extends Controller
         if($itemDetails) {
             $parentItem = DB::table('tabItem')->where('name', $itemDetails->variant_of)->first();
             if($parentItem) {
-                $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->name)->orderBy('idx', 'asc')->pluck('attribute_value');
+                $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->name)->select('attribute', 'attribute_value')->orderBy('idx', 'asc')->get()->toArray();
 
-                return strip_tags($parentItem->description) . ', ' . implode(", ", $attributes->toArray());
+                $attributeValues = array_column($attributes, 'attribute_value');
+
+                $itemName = strip_tags($parentItem->item_name);
+                foreach($attributes as $attr) {
+                    $attributeAbbr = DB::table('tabItem Attribute Value')->where('parent', $attr->attribute)->where('attribute_value', $attr->attribute_value)->first();
+                    $itemName .= '-' . (($attributeAbbr) ? $attributeAbbr->abbr : null);
+                }
+
+                return [
+                    'item_name' => strtoupper($itemName),
+                    'description' => strip_tags($parentItem->description) . ', ' . implode(", ", $attributeValues)
+                ];
             }
         }
     }

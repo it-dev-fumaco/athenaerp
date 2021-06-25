@@ -9,7 +9,7 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-body text-center">
-                        <h6 class="text-center m-0"><i class="fas fa-spinner"></i> Adding attribute to items. Please wait.</h6>
+                        <h6 class="text-center m-0"><i class="fas fa-spinner"></i> Updating items. Please wait.</h6>
                         <button type="button" class="btn btn-default mt-3 d-none btn-sm" data-dismiss="modal">Close</button>
                     </div>
                 </div>
@@ -50,11 +50,11 @@
                     </div>
                     <div class="card-body p-2">
                         <form action="/insert_attribute" method="POST" id="form-add">
-                            @csrf
                             <input type="hidden" name="parentItem" value="{{ $itemParent->name }}">
                             <table class="table table-bordered table-hover" id="variants-table">
                                 <thead>
                                     <tr>
+                                        <th class="text-center align-middle">Is Disabled</th>
                                         <th class="text-center align-middle">Item Code</th>
                                         @foreach ($itemAttributes as $itemAttribute)
                                         <th class="text-center align-middle">{{ $itemAttribute }}</th>
@@ -63,13 +63,20 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($itemVariantsArr as $row)
-                                    <input type="hidden" name="itemCode[]" value="{{ $row['item_code'] }}">
+                                    <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
                                     <tr>
+                                        <td>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="hidden" value="{{ $row['disabled'] }}" name="is_disabled">
+                                                <input class="custom-control-input cb-1" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                <label for="is-disabled-cb-{{ $row['item_code'] }}" class="custom-control-label">Disabled</label>
+                                            </div>
+                                        </td>
                                         <td class="text-center align-middle">{{ $row['item_code'] }}</td>
                                         @foreach ($row['attributes'] as $attr)
                                         <td class="text-center align-middle">{{ $attr->attribute_value }}</td>
                                         @endforeach
-                                        <input type="hidden" name="idx[]" value="{{ $attr->idx }}">
+                                        <input type="hidden" name="idx" value="{{ $attr->idx }}">
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -96,26 +103,45 @@
                         </div>
                     </div>
                     <div class="card-body p-2">
-                        <table class="table table-bordered table-hover overflow-auto">
-                            <thead>
-                                <tr>
-                                    <th class="text-center align-middle">Item Code</th>
-                                    @foreach ($itemAttributes as $itemAttribute)
-                                    <th class="text-center align-middle">{{ $itemAttribute }}</th>
+                        <form action="/insert_attribute" method="POST" id="form-add-1">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center align-middle">
+                                            <div class="custom-control custom-checkbox">
+                                                <input class="custom-control-input" id="check-all" type="checkbox">
+                                                <label for="check-all" class="custom-control-label">Is Disabled</label>
+                                            </div>
+                                        </th>
+                                        <th class="text-center align-middle">Item Code</th>
+                                        @foreach ($itemAttributes as $itemAttribute)
+                                        <th class="text-center align-middle">{{ $itemAttribute }}</th>
+                                        @endforeach
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($itemsIncompleteAttr as $row)
+                                    <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
+                                    <tr>
+                                        <td>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="hidden" class="tb-2" value="{{ $row['disabled'] }}" name="is_disabled">
+                                                <input class="custom-control-input cb-1 cb-2" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}-1" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                <label for="is-disabled-cb-{{ $row['item_code'] }}-1" class="custom-control-label">Disabled</label>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">{{ $row['item_code'] }}</td>
+                                        @foreach ($row['attributes'] as $attr)
+                                        <td class="text-center align-middle">{{ $attr->attribute_value }}</td>
+                                        @endforeach
+                                    </tr>
                                     @endforeach
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($itemsIncompleteAttr as $row)
-                                <tr>
-                                    <td class="text-center align-middle">{{ $row['item_code'] }}</td>
-                                    @foreach ($row['attributes'] as $attr)
-                                    <td class="text-center align-middle">{{ $attr->attribute_value }}</td>
-                                    @endforeach
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Changes</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -158,7 +184,7 @@
 
                 if(!existing_columns.includes(column_name)){
                     $('#variants-table').find('tr').each(function(){
-                        $(this).find('td').last().after('<td><input type="hidden" name="newAttr[]" value="' + column_name + '"><select class="form-control custom-select2" name="newAttrVal[]" required> ' + $('#attributeValues').html() + '</select></td>');
+                        $(this).find('td').last().after('<td><input type="hidden" name="newAttr" value="' + column_name + '"><select class="form-control custom-select2" name="newAttrVal" required> ' + $('#attributeValues').html() + '</select></td>');
                         $(this).find('th').last().after('<th class="text-center align-middle">' + column_name + '</th>');
                     });
                 }
@@ -216,28 +242,109 @@
             });
         });
 
+        $('.cb-1').click(function(e){
+            if($(this).prop("checked") == true){
+                $(this).prev().val(1);
+            } else {
+                $(this).prev().val(0);
+            }
+
+            setPropCheckAll();
+        });
+
+        function setPropCheckAll(){
+            var numberOfChecked = $('input:checkbox.cb-2:checked').length;
+            var totalCheckboxes = $('input:checkbox.cb-2').length;
+
+            if(numberOfChecked != totalCheckboxes) {
+                $("#check-all").prop('checked', false);
+            } else {
+                $("#check-all").prop('checked', true);
+            }
+        }
+
+        function getSerializedArrayFormData(arr){
+            var data = {};
+            $.each(arr, function () {
+                if (data[this.name]) {
+                    if (!data[this.name].push) {
+                        data[this.name] = [data[this.name]];
+                    }
+                    data[this.name].push(this.value || '');
+                } else {
+                    data[this.name] = this.value || '';
+                }
+            });
+
+            return data;
+        }
+
+        $('#check-all').click(function(e){
+            if($(this).prop("checked") == true){
+                $("input:checkbox.cb-2").prop('checked', true);
+                $("input:text.tb-2").val(1);
+            } else {
+                $("input:checkbox.cb-2").prop('checked', false);
+                $("input:text.tb-2").val(0);
+            }
+
+            setPropCheckAll();
+        });
+
         $('#form-add').submit(function(e){
             e.preventDefault();
 
-            $('#preloader-modal').modal('show');
-            $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: $(this).serialize(),
-                success: function(response){
-                    if (response.status) {
-                        $('#preloader-modal h6').html(response.message);
-                        $('#preloader-modal button').removeClass('d-none');
-                    }else{
-                        $('#preloader-modal h6').text(response.message);
-                        $('#preloader-modal button').addClass('d-none');
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    alert('An error occured.');
-                }
-            });
+            submitAjax('#form-add');
         });
+
+        function submitAjax(form) {
+            $('#preloader-modal').modal('show');
+            
+            var action = $(form).attr('action');
+            var formData = $(form).serializeArray();
+            var splittedArr = splitArrayIntoChunksOfLen(formData, 400);
+            var n = 1;
+            $.each(splittedArr, function(i, d){
+                var data = getSerializedArrayFormData(d);
+
+                $.ajax({
+                    type: 'POST',
+                    url: action,
+                    data: {data, "_token": "{{ csrf_token() }}"},
+                    success: function(response){
+                        if(n == splittedArr.length) {
+                            if (response.status) {
+                                $('#preloader-modal h6').html(response.message);
+                                $('#preloader-modal button').removeClass('d-none');
+                            }else{
+                                $('#preloader-modal h6').text(response.message);
+                                $('#preloader-modal button').addClass('d-none');
+                            }
+                        }
+                        n++;
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        $('#preloader-modal').modal('hide');
+                        alert('An error occured.');
+                    }
+                });
+            });
+        }
+
+        $('#form-add-1').submit(function(e){
+            e.preventDefault();
+
+            submitAjax('#form-add-1');
+        });
+
+        function splitArrayIntoChunksOfLen(arr, len) {
+            var chunks = [], i = 0, n = arr.length;
+            while (i < n) {
+                chunks.push(arr.slice(i, i += len));
+            }
+
+            return chunks;
+        }
     });
     </script>
 @endsection
