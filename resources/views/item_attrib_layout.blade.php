@@ -28,7 +28,7 @@
             <div class="container">
                 <a href="/search" class="navbar-brand">
                     {{-- <img src="../../dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8"> --}}
-                    <span class="brand-text font-weight-light">Attribute Update</span>
+                    <span class="brand-text font-weight-light"><b>ERP</b> Item Attribute Update</span>
                 </a>
             
                 <button class="navbar-toggler order-1" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
@@ -95,12 +95,14 @@
         </div>
        
 </div>
-        <footer class="fixed-bottom">
-            <!-- To the right -->
-            <div class="float-right d-none d-sm-inline">
-                <a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
-            </div>
-        </footer>
+<footer class="main-footer">
+    <!-- To the right -->
+    <div class="float-right d-none d-sm-inline">
+      FUMACO Inc.
+    </div>
+    <!-- Default to the left -->
+    <strong>Copyright &copy; 2021 <a href="https://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+  </footer>
 
         <!-- jQuery -->
         <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>

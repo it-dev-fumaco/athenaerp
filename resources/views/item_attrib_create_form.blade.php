@@ -50,38 +50,40 @@
                     </div>
                     <div class="card-body p-2">
                         <form action="/insert_attribute" method="POST" id="form-add">
-                            <input type="hidden" name="parentItem" value="{{ $itemParent->name }}">
-                            <table class="table table-bordered table-hover" id="variants-table">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center align-middle">Is Disabled</th>
-                                        <th class="text-center align-middle">Item Code</th>
-                                        @foreach ($itemAttributes as $itemAttribute)
-                                        <th class="text-center align-middle">{{ $itemAttribute }}</th>
+                            <div style="height: 500px; max-width: 100%; overflow: auto;">
+                                <input type="hidden" name="parentItem" value="{{ $itemParent->name }}">
+                                <table class="table table-bordered table-hover" id="variants-table" style="font-size: 0.9rem !important;">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center align-middle text-nowrap p-2">Is Disabled</th>
+                                            <th class="text-center align-middle text-nowrap p-2">Item Code</th>
+                                            @foreach ($itemAttributes as $itemAttribute)
+                                            <th class="text-center align-middle text-nowrap p-2">{{ $itemAttribute }}</th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($itemVariantsArr as $row)
+                                        <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
+                                        <tr>
+                                            <td class="text-center align-middle p-2">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="hidden" value="{{ $row['disabled'] }}" name="is_disabled">
+                                                    <input class="custom-control-input cb-1" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                    <label for="is-disabled-cb-{{ $row['item_code'] }}" class="custom-control-label">Disabled</label>
+                                                </div>
+                                            </td>
+                                            <td class="text-center align-middle font-weight-bold p-2">{{ $row['item_code'] }}</td>
+                                            @foreach ($row['attributes'] as $attr)
+                                            <td class="text-center align-middle p-2">{{ $attr->attribute_value }}</td>
+                                            @endforeach
+                                            <input type="hidden" name="idx" value="{{ $attr->idx }}">
+                                        </tr>
                                         @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($itemVariantsArr as $row)
-                                    <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
-                                    <tr>
-                                        <td>
-                                            <div class="custom-control custom-checkbox">
-                                                <input type="hidden" value="{{ $row['disabled'] }}" name="is_disabled">
-                                                <input class="custom-control-input cb-1" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}" {{ ($row['disabled']) ? 'checked' : '' }}>
-                                                <label for="is-disabled-cb-{{ $row['item_code'] }}" class="custom-control-label">Disabled</label>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">{{ $row['item_code'] }}</td>
-                                        @foreach ($row['attributes'] as $attr)
-                                        <td class="text-center align-middle">{{ $attr->attribute_value }}</td>
-                                        @endforeach
-                                        <input type="hidden" name="idx" value="{{ $attr->idx }}">
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                            <div class="col-12 text-center">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-12 text-center mt-3">
                                 <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Changes</button>
                             </div>
                         </form>
@@ -104,41 +106,43 @@
                     </div>
                     <div class="card-body p-2">
                         <form action="/insert_attribute" method="POST" id="form-add-1">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center align-middle">
-                                            <div class="custom-control custom-checkbox">
-                                                <input class="custom-control-input" id="check-all" type="checkbox">
-                                                <label for="check-all" class="custom-control-label">Is Disabled</label>
-                                            </div>
-                                        </th>
-                                        <th class="text-center align-middle">Item Code</th>
-                                        @foreach ($itemAttributes as $itemAttribute)
-                                        <th class="text-center align-middle">{{ $itemAttribute }}</th>
+                            <div style="height: 500px; max-width: 100%; overflow: auto;">
+                                <table class="table table-bordered table-hover" style="font-size: 0.9rem !important;">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center align-middle text-nowrap p-2">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input class="custom-control-input" id="check-all" type="checkbox">
+                                                    <label for="check-all" class="custom-control-label">Is Disabled</label>
+                                                </div>
+                                            </th>
+                                            <th class="text-center align-middle text-nowrap p-2">Item Code</th>
+                                            @foreach ($itemAttributes as $itemAttribute)
+                                            <th class="text-center align-middle text-nowrap p-2">{{ $itemAttribute }}</th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($itemsIncompleteAttr as $row)
+                                        <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
+                                        <tr>
+                                            <td class="text-center align-middle p-2">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="hidden" class="tb-2" value="{{ $row['disabled'] }}" name="is_disabled">
+                                                    <input class="custom-control-input cb-1 cb-2" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}-1" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                    <label for="is-disabled-cb-{{ $row['item_code'] }}-1" class="custom-control-label">Disabled</label>
+                                                </div>
+                                            </td>
+                                            <td class="text-center align-middle font-weight-bold p-2">{{ $row['item_code'] }}</td>
+                                            @foreach ($row['attributes'] as $attr)
+                                            <td class="text-center align-middle p-2">{{ $attr->attribute_value }}</td>
+                                            @endforeach
+                                        </tr>
                                         @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($itemsIncompleteAttr as $row)
-                                    <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
-                                    <tr>
-                                        <td>
-                                            <div class="custom-control custom-checkbox">
-                                                <input type="hidden" class="tb-2" value="{{ $row['disabled'] }}" name="is_disabled">
-                                                <input class="custom-control-input cb-1 cb-2" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}-1" {{ ($row['disabled']) ? 'checked' : '' }}>
-                                                <label for="is-disabled-cb-{{ $row['item_code'] }}-1" class="custom-control-label">Disabled</label>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">{{ $row['item_code'] }}</td>
-                                        @foreach ($row['attributes'] as $attr)
-                                        <td class="text-center align-middle">{{ $attr->attribute_value }}</td>
-                                        @endforeach
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                            <div class="col-12 text-center">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-12 text-center mt-3">
                                 <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Changes</button>
                             </div>
                         </form>
@@ -304,6 +308,7 @@
             var formData = $(form).serializeArray();
             var splittedArr = splitArrayIntoChunksOfLen(formData, 400);
             var n = 1;
+            var affectedRows = 0;
             $.each(splittedArr, function(i, d){
                 var data = getSerializedArrayFormData(d);
 
@@ -312,9 +317,11 @@
                     url: action,
                     data: {data, "_token": "{{ csrf_token() }}"},
                     success: function(response){
+                        affectedRows = affectedRows + response.count;
                         if(n == splittedArr.length) {
                             if (response.status) {
-                                $('#preloader-modal h6').html(response.message);
+                                var message = (response.displayCount) ? '<b>' + affectedRows + '</b> ' + response.message : response.message;
+                                $('#preloader-modal h6').html(message);
                                 $('#preloader-modal button').removeClass('d-none');
                             }else{
                                 $('#preloader-modal h6').text(response.message);

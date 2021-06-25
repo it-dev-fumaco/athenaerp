@@ -4,14 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-// use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
-// use App\StockReservation;
-// use Illuminate\Validation\Rule;
 use Validator;
 use Auth;
 use DB;
 use App\LdapClasses\adLDAP;
+use Illuminate\Support\Str;
 
 class ItemAttributeController extends Controller
 {
@@ -233,6 +231,8 @@ class ItemAttributeController extends Controller
             $itemCodes = $request->data['itemCode'];
             $newAttrs = (isset($request->data['newAttr'])) ? $request->data['newAttr'] : [];
             $message = 'Items have been updated.';
+            $displayCount = 1;
+            $affectedRows = 0;
             if(count($newAttrs) > 0) {
                 foreach ($newAttrs as $x => $newAttr) {
                     $data[] = [
@@ -279,8 +279,10 @@ class ItemAttributeController extends Controller
                 DB::table('tabItem Variant Attribute')->insert($data);
     
                 $message = 'Attribute <b>'. implode(", ", array_unique($newAttrs)) .'</b> has been added to <b>' . count($data). '</b> item(s).';
+                $displayCount = 0;
             } else {
                 $message = 'Item(s) has been updated.';
+                $affectedRows = count($itemCodes);
             }
 
             foreach ($itemCodes as $n => $itemCode) {
@@ -294,7 +296,7 @@ class ItemAttributeController extends Controller
 
             DB::commit();
 
-            return response()->json(['status' => 1, 'message' => $message]);
+            return response()->json(['status' => 1, 'message' => $message, 'count' => $affectedRows, 'displayCount' => $displayCount]);
         } catch (Exception $e) {
             DB::rollback();
 
@@ -333,7 +335,7 @@ class ItemAttributeController extends Controller
                 }
 
                 return [
-                    'item_name' => strtoupper($itemName),
+                    'item_name' => Str::limit(strtoupper($itemName), 140, ''),
                     'description' => strip_tags($parentItem->description) . ', ' . implode(", ", $attributeValues)
                 ];
             }
