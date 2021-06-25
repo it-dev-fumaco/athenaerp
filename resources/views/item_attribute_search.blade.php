@@ -13,27 +13,36 @@
                     <button type="submit" class="btn btn-primary">Search</button>
                 </div>
             </form>
-            <div class="col-md-10 text-center" style="margin: 0 auto !important;">
+            <div class="col-md-8 text-center" style="margin: 0 auto !important;">
                 @if( request('item_code') == "")
                     <span>Enter item code to start searching</span>
                 @elseif(count($itemAttrib) > 0)
-                    <div class="row">
-                        <table class="table table-bordered">
-                            <tbody>
-                                <tr>
-                                    <th>Attribute</th>
-                                    <th>Attribute Value</th>
-                                </tr>
-                                @forelse($itemAttrib as $itemAttribute)
+                        <div class="card p-2">
+                            @foreach($parentDesc as $desc)
+                                <h4><b>{{ request('item_code') }}</b> Item Attributes</h4>
+                                {{-- <span>Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span> --}}
+                                <br/>
+                                <div class="text-justify">
+                                    <small>{{ $itemDesc->description }}</small>
+                                </div>
+                                <span class="text-left mt-2 mb-1">Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span>
+                            @endforeach
+                            <table class="table table-bordered m-0">
+                                <tbody>
                                     <tr>
-                                        <td>{{ $itemAttribute->attribute }}</td>
-                                        <td>{{ $itemAttribute->attribute_value }}</td>
+                                        <th class="text-center">Attribute</th>
+                                        <th class="text-center">Attribute Value</th>
                                     </tr>
-                                @empty
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                                    @forelse($itemAttrib as $itemAttribute)
+                                        <tr>
+                                            <td>{{ $itemAttribute->attribute }}</td>
+                                            <td>{{ $itemAttribute->attribute_value }}</td>
+                                        </tr>
+                                    @empty
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     <div class="row">
                         <div class="col-md-4" style="margin: 0 auto !important; z-index: 999 !important">
                             <a href="/update_form?u_item_code={{ request('item_code') }}">

@@ -63,8 +63,16 @@ class ItemAttributeController extends Controller
             ->where('ti.is_stock_item', 1)->where('ti.has_variants', 0)->where('ti.disabled', 0)
             ->orderby('tva.idx', 'asc')
             ->get();
+
+        $itemDesc = DB::table('tabItem')->select('description', 'variant_of')
+            ->where('name', $request->item_code)
+            ->first();
+
+        $parentDesc = DB::table('tabItem')->select('description')
+            ->where('name', json_decode( json_encode($itemDesc->variant_of), true))
+            ->get();
             
-        return view('item_attribute_search', compact('itemAttrib'));
+        return view('item_attribute_search', compact('itemAttrib', 'itemDesc', 'parentDesc'));
     }
 
     public function update_attrib_form(Request $request){     

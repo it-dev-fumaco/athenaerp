@@ -5,7 +5,7 @@
 
 @section('content')
     <div class="container-fluid align-center">
-        <div class="col-md-8 p-2" style="margin: 0 auto !important;">
+        <div class="col-md-8 offset-md-2 pt-2 mb-0">
             <div class="alert alert-warning" role="alert">
                 Editing of Attribute Values
                 Warning:
@@ -25,7 +25,7 @@
                             </div>
                         @endif
                     </div>
-                    <table class="table table-bordered">
+                    <table class="table table-bordered m-0">
                         <tbody>
                             <tr>
                                 <th class="text-center">Attribute</th>
@@ -34,12 +34,8 @@
                                 <th class="text-center">Attribute Abbreviation</th>
                                 <th class="text-center">-</th>
                             </tr>
-                            {{-- @foreach($attribute_values as $value)
-                                <input type="text" id="variant_count" value="{{ $value['count'] }}"/>
-                                {{ $value['count'] }}
-                            @endforeach --}}
                             <form id="updateForm" action="/update_attribute" method="POST">
-                                @foreach($parentDesc as $desc)
+                                {{-- @foreach($parentDesc as $desc)
                                     <h3>Update <b>{{ $item_code }}</b> Attributes</h3>
                                     <input type="text" id="itemCodeValue" name="parDesc" value="{{ $desc->description }}" readonly hidden/>
                                     <span>Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span>
@@ -47,7 +43,16 @@
                                     <span>Item Description</span>
                                     <textarea class="form-control" rows="3" name="item_description" readonly>{{ $itemDesc->description }}</textarea>
                                     <br/>
+                                @endforeach --}}
+                                @foreach($parentDesc as $desc)
+                                    <h4 class="text-center">Update <b>{{ $item_code }}</b> Item Attributes</h4>
+                                    <input type="text" id="itemCodeValue" name="parDesc" value="{{ $desc->description }}" readonly hidden/>
+                                    <div class="text-justify">
+                                        <small>{{ $itemDesc->description }}</small>
+                                    </div>
+                                    <span class="d-block text-left mt-2 mb-1">Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span>
                                 @endforeach
+                                
                                 <input type="text" id="itemCodeValue" name="itemCode" value="{{ $item_code }}" readonly hidden/>
                                 @csrf
                                 {{-- @forelse($itemAttrib as $itemAttribute) --}}
