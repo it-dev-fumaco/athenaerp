@@ -213,15 +213,14 @@ class ItemAttributeController extends Controller
         // return $attribVal2;
 
         $strAbbr = implode("-",$request->abbr);
+        $strDesc = implode(", ",$request->attrib);
 
-        $Abbr = json_decode(json_encode($strAbbr), true);
-
-        $itemName = $request->parDesc."-".$Abbr;
+        $itemName = $request->parDesc."-".$strAbbr;
+        $itemDesc = $request->parDesc.", ".$strDesc;
 
         $attribVal3 = [
-            // 'description' => $request->item_description
             'item_name' => $itemName,
-            'description' => $this->generateItemDescription($request->itemCode)
+            'description' => $itemDesc
         ];
 
         $updateDesc = DB::table('tabItem')
