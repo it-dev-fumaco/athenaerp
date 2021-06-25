@@ -31,6 +31,7 @@
                                 <th class="text-center">Attribute</th>
                                 <th class="text-center">Attribute Value</th>
                                 <th class="text-center">Attribute Value Update</th>
+                                <th class="text-center">Attribute Abbreviation</th>
                                 <th class="text-center">-</th>
                             </tr>
                             {{-- @foreach($attribute_values as $value)
@@ -40,10 +41,11 @@
                             <form id="updateForm" action="/update_attribute" method="POST">
                                 @foreach($parentDesc as $desc)
                                     <h3>Update <b>{{ $item_code }}</b> Attributes</h3>
+                                    <input type="text" id="itemCodeValue" name="parDesc" value="{{ $desc->description }}" readonly hidden/>
                                     <span>Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span>
                                     <br/>
                                     <span>Item Description</span>
-                                    <textarea class="form-control" rows="3" name="item_description">{{ $itemDesc->description }}</textarea>
+                                    <textarea class="form-control" rows="3" name="item_description" readonly>{{ $itemDesc->description }}</textarea>
                                     <br/>
                                 @endforeach
                                 <input type="text" id="itemCodeValue" name="itemCode" value="{{ $item_code }}" readonly hidden/>
@@ -61,6 +63,9 @@
                                         </td>
                                         <td class="p-1">
                                             <input type="text" id="attribVal" class="form-control" name="attrib[]" value="{{ $value['attribute_value'] }}" required/>
+                                        </td>
+                                        <td class="p-1">
+                                            <input type="text" id="attribAbbr" class="form-control" name="abbr[]" value="{{ $value['abbr'] }}" maxlength="5" required/>
                                         </td>
                                         <td class="text-center">
                                             <span class="badge badge-info">{{ $value['count'] }}</span>

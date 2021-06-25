@@ -87,25 +87,6 @@ class ItemAttributeController extends Controller
             ->where('name', json_decode( json_encode($itemDesc->variant_of), true))
             ->get();
 
-        // $itemAttrib->attribute;
-
-        $attribute = [];
-
-        // return count($itemAttrib);
-
-        // for($i = 0; $i < count($itemAttrib); $i++){
-        //     $attribute = [
-        //         'test' => $itemAttrib[$i]
-        //     ];
-        // }
-        
-        // return $attribute;
-
-        // $c_attrib = DB::table('tabItem Variant Attribute')->select('attribute')->where('parent', $item_code)->get();
-        // // $c_attrib_val = DB::table('tabItem Variant Attribute')->select('attribute_value')->where('parent', $item_code)->get();
-
-        // return $c_attrib->attribute;
-
         $attributes = [];
         $attribute_values = [];
 
@@ -115,10 +96,17 @@ class ItemAttributeController extends Controller
                 ->where('attribute_value', $attrib->attribute_value)
                 ->get();
 
+            $getAbbr = DB::table('tabItem Attribute Value')
+                ->where('parent', $attrib->attribute)
+                ->where('attribute_value', $attrib->attribute_value)
+                ->select('abbr')
+                ->first();
+
             $count = count($c_attrib);
             $attribute_values[] = [
                 'attribute' => $attrib->attribute,
                 'attribute_value' => $attrib->attribute_value,
+                'abbr' => $getAbbr->abbr,
                 'count' => $count
             ];
         }
@@ -195,7 +183,8 @@ class ItemAttributeController extends Controller
 
         for($h=0; $h < count($currentAttrib); $h++){
             $attribVal2 = [
-                'attribute_value' => $request->attrib[$h]
+                'attribute_value' => $request->attrib[$h],
+                'abbr' => $request->abbr[$h]
             ];
 
             $updateNewAttrib = DB::table('tabItem Attribute Value')
@@ -203,9 +192,18 @@ class ItemAttributeController extends Controller
                 ->where('attribute_value', $currentAttrib[$h])
                 ->update($attribVal2);
         }
+        // return $attribVal2;
+
+        $strAbbr = implode("-",$request->abbr);
+
+        $Abbr = json_decode(json_encode($strAbbr), true);
+
+        $itemName = $request->parDesc."-".$Abbr;
 
         $attribVal3 = [
-            'description' => $request->item_description
+            // 'description' => $request->item_description
+            'item_name' => $itemName,
+            'description' => $this->generateItemDescription($request->itemCode)
         ];
 
         $updateDesc = DB::table('tabItem')
