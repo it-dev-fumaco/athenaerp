@@ -18,15 +18,12 @@
                     <span>Enter item code to start searching</span>
                 @elseif(count($itemAttrib) > 0)
                         <div class="card p-2">
-                            @foreach($parentDesc as $desc)
                                 <h4><b>{{ request('item_code') }}</b> Item Attributes</h4>
-                                {{-- <span>Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span> --}}
                                 <br/>
                                 <div class="text-justify">
                                     <small>{{ $itemDesc->description }}</small>
                                 </div>
-                                <span class="text-left mt-2 mb-1">Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span>
-                            @endforeach
+                                <span class="text-left mt-2 mb-1">Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $parentDesc->description }}</span>
                             <table class="table table-bordered m-0">
                                 <tbody>
                                     <tr>

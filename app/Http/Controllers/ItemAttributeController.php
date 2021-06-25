@@ -68,9 +68,11 @@ class ItemAttributeController extends Controller
             ->where('name', $request->item_code)
             ->first();
 
+        $parentItemCode = ($itemDesc) ? $itemDesc->variant_of : null ;
+
         $parentDesc = DB::table('tabItem')->select('description')
-            ->where('name', json_decode( json_encode($itemDesc->variant_of), true))
-            ->get();
+            ->where('name', $parentItemCode)
+            ->first();
             
         return view('item_attribute_search', compact('itemAttrib', 'itemDesc', 'parentDesc'));
     }
