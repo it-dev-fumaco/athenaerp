@@ -277,15 +277,6 @@ class ItemAttributeController extends Controller
                 }
 
                 DB::table('tabItem Variant Attribute')->insert($data);
-
-                foreach ($itemCodes as $itemCode) {
-                    DB::table('tabItem')->where('name', $itemCode)->update([
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'item_name' => $this->generateItemDescription($itemCode)['item_name'],
-                        'description' => $this->generateItemDescription($itemCode)['description']
-                    ]);
-                }
     
                 $message = 'Attribute <b>'. implode(", ", array_unique($newAttrs)) .'</b> has been added to <b>' . count($data). '</b> item(s).';
             } else {
@@ -296,7 +287,8 @@ class ItemAttributeController extends Controller
                 DB::table('tabItem')->where('name', $itemCode)->update([
                     'modified' => Carbon::now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
-                    'disabled' => $request->data['is_disabled'][$n]
+                    'item_name' => $this->generateItemDescription($itemCode)['item_name'],
+                    'description' => $this->generateItemDescription($itemCode)['description']
                 ]);
             }
 
