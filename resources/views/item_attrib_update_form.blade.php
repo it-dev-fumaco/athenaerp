@@ -5,6 +5,17 @@
 
 @section('content')
     <div class="container-fluid align-center">
+        @if(\Session::has('notFound'))
+            <div class="col-md-8 offset-md-2 alert alert-danger text-center mt-2">
+                <span id="notFound">{!! \Session::get('notFound') !!}</span>
+            </div>
+
+            <div class="col-md-8 offset-md-2 text-center">
+                <a href="/search">
+                    <button type="button" class="btn btn-primary">Go back to Search Page</button>
+                </a>
+            </div>
+        @else
         <div class="col-md-8 offset-md-2 pt-2 mb-0">
             <div class="alert alert-warning" role="alert">
                 Editing of Attribute Values
@@ -55,7 +66,6 @@
                                 
                                 <input type="text" id="itemCodeValue" name="itemCode" value="{{ $item_code }}" readonly hidden/>
                                 @csrf
-                                {{-- @forelse($itemAttrib as $itemAttribute) --}}
                                 @forelse($attribute_values as $value)
                                     <tr>
                                         <td>
@@ -76,21 +86,6 @@
                                             <span class="badge badge-info">{{ $value['count'] }}</span>
                                         </td>
                                     </tr>
-                                    {{-- @endforeach --}}
-                                    {{-- <tr>
-                                        <td>
-                                            <input type="text" name="attribName[]" value="{{ $itemAttribute->attribute }}" readonly hidden/>
-                                            {{ $itemAttribute->attribute }}
-                                        </td>
-                                        <td>
-                                            <input type="text" name="currentAttrib[]" value="{{ $itemAttribute->attribute_value }}" readonly hidden/>
-                                            {{ $itemAttribute->attribute_value }}
-                                        </td>
-                                        <td class="p-1">
-                                            <input type="text" id="attribVal" class="form-control" name="attrib[]" value="{{ $itemAttribute->attribute_value }}" required/>
-                                            <span>has ! variants</span>
-                                        </td>
-                                    </tr> --}}
                                 @empty
                                 <tr>
                                     <td colspan="12" class="text-center">No result(s) found.</td>
@@ -106,6 +101,7 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
     <div class="container" style="background-color: rgba(0,0,0,0); height: 100px;"></div>
 @endsection

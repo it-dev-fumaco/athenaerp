@@ -78,7 +78,11 @@ class ItemAttributeController extends Controller
     }
 
     public function update_attrib_form(Request $request){     
-        $item_code = $request->query('u_item_code');
+        $item_code = $request->u_item_code;
+
+        if(!$item_code){
+            return redirect('/search');
+        }
 
         $itemAttrib = DB::table('tabItem Variant Attribute as tva')
             ->join('tabItem as ti', 'tva.parent', 'ti.name')
@@ -90,9 +94,11 @@ class ItemAttributeController extends Controller
         $itemDesc = DB::table('tabItem')->select('description', 'variant_of')
             ->where('name', $item_code)
             ->first();
+        
+        $parentItemCode = ($itemDesc) ? $itemDesc->variant_of : redirect()->back()->with('notFound','Item code <b>'.$item_code.'</b> not found.') ;
 
         $parentDesc = DB::table('tabItem')->select('description')
-            ->where('name', json_decode( json_encode($itemDesc->variant_of), true))
+            ->where('name', $parentItemCode)
             ->get();
 
         $attributes = [];
@@ -102,7 +108,7 @@ class ItemAttributeController extends Controller
             $c_attrib = DB::table('tabItem Variant Attribute')->select('parent', 'attribute', 'attribute_value')
                 ->where('attribute', $attrib->attribute)
                 ->where('attribute_value', $attrib->attribute_value)
-                ->get();
+                ->count();
 
             $getAbbr = DB::table('tabItem Attribute Value')
                 ->where('parent', $attrib->attribute)
@@ -110,12 +116,12 @@ class ItemAttributeController extends Controller
                 ->select('abbr')
                 ->first();
 
-            $count = count($c_attrib);
+            // $count = count($c_attrib);
             $attribute_values[] = [
                 'attribute' => $attrib->attribute,
                 'attribute_value' => $attrib->attribute_value,
-                'abbr' => $getAbbr->abbr,
-                'count' => $count
+                'abbr' => ($getAbbr) ? $getAbbr->abbr : null,
+                'count' => $c_attrib
             ];
         }
 
