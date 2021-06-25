@@ -5,6 +5,16 @@
 
 @section('content')
     <div class="container-fluid align-center">
+        <div class="modal fade" id="preloader-modal" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body text-center">
+                        <h6 class="text-center m-0"><i class="fas fa-spinner"></i> Updating item. Please wait.</h6>
+                        <button type="button" class="btn btn-default mt-3 d-none btn-sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         @if(\Session::has('notFound'))
             <div class="col-md-8 offset-md-2 alert alert-danger text-center mt-2">
                 <span id="notFound">{!! \Session::get('notFound') !!}</span>
@@ -107,5 +117,33 @@
 @endsection
 
 @section('script')
+<script>
+    $(document).ready(function(e){
+        $('#updateForm').submit(function(e){
+            e.preventDefault();
+
+            $('#preloader-modal').modal('show');
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.status) {
+                        $('#preloader-modal h6').html(response.message);
+                        $('#preloader-modal button').removeClass('d-none');
+                    }else{
+                        $('#preloader-modal h6').html(response.message);
+                        $('#preloader-modal button').removeClass('d-none');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $('#preloader-modal').modal('hide');
+                    alert('An error occured.');
+                }
+            });
+        });
+    });
+</script>
 
 @endsection

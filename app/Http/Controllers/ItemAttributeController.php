@@ -167,67 +167,117 @@ class ItemAttributeController extends Controller
         return view('item_attrib_create_form', compact('itemVariantsArr', 'itemDetails', 'itemAttributes', 'itemParent', 'itemsIncompleteAttr'));
     }
     
-    // public function item_attribute_search(Request $request){
-    //     $itemAttrib = DB::table('tabItem Variant Attribute as tva')
-    //         ->join('tabItem as ti', 'tva.parent', 'ti.name')
-    //         ->where('tva.parent', $request->item_code)
-    //         ->where('ti.is_stock_item', 1)->where('ti.has_variants', 0)->where('ti.disabled', 0)
-    //         ->orderby('tva.idx', 'asc')
-    //         ->get();
-
-    //     $attribSelect = DB::table('tabItem Attribute Value')->select('parent')->distinct()->orderby('parent', 'asc')->get();
-
-    //     $idx = DB::table('tabItem Variant Attribute')->where('parent', $request->item_code)->orderby('creation', 'asc')->value('idx');
-        
-    //     return view('item_attribute', compact('itemAttrib', 'attribSelect', 'idx'));
-    // }
-    
     public function item_attribute_update(Request $request){
-        $attribVal = [];
-        $attribVal2 = [];
-        $attribVal3 = [];
-        $attribName = $request->attribName;
-        $newAttrib = $request->attrib;
+        DB::beginTransaction();
+        try {
+            $itemDetails = DB::table('tabItem')->where('name', $request->itemCode)->first();
+            $getItemVariants = DB::table('tabItem as i')->join('tabItem Variant Attribute as d', 'i.name', 'd.parent')
+                ->where('i.is_stock_item', 1)->where('i.has_variants', 0)->where('i.variant_of', $itemDetails->variant_of)->get();
+            
+            $attrArr = [];
+            $item_code_with_same_attr = DB::table('tabItem as i')->join('tabItem Variant Attribute as d', 'i.name', 'd.parent')
+                ->where('i.is_stock_item', 1)->where('i.has_variants', 0)->where('i.disabled', 0)
+                ->where('i.variant_of', $itemDetails->variant_of)->pluck('item_code');
+    
+            $attribName = $request->attribName;
+            $newAttrib = $request->attrib;
+            $currentAttrib = $request->currentAttrib;
+            for($i = 0; $i < count($newAttrib); $i++){
+                $getItemVariants = DB::table('tabItem as i')->join('tabItem Variant Attribute as d', 'i.name', 'd.parent')
+                    ->where('i.is_stock_item', 1)->where('i.has_variants', 0)->where('attribute', $attribName[$i])->where('attribute_value', $newAttrib[$i])
+                    ->where('i.variant_of', $itemDetails->variant_of)->whereIn('i.name', $item_code_with_same_attr)->select('item_code', 'attribute_value')->get();
 
-        $currentAttrib = $request->currentAttrib;
-        for($i=0; $i < count($newAttrib); $i++){
-            $attribVal = [
-                'attribute_value' => $request->attrib[$i]
+                $item_code_with_same_attr = array_column($getItemVariants->toArray(), 'item_code');
+
+                $attrArr[] = [
+                    'attribute_name' => $attribName[$i],
+                    'attribute_value' => $newAttrib[$i],
+                    'item_code_with_same_attr' => $item_code_with_same_attr
+                ];
+
+                $attribVal = [
+                    'attribute_value' => $request->attrib[$i]
+                ];
+                
+                DB::table('tabItem Variant Attribute')->where('attribute', $attribName[$i])
+                    ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
+            }
+
+            $itemDuplicate = collect($attrArr)->min('item_code_with_same_attr')[0];
+
+            if($request->itemCode != $itemDuplicate) {
+                return response()->json(['status' => 0, 'message' => 'Item Variant <b>' . $itemDuplicate . '</b> already exists with same attributes.']);
+            }
+
+            for($h=0; $h < count($currentAttrib); $h++){
+                $attribVal2 = [
+                    'attribute_value' => $request->attrib[$h],
+                    'abbr' => $request->abbr[$h]
+                ];
+                
+                DB::table('tabItem Attribute Value')->where('parent', $attribName[$h])
+                    ->where('attribute_value', $currentAttrib[$h])->update($attribVal2);
+            }
+
+            $attribVal3 = [
+                'item_name' => $this->generateItemDescription($request->itemCode)['item_name'],
+                'description' => $this->generateItemDescription($request->itemCode)['description']
             ];
-            $updateAttrib = DB::table('tabItem Variant Attribute')
-                ->where('attribute', $attribName[$i])
-                ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
+            
+            DB::table('tabItem')->where('name', $request->itemCode)->update($attribVal3);
+
+            DB::commit();
+
+            return response()->json(['status' => 1, 'message' => 'Item attribute has been updated.']);
+        } catch (Exception $e) {
+            DB::rollback();
+
+            return response()->json(['status' => 0, 'message' => 'Error updating. Please try again.']);
         }
+       
+        // $attribName = $request->attribName;
+        // $newAttrib = $request->attrib;
 
-        for($h=0; $h < count($currentAttrib); $h++){
-            $attribVal2 = [
-                'attribute_value' => $request->attrib[$h],
-                'abbr' => $request->abbr[$h]
-            ];
+        // $currentAttrib = $request->currentAttrib;
+        // for($i=0; $i < count($newAttrib); $i++){
+        //     $attribVal = [
+        //         'attribute_value' => $request->attrib[$i]
+        //     ];
+        //     $updateAttrib = DB::table('tabItem Variant Attribute')
+        //         ->where('attribute', $attribName[$i])
+        //         ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
+        // }
 
-            $updateNewAttrib = DB::table('tabItem Attribute Value')
-                ->where('parent', $attribName[$h])
-                ->where('attribute_value', $currentAttrib[$h])
-                ->update($attribVal2);
-        }
-        // return $attribVal2;
+        // for($h=0; $h < count($currentAttrib); $h++){
+        //     $attribVal2 = [
+        //         'attribute_value' => $request->attrib[$h],
+        //         'abbr' => $request->abbr[$h]
+        //     ];
 
-        $strAbbr = implode("-",$request->abbr);
-        $strDesc = implode(", ",$request->attrib);
+        //     $updateNewAttrib = DB::table('tabItem Attribute Value')
+        //         ->where('parent', $attribName[$h])
+        //         ->where('attribute_value', $currentAttrib[$h])
+        //         ->update($attribVal2);
+        // }
+        // // return $attribVal2;
 
-        $itemName = $request->parDesc."-".$strAbbr;
-        $itemDesc = $request->parDesc.", ".$strDesc;
+        // $strAbbr = implode("-",$request->abbr);
 
-        $attribVal3 = [
-            'item_name' => $itemName,
-            'description' => $itemDesc
-        ];
+        // $Abbr = json_decode(json_encode($strAbbr), true);
 
-        $updateDesc = DB::table('tabItem')
-            ->where('name', $request->itemCode)->update($attribVal3);
-        // Original Value = 4424, Recessed Mounted, Special T-Runner, CRS, 1220 x 737 x 0.5mm
-        // return redirect('/search')->with('success','Attribute Updated!');
-        return redirect()->back()->with('success','Attribute Updated!');
+        // $itemName = $request->parDesc."-".$Abbr;
+
+        // $attribVal3 = [
+        //     // 'description' => $request->item_description
+        //     'item_name' => $itemName,
+        //     'description' => $this->generateItemDescription($request->itemCode)
+        // ];
+
+        // $updateDesc = DB::table('tabItem')
+        //     ->where('name', $request->itemCode)->update($attribVal3);
+        // // Original Value = 4424, Recessed Mounted, Special T-Runner, CRS, 1220 x 737 x 0.5mm
+        // // return redirect('/search')->with('success','Attribute Updated!');
+        // return redirect()->back()->with('success','Attribute Updated!');
     }
 
     public function item_attribute_dropdown(Request $request){
@@ -315,7 +365,7 @@ class ItemAttributeController extends Controller
         } catch (Exception $e) {
             DB::rollback();
 
-            return response()->json(['status' => 0, 'message' => 'Error saving. Please try again.']);
+            return response()->json(['status' => 0, 'message' => 'Error updating. Please try again.']);
         }
     }
 
@@ -342,12 +392,17 @@ class ItemAttributeController extends Controller
                 $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->name)->select('attribute', 'attribute_value')->orderBy('idx', 'asc')->get()->toArray();
 
                 $attributeValues = array_column($attributes, 'attribute_value');
+                $attributeValues = array_filter($attributeValues, function($v) { return strtolower($v) != "n/a"; });
 
-                $itemName = strip_tags($parentItem->item_name);
+                $parentItemName = strip_tags($parentItem->item_name);
+                $abbrArr = [];
                 foreach($attributes as $attr) {
                     $attributeAbbr = DB::table('tabItem Attribute Value')->where('parent', $attr->attribute)->where('attribute_value', $attr->attribute_value)->first();
-                    $itemName .= '-' . (($attributeAbbr) ? $attributeAbbr->abbr : null);
+                    $abbrArr[] = ($attributeAbbr) ? ($attributeAbbr->abbr) : null;
                 }
+
+                $itemName = array_filter($abbrArr, function($v) { return !in_array(strtolower($v), ["n/a", "-"]); });
+                $itemName = strip_tags($parentItemName) . '-' . implode("-", $itemName);
 
                 return [
                     'item_name' => Str::limit(strtoupper($itemName), 140, ''),
