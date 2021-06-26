@@ -149,7 +149,7 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/picking_slip" class="text-dark">
-												<div class="info-box bg-teal p-0">
+												<div class="info-box bg-navy p-0">
 													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-truck"></i></span>
 													<div class="info-box-content pt-1 pb-1 text-truncate d-inline-block">
 														<span class="info-box-text font-weight-bold text-uppercase">Deliveries</span>
@@ -169,7 +169,7 @@
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
 												<a href="/replacements" class="text-dark">
-												<div class="info-box bg-navy p-0">
+												<div class="info-box bg-teal p-0">
 													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-retweet"></i></span>
 													<div class="info-box-content pt-1 pb-1">
 														<span class="info-box-text font-weight-bold text-uppercase">Order Replacement</span>
