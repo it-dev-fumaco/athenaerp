@@ -18,20 +18,17 @@ Route::get('/update', 'ItemAttributeController@update_login')->name('update_logi
 Route::post('/U_login_user', 'ItemAttributeController@login');
 
 Route::group(['middleware' => 'auth'], function(){
-    // Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
-    // Route::post('/insert_attribute', 'ItemAttributeController@item_attribute_insert');
-    // Route::get('/item_attribute', 'ItemAttributeController@item_attribute_search');
-    // Route::get('/attribute_dropdown', 'ItemAttributeController@item_attribute_dropdown');
-
+    // routes for item attribute updating
     Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
     Route::get('/search', 'ItemAttributeController@item_attribute_search');
     Route::get('/update_form', 'ItemAttributeController@update_attrib_form');
-    // Route::post('/update_form', 'ItemAttributeController@update_attrib_form');
     Route::get('/add_form/{item_code}', 'ItemAttributeController@add_attrib_form');
     Route::get('/attribute_dropdown', 'ItemAttributeController@item_attribute_dropdown');
     Route::post('/insert_attribute', 'ItemAttributeController@item_attribute_insert');
     Route::get('/signout', 'ItemAttributeController@signout');
     Route::get('/getAttributes', 'ItemAttributeController@getAttributes');
+    Route::get('/viewParentItemDetails', 'ItemAttributeController@viewParentItemDetails');
+    Route::post('/deleteItemAttribute/{parentItemCode}', 'ItemAttributeController@deleteItemAttribute');
     
     
     Route::get('/', 'MainController@index');

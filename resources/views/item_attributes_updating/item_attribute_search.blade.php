@@ -10,7 +10,7 @@
                 <div class="form-group" style="margin: 0 auto !important;">   
                     <label>Item Code </label>
                     <input type="text" class="form-control m-2" id="itemCode" name="item_code" value="{{ request('item_code') }}" required/>
-                    <button type="submit" class="btn btn-primary">Search</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
                 </div>
             </form>
             <div class="col-md-8 text-center" style="margin: 0 auto !important;">
@@ -23,7 +23,7 @@
                                 <div class="text-justify">
                                     <small>{{ $itemDesc->description }}</small>
                                 </div>
-                                <span class="text-left mt-2 mb-1">Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $parentDesc->description }}</span>
+                                <span class="text-left mt-2 mb-1">Variant of <b><a href="/viewParentItemDetails?item_code={{ $itemDesc->variant_of }}">{{ $itemDesc->variant_of }}</a></b> - {{ $parentDesc->description }}</span>
                             <table class="table table-bordered m-0">
                                 <tbody>
                                     <tr>
@@ -43,12 +43,12 @@
                     <div class="row">
                         <div class="col-md-4" style="margin: 0 auto !important; z-index: 999 !important">
                             <a href="/update_form?u_item_code={{ request('item_code') }}">
-                                <button type="submit" class="col-md-12 btn btn-primary btn-lg">Update Attribute</button>
+                                <button type="submit" class="col-md-12 btn btn-primary btn-lg"><i class="fas fa-edit"></i> Update Attribute</button>
                             </a>
                         </div>
                         <div class="col-md-4" style="margin: 0 auto !important; z-index: 999 !important">
                             <a href="/add_form/{{ request('item_code') }}">
-                                <button type="submit" class="col-md-12 btn btn-primary btn-lg">Add Attribute</button>
+                                <button type="submit" class="col-md-12 btn btn-primary btn-lg"><i class="fas fa-plus"></i> Add Attribute</button>
                             </a>
                         </div>
                     </div>

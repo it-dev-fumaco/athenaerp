@@ -80,7 +80,6 @@
                                             
                                         </tr>
                                         @endforeach
-                                        <input type="hidden" id="idx" value="{{ $attr->idx }}">
                                         <input type="hidden" id="parentItem" value="{{ $itemParent->name }}">
                                     </tbody>
                                 </table>

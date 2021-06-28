@@ -302,6 +302,8 @@ class ItemAttributeController extends Controller
             $now = Carbon::now()->toDateTimeString();
             $data = [];
 
+            $lastIdx = DB::table('tabItem Variant Attribute')->where('parent', $request->parentItem)->max('idx');
+
             $itemCodes = $request->data['itemCode'];
             $newAttrVals = (isset($request->data['newAttrVal'])) ? $request->data['newAttrVal'] : [];
             $message = 'Items have been updated.';
@@ -319,7 +321,7 @@ class ItemAttributeController extends Controller
                         'parent' => $itemCodes[$x],
                         'parentfield' => 'attributes',
                         'parenttype' => 'Item',
-                        'idx' => $request->idx + 1,
+                        'idx' => $lastIdx + 1,
                         'from_range' => 0,
                         'numeric_values' => 0,
                         'attribute' => $request->attributeName,
@@ -340,7 +342,7 @@ class ItemAttributeController extends Controller
                         'parent' => $request->parentItem,
                         'parentfield' => 'attributes',
                         'parenttype' => 'Item',
-                        'idx' => $request->idx + 1,
+                        'idx' => $lastIdx + 1,
                         'from_range' => 0,
                         'numeric_values' => 0,
                         'attribute' => $request->attributeName,
@@ -418,6 +420,57 @@ class ItemAttributeController extends Controller
                     'description' => strip_tags($parentItem->description) . ', ' . implode(", ", $attributeValues)
                 ];
             }
+        }
+    }
+
+    public function viewParentItemDetails(Request $request) {
+        $itemCode = ($request->item_code) ? $request->item_code : null;
+        
+        $itemDetails = DB::table('tabItem')->where('name', $itemCode)->first();
+
+        $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemCode)->orderBy('idx', 'asc')->get();
+
+        return view('item_attributes_updating.parent_item_attributes', compact('itemDetails', 'attributes'));
+    }
+
+    public function deleteItemAttribute($parentItemCode, Request $request){
+        DB::beginTransaction();
+        try {
+            $attribute = $request->attribute;
+            // check if item code exists
+            $parentItemDetails = DB::table('tabItem')->where('name', $parentItemCode)->first();
+            if(!$parentItemDetails) {
+                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>' . $parentItemCode . '</b> not found.']);
+            }
+            // check if item code is a parent item
+            if($parentItemDetails->has_variants == 0) {
+                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>' . $parentItemCode . '</b> is not a parent/template item.']);
+            }
+            // get item variants
+            $itemVariants = DB::table('tabItem')->where('variant_of', $parentItemCode)->pluck('name');
+            $itemVariantsArr = $itemVariants->toArray();
+            // include parent item code in array
+            array_push($itemVariantsArr, $parentItemCode);
+            // delete item variant attribute from parent item code and its variants
+            $affectedRows = DB::table('tabItem Variant Attribute')->whereIn('parent', $itemVariantsArr)->where('attribute', $attribute)->delete();
+            // update item description after removing attribute
+            $arr = [];
+            foreach($itemVariants as $itemCode) {
+                DB::table('tabItem')->where('name', $itemCode)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'item_name' => $this->generateItemDescription($itemCode)['item_name'],
+                    'description' => $this->generateItemDescription($itemCode)['description']
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with(['status' => 1, 'message' => "Attribute <b>" . $attribute . "</b> has been removed from the attribute list of <b>" . $parentItemCode . "</b> and it's variants. No. of item(s) updated: <b>" . $affectedRows . "</b>"]);
+        } catch (Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->with(['status' => 0, 'message' => 'Error updating. Please try again.']);
         }
     }
 }
