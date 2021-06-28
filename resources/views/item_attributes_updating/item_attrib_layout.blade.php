@@ -78,7 +78,7 @@
 
                     <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
                         <div class="p-2">
-                            <img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
+                            <img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
                             <span class="d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
                         </div>
 						<a href="/signout" class="btn btn-default m-1">

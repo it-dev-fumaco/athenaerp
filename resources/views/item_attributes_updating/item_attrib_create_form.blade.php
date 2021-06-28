@@ -33,12 +33,11 @@
                 <div class="alert alert-info">
                     <h5><i class="fas fa-info-circle"></i> Note:</h5>
                     Adding new attributes and value  to an existing variant code, will require to update as well the other variants codes on the same parent code.
-                  </div>
-                @if (\Session::has('message'))
-                <div class="alert alert-success text-center mb-3 ml-3 mr-3">
-                    <span>{!! \Session::get('message') !!}</span>
                 </div>
-                @endif
+                <div class="p-3 alert alert-warning alert-dismissible text-center d-none align-middle" id="alertNotif">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <h5 class="m-0"><i class="icon fas fa-exclamation-circle"></i> <span>-</span></h5>
+                </div>
                 <div class="card card-secondary card-outline">
                     <div class="card-header">
                         <h5 class="card-title m-0">Item Variant(s) <span class="badge badge-info">{{ collect($itemVariantsArr)->count() }}</span></h5>
@@ -191,10 +190,14 @@
                 });
 
                 if(!existing_columns.includes(column_name)){
+                    $('#alertNotif').addClass('d-none');
                     $('#variants-table').find('tr').each(function(){
                         $(this).find('td').last().after('<td><input type="hidden" name="newAttr" value="' + column_name + '"><select class="form-control custom-select2" name="newAttrVal" required> ' + $('#attributeValues').html() + '</select></td>');
                         $(this).find('th').last().after('<th class="text-center align-middle">' + column_name + '<input type="hidden" id="attributeName" value="' + column_name + '"></th>');
                     });
+                } else {
+                    $('#alertNotif').removeClass('d-none');
+                    $('#alertNotif span').html('Attribute <b>' + column_name + "</b> already exists");
                 }
 
                 $(this).attr('disabled', true);
