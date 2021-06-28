@@ -103,7 +103,9 @@
                                 </tr>
                                 @endforelse
                                 <tr>
-                                    <td colspan="12"><button id="submitBtn" type="submit" class="submitBtn btn btn-primary float-right">Update Attribute</button></td>
+                                    <td colspan="12">
+                                        <a href="{{ url()->previous() }}" class="btn btn-default"><i class="fas fa-arrow-left"></i> Back</a>
+                                        <button id="submitBtn" type="submit" class="submitBtn btn btn-primary float-right"><i class="fas fa-check"></i> Update Attribute</button></td>
                                 </tr>
                             </form>       
                         </tbody>

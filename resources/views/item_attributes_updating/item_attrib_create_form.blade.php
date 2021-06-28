@@ -17,7 +17,10 @@
         </div>
         <div class="row">
             <div class="col-md-8 align-middle">
-                <h4 class="text-left m-1 pl-5">Template Item: <span class="font-weight-bold">{{ $itemParent->name }}</span> <small style="bordeR:">{{ $itemParent->description }}</small></h4>
+                <div class="float-left">
+                    <a href="{{ url()->previous() }}" class="btn btn-default"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+                <h4 class="text-left mt-1 ml-5 mb-1 pl-5">Template Item: <span class="font-weight-bold">{{ $itemParent->name }}</span> <small style="bordeR:">{{ $itemParent->description }}</small></h4>
             </div>
             <div class="col-md-4 form-inline">
                 <div class="form-group col-8">

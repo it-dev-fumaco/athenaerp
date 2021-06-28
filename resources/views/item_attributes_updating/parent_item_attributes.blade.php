@@ -29,7 +29,7 @@
                 <div class="col-md-4 offset-md-4">
                     <div class="card card-secondary card-outline mt-3">
                         <div class="card-header">
-                            <h5 class="card-title m-0">Item Attribute(s)</h5>
+                            <h5 class="card-title m-0">Item Attribute(s) <span class="badge badge-info">{{ count($attributes) }}</span></h5>
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                   <i class="fas fa-minus"></i>
@@ -97,7 +97,7 @@
                         </div>
                     </div>
                     <div class="text-center m-2">
-                        <a href="{{ url()->previous() }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+                        <a href="{{ url()->previous() }}" class="btn btn-default"><i class="fas fa-arrow-left"></i> Back</a>
                     </div>
                 </div>
                 @else
