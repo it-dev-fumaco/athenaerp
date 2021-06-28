@@ -74,7 +74,6 @@ class ItemAttributeController extends Controller
             ->where('name', $parentItemCode)
             ->first();
             
-        return view('item_attribute_search', compact('itemAttrib', 'itemDesc', 'parentDesc'));
         return view('item_attributes_updating.item_attribute_search', compact('itemAttrib', 'itemDesc', 'parentDesc'));
     }
 
@@ -353,7 +352,7 @@ class ItemAttributeController extends Controller
 
                 DB::table('tabItem Variant Attribute')->insert($data);
     
-                $message = 'Attribute <b>'. implode(", ", array_unique($newAttrs)) .'</b> has been added to <b>' . count($data). '</b> out of <b>' . count($data). '</b> item(s).';
+                $message = 'Attribute <b>'. $request->attributeName .'</b> has been added to <b>' . count($data). '</b> out of <b>' . count($data). '</b> item(s).';
                 $displayCount = 0;
             } else {
                 $message = 'Item(s) has been updated.';
