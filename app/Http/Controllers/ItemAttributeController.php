@@ -333,26 +333,24 @@ class ItemAttributeController extends Controller
                     ];
                 }
     
-                foreach (array_unique($newAttrVals) as $x => $newAttrVal) {
-                     $data[] = [
-                        'name' => uniqid(),
-                        'creation' => $now,
-                        'modified' => $now,
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'parent' => $request->parentItem,
-                        'parentfield' => 'attributes',
-                        'parenttype' => 'Item',
-                        'idx' => $lastIdx + 1,
-                        'from_range' => 0,
-                        'numeric_values' => 0,
-                        'attribute' => $request->attributeName,
-                        'to_range' => 0,
-                        'increment' => 0,
-                        'attribute_value' => null
-                    ];
-                }
+                $data[] = [
+                    'name' => uniqid(),
+                    'creation' => $now,
+                    'modified' => $now,
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'parent' => $request->parentItem,
+                    'parentfield' => 'attributes',
+                    'parenttype' => 'Item',
+                    'idx' => $lastIdx + 1,
+                    'from_range' => 0,
+                    'numeric_values' => 0,
+                    'attribute' => $request->attributeName,
+                    'to_range' => 0,
+                    'increment' => 0,
+                    'attribute_value' => null
+                ];
 
                 DB::table('tabItem Variant Attribute')->insert($data);
     
