@@ -10,7 +10,7 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="card card-teal card-outline">
+					<div class="card card-navy card-outline">
 						<div class="card-header p-0 pt-1 border-bottom-0">
 							<div class="row m-1">
 								<div class="col-xl-4 d-md-none d-lg-none d-xl-inline-block">

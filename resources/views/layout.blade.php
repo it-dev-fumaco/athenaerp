@@ -131,7 +131,7 @@
 					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
 					<i class="fas fa-dolly"></i> Material Issue
 					</a>
-					<a class="btn btn-app bg-teal" href="/picking_slip">
+					<a class="btn btn-app bg-navy" href="/picking_slip">
 					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
 					<i class="fas fa-truck"></i> Deliveries
 					</a>
