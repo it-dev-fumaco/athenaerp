@@ -18,6 +18,13 @@
                     <span>Enter item code to start searching</span>
                 @elseif(count($itemAttrib) > 0)
                         <div class="card p-2">
+                            <div class="col-md-12">
+                                @if(\Session::has('success'))
+                                    <div class="col-md-12 alert alert-success text-center">
+                                        <span id="successMessage">{!! \Session::get('success') !!}</span>
+                                    </div>
+                                @endif
+                            </div>
                                 <h4><b>{{ request('item_code') }}</b> Item Attributes</h4>
                                 <br/>
                                 <div class="text-justify">

@@ -40,7 +40,7 @@
             <div class="box">
                 <div class="box-body">
                     <div class="col-md-12">
-                        @if (\Session::has('success'))
+                        @if(\Session::has('success'))
                             <div class="col-md-12 alert alert-success text-center">
                                 <span id="successMessage">{!! \Session::get('success') !!}</span>
                             </div>
@@ -117,7 +117,7 @@
 @endsection
 
 @section('script')
-<script>
+{{-- <script>
     $(document).ready(function(e){
         $('#updateForm').submit(function(e){
             e.preventDefault();
@@ -144,6 +144,6 @@
             });
         });
     });
-</script>
+</script> --}}
 
 @endsection
