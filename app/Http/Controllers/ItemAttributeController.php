@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 class ItemAttributeController extends Controller
 {
     public function update_login(){
-        return view('login');
+        return view('item_attributes_updating.login');
     }
 
     public function login(Request $request){
@@ -75,6 +75,7 @@ class ItemAttributeController extends Controller
             ->first();
             
         return view('item_attribute_search', compact('itemAttrib', 'itemDesc', 'parentDesc'));
+        return view('item_attributes_updating.item_attribute_search', compact('itemAttrib', 'itemDesc', 'parentDesc'));
     }
 
     public function update_attrib_form(Request $request){     
@@ -127,15 +128,15 @@ class ItemAttributeController extends Controller
 
         // return $attribute_values;
 
-        return view('item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc', 'parentDesc', 'attribute_values'));
+        return view('item_attributes_updating.item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc', 'parentDesc', 'attribute_values'));
     }
 
     public function add_attrib_form(Request $request, $item_code){
-        $itemDetails = DB::table('tabItem')->where('name', $item_code)->first();
+        $itemDetails = DB::table('tabItem')->where('name', strtoupper($item_code))->first();
         if(!$itemDetails) {
             return 'Item not found.';
         }
-
+        
         $itemParent = DB::table('tabItem')->where('name', $itemDetails->variant_of)->first();
 
         $itemAttributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->variant_of)->orderBy('idx', 'asc')->pluck('attribute');
@@ -164,7 +165,7 @@ class ItemAttributeController extends Controller
             }
         }
 
-        return view('item_attrib_create_form', compact('itemVariantsArr', 'itemDetails', 'itemAttributes', 'itemParent', 'itemsIncompleteAttr'));
+        return view('item_attributes_updating.item_attrib_create_form', compact('itemVariantsArr', 'itemDetails', 'itemAttributes', 'itemParent', 'itemsIncompleteAttr'));
     }
     
     public function item_attribute_update(Request $request){
@@ -303,12 +304,12 @@ class ItemAttributeController extends Controller
             $data = [];
 
             $itemCodes = $request->data['itemCode'];
-            $newAttrs = (isset($request->data['newAttr'])) ? $request->data['newAttr'] : [];
+            $newAttrVals = (isset($request->data['newAttrVal'])) ? $request->data['newAttrVal'] : [];
             $message = 'Items have been updated.';
             $displayCount = 1;
             $affectedRows = 0;
-            if(count($newAttrs) > 0) {
-                foreach ($newAttrs as $x => $newAttr) {
+            if(count($newAttrVals) > 0) {
+                foreach ($newAttrVals as $x => $newAttrVal) {
                     $data[] = [
                         'name' => uniqid(),
                         'creation' => $now,
@@ -319,17 +320,17 @@ class ItemAttributeController extends Controller
                         'parent' => $itemCodes[$x],
                         'parentfield' => 'attributes',
                         'parenttype' => 'Item',
-                        'idx' => $request->data['idx'][$x] + 1,
+                        'idx' => $request->idx + 1,
                         'from_range' => 0,
                         'numeric_values' => 0,
-                        'attribute' => $newAttr,
+                        'attribute' => $request->attributeName,
                         'to_range' => 0,
                         'increment' => 0,
                         'attribute_value' => $request->data['newAttrVal'][$x]
                     ];
                 }
     
-                foreach (array_unique($newAttrs) as $x => $newAttr) {
+                foreach (array_unique($newAttrVals) as $x => $newAttrVal) {
                      $data[] = [
                         'name' => uniqid(),
                         'creation' => $now,
@@ -337,13 +338,13 @@ class ItemAttributeController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
-                        'parent' => $request->data['parentItem'],
+                        'parent' => $request->parentItem,
                         'parentfield' => 'attributes',
                         'parenttype' => 'Item',
-                        'idx' => $request->data['idx'][$x] + 1,
+                        'idx' => $request->idx + 1,
                         'from_range' => 0,
                         'numeric_values' => 0,
-                        'attribute' => $newAttr,
+                        'attribute' => $request->attributeName,
                         'to_range' => 0,
                         'increment' => 0,
                         'attribute_value' => null

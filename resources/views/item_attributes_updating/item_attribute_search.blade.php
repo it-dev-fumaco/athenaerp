@@ -1,4 +1,4 @@
-@extends('item_attrib_layout', [
+@extends('item_attributes_updating.item_attrib_layout', [
     'namePage' => 'ERPInventory',
     'activePage' => 'dashboard',
 ])

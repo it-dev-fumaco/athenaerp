@@ -1,4 +1,4 @@
-@extends('item_attrib_layout', [
+@extends('item_attributes_updating.item_attrib_layout', [
     'namePage' => 'ERPInventory',
     'activePage' => 'dashboard',
 ])
@@ -51,7 +51,6 @@
                     <div class="card-body p-2">
                         <form action="/insert_attribute" method="POST" id="form-add">
                             <div style="height: 500px; max-width: 100%; overflow: auto;">
-                                <input type="hidden" name="parentItem" value="{{ $itemParent->name }}">
                                 <table class="table table-bordered table-hover" id="variants-table" style="font-size: 0.9rem !important;">
                                     <thead>
                                         <tr>
@@ -64,6 +63,7 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($itemVariantsArr as $row)
+                                        
                                         <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
                                         <tr>
                                             <td class="text-center align-middle p-2">
@@ -77,9 +77,11 @@
                                             @foreach ($row['attributes'] as $attr)
                                             <td class="text-center align-middle p-2">{{ $attr->attribute_value }}</td>
                                             @endforeach
-                                            <input type="hidden" name="idx" value="{{ $attr->idx }}">
+                                            
                                         </tr>
                                         @endforeach
+                                        <input type="hidden" id="idx" value="{{ $attr->idx }}">
+                                        <input type="hidden" id="parentItem" value="{{ $itemParent->name }}">
                                     </tbody>
                                 </table>
                             </div>
@@ -189,7 +191,7 @@
                 if(!existing_columns.includes(column_name)){
                     $('#variants-table').find('tr').each(function(){
                         $(this).find('td').last().after('<td><input type="hidden" name="newAttr" value="' + column_name + '"><select class="form-control custom-select2" name="newAttrVal" required> ' + $('#attributeValues').html() + '</select></td>');
-                        $(this).find('th').last().after('<th class="text-center align-middle">' + column_name + '</th>');
+                        $(this).find('th').last().after('<th class="text-center align-middle">' + column_name + '<input type="hidden" id="attributeName" value="' + column_name + '"></th>');
                     });
                 }
 
@@ -303,7 +305,7 @@
 
         function submitAjax(form) {
             $('#preloader-modal').modal('show');
-            
+
             var action = $(form).attr('action');
             var formData = $(form).serializeArray();
             var splittedArr = splitArrayIntoChunksOfLen(formData, 400);
@@ -312,10 +314,18 @@
             $.each(splittedArr, function(i, d){
                 var data = getSerializedArrayFormData(d);
 
+                var arr = {
+                    data, 
+                    "_token": "{{ csrf_token() }}",
+                    idx: $('#idx').val(),
+                    parentItem: $('#parentItem').val(),
+                    attributeName: $('#attributeName').val(),
+                }
+
                 $.ajax({
                     type: 'POST',
                     url: action,
-                    data: {data, "_token": "{{ csrf_token() }}"},
+                    data: arr,
                     success: function(response){
                         affectedRows = affectedRows + response.count;
                         if(n == splittedArr.length) {
