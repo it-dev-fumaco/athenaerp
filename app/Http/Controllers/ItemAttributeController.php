@@ -343,7 +343,7 @@ class ItemAttributeController extends Controller
 
                 DB::table('tabItem Variant Attribute')->insert($data);
     
-                $message = 'Attribute <b>'. implode(", ", array_unique($newAttrs)) .'</b> has been added to <b>' . count($data). '</b> item(s).';
+                $message = 'Attribute <b>'. implode(", ", array_unique($newAttrs)) .'</b> has been added to <b>' . count($data). '</b> out of <b>' . count($data). '</b> item(s).';
                 $displayCount = 0;
             } else {
                 $message = 'Item(s) has been updated.';

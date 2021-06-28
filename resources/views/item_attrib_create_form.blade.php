@@ -320,7 +320,7 @@
                         affectedRows = affectedRows + response.count;
                         if(n == splittedArr.length) {
                             if (response.status) {
-                                var message = (response.displayCount) ? '<b>' + affectedRows + '</b> ' + response.message : response.message;
+                                var message = (response.displayCount) ? '<b>' + affectedRows + '</b> out of <b>' + affectedRows + '</b> ' + response.message : response.message;
                                 $('#preloader-modal h6').html(message);
                                 $('#preloader-modal button').removeClass('d-none');
                             }else{
