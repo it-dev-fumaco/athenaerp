@@ -170,6 +170,8 @@ class ItemAttributeController extends Controller
     public function item_attribute_update(Request $request){
         DB::beginTransaction();
         try {
+            $affectedRows = 0;
+
             $itemDetails = DB::table('tabItem')->where('name', $request->itemCode)->first();
             $getItemVariants = DB::table('tabItem as i')->join('tabItem Variant Attribute as d', 'i.name', 'd.parent')
                 ->where('i.is_stock_item', 1)->where('i.has_variants', 0)->where('i.variant_of', $itemDetails->variant_of)->get();
@@ -195,12 +197,14 @@ class ItemAttributeController extends Controller
                     'item_code_with_same_attr' => $item_code_with_same_attr
                 ];
 
-                $attribVal = [
-                    'attribute_value' => $request->attrib[$i]
-                ];
-                
-                DB::table('tabItem Variant Attribute')->where('attribute', $attribName[$i])
-                    ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
+                if($currentAttrib[$i] != $request->attrib[$i]) {
+                    $attribVal = [
+                        'attribute_value' => $request->attrib[$i]
+                    ];
+                    
+                    $affectedRows += DB::table('tabItem Variant Attribute')->where('attribute', $attribName[$i])
+                        ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
+                }
             }
 
             $itemDuplicate = collect($attrArr)->min('item_code_with_same_attr');
@@ -213,13 +217,15 @@ class ItemAttributeController extends Controller
             }
 
             for($h=0; $h < count($currentAttrib); $h++){
-                $attribVal2 = [
-                    'attribute_value' => $request->attrib[$h],
-                    'abbr' => $request->abbr[$h]
-                ];
-                
-                DB::table('tabItem Attribute Value')->where('parent', $attribName[$h])
-                    ->where('attribute_value', $currentAttrib[$h])->update($attribVal2);
+                if($currentAttrib[$h] != $request->attrib[$h]) {
+                    $attribVal2 = [
+                        'attribute_value' => $request->attrib[$h],
+                        'abbr' => $request->abbr[$h]
+                    ];
+                    
+                    $affectedRows += DB::table('tabItem Attribute Value')->where('parent', $attribName[$h])
+                        ->where('attribute_value', $currentAttrib[$h])->update($attribVal2);
+                }
             }
 
             $attribVal3 = [
@@ -231,7 +237,7 @@ class ItemAttributeController extends Controller
 
             DB::commit();
 
-            return response()->json(['status' => 1, 'message' => 'Item attribute has been updated.']);
+            return response()->json(['status' => 1, 'message' => 'Item attribute has been updated. <br><b>' . $affectedRows . '</b> transactions updated.']);
         } catch (Exception $e) {
             DB::rollback();
 
