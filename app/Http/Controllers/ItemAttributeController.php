@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Validator;
 use Auth;
 use DB;
+use Session;
 use App\LdapClasses\adLDAP;
 use Illuminate\Support\Str;
 
@@ -237,7 +238,8 @@ class ItemAttributeController extends Controller
 
             DB::commit();
 
-            return response()->json(['status' => 1, 'message' => 'Item attribute has been updated. <br><b>' . $affectedRows . '</b> transactions updated.']);
+            // return response()->json(['status' => 1, 'message' => 'Item attribute has been updated. <br><b>' . $affectedRows . '</b> transactions updated.']);
+            return redirect('/search?item_code='.$request->itemCode)->with('success', 'Attribute Updated! <b>' . $affectedRows . '</b> transactions updated.');
         } catch (Exception $e) {
             DB::rollback();
 
