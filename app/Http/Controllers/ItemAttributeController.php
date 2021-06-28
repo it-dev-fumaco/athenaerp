@@ -203,10 +203,13 @@ class ItemAttributeController extends Controller
                     ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
             }
 
-            $itemDuplicate = collect($attrArr)->min('item_code_with_same_attr')[0];
+            $itemDuplicate = collect($attrArr)->min('item_code_with_same_attr');
+            $itemDuplicate = ($itemDuplicate) ? $itemDuplicate[0] : null;
 
-            if($request->itemCode != $itemDuplicate) {
-                return response()->json(['status' => 0, 'message' => 'Item Variant <b>' . $itemDuplicate . '</b> already exists with same attributes.']);
+            if($itemDuplicate) {
+                if(strtoupper($request->itemCode) != strtoupper($itemDuplicate)) {
+                    return response()->json(['status' => 0, 'message' => 'Item Variant <b>' . $itemDuplicate . '</b> already exists with same attributes.']);
+                }
             }
 
             for($h=0; $h < count($currentAttrib); $h++){
