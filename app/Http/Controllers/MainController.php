@@ -2452,10 +2452,13 @@ class MainController extends Controller
     public function get_recently_added_items(Request $request){ // reserved items
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
-
-        $q = DB::table('tabStock Reservation')->select('item_code', DB::raw('sum(reserve_qty) as qty'), 'warehouse', 'description', 'stock_uom')
-            ->groupby('item_code', 'warehouse', 'description', 'stock_uom')
-            ->orderBy('creation', 'desc')
+        
+        $q = DB::table('tabStock Reservation as sr')
+            ->join('tabItem as ti', 'sr.item_code', 'ti.name')
+            ->groupby('sr.item_code', 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
+            ->where('sr.warehouse', $allowed_warehouses)
+            ->orderBy('sr.creation', 'desc')
+            ->select('sr.item_code', DB::raw('sum(sr.reserve_qty) as qty'), 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
             ->get();
 
         $list = [];
@@ -2464,6 +2467,7 @@ class MainController extends Controller
 
             $list[] = [
                 'item_code' => $row->item_code,
+                'item_classification' => $row->item_classification,
                 'description' => $row->description,
                 'qty' => $row->qty,
                 'warehouse' => $row->warehouse,
