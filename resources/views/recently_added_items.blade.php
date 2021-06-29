@@ -11,8 +11,11 @@
         </div>
         <div class="product-info">
             <div class="col-md-8 float-left bg-white" style="display: inline-block">
-                <span class="font-weight-bold product-title">{{ $item['item_code'] }}</span>
-                <small class="d-block font-italic">{{ str_limit($item['description'], $limit = 30, $end = '...') }}</small>
+                {{-- <span class="font-weight-bold product-title">{{ $item['item_code'] }}</span> --}}
+                <a href="#" class="view-item-details" data-item-code="{{ $item['item_code'] }}" data-item-classification="{{ $item['item_classification'] }}">
+                    <span class="d-block font-weight-bold text-dark item-code">{{ $item['item_code'] }}</span>
+                </a>
+                <small class="d-block font-italic">{{ str_limit($item['description'], $limit = 25, $end = '...') }}</small>
             </div>
 
             <div class="col-md-4 float-right text-center bg-white" style="display: inline-block">
