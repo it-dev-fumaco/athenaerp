@@ -64,7 +64,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr)">
+										<tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr | orderBy: 'status')">
 										  	<td class="text-center">
 											  	<span class="d-block font-weight-bold">@{{ r.creation }}</span>
 											  	<small class="d-block mt-1">@{{ r.name }}</small>
@@ -74,6 +74,7 @@
 													@{{ r.item_code }}
 													<span class="badge badge-success" ng-if="r.status === 'Returned'">@{{ r.status }}</span>
 													<span class="badge badge-warning" ng-if="r.status === 'For Checking'">@{{ r.status }}</span>
+													<span class="badge badge-warning" ng-if="r.status === 'For Return'">@{{ r.status }}</span>
 													<i class="fas fa-arrow-right ml-3 mr-2"></i> @{{ r.t_warehouse }}
 												</div>
 												<span class="d-block">@{{ r.description }}</span>
@@ -85,7 +86,8 @@
 												<span style="font-size: 10pt;">@{{ r.so_customer_name }}</span>
 											</td>
 											<td class="text-center">
-												<img src="dist/img/icon.png" class="img-circle checkout update-item" data-id="@{{ r.stedname }}">
+												<img src="dist/img/icon.png" class="img-circle checkout update-item" ng-hide="r.reference_doc == 'delivery_note'" data-id="@{{ r.c_name }}">
+												<img src="dist/img/icon.png" class="img-circle checkout update-item-return" ng-hide="r.reference_doc == 'stock_entry'" data-id="@{{ r.c_name }}">
 											</td>
 										</tr>
 									</tbody>
@@ -101,6 +103,13 @@
 
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
+		@csrf
+		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+	</form>
+</div>
+
+<div class="modal fade" id="dr-modal">
+	<form method="POST" action="/submit_dr_sales_return">
 		@csrf
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>
@@ -126,6 +135,65 @@
 					$('#ste-modal .modal-dialog').html(response);
 				}
 			});
+		});
+
+		$(document).on('click', '.update-item-return', function(){
+			var id = $(this).data('id');
+			$.ajax({
+				type: 'GET',
+				url: '/get_dr_return_details/' + id,
+				success: function(response){
+					$('#dr-modal').modal('show');
+					$('#dr-modal .modal-dialog').html(response);
+				}
+			});
+		});
+
+		$('#dr-modal form').validate({
+			rules: {
+				barcode: {
+					required: true,
+				},
+          		qty: {
+					required: true,
+				},
+			},
+			messages: {
+				barcode: {
+					required: "Please enter barcode",
+				},
+				qty: {
+					required: "Please enter quantity",
+				},
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.form-group').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			},
+			submitHandler: function(form) {
+				$.ajax({
+					type: 'POST',
+					url: $(form).attr('action'),
+					data: $(form).serialize(),
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							$('#dr-modal').modal('hide');
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			}
 		});
 
 		$('#ste-modal form').validate({

@@ -526,21 +526,26 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $q = DB::table('tabStock Entry as ste')
+        $dr_sales_return = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
+            ->where('dn.docstatus', 0)->where('is_return', 1)->whereIn('dni.warehouse', $allowed_warehouses)
+            ->select('dni.name as c_name', 'dn.name', 'dni.warehouse', 'dni.item_code', 'dni.description', 'dni.qty', 'dn.reference', 'dni.item_status', 'dn.customer', 'dn.owner', 'dn.creation')
+            ->orderByRaw("FIELD(dni.item_status, 'For Checking', 'For Return', 'Returned') ASC")
+            ->get();
+
+        $mr_sales_return = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Receipt')
             ->where('ste.receive_as', 'Sales Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
             ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Returned') ASC")
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'For Return', 'Returned') ASC")
             ->get();
 
         $list = [];
-        foreach ($q as $d) {
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
+        foreach ($mr_sales_return as $d) {
+            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
             $list[] = [
-                'stedname' => $d->stedname,
+                'c_name' => $d->stedname,
                 'owner' => $owner,
                 'name' => $d->name,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i A'),
@@ -551,9 +556,31 @@ class MainController extends Controller
                 'sales_order_no' => $d->sales_order_no,
                 'status' => $d->status,
                 'so_customer_name' => $d->so_customer_name,
+                'parent_warehouse' => $this->get_warehouse_parent($d->t_warehouse),
+                'reference_doc' => 'stock_entry'
             ];
         }
-        
+
+        foreach ($dr_sales_return as $d) {
+            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
+
+            $list[] = [
+                'c_name' => $d->c_name,
+                'owner' => $owner,
+                'name' => $d->name,
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i A'),
+                't_warehouse' => $d->warehouse,
+                'item_code' => $d->item_code,
+                'description' => $d->description,
+                'transfer_qty' => abs($d->qty),
+                'sales_order_no' => $d->reference,
+                'status' => $d->item_status,
+                'so_customer_name' => $d->customer,
+                'parent_warehouse' => $this->get_warehouse_parent($d->warehouse),
+                'reference_doc' => 'delivery_note'
+            ];
+        }
+
         return response()->json(['mr_return' => $list]);
     }
 
@@ -623,7 +650,8 @@ class MainController extends Controller
         }
 
         if($q->purpose == 'Material Receipt'){
-            return view('return_modal_content', compact('data'));
+            $is_stock_entry = true;
+            return view('return_modal_content', compact('data', 'is_stock_entry'));
         }
 
         if($q->purpose == 'Material Transfer'){
@@ -2866,5 +2894,101 @@ class MainController extends Controller
             })
             ->select('name as id', 'name as text')
             ->orderBy('modified', 'desc')->limit(10)->get();
+    }
+
+    public function get_dr_return_details($id){
+        $q = DB::table('tabDelivery Note as dr')->join('tabDelivery Note Item as dri', 'dri.parent', 'dr.name')
+            ->where('dr.is_return', 1)->where('dr.docstatus', 0)->where('dri.name', $id)
+            ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner')->first();
+
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->first();
+        $img = ($img) ? $img->image_path : null;
+
+        $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
+
+        $available_qty = $this->get_available_qty($q->item_code, $q->warehouse);
+
+        $data = [
+            'name' => $q->c_name,
+            't_warehouse' => $q->warehouse,
+            'available_qty' => $available_qty,
+            'validate_item_code' => $q->barcode_return,
+            'img' => $img,
+            'item_code' => $q->item_code,
+            'description' => $q->description,
+            'ref_no' => $q->against_sales_order . '<br>' . $q->name,
+            'stock_uom' => $q->stock_uom,
+            'qty' => abs($q->qty * 1),
+            'owner' => $owner,
+            'status' => $q->item_status,
+        ];
+        
+        $is_stock_entry = false;
+        return view('return_modal_content', compact('data', 'is_stock_entry'));
+    }
+
+    public function submit_dr_sales_return(Request $request){
+        DB::beginTransaction();
+        try {
+            $driDetails = DB::table('tabDelivery Note as dr')->join('tabDelivery Note Item as dri', 'dri.parent', 'dr.name')->where('dri.name', $request->child_tbl_id)
+                ->select('dr.name as parent_dr', 'dr.*', 'dri.*', 'dri.item_status as per_item_status', 'dr.docstatus as dr_status')->first();
+
+            if(!$driDetails){
+                return response()->json(['status' => 0, 'message' => 'Record not found.']);
+            }
+
+            if(in_array($driDetails->per_item_status, ['Issued', 'Returned'])){
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $driDetails->per_item_status . '.']);
+            }
+
+            if($driDetails->dr_status == 1){
+                return response()->json(['status' => 0, 'message' => 'Item already returned.']);
+            }
+
+            $itemDetails = DB::table('tabItem')->where('name', $driDetails->item_code)->first();
+            if(!$itemDetails){
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $driDetails->item_code . '</b> not found.']);
+            }
+
+            if($itemDetails->is_stock_item == 0){
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $driDetails->item_code . '</b> is not a stock item.']);
+            }
+
+            if($request->barcode != $itemDetails->item_code){
+                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.']);
+            }
+
+            $values = [
+                'session_user' => Auth::user()->full_name,
+                'item_status' => 'Returned',
+                'barcode_return' => $request->barcode,
+                'date_modified' => Carbon::now()->toDateTimeString()
+            ];
+
+            DB::table('tabDelivery Note Item')->where('name', $request->child_tbl_id)->update($values);
+
+            $this->update_pending_dr_item_status();
+
+            DB::commit();
+
+            return response()->json(['status' => 1, 'message' => 'Item <b>' . $driDetails->item_code . '</b> has been returned.']);
+        } catch (Exception $e) {
+            DB::rollback();
+            
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+        }
+    }
+
+    public function update_pending_dr_item_status(){
+        $for_return_dr = DB::table('tabDelivery Note')->where('return_status', 'For Return')->where('docstatus', 0)->pluck('name');
+
+        foreach($for_return_dr as $dr){
+            $items_for_return = DB::table('tabDelivery Note Item')
+                ->where('parent', $dr)->where('item_status', 'For Return')->exists();
+
+            if(!$items_for_return){
+                DB::table('tabDelivery Note')->where('name', $dr)->where('docstatus', 0)->update(['return_status' => 'Returned']);
+            }
+        }
     }
 }

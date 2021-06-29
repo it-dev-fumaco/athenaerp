@@ -56,7 +56,7 @@ Route::group(['middleware' => 'auth'], function(){
 
     Route::post('/checkout_ste_item', 'MainController@checkout_ste_item');
     Route::post('/checkout_picking_slip_item', 'MainController@checkout_picking_slip_item');
-    Route::post('/return_dr_item', 'MainController@return_dr_item');
+    Route::post('/submit_dr_sales_return', 'MainController@submit_dr_sales_return');
 
     Route::get('/submit_stock_entry/{id}', 'MainController@submit_stock_entry');
 
