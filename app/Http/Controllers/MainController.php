@@ -1444,7 +1444,7 @@ class MainController extends Controller
             ->count();
     }
 
-    public function view_production_to_receive(Request $request){
+    public function view_production_to_receive(Request $request){// Feedback
         if(!$request->arr){
             return view('production_to_receive');
         }
@@ -1454,6 +1454,7 @@ class MainController extends Controller
 
         $q = DB::connection('mysql_mes')->table('production_order AS po')
             ->whereNotIn('po.status', ['Cancelled'])
+            ->where('po.item_classification', 'HO - Housing')
             ->where('po.produced_qty', '>', 0)
             ->whereRaw('po.produced_qty > feedback_qty')
             ->select('po.*')->get();
@@ -1481,9 +1482,12 @@ class MainController extends Controller
                 'parent_warehouse' => $parent_warehouse,
                 'owner' => $owner,
                 'created_at' =>  Carbon::parse($row->created_at)->format('M-d-Y h:i A'),
-                'operation_name' => $operation_name
+                'operation_name' => $operation_name,
+                'delivery_date' => Carbon::parse($row->delivery_date)->format('F d, Y')
             ];
         }
+
+        // return $list;
 
         return response()->json(['records' => $list]);
     }

@@ -79,10 +79,13 @@
 										</td>
 										<td class="text-center">
 											<span class="reference-no d-block">@{{ x.sales_order_no }}@{{ x.material_request }}</span>
-											<span class="customer d-block">@{{ x.customer }}</span>
+											<span class="customer d-block" style="font-size: 10pt;">@{{ x.customer }}</span>
+											<span style="font-size: 10pt;"><small>@{{x.material_request ? "" : "Delivery Date: " + x.delivery_date }}</small></span>
 										</td>
 										<td class="text-center">
-											<img src="dist/img/check.png" class="img-circle checkout" data-ste="@{{ x.ste_no }}">
+											{{-- <img src="dist/img/check.png" class="img-circle checkout" data-ste="@{{ x.ste_no }}"> --}}
+											<img src="dist/img/check.png" class="img-circle checkout" data-toggle="modal" data-target="#modal-notification">
+											{{-- <img src="dist/img/check.png" class="img-circle checkout" data-toggle="modal" data-target="#receive-item-modal"> --}}
 										</td>
 									</tr>
 								</tbody>
@@ -153,12 +156,12 @@
 	</form>
 </div>
 
-<div class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="Notif Modal">
+{{-- <div class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="Notif Modal">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
+				<h4 class="modal-title">Modal title</h4>
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Modal title</h4>
 			</div>
 			<form></form>
 			<div class="modal-body">
@@ -169,7 +172,30 @@
 			</div>
 		</div>
 	</div>
-</div>
+</div> --}}
+
+{{-- <div class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="Notif Modal">
+	<div class="modal-dialog">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="modal-notification-label">Feedback <span class="alert alert-warning"><b>For Return</b></span></h5>
+		  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			<span aria-hidden="true">&times;</span>
+		  </button>
+		</div>
+		<div class="modal-body">
+			<span class="target-warehouse">@{{ x.fg_warehouse }}</span>
+			<br/>
+			<span>Barcode</span>
+			<input type
+		</div>
+		<div class="modal-footer">
+		  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+		  <button type="button" class="btn btn-primary">Save changes</button>
+		</div>
+	  </div>
+	</div>
+  </div> --}}
 @endsection
 
 @section('script')
