@@ -867,12 +867,23 @@
 			}
 
 			get_low_stock_level_items();
+			get_recently_added_items();
 			function get_low_stock_level_items(page) {
 				$.ajax({
 					type: "GET",
 					url: "/get_low_stock_level_items?page=" + page,
 					success: function (data) {
 						$('#low-level-stock-table').html(data);
+					}
+				});
+			}
+
+			function get_recently_added_items(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_recently_added_items?page=" + page,
+					success: function (data) {
+						$('#recently-added-items-div').html(data);
 					}
 				});
 			}
@@ -1524,6 +1535,12 @@
 				event.preventDefault();
 				var page = $(this).attr('href').split('page=')[1];
 				get_low_stock_level_items(page);
+			});
+
+			$(document).on('click', '#reserved-items-pagination a', function(event){
+				event.preventDefault();
+				var page = $(this).attr('href').split('page=')[1];
+				get_recently_added_items(page);
 			});
 
 			$(document).on('click', '#athena-transactions-pagination a', function(event){

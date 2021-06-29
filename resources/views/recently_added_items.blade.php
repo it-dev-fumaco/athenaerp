@@ -10,9 +10,17 @@
             </a>
         </div>
         <div class="product-info">
-            <span class="font-weight-bold product-title">{{ $item['item_code'] }}</span>
-            <span class="font-italic" style="font-size: 10px;"> - {{ $item['default_warehouse'] }}</span>
-            <small class="d-block font-italic">{{ str_limit($item['description'], $limit = 100, $end = '...') }}</small>
+            <div class="col-md-8 float-left bg-white" style="display: inline-block">
+                <span class="font-weight-bold product-title">{{ $item['item_code'] }}</span>
+                <small class="d-block font-italic">{{ str_limit($item['description'], $limit = 30, $end = '...') }}</small>
+            </div>
+
+            <div class="col-md-4 float-right text-center bg-white" style="display: inline-block">
+                <span class="font-italic font-weight-bold text-right">
+                    <small><b>{{ $item['qty'] }}</b></small> <span style="font-size: 10px;">{{ $item['stock_uom'] }}</span>
+                </span>
+                <span class="font-italic" style="font-size: 10px;"><br/>{{ $item['warehouse'] }}</span>
+            </div>
         </div>
     </li>
     @empty
@@ -20,4 +28,8 @@
         <h5 class="text-center">No Record(s) found.</h5>
     </li>
     @endforelse 
-  </ul>
+</ul>
+
+<div class="col-md-10 clearfix" id="reserved-items-pagination" style="font-size: 12pt;">
+    {{ $list->links() }}
+</div>

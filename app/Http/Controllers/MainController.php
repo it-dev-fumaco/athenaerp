@@ -29,7 +29,7 @@ class MainController extends Controller
         return view('index');
     }
 
-    public function search_results(Request $request){        
+    public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
         $itemClass = DB::table('tabItem')->select('item_classification')
@@ -154,7 +154,13 @@ class MainController extends Controller
         }
         return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
-    
+
+    public function reserved_qty(Request $request){
+        $reservedQty = DB::table('tabStock Reservation')->select('item_code', 'warehouse', 'reserve_qty')->get();
+
+        return view('index', compact('reservedQty'));
+    }
+
     public function count_ste_for_issue($purpose){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
@@ -2451,28 +2457,45 @@ class MainController extends Controller
         return view('tbl_low_level_stocks', compact('low_level_stocks'));
     }
 
-    public function get_recently_added_items(){
+    public function get_recently_added_items(Request $request){ // reserved items
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $q = DB::table('tabItem')->where('disabled', 0)
-            ->where('has_variants', 0)->where('is_stock_item', 1)
-            ->whereIn('default_warehouse', $allowed_warehouses)
-            ->orderBy('creation', 'desc')->limit(5)->get();
+        $q = DB::table('tabStock Reservation')->select('item_code', DB::raw('sum(reserve_qty) as qty'), 'warehouse', 'description', 'stock_uom')
+            ->groupby('item_code', 'warehouse', 'description', 'stock_uom')
+            ->orderBy('creation', 'desc')
+            ->get();
 
         $list = [];
         foreach($q as $row){
-            $item_image_path = DB::table('tabItem Images')->where('parent', $row->name)->first();
+            $item_image_path = DB::table('tabItem Images')->where('parent', $row->item_code)->first();
 
             $list[] = [
                 'item_code' => $row->item_code,
                 'description' => $row->description,
-                'default_warehouse' => $row->default_warehouse, //CCCCC
+                'qty' => $row->qty,
+                'warehouse' => $row->warehouse,
+                'stock_uom' => $row->stock_uom,
                 'image' => ($item_image_path) ? $item_image_path->image_path : null
             ];
         }
 
-        return view('recently_added_items', compact('list'));
+        // Get current page form url e.x. &page=1
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data
+        $itemCollection = collect($list);
+        // Define how many items we want to be visible in each page
+        $perPage = 8;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+
+        $list = $paginatedItems;
+
+        return view('recently_added_items', compact('list')); // reserved items
     }
 
     public function invAccuracyChart($year){
