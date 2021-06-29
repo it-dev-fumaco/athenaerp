@@ -477,12 +477,7 @@ class MainController extends Controller
 
         $list = [];
         foreach ($q as $d) {
-            $actual_qty = $this->get_actual_qty($d->item_code, $d->s_warehouse);
-
-            $total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
-                ->where('item_code', $d->item_code)->where('s_warehouse', $d->s_warehouse)->sum('qty');
-            
-            $balance = $actual_qty - $total_issued;
+            $available_qty = $this->get_available_qty($d->item_code, $d->s_warehouse);
 
             if($d->material_request){
                 $customer = DB::table('tabMaterial Request')->where('name', $d->material_request)->first();
@@ -500,8 +495,7 @@ class MainController extends Controller
             $owner = DB::table('tabUser')->where('email', $d->owner)->first();
             $owner = ($owner) ? $owner->full_name : null;
 
-            $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
-            $parent_warehouse_target = $this->get_warehouse_parent($d->t_warehouse);
+            $parent_warehouse = $this->get_warehouse_parent(($d->transfer_as == 'For Return') ? $d->t_warehouse : $d->s_warehouse);
 
             $list[] = [
                 'customer' => $customer,
@@ -510,7 +504,7 @@ class MainController extends Controller
                 's_warehouse' => $d->s_warehouse,
                 't_warehouse' => $d->t_warehouse,
                 'transfer_as' => $d->transfer_as,
-                'actual_qty' => $actual_qty,
+                'available_qty' => $available_qty,
                 'uom' => $d->uom,
                 'name' => $d->name,
                 'owner' => $owner,
@@ -519,10 +513,8 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
-                'balance' => $balance,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
-                'parent_warehouse_target' => $parent_warehouse_target,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
             ];
         }
