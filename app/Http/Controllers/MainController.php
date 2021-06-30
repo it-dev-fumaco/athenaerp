@@ -2477,7 +2477,7 @@ class MainController extends Controller
         return view('tbl_low_level_stocks', compact('low_level_stocks'));
     }
 
-    public function get_recently_added_items(Request $request){ // reserved items
+    public function get_reserved_items(Request $request){ // reserved items
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
         
@@ -2485,6 +2485,7 @@ class MainController extends Controller
             ->join('tabItem as ti', 'sr.item_code', 'ti.name')
             ->groupby('sr.item_code', 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
             ->where('sr.warehouse', $allowed_warehouses)
+            ->whereNotIn('sr.status', ['Cancelled', 'Expired'])
             ->orderBy('sr.creation', 'desc')
             ->select('sr.item_code', DB::raw('sum(sr.reserve_qty) as qty'), 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
             ->get();
@@ -2519,7 +2520,7 @@ class MainController extends Controller
 
         $list = $paginatedItems;
 
-        return view('recently_added_items', compact('list')); // reserved items
+        return view('reserved_items', compact('list')); // reserved items
     }
 
     public function invAccuracyChart($year){

@@ -307,7 +307,8 @@
 																</button>
 															</div>
 														</div>
-														<div class="card-body pt-0 pb-0 pl-1 pr-1" id="recently-added-items-div"></div>
+														{{-- <div class="card-body pt-0 pb-0 pl-1 pr-1" id="recently-added-items-div"></div> --}}
+														<div class="card-body pt-0 pb-0 pl-1 pr-1" id="reserved-items-div"></div>
 													</div>
 												</div>
 											</div>
@@ -367,13 +368,13 @@
 
 <script>
 	$(document).ready(function(){
-		recently_added_items();
-		function recently_added_items(){
+		reserved_items();
+		function reserved_items(){
 				$.ajax({
 					type: "GET",
-					url: "/get_recently_added_items",
+					url: "/get_reserved_items",
 					success: function (data) {
-						$('#recently-added-items-div').html(data);
+						$('#reserved-items-div').html(data);
 					}
 				});
 			}
