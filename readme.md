@@ -8,9 +8,15 @@ Instructions using GUI and Commands
     Open CMD and change directory to your Local project folder
     Type copy .env.example .env
     Setup database connections in .env file
-            - host = 10.0.48.84
+         - ERP (for dev)
+            - host = 10.0.48.85
             - database name = '3f2ec5a818bccb73'
             - username = erp
+            - password = 'fumaco'
+        - MES (for dev)
+            - host 10.0.0.93
+            - database name = 'mes-testing'
+            - username = dev
             - password = 'fumaco'
     Type php artisan key:generate
     Type php artisan optimize
