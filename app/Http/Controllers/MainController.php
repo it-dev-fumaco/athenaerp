@@ -1462,11 +1462,12 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        return DB::table('tabStock Entry as ste')
-            ->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
-            ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 0)
-            ->select('ste.*', 'pro.production_item', 'pro.description', 'pro.stock_uom')
-            ->whereIn('pro.fg_warehouse', $allowed_warehouses)
+        return DB::connection('mysql_mes')->table('production_order AS po')
+            ->whereNotIn('po.status', ['Cancelled', 'Stopped'])
+            ->whereIn('po.fg_warehouse', $allowed_warehouses)
+            ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')
+            ->where('po.produced_qty', '>', 0)
+            ->whereRaw('po.produced_qty > feedback_qty')
             ->count();
     }
 

@@ -1419,7 +1419,7 @@
 					dataType: 'json',
 					contentType: 'application/json',
 					success: function (data) {
-						$('#material-receipt').text(0);
+						$('#material-receipt').text(data);
 					}
 				});
 			}
