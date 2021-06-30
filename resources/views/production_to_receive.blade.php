@@ -83,8 +83,8 @@
 											<span style="font-size: 10pt;"><small>@{{x.material_request ? "" : "Delivery Date: " + x.delivery_date }}</small></span>
 										</td>
 										<td class="text-center">
-											{{-- <img src="dist/img/check.png" class="img-circle checkout" data-ste="@{{ x.ste_no }}"> --}}
-											<img src="dist/img/check.png" class="img-circle checkout" data-toggle="modal" data-target="#modal-notification">
+											<img src="dist/img/check.png" class="img-circle checkout feedback-details" data-id="@{{ x.production_order }}">
+											{{-- <img src="dist/img/check.png" class="img-circle checkout" data-toggle="modal" data-target="#modal-notification"> --}}
 											{{-- <img src="dist/img/check.png" class="img-circle checkout" data-toggle="modal" data-target="#receive-item-modal"> --}}
 										</td>
 									</tr>
@@ -96,9 +96,53 @@
 			</div>
 		</div>
 	</div>
+
+	{{-- <div class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="Notif Modal">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+				<h5 class="modal-title" id="modal-notification-label">Feedback <span class="badge badge-warning">To Receive</span></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				</div>
+				<form>
+					<div class="modal-body">
+						<div class="col-md-12">
+							<span class="target-warehouse">@{{ x.fg_warehouse }}</span>
+						</div>
+						<div class="col-md-12">
+							<div class="form-group">
+								<label>Barcode</label>
+								<input type="text" class="form-control" name="feedback-barcode"  id="feedbackBarcode" />
+							</div>
+						</div>
+						<div class="col-md-4 float-left">
+						</div>
+						<div class="col-md-8 float-right">
+							<span><b>@{{ x.item_code }}</b></span>
+							<span>@{{ x.description }}</span>
+							<span>@{{ x.qty_to_receive }}</span>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary">Save changes</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div> --}}
 </div>
 
 <div class="modal fade" id="receive-item-modal">
+	<form method="POST" action="#">
+		@csrf
+		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+	</form>
+</div>
+
+{{-- <div class="modal fade" id="receive-item-modal">
 	<form id="submit-receive-form" method="POST" action="#">
 		@csrf
 		<input type="hidden" name="production_order">
@@ -154,48 +198,7 @@
 			</div>
 		</div>
 	</form>
-</div>
-
-{{-- <div class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="Notif Modal">
-	<div class="modal-dialog" role="document">
-		<div class="modal-content">
-				<h4 class="modal-title">Modal title</h4>
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-			</div>
-			<form></form>
-			<div class="modal-body">
-				<p style="font-size: 12pt; text-align: center;"></p>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
 </div> --}}
-
-{{-- <div class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="Notif Modal">
-	<div class="modal-dialog">
-	  <div class="modal-content">
-		<div class="modal-header">
-		  <h5 class="modal-title" id="modal-notification-label">Feedback <span class="alert alert-warning"><b>For Return</b></span></h5>
-		  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-			<span aria-hidden="true">&times;</span>
-		  </button>
-		</div>
-		<div class="modal-body">
-			<span class="target-warehouse">@{{ x.fg_warehouse }}</span>
-			<br/>
-			<span>Barcode</span>
-			<input type
-		</div>
-		<div class="modal-footer">
-		  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-		  <button type="button" class="btn btn-primary">Save changes</button>
-		</div>
-	  </div>
-	</div>
-  </div> --}}
 @endsection
 
 @section('script')
@@ -205,6 +208,18 @@
 			headers: {
 			  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
 			}
+		});
+
+		$(document).on('click', '.feedback-details', function(){
+			var id = $(this).data('id');
+			$.ajax({
+				type: 'GET',
+				url: '/feedback_details/' + id,
+				success: function(response){
+					$('#receive-item-modal').modal('show');
+					$('#receive-item-modal .modal-dialog').html(response);
+				}
+			});
 		});
 
 		$(document).on('click', '.update-item-return', function(){
