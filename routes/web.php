@@ -44,6 +44,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_dr_return', 'MainController@get_dr_return');
     Route::get('/get_mr_sales_return', 'MainController@get_mr_sales_return');
 
+    Route::get('/feedback_details/{id}', 'MainController@feedback_details');
     Route::get('/get_ste_details/{id}', 'MainController@get_ste_details');
     Route::get('/get_ps_details/{id}', 'MainController@get_ps_details');
     Route::get('/get_dr_return_details/{id}', 'MainController@get_dr_return_details');

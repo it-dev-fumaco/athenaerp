@@ -559,6 +559,52 @@ class MainController extends Controller
         return response()->json(['mr_return' => $list]);
     }
 
+    public function feedback_details($id){  
+        // $user = Auth::user()->frappe_userid;
+        // $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $data = DB::connection('mysql_mes')->table('production_order AS po')
+            ->where('po.production_order', $id)
+            ->select('po.*')->first();
+
+        $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
+        
+        $q = [];
+        $q = [
+            'production_order' => $data->production_order,
+            'fg_warehouse' => $data->fg_warehouse,
+            'src_warehouse' => $data->wip_warehouse,
+            'sales_order' => $data->sales_order,
+            'status' => $data->status,
+            'material_request' => $data->material_request,
+            'img' => $img,
+            'customer' => $data->customer,
+            'item_code' => $data->item_code,
+            'description' => $data->description,
+            'qty_to_receive' => $data->produced_qty - $data->feedback_qty,
+            'stock_uom' => $data->stock_uom,
+        ];
+
+        // foreach ($data as $row) {
+        //     $q[] = [
+        //         'production_order' => $row->production_order,
+        //         'fg_warehouse' => $row->fg_warehouse,
+        //         'sales_order_no' => $row->sales_order,
+        //         'status' => $row->status,
+        //         'material_request' => $row->material_request,
+        //         'customer' => $row->customer,
+        //         'item_code' => $row->item_code,
+        //         'description' => $row->description,
+        //         'qty_to_receive' => $row->produced_qty - $row->feedback_qty,
+        //         'stock_uom' => $row->stock_uom,
+        //     ];
+        // }
+        // return $q;
+
+        return view('feedback_details_modal', compact('q'));
+        // return response()->json($data);
+    }
+
     public function get_ste_details($id){
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
@@ -1454,7 +1500,8 @@ class MainController extends Controller
 
         $q = DB::connection('mysql_mes')->table('production_order AS po')
             ->whereNotIn('po.status', ['Cancelled'])
-            ->where('po.item_classification', 'HO - Housing')
+            // ->where('po.item_classification', 'HO - Housing')
+            ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')
             ->where('po.produced_qty', '>', 0)
             ->whereRaw('po.produced_qty > feedback_qty')
             ->select('po.*')->get();
