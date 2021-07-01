@@ -115,11 +115,11 @@
 					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
 					<i class="far fa-check-circle"></i> Feedback
 					</a>
-					<a class="btn btn-app bg-secondary" href="/material_transfer">
+					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
 					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
 					<i class="fas fa-exchange-alt"></i> Transfer
 					</a>
-					<a class="btn btn-app bg-maroon" href="/receipts">
+					<a class="btn btn-app bg-purple" href="/receipts">
 					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
 					<i class="fas fa-boxes"></i> PO Receipts
 					</a>
@@ -135,7 +135,7 @@
 					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
 					<i class="fas fa-truck"></i> Deliveries
 					</a>
-					<a class="btn btn-app bg-orange" href="/replacements">
+					<a class="btn btn-app bg-teal" href="/replacements">
 					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
 					<i class="fas fa-retweet"></i> Replacements
 					</a>
