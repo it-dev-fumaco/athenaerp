@@ -27,6 +27,9 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/picking_slip', 'MainController@view_picking_slip');
     Route::get('/production_to_receive', 'MainController@view_production_to_receive');
 
+    // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
+    Route::post('/cancel_transaction', 'MainController@cancel_athena_transaction');
+
     // JQUERY
     Route::get('/count_ste_for_issue/{purpose}', 'MainController@count_ste_for_issue');
     Route::get('/count_ps_for_issue', 'MainController@count_ps_for_issue');

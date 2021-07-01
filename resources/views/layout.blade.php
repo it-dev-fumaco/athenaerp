@@ -1511,6 +1511,29 @@
 				get_stock_reservation(item_code)
 			}
 
+			$(document).on('submit', '.cancel-modal form', function(e){
+				e.preventDefault();
+
+				// alert();
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							$('.cancel-modal').modal('hide');
+							// $('.cancel-modal').modal('hide');
+							get_athena_transactions(response.item_code);
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			});
+
 			function get_athena_transactions(item_code, page){
 				$.ajax({
 					type: 'GET',
@@ -1682,7 +1705,7 @@
 			});
 			
 			$('#view-item-details-modal').on("hidden.bs.modal", function () {
-				$('#item-tabs a[href="#tab_1"]').tab('show');
+				// $('#item-tabs a[href="#tab_1"]').tab('show');
 			});
 
 			$(document).on('hidden.bs.modal', '.modal', function () {

@@ -1296,6 +1296,9 @@ class MainController extends Controller
         $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->paginate(10);
 
         $list = [];
+
+        $user_group = DB::table('tabWarehouse Users')->where('wh_user', Auth::user()->wh_user)->first();
+
         foreach($logs as $row){
             $ps_ref = ['Packing Slip', 'Picking Slip'];
             $reference_type = (in_array($row->reference_type, $ps_ref)) ? 'Packing Slip' : $row->reference_type;
@@ -1304,7 +1307,7 @@ class MainController extends Controller
             if(!$existing_reference_no){
                 $status = 'DELETED';
             }else{
-                if ($existing_reference_no->docstatus == 2) {
+                if ($existing_reference_no->docstatus == 2 or $row->docstatus == 2) {
                     $status = 'CANCELLED';
                 } elseif ($existing_reference_no->docstatus == 0) {
                     $status = 'DRAFT';
@@ -1313,6 +1316,8 @@ class MainController extends Controller
                 }
             }
             $list[] = [
+                'reference_name' => $row->reference_name,
+                'item_code' => $row->item_code,
                 'reference_parent' => $row->reference_parent,
                 'source_warehouse' => $row->source_warehouse,
                 'target_warehouse' => $row->target_warehouse,
@@ -1325,7 +1330,75 @@ class MainController extends Controller
             ];
         }
 
-        return view('tbl_athena_transactions', compact('list', 'logs', 'item_code'));
+        return view('tbl_athena_transactions', compact('list', 'logs', 'item_code', 'user_group'));
+    }
+
+    public function cancel_athena_transaction(Request $request){
+        // return $request->athena_transaction_number;
+        DB::beginTransaction();
+        try{
+            // $SEstatus_update = [
+                //     'se.item_status' => 'For Checking',
+                //     'sed.status' => 'For Checking',
+                //     'sed.session_user' => "",
+                //     'sed.issued_qty' => 0,
+                //     'sed.date_modified' => null
+                // ];
+    
+            // $SEcancel = DB::table('tabStock Entry as se')
+            //     ->join('tabStock Entry Detail as sed', 'sed.parent', 'se.name')
+            //     ->where('se.name', $request->athena_transaction_number)
+            //     ->orwhere('sed.parent', $request->athena_transaction_number)
+            //     ->update($SEstatus_update);
+
+            // $SEPScancel = DB::table('tabStock Entry as se')
+            //     ->join('tabPacking Slip as ps', 'ps.name', 'se.name')
+            //     ->where('ps.name', $request->athena_transaction_number)
+            //     ->update(['se.item_status' => 'test','ps.item_status' => 'test']);
+            // return $SEPScancel;
+
+            $ATstatus_update = [
+                'docstatus' => 2
+            ];
+
+            $SEstatus_update = [
+                'item_status' => 'For Checking'
+            ];
+
+            // return $SEstatus_update;
+
+            $SEDstatus_update = [
+                'status' => 'For Checking',
+                'session_user' => "",
+                'issued_qty' => 0,
+                'date_modified' => null
+            ];
+
+            $PSIstatus_update = [
+                'status' => 'For Checking',
+                'session_user' => "",
+                'barcode' => "",
+                'date_modified' => null
+            ];
+            // return $SEDstatus_update;
+
+            $ATcancel = DB::table('tabAthena Transactions')->where('reference_parent', $request->athena_transaction_number)->update($ATstatus_update);
+            $SEcancel = DB::table('tabStock Entry')->where('name', $request->athena_transaction_number)->update($SEstatus_update);
+            $SEDcancel = DB::table('tabStock Entry Detail')->where('parent', $request->athena_transaction_number)->update($SEDstatus_update);
+
+            $PSstatus_update = DB::table('tabPacking Slip')->where('name', $request->athena_transaction_number)->update($SEstatus_update);
+            $PSIstatus_update = DB::table('tabPacking Slip Item')->where('name', $request->athena_reference_name)->update($PSIstatus_update);
+
+            // return $SEDcancel;
+
+            DB::commit();
+            return response()->json(['status' => 1, 'message' => '<b>'. $request->athena_transaction_number . '</b> has been cancelled.', 'item_code' => $request->itemCode ]);
+            // return redirect()->back();
+        }catch(Exception $e){
+            DB::rollback();
+            // return redirect()->back();
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+        }
     }
 
     public function get_stock_ledger($item_code, Request $request){
