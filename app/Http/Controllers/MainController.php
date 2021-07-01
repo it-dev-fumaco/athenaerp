@@ -3258,49 +3258,24 @@ class MainController extends Controller
 						->where('production_order', $production_order_details->name)->update($production_data_mes);
 					$this->insert_production_scrap($production_order_details->name, $request->fg_completed_qty);
 				});
-			}
-			$data = array(
-                'posting_date'  => $now->format('Y-m-d'),
-                'posting_time'  => $now->format('H:i:s'),
-                'ste'           => $new_id,
-				'sales_order_no'=> $mes_production_order_details->sales_order,
-				'mreq'			=> $production_order_details->material_request,
-                'item_code'     => $production_order_details->production_item,
-				'item_name'     => $production_order_details->item_name,
-				'customer'		=> $mes_production_order_details->customer,
-				'feedbacked_by' => Auth::user()->wh_user,
-				'completed_qty' => $request->fg_completed_qty, 
-				'uom'			=> $production_order_details->stock_uom
-			);
-			$recipient= DB::connection('mysql_mes')
-                ->table('email_trans_recipient')
-				->where('email_trans', "Feedbacking")
-				->where('email', 'like','%@fumaco.local%')
-                ->select('email')
-                ->get();
-			if(count($recipient) > 0){
-				if($mes_production_order_details->parent_item_code == $mes_production_order_details->sub_parent_item_code && $mes_production_order_details->sub_parent_item_code == $mes_production_order_details->item_code){
-					foreach ($recipient as $row) {
-						Mail::to($row->email)->send(new SendMail_feedbacking($data));
-					}	
-				}
-			}
-			$feedbacked_timelogs = [
-                'production_order'  => $mes_production_order_details->production_order,
-                'ste_no'           => $new_id,
-                'item_code'     => $production_order_details->production_item,
-				'item_name'     => $production_order_details->item_name,
-				'feedbacked_qty' => $request->fg_completed_qty, 
-				'from_warehouse'=> $production_order_details->wip_warehouse,
-				'to_warehouse' => $mes_production_order_details->fg_warehouse,
-				'transaction_date'=>$now->format('Y-m-d'),
-				'transaction_time' =>$now->format('G:i:s'),
-				'created_at'  => $now->toDateTimeString(),
-				'created_by'  =>  Auth::user()->wh_user,
-			];
 
-			DB::connection('mysql_mes')->table('feedbacked_logs')->insert($feedbacked_timelogs);
-
+                $feedbacked_timelogs = [
+                    'production_order'  => $mes_production_order_details->production_order,
+                    'ste_no'           => $new_id,
+                    'item_code'     => $production_order_details->production_item,
+                    'item_name'     => $production_order_details->item_name,
+                    'feedbacked_qty' => $request->fg_completed_qty, 
+                    'from_warehouse'=> $production_order_details->wip_warehouse,
+                    'to_warehouse' => $mes_production_order_details->fg_warehouse,
+                    'transaction_date'=>$now->format('Y-m-d'),
+                    'transaction_time' =>$now->format('G:i:s'),
+                    'created_at'  => $now->toDateTimeString(),
+                    'created_by'  =>  Auth::user()->wh_user,
+                ];
+    
+                DB::connection('mysql_mes')->table('feedbacked_logs')->insert($feedbacked_timelogs);
+			}
+			
 			DB::commit();
 
 			return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.']);
