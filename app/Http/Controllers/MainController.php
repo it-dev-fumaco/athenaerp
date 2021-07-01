@@ -2474,7 +2474,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Reservation as sr')
             ->join('tabItem as ti', 'sr.item_code', 'ti.name')
             ->groupby('sr.item_code', 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
-            ->where('sr.warehouse', $allowed_warehouses)
+            ->whereIn('sr.warehouse', $allowed_warehouses)
             ->whereNotIn('sr.status', ['Cancelled', 'Expired'])
             ->orderBy('sr.creation', 'desc')
             ->select('sr.item_code', DB::raw('sum(sr.reserve_qty) as qty'), 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
