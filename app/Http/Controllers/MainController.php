@@ -2555,7 +2555,7 @@ class MainController extends Controller
          $q = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)
             ->where('se.purpose', 'Material Issue')->where('se.issue_as', 'Customer Replacement')
-            ->select('sed.status', 'sed.validate_item_code', 'se.sales_order_no', 'sed.parent', 'sed.name', 'sed.t_warehouse', 'sed.s_warehouse', 'sed.item_code', 'sed.description', 'sed.uom', 'sed.qty', 'sed.owner', 'se.material_request', 'se.creation')
+            ->select('sed.status', 'sed.validate_item_code', 'se.sales_order_no', 'sed.parent', 'sed.name', 'sed.t_warehouse', 'sed.s_warehouse', 'sed.item_code', 'sed.description', 'sed.uom', 'sed.qty', 'sed.owner', 'se.material_request', 'se.creation', 'se.delivery_date')
             ->orderByRaw("FIELD(sed.status, 'For Checking', 'Issued') ASC")
             ->get();
  
@@ -2596,6 +2596,7 @@ class MainController extends Controller
                  'status' => $d->status,
                  'available_qty' => $available_qty,
                  'ref_no' => $ref_no,
+                 'delivery_date' => $d->delivery_date,
                  'parent_warehouse' => $parent_warehouse,
                  'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
              ];

@@ -91,7 +91,11 @@
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
 												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }}</span>
 											</td>
-											<td class="text-center">@{{ x.ref_no }}</td>
+											<td class="text-center">
+												@{{ x.ref_no }}<br/>
+												<span class="customer d-block" style="font-size: 10pt;">@{{ x.customer }}</span>
+												<span style="font-size: 10pt;"><small>@{{ x.delivery_date ? "Delivery Date:" + x.delivery_date : '' }}</small></span>
+											</td>
 											<td class="text-center"><img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}"></td>
 										</tr>
 									</tbody>
