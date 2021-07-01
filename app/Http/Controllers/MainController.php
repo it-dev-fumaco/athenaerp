@@ -1525,6 +1525,7 @@ class MainController extends Controller
 
         $q = DB::connection('mysql_mes')->table('production_order AS po')
             ->whereNotIn('po.status', ['Cancelled'])
+            ->whereIn('po.fg_warehouse', $allowed_warehouses)
             ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')
             ->where('po.produced_qty', '>', 0)
             ->whereRaw('po.produced_qty > feedback_qty')
@@ -2923,7 +2924,7 @@ class MainController extends Controller
                 ->where('docstatus', 1)->exists();
             
 			if(!$existing_ste_transfer){
-                return response()->json(['status' => 0, 'message' => 'Materials unavailable.']);
+            return response()->json(['status' => 0, 'message' => 'Materials unavailable.']);
 			}
             
 			$production_order_details = DB::table('tabProduction Order')
@@ -3014,7 +3015,6 @@ class MainController extends Controller
 					}
 
 					if($qty <= 0){
-                        return response()->json(['status' => 0, 'message' => $qty]);
 						return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0 for ' . $row['item_code'] . ' in ' . $production_order_details->wip_warehouse]);
 					}
 

@@ -57,7 +57,7 @@ Route::group(['middleware' => 'auth'], function(){
 
     Route::post('/checkout_ste_item', 'MainController@checkout_ste_item');
     Route::post('/checkout_picking_slip_item', 'MainController@checkout_picking_slip_item');
-    Route::post('/return_dr_item', 'MainController@return_dr_item');
+    Route::post('/submit_dr_sales_return', 'MainController@submit_dr_sales_return');
 
     Route::get('/submit_stock_entry/{id}', 'MainController@submit_stock_entry');
 
@@ -85,7 +85,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_purchase_receipt_details/{id}', 'MainController@get_purchase_receipt_details');
     Route::post('/update_received_item', 'MainController@update_received_item');
     Route::get('/inv_accuracy/{year}', 'MainController@invAccuracyChart');
-    Route::get('/get_recently_added_items', 'MainController@get_recently_added_items');
+    // Route::get('/get_recently_added_items', 'MainController@get_recently_added_items');
+    Route::get('/get_reserved_items', 'MainController@get_reserved_items');
     Route::get('/get_available_qty/{item_code}/{warehouse}', 'MainController@get_available_qty');
     Route::get('/validate_if_reservation_exists', 'MainController@validate_if_reservation_exists');
     Route::post('/submit_sales_return', 'MainController@submit_sales_return');
@@ -94,6 +95,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/submit_transaction', 'MainController@submit_transaction');
     Route::get('/create_material_request/{id}', 'MainController@create_material_request');
     Route::get('/consignment_warehouses', 'MainController@consignment_warehouses');
-
     Route::post('/create_feedback', 'MainController@create_feedback');
 });

@@ -1,6 +1,6 @@
 <div class="modal-content">
     <div class="modal-header">
-        <h4 class="modal-title">Sales Return <small class="badge {{ ($data['status'] == 'For Checking') ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h4>
+        <h4 class="modal-title">Sales Return <small class="badge {{ (in_array($data['status'], ['For Return', 'For Checking'])) ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h4>
           <button type="button" class="close" data-dismiss="modal">&times;</button>
     </div>
     <div class="modal-body">
@@ -12,7 +12,7 @@
                     </h4>
                 </div>
                 <input type="hidden" name="child_tbl_id" value="{{ $data['name'] }}">
-                <input type="hidden" name="is_stock_entry" value="1">
+                <input type="hidden" name="is_stock_entry" value="{{ ($is_stock_entry) ? 1 : 0 }}">
                 <input type="hidden" name="has_reservation" value="0">
                 <div class="box-body" style="font-size: 12pt;">
                     <div class="row">
@@ -22,7 +22,7 @@
                         </div>
                         <div class="col-md-6 form-group">
                             <label>Qty</label>
-                            <input type="text" class="form-control" name="qty" placeholder="Qty" value="{{ $data['qty'] }}" required>
+                            <input type="text" class="form-control disabled" name="qty" placeholder="Qty" value="{{ $data['qty'] }}" readonly required>
                         </div>
                         <div class="col-md-12">
                             <div class="row">
@@ -41,7 +41,7 @@
                                         <dt>Available Qty</dt>
                                         <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
                                         <dt class="mt-1">Reference No:</dt>
-                                        <dd>{{ $data['ref_no'] }}</dd>
+                                        <dd>{!! $data['ref_no'] !!}</dd>
                                     </dl>
                                 </div>
                             </div>
