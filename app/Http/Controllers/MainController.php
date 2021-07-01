@@ -1481,6 +1481,8 @@ class MainController extends Controller
 
         $q = DB::connection('mysql_mes')->table('production_order AS po')
             ->whereNotIn('po.status', ['Cancelled'])
+            ->whereIn('po.fg_warehouse', $allowed_warehouses)
+            ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')
             ->where('po.produced_qty', '>', 0)
             ->whereRaw('po.produced_qty > feedback_qty')
             ->select('po.*')->get();
@@ -1508,7 +1510,8 @@ class MainController extends Controller
                 'parent_warehouse' => $parent_warehouse,
                 'owner' => $owner,
                 'created_at' =>  Carbon::parse($row->created_at)->format('M-d-Y h:i A'),
-                'operation_name' => $operation_name
+                'operation_name' => $operation_name,
+                'delivery_date' => Carbon::parse($row->delivery_date)->format('F d, Y')
             ];
         }
 
