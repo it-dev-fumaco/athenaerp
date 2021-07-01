@@ -9,15 +9,19 @@ Instructions using GUI and Commands
     Type copy .env.example .env
     Setup database connections in .env file
          - ERP (for dev)
-            - host = 10.0.48.85
-            - database name = '3f2ec5a818bccb73'
-            - username = erp
-            - password = 'fumaco'
+            DB_CONNECTION=mysql
+            DB_HOST=10.0.48.85
+            DB_PORT=3306
+            DB_DATABASE=3f2ec5a818bccb73
+            DB_USERNAME=erp
+            DB_PASSWORD=fumaco
         - MES (for dev)
-            - host 10.0.0.93
-            - database name = 'mes-testing'
-            - username = dev
-            - password = 'fumaco'
+            DB_CONNECTION_1=mysql
+            DB_HOST_1=10.0.0.93
+            DB_PORT_1=3306
+            DB_DATABASE_1=mes-testing
+            DB_USERNAME_1=dev
+            DB_PASSWORD_1=fumaco
     Type php artisan key:generate
     Type php artisan optimize
     Type php artisan serve
