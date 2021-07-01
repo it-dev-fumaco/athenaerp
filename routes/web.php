@@ -95,5 +95,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/create_material_request/{id}', 'MainController@create_material_request');
     Route::get('/consignment_warehouses', 'MainController@consignment_warehouses');
 
-    Route::post('/create_feedback/{production_order}', 'MainController@create_feedback');
+    Route::post('/create_feedback', 'MainController@create_feedback');
 });

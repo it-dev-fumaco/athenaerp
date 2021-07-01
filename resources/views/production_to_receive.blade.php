@@ -79,7 +79,8 @@
 										</td>
 										<td class="text-center">
 											<span class="reference-no d-block">@{{ x.sales_order_no }}@{{ x.material_request }}</span>
-											<span class="customer d-block">@{{ x.customer }}</span>
+											<span class="customer d-block" style="font-size: 10pt;">@{{ x.customer }}</span>
+											<span style="font-size: 10pt;"><small>@{{x.material_request ? "" : "Delivery Date: " + x.delivery_date }}</small></span>
 										</td>
 										<td class="text-center">
 											<img src="dist/img/check.png" class="img-circle checkout feedback-details" data-id="@{{ x.production_order }}">
@@ -96,7 +97,10 @@
 </div>
 
 <div class="modal fade" id="receive-item-modal">
-	<div class="modal-dialog" style="min-width: 35% !important;"></div>
+	<form method="POST" action="/create_feedback" autocomplete="off">
+		@csrf
+		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+	</form>
 </div>
 @endsection
 
@@ -120,6 +124,68 @@
 				}
 			});
 		});
+
+		$('#receive-item-modal form').validate({
+			rules: {
+				barcode: {
+					required: true,
+				},
+          		fg_completed_qty: {
+					required: true,
+				},
+			},
+			messages: {
+				barcode: {
+					required: "Please enter barcode",
+				},
+				fg_completed_qty: {
+					required: "Please enter quantity",
+				},
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.form-group').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			},
+			submitHandler: function(form) {
+				$.ajax({
+					type: 'POST',
+					url: $(form).attr('action'),
+					data: $(form).serialize(),
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							$('#receive-item-modal').modal('hide');
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			}
+		});
+
+		function showNotification(color, message, icon){
+			$.notify({
+				icon: icon,
+				message: message
+			},{
+				type: color,
+				timer: 500,
+				z_index: 1060,
+				placement: {
+					from: 'top',
+					align: 'center'
+				}
+			});
+		}
 	});
 
 	var app = angular.module('myApp', []);
