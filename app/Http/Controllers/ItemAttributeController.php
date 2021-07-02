@@ -190,6 +190,9 @@ class ItemAttributeController extends Controller
             $attribName = $request->attribName;
             $newAttrib = $request->attrib;
             $currentAttrib = $request->currentAttrib;
+            $currentAbbr = $request->currentAbbr;
+            $attVal = '';
+            $abbVal ='';
             for($i = 0; $i < count($newAttrib); $i++){
                 $getItemVariants = DB::table('tabItem as i')->join('tabItem Variant Attribute as d', 'i.name', 'd.parent')
                     ->where('i.is_stock_item', 1)->where('i.has_variants', 0)->where('attribute', $attribName[$i])->where('attribute_value', $newAttrib[$i])
@@ -210,8 +213,12 @@ class ItemAttributeController extends Controller
                     
                     $affectedRows += DB::table('tabItem Variant Attribute')->where('attribute', $attribName[$i])
                         ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
+
+                    $attVal .= $attribName[$i].' was changed from '.$currentAttrib[$i].' to '.$request->attrib[$i]. ', ';
                 }
             }
+            // return $affectedRows;
+            // return $attVal;
 
             $itemDuplicate = collect($attrArr)->min('item_code_with_same_attr');
             $itemDuplicate = ($itemDuplicate) ? $itemDuplicate[0] : null;
@@ -221,7 +228,7 @@ class ItemAttributeController extends Controller
                     return response()->json(['status' => 0, 'message' => 'Item Variant <b>' . $itemDuplicate . '</b> already exists with same attributes.']);
                 }
             }
-
+            
             for($h=0; $h < count($currentAttrib); $h++){
                 if($currentAttrib[$h] != $request->attrib[$h]) {
                     $attribVal2 = [
@@ -234,12 +241,36 @@ class ItemAttributeController extends Controller
                 }
             }
 
+            $abbVal = '';
+            for($t=0; $t < count($currentAbbr); $t++){
+                if($currentAbbr[$t] != $request->abbr[$t]){
+                    $abbVal .= 'Abbreviation '.$currentAbbr[$t].' was changed to '.$request->abbr[$t]. ', ';
+                }
+            }
+
+            // return $abbVal;
+
             $attribVal3 = [
                 'item_name' => $this->generateItemDescription($request->itemCode)['item_name'],
                 'description' => $this->generateItemDescription($request->itemCode)['description']
             ];
             
             DB::table('tabItem')->where('name', $request->itemCode)->update($attribVal3);
+            $act =[
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'idx' => 0,
+                'docstatus' => 0,
+                'user' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'transaction_date' => Carbon::now()->toDateTimeString(),
+                'subject' => $attVal. $abbVal.'of item '.$itemDetails->variant_of,
+                'operation' => 'Update Attribute'
+            ];
+
+            // return $act;
+
+            $logs = DB::table('tabItem Attribute Update Activity Log')->insert($act);
 
             DB::commit();
 
@@ -375,6 +406,22 @@ class ItemAttributeController extends Controller
                 ]);
             }
 
+            $act =[
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'idx' => 0,
+                'docstatus' => 0,
+                'user' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'transaction_date' => Carbon::now()->toDateTimeString(),
+                'subject' => $request->attributeName.' attribute has been added to '.$request->parentItem,
+                'operation' => 'Add Attribute'
+            ];
+
+            // return $act;
+
+            $logs = DB::table('tabItem Attribute Update Activity Log')->insert($act);
+
             DB::commit();
 
             return response()->json(['status' => 1, 'message' => $message, 'count' => $affectedRows, 'displayCount' => $displayCount]);
@@ -468,6 +515,22 @@ class ItemAttributeController extends Controller
                     'description' => $this->generateItemDescription($itemCode)['description']
                 ]);
             }
+
+            $act =[
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'idx' => 0,
+                'docstatus' => 0,
+                'user' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'transaction_date' => Carbon::now()->toDateTimeString(),
+                'subject' => $attribute.' attribute has been removed from '.$parentItemCode,
+                'operation' => 'Delete Attribute'
+            ];
+
+            // return $act;
+
+            $logs = DB::table('tabItem Attribute Update Activity Log')->insert($act);
 
             DB::commit();
 

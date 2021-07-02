@@ -90,6 +90,7 @@
                                             <input type="text" id="attribVal" class="form-control" name="attrib[]" value="{{ $value['attribute_value'] }}" required/>
                                         </td>
                                         <td class="p-1">
+                                            <input type="text" name="currentAbbr[]" value="{{ $value['abbr'] }}" readonly hidden/>
                                             <input type="text" id="attribAbbr" class="form-control" name="abbr[]" value="{{ $value['abbr'] }}" maxlength="5" required/>
                                         </td>
                                         <td class="text-center">
