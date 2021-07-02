@@ -587,9 +587,13 @@ class MainController extends Controller
     public function feedback_details($id){  
         // $user = Auth::user()->frappe_userid;
         // $allowed_warehouses = $this->user_allowed_warehouse($user);
-        $data = DB::connection('mysql_mes')->table('production_order AS po')
-            ->where('po.production_order', $id)
-            ->select('po.*')->first();
+        $try = DB::connection('mysql_mes')->table('production_order AS po')
+            ->where('po.production_order', $id)->get();
+
+        if(count($try) == 1){
+            $data = DB::connection('mysql_mes')->table('production_order AS po')
+                ->where('po.production_order', $id)
+                ->select('po.*')->first();
 
             $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
         
@@ -606,26 +610,87 @@ class MainController extends Controller
                 'item_code' => $data->item_code,
                 'description' => $data->description,
                 'qty_to_receive' => $data->produced_qty - $data->feedback_qty,
+                'feedback_qty' => $data->feedback_qty,
                 'stock_uom' => $data->stock_uom,
             ];
+        }else{
+            $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed')
+            ->where('se.production_order', $id)->first();
 
-               // foreach ($data as $row) {
-        //     $q[] = [
-        //         'production_order' => $row->production_order,
-        //         'fg_warehouse' => $row->fg_warehouse,
-        //         'sales_order_no' => $row->sales_order,
-        //         'status' => $row->status,
-        //         'material_request' => $row->material_request,
-        //         'customer' => $row->customer,
-        //         'item_code' => $row->item_code,
-        //         'description' => $row->description,
-        //         'qty_to_receive' => $row->produced_qty - $row->feedback_qty,
-        //         'stock_uom' => $row->stock_uom,
-        //     ];
-        // }
+            $q[] = [
+                'production_order' => $se->production_order,
+                'fg_warehouse' => $se->to_warehouse,
+                'sales_order_no' => $se->sales_order_no,
+                'status' => $se->item_status,
+                'material_request' => $se->material_request,
+                'customer' => $se->customer,
+                'item_code' => $se->item_code,
+                'description' => $se->description,
+                'qty_to_receive' => $se->actual_qty,
+                'feedback_qty' => $data->transfer_qty,
+                'stock_uom' => $se->stock_uom,
+            ];
+        }
+
         // return $q;
         return view('feedback_details_modal', compact('q'));
-        // return response()->json($data);
+    }
+
+    public function feedback_submit(Request $request){
+        DB::beginTransaction();
+        try{
+            $now = Carbon::now();
+
+            $erp_update = [];
+            
+            $erp_update = [
+                'produced_qty' => $request->r_qty + $request->ofeedback_qty,
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'status' => $request->r_qty == $request->f_qty ? "Completed" : "In Process"
+            ];
+
+            // return $erp_update;
+
+            $erp_prod = DB::table('tabProduction Order')->where('name', $request->prod_order)->where('docstatus', 1)->update($erp_update);
+
+            $mes_update = [];
+            
+            $mes_update = [
+                'feedback_qty' => $request->r_qty + $request->ofeedback_qty,
+                'last_modified_by' => Auth::user()->wh_user,
+                'last_modified_at' => $now->toDateTimeString()
+            ];
+
+            // return $mes_update;
+            $mes_prod = DB::connection('mysql_mes')->table('production_order as po')->where('po.production_order', $request->prod_order)->update($mes_update);
+
+            $feedback_log = [];
+
+            $feedback_log = [
+                'production_order' => $request->prod_order,
+                'ste_no' => "",
+                'item_code' => $request->itemCode,
+                'item_name' => $request->itemDesc,
+                'feedbacked_qty' => $request->r_qty,
+                'from_warehouse' => $request->src_wh,
+                'to_warehouse' => $request->to_wh,
+                'transaction_date' => $now->format('Y-m-d'),
+                'transaction_time' => $now->format('H:i:s'),
+                'status' => "",
+                'created_at' => $now->toDateTimeString(),
+                'created_by' => Auth::user()->wh_user
+            ];
+
+            // return $feedback_log;
+
+            $mes_log = DB::connection('mysql_mes')->table('feedbacked_logs')->insert($feedback_log);
+
+            DB::commit();
+            return redirect()->back();
+        }catch(Exception $e){
+            DB::rollback();
+        }
     }
 
     public function get_ste_details($id){
@@ -1522,6 +1587,7 @@ class MainController extends Controller
         
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
+        $list = [];
 
         $q = DB::connection('mysql_mes')->table('production_order AS po')
             ->whereNotIn('po.status', ['Cancelled'])
@@ -1531,7 +1597,39 @@ class MainController extends Controller
             ->whereRaw('po.produced_qty > feedback_qty')
             ->select('po.*')->get();
 
-        $list = [];
+        $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+             ->where('purpose','Manufacture')->where('to_warehouse', 'P2 - Housing Temporary - FI')->where('production_order', '!=', '')
+             ->where('sed.docstatus', 0)
+            ->get();
+
+        foreach ($se as $row) {
+            $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
+    
+            $owner = ucwords(str_replace('.', ' ', explode('@', $row->creation)[0]));
+    
+            $operation_id = 0;
+            $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
+            $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
+    
+            $list[] = [
+                'production_order' => $row->production_order,
+                'fg_warehouse' => $row->to_warehouse,
+                'sales_order_no' => $row->sales_order_no,
+                'material_request' => $row->material_request,
+                'customer' => $row->customer,
+                'item_code' => $row->item_code,
+                'description' => $row->description,
+                'qty_to_receive' => $row->actual_qty * 1,
+                'qty_to_manufacture' => $row->transfer_qty,
+                'stock_uom' => $row->stock_uom,
+                'parent_warehouse' => $row->from_warehouse,
+                'owner' => $owner,
+                'created_at' =>  Carbon::parse($row->creation)->format('M-d-Y h:i A'),
+                'operation_name' => $operation_name,
+                'delivery_date' => Carbon::parse($row->delivery_date)->format('F d, Y')
+            ];
+        }
+
         foreach ($q as $row) {
             $parent_warehouse = $this->get_warehouse_parent($row->fg_warehouse);
 
@@ -1550,6 +1648,7 @@ class MainController extends Controller
                 'item_code' => $row->item_code,
                 'description' => $row->description,
                 'qty_to_receive' => $row->produced_qty - $row->feedback_qty,
+                'qty_to_manufacture' => $row->qty_to_manufacture,
                 'stock_uom' => $row->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'owner' => $owner,
