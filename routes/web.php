@@ -29,6 +29,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/getAttributes', 'ItemAttributeController@getAttributes');
     Route::get('/viewParentItemDetails', 'ItemAttributeController@viewParentItemDetails');
     Route::post('/deleteItemAttribute/{parentItemCode}', 'ItemAttributeController@deleteItemAttribute');
+    Route::post('/updateParentItem/{item_code}', 'ItemAttributeController@updateParentItem');
     
     
     Route::get('/', 'MainController@index');

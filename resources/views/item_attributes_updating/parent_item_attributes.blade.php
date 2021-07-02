@@ -24,10 +24,52 @@
                 </div>
                 @elseif($itemDetails)
                 <div class="col-md-4 offset-md-4 align-middle">
-                    <h4 class="text-left m-1 pt-3">Template Item: <span class="font-weight-bold">{{ $itemDetails->name }}</span> <small>{{ $itemDetails->description }}</small></h4>
+                    <h5 class="text-left m-1 pt-2">Template Item: <span class="font-weight-bold">{{ $itemDetails->name }}</span> <small>{{ $itemDetails->description }} <a href="#" class="ml-2" data-toggle="modal" data-target="#modal-default"><i class="fas fa-edit"></i> Edit</a></small></h5>
+                    
                 </div>
+
+                <div class="modal fade" id="modal-default">
+                    <form action="/updateParentItem/{{ $itemDetails->name }}" autocomplete="off" method="post">
+                        @csrf
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                <h4 class="modal-title">Change Template Item Name</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label for="">Item Code</label>
+                                        <input type="text" class="form-control" value="{{ $itemDetails->name }}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="">Item Name</label>
+                                        <input type="text" class="form-control" name="item_name" value="{{ $itemDetails->item_name }}" placeholder="Enter Item Name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="">Description</label>
+                                        <textarea name="description" class="form-control" placeholder="Enter Item Description">{{ $itemDetails->description }}</textarea>
+                                    </div>
+                                    <div class="alert alert-info text-center p-3">
+                                        <small><i class="fas fa-info-circle"></i> <b>Note:</b> Item description of the variants of this item will also be updated.</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Save changes</button>
+                                </div>
+                            </div>
+                        <!-- /.modal-content -->
+                        </div>
+                    </form>
+                    <!-- /.modal-dialog -->
+                </div>
+                <!-- /.modal -->
+
                 <div class="col-md-4 offset-md-4">
-                    <div class="card card-secondary card-outline mt-3">
+                    <div class="card card-secondary card-outline mt-2">
                         <div class="card-header">
                             <h5 class="card-title m-0">Item Attribute(s) <span class="badge badge-info">{{ count($attributes) }}</span></h5>
                             <div class="card-tools">
@@ -41,10 +83,9 @@
                         </div>
                         <div class="card-body p-2">
                             @if (\Session::has('message'))
-                            <div class="alert {{ (\Session::get('status') == 1) ? 'alert-success' : 'alert-danger' }} alert-dismissible">
+                            <div class="alert {{ (\Session::get('status') == 1) ? 'alert-success' : 'alert-danger' }} alert-dismissible text-center">
                                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                                <h5><i class="icon fas fa-check"></i> Attribute Deleted!</h5>
-                                {!! \Session::get('message') !!}
+                                <i class="fas fa-check"></i> {!! \Session::get('message') !!}
                             </div>
                             @endif
                             <table class="table table-bordered table-hover m-0">

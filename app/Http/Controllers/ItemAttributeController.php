@@ -15,6 +15,10 @@ use Illuminate\Support\Str;
 class ItemAttributeController extends Controller
 {
     public function update_login(){
+        if(Auth::user()) {
+             return redirect('/search');
+        }
+        
         return view('item_attributes_updating.login');
     }
 
@@ -468,6 +472,41 @@ class ItemAttributeController extends Controller
             DB::commit();
 
             return redirect()->back()->with(['status' => 1, 'message' => "Attribute <b>" . $attribute . "</b> has been removed from the attribute list of <b>" . $parentItemCode . "</b> and it's variants. No. of item(s) updated: <b>" . $affectedRows . "</b>"]);
+        } catch (Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->with(['status' => 0, 'message' => 'Error updating. Please try again.']);
+        }
+    }
+
+    public function updateParentItem(Request $request, $item_code) {
+        DB::beginTransaction();
+        try {
+            $parentItemDetails = DB::table('tabItem')->where('name', $item_code)->first();
+            if(!$parentItemDetails) {
+                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>' . $item_code . '</b> not found.']);
+            }
+
+            DB::table('tabItem')->where('name', $item_code)->update([
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'item_name' => $request->item_name,
+                'description' => $request->description
+            ]);
+
+            $itemVariants = DB::table('tabItem')->where('variant_of', $item_code)->pluck('name');
+            foreach($itemVariants as $itemCode) {
+                DB::table('tabItem')->where('name', $itemCode)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'item_name' => $this->generateItemDescription($itemCode)['item_name'],
+                    'description' => $this->generateItemDescription($itemCode)['description']
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with(['status' => 1, 'message' => "Item <b>" . $item_code . "</b> has been updated. No. of item variant(s) updated: <b>" . count($itemVariants) . "</b>"]);
         } catch (Exception $e) {
             DB::rollback();
 
