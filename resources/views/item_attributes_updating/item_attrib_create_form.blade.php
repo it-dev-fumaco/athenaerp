@@ -40,7 +40,7 @@
                 </div>
                 <div class="card card-secondary card-outline">
                     <div class="card-header">
-                        <h5 class="card-title m-0">Item Variant(s) <span class="badge badge-info">{{ collect($itemVariantsArr)->count() }}</span></h5>
+                        <h5 class="card-title m-0">Item Variant(s) <span class="badge badge-info">{{ collect($completeAttr)->count() }}</span></h5>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                               <i class="fas fa-minus"></i>
@@ -64,22 +64,20 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($itemVariantsArr as $row)
-                                        
-                                        <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
+                                        @foreach ($completeAttr as $item_code => $row)
+                                        <input type="hidden" name="itemCode" value="{{ $item_code }}">
                                         <tr>
                                             <td class="text-center align-middle p-2">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="hidden" value="{{ $row['disabled'] }}" name="is_disabled">
-                                                    <input class="custom-control-input cb-1" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}" {{ ($row['disabled']) ? 'checked' : '' }}>
-                                                    <label for="is-disabled-cb-{{ $row['item_code'] }}" class="custom-control-label">Disabled</label>
+                                                    <input class="custom-control-input cb-1" type="checkbox" id="is-disabled-cb-{{ $item_code }}" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                    <label for="is-disabled-cb-{{ $item_code }}" class="custom-control-label">Disabled</label>
                                                 </div>
                                             </td>
-                                            <td class="text-center align-middle font-weight-bold p-2">{{ $row['item_code'] }}</td>
-                                            @foreach ($row['attributes'] as $attr)
-                                            <td class="text-center align-middle p-2">{{ $attr->attribute_value }}</td>
+                                            <td class="text-center align-middle font-weight-bold p-2">{{ $item_code }}</td>
+                                            @foreach ($itemAttributes as $itemAttribute)
+                                            <td class="text-center align-middle p-2">{{ $completeAttr[$item_code][$itemAttribute] }}</td>
                                             @endforeach
-                                            
                                         </tr>
                                         @endforeach
                                         <input type="hidden" id="parentItem" value="{{ $itemParent->name }}">
@@ -97,7 +95,7 @@
             <div class="col-md-12 mt-3">
                 <div class="card collapsed-card card-danger card-outline">
                     <div class="card-header">
-                        <h5 class="card-title m-0">Item Variants with Incomplete Attribute(s) <span class="badge badge-danger">{{ collect($itemsIncompleteAttr)->count() }}</span></h5>
+                        <h5 class="card-title m-0">Item Variants with Incomplete Attribute(s) <span class="badge badge-danger">{{ collect($incompleteAttr)->count() }}</span></h5>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                               <i class="fas fa-plus"></i>
@@ -126,19 +124,19 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($itemsIncompleteAttr as $row)
-                                        <input type="hidden" name="itemCode" value="{{ $row['item_code'] }}">
+                                        @foreach ($incompleteAttr as $item_code => $row)
+                                        <input type="hidden" name="itemCode" value="{{ $item_code }}">
                                         <tr>
                                             <td class="text-center align-middle p-2">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="hidden" class="tb-2" value="{{ $row['disabled'] }}" name="is_disabled">
-                                                    <input class="custom-control-input cb-1 cb-2" type="checkbox" id="is-disabled-cb-{{ $row['item_code'] }}-1" {{ ($row['disabled']) ? 'checked' : '' }}>
-                                                    <label for="is-disabled-cb-{{ $row['item_code'] }}-1" class="custom-control-label">Disabled</label>
+                                                    <input class="custom-control-input cb-1 cb-2" type="checkbox" id="is-disabled-cb-{{ $item_code }}-1" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                    <label for="is-disabled-cb-{{ $item_code }}-1" class="custom-control-label">Disabled</label>
                                                 </div>
                                             </td>
-                                            <td class="text-center align-middle font-weight-bold p-2">{{ $row['item_code'] }}</td>
-                                            @foreach ($row['attributes'] as $attr)
-                                            <td class="text-center align-middle p-2">{{ $attr->attribute_value }}</td>
+                                            <td class="text-center align-middle font-weight-bold p-2">{{ $item_code }}</td>
+                                            @foreach ($itemAttributes as $itemAttribute)
+                                            <td class="text-center align-middle p-2">{{ (isset($incompleteAttr[$item_code][$itemAttribute])) ? $incompleteAttr[$item_code][$itemAttribute] : null }}</td>
                                             @endforeach
                                         </tr>
                                         @endforeach

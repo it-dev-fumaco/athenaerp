@@ -141,31 +141,32 @@ class ItemAttributeController extends Controller
 
         $itemAttributes = DB::table('tabItem Variant Attribute')->where('parent', $itemDetails->variant_of)->orderBy('idx', 'asc')->pluck('attribute');
 
-        $itemVariants = DB::table('tabItem')->where('is_stock_item', 1)->where('has_variants', 0)
-            ->where('variant_of', $itemDetails->variant_of)
-            ->select('item_code', 'disabled')->orderBy('creation', 'asc')->get();
+        $itemVariants = DB::table('tabItem as i')->join('tabItem Variant Attribute as iv', 'i.name', 'iv.parent')
+            ->where('i.is_stock_item', 1)->where('i.has_variants', 0)->where('i.variant_of', $itemDetails->variant_of)
+            ->select('i.item_code', 'i.disabled', 'iv.attribute', 'iv.attribute_value')
+            ->orderBy('i.creation', 'asc')->get();
 
-        $itemVariantsArr = [];
-        $itemsIncompleteAttr = [];
-        foreach($itemVariants as $itemVariant) {
-            $attributes = DB::table('tabItem Variant Attribute')->where('parent', $itemVariant->item_code)->orderBy('idx', 'asc')->get();
-
-            if(count($itemAttributes) == count($attributes)){
-                $itemVariantsArr[] = [
-                    'item_code' => $itemVariant->item_code,
-                    'disabled' => $itemVariant->disabled,
-                    'attributes' => $attributes
-                ];
-            } else {
-                $itemsIncompleteAttr[] = [
-                    'item_code' => $itemVariant->item_code,
-                    'disabled' => $itemVariant->disabled,
-                    'attributes' => $attributes
-                ];
-            }
+        $attributesArr = [];
+        foreach ($itemVariants as $row) {
+            $attributesArr[$row->item_code][$row->attribute] = $row->attribute_value;
+            $attributesArr[$row->item_code]['disabled'] = $row->disabled;
         }
 
-        return view('item_attributes_updating.item_attrib_create_form', compact('itemVariantsArr', 'itemDetails', 'itemAttributes', 'itemParent', 'itemsIncompleteAttr'));
+        $countAttr = count($itemAttributes);
+
+        $completeAttr = collect($attributesArr)->filter(function ($value, $key) use ($countAttr){
+            if((count($value) - 1) == $countAttr) {
+                return $value;
+            }
+        });
+
+        $incompleteAttr = collect($attributesArr)->filter(function ($value, $key) use ($countAttr){
+            if((count($value) - 1) != $countAttr) {
+                return $value;
+            }
+        });
+
+        return view('item_attributes_updating.item_attrib_create_form', compact('completeAttr', 'itemDetails', 'itemAttributes', 'itemParent', 'incompleteAttr'));
     }
     
     public function item_attribute_update(Request $request){
