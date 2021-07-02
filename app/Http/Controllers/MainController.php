@@ -1670,38 +1670,38 @@ class MainController extends Controller
             ->whereRaw('po.produced_qty > feedback_qty')
             ->select('po.*')->get();
 
-        $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
-             ->where('purpose','Manufacture')->where('to_warehouse', 'P2 - Housing Temporary - FI')->where('production_order', '!=', '')
-             ->where('sed.docstatus', 0)
-            ->get();
+        // $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
+        //      ->where('purpose','Manufacture')->where('to_warehouse', 'P2 - Housing Temporary - FI')->where('production_order', '!=', '')
+        //      ->where('sed.docstatus', 0)
+        //     ->get();
 
-        foreach ($se as $row) {
-            $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
+        // foreach ($se as $row) {
+        //     $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
     
-            $owner = ucwords(str_replace('.', ' ', explode('@', $row->creation)[0]));
+        //     $owner = ucwords(str_replace('.', ' ', explode('@', $row->creation)[0]));
     
-            $operation_id = 0;
-            $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
-            $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
+        //     $operation_id = 0;
+        //     $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
+        //     $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
     
-            $list[] = [
-                'production_order' => $row->production_order,
-                'fg_warehouse' => $row->to_warehouse,
-                'sales_order_no' => $row->sales_order_no,
-                'material_request' => $row->material_request,
-                'customer' => $row->customer,
-                'item_code' => $row->item_code,
-                'description' => $row->description,
-                'qty_to_receive' => $row->actual_qty * 1,
-                'qty_to_manufacture' => $row->transfer_qty,
-                'stock_uom' => $row->stock_uom,
-                'parent_warehouse' => $row->from_warehouse,
-                'owner' => $owner,
-                'created_at' =>  Carbon::parse($row->creation)->format('M-d-Y h:i A'),
-                'operation_name' => $operation_name,
-                'delivery_date' => Carbon::parse($row->delivery_date)->format('F d, Y')
-            ];
-        }
+        //     $list[] = [
+        //         'production_order' => $row->production_order,
+        //         'fg_warehouse' => $row->to_warehouse,
+        //         'sales_order_no' => $row->sales_order_no,
+        //         'material_request' => $row->material_request,
+        //         'customer' => $row->customer,
+        //         'item_code' => $row->item_code,
+        //         'description' => $row->description,
+        //         'qty_to_receive' => $row->actual_qty * 1,
+        //         'qty_to_manufacture' => $row->transfer_qty,
+        //         'stock_uom' => $row->stock_uom,
+        //         'parent_warehouse' => $row->from_warehouse,
+        //         'owner' => $owner,
+        //         'created_at' =>  Carbon::parse($row->creation)->format('M-d-Y h:i A'),
+        //         'operation_name' => $operation_name,
+        //         'delivery_date' => Carbon::parse($row->delivery_date)->format('F d, Y')
+        //     ];
+        // }
 
         foreach ($q as $row) {
             $parent_warehouse = $this->get_warehouse_parent($row->fg_warehouse);
