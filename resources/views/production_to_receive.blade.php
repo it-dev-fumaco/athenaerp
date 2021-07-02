@@ -1,5 +1,5 @@
 @extends('layout', [
-	'namePage' => 'Feedback',
+	'namePage' => 'Feedback - To Receive',
     'activePage' => 'feedback',
 	'nameDesc' => 'Incoming'
 ])
@@ -14,7 +14,7 @@
 						<div class="card-header p-0 pt-1 border-bottom-0">
 							<div class="row m-1">
 								<div class="col-xl-4 d-md-none d-lg-none d-xl-inline-block">
-									<h5 class="card-title m-1 font-weight-bold">Feedback</h5>
+									<h5 class="card-title m-1 font-weight-bold">Feedback List</h5>
 								</div>
 								<div class="col-xl-1 col-lg-2 col-md-2">
 									<button type="button" class="btn btn-block btn-primary" ng-click="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
