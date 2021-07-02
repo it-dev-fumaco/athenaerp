@@ -46,8 +46,9 @@
 						<div class="table-responsive p-0">
 							<table class="table table-hover">
 								<col style="width: 17%;">
-								<col style="width: 43%;">
+								<col style="width: 33%;">
 								<col style="width: 15%;">
+								<col style="width: 10%;">
 								<col style="width: 15%;">
 								<col style="width: 10%;">
 								<thead>
@@ -56,6 +57,7 @@
 										<th scope="col" class="text-center">Item Description</th>
 										<th scope="col" class="text-center">Qty to Manufacture</th>
 										<th scope="col" class="text-center">Qty to Receive</th>
+										<th scope="col" class="text-center">Delivery Date</th>
 										<th scope="col" class="text-center">Ref. No.</th>
 										<th scope="col" class="text-center">Actions</th>
 									</tr>
@@ -82,9 +84,12 @@
 											<span class="badge badge-success qty" style="font-size: 14pt;"><b>@{{ x.qty_to_receive }}</b></span>
 										</td>
 										<td class="text-center">
+											<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 11pt;">@{{ x.delivery_date }}</span>
+											<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
+										</td>
+										<td class="text-center">
 											<span class="reference-no d-block">@{{ x.sales_order_no }}@{{ x.material_request }}</span>
 											<span class="customer d-block" style="font-size: 10pt;">@{{ x.customer }}</span>
-											<span style="font-size: 10pt;"><small>@{{x.material_request ? "" : "Delivery Date: " + x.delivery_date }}</small></span>
 										</td>
 										<td class="text-center">
 											<img src="dist/img/check.png" class="img-circle checkout feedback-details" data-id="@{{ x.production_order }}">

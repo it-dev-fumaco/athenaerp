@@ -1727,7 +1727,8 @@ class MainController extends Controller
                 'owner' => $owner,
                 'created_at' =>  Carbon::parse($row->created_at)->format('M-d-Y h:i A'),
                 'operation_name' => $operation_name,
-                'delivery_date' => Carbon::parse($row->delivery_date)->format('F d, Y')
+                'delivery_date' => ($row->delivery_date) ? Carbon::parse($row->delivery_date)->format('M-d-Y') : null,
+                'delivery_status' => ($row->delivery_date) ? ((Carbon::parse($row->delivery_date) < Carbon::now()) ? 'late' : null) : null
             ];
         }
 

@@ -36,26 +36,25 @@
                                     <input type="text" name="itemCode" value="{{ $q['item_code'] }}" hidden/>
                                     <small class="d-block text-justify">{{ $q['description'] }}</small>
                                     <input type="text" name="itemDesc" value="{{ $q['description'] }}" hidden/>
-                                    <br/>
-                                    <label>Received Quantity</label>
-                                    {{-- <input type="text" class="form-control" name="r_qty" placeholder="Received Quantity" value="" required> --}}
-                                    <input type="number" class="form-control" name="r_qty" placeholder="Received Quantity" max="{{ $q['qty_to_receive'] }}" required>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            <dl>
+                                                <dt>Qty to Receive</dt>
+                                                <dd class="badge {{ ($q['qty_to_receive'] > 0) ? 'badge-success' : 'badge-danger' }}" style="font-size: 12pt;">{{ $q['qty_to_receive'] }} {{ $q['stock_uom'] }}</dd>
+                                                <input type="text" name="f_qty" value="{{ $q['qty_to_receive'] }}" hidden />
+                                            </dl>
+                                        </div>
+                                        <div class="col-6">
+                                            <dl>
+                                                <dt class="mt-1">Reference No:</dt>
+                                                <dd>{{ $q['sales_order'] }}{{ $q['material_request'] }}</dd>
+                                                <input type="text" name="ref_number" value="{{ $q['sales_order'] }}{{ $q['material_request'] }}" hidden/>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                    <label>Actual Quantity Received</label>
+                                    <input type="number" class="form-control" name="r_qty" placeholder="Quantity" max="{{ $q['qty_to_receive'] }}" required>
                                     <input type="number" class="form-control" name="ofeedback_qty" value="{{ $q['feedback_qty'] }}" required hidden>
-                                    <br/>
-                                </div>
-                                <div class="col-md-4 float-left p-1">
-                                    <dl>
-                                        <dt class="mt-1">Reference No:</dt>
-                                        <dd>{{ $q['sales_order'] }}{{ $q['material_request'] }}</dd>
-                                        <input type="text" name="ref_number" value="{{ $q['sales_order'] }}{{ $q['material_request'] }}" hidden/>
-                                    </dl>
-                                </div>
-                                <div class="col-md-4 float-right p-2">
-                                    <dl>
-                                        <dt>Feedback Qty</dt>
-                                        <dd class="badge {{ ($q['qty_to_receive'] > 0) ? 'badge-success' : 'badge-danger' }}" style="font-size: 12pt;">{{ $q['qty_to_receive'] }} {{ $q['stock_uom'] }}</dd>
-                                        <input type="text" name="f_qty" value="{{ $q['qty_to_receive'] }}" hidden />
-                                    </dl>
                                 </div>
                             </div>
                         </div>
