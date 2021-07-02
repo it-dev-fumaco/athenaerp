@@ -232,7 +232,7 @@ class MainController extends Controller
             ->orderBy('tabItem.modified', 'desc')->paginate(8);
 
         return view('suggestion_box', compact('q'));
-    }
+    }//123
 
     public function get_select_filters(){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 0)
