@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'ERPInventory',
+    'namePage' => 'Dashboard',
     'activePage' => 'dashboard',
 ])
 
