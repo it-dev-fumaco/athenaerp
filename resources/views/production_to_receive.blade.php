@@ -75,7 +75,7 @@
 												<i class="fas fa-arrow-right ml-3 mr-2"></i> <span class="target-warehouse">@{{ x.fg_warehouse }}</span>
 											</div>
 											<span class="d-block description">@{{ x.description }}</span>
-											<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
+											<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 										</td>
 										<td class="text-center">
 											<span class="qty" style="font-size: 14pt;"><b>@{{ x.qty_to_manufacture }}</b></span>
@@ -89,7 +89,7 @@
 										</td>
 										<td class="text-center">
 											<span class="reference-no d-block">@{{ x.sales_order_no }}@{{ x.material_request }}</span>
-											<span class="customer d-block" style="font-size: 10pt;">@{{ x.customer }}</span>
+											<small class="customer d-block">@{{ x.customer }}</small>
 										</td>
 										<td class="text-center">
 											<img src="dist/img/check.png" class="img-circle checkout feedback-details" data-id="@{{ x.production_order }}">

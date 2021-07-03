@@ -165,7 +165,7 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        return DB::table('tabStock Entry as ste')
+        $count = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)
             ->where('purpose', $purpose)
@@ -175,13 +175,31 @@ class MainController extends Controller
                     ->whereIn('sted.s_warehouse', $allowed_warehouses);
             })
             ->when($purpose == 'Material Transfer', function($q) use ($allowed_warehouses){
-				return $q->whereNotin('ste.transfer_as', ['Consignment', 'Sample Item'])
+				return $q->whereNotin('ste.transfer_as', ['Consignment', 'Sample Item', 'For Return'])
                     ->whereIn('sted.s_warehouse', $allowed_warehouses);
+            })
+            ->when($purpose == 'Material Transfer for Manufacture', function($q) use ($allowed_warehouses){
+				return $q->whereIn('sted.s_warehouse', $allowed_warehouses);
             })
             ->when($purpose == 'Material Receipt', function($q) use ($allowed_warehouses){
 				return $q->where('ste.receive_as', 'Sales Return')
                     ->whereIn('sted.t_warehouse', $allowed_warehouses);
             })->count();
+
+        if($purpose == 'Material Receipt') {
+            $count += DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
+                ->where('dn.is_return', 1)->where('dn.docstatus', 0)->whereNotIn('dni.item_status', ['Issued', 'Returned'])
+                ->whereIn('dni.warehouse', $allowed_warehouses)->count();
+        }
+
+        if($purpose == 'Material Transfer') {
+            $count += DB::table('tabStock Entry as ste')->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')->whereNotIn('sted.status', ['Issued', 'Returned'])
+                ->whereIn('t_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['For Return', 'Internal Transfer'])
+                ->count();
+        }
+
+        return $count;
     }
 
     public function count_ps_for_issue(){
@@ -426,9 +444,8 @@ class MainController extends Controller
             }
 
             $list[] = [
-                'delivery_date' => Carbon::parse($delivery_date)->format('M-d-Y'),
                 'customer' => $d->so_customer_name,
-                'delivery_status' => $order_status,
+                'order_status' => $order_status,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
@@ -446,7 +463,9 @@ class MainController extends Controller
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->production_order,
-                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+                'delivery_date' => ($delivery_date) ? Carbon::parse($delivery_date)->format('M-d-Y') : null,
+                'delivery_status' => ($delivery_date) ? ((Carbon::parse($delivery_date) < Carbon::now()) ? 'late' : null) : null
             ];
         }
         
@@ -504,13 +523,13 @@ class MainController extends Controller
                 's_warehouse' => $d->s_warehouse,
                 't_warehouse' => $d->t_warehouse,
                 'transfer_as' => $d->transfer_as,
-                'available_qty' => $available_qty,
+                'available_qty' => number_format($available_qty),
                 'uom' => $d->uom,
                 'name' => $d->name,
                 'owner' => $owner,
                 'parent' => $d->parent,
                 'part_nos' => $part_nos,
-                'qty' => $d->qty,
+                'qty' => number_format($d->qty),
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
                 'ref_no' => $ref_no,
@@ -552,12 +571,13 @@ class MainController extends Controller
                 't_warehouse' => $d->t_warehouse,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
-                'transfer_qty' => $d->transfer_qty,
+                'transfer_qty' => number_format($d->transfer_qty),
                 'sales_order_no' => $d->sales_order_no,
                 'status' => $d->status,
                 'so_customer_name' => $d->so_customer_name,
                 'parent_warehouse' => $this->get_warehouse_parent($d->t_warehouse),
-                'reference_doc' => 'stock_entry'
+                'reference_doc' => 'stock_entry',
+                'transaction_date' => $d->creation
             ];
         }
 
@@ -572,12 +592,13 @@ class MainController extends Controller
                 't_warehouse' => $d->warehouse,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
-                'transfer_qty' => abs($d->qty),
+                'transfer_qty' => number_format(abs($d->qty)),
                 'sales_order_no' => $d->reference,
                 'status' => $d->item_status,
                 'so_customer_name' => $d->customer,
                 'parent_warehouse' => $this->get_warehouse_parent($d->warehouse),
-                'reference_doc' => 'delivery_note'
+                'reference_doc' => 'delivery_note',
+                'transaction_date' => $d->creation
             ];
         }
 
@@ -1720,8 +1741,8 @@ class MainController extends Controller
                 'customer' => $row->customer,
                 'item_code' => $row->item_code,
                 'description' => $row->description,
-                'qty_to_receive' => $row->produced_qty - $row->feedback_qty,
-                'qty_to_manufacture' => $row->qty_to_manufacture,
+                'qty_to_receive' => number_format($row->produced_qty - $row->feedback_qty),
+                'qty_to_manufacture' => number_format($row->qty_to_manufacture),
                 'stock_uom' => $row->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'owner' => $owner,
@@ -2427,36 +2448,8 @@ class MainController extends Controller
     }
 
     public function dashboard_data(){
-        $start = Carbon::now()->startOfDay()->toDateTimeString();
-		$end = Carbon::now()->endOfDay()->toDateTimeString();
-
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
-
-        $stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
-            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', '<', 2)->where('sed.status', '!=', 'For Checking')
-            ->whereBetween('sed.date_modified', [$start, $end])
-            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->get();
-
-        $stock_entries_for_return = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
-            ->whereIn('sed.t_warehouse', $allowed_warehouses)->where('se.docstatus', '<', 2)->where('sed.status', '!=', 'For Checking')
-            ->where('transfer_as', 'For Return')->whereBetween('sed.date_modified', [$start, $end])
-            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->count();
-
-        $picking_slips = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->where('psi.session_user', Auth::user()->full_name)->where('ps.docstatus', '<', 2)->where('psi.status', '!=', 'For Checking')
-            ->whereBetween('psi.date_modified', [$start, $end])->count();
-
-        $feedbacks = DB::table('tabStock Entry as ste')->join('tabProduction Order as pro', 'ste.production_order', 'pro.name')
-            ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 1)->whereIn('pro.fg_warehouse', $allowed_warehouses)
-            ->whereBetween('ste.posting_date', [$start, $end])->count();
-
-        $sales_returns = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
-            ->where('dn.is_return', 1)->where('dn.docstatus', 1)->whereIn('dni.warehouse', $allowed_warehouses)
-            ->whereBetween('dn.posting_date', [$start, $end])->count();
-
-        $purchase_receipts = DB::table('tabPurchase Receipt as pr')->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')
-            ->where('pr.docstatus', 1)->whereIn('pri.warehouse', $allowed_warehouses)->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->whereBetween('pr.posting_date', [$start, $end])->count();
 
         $purchase_orders = DB::table('tabPurchase Receipt as pr')
             ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')->where('pr.docstatus', 0)
@@ -2464,28 +2457,12 @@ class MainController extends Controller
             ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
 
         $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
-            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
-            ->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->get();
-
-        $pending_stock_entries_for_return = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
-            ->whereIn('sed.t_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('sed.status', '!=', 'For Checking')
-            ->where('transfer_as', 'For Return')->select('se.purpose', 'sed.date_modified', 'sed.status', 'se.docstatus', 'se.transfer_as', 'se.issue_as')->count();
-
-        $pending_sales_returns = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
-            ->where('dn.is_return', 1)->where('dn.docstatus', 0)->whereIn('dni.warehouse', $allowed_warehouses)->count();
+            ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('se.purpose', 'Material Issue')
+            ->where('se.issue_as', 'Customer Replacement')->count();
 
         return [
-            'd_withdrawals' => collect($stock_entries)->where('purpose', 'Material Transfer for Manufacture')->count(),
-            'd_material_issues' => collect($stock_entries)->where('purpose', 'Material Issue')->where('issue_as', '!=', 'Customer Replacement')->count(),
-            'd_replacements' => collect($stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
-            'd_internal_transfers' => collect($stock_entries)->where('purpose', 'Material Transfer')->where('transfer_as', '!=', 'For Return')->count(),
-            'd_returns' => $stock_entries_for_return + $sales_returns,
-            'd_picking_slips' => $picking_slips,
-            'd_feedbacks' => $feedbacks,
-            'd_purchase_receipts' => $purchase_receipts,
             'p_purchase_receipts' => $purchase_orders,
-            'p_replacements' => collect($pending_stock_entries)->where('purpose', 'Material Issue')->where('issue_as', 'Customer Replacement')->count(),
-            'p_returns' => $pending_stock_entries_for_return + $pending_sales_returns,
+            'p_replacements' => $pending_stock_entries,
         ];
     }
 
@@ -2655,7 +2632,7 @@ class MainController extends Controller
          $q = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)
             ->where('se.purpose', 'Material Issue')->where('se.issue_as', 'Customer Replacement')
-            ->select('sed.status', 'sed.validate_item_code', 'se.sales_order_no', 'sed.parent', 'sed.name', 'sed.t_warehouse', 'sed.s_warehouse', 'sed.item_code', 'sed.description', 'sed.uom', 'sed.qty', 'sed.owner', 'se.material_request', 'se.creation', 'se.delivery_date')
+            ->select('sed.status', 'sed.validate_item_code', 'se.sales_order_no', 'sed.parent', 'sed.name', 'sed.t_warehouse', 'sed.s_warehouse', 'sed.item_code', 'sed.description', 'sed.uom', 'sed.qty', 'sed.owner', 'se.material_request', 'se.creation', 'se.delivery_date', 'se.issue_as')
             ->orderByRaw("FIELD(sed.status, 'For Checking', 'Issued') ASC")
             ->get();
  
@@ -2696,9 +2673,11 @@ class MainController extends Controller
                  'status' => $d->status,
                  'available_qty' => $available_qty,
                  'ref_no' => $ref_no,
-                 'delivery_date' => $d->delivery_date,
+                 'issue_as' => $d->issue_as,
                  'parent_warehouse' => $parent_warehouse,
-                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
+                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+                 'delivery_date' => ($d->delivery_date) ? Carbon::parse($d->delivery_date)->format('M-d-Y') : null,
+                    'delivery_status' => ($d->delivery_date) ? ((Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null) : null
              ];
          }
 

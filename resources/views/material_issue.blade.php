@@ -76,7 +76,7 @@
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
 												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-												<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
+												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center">
 												<span class="d-block" style="font-size: 13pt;">@{{ x.qty | number:2 }}</span>
@@ -85,7 +85,7 @@
 											</td>
 											<td class="text-center">
 												<span class="d-block">@{{ x.sales_order_no }}</span>
-												<span class="d-block">@{{ x.issue_as }}</span>
+												<small class="d-block">@{{ x.issue_as }}</small>
 											</td>
 											<td class="text-center">
 												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}">
@@ -101,7 +101,6 @@
 		</div>
 	</div>
 </div>
-
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
@@ -109,7 +108,6 @@
 	</form>
 </div>
 @endsection
-
 @section('script')
 <script>
 	$(document).ready(function(){

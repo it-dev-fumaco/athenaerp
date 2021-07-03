@@ -78,7 +78,7 @@
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
 												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-												<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
+												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center" style="font-size: 14pt;">@{{ x.qty | number:2 }}</td>
 											<td class="text-center">
@@ -86,10 +86,10 @@
 												<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
 											</td>
 											<td class="text-center">
-												<span class="d-block">@{{ x.delivery_note }}</span>
 												<span class="d-block">@{{ x.sales_order }}</span>
-												<span class="d-block mt-2" style="font-size: 10pt;">@{{ x.customer }}</span>
-												<span class="d-block mt-3" style="font-size: 10pt;">@{{ x.classification }}</span>
+												<span class="d-block">@{{ x.delivery_note }}</span>
+												<small class="d-block mt-2">@{{ x.customer }}</small>
+												<small class="d-block mt-3">@{{ x.classification }}</small>
 											</td>
 											<td class="text-center">
 												<img src="dist/img/icon.png" ng-hide="x.type != 'picking_slip'" class="img-circle checkout update-ps"  data-id="@{{ x.id }}">
@@ -106,14 +106,12 @@
 		</div>
 	</div>
 </div>
-
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>
 </div>
-
 <div class="modal fade" id="ps-modal">
 	<form method="POST" action="/checkout_picking_slip_item">
 		@csrf
@@ -121,7 +119,6 @@
 	</form>
 </div>
 @endsection
-
 @section('script')
 <script>
 	$(document).ready(function(){

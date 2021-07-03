@@ -107,37 +107,37 @@
 					</a>{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
 				</div>
 				<div class="col-xl-7 pr-4 pt-2 text-right">
-				<a class="btn btn-app bg-primary" href="/returns">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
-					<i class="fas fa-undo"></i> Returns
+					<a class="btn btn-app bg-primary" href="/returns">
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
+						<i class="fas fa-undo"></i> Returns
 					</a>
 					<a class="btn btn-app bg-info" href="/production_to_receive">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
-					<i class="far fa-check-circle"></i> Feedback
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
+						<i class="far fa-check-circle"></i> Feedback
 					</a>
 					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
-					<i class="fas fa-exchange-alt"></i> Transfer
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
+						<i class="fas fa-exchange-alt"></i> Transfer
 					</a>
 					<a class="btn btn-app bg-purple" href="/receipts">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
-					<i class="fas fa-boxes"></i> PO Receipts
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
+						<i class="fas fa-boxes"></i> PO Receipts
 					</a>
 					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
-					<i class="fas fa-tasks"></i> Withdrawals
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
+						<i class="fas fa-tasks"></i> Withdrawals
 					</a>
 					<a class="btn btn-app bg-indigo" href="/material_issue">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
-					<i class="fas fa-dolly"></i> Material Issue
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
+						<i class="fas fa-dolly"></i> Material Issue
 					</a>
 					<a class="btn btn-app bg-navy" href="/picking_slip">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
-					<i class="fas fa-truck"></i> Deliveries
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
+						<i class="fas fa-truck"></i> Deliveries
 					</a>
 					<a class="btn btn-app bg-teal" href="/replacements">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
-					<i class="fas fa-retweet"></i> Replacements
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
+						<i class="fas fa-retweet"></i> Replacement
 					</a>
 				</div>
 			</div>
@@ -709,7 +709,7 @@
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 
@@ -807,15 +807,8 @@
 					dataType: 'json',
 					contentType: 'application/json',
 					success: function (data) {
-						$('#d-material-receipt').text(data.d_feedbacks);
-						$('#d-purchase-receipts').text(data.d_purchase_receipts);
 						$('#p-purchase-receipts').text(data.p_purchase_receipts);
-						$('#d-replacements').text(data.d_replacements);
 						$('#p-replacements').text(data.p_replacements);
-						$('#d-material-transfer').text(data.d_internal_transfers);
-						$('#d-picking-slips').text(data.d_picking_slips);
-						$('#d-withdrawals').text(data.d_withdrawals);
-						$('#d-material-issues').text(data.d_material_issues);
 					}
 				});
 			}

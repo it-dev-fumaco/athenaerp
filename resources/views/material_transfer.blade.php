@@ -77,12 +77,12 @@
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
 												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-												<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
+												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center">
-												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
+												<span class="d-block" style="font-size: 14pt;">@{{ x.qty }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
-												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }}</span>
+												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty }}</span>
 											</td>
 											<td class="text-center">
 												<span class="d-block">@{{ x.sales_order_no }}</span>
