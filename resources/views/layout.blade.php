@@ -338,6 +338,16 @@
 									<div class="tab-pane" id="tab_2">
 										<div class="row">
 											<div class="col-md-12">
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="warehouse-user-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="warehouse-user-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+												<div class="col-md-2" style="display: inline-block">
+													<button class="btn btn-secondary" onclick="athresetFilter()">Reset Filters</button>
+												</div>
 												<div class="box-body table-responsive no-padding" id="athena-transactions-table"></div>
 											</div>
 										</div>
@@ -345,6 +355,17 @@
 									<div class="tab-pane" id="tab_3">
 										<div class="row">
 											<div class="col-md-12">
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="erp-warehouse-user-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+												<div class="col-md-2" style="display: inline-block">
+													<button class="btn btn-secondary" onclick="erpresetFilter()">Reset Filters</button>
+												</div>
+
 												<div class="box-body table-responsive no-padding" id="stock-ledger-table"></div>
 											</div>
 										</div>
@@ -1562,7 +1583,12 @@
 			$(document).on('click', '#athena-transactions-pagination a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('page=')[1];
+				if($('#warehouse-user-filter').val() == null){
+					var user_filter = '&wh_user=';
+				}else{
+					var user_filter = '&wh_user='+$('#warehouse-user-filter').val()
+				}
+				var page = $(this).attr('href').split('page=')[1]+user_filter;
 				get_athena_transactions(item_code, page);
 			});
 
@@ -1600,7 +1626,12 @@
 			$(document).on('click', '#stock-ledger-pagination a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('page=')[1];
+				if($('#erp-warehouse-user-filter').val() == null){
+					var user_filter = '&wh_user=';
+				}else{
+					var user_filter = '&wh_user='+$('#erp-warehouse-user-filter').val();
+				}
+				var page = $(this).attr('href').split('page=')[1] + user_filter;
 				get_stock_ledger(item_code, page);
 			});
 
@@ -1720,6 +1751,92 @@
 				});
 			}
 		});
+		// Transactions Warehouse Users Filter
+		$('#warehouse-user-filter').select2({//warehouse users
+			dropdownParent: $('#warehouse-user-filter-parent'),
+			placeholder: 'Select Warehouse User',
+			ajax: {
+				url: '/get_select_filters',
+				method: 'GET',
+				dataType: 'json',
+                data: function (data) {
+					return {
+						q: data.term // search term
+					};
+				},
+				processResults: function (response) {
+					return {
+						results: response.warehouse_users
+					};
+				},
+				cache: true
+			}
+		});
+
+		$(document).on('select2:select', '#warehouse-user-filter', function(e){
+			var data = $('#selected-item-code').text()+'?wh_user='+$('#warehouse-user-filter').val();
+			$.ajax({
+				type: 'GET',
+				url: '/get_athena_transactions/'+data,
+				success: function(response){
+					$('#athena-transactions-table').html(response);
+                    console.log(data);
+				}
+			});
+		});
+
+		$('#erp-warehouse-user-filter').select2({//warehouse users
+			dropdownParent: $('#erp-warehouse-user-filter-parent'),
+			placeholder: 'Select Warehouse User',
+			ajax: {
+				url: '/get_select_filters',
+				method: 'GET',
+				dataType: 'json',
+						data: function (data) {
+				return {
+					q: data.term // search term
+				};
+				},
+				processResults: function (response) {
+				return {
+					results: response.warehouse_users
+				};
+				},
+				cache: true
+			}
+		});
+
+		$(document).on('select2:select', '#erp-warehouse-user-filter', function(e){
+			var data = $('#selected-item-code').text()+'?wh_user='+$('#erp-warehouse-user-filter').val()+'&page=';
+			$.ajax({
+			type: 'GET',
+			url: '/get_stock_ledger/'+data,
+			success: function(response){
+				$('#stock-ledger-table').html(response);
+				console.log(data);
+			}
+			});
+		});
+
+    function erpresetFilter(){
+      $.ajax({
+        type: 'GET',
+        url: '/get_stock_ledger/'+$('#selected-item-code').text(),
+        success: function(response){
+          $('#stock-ledger-table').html(response);
+        }
+      });
+    }
+	function athresetFilter(){
+      $.ajax({
+        type: 'GET',
+        url: '/get_athena_transactions/'+$('#selected-item-code').text(),
+        success: function(response){
+			$('#athena-transactions-table').html(response);
+        }
+      });
+    }
+	// Transactions Warehouse Users Filter
 	</script>
 </body>
 </html>

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use App\StockReservation;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Arr;
 use Auth;
 use DB;
 
@@ -31,6 +33,10 @@ class MainController extends Controller
 
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
+
+        // $WHusers = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->select('warehouse_user')->pluck('warehouse_user');
+
+        // return $WHusers;
 
         $itemClass = DB::table('tabItem')->select('item_classification')
             ->where('description', 'LIKE', "%".$request->searchString."%" )
@@ -252,7 +258,7 @@ class MainController extends Controller
         return view('suggestion_box', compact('q'));
     }//123
 
-    public function get_select_filters(){
+    public function get_select_filters(Request $request){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 0)
             ->where('category', 'Physical')
             ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
@@ -263,9 +269,18 @@ class MainController extends Controller
         $item_classification = DB::table('tabItem Classification')
             ->orderBy('name', 'asc')->pluck('name');
 
+        // $WHusers = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->pluck('warehouse_user');
+        $Athena_wh_users = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->where('warehouse_user','LIKE', '%'.$request->q.'%')
+            ->selectRaw('warehouse_user as id, warehouse_user as text')->get();
+
+        $ERP_wh_users = DB::table('tabStock Entry Detail')->groupBy('session_user')->where('session_user','LIKE', '%'.$request->q.'%')
+            ->selectRaw('session_user as id, session_user as text')->get();
+
         return response()->json([
             // 'parent_warehouses' => $allowed_warehouses,
             'warehouses' => $warehouses,
+            'warehouse_users' => $Athena_wh_users,
+            'session_user' => $ERP_wh_users,
             'item_groups' => $item_groups,
             'item_classification' => $item_classification,
         ]);
@@ -1444,8 +1459,15 @@ class MainController extends Controller
         return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses'));
     }
 
-    public function get_athena_transactions($item_code){
-        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->paginate(10);
+    public function get_athena_transactions(Request $request, $item_code){
+        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->get();//->paginate(10);
+        if($request->wh_user != ''){
+            $logs = $logs->where('warehouse_user', $request->wh_user);
+        }
+
+        // if($request->src_wh != ''){
+        //     $logs = $logs->where('source_warehouse', $request->src_wh);
+        // }
 
         $list = [];
 
@@ -1471,6 +1493,7 @@ class MainController extends Controller
                 'reference_name' => $row->reference_name,
                 'item_code' => $row->item_code,
                 'reference_parent' => $row->reference_parent,
+                'item_code' => $row->item_code,
                 'source_warehouse' => $row->source_warehouse,
                 'target_warehouse' => $row->target_warehouse,
                 'reference_type' => $row->reference_type,
@@ -1481,6 +1504,20 @@ class MainController extends Controller
                 'status' => $status
             ];
         }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            // Create a new Laravel collection from the array data
+            $itemCollection = collect($list);
+            // Define how many items we want to be visible in each page
+            $perPage = 10;
+            // Slice the collection to get the items to display in current page
+            $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+            // Create our paginator and pass it to the view
+            $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+            // set url path for generted links
+            $paginatedItems->setPath($request->url());
+
+            $list = $paginatedItems;
 
         return view('tbl_athena_transactions', compact('list', 'logs', 'item_code', 'user_group'));
     }
@@ -1553,9 +1590,9 @@ class MainController extends Controller
         }
     }
 
-    public function get_stock_ledger($item_code, Request $request){
+    public function get_stock_ledger(Request $request, $item_code){
         $logs = DB::table('tabStock Ledger Entry')->where('item_code', $item_code)
-            ->orderBy('posting_date', 'desc')->orderBy('posting_time', 'desc')->orderBy('name', 'desc')->paginate(10);
+            ->orderBy('posting_date', 'desc')->orderBy('posting_time', 'desc')->orderBy('name', 'desc')->get();
 
         $list = [];
         foreach($logs as $row){
@@ -1619,9 +1656,30 @@ class MainController extends Controller
                 'session_user' => $session_user,
                 'posting_date' => $row->posting_date,//cccc
             ];
+            // $wh_user = $request->wh_user;
+            if($request->wh_user != ''){
+                $list = collect($list)->filter(function ($value, $key) use($request){
+                    return $value['session_user'] == $request->wh_user;
+                });
+            }
+        
         }
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            // Create a new Laravel collection from the array data
+            $itemCollection = collect($list);
+            // Define how many items we want to be visible in each page
+            $perPage = 10;
+            // Slice the collection to get the items to display in current page
+            $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+            // Create our paginator and pass it to the view
+            $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+            // set url path for generted links
+            $paginatedItems->setPath($request->url());
+
+            $list = $paginatedItems;
 
         return view('tbl_stock_ledger', compact('list', 'logs', 'item_code'));
+        // return view('tbl_stock_ledger', compact('logs', 'item_code', 'wh_users'));
     }
 
     public function print_barcode($item_code){
