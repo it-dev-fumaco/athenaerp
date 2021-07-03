@@ -61,7 +61,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="x in mt_filtered = (mt | filter:searchText | filter: fltr)">
+										<tr ng-repeat="x in mt_filtered = (mt | filter:searchText | filter: fltr | orderBy: ['status', 'transaction_date'])">
 											<td class="text-center">
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<small class="d-block mt-1">@{{ x.parent }}</small>

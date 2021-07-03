@@ -534,7 +534,8 @@ class MainController extends Controller
                 'status' => $d->status,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+                'transaction_date' => Carbon::parse($d->creation),
             ];
         }
         
@@ -953,7 +954,7 @@ class MainController extends Controller
             ];
 
             DB::table('tabStock Entry Detail')->where('name', $request->child_tbl_id)->update($values);
-
+            
             $this->insert_transaction_log('Stock Entry', $request->child_tbl_id);
 
             $status_result = $this->update_pending_ste_item_status();
@@ -1043,13 +1044,30 @@ class MainController extends Controller
             $s_warehouse = $q->warehouse;
             $t_warehouse = null;
             $reference_no = $q->delivery_note;
-        }else{
+        } else if($transaction_type == 'Delivery Note') {
+            $q = DB::table('tabDelivery Note as dn')
+                ->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
+                ->where('dni.name', $id)->select('dni.name', 'dni.parent', 'dni.item_code', 'dni.description', 'dn.name as delivery_note', 'dni.warehouse', 'dni.qty', 'dni.barcode', 'dni.session_user', 'dni.stock_uom')
+                ->first();
+
+            $type = 'Check In - Received';
+            $purpose = 'Sales Return';
+            $barcode = $q->barcode;
+            $remarks = null;
+            $s_warehouse = null;
+            $t_warehouse = $q->warehouse;
+            $reference_no = $q->delivery_note;
+        } else {
             $q = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')->where('sted.name', $id)
                 ->select('sted.*', 'ste.sales_order_no', 'ste.material_request', 'ste.purpose', 'ste.transfer_as', 'ste.issue_as', 'ste.receive_as')
                 ->first();
 
             $type = null;
+            if($q->purpose == 'Manufacture') {
+                $type = 'Check In - Received';
+            }
+
             if($q->purpose == 'Material Transfer for Manufacture') {
                 $type = 'Check Out - Issued';
             }
@@ -1070,8 +1088,12 @@ class MainController extends Controller
                 $type = 'Check Out - Replaced';
             }
 
+            if($q->purpose == 'Material Issue' && $q->issue_as != 'Customer Replacement') {
+                $type = 'Check Out - Issued';
+            }
+
             if($q->purpose == 'Material Receipt' && $q->receive_as == 'Sales Return') {
-                $type = 'Check Out - Received';
+                $type = 'Check In - Received';
             }
 
             $purpose = $q->purpose;
@@ -2856,13 +2878,20 @@ class MainController extends Controller
         ->where('voucher_type', 'Stock Reconciliation')->join('tabItem as i', 'i.name', 'sle.item_code')
             ->whereIn('sle.warehouse', $allowed_warehouses)->whereBetween('sle.creation', [$startOfYear, $endOfYear])
             ->whereMonth('sle.creation', $request->month)
-            ->select('sle.creation as transaction_date', 'voucher_type as transaction_type', 'sle.item_code', 'i.description', 'sle.warehouse', 'sle.qty_after_transaction as qty', 'sle.voucher_no as reference_no', 'sle.voucher_no as reference_parent', 'sle.owner as user');
+            ->select('sle.creation as transaction_date', 'voucher_type as transaction_type', 'sle.item_code', 'i.description', 'sle.warehouse as s_warehouse', 'sle.warehouse as t_warehouse', 'sle.qty_after_transaction as qty', 'sle.voucher_no as reference_no', 'sle.voucher_no as reference_parent', 'sle.owner as user');
+
+        // check in transactions 
+        $checkin_transactions = DB::table('tabAthena Transactions')->whereIn('target_warehouse', $allowed_warehouses)
+            ->whereNull('source_warehouse')->whereBetween('transaction_date', [$startOfYear, $endOfYear])
+            ->whereMonth('transaction_date', $request->month)
+            ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
+            ->orderBy('transaction_date', 'desc');
 
         $list = DB::table('tabAthena Transactions')->whereIn('source_warehouse', $allowed_warehouses)
             ->whereBetween('transaction_date', [$startOfYear, $endOfYear])
             ->whereMonth('transaction_date', $request->month)
-            ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
-            ->orderBy('transaction_date', 'desc')->union($stock_adjustments_query)->orderBy('transaction_date', 'desc')->get();
+            ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
+            ->orderBy('transaction_date', 'desc')->union($stock_adjustments_query)->union($checkin_transactions)->orderBy('transaction_date', 'desc')->get();
 
         return view('tbl_athena_logs', compact('list'));
     }
@@ -3043,6 +3072,7 @@ class MainController extends Controller
             DB::table('tabDelivery Note Item')->where('name', $request->child_tbl_id)->update($values);
 
             $this->update_pending_dr_item_status();
+            $this->insert_transaction_log('Delivery Note', $request->child_tbl_id);
 
             DB::commit();
 
@@ -3219,6 +3249,8 @@ class MainController extends Controller
 						'batch_no' => null,
 						'valuation_rate' => $base_rate,
 						'material_request' => null,
+                        'session_user' => null,
+                        'validate_item_code' => null,
 						't_warehouse_personnel' => null,
 						's_warehouse_personnel' => null,
 						'target_warehouse_location' => null,
@@ -3230,8 +3262,9 @@ class MainController extends Controller
 			$rm_amount = collect($stock_entry_detail)->sum('basic_amount');
 			$rate = ($rm_amount > 0) ? $rm_amount / $request->fg_completed_qty : 0;
 
+            $sted_id = uniqid();
 			$stock_entry_detail[] = [
-				'name' =>  uniqid(),
+				'name' =>  $sted_id,
 				'creation' => $now->toDateTimeString(),
 				'modified' => $now->toDateTimeString(),
 				'modified_by' => Auth::user()->wh_user,
@@ -3269,6 +3302,8 @@ class MainController extends Controller
 				'batch_no' => null,
 				'valuation_rate' => $rate,
 				'material_request' => null,
+                'session_user' => Auth::user()->full_name,
+                'validate_item_code' => $production_order_details->production_item,
 				't_warehouse_personnel' => null,
 				's_warehouse_personnel' => null,
 				'target_warehouse_location' => null,
@@ -3427,6 +3462,8 @@ class MainController extends Controller
                 ];
     
                 DB::connection('mysql_mes')->table('feedbacked_logs')->insert($feedbacked_timelogs);
+
+                $this->insert_transaction_log('Stock Entry', $sted_id);
 			}
 			
 			DB::commit();
