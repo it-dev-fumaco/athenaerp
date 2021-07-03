@@ -1,5 +1,4 @@
-
-<table class="table" style="font-size: 11pt;">
+<table class="table">
     <thead>
     <tr>
         <th scope="col" class="text-center">Transaction No.</th>
@@ -78,10 +77,10 @@
 </table>
 
 <div class="box-footer clearfix" id="athena-transactions-pagination" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
-	{{ $logs->links() }}
+    {{ $list->links() }}
 </div>
 <style>
-    .cancel-modal {
-        background: rgba(0,0,0,0.7);
+    .cancel-modal{
+        background: rgba(0, 0, 0, .7);
     }
 </style>
