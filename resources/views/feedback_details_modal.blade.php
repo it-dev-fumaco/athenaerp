@@ -14,7 +14,7 @@
                         <input type="text" name="to_wh" value="{{ $q['fg_warehouse'] }}" hidden/>
                     </span>
                 </div>
-                <input type="hidden" name="prod_order" value="{{ $q['production_order'] }}">
+                <input type="hidden" name="production_order" value="{{ $q['production_order'] }}">
                 <div class="box-body" style="font-size: 12pt;">
                     <div class="row">
                         <div class="col-md-12 form-group">
@@ -53,7 +53,7 @@
                                         </div>
                                     </div>
                                     <label>Actual Quantity Received</label>
-                                    <input type="number" class="form-control" name="r_qty" placeholder="Quantity" max="{{ $q['qty_to_receive'] }}" required>
+                                    <input type="number" class="form-control" name="fg_completed_qty" placeholder="Quantity" max="{{ $q['qty_to_receive'] }}" required>
                                     <input type="number" class="form-control" name="ofeedback_qty" value="{{ $q['feedback_qty'] }}" required hidden>
                                 </div>
                             </div>

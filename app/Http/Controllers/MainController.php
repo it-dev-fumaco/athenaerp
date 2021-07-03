@@ -523,13 +523,13 @@ class MainController extends Controller
                 's_warehouse' => $d->s_warehouse,
                 't_warehouse' => $d->t_warehouse,
                 'transfer_as' => $d->transfer_as,
-                'available_qty' => number_format($available_qty),
+                'available_qty' => $available_qty,
                 'uom' => $d->uom,
                 'name' => $d->name,
                 'owner' => $owner,
                 'parent' => $d->parent,
                 'part_nos' => $part_nos,
-                'qty' => number_format($d->qty),
+                'qty' => $d->qty,
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
                 'ref_no' => $ref_no,
@@ -3077,12 +3077,12 @@ class MainController extends Controller
                 ->where('docstatus', 1)->exists();
             
 			if(!$existing_ste_transfer){
-            return response()->json(['status' => 0, 'message' => 'Materials unavailable.']);
+                return response()->json(['status' => 0, 'message' => 'Materials unavailable.']);
 			}
             
 			$production_order_details = DB::table('tabProduction Order')
                 ->where('name', $production_order)->first();
-            
+
 			$produced_qty = $production_order_details->produced_qty + $request->fg_completed_qty;
 			if($produced_qty >= (int)$production_order_details->qty && $production_order_details->material_transferred_for_manufacturing > 0){
 				$pending_mtfm_count = DB::table('tabStock Entry as ste')
@@ -3228,7 +3228,7 @@ class MainController extends Controller
 			}
 
 			$rm_amount = collect($stock_entry_detail)->sum('basic_amount');
-			$rate = $rm_amount / $request->fg_completed_qty;
+			$rate = ($rm_amount > 0) ? $rm_amount / $request->fg_completed_qty : 0;
 
 			$stock_entry_detail[] = [
 				'name' =>  uniqid(),

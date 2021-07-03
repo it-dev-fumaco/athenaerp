@@ -5,7 +5,7 @@
 ])
 
 @section('content')
-<div class="content" ng-app="myApp" ng-controller="stockCtrl">
+<div class="content" ng-app="myApp" ng-controller="stockCtrl" id="anglrCtrl">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
 			<div class="row">
@@ -177,6 +177,7 @@
 					success: function(response){
 						if (response.status) {
 							showNotification("success", response.message, "fa fa-check");
+							angular.element('#anglrCtrl').scope().loadData();
 							$('#ste-modal').modal('hide');
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
