@@ -273,13 +273,25 @@ class MainController extends Controller
         $Athena_wh_users = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->where('warehouse_user','LIKE', '%'.$request->q.'%')
             ->selectRaw('warehouse_user as id, warehouse_user as text')->get();
 
+        $Athena_src_wh = DB::table('tabAthena Transactions')->groupBy('source_warehouse')->where('source_warehouse','LIKE', '%'.$request->q.'%')
+            ->where('source_warehouse', '!=', '')->selectRaw('source_warehouse as id, source_warehouse as text')->get();
+
+        $Athena_to_wh = DB::table('tabAthena Transactions')->groupBy('target_warehouse')->where('target_warehouse','LIKE', '%'.$request->q.'%')
+            ->where('target_warehouse', '!=', '')->selectRaw('target_warehouse as id, target_warehouse as text')->get();
+
         $ERP_wh_users = DB::table('tabStock Entry Detail')->groupBy('session_user')->where('session_user','LIKE', '%'.$request->q.'%')
             ->selectRaw('session_user as id, session_user as text')->get();
+
+        $ERP_wh = DB::table('tabStock Ledger Entry')->groupBy('warehouse')->where('warehouse','LIKE', '%'.$request->q.'%')
+            ->selectRaw('warehouse as id, warehouse as text')->get();
 
         return response()->json([
             // 'parent_warehouses' => $allowed_warehouses,
             'warehouses' => $warehouses,
             'warehouse_users' => $Athena_wh_users,
+            'source_warehouse' => $Athena_src_wh,
+            'target_warehouse' => $Athena_to_wh,
+            'warehouse' => $ERP_wh,
             'session_user' => $ERP_wh_users,
             'item_groups' => $item_groups,
             'item_classification' => $item_classification,
@@ -1439,13 +1451,17 @@ class MainController extends Controller
 
     public function get_athena_transactions(Request $request, $item_code){
         $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->get();//->paginate(10);
-        if($request->wh_user != ''){
+        if($request->wh_user != '' and $request->wh_user != 'null'){
             $logs = $logs->where('warehouse_user', $request->wh_user);
         }
 
-        // if($request->src_wh != ''){
-        //     $logs = $logs->where('source_warehouse', $request->src_wh);
-        // }
+        if($request->src_wh != '' and $request->src_wh != 'null'){
+            $logs = $logs->where('source_warehouse', $request->src_wh);
+        }
+
+        if($request->trg_wh != '' and $request->trg_wh != 'null'){
+            $logs = $logs->where('target_warehouse', $request->trg_wh);
+        }
 
         $list = [];
 
@@ -1635,9 +1651,15 @@ class MainController extends Controller
                 'posting_date' => $row->posting_date,//cccc
             ];
             // $wh_user = $request->wh_user;
-            if($request->wh_user != ''){
+            if($request->wh_user != '' and $request->wh_user != 'null'){
                 $list = collect($list)->filter(function ($value, $key) use($request){
                     return $value['session_user'] == $request->wh_user;
+                });
+            }
+
+            if($request->erp_wh != '' and $request->erp_wh != 'null'){
+                $list = collect($list)->filter(function ($value, $key) use($request){
+                    return $value['warehouse'] == $request->erp_wh;
                 });
             }
         

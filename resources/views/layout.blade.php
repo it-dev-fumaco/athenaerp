@@ -345,8 +345,25 @@
 														</select>
 													</div>
 												</div>
+												
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="ath-src-warehouse-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="ath-to-warehouse-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
 												<div class="col-md-2" style="display: inline-block">
-													<button class="btn btn-secondary" onclick="athresetFilter()">Reset Filters</button>
+													<button class="btn btn-secondary" id="athReset">Reset Filters</button>
 												</div>
 												<div class="box-body table-responsive no-padding" id="athena-transactions-table"></div>
 											</div>
@@ -362,8 +379,17 @@
 														</select>
 													</div>
 												</div>
+
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="erp-warehouse-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="erp-warehouse-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
 												<div class="col-md-2" style="display: inline-block">
-													<button class="btn btn-secondary" onclick="erpresetFilter()">Reset Filters</button>
+													<button class="btn btn-secondary" id="erpReset">Reset Filters</button>
 												</div>
 
 												<div class="box-body table-responsive no-padding" id="stock-ledger-table"></div>
@@ -389,7 +415,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" id="resetAll" class="btn btn-default" data-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -1549,9 +1575,13 @@
 			});
 
 			function get_athena_transactions(item_code, page){
+				var ath_src = $('#ath-src-warehouse-filter').val();
+				var ath_trg = $('#ath-to-warehouse-filter').val();
+				var ath_user = $('#warehouse-user-filter').val();
+				// var ath_user = $('#warehouse-user-filter').val();
 				$.ajax({
 					type: 'GET',
-					url: '/get_athena_transactions/' + item_code + '?page=' + page,
+					url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg,
 					success: function(response){
 						$('#athena-transactions-table').html(response);
 					}
@@ -1580,18 +1610,6 @@
 				get_reserved_items(page);
 			});
 
-			$(document).on('click', '#athena-transactions-pagination a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-				if($('#warehouse-user-filter').val() == null){
-					var user_filter = '&wh_user=';
-				}else{
-					var user_filter = '&wh_user='+$('#warehouse-user-filter').val()
-				}
-				var page = $(this).attr('href').split('page=')[1]+user_filter;
-				get_athena_transactions(item_code, page);
-			});
-
 			$(document).on('click', '#stock-reservations-pagination-1 a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
@@ -1614,26 +1632,16 @@
 			});
 
 			function get_stock_ledger(item_code, page){
+				var erp_user = $('#erp-warehouse-user-filter').val();
+				var erp_wh = $('#erp-warehouse-filter').val();
 				$.ajax({
 					type: 'GET',
-					url: '/get_stock_ledger/' + item_code + '?page=' + page,
+					url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh,
 					success: function(response){
 						$('#stock-ledger-table').html(response);
 					}
 				});
 			}
-
-			$(document).on('click', '#stock-ledger-pagination a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-				if($('#erp-warehouse-user-filter').val() == null){
-					var user_filter = '&wh_user=';
-				}else{
-					var user_filter = '&wh_user='+$('#erp-warehouse-user-filter').val();
-				}
-				var page = $(this).attr('href').split('page=')[1] + user_filter;
-				get_stock_ledger(item_code, page);
-			});
 
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
@@ -1750,93 +1758,202 @@
 				  }
 				});
 			}
-		});
-		// Transactions Warehouse Users Filter
-		$('#warehouse-user-filter').select2({//warehouse users
-			dropdownParent: $('#warehouse-user-filter-parent'),
-			placeholder: 'Select Warehouse User',
-			ajax: {
-				url: '/get_select_filters',
-				method: 'GET',
-				dataType: 'json',
-                data: function (data) {
+
+			// Transactions Warehouse Users Filter
+
+
+			// Athena Transactions Pagination
+			
+			$(document).on('click', '#athena-transactions-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+				
+				var page = $(this).attr('href').split('page=')[1];//+ath_user_filter+ath_src_wh;
+				get_athena_transactions(item_code, page);
+			});
+
+			// Athena Transactions Pagination
+
+			// ERP Transactions Pagination
+			$(document).on('click', '#stock-ledger-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+
+				var page = $(this).attr('href').split('page=')[1];// + user_filter;
+				get_stock_ledger(item_code, page);
+			});
+		
+			// ERP Transactions Pagination
+			
+			//Athena Warehouse Users
+				$('#warehouse-user-filter').select2({//athena warehouse users
+				dropdownParent: $('#warehouse-user-filter-parent'),
+				placeholder: 'Select Warehouse User',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.warehouse_users
+						};
+					},
+					cache: true
+				}
+				});
+
+				$(document).on('select2:select', '#warehouse-user-filter', function(e){
+					var item_code = $('#selected-item-code').text();
+					get_athena_transactions(item_code);
+				});
+			//Athena Warehouse Users
+
+			//Athena Source Warehouse
+			$('#ath-src-warehouse-filter').select2({
+				dropdownParent: $('#ath-src-warehouse-filter-parent'),
+				placeholder: 'Select Source Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.source_warehouse
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#ath-src-warehouse-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_athena_transactions(item_code);
+			});
+			//Athena Source Warehouse
+
+			//Athena Target Warehouse
+			$('#ath-to-warehouse-filter').select2({
+				dropdownParent: $('#ath-to-warehouse-filter-parent'),
+				placeholder: 'Select Target Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.target_warehouse
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#ath-to-warehouse-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_athena_transactions(item_code);
+			});
+			//Athena Target Warehouse
+
+			// ERP Warehouse Users
+			$('#erp-warehouse-user-filter').select2({//warehouse users
+				dropdownParent: $('#erp-warehouse-user-filter-parent'),
+				placeholder: 'Select Warehouse User',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+							data: function (data) {
 					return {
 						q: data.term // search term
 					};
-				},
-				processResults: function (response) {
+					},
+					processResults: function (response) {
 					return {
 						results: response.warehouse_users
 					};
-				},
-				cache: true
-			}
-		});
-
-		$(document).on('select2:select', '#warehouse-user-filter', function(e){
-			var data = $('#selected-item-code').text()+'?wh_user='+$('#warehouse-user-filter').val();
-			$.ajax({
-				type: 'GET',
-				url: '/get_athena_transactions/'+data,
-				success: function(response){
-					$('#athena-transactions-table').html(response);
-                    console.log(data);
+					},
+					cache: true
 				}
 			});
-		});
 
-		$('#erp-warehouse-user-filter').select2({//warehouse users
-			dropdownParent: $('#erp-warehouse-user-filter-parent'),
-			placeholder: 'Select Warehouse User',
-			ajax: {
-				url: '/get_select_filters',
-				method: 'GET',
-				dataType: 'json',
-						data: function (data) {
-				return {
-					q: data.term // search term
-				};
-				},
-				processResults: function (response) {
-				return {
-					results: response.warehouse_users
-				};
-				},
-				cache: true
-			}
-		});
-
-		$(document).on('select2:select', '#erp-warehouse-user-filter', function(e){
-			var data = $('#selected-item-code').text()+'?wh_user='+$('#erp-warehouse-user-filter').val()+'&page=';
-			$.ajax({
-			type: 'GET',
-			url: '/get_stock_ledger/'+data,
-			success: function(response){
-				$('#stock-ledger-table').html(response);
-				console.log(data);
-			}
+			$(document).on('select2:select', '#erp-warehouse-user-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_stock_ledger(item_code)
 			});
-		});
+			// ERP Warehouse Users
 
-    function erpresetFilter(){
-      $.ajax({
-        type: 'GET',
-        url: '/get_stock_ledger/'+$('#selected-item-code').text(),
-        success: function(response){
-          $('#stock-ledger-table').html(response);
-        }
-      });
-    }
-	function athresetFilter(){
-      $.ajax({
-        type: 'GET',
-        url: '/get_athena_transactions/'+$('#selected-item-code').text(),
-        success: function(response){
-			$('#athena-transactions-table').html(response);
-        }
-      });
-    }
-	// Transactions Warehouse Users Filter
+			// ERP Warehouse
+			$(document).on('select2:select', '#erp-warehouse-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_stock_ledger(item_code);
+			});
+
+			$('#erp-warehouse-filter').select2({
+				dropdownParent: $('#erp-warehouse-filter-parent'),
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+							data: function (data) {
+					return {
+						q: data.term // search term
+					};
+					},
+					processResults: function (response) {
+					return {
+						results: response.warehouse
+					};
+					},
+					cache: true
+				}
+			});
+			// ERP Warehouse
+
+			$('#athReset').click(function(){
+				item_code = $('#selected-item-code').text();
+				$('#ath-to-warehouse-filter').empty();
+				$('#ath-src-warehouse-filter').empty();
+				$('#warehouse-user-filter').empty();
+				get_athena_transactions(item_code);
+			})
+
+			$('#erpReset').click(function(){
+				item_code = $('#selected-item-code').text();
+				$('#erp-warehouse-filter').empty();
+				$('#erp-warehouse-user-filter').empty();
+				get_stock_ledger(item_code);
+
+			})
+
+			$('#resetAll').click(function(){
+				item_code = $('#selected-item-code').text();
+				$('#ath-to-warehouse-filter').empty();
+				$('#ath-src-warehouse-filter').empty();
+				$('#warehouse-user-filter').empty();
+				$('#erp-warehouse-filter').empty();
+				$('#erp-warehouse-user-filter').empty();
+				get_stock_ledger(item_code);
+				get_athena_transactions(item_code);
+			})
+			// Transactions Warehouse Filter
+		});
+		
 	</script>
 </body>
 </html>
