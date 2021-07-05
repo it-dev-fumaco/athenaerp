@@ -34,7 +34,7 @@
                 <td class="text-justify align-middle">
                     <span class="font-weight-bold">{{ $row->item_code }}</span> - {{ str_limit($row->description, $limit = 70, $end = '...') }}
                 </td>
-                <td class="text-center align-middle">{{ $row->warehouse }}</td>
+                <td class="text-center align-middle">{{ ($row->s_warehouse) ? $row->s_warehouse : $row->t_warehouse }}</td>
                 <td class="text-center align-middle font-weight-bold" style="font-size: 0.9rem;">{{ number_format($row->qty * 1) }}</td>
                 <td class="text-center align-middle">
                     <span class="d-block">{{ $row->reference_no }}</span>
