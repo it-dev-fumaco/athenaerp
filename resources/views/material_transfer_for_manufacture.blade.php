@@ -5,9 +5,7 @@
 ])
 
 @section('content')
-
-
-<div class="content" ng-app="myApp" ng-controller="stockCtrl">
+<div class="content" ng-app="myApp" ng-controller="stockCtrl" id="anglrCtrl">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
 			<div class="row">
@@ -49,8 +47,9 @@
 							<div class="table-responsive p-0">
 								<table class="table table-hover">
 									<col style="width: 17%;">
-									<col style="width: 43%;">
+									<col style="width: 33%;">
 									<col style="width: 15%;">
+									<col style="width: 10%;">
 									<col style="width: 15%;">
 									<col style="width: 10%;">
 									<thead>
@@ -58,6 +57,7 @@
 											<th scope="col" class="text-center">Production Order</th>
 											<th scope="col" class="text-center">Item Description</th>
 											<th scope="col" class="text-center">Qty</th>
+											<th scope="col" class="text-center">Delivery Date</th>
 											<th scope="col" class="text-center">Ref. No.</th>
 											<th scope="col" class="text-center">Actions</th>
 										</tr>
@@ -79,7 +79,7 @@
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
 												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-												<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
+												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center">
 												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
@@ -87,7 +87,14 @@
 												<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
 											</td>
 											<td class="text-center">
-												<span class="d-block"></span>@{{ x.ref_no }}<br><br><span style="font-size: 10pt;">@{{ x.customer }}</span><br><span style="font-size: 10pt;">Delivery Date: @{{ x.delivery_date }}</span><br><span style="font-size: 10pt;">@{{ x.delivery_status }}</span></td>
+												<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 11pt;">@{{ x.delivery_date }}</span>
+												<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
+											</td>
+											<td class="text-center">
+												<span class="d-block">@{{ x.ref_no }}</span>
+												<small class="d-block">@{{ x.customer }}</small>
+												<small class="d-block mt-3">@{{ x.order_status }}</small>
+											</td>
 											<td class="text-center">
 												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}">
 											</td>
@@ -102,7 +109,6 @@
 		</div>
 	</div>
 </div>
-
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
@@ -110,7 +116,6 @@
 	</form>
 </div>
 @endsection
-
 @section('script')
 <script>
 	$(document).ready(function(){
@@ -180,6 +185,7 @@
 					success: function(response){
 						if (response.status) {
 							showNotification("success", response.message, "fa fa-check");
+							angular.element('#anglrCtrl').scope().loadData();
 							$('#ste-modal').modal('hide');
 						}else{
 							showNotification("danger", response.message, "fa fa-info");

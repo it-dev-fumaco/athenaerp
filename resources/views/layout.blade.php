@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>ERP Inventory</title>
+	<title>ERP Inventory - {{ $namePage }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -107,37 +107,37 @@
 					</a>{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
 				</div>
 				<div class="col-xl-7 pr-4 pt-2 text-right">
-				<a class="btn btn-app bg-primary" href="/returns">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
-					<i class="fas fa-undo"></i> Returns
+					<a class="btn btn-app bg-primary" href="/returns">
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
+						<i class="fas fa-undo"></i> Returns
 					</a>
 					<a class="btn btn-app bg-info" href="/production_to_receive">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
-					<i class="far fa-check-circle"></i> Feedback
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
+						<i class="far fa-check-circle"></i> Feedback
 					</a>
 					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
-					<i class="fas fa-exchange-alt"></i> Transfer
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
+						<i class="fas fa-exchange-alt"></i> Transfer
 					</a>
 					<a class="btn btn-app bg-purple" href="/receipts">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
-					<i class="fas fa-boxes"></i> PO Receipts
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
+						<i class="fas fa-boxes"></i> PO Receipts
 					</a>
 					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
-					<i class="fas fa-tasks"></i> Withdrawals
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
+						<i class="fas fa-tasks"></i> Withdrawals
 					</a>
 					<a class="btn btn-app bg-indigo" href="/material_issue">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
-					<i class="fas fa-dolly"></i> Material Issue
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
+						<i class="fas fa-dolly"></i> Material Issue
 					</a>
 					<a class="btn btn-app bg-navy" href="/picking_slip">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
-					<i class="fas fa-truck"></i> Deliveries
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
+						<i class="fas fa-truck"></i> Deliveries
 					</a>
 					<a class="btn btn-app bg-teal" href="/replacements">
-					<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
-					<i class="fas fa-retweet"></i> Replacements
+						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
+						<i class="fas fa-retweet"></i> Replacement
 					</a>
 				</div>
 			</div>
@@ -338,6 +338,33 @@
 									<div class="tab-pane" id="tab_2">
 										<div class="row">
 											<div class="col-md-12">
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="warehouse-user-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="warehouse-user-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+												
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="ath-src-warehouse-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="ath-to-warehouse-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
+												<div class="col-md-2" style="display: inline-block">
+													<button class="btn btn-secondary" id="athReset">Reset Filters</button>
+												</div>
 												<div class="box-body table-responsive no-padding" id="athena-transactions-table"></div>
 											</div>
 										</div>
@@ -345,6 +372,26 @@
 									<div class="tab-pane" id="tab_3">
 										<div class="row">
 											<div class="col-md-12">
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="erp-warehouse-user-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
+												<div class="col-md-3 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="erp-warehouse-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="erp-warehouse-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
+												<div class="col-md-2" style="display: inline-block">
+													<button class="btn btn-secondary" id="erpReset">Reset Filters</button>
+												</div>
+
 												<div class="box-body table-responsive no-padding" id="stock-ledger-table"></div>
 											</div>
 										</div>
@@ -368,7 +415,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" id="resetAll" class="btn btn-default" data-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -709,7 +756,7 @@
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 
@@ -807,15 +854,8 @@
 					dataType: 'json',
 					contentType: 'application/json',
 					success: function (data) {
-						$('#d-material-receipt').text(data.d_feedbacks);
-						$('#d-purchase-receipts').text(data.d_purchase_receipts);
 						$('#p-purchase-receipts').text(data.p_purchase_receipts);
-						$('#d-replacements').text(data.d_replacements);
 						$('#p-replacements').text(data.p_replacements);
-						$('#d-material-transfer').text(data.d_internal_transfers);
-						$('#d-picking-slips').text(data.d_picking_slips);
-						$('#d-withdrawals').text(data.d_withdrawals);
-						$('#d-material-issues').text(data.d_material_issues);
 					}
 				});
 			}
@@ -867,12 +907,23 @@
 			}
 
 			get_low_stock_level_items();
+			get_reserved_items();
 			function get_low_stock_level_items(page) {
 				$.ajax({
 					type: "GET",
 					url: "/get_low_stock_level_items?page=" + page,
 					success: function (data) {
 						$('#low-level-stock-table').html(data);
+					}
+				});
+			}
+
+			function get_reserved_items(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_reserved_items?page=" + page,
+					success: function (data) {
+						$('#reserved-items-div').html(data);
 					}
 				});
 			}
@@ -1408,7 +1459,7 @@
 					dataType: 'json',
 					contentType: 'application/json',
 					success: function (data) {
-						$('#material-receipt').text(0);
+						$('#material-receipt').text(data);
 					}
 				});
 			}
@@ -1500,10 +1551,37 @@
 				get_stock_reservation(item_code)
 			}
 
+			$(document).on('submit', '.cancel-modal form', function(e){
+				e.preventDefault();
+
+				// alert();
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							$('.cancel-modal').modal('hide');
+							// $('.cancel-modal').modal('hide');
+							get_athena_transactions(response.item_code);
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			});
+
 			function get_athena_transactions(item_code, page){
+				var ath_src = $('#ath-src-warehouse-filter').val();
+				var ath_trg = $('#ath-to-warehouse-filter').val();
+				var ath_user = $('#warehouse-user-filter').val();
+				// var ath_user = $('#warehouse-user-filter').val();
 				$.ajax({
 					type: 'GET',
-					url: '/get_athena_transactions/' + item_code + '?page=' + page,
+					url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg,
 					success: function(response){
 						$('#athena-transactions-table').html(response);
 					}
@@ -1526,11 +1604,10 @@
 				get_low_stock_level_items(page);
 			});
 
-			$(document).on('click', '#athena-transactions-pagination a', function(event){
+			$(document).on('click', '#reserved-items-pagination a', function(event){
 				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
-				get_athena_transactions(item_code, page);
+				get_reserved_items(page);
 			});
 
 			$(document).on('click', '#stock-reservations-pagination-1 a', function(event){
@@ -1555,21 +1632,16 @@
 			});
 
 			function get_stock_ledger(item_code, page){
+				var erp_user = $('#erp-warehouse-user-filter').val();
+				var erp_wh = $('#erp-warehouse-filter').val();
 				$.ajax({
 					type: 'GET',
-					url: '/get_stock_ledger/' + item_code + '?page=' + page,
+					url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh,
 					success: function(response){
 						$('#stock-ledger-table').html(response);
 					}
 				});
 			}
-
-			$(document).on('click', '#stock-ledger-pagination a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('page=')[1];
-				get_stock_ledger(item_code, page);
-			});
 
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
@@ -1665,7 +1737,7 @@
 			});
 			
 			$('#view-item-details-modal').on("hidden.bs.modal", function () {
-				$('#item-tabs a[href="#tab_1"]').tab('show');
+				// $('#item-tabs a[href="#tab_1"]').tab('show');
 			});
 
 			$(document).on('hidden.bs.modal', '.modal', function () {
@@ -1686,7 +1758,202 @@
 				  }
 				});
 			}
+
+			// Transactions Warehouse Users Filter
+
+
+			// Athena Transactions Pagination
+			
+			$(document).on('click', '#athena-transactions-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+				
+				var page = $(this).attr('href').split('page=')[1];//+ath_user_filter+ath_src_wh;
+				get_athena_transactions(item_code, page);
+			});
+
+			// Athena Transactions Pagination
+
+			// ERP Transactions Pagination
+			$(document).on('click', '#stock-ledger-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $(this).closest('div').data('item-code');
+
+				var page = $(this).attr('href').split('page=')[1];// + user_filter;
+				get_stock_ledger(item_code, page);
+			});
+		
+			// ERP Transactions Pagination
+			
+			//Athena Warehouse Users
+				$('#warehouse-user-filter').select2({//athena warehouse users
+				dropdownParent: $('#warehouse-user-filter-parent'),
+				placeholder: 'Select Warehouse User',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.warehouse_users
+						};
+					},
+					cache: true
+				}
+				});
+
+				$(document).on('select2:select', '#warehouse-user-filter', function(e){
+					var item_code = $('#selected-item-code').text();
+					get_athena_transactions(item_code);
+				});
+			//Athena Warehouse Users
+
+			//Athena Source Warehouse
+			$('#ath-src-warehouse-filter').select2({
+				dropdownParent: $('#ath-src-warehouse-filter-parent'),
+				placeholder: 'Select Source Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.source_warehouse
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#ath-src-warehouse-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_athena_transactions(item_code);
+			});
+			//Athena Source Warehouse
+
+			//Athena Target Warehouse
+			$('#ath-to-warehouse-filter').select2({
+				dropdownParent: $('#ath-to-warehouse-filter-parent'),
+				placeholder: 'Select Target Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.target_warehouse
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#ath-to-warehouse-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_athena_transactions(item_code);
+			});
+			//Athena Target Warehouse
+
+			// ERP Warehouse Users
+			$('#erp-warehouse-user-filter').select2({//warehouse users
+				dropdownParent: $('#erp-warehouse-user-filter-parent'),
+				placeholder: 'Select Warehouse User',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+							data: function (data) {
+					return {
+						q: data.term // search term
+					};
+					},
+					processResults: function (response) {
+					return {
+						results: response.warehouse_users
+					};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#erp-warehouse-user-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_stock_ledger(item_code)
+			});
+			// ERP Warehouse Users
+
+			// ERP Warehouse
+			$(document).on('select2:select', '#erp-warehouse-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_stock_ledger(item_code);
+			});
+
+			$('#erp-warehouse-filter').select2({
+				dropdownParent: $('#erp-warehouse-filter-parent'),
+				placeholder: 'Select Warehouse',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+							data: function (data) {
+					return {
+						q: data.term // search term
+					};
+					},
+					processResults: function (response) {
+					return {
+						results: response.warehouse
+					};
+					},
+					cache: true
+				}
+			});
+			// ERP Warehouse
+
+			$('#athReset').click(function(){
+				item_code = $('#selected-item-code').text();
+				$('#ath-to-warehouse-filter').empty();
+				$('#ath-src-warehouse-filter').empty();
+				$('#warehouse-user-filter').empty();
+				get_athena_transactions(item_code);
+			})
+
+			$('#erpReset').click(function(){
+				item_code = $('#selected-item-code').text();
+				$('#erp-warehouse-filter').empty();
+				$('#erp-warehouse-user-filter').empty();
+				get_stock_ledger(item_code);
+
+			})
+
+			$('#resetAll').click(function(){
+				item_code = $('#selected-item-code').text();
+				$('#ath-to-warehouse-filter').empty();
+				$('#ath-src-warehouse-filter').empty();
+				$('#warehouse-user-filter').empty();
+				$('#erp-warehouse-filter').empty();
+				$('#erp-warehouse-user-filter').empty();
+				get_stock_ledger(item_code);
+				get_athena_transactions(item_code);
+			})
+			// Transactions Warehouse Filter
 		});
+		
 	</script>
 </body>
 </html>

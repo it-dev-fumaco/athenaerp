@@ -5,7 +5,7 @@
 ])
 
 @section('content')
-<div class="content" ng-app="myApp" ng-controller="stockCtrl">
+<div class="content" ng-app="myApp" ng-controller="stockCtrl" id="anglrCtrl">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
 			<div class="row">
@@ -61,7 +61,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="x in mt_filtered = (mt | filter:searchText | filter: fltr)">
+										<tr ng-repeat="x in mt_filtered = (mt | filter:searchText | filter: fltr | orderBy: ['status', 'transaction_date'])">
 											<td class="text-center">
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<small class="d-block mt-1">@{{ x.parent }}</small>
@@ -77,12 +77,12 @@
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
 												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-												<span class="d-block mt-2" ng-hide="x.owner == null" style="font-size: 10pt;"><b>Requested by:</b> @{{ x.owner }}</span>
+												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center">
 												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
-												<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
+												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }}</span>
 											</td>
 											<td class="text-center">
 												<span class="d-block">@{{ x.sales_order_no }}</span>
@@ -102,9 +102,6 @@
 		</div>
 	</div>
 </div>
-
-
-
 
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
@@ -135,8 +132,6 @@
 			$('#ste-modal input[name="deduct_reserve"]').val(0);
       		$('#ste-modal form').submit();
 		});
-
-		
 
 		$(document).on('click', '.update-item', function(){
 			var id = $(this).data('id');
@@ -186,6 +181,7 @@
 					success: function(response){
 						if (response.status) {
 							showNotification("success", response.message, "fa fa-check");
+							angular.element('#anglrCtrl').scope().loadData();
 							$('#ste-modal').modal('hide');
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
@@ -213,11 +209,10 @@
 		}
 	});
 
-
 	var app = angular.module('myApp', []);
 	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
 		$http.get("/get_parent_warehouses").then(function (response) {
-		$scope.wh = response.data.wh;
+			$scope.wh = response.data.wh;
 		});
 		
 		$scope.loadData = function(){
