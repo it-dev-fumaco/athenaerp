@@ -17,10 +17,13 @@
 	<link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
 	<!-- Select2 -->
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
-	<!-- bootstrap datepicker -->
-	<link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}">
 	<!-- iCheck for checkboxes and radio inputs -->
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
+	<!-- datepicker -->
+	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('js/datetimepicker/moment.min.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('js/datetimepicker/daterangepicker.min.js') }}"></script>
+	<link rel="stylesheet" type="text/css" href="{{ asset('css/daterangepicker.css') }}" />
 </head>
 
 <style>
@@ -338,25 +341,40 @@
 									<div class="tab-pane" id="tab_2">
 										<div class="row">
 											<div class="col-md-12">
-												<div class="col-md-3 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="warehouse-user-filter-parent" style="z-index: 1050">
-														<select name="warehouse_user" id="warehouse-user-filter" class="form-control">
-															
-														</select>
+												
+												<div class="col-md-3 p-0" style="display: inline-block;">
+													<div class="form-group m-1">
+														{{-- <label>Date range:</label> --}}
+														<div class="input-group">
+															<div class="input-group-prepend">
+																<span class="input-group-text">
+																	<i class="far fa-calendar-alt"></i>
+																</span>
+															</div>
+															<input type="text" name="dates" class="form-control float-right" id="ath_dates">
+														</div>
 													</div>
 												</div>
 												
-												<div class="col-md-3 p-2" style="display: inline-block">
+												<div class="col-md-2 p-2" style="display: inline-block">
 													<div class="form-group m-0" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
-														<select name="warehouse_user" id="ath-src-warehouse-filter" class="form-control">
+														<select name="ath-src-warehouse" id="ath-src-warehouse-filter" class="form-control">
 															
 														</select>
 													</div>
 												</div>
 
-												<div class="col-md-3 p-2" style="display: inline-block">
+												<div class="col-md-2 p-2" style="display: inline-block">
 													<div class="form-group m-0" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
-														<select name="warehouse_user" id="ath-to-warehouse-filter" class="form-control">
+														<select name="ath-to-warehouse" id="ath-to-warehouse-filter" class="form-control">
+															
+														</select>
+													</div>
+												</div>
+
+												<div class="col-md-2 p-2" style="display: inline-block">
+													<div class="form-group m-0" id="warehouse-user-filter-parent" style="z-index: 1050">
+														<select name="warehouse_user" id="warehouse-user-filter" class="form-control">
 															
 														</select>
 													</div>
@@ -372,17 +390,32 @@
 									<div class="tab-pane" id="tab_3">
 										<div class="row">
 											<div class="col-md-12">
+												
+												<div class="col-md-3 p-0" style="display: inline-block;">
+													<div class="form-group m-1">
+														{{-- <label>Date range:</label> --}}
+														<div class="input-group">
+															<div class="input-group-prepend">
+																<span class="input-group-text">
+																	<i class="far fa-calendar-alt"></i>
+																</span>
+															</div>
+															<input type="text" name="erpdates" class="form-control float-right" id="erp_dates">
+														</div>
+													</div>
+												</div>
+
 												<div class="col-md-3 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
-														<select name="warehouse_user" id="erp-warehouse-user-filter" class="form-control">
+													<div class="form-group m-0" id="erp-warehouse-filter-parent" style="z-index: 1050">
+														<select name="erp-warehouse" id="erp-warehouse-filter" class="form-control">
 															
 														</select>
 													</div>
 												</div>
 
 												<div class="col-md-3 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="erp-warehouse-filter-parent" style="z-index: 1050">
-														<select name="warehouse_user" id="erp-warehouse-filter" class="form-control">
+													<div class="form-group m-0" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
+														<select name="erp-warehouse-user" id="erp-warehouse-user-filter" class="form-control">
 															
 														</select>
 													</div>
@@ -772,6 +805,9 @@
 <script src="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.min.js') }}"></script>
 <!-- AdminLTE App -->
 <script src="{{ asset('/updated/dist/js/adminlte.min.js') }}"></script>
+
+<script src="{{ asset('/updated/plugins/daterangepicker/daterangepicker.js') }}"></script>
+<script src="{{ asset('/updated/plugins/inputmask/jquery.inputmask.min.js') }}"></script>
 <!-- Select2 -->
 <script src="{{ asset('/updated/plugins/select2/js/select2.min.js') }}"></script>
 <!-- bootstrap datepicker -->
@@ -1578,10 +1614,11 @@
 				var ath_src = $('#ath-src-warehouse-filter').val();
 				var ath_trg = $('#ath-to-warehouse-filter').val();
 				var ath_user = $('#warehouse-user-filter').val();
+				var ath_drange = $('#ath_dates').val();
 				// var ath_user = $('#warehouse-user-filter').val();
 				$.ajax({
 					type: 'GET',
-					url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg,
+					url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
 					success: function(response){
 						$('#athena-transactions-table').html(response);
 					}
@@ -1634,9 +1671,10 @@
 			function get_stock_ledger(item_code, page){
 				var erp_user = $('#erp-warehouse-user-filter').val();
 				var erp_wh = $('#erp-warehouse-filter').val();
+				var erp_d = $('#erp_dates').val();
 				$.ajax({
 					type: 'GET',
-					url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh,
+					url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh + '&erp_d=' + erp_d,
 					success: function(response){
 						$('#stock-ledger-table').html(response);
 					}
@@ -1788,7 +1826,7 @@
 			//Athena Warehouse Users
 				$('#warehouse-user-filter').select2({//athena warehouse users
 				dropdownParent: $('#warehouse-user-filter-parent'),
-				placeholder: 'Select Warehouse User',
+				placeholder: 'Warehouse User',
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -1816,7 +1854,7 @@
 			//Athena Source Warehouse
 			$('#ath-src-warehouse-filter').select2({
 				dropdownParent: $('#ath-src-warehouse-filter-parent'),
-				placeholder: 'Select Source Warehouse',
+				placeholder: 'Source Warehouse',
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -1844,7 +1882,7 @@
 			//Athena Target Warehouse
 			$('#ath-to-warehouse-filter').select2({
 				dropdownParent: $('#ath-to-warehouse-filter-parent'),
-				placeholder: 'Select Target Warehouse',
+				placeholder: 'Target Warehouse',
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -1868,6 +1906,43 @@
 				get_athena_transactions(item_code);
 			});
 			//Athena Target Warehouse
+
+			//Athena Month
+			$('#ath_dates').on('change', function(e){ 
+				var item_code = $('#selected-item-code').text();
+				get_athena_transactions(item_code);
+			})
+			
+			$(function() {
+				$("#ath_dates").daterangepicker({
+					locale: {
+						// format: 'YYYY-MM-DD',
+						format: 'YYYY-MMM-DD',
+						separator: " to "
+            		},
+					startDate: moment().subtract(30, 'days'), endDate: moment(),
+				});
+			});
+			
+			//Athena Month
+
+			//ERP Month
+			$('#erp_dates').on('change', function(e){ 
+				var item_code = $('#selected-item-code').text();
+				get_stock_ledger(item_code);
+			})
+			
+			$(function() {
+				$("#erp_dates").daterangepicker({
+					locale: {
+						format: 'YYYY-MMM-DD',
+						separator: " to "
+            		},
+					startDate: moment().subtract(30, 'days'), endDate: moment(),
+				});
+			});
+			
+			//ERP Month
 
 			// ERP Warehouse Users
 			$('#erp-warehouse-user-filter').select2({//warehouse users
@@ -1930,6 +2005,15 @@
 				$('#ath-to-warehouse-filter').empty();
 				$('#ath-src-warehouse-filter').empty();
 				$('#warehouse-user-filter').empty();
+				$(function() {
+					$("#ath_dates").daterangepicker({
+						locale: {
+							format: 'YYYY-MMM-DD',
+							separator: " to "
+						},
+						startDate: moment().subtract(30, 'days'), endDate: moment(),
+					});
+				});
 				get_athena_transactions(item_code);
 			})
 
@@ -1937,6 +2021,15 @@
 				item_code = $('#selected-item-code').text();
 				$('#erp-warehouse-filter').empty();
 				$('#erp-warehouse-user-filter').empty();
+				$(function() {
+					$("#erp_dates").daterangepicker({
+						locale: {
+							format: 'YYYY-MMM-DD',
+							separator: " to "
+						},
+						startDate: moment().subtract(30, 'days'), endDate: moment(),
+					});
+				});
 				get_stock_ledger(item_code);
 
 			})
@@ -1948,6 +2041,24 @@
 				$('#warehouse-user-filter').empty();
 				$('#erp-warehouse-filter').empty();
 				$('#erp-warehouse-user-filter').empty();
+				$(function() {
+					$("#ath_dates").daterangepicker({
+						locale: {
+							format: 'YYYY-MMM-DD',
+							separator: " to "
+						},
+						startDate: moment().subtract(30, 'days'), endDate: moment(),
+					});
+				});
+				$(function() {
+					$("#erp_dates").daterangepicker({
+						locale: {
+							format: 'YYYY-MMM-DD',
+							separator: " to "
+						},
+						startDate: moment().subtract(30, 'days'), endDate: moment(),
+					});
+				});
 				get_stock_ledger(item_code);
 				get_athena_transactions(item_code);
 			})

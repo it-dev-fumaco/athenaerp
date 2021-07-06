@@ -26,10 +26,8 @@
     @empty
     <tr>
       <td colspan="8" style="text-align:center;">No Records Found.</td>
-  </tr>
+    </tr>
     @endforelse
-      
-
     </tbody>
   </table>
   <div class="box-footer clearfix" id="stock-ledger-pagination" data-item-code="{{ $item_code }}" style="font-size: 16pt;">

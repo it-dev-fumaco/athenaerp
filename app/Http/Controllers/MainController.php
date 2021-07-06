@@ -34,10 +34,6 @@ class MainController extends Controller
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
-        // $WHusers = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->select('warehouse_user')->pluck('warehouse_user');
-
-        // return $WHusers;
-
         $itemClass = DB::table('tabItem')->select('item_classification')
             ->where('description', 'LIKE', "%".$request->searchString."%" )
             ->orWhere('name', 'LIKE', "%".$request->searchString."%")
@@ -1472,6 +1468,10 @@ class MainController extends Controller
     }
 
     public function get_athena_transactions(Request $request, $item_code){
+        $dates = explode(' to ', $request->ath_dates);
+        $from = Carbon::parse($dates[0]);
+        $to = Carbon::parse($dates[1])->endOfDay();
+
         $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->get();//->paginate(10);
         if($request->wh_user != '' and $request->wh_user != 'null'){
             $logs = $logs->where('warehouse_user', $request->wh_user);
@@ -1483,6 +1483,10 @@ class MainController extends Controller
 
         if($request->trg_wh != '' and $request->trg_wh != 'null'){
             $logs = $logs->where('target_warehouse', $request->trg_wh);
+        }
+
+        if($request->ath_dates != '' and $request->ath_dates != 'null'){
+            $logs = $logs->whereBetween('transaction_date',[$from, $to]);
         }
 
         $list = [];
@@ -1539,28 +1543,8 @@ class MainController extends Controller
     }
 
     public function cancel_athena_transaction(Request $request){
-        // return $request->athena_transaction_number;
         DB::beginTransaction();
         try{
-            // $SEstatus_update = [
-                //     'se.item_status' => 'For Checking',
-                //     'sed.status' => 'For Checking',
-                //     'sed.session_user' => "",
-                //     'sed.issued_qty' => 0,
-                //     'sed.date_modified' => null
-                // ];
-    
-            // $SEcancel = DB::table('tabStock Entry as se')
-            //     ->join('tabStock Entry Detail as sed', 'sed.parent', 'se.name')
-            //     ->where('se.name', $request->athena_transaction_number)
-            //     ->orwhere('sed.parent', $request->athena_transaction_number)
-            //     ->update($SEstatus_update);
-
-            // $SEPScancel = DB::table('tabStock Entry as se')
-            //     ->join('tabPacking Slip as ps', 'ps.name', 'se.name')
-            //     ->where('ps.name', $request->athena_transaction_number)
-            //     ->update(['se.item_status' => 'test','ps.item_status' => 'test']);
-            // return $SEPScancel;
 
             $ATstatus_update = [
                 'docstatus' => 2
@@ -1672,7 +1656,7 @@ class MainController extends Controller
                 'session_user' => $session_user,
                 'posting_date' => $row->posting_date,//cccc
             ];
-            // $wh_user = $request->wh_user;
+
             if($request->wh_user != '' and $request->wh_user != 'null'){
                 $list = collect($list)->filter(function ($value, $key) use($request){
                     return $value['session_user'] == $request->wh_user;
@@ -1683,6 +1667,18 @@ class MainController extends Controller
                 $list = collect($list)->filter(function ($value, $key) use($request){
                     return $value['warehouse'] == $request->erp_wh;
                 });
+            }
+
+            if($request->erp_d != '' and $request->erp_d != 'null'){
+                $dates = explode(' to ', $request->erp_d);
+
+                $list = collect($list)->filter(function ($value, $key) use($dates){
+                    if($value['date_modified'] >= Carbon::parse($dates[0])
+                        and $value['date_modified'] <= Carbon::parse($dates[1])->endOfDay()){
+                            return $value['date_modified'];
+                        }
+                });
+
             }
         
         }
@@ -2667,7 +2663,7 @@ class MainController extends Controller
                 'item_code' => $row->item_code,
                 'item_classification' => $row->item_classification,
                 'description' => $row->description,
-                'qty' => $row->qty,
+                'qty' => $row->qty * 1,
                 'warehouse' => $row->warehouse,
                 'stock_uom' => $row->stock_uom,
                 'image' => ($item_image_path) ? $item_image_path->image_path : null

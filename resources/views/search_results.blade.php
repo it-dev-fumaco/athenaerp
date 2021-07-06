@@ -12,20 +12,27 @@
 					<div class="container-fluid itemClassContainer overflow-auto">
 						<input type="button" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden="">
 						@foreach($itemClass as $itemClass)
-							<!-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass])) }}"> 
-							<a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass]) }}"> - array	 -->
-							<a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass->item_classification]) }}">	
+							{{-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass->item_classification])) }}">  --}}
+							{{-- <a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass]) }}"> - array --}}
+							{{-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->except('searchString'),['classification' => $itemClass->item_classification])) }}">  --}}
+							{{-- <a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass->item_classification]) }}">	 --}}
+							<a class="itemClassBubble" href="">	
 								<div class="classPanel">
 									<div class="classPanelAbbr">
 										<i>{{substr($itemClass->item_classification, 0, 2)}}</i>
 									</div>
 									<div class="classPanelName">
-										<!-- <i>{{substr(Illuminate\Support\Str::limit($itemClass->item_classification,15), 4)}}</i> Ellipsis  -->
-										<!-- <i>{{substr($itemClass->item_classification, 4)}}</i> -->
-										<input type="button" class="classPanelBtn bg-white" name="text[]" value="{{substr($itemClass->item_classification, 4)}}" readonly>
+										<input type="button" class="classPanelBtn bg-white" id="das" name="text[]" value="{{substr($itemClass->item_classification, 4)}}" readonly>
 									</div>
 								</div>
 							</a>
+							<script>
+								if($('.classPanelBtn').length > 1){
+									$('.itemClassBubble').attr("href", "{{ request()->fullUrlWithQuery(['classification' => $itemClass->item_classification]) }}")
+								}else{
+									$('.itemClassBubble').attr("href", "{{ url()->current().'?'.http_build_query(array_merge(request()->except('searchString'),['classification' => $itemClass->item_classification])) }}")
+								}
+							</script>
  						@endforeach
 					</div>
 					<div class="card card-gray card-outline">

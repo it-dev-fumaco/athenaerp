@@ -25,7 +25,7 @@
         @endphp
         <tr>
             <td class="text-center">
-                <span class="d-block">{{ $row['reference_parent'] }}</span>
+                <span class="d-block">{{ $row['reference_parent'] }}<br/></span>
                 <span class="badge {{ $label }}">{{ $row['status'] }}</span>
             </td>
             <td class="text-center">{{ $row['source_warehouse'] }}</td>
