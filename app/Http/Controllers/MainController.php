@@ -34,10 +34,6 @@ class MainController extends Controller
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
-        // $WHusers = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->select('warehouse_user')->pluck('warehouse_user');
-
-        // return $WHusers;
-
         $itemClass = DB::table('tabItem')->select('item_classification')
             ->where('description', 'LIKE', "%".$request->searchString."%" )
             ->orWhere('name', 'LIKE', "%".$request->searchString."%")

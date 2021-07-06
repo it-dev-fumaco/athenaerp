@@ -17,16 +17,13 @@
 	<link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
 	<!-- Select2 -->
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
-	<!-- bootstrap datepicker -->
-	{{-- <script src="{{ asset('/updated/plugins/moment/moment.min.js') }}"></script>
-
-	<link rel="stylesheet" href="{{ asset('/updated/plugins/datepicker/datepicker3.css') }}"> --}}
 	<!-- iCheck for checkboxes and radio inputs -->
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
-	<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+	<!-- datepicker -->
+	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('js/datetimepicker/moment.min.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('js/datetimepicker/daterangepicker.min.js') }}"></script>
+	<link rel="stylesheet" type="text/css" href="{{ asset('css/daterangepicker.css') }}" />
 </head>
 
 <style>
