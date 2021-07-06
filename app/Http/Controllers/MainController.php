@@ -2667,7 +2667,7 @@ class MainController extends Controller
                 'item_code' => $row->item_code,
                 'item_classification' => $row->item_classification,
                 'description' => $row->description,
-                'qty' => $row->qty,
+                'qty' => $row->qty * 1,
                 'warehouse' => $row->warehouse,
                 'stock_uom' => $row->stock_uom,
                 'image' => ($item_image_path) ? $item_image_path->image_path : null
