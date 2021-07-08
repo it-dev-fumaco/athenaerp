@@ -1932,22 +1932,22 @@ class MainController extends Controller
         try {
             $now = Carbon::now();
 
-            $stock_entry_detail = DB::connection('mysql')->table('tabStock Entry Detail')->where('parent', $stock_entry)->get();
+            $stock_entry_detail = DB::table('tabStock Entry Detail')->where('parent', $stock_entry)->get();
 
-            $latest_id = DB::connection('mysql')->table('tabBin')->max('name');
+            $latest_id = DB::table('tabBin')->max('name');
             $latest_id_exploded = explode("/", $latest_id);
             $new_id = $latest_id_exploded[1] + 1;
 
-            $stock_entry_qry = DB::connection('mysql')->table('tabStock Entry')->where('name', $stock_entry)->first();
+            $stock_entry_qry = DB::table('tabStock Entry')->where('name', $stock_entry)->first();
 
-            $stock_entry_detail = DB::connection('mysql')->table('tabStock Entry Detail')->where('parent', $stock_entry)->get();
+            $stock_entry_detail = DB::table('tabStock Entry Detail')->where('parent', $stock_entry)->get();
             
             $s_data_insert = [];
             $d_data = [];
             foreach($stock_entry_detail as $row){
                
                     if($row->s_warehouse){
-                        $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->s_warehouse)
+                        $bin_qry = DB::table('tabBin')->where('warehouse', $row->s_warehouse)
                         ->where('item_code', $row->item_code)->first();
                     if (!$bin_qry) {
                                
@@ -1959,8 +1959,8 @@ class MainController extends Controller
                             'name' => $id,
                             'creation' => $now->toDateTimeString(),
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->email,
-                            'owner' => Auth::user()->email,
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
                             'docstatus' => 0,
                             'parent' => null,
                             'parentfield' => null,
@@ -1987,23 +1987,22 @@ class MainController extends Controller
                             'valuation_rate' => $row->valuation_rate,
                         ];
 
-                        DB::connection('mysql')->table('tabBin')->insert($bin);
+                        DB::table('tabBin')->insert($bin);
                     }else{
                         $bin = [
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->email,
+                            'modified_by' => Auth::user()->wh_user,
                             'actual_qty' => $bin_qry->actual_qty - $row->transfer_qty,
                             'stock_value' => $bin_qry->valuation_rate * $row->transfer_qty,
                             'valuation_rate' => $bin_qry->valuation_rate,
                         ];
         
-                        DB::connection('mysql')->table('tabBin')->where('name', $bin_qry->name)->update($bin);
+                        DB::table('tabBin')->where('name', $bin_qry->name)->update($bin);
                     }
-                    
                 }
 
                 if($row->t_warehouse){
-                    $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
+                    $bin_qry = DB::table('tabBin')->where('warehouse', $row->t_warehouse)
                         ->where('item_code', $row->item_code)->first();
                     if (!$bin_qry) {
                         
@@ -2015,8 +2014,8 @@ class MainController extends Controller
                             'name' => $id,
                             'creation' => $now->toDateTimeString(),
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->email,
-                            'owner' => Auth::user()->email,
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
                             'docstatus' => 0,
                             'parent' => null,
                             'parentfield' => null,
@@ -2043,17 +2042,17 @@ class MainController extends Controller
                             'valuation_rate' => $row->valuation_rate,
                         ];
 
-                        DB::connection('mysql')->table('tabBin')->insert($bin);
+                        DB::table('tabBin')->insert($bin);
                     }else{
                         $bin = [
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->email,
+                            'modified_by' => Auth::user()->wh_user,
                             'actual_qty' => $bin_qry->actual_qty + $row->transfer_qty,
                             'stock_value' => $bin_qry->valuation_rate * $row->transfer_qty,
                             'valuation_rate' => $bin_qry->valuation_rate,
                         ];
         
-                        DB::connection('mysql')->table('tabBin')->where('name', $bin_qry->name)->update($bin);
+                        DB::table('tabBin')->where('name', $bin_qry->name)->update($bin);
                     }
                 }
             }
@@ -3592,7 +3591,7 @@ class MainController extends Controller
     }
 
     public function feedback_production_order_items($production_order, $qty_to_manufacture, $fg_completed_qty){
-        $production_order_items_qry = DB::connection('mysql')->table('tabProduction Order Item')
+        $production_order_items_qry = DB::table('tabProduction Order Item')
             ->where('parent', $production_order)
             ->where(function($q) {
                 $q->where('item_alternative_for', 'new_item')
@@ -3603,13 +3602,13 @@ class MainController extends Controller
         $arr = [];
         foreach ($production_order_items_qry as $index => $row) {
             $item_required_qty = $row->required_qty;
-            $item_required_qty += DB::connection('mysql')->table('tabProduction Order Item')
+            $item_required_qty += DB::table('tabProduction Order Item')
                 ->where('parent', $production_order)
                 ->where('item_alternative_for', $row->item_code)
                 ->whereNotNull('item_alternative_for')
                 ->sum('required_qty');
 
-            $consumed_qty = DB::connection('mysql')->table('tabStock Entry as ste')
+            $consumed_qty = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
                 ->where('ste.production_order', $production_order)->whereNull('sted.t_warehouse')
                 ->where('sted.item_code', $row->item_code)->where('purpose', 'Manufacture')
@@ -3663,7 +3662,7 @@ class MainController extends Controller
     }
 
     public function get_alternative_items($production_order, $item_code, $remaining_required_qty){
-        $q = DB::connection('mysql')->table('tabProduction Order Item')
+        $q = DB::table('tabProduction Order Item')
 			->where('parent', $production_order)->where('item_alternative_for', $item_code)
             ->orderBy('required_qty', 'asc')->get();
 
@@ -3671,7 +3670,7 @@ class MainController extends Controller
         $arr = [];
         foreach ($q as $row) {
             if($remaining > 0){
-                $consumed_qty = DB::connection('mysql')->table('tabStock Entry as ste')
+                $consumed_qty = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
                     ->where('ste.production_order', $production_order)->whereNull('sted.t_warehouse')
                     ->where('sted.item_code', $row->item_code)->where('purpose', 'Manufacture')
@@ -3705,7 +3704,7 @@ class MainController extends Controller
             return response()->json(['success' => 0, 'message' => 'Production Order ' . $production_order . ' not found.']);
         }
 
-        $bom_scrap_details = DB::connection('mysql')->table('tabBOM Scrap Item')->where('parent', $production_order_details->bom_no)->first();
+        $bom_scrap_details = DB::table('tabBOM Scrap Item')->where('parent', $production_order_details->bom_no)->first();
         if (!$bom_scrap_details) {
             return response()->json(['success' => 0, 'message' => 'BOM ' . $production_order_details->bom_no . ' not found.']);
         }
@@ -3715,7 +3714,7 @@ class MainController extends Controller
             return response()->json(['success' => 0, 'message' => 'UoM Kilogram not found.']);
         }
 
-        $thickness = DB::connection('mysql')->table('tabItem Variant Attribute')
+        $thickness = DB::table('tabItem Variant Attribute')
             ->where('parent', $bom_scrap_details->item_code)->where('attribute', 'like', '%thickness%')->first();
 
         if($thickness){
