@@ -28,7 +28,7 @@ class MainController extends Controller
         return view('index');
     }
 
-    public function search_results(Request $request){        
+    public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
         $itemClass = DB::table('tabItem')->select('item_classification')
