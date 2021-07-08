@@ -424,12 +424,7 @@ class MainController extends Controller
 
         $list = [];
         foreach ($q as $d) {
-            $actual_qty = $this->get_actual_qty($d->item_code, $d->s_warehouse);
-
-            $total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
-                ->where('item_code', $d->item_code)->where('s_warehouse', $d->s_warehouse)->sum('qty');
-            
-            $balance = $actual_qty - $total_issued;
+            $available_qty = $this->get_available_qty($d->item_code, $d->s_warehouse);
 
             $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
@@ -475,7 +470,6 @@ class MainController extends Controller
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
                 't_warehouse' => $d->t_warehouse,
-                'actual_qty' => $actual_qty,
                 'uom' => $d->uom,
                 'name' => $d->name,
                 'owner' => $owner,
@@ -484,7 +478,7 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
-                'balance' => $balance,
+                'balance' => $available_qty,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->production_order,
@@ -818,16 +812,21 @@ class MainController extends Controller
     }
 
     public function get_stock_reservation($item_code, $warehouse, $sales_person, $project, $consignment_warehouse){
-        $query = DB::table('tabStock Reservation')
-            ->where('warehouse', $warehouse)->where('item_code', $item_code)
-            ->when($sales_person, function($q) use ($sales_person, $project){
-                return $q->where('sales_person', $sales_person)->where('project', $project);
-            })
-            ->when($consignment_warehouse, function($q) use ($consignment_warehouse){
-				return $q->where('consignment_warehouse', $consignment_warehouse);
-            })
-            ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
+        $query = [];
+        if($sales_person) {
+            $query = DB::table('tabStock Reservation')
+                ->where('warehouse', $warehouse)->where('item_code', $item_code)
+                ->where('sales_person', $sales_person)->where('project', $project)
+                ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
+        }
 
+        if($consignment_warehouse) {
+             $query = DB::table('tabStock Reservation')
+                ->where('warehouse', $warehouse)->where('item_code', $item_code)
+                ->where('consignment_warehouse', $consignment_warehouse)
+                ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
+        }
+       
         return ($query) ? $query : [];
     }
 
