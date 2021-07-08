@@ -121,7 +121,6 @@ class ItemAttributeController extends Controller
                 ->select('abbr')
                 ->first();
 
-            // $count = count($c_attrib);
             $attribute_values[] = [
                 'attribute' => $attrib->attribute,
                 'attribute_value' => $attrib->attribute_value,
@@ -129,8 +128,6 @@ class ItemAttributeController extends Controller
                 'count' => $c_attrib
             ];
         }
-
-        // return $attribute_values;
 
         return view('item_attributes_updating.item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc', 'parentDesc', 'attribute_values'));
     }
@@ -193,6 +190,7 @@ class ItemAttributeController extends Controller
             $currentAbbr = $request->currentAbbr;
             $attVal = '';
             $abbVal ='';
+            $attVal2 = '';
             for($i = 0; $i < count($newAttrib); $i++){
                 $getItemVariants = DB::table('tabItem as i')->join('tabItem Variant Attribute as d', 'i.name', 'd.parent')
                     ->where('i.is_stock_item', 1)->where('i.has_variants', 0)->where('attribute', $attribName[$i])->where('attribute_value', $newAttrib[$i])
@@ -215,10 +213,9 @@ class ItemAttributeController extends Controller
                         ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
 
                     $attVal .= $attribName[$i].' was changed from '.$currentAttrib[$i].' to '.$request->attrib[$i]. ', ';
+
                 }
             }
-            // return $affectedRows;
-            // return $attVal;
 
             $itemDuplicate = collect($attrArr)->min('item_code_with_same_attr');
             $itemDuplicate = ($itemDuplicate) ? $itemDuplicate[0] : null;
@@ -228,27 +225,63 @@ class ItemAttributeController extends Controller
                     return response()->json(['status' => 0, 'message' => 'Item Variant <b>' . $itemDuplicate . '</b> already exists with same attributes.']);
                 }
             }
-            
+
+            $abbVal = '';
+            $abbVal2 = '';
+            $abbVal3 = '';
+            $erp_logs = [];
+            for($t=0; $t < count($currentAbbr); $t++){
+                if($currentAbbr[$t] != $request->abbr[$t]){
+                    $abbVal .= 'Abbreviation '.$currentAbbr[$t].' was changed to '.$request->abbr[$t]. ', ';
+
+                    $abbrKey = DB::table('tabItem Attribute Value')->where('abbr', $currentAbbr[$t])->first();
+                }
+            }
+            $elog = [];
             for($h=0; $h < count($currentAttrib); $h++){
                 if($currentAttrib[$h] != $request->attrib[$h]) {
                     $attribVal2 = [
                         'attribute_value' => $request->attrib[$h],
                         'abbr' => $request->abbr[$h]
                     ];
-                    
+                    $attKey = DB::table('tabItem Attribute Value')->select('name')->where('attribute_value', $currentAttrib[$h])->first();
+
                     $affectedRows += DB::table('tabItem Attribute Value')->where('parent', $attribName[$h])
                         ->where('attribute_value', $currentAttrib[$h])->update($attribVal2);
+                    
+                    $variants_name = DB::table('tabItem Variant Attribute')->where('attribute', $attribName[$h])->where('attribute_value', $request->attrib[$h])->get();
+                    $attVal2 .= '[ "attributes", '.($h + 1).', "'.$attKey->name.'", [[ "attribute_value", "'.$currentAttrib[$h].'", "'.$request->attrib[$h].'" ]]],';
+                  
+                    foreach($variants_name as $v){
+                        $elog[] = [
+                            'name' => uniqid(),
+                            'creation' => Carbon::now()->toDateTimeString(),
+                            'modified' => Carbon::now()->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
+                            'docstatus' => 0,
+                            'idx' => $v->idx,
+                            'ref_doctype' => 'Item',
+                            'docname' => $v->parent,
+                            'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ '.rtrim($attVal2, ',').' ] }'
+                        ];
+                    }
                 }
             }
 
-            $abbVal = '';
-            for($t=0; $t < count($currentAbbr); $t++){
-                if($currentAbbr[$t] != $request->abbr[$t]){
-                    $abbVal .= 'Abbreviation '.$currentAbbr[$t].' was changed to '.$request->abbr[$t]. ', ';
-                }
-            }
+            $erp_logs[] = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'ref_doctype' => 'Item',
+                'docname' => $request->itemCode,
+                'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ '.rtrim($attVal2, ',').' ] }'
+            ];
 
-            // return $abbVal;
 
             $attribVal3 = [
                 'item_name' => $this->generateItemDescription($request->itemCode)['item_name'],
@@ -268,63 +301,17 @@ class ItemAttributeController extends Controller
                 'operation' => 'Update Attribute'
             ];
 
-            // return $act;
-
-            $logs = DB::table('tabItem Attribute Update Activity Log')->insert($act);
+            $erpVal = DB::table('tabVersion')->insert($erp_logs);
+            $erpVal = DB::table('tabVersion')->insert($elog);
 
             DB::commit();
 
-            // return response()->json(['status' => 1, 'message' => 'Item attribute has been updated. <br><b>' . $affectedRows . '</b> transactions updated.']);
             return redirect('/search?item_code='.$request->itemCode)->with('success', 'Attribute Updated! <b>' . $affectedRows . '</b> transactions updated.');
         } catch (Exception $e) {
             DB::rollback();
 
             return response()->json(['status' => 0, 'message' => 'Error updating. Please try again.']);
         }
-       
-        // $attribName = $request->attribName;
-        // $newAttrib = $request->attrib;
-
-        // $currentAttrib = $request->currentAttrib;
-        // for($i=0; $i < count($newAttrib); $i++){
-        //     $attribVal = [
-        //         'attribute_value' => $request->attrib[$i]
-        //     ];
-        //     $updateAttrib = DB::table('tabItem Variant Attribute')
-        //         ->where('attribute', $attribName[$i])
-        //         ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
-        // }
-
-        // for($h=0; $h < count($currentAttrib); $h++){
-        //     $attribVal2 = [
-        //         'attribute_value' => $request->attrib[$h],
-        //         'abbr' => $request->abbr[$h]
-        //     ];
-
-        //     $updateNewAttrib = DB::table('tabItem Attribute Value')
-        //         ->where('parent', $attribName[$h])
-        //         ->where('attribute_value', $currentAttrib[$h])
-        //         ->update($attribVal2);
-        // }
-        // // return $attribVal2;
-
-        // $strAbbr = implode("-",$request->abbr);
-
-        // $Abbr = json_decode(json_encode($strAbbr), true);
-
-        // $itemName = $request->parDesc."-".$Abbr;
-
-        // $attribVal3 = [
-        //     // 'description' => $request->item_description
-        //     'item_name' => $itemName,
-        //     'description' => $this->generateItemDescription($request->itemCode)
-        // ];
-
-        // $updateDesc = DB::table('tabItem')
-        //     ->where('name', $request->itemCode)->update($attribVal3);
-        // // Original Value = 4424, Recessed Mounted, Special T-Runner, CRS, 1220 x 737 x 0.5mm
-        // // return redirect('/search')->with('success','Attribute Updated!');
-        // return redirect()->back()->with('success','Attribute Updated!');
     }
 
     public function item_attribute_dropdown(Request $request){
@@ -418,9 +405,50 @@ class ItemAttributeController extends Controller
                 'operation' => 'Add Attribute'
             ];
 
-            // return $act;
-
             $logs = DB::table('tabItem Attribute Update Activity Log')->insert($act);
+            
+            $parItem = DB::table('tabItem Variant Attribute')->where('parent', $request->parentItem)->where('attribute', $request->attributeName)->get();
+            
+            $erp_logs = [];
+            $add = [];
+            foreach ($newAttrVals as $x => $newAttrVal) {
+                $add[] = [
+                    'attribute' => $request->attributeName,
+                    'attribute_value' => $request->data['newAttrVal'][$x],
+                    'creation' => $now,
+                    'docstatus' => 0,
+                    'doctype' => 'Item Variant Attribute',
+                    'from_range' => 0,
+                    'idx' => $lastIdx + 1,
+                    'increment' => 0,
+                    'modified' => $now,
+                    'modified_by' => Auth::user()->wh_user,
+                    'name' => $data[$x]['name'],
+                    'numeric_values' => 0,
+                    'owner' => Auth::user()->wh_user,
+                    'parent' => $itemCodes[$x],
+                    'parentfield' => 'attributes',
+                    'parenttype' => 'Item',
+                    'to_range' => 0
+                ];
+            }
+
+            foreach($add as $ad){
+                $erp_logs[] = [
+                    'name' => uniqid(),
+                    'creation' => Carbon::now()->toDateTimeString(),
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'idx' => $ad["idx"],
+                    'ref_doctype' => 'Item',
+                    'docname' => $ad["parent"],
+                    'data' => '{ "added": [[ "attributes", '.trim(json_encode($ad), '[]').' ]], "changed": [], "removed": [], "row_changed": [] }'
+                ];
+            }
+
+            $erpVal = DB::table('tabVersion')->insert($erp_logs);
 
             DB::commit();
 
@@ -501,11 +529,53 @@ class ItemAttributeController extends Controller
             // get item variants
             $itemVariants = DB::table('tabItem')->where('variant_of', $parentItemCode)->pluck('name');
             $itemVariantsArr = $itemVariants->toArray();
+            
+            $parItem = DB::table('tabItem Variant Attribute')->whereIn('parent', $itemVariantsArr)->where('attribute', $attribute)->get();
+            $rmv = '';
+            $erp_logs = [];
+            $rmv = [];
+            foreach($parItem as $par){
+                $rmv[] = [
+                    "attribute" => $par->attribute, 
+                    "attribute_value" => $par->attribute_value, 
+                    "creation" => $par->creation, 
+                    "docstatus" => $par->docstatus, 
+                    "from_range" => $par->from_range, 
+                    "idx" => $par->idx, 
+                    "increment" => $par->increment, 
+                    "modified" => $par->modified, 
+                    "modified_by" => $par->modified_by, 
+                    "name" => $par->name, 
+                    "numeric_values" => $par->numeric_values, 
+                    "owner" => $par->owner, 
+                    "parent" => $par->parent, 
+                    "parentfield" => $par->parentfield, 
+                    "parenttype" => $par->parenttype, 
+                    "to_range" => $par->to_range
+                ];
+            }
+            // return $rmv;
+            foreach($rmv as $r){
+                $erp_logs[] = [
+                    'name' => uniqid(),
+                    'creation' => Carbon::now()->toDateTimeString(),
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docname' =>  $r['parent'],
+                    'ref_doctype' => 'Item',
+                    'docstatus' => 0,
+                    'idx' => 0,
+                    'data' => '{ "added": [], "changed": [], "removed": [[ "attributes", '.trim(json_encode($r), '[]').' ]], "row_changed": [] }'
+                ];
+            }
+            $erpV = DB::table('tabVersion')->insert($erp_logs);
+
             // include parent item code in array
             array_push($itemVariantsArr, $parentItemCode);
-            // delete item variant attribute from parent item code and its variants
+            // // delete item variant attribute from parent item code and its variants
             $affectedRows = DB::table('tabItem Variant Attribute')->whereIn('parent', $itemVariantsArr)->where('attribute', $attribute)->delete();
-            // update item description after removing attribute
+            // // update item description after removing attribute
             $arr = [];
             foreach($itemVariants as $itemCode) {
                 DB::table('tabItem')->where('name', $itemCode)->update([

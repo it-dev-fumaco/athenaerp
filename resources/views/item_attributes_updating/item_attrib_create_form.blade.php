@@ -52,6 +52,7 @@
                     </div>
                     <div class="card-body p-2">
                         <form action="/insert_attribute" method="POST" id="form-add">
+                            {{-- @csrf --}}
                             <div style="height: 500px; max-width: 100%; overflow: auto;">
                                 <table class="table table-bordered table-hover" id="variants-table" style="font-size: 0.9rem !important;">
                                     <thead>
