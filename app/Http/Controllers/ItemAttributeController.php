@@ -121,7 +121,6 @@ class ItemAttributeController extends Controller
                 ->select('abbr')
                 ->first();
 
-            // $count = count($c_attrib);
             $attribute_values[] = [
                 'attribute' => $attrib->attribute,
                 'attribute_value' => $attrib->attribute_value,
@@ -129,8 +128,6 @@ class ItemAttributeController extends Controller
                 'count' => $c_attrib
             ];
         }
-
-        // return $attribute_values;
 
         return view('item_attributes_updating.item_attrib_update_form', compact('itemAttrib', 'item_code', 'itemDesc', 'parentDesc', 'attribute_values'));
     }
@@ -219,10 +216,6 @@ class ItemAttributeController extends Controller
 
                 }
             }
-            // return $affectedRows;
-            // return $attVal;
-
-            // return $getItemVariants->item_code;
 
             $itemDuplicate = collect($attrArr)->min('item_code_with_same_attr');
             $itemDuplicate = ($itemDuplicate) ? $itemDuplicate[0] : null;
@@ -242,7 +235,6 @@ class ItemAttributeController extends Controller
                     $abbVal .= 'Abbreviation '.$currentAbbr[$t].' was changed to '.$request->abbr[$t]. ', ';
 
                     $abbrKey = DB::table('tabItem Attribute Value')->where('abbr', $currentAbbr[$t])->first();
-                    // $attVal2 .= ' "attributes", '.$t.', "'.$abbrKey->name.'", [[ "abbr", "'.$currentAbbr[$t].'", "'.$request->abbr[$t].'" ]]], ';
                 }
             }
             $elog = [];
@@ -251,7 +243,7 @@ class ItemAttributeController extends Controller
                     $attribVal2 = [
                         'attribute_value' => $request->attrib[$h],
                         'abbr' => $request->abbr[$h]
-                    ];//return $currentAttrib[$h].$attribName[$h];
+                    ];
                     $attKey = DB::table('tabItem Attribute Value')->select('name')->where('attribute_value', $currentAttrib[$h])->first();
 
                     $affectedRows += DB::table('tabItem Attribute Value')->where('parent', $attribName[$h])
@@ -271,14 +263,12 @@ class ItemAttributeController extends Controller
                             'idx' => $v->idx,
                             'ref_doctype' => 'Item',
                             'docname' => $v->parent,
-                            // 'docname' => $request->itemCode,
                             'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ '.rtrim($attVal2, ',').' ] }'
                         ];
                     }
                 }
             }
 
-            // return $elog;
             $erp_logs[] = [
                 'name' => uniqid(),
                 'creation' => Carbon::now()->toDateTimeString(),
@@ -291,34 +281,14 @@ class ItemAttributeController extends Controller
                 'docname' => $request->itemCode,
                 'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ '.rtrim($attVal2, ',').' ] }'
             ];
-            // dd($attVal2.$abbVal2);
-            // dd($erp_logs);
 
-            // $try = 'try'.$attVal2.$abbVal2;
-            // return $try;
-
-            // foreach($add as $ad){
-            //     $erp_logs[] = [
-            //         'name' => uniqid(),
-            //         'creation' => Carbon::now()->toDateTimeString(),
-            //         'modified' => Carbon::now()->toDateTimeString(),
-            //         'modified_by' => Auth::user()->wh_user,
-            //         'owner' => Auth::user()->wh_user,
-            //         'docstatus' => 0,
-            //         'idx' => $ad["idx"],
-            //         'ref_doctype' => 'Item',
-            //         // 'docname' => $ad["name"],
-            //         'docname' => $ad["parent"],
-            //         'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [[ "attributes", '.$attVal2.$abbVal2.' ]] }'
-            //     ];
-            // }
 
             $attribVal3 = [
                 'item_name' => $this->generateItemDescription($request->itemCode)['item_name'],
                 'description' => $this->generateItemDescription($request->itemCode)['description']
             ];
             
-            // DB::table('tabItem')->where('name', $request->itemCode)->update($attribVal3);
+            DB::table('tabItem')->where('name', $request->itemCode)->update($attribVal3);
             $act =[
                 'name' => uniqid(),
                 'creation' => Carbon::now()->toDateTimeString(),
@@ -336,57 +306,12 @@ class ItemAttributeController extends Controller
 
             DB::commit();
 
-            // return response()->json(['status' => 1, 'message' => 'Item attribute has been updated. <br><b>' . $affectedRows . '</b> transactions updated.']);
             return redirect('/search?item_code='.$request->itemCode)->with('success', 'Attribute Updated! <b>' . $affectedRows . '</b> transactions updated.');
         } catch (Exception $e) {
             DB::rollback();
 
             return response()->json(['status' => 0, 'message' => 'Error updating. Please try again.']);
         }
-       
-        // $attribName = $request->attribName;
-        // $newAttrib = $request->attrib;
-
-        // $currentAttrib = $request->currentAttrib;
-        // for($i=0; $i < count($newAttrib); $i++){
-        //     $attribVal = [
-        //         'attribute_value' => $request->attrib[$i]
-        //     ];
-        //     $updateAttrib = DB::table('tabItem Variant Attribute')
-        //         ->where('attribute', $attribName[$i])
-        //         ->where('attribute_value', $currentAttrib[$i])->update($attribVal);
-        // }
-
-        // for($h=0; $h < count($currentAttrib); $h++){
-        //     $attribVal2 = [
-        //         'attribute_value' => $request->attrib[$h],
-        //         'abbr' => $request->abbr[$h]
-        //     ];
-
-        //     $updateNewAttrib = DB::table('tabItem Attribute Value')
-        //         ->where('parent', $attribName[$h])
-        //         ->where('attribute_value', $currentAttrib[$h])
-        //         ->update($attribVal2);
-        // }
-        // // return $attribVal2;
-
-        // $strAbbr = implode("-",$request->abbr);
-
-        // $Abbr = json_decode(json_encode($strAbbr), true);
-
-        // $itemName = $request->parDesc."-".$Abbr;
-
-        // $attribVal3 = [
-        //     // 'description' => $request->item_description
-        //     'item_name' => $itemName,
-        //     'description' => $this->generateItemDescription($request->itemCode)
-        // ];
-
-        // $updateDesc = DB::table('tabItem')
-        //     ->where('name', $request->itemCode)->update($attribVal3);
-        // // Original Value = 4424, Recessed Mounted, Special T-Runner, CRS, 1220 x 737 x 0.5mm
-        // // return redirect('/search')->with('success','Attribute Updated!');
-        // return redirect()->back()->with('success','Attribute Updated!');
     }
 
     public function item_attribute_dropdown(Request $request){
@@ -399,7 +324,6 @@ class ItemAttributeController extends Controller
     public function item_attribute_insert(Request $request){
         DB::beginTransaction();
         try {
-            // return $request->all();
             $now = Carbon::now()->toDateTimeString();
             $data = [];
 
@@ -481,15 +405,11 @@ class ItemAttributeController extends Controller
                 'operation' => 'Add Attribute'
             ];
 
-            // return $act;
-
             $logs = DB::table('tabItem Attribute Update Activity Log')->insert($act);
             
-            // $parentItem = DB::table('tabItem')->where('name', $request->itemCode)->first();
-                $parItem = DB::table('tabItem Variant Attribute')->where('parent', $request->parentItem)->where('attribute', $request->attributeName)->get();
+            $parItem = DB::table('tabItem Variant Attribute')->where('parent', $request->parentItem)->where('attribute', $request->attributeName)->get();
             
             $erp_logs = [];
-            // dd($parItem);
             $add = [];
             foreach ($newAttrVals as $x => $newAttrVal) {
                 $add[] = [
@@ -512,7 +432,6 @@ class ItemAttributeController extends Controller
                     'to_range' => 0
                 ];
             }
-            // dd($add);
 
             foreach($add as $ad){
                 $erp_logs[] = [
@@ -524,14 +443,10 @@ class ItemAttributeController extends Controller
                     'docstatus' => 0,
                     'idx' => $ad["idx"],
                     'ref_doctype' => 'Item',
-                    // 'docname' => $ad["name"],
                     'docname' => $ad["parent"],
                     'data' => '{ "added": [[ "attributes", '.trim(json_encode($ad), '[]').' ]], "changed": [], "removed": [], "row_changed": [] }'
                 ];
             }
-            
-            // dd($erp_logs);
-            // return $erp_logs;
 
             $erpVal = DB::table('tabVersion')->insert($erp_logs);
 
@@ -617,10 +532,6 @@ class ItemAttributeController extends Controller
             
             $parItem = DB::table('tabItem Variant Attribute')->whereIn('parent', $itemVariantsArr)->where('attribute', $attribute)->get();
             $rmv = '';
-            // dd($parItem);
-            // for($a = 0; $a < count($parItem); $a++){
-            //     $rmv = '["attributes", {'.implode(',', json_decode( json_encode($parItem[$a]), true)).'}]';
-            // }
             $erp_logs = [];
             $rmv = [];
             foreach($parItem as $par){
@@ -658,27 +569,6 @@ class ItemAttributeController extends Controller
                     'data' => '{ "added": [], "changed": [], "removed": [[ "attributes", '.trim(json_encode($r), '[]').' ]], "row_changed": [] }'
                 ];
             }
-
-            // $erp_logs = [
-            //     'added' => '{ "added": []',
-            //     'changed' => '"changed": []',
-            //     'removed' => '"removed": [[ "attributes", '.trim(json_encode($rmv), '[]').' ]]',
-            //     'row_changed' => '"row_changed": [] }'
-            // ];
-
-            // $erp_logs[] = [
-            //     'name' => uniqid(),
-            //     'creation' => Carbon::now()->toDateTimeString(),
-            //     'modified' => Carbon::now()->toDateTimeString(),
-            //     'modified_by' => Auth::user()->wh_user,
-            //     'owner' => Auth::user()->wh_user,
-            //     'docstatus' => 0,
-            //     'idx' => 0,
-            //     'data' => '{ "added": [], "changed": [], "removed": [[ "attributes", '.trim(json_encode($rmv), '[]').' ]], "row_changed": [] }'
-            // ];
-            
-            // dd($erp_logs);
-
             $erpV = DB::table('tabVersion')->insert($erp_logs);
 
             // include parent item code in array
