@@ -368,6 +368,155 @@
 
 <script>
 	$(document).ready(function(){
+
+		dashboard_data();
+	
+
+			function dashboard_data(purpose, div){
+				$.ajax({
+					type: "GET",
+					url: "/dashboard_data",
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#p-purchase-receipts').text(data.p_purchase_receipts);
+						$('#p-replacements').text(data.p_replacements);
+					}
+				});
+			}
+
+				count_ste_for_issue('Material Issue', '#material-issue');
+			count_ste_for_issue('Material Transfer', '#material-transfer');
+			count_ste_for_issue('Material Receipt', '#p-returns');
+			count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
+			count_ps_for_issue();
+			count_production_to_receive();
+
+			function count_ste_for_issue(purpose, div){
+				$.ajax({
+					type: "GET",
+					url: "/count_ste_for_issue/" + purpose,
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$(div).text(data);
+					}
+				});
+			}
+
+			function count_production_to_receive(){
+				$.ajax({
+					type: "GET",
+					url: "/count_production_to_receive",
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#material-receipt').text(data);
+					}
+				});
+			}
+
+			function count_ps_for_issue(){
+				$.ajax({
+					type: "GET",
+					url: "/count_ps_for_issue",
+					dataType: 'json',
+					contentType: 'application/json',
+					success: function (data) {
+						$('#picking-slip').text(data);
+					}
+				});
+			}
+
+		get_low_stock_level_items();
+			get_reserved_items();
+			function get_low_stock_level_items(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_low_stock_level_items?page=" + page,
+					success: function (data) {
+						$('#low-level-stock-table').html(data);
+					}
+				});
+			}
+
+			function get_reserved_items(page) {
+				$.ajax({
+					type: "GET",
+					url: "/get_reserved_items?page=" + page,
+					success: function (data) {
+						$('#reserved-items-div').html(data);
+					}
+				});
+			}
+
+			get_athena_logs({{ now()->month }});
+			function get_athena_logs(month) {
+				$.ajax({
+					type: "GET",
+					url: "/get_athena_logs?month=" + month,
+					success: function (data) {
+						$('#athena-logs-table').html(data);
+					}
+				});
+			}
+
+			$('#athena-logs-pagination .month').click(function(e){
+				e.preventDefault();
+				var month = $(this).find('.page-link').eq(0).data('month');
+				$('#athena-logs-pagination li.active').removeClass('active');
+				$(this).addClass('active');
+
+				set_prev_next_btn_att(month);
+				get_athena_logs(month);
+			});
+
+			$('#athena-logs-pagination .prev').click(function(e){
+				e.preventDefault();
+
+				if(!$(this).hasClass('disabled')){
+					var active = $('#athena-logs-pagination li.active');
+					active.removeClass('active');
+					active.prev().addClass('active');
+
+					var month = $('#athena-logs-pagination li.active').find('.page-link').eq(0).data('month');
+					set_prev_next_btn_att(month);
+					get_athena_logs(month);
+				
+				}
+			});
+
+			function set_prev_next_btn_att(n){
+				$('#athena-logs-pagination .prev').removeClass('disabled');
+				$('#athena-logs-pagination .next').removeClass('disabled');
+
+				if(n == 1) {
+					$('#athena-logs-pagination .prev').addClass('disabled');
+				}
+
+				if(n == {{ now()->month }}) {
+					$('#athena-logs-pagination .next').addClass('disabled');
+				}
+			}
+
+			$('#athena-logs-pagination .next').click(function(e){
+				e.preventDefault();
+
+				if(!$(this).hasClass('disabled')){
+					var active = $('#athena-logs-pagination li.active');
+					active.removeClass('active');
+					active.next().addClass('active');
+
+					var month = $('#athena-logs-pagination li.active').find('.page-link').eq(0).data('month');
+					set_prev_next_btn_att(month);
+					get_athena_logs(month);
+				}
+			});
+
+
+
+
+
 		reserved_items();
 		function reserved_items(){
 				$.ajax({

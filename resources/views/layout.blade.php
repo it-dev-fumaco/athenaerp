@@ -111,35 +111,27 @@
 				</div>
 				<div class="col-xl-7 pr-4 pt-2 text-right">
 					<a class="btn btn-app bg-primary" href="/returns">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-returns">-</span>
 						<i class="fas fa-undo"></i> Returns
 					</a>
 					<a class="btn btn-app bg-info" href="/production_to_receive">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-receipt">-</span>
 						<i class="far fa-check-circle"></i> Feedback
 					</a>
 					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-transfer">-</span>
 						<i class="fas fa-exchange-alt"></i> Transfer
 					</a>
 					<a class="btn btn-app bg-purple" href="/receipts">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-purchase-receipts">-</span>
 						<i class="fas fa-boxes"></i> PO Receipts
 					</a>
 					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-manufacture">-</span>
 						<i class="fas fa-tasks"></i> Withdrawals
 					</a>
 					<a class="btn btn-app bg-indigo" href="/material_issue">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="material-issue">-</span>
 						<i class="fas fa-dolly"></i> Material Issue
 					</a>
 					<a class="btn btn-app bg-navy" href="/picking_slip">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="picking-slip">-</span>
 						<i class="fas fa-truck"></i> Deliveries
 					</a>
 					<a class="btn btn-app bg-teal" href="/replacements">
-						<span class="badge bg-warning font-weight-bold" style="font-size: 1rem;" id="p-replacements">-</span>
 						<i class="fas fa-retweet"></i> Replacement
 					</a>
 				</div>
@@ -155,27 +147,27 @@
 	<!-- /.content-wrapper -->
 
 	<style>
+		.remove{
+			position: absolute;
+			top: 15%;
+			right: 0;
+			transform: translate(-50%, -50%);
+			-ms-transform: translate(-50%, -50%);
+			background-color: #d9534f;
+			color: white;
+			font-size: 16px;
+			padding: 5px 10px;
+			border: none;
+			cursor: pointer;
+			border-radius: 2px;
+			text-align: center;
+		}
 
-.remove{
-     position: absolute;
-    top: 15%;
-    right: 0;
-    transform: translate(-50%, -50%);
-    -ms-transform: translate(-50%, -50%);
-    background-color: #d9534f;
-    color: white;
-    font-size: 16px;
-    padding: 5px 10px;
-    border: none;
-    cursor: pointer;
-    border-radius: 2px;
-    text-align: center;
-}
-
-.col-md-13 {
+		.col-md-13 {
 			width: 19%;
 			margin: 0.5%;
 		}
+		
 		.imgPreview {
 			border: 1px solid #ddd;
 			border-radius: 4px;
@@ -878,24 +870,6 @@
 				});
 			});
 
-			dashboard_data();
-			setInterval(function () {
-				dashboard_data();
-			}, 60000);
-
-			function dashboard_data(purpose, div){
-				$.ajax({
-					type: "GET",
-					url: "/dashboard_data",
-					dataType: 'json',
-					contentType: 'application/json',
-					success: function (data) {
-						$('#p-purchase-receipts').text(data.p_purchase_receipts);
-						$('#p-replacements').text(data.p_replacements);
-					}
-				});
-			}
-
 			$('#warehouse-filter').select2({
 				dropdownParent: $('#warehouse-filter-parent'),
 				placeholder: 'Select Warehouse',
@@ -942,8 +916,8 @@
 				});
 			}
 
-			get_low_stock_level_items();
-			get_reserved_items();
+			// get_low_stock_level_items();
+			// get_reserved_items();
 			function get_low_stock_level_items(page) {
 				$.ajax({
 					type: "GET",
@@ -963,69 +937,6 @@
 					}
 				});
 			}
-
-			get_athena_logs({{ now()->month }});
-			function get_athena_logs(month) {
-				$.ajax({
-					type: "GET",
-					url: "/get_athena_logs?month=" + month,
-					success: function (data) {
-						$('#athena-logs-table').html(data);
-					}
-				});
-			}
-
-			$('#athena-logs-pagination .month').click(function(e){
-				e.preventDefault();
-				var month = $(this).find('.page-link').eq(0).data('month');
-				$('#athena-logs-pagination li.active').removeClass('active');
-				$(this).addClass('active');
-
-				set_prev_next_btn_att(month);
-				get_athena_logs(month);
-			});
-
-			$('#athena-logs-pagination .prev').click(function(e){
-				e.preventDefault();
-
-				if(!$(this).hasClass('disabled')){
-					var active = $('#athena-logs-pagination li.active');
-					active.removeClass('active');
-					active.prev().addClass('active');
-
-					var month = $('#athena-logs-pagination li.active').find('.page-link').eq(0).data('month');
-					set_prev_next_btn_att(month);
-					get_athena_logs(month);
-				
-				}
-			});
-
-			function set_prev_next_btn_att(n){
-				$('#athena-logs-pagination .prev').removeClass('disabled');
-				$('#athena-logs-pagination .next').removeClass('disabled');
-
-				if(n == 1) {
-					$('#athena-logs-pagination .prev').addClass('disabled');
-				}
-
-				if(n == {{ now()->month }}) {
-					$('#athena-logs-pagination .next').addClass('disabled');
-				}
-			}
-
-			$('#athena-logs-pagination .next').click(function(e){
-				e.preventDefault();
-
-				if(!$(this).hasClass('disabled')){
-					var active = $('#athena-logs-pagination li.active');
-					active.removeClass('active');
-					active.next().addClass('active');
-
-					var month = $('#athena-logs-pagination li.active').find('.page-link').eq(0).data('month');
-					set_prev_next_btn_att(month);
-					get_athena_logs(month);
-				}
-			});
 			
 			$('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
 				checkboxClass: 'icheckbox_minimal-blue',
@@ -1460,58 +1371,6 @@
 				}
 			});
 
-			count_ste_for_issue('Material Issue', '#material-issue');
-			count_ste_for_issue('Material Transfer', '#material-transfer');
-			count_ste_for_issue('Material Receipt', '#p-returns');
-			count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
-			count_ps_for_issue();
-			count_production_to_receive();
-
-			setInterval(function () {
-				count_ste_for_issue('Material Issue', '#material-issue');
-				count_ste_for_issue('Material Transfer', '#material-transfer');
-				count_ste_for_issue('Material Receipt', '#p-returns');
-				count_ste_for_issue('Material Transfer for Manufacture', '#material-manufacture');
-				count_ps_for_issue();
-				count_production_to_receive();
-			}, 60000);
-			
-			function count_ste_for_issue(purpose, div){
-				$.ajax({
-					type: "GET",
-					url: "/count_ste_for_issue/" + purpose,
-					dataType: 'json',
-					contentType: 'application/json',
-					success: function (data) {
-						$(div).text(data);
-					}
-				});
-			}
-
-			function count_production_to_receive(){
-				$.ajax({
-					type: "GET",
-					url: "/count_production_to_receive",
-					dataType: 'json',
-					contentType: 'application/json',
-					success: function (data) {
-						$('#material-receipt').text(data);
-					}
-				});
-			}
-
-			function count_ps_for_issue(){
-				$.ajax({
-					type: "GET",
-					url: "/count_ps_for_issue",
-					dataType: 'json',
-					contentType: 'application/json',
-					success: function (data) {
-						$('#picking-slip').text(data);
-					}
-				});
-			}
-
 			function load_suggestion_box(){
 				var search_string = $('#searchid').val();
 				$.ajax({
@@ -1573,6 +1432,8 @@
 			});
 
 			function view_item_details(item_code){
+				
+
 				$.ajax({
 					type: 'GET',
 					url: '/get_item_details/' + item_code,
@@ -1582,9 +1443,26 @@
 					}
 				});
 
+				$("#ath_dates").daterangepicker({
+					locale: {
+						// format: 'YYYY-MM-DD',
+						format: 'YYYY-MMM-DD',
+						separator: " to "
+            		},
+					startDate: moment().subtract(30, 'days'), endDate: moment(),
+				});
+
+				$("#erp_dates").daterangepicker({
+					locale: {
+						format: 'YYYY-MMM-DD',
+						separator: " to "
+            		},
+					startDate: moment().subtract(30, 'days'), endDate: moment(),
+				});
+
 				get_athena_transactions(item_code);
 				get_stock_ledger(item_code);
-				get_stock_reservation(item_code)
+				get_stock_reservation(item_code);
 			}
 
 			$(document).on('submit', '.cancel-modal form', function(e){
@@ -1611,7 +1489,8 @@
 			});
 
 			function get_athena_transactions(item_code, page){
-				var ath_src = $('#ath-src-warehouse-filter').val();
+				if(item_code){
+var ath_src = $('#ath-src-warehouse-filter').val();
 				var ath_trg = $('#ath-to-warehouse-filter').val();
 				var ath_user = $('#warehouse-user-filter').val();
 				var ath_drange = $('#ath_dates').val();
@@ -1623,6 +1502,8 @@
 						$('#athena-transactions-table').html(response);
 					}
 				});
+				}
+				
 			}
 
 			function get_stock_reservation(item_code, page){
@@ -1669,7 +1550,8 @@
 			});
 
 			function get_stock_ledger(item_code, page){
-				var erp_user = $('#erp-warehouse-user-filter').val();
+				if(item_code) {
+	var erp_user = $('#erp-warehouse-user-filter').val();
 				var erp_wh = $('#erp-warehouse-filter').val();
 				var erp_d = $('#erp_dates').val();
 				$.ajax({
@@ -1679,6 +1561,8 @@
 						$('#stock-ledger-table').html(response);
 					}
 				});
+				}
+			
 			}
 
 			$(document).on('click', '.upload-item-image', function(e){
@@ -1913,17 +1797,6 @@
 				get_athena_transactions(item_code);
 			})
 			
-			$(function() {
-				$("#ath_dates").daterangepicker({
-					locale: {
-						// format: 'YYYY-MM-DD',
-						format: 'YYYY-MMM-DD',
-						separator: " to "
-            		},
-					startDate: moment().subtract(30, 'days'), endDate: moment(),
-				});
-			});
-			
 			//Athena Month
 
 			//ERP Month
@@ -1932,15 +1805,6 @@
 				get_stock_ledger(item_code);
 			})
 			
-			$(function() {
-				$("#erp_dates").daterangepicker({
-					locale: {
-						format: 'YYYY-MMM-DD',
-						separator: " to "
-            		},
-					startDate: moment().subtract(30, 'days'), endDate: moment(),
-				});
-			});
 			
 			//ERP Month
 
@@ -2061,7 +1925,7 @@
 				});
 				get_stock_ledger(item_code);
 				get_athena_transactions(item_code);
-			})
+			});
 			// Transactions Warehouse Filter
 		});
 		
