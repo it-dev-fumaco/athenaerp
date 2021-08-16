@@ -1859,68 +1859,182 @@ class MainController extends Controller
     public function create_stock_ledger_entry($stock_entry){
         try {
             $now = Carbon::now();
-            $latest_pro = DB::table('tabStock Ledger Entry')->max('name');
-            $latest_pro_exploded = explode("/", $latest_pro);
-            $new_id = $latest_pro_exploded[1] + 1;
-
             $stock_entry_qry = DB::table('tabStock Entry')
                 ->where('name', $stock_entry)->first();
 
             $stock_entry_detail = DB::table('tabStock Entry Detail')
                 ->where('parent', $stock_entry)->get();
 
-            $stock_ledger_entry = [];
-            foreach ($stock_entry_detail as $row) {
-                $warehouse = ($row->s_warehouse) ? $row->s_warehouse : $row->t_warehouse;
-
-                $bin_qry = DB::table('tabBin')->where('warehouse', $warehouse)
-                    ->where('item_code', $row->item_code)->first();
+            if ($stock_entry_qry->purpose == 'Material Transfer for Manufacture') {
+                $latest_pro = DB::table('tabStock Ledger Entry')->max('name');
+                $latest_pro_exploded = explode("/", $latest_pro);
+                $new_id = $latest_pro_exploded[1] + 1;
                 
-                $new_id = $new_id + 1;
-                $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
-                $id = 'SLEM/'.$new_id;
+                $s_data = [];
+                $t_data = [];
+                foreach ($stock_entry_detail as $row) {
+                    $new_id = $new_id + 1;
+                    $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
+                    $id = 'SLEM/'.$new_id;
+                    
+                    $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->s_warehouse)
+                        ->where('item_code', $row->item_code)->first();
+                    
+                    if ($bin_qry) {
+                        $actual_qty = $bin_qry->actual_qty;
+                        $valuation_rate = $bin_qry->valuation_rate;
+                    }
+                        
+                    $s_data[] = [
+                        'name' => $id,
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->email,
+                        'owner' => Auth::user()->email,
+                        'docstatus' => 1,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'serial_no' => $row->serial_no,
+                        'fiscal_year' => $now->format('Y'),
+                        'voucher_type' => 'Stock Entry',
+                        'posting_time' => $now->format('H:i:s'),
+                        'actual_qty' => $row->qty * -1,
+                        'stock_value' => $actual_qty * $valuation_rate,
+                        '_comments' => null,
+                        'incoming_rate' => 0,
+                        'voucher_detail_no' => $row->name,
+                        'stock_uom' => $row->stock_uom,
+                        'warehouse' => $row->s_warehouse,
+                        '_liked_by' => null,
+                        'company' => 'FUMACO Inc.',
+                        '_assign' => null,
+                        'item_code' => $row->item_code,
+                        'valuation_rate' => $valuation_rate,
+                        'project' => $stock_entry_qry->project,
+                        'voucher_no' => $row->parent,
+                        'outgoing_rate' => 0,
+                        'is_cancelled' => 'No',
+                        'qty_after_transaction' => $actual_qty,
+                        '_user_tags' => null,
+                        'batch_no' => $row->batch_no,
+                        'stock_value_difference' => ($row->qty * $row->valuation_rate) * -1,
+                        'posting_date' => $now->format('Y-m-d'),
+                    ];
+                    
+                    $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
+                        ->where('item_code', $row->item_code)->first();
 
-                $stock_ledger_entry[] = [
-                    'name' => $id,
-                    'creation' => $now->toDateTimeString(),
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 1,
-                    'parent' => null,
-                    'parentfield' => null,
-                    'parenttype' => null,
-                    'idx' => 0,
-                    'serial_no' => $row->serial_no,
-                    'fiscal_year' => $now->format('Y'),
-                    'voucher_type' => 'Stock Entry',
-                    'posting_time' => $now->format('H:i:s'),
-                    'actual_qty' => ($row->s_warehouse) ? ($row->qty * -1) : $row->qty,
-                    'stock_value' => $bin_qry->actual_qty * $bin_qry->valuation_rate,
-                    '_comments' => null,
-                    'incoming_rate' => ($row->t_warehouse) ? ($row->basic_rate) : 0,
-                    'voucher_detail_no' => $row->name,
-                    'stock_uom' => $row->stock_uom,
-                    'warehouse' => $warehouse,
-                    '_liked_by' => null,
-                    'company' => 'FUMACO Inc.',
-                    '_assign' => null,
-                    'item_code' => $row->item_code,
-                    // 'stock_queue' => ,
-                    'valuation_rate' => $bin_qry->valuation_rate,
-                    'project' => $stock_entry_qry->project,
-                    'voucher_no' => $row->parent,
-                    'outgoing_rate' => 0,
-                    'is_cancelled' => 'No',
-                    'qty_after_transaction' => $bin_qry->actual_qty,
-                    '_user_tags' => null,
-                    'batch_no' => $row->batch_no,
-                    'stock_value_difference' => ($row->s_warehouse) ? ($row->qty * $row->valuation_rate) * -1  : $row->qty * $row->valuation_rate,
-                    'posting_date' => $now->format('Y-m-d'),
-                ];
+                    if ($bin_qry) {
+                        $actual_qty = $bin_qry->actual_qty;
+                        $valuation_rate = $bin_qry->valuation_rate;
+                    }
+                    
+                    $new_id = $new_id + 1;
+                    $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
+                    $id = 'SLEM/'.$new_id;
+
+                    $t_data[] = [
+                        'name' => $id,
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->email,
+                        'owner' => Auth::user()->email,
+                        'docstatus' => 1,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'serial_no' => $row->serial_no,
+                        'fiscal_year' => $now->format('Y'),
+                        'voucher_type' => 'Stock Entry',
+                        'posting_time' => $now->format('H:i:s'),
+                        'actual_qty' => $row->qty,
+                        'stock_value' => $actual_qty * $valuation_rate,
+                        '_comments' => null,
+                        'incoming_rate' => $row->basic_rate,
+                        'voucher_detail_no' => $row->name,
+                        'stock_uom' => $row->stock_uom,
+                        'warehouse' => $row->t_warehouse,
+                        '_liked_by' => null,
+                        'company' => 'FUMACO Inc.',
+                        '_assign' => null,
+                        'item_code' => $row->item_code,
+                        'valuation_rate' => $valuation_rate,
+                        'project' => $stock_entry_qry->project,
+                        'voucher_no' => $row->parent,
+                        'outgoing_rate' => 0,
+                        'is_cancelled' => 'No',
+                        'qty_after_transaction' => $actual_qty,
+                        '_user_tags' => null,
+                        'batch_no' => $row->batch_no,
+                        'stock_value_difference' => $row->qty * $row->valuation_rate,
+                        'posting_date' => $now->format('Y-m-d'),
+                    ];
+                }
+
+                $stock_ledger_entry = array_merge($s_data, $t_data);
+
+                DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+            } else {
+                $latest_pro = DB::table('tabStock Ledger Entry')->max('name');
+                $latest_pro_exploded = explode("/", $latest_pro);
+                $new_id = $latest_pro_exploded[1] + 1;
+                
+                $stock_ledger_entry = [];
+                foreach ($stock_entry_detail as $row) {
+                    $warehouse = ($row->s_warehouse) ? $row->s_warehouse : $row->t_warehouse;
+    
+                    $bin_qry = DB::table('tabBin')->where('warehouse', $warehouse)
+                        ->where('item_code', $row->item_code)->first();
+                    
+                    $new_id = $new_id + 1;
+                    $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
+                    $id = 'SLEM/'.$new_id;
+    
+                    $stock_ledger_entry[] = [
+                        'name' => $id,
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 1,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'serial_no' => $row->serial_no,
+                        'fiscal_year' => $now->format('Y'),
+                        'voucher_type' => 'Stock Entry',
+                        'posting_time' => $now->format('H:i:s'),
+                        'actual_qty' => ($row->s_warehouse) ? ($row->qty * -1) : $row->qty,
+                        'stock_value' => $bin_qry->actual_qty * $bin_qry->valuation_rate,
+                        '_comments' => null,
+                        'incoming_rate' => ($row->t_warehouse) ? ($row->basic_rate) : 0,
+                        'voucher_detail_no' => $row->name,
+                        'stock_uom' => $row->stock_uom,
+                        'warehouse' => $warehouse,
+                        '_liked_by' => null,
+                        'company' => 'FUMACO Inc.',
+                        '_assign' => null,
+                        'item_code' => $row->item_code,
+                        // 'stock_queue' => ,
+                        'valuation_rate' => $bin_qry->valuation_rate,
+                        'project' => $stock_entry_qry->project,
+                        'voucher_no' => $row->parent,
+                        'outgoing_rate' => 0,
+                        'is_cancelled' => 'No',
+                        'qty_after_transaction' => $bin_qry->actual_qty,
+                        '_user_tags' => null,
+                        'batch_no' => $row->batch_no,
+                        'stock_value_difference' => ($row->s_warehouse) ? ($row->qty * $row->valuation_rate) * -1  : $row->qty * $row->valuation_rate,
+                        'posting_date' => $now->format('Y-m-d'),
+                    ];
+                }
+    
+                DB::table('tabStock Ledger Entry')->insert($stock_ledger_entry);
             }
-
-            DB::table('tabStock Ledger Entry')->insert($stock_ledger_entry);
 
             return ['success' => true, 'message' => 'Stock ledger entries created.'];
         } catch (Exception $e) {
