@@ -1867,10 +1867,12 @@ class MainController extends Controller
             $stock_entry_detail = DB::table('tabStock Entry Detail')
                 ->where('parent', $stock_entry)->get();
 
+
             if ($stock_entry_qry->purpose == 'Material Transfer for Manufacture') {                
                 $s_data = [];
                 $t_data = [];
                 foreach ($stock_entry_detail as $row) {
+
                     $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->s_warehouse)
                         ->where('item_code', $row->item_code)->first();
                     
@@ -1880,7 +1882,9 @@ class MainController extends Controller
                     }
                         
                     $s_data[] = [
+
                         'name' => 'ath' . uniqid(),
+
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->email,
@@ -1909,7 +1913,9 @@ class MainController extends Controller
                         'project' => $stock_entry_qry->project,
                         'voucher_no' => $row->parent,
                         'outgoing_rate' => 0,
+
                         'is_cancelled' => 0,
+
                         'qty_after_transaction' => $actual_qty,
                         '_user_tags' => null,
                         'batch_no' => $row->batch_no,
@@ -1920,6 +1926,7 @@ class MainController extends Controller
                     $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
                         ->where('item_code', $row->item_code)->first();
 
+
                     if ($bin_qry) {
                         $actual_qty = $bin_qry->actual_qty;
                         $valuation_rate = $bin_qry->valuation_rate;
@@ -1927,6 +1934,7 @@ class MainController extends Controller
 
                     $t_data[] = [
                         'name' => 'ath' . uniqid(),
+
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->email,
@@ -1955,7 +1963,9 @@ class MainController extends Controller
                         'project' => $stock_entry_qry->project,
                         'voucher_no' => $row->parent,
                         'outgoing_rate' => 0,
+
                         'is_cancelled' => 0,
+
                         'qty_after_transaction' => $actual_qty,
                         '_user_tags' => null,
                         'batch_no' => $row->batch_no,
@@ -1977,6 +1987,7 @@ class MainController extends Controller
 
                     $stock_ledger_entry[] = [
                         'name' => 'ath' . uniqid(),
+
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
@@ -2006,7 +2017,9 @@ class MainController extends Controller
                         'project' => $stock_entry_qry->project,
                         'voucher_no' => $row->parent,
                         'outgoing_rate' => 0,
+
                         'is_cancelled' => 0,
+
                         'qty_after_transaction' => $bin_qry->actual_qty,
                         '_user_tags' => null,
                         'batch_no' => $row->batch_no,
