@@ -39,7 +39,7 @@ class MainController extends Controller
             ->orWhere('name', 'LIKE', "%".$request->searchString."%")
             ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
             ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
-            ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
+            // ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
             ->orderby('item_classification','asc')
             ->distinct('created_at')
             ->get();
@@ -63,7 +63,7 @@ class MainController extends Controller
                         ->orWhere('item_classification', 'LIKE', "%".$request->searchString."%")
                         ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
                         ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
+                        // ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
                         ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
                 });
             })
@@ -138,6 +138,9 @@ class MainController extends Controller
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $row->name)->pluck('supplier_part_no');
 
+            $item_default_warehouse = DB::table('tabItem Default')->where   ('parent', $row->name)->first();
+            $default_warehouse = ($item_default_warehouse) ? $item_default_warehouse->default_warehouse : null;
+
             $part_nos = implode(', ', $part_nos->toArray());
 
             $item_list[] = [
@@ -150,7 +153,7 @@ class MainController extends Controller
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
-                'default_warehouse' => $row->default_warehouse
+                'default_warehouse' => $default_warehouse
             ];
             
         }
@@ -418,7 +421,7 @@ class MainController extends Controller
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer for Manufacture')
             ->where('ste.transfer_as', '!=', 'For Return')
             ->whereIn('s_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.production_order', 'ste.creation', 'ste.so_customer_name')
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.work_order', 'ste.creation', 'ste.so_customer_name')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -437,7 +440,7 @@ class MainController extends Controller
             $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
 
             // check if production order exist
-            $production_order = DB::table('tabProduction Order')->where('name', $d->production_order)->first();
+            $production_order = DB::table('tabWork Order')->where('name', $d->work_order)->first();
 
             $delivery_date = $production_order->delivery_date;
             // $order_status = 'Unknown Status';
@@ -482,7 +485,7 @@ class MainController extends Controller
                 'balance' => $available_qty,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
-                'production_order' => $d->production_order,
+                'production_order' => $d->work_order,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                 'delivery_date' => ($delivery_date) ? Carbon::parse($delivery_date)->format('M-d-Y') : null,
                 'delivery_status' => ($delivery_date) ? ((Carbon::parse($delivery_date) < Carbon::now()) ? 'late' : null) : null
@@ -657,10 +660,10 @@ class MainController extends Controller
             ];
         }else{
             $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed')
-            ->where('se.production_order', $id)->first();
+            ->where('se.work_order', $id)->first();
 
             $q[] = [
-                'production_order' => $se->production_order,
+                'production_order' => $se->work_order,
                 'fg_warehouse' => $se->to_warehouse,
                 'sales_order_no' => $se->sales_order_no,
                 'status' => $se->item_status,
@@ -692,9 +695,8 @@ class MainController extends Controller
                 'status' => $request->r_qty == $request->f_qty ? "Completed" : "In Process"
             ];
 
-            // return $erp_update;
 
-            $erp_prod = DB::table('tabProduction Order')->where('name', $request->prod_order)->where('docstatus', 1)->update($erp_update);
+            $erp_prod = DB::table('tabWork Order')->where('name', $request->prod_order)->where('docstatus', 1)->update($erp_update);
 
             $mes_update = [];
             
@@ -739,7 +741,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('sted.name', $id)
-            ->select('ste.production_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request', 'ste.issue_as')
+            ->select('ste.work_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request', 'ste.issue_as')
             ->first();
 
         $ref_no = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
@@ -985,15 +987,15 @@ class MainController extends Controller
             $status_result = $this->update_pending_ste_item_status();
 
             if ($steDetails->purpose == 'Material Transfer for Manufacture') {
-                $cancelled_production_order = DB::table('tabProduction Order')
-                    ->where('name', $steDetails->production_order)->where('docstatus', 2)->first();
+                $cancelled_production_order = DB::table('tabWork Order')
+                    ->where('name', $steDetails->work_order)->where('docstatus', 2)->first();
 
                 if($cancelled_production_order){
                     return response()->json(['status' => 0, 'message' => 'Production Order ' . $cancelled_production_order->name . ' was cancelled. Please reload the page.']);
                 }
 
                 $this->submit_stock_entry($steDetails->parent_se);
-                $this->generate_stock_entry($steDetails->production_order);
+                $this->generate_stock_entry($steDetails->work_order);
             }
 
             if ($steDetails->purpose == 'Material Transfer') {
@@ -1411,7 +1413,7 @@ class MainController extends Controller
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
-        $production_item_alternatives = DB::table('tabProduction Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
+        $production_item_alternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
             ->where('p.item_code', $item_details->name)->where('p.item_alternative_for', '!=', $item_details->name)
             ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get();
         foreach($production_item_alternatives as $a){
@@ -1859,68 +1861,162 @@ class MainController extends Controller
     public function create_stock_ledger_entry($stock_entry){
         try {
             $now = Carbon::now();
-            $latest_pro = DB::table('tabStock Ledger Entry')->max('name');
-            $latest_pro_exploded = explode("/", $latest_pro);
-            $new_id = $latest_pro_exploded[1] + 1;
-
             $stock_entry_qry = DB::table('tabStock Entry')
                 ->where('name', $stock_entry)->first();
 
             $stock_entry_detail = DB::table('tabStock Entry Detail')
                 ->where('parent', $stock_entry)->get();
 
-            $stock_ledger_entry = [];
-            foreach ($stock_entry_detail as $row) {
-                $warehouse = ($row->s_warehouse) ? $row->s_warehouse : $row->t_warehouse;
+            if ($stock_entry_qry->purpose == 'Material Transfer for Manufacture') {                
+                $s_data = [];
+                $t_data = [];
+                foreach ($stock_entry_detail as $row) {
+                    $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->s_warehouse)
+                        ->where('item_code', $row->item_code)->first();
+                    
+                    if ($bin_qry) {
+                        $actual_qty = $bin_qry->actual_qty;
+                        $valuation_rate = $bin_qry->valuation_rate;
+                    }
+                        
+                    $s_data[] = [
+                        'name' => 'ath' . uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->email,
+                        'owner' => Auth::user()->email,
+                        'docstatus' => 1,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'serial_no' => $row->serial_no,
+                        'fiscal_year' => $now->format('Y'),
+                        'voucher_type' => 'Stock Entry',
+                        'posting_time' => $now->format('H:i:s'),
+                        'actual_qty' => $row->qty * -1,
+                        'stock_value' => $actual_qty * $valuation_rate,
+                        '_comments' => null,
+                        'incoming_rate' => 0,
+                        'voucher_detail_no' => $row->name,
+                        'stock_uom' => $row->stock_uom,
+                        'warehouse' => $row->s_warehouse,
+                        '_liked_by' => null,
+                        'company' => 'FUMACO Inc.',
+                        '_assign' => null,
+                        'item_code' => $row->item_code,
+                        'valuation_rate' => $valuation_rate,
+                        'project' => $stock_entry_qry->project,
+                        'voucher_no' => $row->parent,
+                        'outgoing_rate' => 0,
+                        'is_cancelled' => 0,
+                        'qty_after_transaction' => $actual_qty,
+                        '_user_tags' => null,
+                        'batch_no' => $row->batch_no,
+                        'stock_value_difference' => ($row->qty * $row->valuation_rate) * -1,
+                        'posting_date' => $now->format('Y-m-d'),
+                    ];
+                    
+                    $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
+                        ->where('item_code', $row->item_code)->first();
 
-                $bin_qry = DB::table('tabBin')->where('warehouse', $warehouse)
-                    ->where('item_code', $row->item_code)->first();
-                
-                $new_id = $new_id + 1;
-                $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
-                $id = 'SLEM/'.$new_id;
+                    if ($bin_qry) {
+                        $actual_qty = $bin_qry->actual_qty;
+                        $valuation_rate = $bin_qry->valuation_rate;
+                    }
 
-                $stock_ledger_entry[] = [
-                    'name' => $id,
-                    'creation' => $now->toDateTimeString(),
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 1,
-                    'parent' => null,
-                    'parentfield' => null,
-                    'parenttype' => null,
-                    'idx' => 0,
-                    'serial_no' => $row->serial_no,
-                    'fiscal_year' => $now->format('Y'),
-                    'voucher_type' => 'Stock Entry',
-                    'posting_time' => $now->format('H:i:s'),
-                    'actual_qty' => ($row->s_warehouse) ? ($row->qty * -1) : $row->qty,
-                    'stock_value' => $bin_qry->actual_qty * $bin_qry->valuation_rate,
-                    '_comments' => null,
-                    'incoming_rate' => ($row->t_warehouse) ? ($row->basic_rate) : 0,
-                    'voucher_detail_no' => $row->name,
-                    'stock_uom' => $row->stock_uom,
-                    'warehouse' => $warehouse,
-                    '_liked_by' => null,
-                    'company' => 'FUMACO Inc.',
-                    '_assign' => null,
-                    'item_code' => $row->item_code,
-                    // 'stock_queue' => ,
-                    'valuation_rate' => $bin_qry->valuation_rate,
-                    'project' => $stock_entry_qry->project,
-                    'voucher_no' => $row->parent,
-                    'outgoing_rate' => 0,
-                    'is_cancelled' => 'No',
-                    'qty_after_transaction' => $bin_qry->actual_qty,
-                    '_user_tags' => null,
-                    'batch_no' => $row->batch_no,
-                    'stock_value_difference' => ($row->s_warehouse) ? ($row->qty * $row->valuation_rate) * -1  : $row->qty * $row->valuation_rate,
-                    'posting_date' => $now->format('Y-m-d'),
-                ];
+                    $t_data[] = [
+                        'name' => 'ath' . uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->email,
+                        'owner' => Auth::user()->email,
+                        'docstatus' => 1,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'serial_no' => $row->serial_no,
+                        'fiscal_year' => $now->format('Y'),
+                        'voucher_type' => 'Stock Entry',
+                        'posting_time' => $now->format('H:i:s'),
+                        'actual_qty' => $row->qty,
+                        'stock_value' => $actual_qty * $valuation_rate,
+                        '_comments' => null,
+                        'incoming_rate' => $row->basic_rate,
+                        'voucher_detail_no' => $row->name,
+                        'stock_uom' => $row->stock_uom,
+                        'warehouse' => $row->t_warehouse,
+                        '_liked_by' => null,
+                        'company' => 'FUMACO Inc.',
+                        '_assign' => null,
+                        'item_code' => $row->item_code,
+                        'valuation_rate' => $valuation_rate,
+                        'project' => $stock_entry_qry->project,
+                        'voucher_no' => $row->parent,
+                        'outgoing_rate' => 0,
+                        'is_cancelled' => 0,
+                        'qty_after_transaction' => $actual_qty,
+                        '_user_tags' => null,
+                        'batch_no' => $row->batch_no,
+                        'stock_value_difference' => $row->qty * $row->valuation_rate,
+                        'posting_date' => $now->format('Y-m-d'),
+                    ];
+                }
+
+                $stock_ledger_entry = array_merge($s_data, $t_data);
+
+                DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+            } else {
+                $stock_ledger_entry = [];
+                foreach ($stock_entry_detail as $row) {
+                    $warehouse = ($row->s_warehouse) ? $row->s_warehouse : $row->t_warehouse;
+    
+                    $bin_qry = DB::table('tabBin')->where('warehouse', $warehouse)
+                        ->where('item_code', $row->item_code)->first();
+
+                    $stock_ledger_entry[] = [
+                        'name' => 'ath' . uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 1,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'serial_no' => $row->serial_no,
+                        'fiscal_year' => $now->format('Y'),
+                        'voucher_type' => 'Stock Entry',
+                        'posting_time' => $now->format('H:i:s'),
+                        'actual_qty' => ($row->s_warehouse) ? ($row->qty * -1) : $row->qty,
+                        'stock_value' => $bin_qry->actual_qty * $bin_qry->valuation_rate,
+                        '_comments' => null,
+                        'incoming_rate' => ($row->t_warehouse) ? ($row->basic_rate) : 0,
+                        'voucher_detail_no' => $row->name,
+                        'stock_uom' => $row->stock_uom,
+                        'warehouse' => $warehouse,
+                        '_liked_by' => null,
+                        'company' => 'FUMACO Inc.',
+                        '_assign' => null,
+                        'item_code' => $row->item_code,
+                        // 'stock_queue' => ,
+                        'valuation_rate' => $bin_qry->valuation_rate,
+                        'project' => $stock_entry_qry->project,
+                        'voucher_no' => $row->parent,
+                        'outgoing_rate' => 0,
+                        'is_cancelled' => 0,
+                        'qty_after_transaction' => $bin_qry->actual_qty,
+                        '_user_tags' => null,
+                        'batch_no' => $row->batch_no,
+                        'stock_value_difference' => ($row->s_warehouse) ? ($row->qty * $row->valuation_rate) * -1  : $row->qty * $row->valuation_rate,
+                        'posting_date' => $now->format('Y-m-d'),
+                    ];
+                }
+    
+                DB::table('tabStock Ledger Entry')->insert($stock_ledger_entry);
             }
-
-            DB::table('tabStock Ledger Entry')->insert($stock_ledger_entry);
 
             return ['success' => true, 'message' => 'Stock ledger entries created.'];
         } catch (Exception $e) {
@@ -1934,9 +2030,10 @@ class MainController extends Controller
 
             $stock_entry_detail = DB::table('tabStock Entry Detail')->where('parent', $stock_entry)->get();
 
-            $latest_id = DB::table('tabBin')->max('name');
+            $latest_id = DB::connection('mysql')->table('tabBin')->where('name', 'like', '%BINM%')->max('name');
+            $latest_id = ($latest_id) ? $latest_id : 0;
             $latest_id_exploded = explode("/", $latest_id);
-            $new_id = $latest_id_exploded[1] + 1;
+            $new_id = (array_key_exists(1, $latest_id_exploded)) ? $latest_id_exploded[1] + 1 : 1;
 
             $stock_entry_qry = DB::table('tabStock Entry')->where('name', $stock_entry)->first();
 
@@ -2072,10 +2169,6 @@ class MainController extends Controller
                 ->groupBy('s_warehouse', 't_warehouse', 'parent', 'cost_center', 'expense_account')
                 ->get();
     
-            $latest_name = DB::table('tabGL Entry')->max('name');
-            $latest_name_exploded = explode("L", $latest_name);
-            $new_id = $latest_name_exploded[1] + 1;
-    
             $basic_amount = 0;
             foreach ($stock_entry_detail as $row) {
                 $basic_amount += ($row->t_warehouse) ? $row->basic_amount : 0;
@@ -2083,12 +2176,7 @@ class MainController extends Controller
     
             $gl_entry = [];
             
-            foreach ($stock_entry_detail as $row) {
-                $id = str_pad($new_id, 7, '0', STR_PAD_LEFT);
-                $id = 'MGL'.$id;
-    
-                $new_id = $new_id + 1;
-    
+            foreach ($stock_entry_detail as $row) {    
                 if($row->s_warehouse){
                     $credit = $basic_amount;
                     $debit = 0;
@@ -2102,7 +2190,7 @@ class MainController extends Controller
                 }
     
                 $gl_entry[] = [
-                    'name' => $id,
+                    'name' => 'ath' . uniqid(),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
@@ -2163,17 +2251,17 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
             $now = Carbon::now();
-            $production_order_details = DB::table('tabProduction Order')
+            $production_order_details = DB::table('tabWork Order')
                 ->where('name', $production_order)->first();
 
             // get raw materials from production order items in erp
-            $production_order_items = DB::table('tabProduction Order Item')
+            $production_order_items = DB::table('tabWork Order Item')
                 ->where('parent', $production_order)->orderBy('idx', 'asc')->get();
 
             foreach ($production_order_items as $index => $row) {
                 $pending_ste = DB::table('tabStock Entry Detail as sted')
                     ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
-                    ->where('sted.item_code', $row->item_code)->where('ste.production_order', $row->parent)
+                    ->where('sted.item_code', $row->item_code)->where('ste.work_order', $row->parent)
                     ->where('ste.docstatus', 0)->first();
 
                 if(!$pending_ste){
@@ -2181,7 +2269,7 @@ class MainController extends Controller
 
                     $issued_qty = DB::table('tabStock Entry as ste')
                         ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                        ->where('ste.production_order', $row->parent)
+                        ->where('ste.work_order', $row->parent)
                         ->where('sted.item_code', $row->item_code)
                         ->where('sted.s_warehouse', $row->source_warehouse)
                         ->where('ste.docstatus', 0)
@@ -2290,7 +2378,7 @@ class MainController extends Controller
                             '_liked_by' => null,
                             'purchase_receipt_no' => null,
                             'posting_time' => $now->format('H:i:s'),
-                            'customer_name' => null,
+                            // 'customer_name' => null,
                             'to_warehouse' => $production_order_details->wip_warehouse,
                             'title' => 'Material Transfer for Manufacture',
                             '_comments' => null,
@@ -2308,13 +2396,13 @@ class MainController extends Controller
                             'sales_invoice_no' => null,
                             'company' => 'FUMACO Inc.',
                             'target_warehouse_address' => null,
-                            'customer_address' => null,
+                            // 'customer_address' => null,
                             'total_outgoing_value' => collect($stock_entry_detail)->sum('basic_amount'),
                             'supplier_name' => null,
                             'remarks' => null,
                             '_user_tags' => null,
                             'total_additional_costs' => 0,
-                            'customer' => null,
+                            // 'customer' => null,
                             'bom_no' => $production_order_details->bom_no,
                             'amended_from' => null,
                             'total_amount' => collect($stock_entry_detail)->sum('basic_amount'),
@@ -2324,8 +2412,9 @@ class MainController extends Controller
                             'select_print_heading' => null,
                             'posting_date' => $now->format('Y-m-d'),
                             'target_address_display' => null,
-                            'production_order' => $production_order,
+                            'work_order' => $production_order,
                             'purpose' => 'Material Transfer for Manufacture',
+                            'stock_entry_type' => 'Material Transfer for Manufacture',
                             'shipping_address_contact_person' => null,
                             'customer_1' => null,
                             'material_request' => $production_order_details->material_request,
@@ -2356,10 +2445,10 @@ class MainController extends Controller
                                 'transferred_qty' => $row->required_qty
                             ];
             
-                            DB::table('tabProduction Order Item')->where('name', $row->name)->update($production_order_item);
+                            DB::table('tabWork Order Item')->where('name', $row->name)->update($production_order_item);
 
                             if($production_order_details->status == 'Not Started'){
-                                DB::table('tabProduction Order')
+                                DB::table('tabWork Order')
                                     ->where('name', $production_order_details->name)
                                     ->update(['status' => 'In Process', 'material_transferred_for_manufacturing' => $production_order_details->qty]);
                             }
@@ -2395,11 +2484,11 @@ class MainController extends Controller
                 }
 
                 if($draft_ste->purpose == 'Material Transfer for Manufacture'){
-                    $production_order_details = DB::table('tabProduction Order')->where('name', $draft_ste->production_order)->first();
+                    $production_order_details = DB::table('tabWork Order')->where('name', $draft_ste->work_order)->first();
 
                     // get total "for quantity" (submitted)
                     $transferred_qty = DB::table('tabStock Entry')
-                        ->where('production_order', $draft_ste->production_order)->where('docstatus', 1)
+                        ->where('work_order', $draft_ste->work_order)->where('docstatus', 1)
                         ->where('purpose', 'Material Transfer for Manufacture')->sum('fg_completed_qty');
                     
                     $total_transferred_qty = $transferred_qty + $draft_ste->fg_completed_qty;
@@ -2411,7 +2500,7 @@ class MainController extends Controller
 
                     $material_transferred_for_manufacturing = $transferred_qty + $fg_completed_qty;
 
-                    DB::table('tabProduction Order')->where('name', $draft_ste->production_order)
+                    DB::table('tabWork Order')->where('name', $draft_ste->work_order)
                         ->update(['status' => 'In Process', 'material_transferred_for_manufacturing' => $material_transferred_for_manufacturing]);
                 
                     $values = [
@@ -2449,7 +2538,7 @@ class MainController extends Controller
                         ];
                     }
     
-                    DB::table('tabProduction Order')
+                    DB::table('tabWork Order')
                         ->where('name', $production_order_details->name)
                         ->update($values);
                 }
@@ -2465,15 +2554,15 @@ class MainController extends Controller
     }
 
     public function update_production_order_items($production_order){
-        $production_order_items = DB::table('tabProduction Order Item')->where('parent', $production_order)->get();
+        $production_order_items = DB::table('tabWork Order Item')->where('parent', $production_order)->get();
         foreach ($production_order_items as $row) {
             $transferred_qty = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('ste.production_order', $production_order)->where('ste.purpose', 'Material Transfer for Manufacture')
+                ->where('ste.work_order', $production_order)->where('ste.purpose', 'Material Transfer for Manufacture')
                 ->where('ste.docstatus', 1)->where('item_code', $row->item_code)->sum('qty');
             
                 
-                DB::table('tabProduction Order Item')
+                DB::table('tabWork Order Item')
                     ->where('parent', $production_order)
                     ->where('item_code', $row->item_code)->update(['transferred_qty' => $transferred_qty]);
         }
@@ -2629,10 +2718,12 @@ class MainController extends Controller
     public function get_low_stock_level_items(Request $request){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $item_default_warehouses = DB::table('tabItem Default')->whereIn('default_warehouse', $allowed_warehouses)->pluck('parent');
         
         $query = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')
             ->select('ir.name as id', 'i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty', 'i.item_classification')
-            ->whereIn('default_warehouse', $allowed_warehouses)->get();
+            ->whereIn('i.name', $item_default_warehouses)->get();
 
         $low_level_stocks = [];
         foreach ($query as $a) {
@@ -3217,7 +3308,7 @@ class MainController extends Controller
 		try {
             $production_order = $request->production_order;
             $existing_ste_transfer = DB::table('tabStock Entry')
-                ->where('production_order', $production_order)
+                ->where('work_order', $production_order)
                 ->where('purpose', 'Material Transfer for Manufacture')
                 ->where('docstatus', 1)->exists();
             
@@ -3225,14 +3316,14 @@ class MainController extends Controller
                 return response()->json(['status' => 0, 'message' => 'Materials unavailable.']);
 			}
             
-			$production_order_details = DB::table('tabProduction Order')
+			$production_order_details = DB::table('tabWork Order')
                 ->where('name', $production_order)->first();
 
 			$produced_qty = $production_order_details->produced_qty + $request->fg_completed_qty;
 			if($produced_qty >= (int)$production_order_details->qty && $production_order_details->material_transferred_for_manufacturing > 0){
 				$pending_mtfm_count = DB::table('tabStock Entry as ste')
 					->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-					->where('ste.production_order', $production_order)->where('purpose', 'Material Transfer for Manufacture')
+					->where('ste.work_order', $production_order)->where('purpose', 'Material Transfer for Manufacture')
 					->where('ste.docstatus', 0)->count();
 				
 				if($pending_mtfm_count > 0){
@@ -3302,7 +3393,7 @@ class MainController extends Controller
 
 					$consumed_qty = DB::table('tabStock Entry as ste')
 						->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-						->where('ste.production_order', $production_order)->whereNull('sted.t_warehouse')
+						->where('ste.work_order', $production_order)->whereNull('sted.t_warehouse')
 						->where('sted.item_code', $row['item_code'])->where('purpose', 'Manufacture')
 						->where('ste.docstatus', 1)->sum('qty');
 
@@ -3446,7 +3537,7 @@ class MainController extends Controller
 				'_liked_by' => null,
 				'purchase_receipt_no' => null,
 				'posting_time' => $now->format('H:i:s'),
-				'customer_name' => null,
+				// 'customer_name' => null,
 				'to_warehouse' => $production_order_details->fg_warehouse,
 				'title' => 'Manufacture',
 				'_comments' => null,
@@ -3464,13 +3555,13 @@ class MainController extends Controller
 				'sales_invoice_no' => null,
 				'company' => 'FUMACO Inc.',
 				'target_warehouse_address' => null,
-				'customer_address' => null,
+				// 'customer_address' => null,
 				'total_outgoing_value' => collect($stock_entry_detail)->sum('basic_amount'),
 				'supplier_name' => null,
 				'remarks' => null,
 				'_user_tags' => null,
 				'total_additional_costs' => 0,
-				'customer' => null,
+				// 'customer' => null,
 				'bom_no' => $production_order_details->bom_no,
 				'amended_from' => null,
 				'total_amount' => collect($stock_entry_detail)->sum('basic_amount'),
@@ -3480,8 +3571,9 @@ class MainController extends Controller
 				'select_print_heading' => null,
 				'posting_date' => $now->format('Y-m-d'),
 				'target_address_display' => null,
-				'production_order' => $production_order,
+				'work_order' => $production_order,
 				'purpose' => 'Manufacture',
+                'stock_entry_type' => 'Manufacture',
 				'shipping_address_contact_person' => null,
 				'customer_1' => null,
 				'material_request' => $production_order_details->material_request,
@@ -3517,7 +3609,7 @@ class MainController extends Controller
 					'status' => ($produced_qty == $production_order_details->qty) ? 'Completed' : $production_order_details->status
 				];
 
-				DB::table('tabProduction Order')->where('name', $production_order)->update($production_data);
+				DB::table('tabWork Order')->where('name', $production_order)->update($production_data);
 
 				$this->update_bin($new_id);
 				$this->create_stock_ledger_entry($new_id);
@@ -3591,7 +3683,7 @@ class MainController extends Controller
     }
 
     public function feedback_production_order_items($production_order, $qty_to_manufacture, $fg_completed_qty){
-        $production_order_items_qry = DB::table('tabProduction Order Item')
+        $production_order_items_qry = DB::table('tabWork Order Item')
             ->where('parent', $production_order)
             ->where(function($q) {
                 $q->where('item_alternative_for', 'new_item')
@@ -3602,7 +3694,7 @@ class MainController extends Controller
         $arr = [];
         foreach ($production_order_items_qry as $index => $row) {
             $item_required_qty = $row->required_qty;
-            $item_required_qty += DB::table('tabProduction Order Item')
+            $item_required_qty += DB::table('tabWork Order Item')
                 ->where('parent', $production_order)
                 ->where('item_alternative_for', $row->item_code)
                 ->whereNotNull('item_alternative_for')
@@ -3610,7 +3702,7 @@ class MainController extends Controller
 
             $consumed_qty = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('ste.production_order', $production_order)->whereNull('sted.t_warehouse')
+                ->where('ste.work_order', $production_order)->whereNull('sted.t_warehouse')
                 ->where('sted.item_code', $row->item_code)->where('purpose', 'Manufacture')
                 ->where('ste.docstatus', 1)->sum('qty');
 
@@ -3662,7 +3754,7 @@ class MainController extends Controller
     }
 
     public function get_alternative_items($production_order, $item_code, $remaining_required_qty){
-        $q = DB::table('tabProduction Order Item')
+        $q = DB::table('tabWork Order Item')
 			->where('parent', $production_order)->where('item_alternative_for', $item_code)
             ->orderBy('required_qty', 'asc')->get();
 
@@ -3672,7 +3764,7 @@ class MainController extends Controller
             if($remaining > 0){
                 $consumed_qty = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->where('ste.production_order', $production_order)->whereNull('sted.t_warehouse')
+                    ->where('ste.work_order', $production_order)->whereNull('sted.t_warehouse')
                     ->where('sted.item_code', $row->item_code)->where('purpose', 'Manufacture')
                     ->where('ste.docstatus', 1)->sum('qty');
 

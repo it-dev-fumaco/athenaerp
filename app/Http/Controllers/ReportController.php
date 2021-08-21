@@ -41,7 +41,7 @@ class ReportController extends Controller
                 ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 1)
                 ->whereIn('sted.item_code', $item_codes)
                 ->whereBetween('ste.posting_date', [$start, $end])
-                ->select('ste.production_order', 'ste.posting_date', 'ste.sales_order_no', 'ste.so_customer_name', 'ste.project', 'ste.name', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom')
+                ->select('ste.work_order', 'ste.posting_date', 'ste.sales_order_no', 'ste.so_customer_name', 'ste.project', 'ste.name', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom')
                 ->orderBy('ste.posting_date', 'asc')
                 ->orderBy('sted.item_code', 'asc')->get();
         }
