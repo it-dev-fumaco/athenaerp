@@ -11,29 +11,24 @@
 				<div class="col-sm-12">
 					<div class="container-fluid itemClassContainer overflow-auto">
 						<input type="button" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden="">
-						@foreach($itemClass as $itemClass)
-							{{-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->all(),['classification' => $itemClass->item_classification])) }}">  --}}
-							{{-- <a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass]) }}"> - array --}}
-							{{-- <a class="itemClassBubble" href="{{ url()->current().'?'.http_build_query(array_merge(request()->except('searchString'),['classification' => $itemClass->item_classification])) }}">  --}}
-							{{-- <a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass->item_classification]) }}">	 --}}
-							<a class="itemClassBubble" href="">	
+						@foreach($itemClass as $itemClass1)
+							<a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) }}">	
 								<div class="classPanel">
 									<div class="classPanelAbbr">
-										<i>{{substr($itemClass->item_classification, 0, 2)}}</i>
+										<i>{{substr($itemClass1->item_classification, 0, 2)}}</i>
 									</div>
 									<div class="classPanelName">
-										<input type="button" class="classPanelBtn bg-white" id="das" name="text[]" value="{{substr($itemClass->item_classification, 4)}}" readonly>
+										<input type="button" class="classPanelBtn bg-white" id="das" name="text[]" value="{{substr($itemClass1->item_classification, 4)}}" readonly>
 									</div>
 								</div>
 							</a>
-							<script>
-								if($('.classPanelBtn').length > 1){
-									$('.itemClassBubble').attr("href", "{{ request()->fullUrlWithQuery(['classification' => $itemClass->item_classification]) }}")
-								}else{
-									$('.itemClassBubble').attr("href", "{{ url()->current().'?'.http_build_query(array_merge(request()->except('searchString'),['classification' => $itemClass->item_classification])) }}")
-								}
-							</script>
+							@if(count($itemClass) == 1)
+								<script>
+									$('.itemClassBubble').attr("href", "{{ request()->fullUrlWithQuery(['searchString' => null, 'classification' => $itemClass1->item_classification]) }}")
+								</script>
+							@endif
  						@endforeach
+						{{-- $('.itemClassBubble').attr("href", "{{ url()->current().'?'.http_build_query(array_merge(request()->except('searchString'))) }}") --}}
 					</div>
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
@@ -119,9 +114,9 @@
 												<tr>
 													<td class="text-center" >
 														{{ $inv['warehouse'] }}
-														@if($inv['warehouse'] == $row['default_warehouse'])
+														{{-- @if($inv['warehouse'] == $row['default_warehouse'])
 															<span class="font-italic"><small>- default</small></span>
-														@endif
+														@endif --}}
 													</td>
 													<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
 													<td class="text-center">

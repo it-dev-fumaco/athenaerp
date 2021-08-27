@@ -34,25 +34,27 @@ class MainController extends Controller
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
-        $itemClass = DB::table('tabItem')->select('item_classification')
-            ->where('description', 'LIKE', "%".$request->searchString."%" )
-            ->orWhere('name', 'LIKE', "%".$request->searchString."%")
-            ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
-            ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
-            // ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
-            ->orderby('item_classification','asc')
-            ->distinct('created_at')
-            ->get();
+        // $itemClass = DB::table('tabItem')->where('disabled', 0)
+        //     ->where('has_variants', 0)->where('is_stock_item', 1)->select('item_classification')
+        //     ->where('description', 'LIKE', "%".$request->searchString."%" )
+        //     ->where('item_classification', 'LIKE', $request->classification)
+        //     ->orWhere('name', 'LIKE', "%".$request->searchString."%")
+        //     ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
+        //     ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
+        //     ->orWhere('item_classification', 'LIKE', '%'.$request->searchString.'%')
+        //     ->orderby('item_classification','asc')
+        //     ->distinct('item_classification')
+        //     ->get();
 
-        $itemClassCount = count($itemClass);
+        // $itemClassCount = count($itemClass);
+        // if($itemClassCount >= 2){
+        //     $getFirst = $itemClass->keys()->first();
+        //     $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
+        // }
 
-        if($itemClassCount >= 2){
-            $getFirst = $itemClass->keys()->first();
-            $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
-        }
-
-        $items = DB::table('tabItem')->where('disabled', 0)
-            ->where('has_variants', 0)->where('is_stock_item', 1)
+        // $items = DB::table('tabItem')->where('disabled', 0)
+        $itemQ = DB::table('tabItem')->where('disabled', 0)
+            ->where('has_variants', 0)->where('is_stock_item', 1)->where('item_classification', 'LIKE', $request->classification)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
                     foreach ($search_str as $str) {
@@ -78,13 +80,20 @@ class MainController extends Controller
             })
             ->when($request->check_qty, function($q) use ($request){
 				return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-			})
-            ->orderBy('modified', 'desc')->paginate(20);
+			});
+            
+        $itemClassQuery = Clone $itemQ;
+        $itemsQuery = Clone $itemQ;
+
+        $itemClass = $itemClassQuery->select('item_classification')->distinct('item_classification')->orderby('item_classification','asc')->get();
+        $items = $itemsQuery->orderBy('modified', 'desc')->paginate(20);
+
+        // return $itemClass;
 
         $url = $request->fullUrl();
 
         $items->withPath($url);
-
+        
         if($request->get_total){
             return number_format($items->total());
         }
@@ -138,8 +147,8 @@ class MainController extends Controller
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $row->name)->pluck('supplier_part_no');
 
-            $item_default_warehouse = DB::table('tabItem Default')->where   ('parent', $row->name)->first();
-            $default_warehouse = ($item_default_warehouse) ? $item_default_warehouse->default_warehouse : null;
+            // $item_default_warehouse = DB::table('tabItem Default')->where   ('parent', $row->name)->first();
+            // $default_warehouse = ($item_default_warehouse) ? $item_default_warehouse->default_warehouse : null;
 
             $part_nos = implode(', ', $part_nos->toArray());
 
@@ -153,10 +162,10 @@ class MainController extends Controller
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
-                'default_warehouse' => $default_warehouse
+                // 'default_warehouse' => $default_warehouse
             ];
-            
         }
+
         return view('search_results', compact('item_list', 'items', 'itemClass'));
     }
 
