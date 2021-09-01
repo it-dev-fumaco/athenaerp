@@ -87,13 +87,24 @@ class MainController extends Controller
 
         $itemClass = $itemClassQuery->select('item_classification')->distinct('item_classification')->orderby('item_classification','asc')->get();
         $items = $itemsQuery->orderBy('modified', 'desc')->paginate(20);
+        
+        $input = [];
 
-        // $item_group = DB::table('tabItem Group')->select('name')->get();
-        // return $item_group;
+        if($request->searchString != ''){
+            $input[] = [
+                'name' => uniqid(),
+                'creation' => Carbon::now(),
+                'modified' => Carbon::now(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'search_string' => $request->searchString,
+                'total_result' => $items->total()
+            ];
 
-        // if($request->searchString != ''){
-        //     $srcTxt = DB::table()
-        // }
+            // return $input;
+            $saveSrch = DB::table('tabAthena Inventory Search History')->insert($input);
+
+        }
             // return $itemClass;
         // $transaction_test = DB::table('tabAthena Transactions as a')
         //     ->join('tabItem as i', 'i.name', 'a.item_code')
