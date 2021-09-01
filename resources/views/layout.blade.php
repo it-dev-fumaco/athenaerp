@@ -60,13 +60,17 @@
 									<form role="search" method="GET" action="/search_results" id="search-form">
 										<input type="checkbox" id="cb-1" name="check_qty" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
+										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											<div class="input-group-append">
-												<button class="btn btn-default" type="submit">
-													<i class="fas fa-search"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Search</span>
-												</button>
+											<div class="input-group-append" id="item-group-filter-parent">
+												<select id="item-group-filter" class="btn btn-default">
+													
+												</select>
 											</div>
+											<button class="btn btn-default" type="submit">
+												<i class="fas fa-search"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Search</span>
+											</button>
 										</div>
 									</form>
 									<div id="suggesstion-box" class="mr-2 ml-2"></div>
@@ -1863,6 +1867,37 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				}
 			});
 			// ERP Warehouse
+
+			// Item group filter
+			$('#item-group-filter').select2({
+				dropdownParent: $('#item-group-filter-parent'),
+				placeholder: 'Select Item Group',
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.item_groups
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#item-group-filter', function(e){
+				var data = e.params.data;
+
+				$('#grp-1').val(data.id);
+				// $('#search-form').submit();
+			});
+			// Item group filter
+
 
 			$('#athReset').click(function(){
 				item_code = $('#selected-item-code').text();

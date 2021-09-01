@@ -88,7 +88,30 @@ class MainController extends Controller
         $itemClass = $itemClassQuery->select('item_classification')->distinct('item_classification')->orderby('item_classification','asc')->get();
         $items = $itemsQuery->orderBy('modified', 'desc')->paginate(20);
 
-        // return $itemClass;
+        // $item_group = DB::table('tabItem Group')->select('name')->get();
+        // return $item_group;
+
+        // if($request->searchString != ''){
+        //     $srcTxt = DB::table()
+        // }
+            // return $itemClass;
+        // $transaction_test = DB::table('tabAthena Transactions as a')
+        //     ->join('tabItem as i', 'i.name', 'a.item_code')
+        //     ->select('a.item_code')->where('i.description', 'LIKE', '%'.$request->searchString.'%')
+        //     ->selectRaw('count(a.item_code) as qty')
+        //     ->groupBy('a.item_code')
+        //     ->orderby('qty', 'desc')
+        //     ->get();
+        // $transaction_test = DB::table('tabItem')->select('name')
+        //     ->selectRaw(DB::raw('(select count(item_code) as qty from `tabAthena Transactions`)'))
+        //     // ->select(DB::raw('(select count(item_code) as qty from `tabAthena Transactions` group by item_code order by qty desc;)'))
+        //     ->orderByRaw(DB::raw('(select count(item_code) from `tabAthena Transactions`)'), 'desc')
+        //     // ->groupBy(DB::raw('(select item_code from `tabAthena Transactions`)'))
+        //     ->get();
+            
+        // return $transaction_test;
+
+        // return $items;
 
         $url = $request->fullUrl();
 
@@ -268,11 +291,11 @@ class MainController extends Controller
 
     public function get_select_filters(Request $request){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 0)
-            ->where('category', 'Physical')
+            // ->where('category', 'Physical')
             ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
-        $item_groups = DB::table('tabItem Group')->where('is_group', 0)
-            ->where('show_in_erpinventory', 1)->orderBy('name', 'asc')->pluck('name');
+        $item_groups = DB::table('tabItem Group')->where('is_group', 0)->where('name','LIKE', '%'.$request->q.'%')
+            ->where('show_in_erpinventory', 1)->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();//pluck('name');
 
         $item_classification = DB::table('tabItem Classification')
             ->orderBy('name', 'asc')->pluck('name');
