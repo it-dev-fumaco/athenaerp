@@ -24,7 +24,7 @@
 							</a>
 							@if(count($itemClass) == 1)
 								<script>
-									$('.itemClassBubble').attr("href", "{!! request()->fullUrlWithQuery(['searchString' => null, 'classification' => $itemClass1->item_classification]) !!}")
+									$('.itemClassBubble').attr("href", "{!! request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}")
 								</script>
 							@endif
  						@endforeach
