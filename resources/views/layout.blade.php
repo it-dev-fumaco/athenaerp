@@ -49,23 +49,22 @@
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
 					<div class="row w-100">
-						<div class="col-xl-8 col-lg-9 col-md-9">
+						<div class="col-xl-9 col-lg-10 col-md-10">
 							<div class="row">
-								<div class="col-md-12 col-xl-6 col-lg-4 text-center">
+								<div class="col-md-9 col-xl-5 col-lg-3 text-center">
 									<a href="/" class="navbar-brand">
 										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 									</a>
 								</div>
-								<div class="col-md-12 col-xl-6 col-lg-8 align-middle">
+								<div class="col-md-12 col-xl-7 col-lg-9 align-middle">
 									<form role="search" method="GET" action="/search_results" id="search-form">
 										<input type="checkbox" id="cb-1" name="check_qty" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											<div class="input-group-append" id="item-group-filter-parent">
+											<div class="input-group-append mr-3 ml-3" id="item-group-filter-parent" style="font-size: 11pt;">
 												<select id="item-group-filter" class="btn btn-default">
-													
 												</select>
 											</div>
 											<button class="btn btn-default" type="submit">
@@ -77,7 +76,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-xl-4 col-lg-3 col-md-3 align-middle pb-0">
+						<div class="col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-8 text-right">
 									<a class="nav-link text-white" data-toggle="dropdown" href="#">
@@ -874,9 +873,31 @@
 				});
 			});
 
+			let getParam = new URLSearchParams(window.location.search);
+			let grp = getParam.get('group');
+			let whName = getParam.get('wh');
+
+			if(whName === ''){
+				whPlaceholder = "Select Warehouse";
+			}else if(whName != null){
+				whPlaceholder = whName;
+			}else{
+				whPlaceholder = "Select Warehouse";
+			}
+
+			if(grp === ''){
+				grpPlaceholder = "Item Group";
+			}else if(grp != null){
+				grpPlaceholder = grp;
+			}else{
+				grpPlaceholder = "Item Group";
+			}
+
 			$('#warehouse-filter').select2({
 				dropdownParent: $('#warehouse-filter-parent'),
-				placeholder: 'Select Warehouse',
+				// placeholder: whName.trim() != null ? whName : "Select Warehouse",
+				placeholder: whPlaceholder,
+
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -1871,7 +1892,7 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			// Item group filter
 			$('#item-group-filter').select2({
 				dropdownParent: $('#item-group-filter-parent'),
-				placeholder: 'Select Item Group',
+				placeholder: grpPlaceholder,
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -1896,6 +1917,7 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				$('#grp-1').val(data.id);
 				// $('#search-form').submit();
 			});
+
 			// Item group filter
 
 

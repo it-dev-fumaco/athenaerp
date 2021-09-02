@@ -44,7 +44,7 @@
 								<div class="col-md-6">
 									<div class="row">
 										<div class="col-md-6 p-1">
-												<div class="float-right form-group m-0 w-55" id="warehouse-filter-parent">
+												<div class="float-right form-group m-0 w-55" id="warehouse-filter-parent" style="font-size: 11pt;">
 													<select name="warehouse" id="warehouse-filter" class="form-control" style="width: 200px; font-size: 19px !important;">
 														
 													</select>
@@ -100,7 +100,7 @@
 									</div>
 									<div class="col-md-9 display-inline-block float-right p-2">
 										<div class="col-md-12 p-2 text-justify">
-											<span class="font-italic" style="font-size: 12px;">{{ $row['item_classification'] }}</span><br/>
+											<span class="font-italic" style="font-size: 12px;">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
 											<span class="text-justify" style="font-size: 13px;"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}<br/>
 											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }} </span>
 										</div>
@@ -299,6 +299,8 @@
 	}
 	window.onload=activeBtn;
 </script>
+
+
 @endsection
 
 @section('script')

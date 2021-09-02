@@ -53,6 +53,8 @@ class MainController extends Controller
         // }
 
         // $items = DB::table('tabItem')->where('disabled', 0)
+        if($request->wh == ''){
+
         $itemQ = DB::table('tabItem')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)->where('item_classification', 'LIKE', $request->classification)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -69,9 +71,6 @@ class MainController extends Controller
                         ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
                 });
             })
-            ->when($request->wh, function($q) use ($request){
-				return $q->where('default_warehouse', $request->wh);
-            })
             ->when($request->group, function($q) use ($request){
 				return $q->where('item_group', $request->group);
             })
@@ -81,13 +80,50 @@ class MainController extends Controller
             ->when($request->check_qty, function($q) use ($request){
 				return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
 			});
+        }else{
+            
+            $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)->join('tabItem Default as d', 'd.parent', 'tabItem.name')
+                ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)->where('tabItem.item_classification', 'LIKE', $request->classification)
+                ->when($request->searchString, function ($query) use ($search_str, $request) {
+                    return $query->where(function($q) use ($search_str, $request) {
+                        foreach ($search_str as $str) {
+                            $q->where('tabItem.description', 'LIKE', "%".$str."%");
+                        }
+
+                        $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
+                            // ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
+                    });
+                })
+                ->when($request->group, function($q) use ($request){
+                    return $q->where('tabItem.item_group', $request->group);
+                })
+                ->when($request->classification, function($q) use ($request){
+                    return $q->where('tabItem.item_classification', $request->classification);
+                })
+                ->when($request->check_qty, function($q) use ($request){
+                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                })
+                ->where('d.default_warehouse', $request->wh)
+                ->select('tabItem.name', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'd.default_warehouse');
+        }
             
         $itemClassQuery = Clone $itemQ;
         $itemsQuery = Clone $itemQ;
+        $itemWhFilter = Clone $itemQ;
 
-        $itemClass = $itemClassQuery->select('item_classification')->distinct('item_classification')->orderby('item_classification','asc')->get();
-        $items = $itemsQuery->orderBy('modified', 'desc')->paginate(20);
-        
+        $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
+        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->paginate(20);
+
+        // return $items;
+        // $WhFilter = $itemWhFilter->where('d.default_warehouse', $request->wh)->get();
+        // return $WhFilter;
+
+        // return $items;
+
         $input = [];
 
         if($request->searchString != ''){
@@ -101,10 +137,13 @@ class MainController extends Controller
                 'total_result' => $items->total()
             ];
 
-            // return $input;
             $saveSrch = DB::table('tabAthena Inventory Search History')->insert($input);
-
         }
+
+        // $test = $item->join('tabItem Default as d', 'i.item_code', 'd.parent')
+        //     ->where('d.default_warehouse', $request->wh)
+        //     ->get();
+        // return $test;
             // return $itemClass;
         // $transaction_test = DB::table('tabAthena Transactions as a')
         //     ->join('tabItem as i', 'i.name', 'a.item_code')
