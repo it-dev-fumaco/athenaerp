@@ -346,7 +346,7 @@
 																	<i class="far fa-calendar-alt"></i>
 																</span>
 															</div>
-															<input type="text" name="dates" class="form-control float-right" id="ath_dates">
+															<input type="text" name="dates" class="form-control float-right" id="ath_dates" placeholder="Select a Range">
 														</div>
 													</div>
 												</div>
@@ -1469,21 +1469,44 @@
 				});
 
 				$("#ath_dates").daterangepicker({
+					placeholder: 'Select Date Range',
+					ranges: {
+						'Today': [moment(), moment()],
+						'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+						'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+						'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+						'This Month': [moment().startOf('month'), moment().endOf('month')],
+						'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+					},
 					locale: {
 						// format: 'YYYY-MM-DD',
 						format: 'YYYY-MMM-DD',
 						separator: " to "
             		},
 					startDate: moment().subtract(30, 'days'), endDate: moment(),
+					// startDate: '2018-06-01', endDate: moment(),
 				});
+				$("#ath_dates").val('');
+				$("#ath_dates").attr("placeholder","Select Date Range");
 
 				$("#erp_dates").daterangepicker({
+					ranges: {
+						'Today': [moment(), moment()],
+						'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+						'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+						'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+						'This Month': [moment().startOf('month'), moment().endOf('month')],
+						'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+					},
 					locale: {
 						format: 'YYYY-MMM-DD',
 						separator: " to "
             		},
 					startDate: moment().subtract(30, 'days'), endDate: moment(),
 				});
+
+				$("#erp_dates").val('');
+				$("#erp_dates").attr("placeholder","Select Date Range");
 
 				get_athena_transactions(item_code);
 				get_stock_ledger(item_code);
@@ -1932,9 +1955,13 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 							format: 'YYYY-MMM-DD',
 							separator: " to "
 						},
-						startDate: moment().subtract(30, 'days'), endDate: moment(),
+						// startDate: moment().subtract(30, 'days'), endDate: moment(),
+						startDate: '2018-01-01', endDate: moment(),
+
 					});
 				});
+				$("#ath_dates").val('');
+				$("#ath_dates").attr("placeholder","Select Date Range");
 				get_athena_transactions(item_code);
 			})
 
@@ -1948,9 +1975,13 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 							format: 'YYYY-MMM-DD',
 							separator: " to "
 						},
-						startDate: moment().subtract(30, 'days'), endDate: moment(),
+						// startDate: moment().subtract(30, 'days'), endDate: moment(),
+						startDate: '2018-01-01', endDate: moment(),
+
 					});
 				});
+				$("#erp_dates").val('');
+				$("#erp_dates").attr("placeholder","Select Date Range");
 				get_stock_ledger(item_code);
 
 			})
@@ -1980,6 +2011,10 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 						startDate: moment().subtract(30, 'days'), endDate: moment(),
 					});
 				});
+				$("#erp_dates").val('');
+				$("#erp_dates").attr("placeholder","Select Date Range");
+				$("#ath_dates").val('');
+				$("#ath_dates").attr("placeholder","Select Date Range");
 				get_stock_ledger(item_code);
 				get_athena_transactions(item_code);
 			});

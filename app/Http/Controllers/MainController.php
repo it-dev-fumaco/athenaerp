@@ -1554,10 +1554,6 @@ class MainController extends Controller
     }
 
     public function get_athena_transactions(Request $request, $item_code){
-        $dates = explode(' to ', $request->ath_dates);
-        $from = Carbon::parse($dates[0]);
-        $to = Carbon::parse($dates[1])->endOfDay();
-
         $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->get();//->paginate(10);
         if($request->wh_user != '' and $request->wh_user != 'null'){
             $logs = $logs->where('warehouse_user', $request->wh_user);
@@ -1572,6 +1568,9 @@ class MainController extends Controller
         }
 
         if($request->ath_dates != '' and $request->ath_dates != 'null'){
+            $dates = explode(' to ', $request->ath_dates);
+            $from = Carbon::parse($dates[0]);
+            $to = Carbon::parse($dates[1])->endOfDay();
             $logs = $logs->whereBetween('transaction_date',[$from, $to]);
         }
 
