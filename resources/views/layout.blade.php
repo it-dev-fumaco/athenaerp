@@ -1951,6 +1951,14 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				$('#warehouse-user-filter').empty();
 				$(function() {
 					$("#ath_dates").daterangepicker({
+						ranges: {
+							'Today': [moment(), moment()],
+							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+							'This Month': [moment().startOf('month'), moment().endOf('month')],
+							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+						},
 						locale: {
 							format: 'YYYY-MMM-DD',
 							separator: " to "
@@ -1971,6 +1979,14 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				$('#erp-warehouse-user-filter').empty();
 				$(function() {
 					$("#erp_dates").daterangepicker({
+						ranges: {
+							'Today': [moment(), moment()],
+							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+							'This Month': [moment().startOf('month'), moment().endOf('month')],
+							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+						},
 						locale: {
 							format: 'YYYY-MMM-DD',
 							separator: " to "
@@ -1995,6 +2011,14 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				$('#erp-warehouse-user-filter').empty();
 				$(function() {
 					$("#ath_dates").daterangepicker({
+						ranges: {
+							'Today': [moment(), moment()],
+							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+							'This Month': [moment().startOf('month'), moment().endOf('month')],
+							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+						},
 						locale: {
 							format: 'YYYY-MMM-DD',
 							separator: " to "
@@ -2004,6 +2028,14 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				});
 				$(function() {
 					$("#erp_dates").daterangepicker({
+						ranges: {
+							'Today': [moment(), moment()],
+							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+							'This Month': [moment().startOf('month'), moment().endOf('month')],
+							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+						},
 						locale: {
 							format: 'YYYY-MMM-DD',
 							separator: " to "
