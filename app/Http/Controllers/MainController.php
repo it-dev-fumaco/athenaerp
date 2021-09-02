@@ -71,6 +71,15 @@ class MainController extends Controller
                         ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
                 });
             })
+            // ->when($request->wh, function($q) use ($request){
+			// 	return $q->where('default_warehouse', $request->wh);
+            // })
+            // ->when($request->wh, function($q) use ($request){
+            //     $item_default_warehouse = DB::table('tabItem Default')->where   ('parent', $row->name)->first();
+            //     $default_warehouse = ($item_default_warehouse) ? $item_default_warehouse->default_warehouse : null;
+			// 	return $q->where('default_warehouse', $default_warehouse);
+            // })
+            
             ->when($request->group, function($q) use ($request){
 				return $q->where('item_group', $request->group);
             })
@@ -524,7 +533,7 @@ class MainController extends Controller
             // check if production order exist
             $production_order = DB::table('tabWork Order')->where('name', $d->work_order)->first();
 
-            $delivery_date = $production_order->delivery_date;
+            $delivery_date = ($production_order) ? $production_order->delivery_date : null;
             // $order_status = 'Unknown Status';
             $order_status = null;
             // if($production_order){
