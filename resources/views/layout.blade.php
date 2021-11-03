@@ -601,7 +601,7 @@
 									<div class="col-md-12">
 										<div class="form-group">
 											<label for="">Reservation Type</label>
-											<select name="type" class="form-control" id="select-type-c">
+											<select name="type" class="form-control" id="select-type-c" required>
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
 												<option value="Consignment">Consignment</option>
