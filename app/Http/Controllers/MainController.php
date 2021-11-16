@@ -905,7 +905,7 @@ class MainController extends Controller
         return response()->json($data);
     }
 
-    public function get_stock_reservation($item_code, $warehouse, $sales_person, $project, $consignment_warehouse){
+    public function get_stock_reservation($item_code, $warehouse, $sales_person, $project, $consignment_warehouse, $order_type = null, $po_no = null){
         $query = [];
         if($sales_person) {
             $query = DB::table('tabStock Reservation')
@@ -918,6 +918,13 @@ class MainController extends Controller
              $query = DB::table('tabStock Reservation')
                 ->where('warehouse', $warehouse)->where('item_code', $item_code)
                 ->where('consignment_warehouse', $consignment_warehouse)
+                ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
+        }
+
+        if ($order_type == 'Shopping Cart') {
+            $query = DB::table('tabStock Reservation')
+                ->where('warehouse', $warehouse)->where('item_code', $item_code)
+                ->where('reference_no', $po_no)
                 ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
         }
        
@@ -974,7 +981,7 @@ class MainController extends Controller
         $stock_reservation_details = [];
         $so_details = DB::table('tabSales Order')->where('name', $q->sales_order)->first();
         if($so_details) {
-            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->warehouse, $so_details->sales_person, $so_details->project, null);
+            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
         }
 
         $data = [
@@ -1381,7 +1388,7 @@ class MainController extends Controller
             if($request->has_reservation && $request->has_reservation == 1) {
                 $so_details = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
                 if($so_details) {
-                    $stock_reservation_details = $this->get_stock_reservation($ps_details->item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null);
+                    $stock_reservation_details = $this->get_stock_reservation($ps_details->item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
                 }
 
                 if($stock_reservation_details && $request->deduct_reserve == 1){
@@ -2800,10 +2807,10 @@ class MainController extends Controller
             ->where('warehouse', $warehouse)->sum('website_reserved_qty');
 
         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment'])->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
+            ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
 
         $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment'])->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
+            ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
 
         return ($reserved_qty_for_website + $stock_reservation_qty) + $consumed_qty;
     }
@@ -3208,16 +3215,16 @@ class MainController extends Controller
     public function update_reservation_status(){
         // update status expired
         DB::table('tabStock Reservation')->whereIn('status', ['Active', 'Partially Issued'])
-            ->whereIn('type', ['In-house', 'Consignment'])->where('valid_until', '<', Carbon::now())->update(['status' => 'Expired']);
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->where('valid_until', '<', Carbon::now())->update(['status' => 'Expired']);
         // update status partially issued
         DB::table('tabStock Reservation')
             ->whereNotIn('status', ['Cancelled', 'Issued', 'Expired'])
             ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty < reserve_qty')
-            ->whereIn('type', ['In-house', 'Consignment'])->update(['status' => 'Partially Issued']);
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->update(['status' => 'Partially Issued']);
         // update status issued
         DB::table('tabStock Reservation')->whereNotIn('status', ['Cancelled', 'Expired', 'Issued'])
          ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty >= reserve_qty')
-         ->whereIn('type', ['In-house', 'Consignment'])->update(['status' => 'Issued']);
+         ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->update(['status' => 'Issued']);
     }
 
     public function create_material_request($id){
