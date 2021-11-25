@@ -160,7 +160,11 @@
                                         <dd class="col-sm-8">{{ $data['stock_reservation']->project }}</dd>
                                         @endif
                                         <dt class="col-sm-4">Reserved Qty</dt>
+                                        @if ($data['is_bundle'])
+                                        <dd class="col-sm-8">{{ $data['qty'] }} {{ $data['stock_uom'] }}</dd>
+                                        @else
                                         <dd class="col-sm-8">{{ $data['stock_reservation']->reserve_qty - $data['stock_reservation']->consumed_qty }} {{ $data['stock_reservation']->stock_uom }}</dd>
+                                        @endif
                                     </dl>
                                 </div>
                             </div>
