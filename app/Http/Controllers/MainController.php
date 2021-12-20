@@ -958,7 +958,7 @@ class MainController extends Controller
         if(!$item_details->is_stock_item){
             $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->exists();
         }
-
+        $stock_reservation_details = [];
         $product_bundle_items = [];
         if($is_bundle){
             $query = DB::table('tabPacked Item')->where('parent_detail_docname', $q->dri_name)->get();
@@ -973,16 +973,24 @@ class MainController extends Controller
                     'available_qty' => $available_qty_row,
                     'warehouse' => $row->warehouse
                 ];
+
+                $stock_reservation_details = [];
+                $so_details = DB::table('tabSales Order')->where('name', $q->sales_order)->first();
+                if($so_details) {
+                    $stock_reservation_details = $this->get_stock_reservation($row->item_code, $q->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
+                }
+            }
+        }
+
+        if(!$stock_reservation_details) {
+            $stock_reservation_details = [];
+            $so_details = DB::table('tabSales Order')->where('name', $q->sales_order)->first();
+            if($so_details) {
+                $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
             }
         }
 
         $available_qty = $this->get_available_qty($q->item_code, $q->warehouse);
-
-        $stock_reservation_details = [];
-        $so_details = DB::table('tabSales Order')->where('name', $q->sales_order)->first();
-        if($so_details) {
-            $stock_reservation_details = $this->get_stock_reservation($q->item_code, $q->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
-        }
 
         $data = [
             'id' => $q->id,
@@ -1346,27 +1354,6 @@ class MainController extends Controller
                 br><br>Available reserved qty is <b>' . $reserved_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
             }
 
-            $sales_order = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
-            if($sales_order && in_array($sales_order->order_type, ['Shopping Cart', 'Online Shop'])) {
-                $bin_details = DB::table('tabBin')
-                    ->where('item_code', $ps_details->item_code)
-                    ->where('warehouse', $request->warehouse)
-                    ->first();
-
-                if($bin_details) {
-                    $new_reserved_qty = $bin_details->website_reserved_qty - $request->qty;
-                    $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
-
-                    $values = [
-                        "modified" => Carbon::now()->toDateTimeString(),
-                        "modified_by" => Auth::user()->wh_user,
-                        "website_reserved_qty" => $new_reserved_qty,
-                    ];
-            
-                    DB::table('tabBin')->where('name', $bin_details->name)->update($values);
-                }
-            }
-
             if($request->is_bundle){
                 $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
                 foreach ($query as $row) {
@@ -1375,11 +1362,45 @@ class MainController extends Controller
                     $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
     
                     $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
-                    
-                    $available_qty = $actual_qty - $total_issued;
 
-                    if($available_qty < $bundle_item_qty){
-                        return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
+                    $available_qty = ($actual_qty - $total_issued);
+
+                    if($request->deduct_reserve == 1){
+                        $reserved_qty = $this->get_reserved_qty($row->item_code, $row->warehouse);
+                        if ($available_qty > 0) {
+                            $available_qty = $available_qty - $reserved_qty;
+                        }
+
+                        if($available_qty < $bundle_item_qty){
+                            return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
+                        }
+
+                        $stock_reservation_details = [];
+                        if($request->has_reservation && $request->has_reservation == 1) {
+                            $so_details = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
+                            if($so_details) {
+                                $stock_reservation_details = $this->get_stock_reservation($row->item_code, $row->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
+                            }
+
+                            if($stock_reservation_details && $request->deduct_reserve == 1){
+                                $consumed_qty = $stock_reservation_details->consumed_qty + $bundle_item_qty;
+                                $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+
+                                $data = [
+                                    'modified_by' => Auth::user()->wh_user,
+                                    'modified' => Carbon::now()->toDateTimeString(),
+                                    'consumed_qty' => $consumed_qty
+                                ];
+
+                                DB::table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
+                            }
+                            
+                            $this->update_reservation_status();
+                        }
+                    } else {
+                        if($available_qty < $bundle_item_qty){
+                            return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
+                        }
                     }
                 }
             }
