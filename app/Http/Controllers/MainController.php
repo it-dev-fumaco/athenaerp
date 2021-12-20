@@ -1708,7 +1708,8 @@ class MainController extends Controller
                 $transaction = $row->voucher_type;
                 $voucher_no = $row->voucher_no;
             }else{
-                $transaction = DB::table('tabStock Entry')->where('name', $row->voucher_no)->first()->purpose;
+                $transaction = DB::table('tabStock Entry')->where('name', $row->voucher_no)->first();
+                $transaction = ($transaction) ? $transaction->purpose : null;
                 $voucher_no = $row->voucher_no;
             }
 
@@ -2803,8 +2804,9 @@ class MainController extends Controller
     }
 
     public function get_reserved_qty($item_code, $warehouse){
-        $reserved_qty_for_website = DB::table('tabBin')->where('item_code', $item_code)
-            ->where('warehouse', $warehouse)->sum('website_reserved_qty');
+        // $reserved_qty_for_website = DB::table('tabBin')->where('item_code', $item_code)
+        //     ->where('warehouse', $warehouse)->sum('website_reserved_qty');
+        $reserved_qty_for_website = 0;
 
         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
             ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
