@@ -1107,6 +1107,34 @@ class MainController extends Controller
             if ($steDetails->purpose == 'Material Transfer') {
                 if($steDetails->transfer_as == 'For Return' && $status_result == 'Returned'){
                     $this->submit_stock_entry($steDetails->parent_se);
+
+                    if ($steDetails->work_order) {
+                        $prodDetails = DB::table('tabWork Order Item')->where('parent', $steDetails->work_order)->where('item_code', $steDetails->item_code)->first();
+                        if ($prodDetails) {
+                            // check item alternative 
+                            if ($prodDetails->item_alternative_for) {
+                                // get original item code
+                                $origProdReqItem = DB::connection('mysql')->table('tabWork Order Item')
+                                    ->where('parent', $steDetails->work_order)->where('item_code', $prodDetails->item_alternative_for)->first();
+                                
+                                if ($origProdReqItem) {
+                                    // update original item code required qty
+                                    DB::connection('mysql')->table('tabWork Order Item')->where('name', $origProdReqItem->name)
+                                        ->update(['required_qty' => $origProdReqItem->required_qty + $steDetails->qty]);
+                                    
+                                    $remaining_required_alternative = ($prodDetails->required_qty - $steDetails->qty);
+                                    if ($remaining_required_alternative <= 0) {
+                                        // delete item alternative from production order required items
+                                        DB::connection('mysql')->table('tabWork Order Item')->where('name', $prodDetails->name)->delete();
+                                    } else {
+                                        // update required qty of alternative item
+                                        DB::connection('mysql')->table('tabWork Order Item')->where('name', $prodDetails->name)
+                                            ->update(['required_qty' => $remaining_required_alternative]);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
