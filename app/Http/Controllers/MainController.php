@@ -559,6 +559,7 @@ class MainController extends Controller
             $issued_qty = Arr::exists($consumed_qty, $arr_key) ? $consumed_qty[$arr_key] : 0;
             $reserved_qty = Arr::exists($stock_reservation_qty, $arr_key) ? $stock_reservation_qty[$arr_key] : 0;
 
+
             $available_qty = ($actual_qty - $issued_qty);
             $available_qty = ($available_qty - $reserved_qty);
             $available_qty = ($available_qty < 0) ? 0 : $available_qty;
@@ -862,8 +863,12 @@ class MainController extends Controller
         $stock_reservation_details = [];
         $so_details = DB::table('tabSales Order')->where('name', $ref_no)->first();
 
+        $mr_details = DB::table('tabMaterial Request')->where('name', $ref_no)->first();
+
         $sales_person = ($so_details) ? $so_details->sales_person : null;
+        $sales_person = ($mr_details) ? $mr_details->sales_person : $sales_person;
         $project = ($so_details) ? $so_details->project : null;
+        $project = ($mr_details) ? $mr_details->project : $project;
         $consignment_warehouse = null;
         if($q->transfer_as == 'Consignment') {
             $sales_person = null;
@@ -926,7 +931,8 @@ class MainController extends Controller
         if($sales_person) {
             $query = DB::table('tabStock Reservation')
                 ->where('warehouse', $warehouse)->where('item_code', $item_code)
-                ->where('sales_person', $sales_person)->where('project', $project)
+                ->where('sales_person', trim($sales_person))
+                ->where('project', $project)
                 ->whereIn('status', ['Active', 'Partially Issued'])->orderBy('creation', 'asc')->first();
         }
 
