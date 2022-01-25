@@ -45,7 +45,7 @@
 						</div>
 						<div class="card-body p-0">
 							<div class="table-responsive p-0">
-								<table class="table table-hover">
+								<table class="table table-hover" style="font-size: 10pt;">
 									<col style="width: 15%;">
 									<col style="width: 40%;">
 									<col style="width: 10%;">
@@ -82,7 +82,7 @@
 											</td>
 											<td class="text-center" style="font-size: 14pt;">@{{ x.qty | number:2 }}</td>
 											<td class="text-center">
-												<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 11pt;">@{{ x.delivery_date }}</span>
+												<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 10pt;">@{{ x.delivery_date }}</span>
 												<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
 											</td>
 											<td class="text-center">

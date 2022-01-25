@@ -47,7 +47,7 @@
 						</div>
 						<div class="card-body p-0">
 							<div class="table-responsive p-0">
-								<table class="table table-hover">
+								<table class="table table-hover" style="font-size: 10pt;">
 									<col style="width: 10%;">
 									<col style="width: 17%;">
 									<col style="width: 43%;">
