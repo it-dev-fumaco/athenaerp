@@ -1,16 +1,16 @@
 @if($is_stock_entry)
 <div class="modal-content">
     <div class="modal-header">
-        <h4 class="modal-title">Deliveries <small class="badge {{ ($data['status'] == 'For Checking') ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h4>
+        <h5 class="modal-title">Deliveries <small class="badge {{ ($data['status'] == 'For Checking') ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h5>
           <button type="button" class="close" data-dismiss="modal">&times;</button>
     </div>
     <div class="modal-body">
         <div class="row">
             <div class="col-md-12">
                 <div class="box-header with-border">
-                    <h4 class="box-title">
+                    <h5 class="box-title">
                         <span>{{ $data['s_warehouse'] }}</span>
-                    </h4>
+                    </h5>
                 </div>
                 <input type="hidden" name="child_tbl_id" value="{{ $data['name'] }}">
                 <input type="hidden" name="is_stock_entry" value="1">
@@ -88,14 +88,14 @@
 @if(!$is_stock_entry)
     <div class="modal-content">
         <div class="modal-header">
-              <h4 class="modal-title">Deliveries <small class="badge {{ ($data['status'] == 'For Checking') ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h4>
+              <h5 class="modal-title">Deliveries <small class="badge {{ ($data['status'] == 'For Checking') ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h5>
             <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
         <div class="modal-body">
             <div class="row">
                 <div class="col-md-12">
                     <div class="box-header with-border">
-                        <h4 class="box-title">{{ $data['warehouse'] }}</h4>
+                        <h5 class="box-title">{{ $data['warehouse'] }}</h5>
                     </div>
                     <input type="hidden" name="child_tbl_id" value="{{ $data['id'] }}">
                     <input type="hidden" name="is_stock_entry" value="1">

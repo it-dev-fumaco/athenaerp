@@ -516,47 +516,63 @@ class MainController extends Controller
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 
+        $item_codes = array_unique(array_column($q->toArray(), 'item_code'));
+        $item_codes_arr = [];
+        foreach ($item_codes as $item_code) {
+            array_push($item_codes_arr, $item_code);
+        }
+        $s_warehouses = array_unique(array_column($q->toArray(), 's_warehouse'));
+        $s_warehouses_arr = [];
+        foreach ($s_warehouses as $s_warehouse) {
+            array_push($s_warehouses_arr, $s_warehouse);
+        }
+
+        $work_orders = array_unique(array_column($q->toArray(), 'work_order'));
+        $work_orders_arr = [];
+        foreach ($work_orders as $work_order) {
+            array_push($work_orders_arr, $work_order);
+        }
+
+        $work_order_delivery_date = DB::table('tabWork Order')->whereIn('name', $work_orders_arr)->pluck('delivery_date', 'name');
+        
+        $item_actual_qty = DB::table('tabBin')->whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
+            ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'actual_qty')->pluck('actual_qty', 'id');
+    
+        $stock_reservation_qty = DB::table('tabStock Reservation')->whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])
+            ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'reserve_qty')->pluck('reserve_qty', 'id');
+
+        $consumed_qty = DB::table('tabStock Reservation')->whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])
+            ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'consumed_qty')->pluck('consumed_qty', 'id');
+
+        $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes_arr)
+            ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
+
+        $parent_warehouses = DB::table('tabWarehouse')->whereIn('name', $s_warehouses_arr)->pluck('parent_warehouse', 'name');
+
         $list = [];
         foreach ($q as $d) {
-            $available_qty = $this->get_available_qty($d->item_code, $d->s_warehouse);
+            $arr_key = $d->item_code . str_replace(' ', '', $d->s_warehouse);
+
+            $actual_qty = Arr::exists($item_actual_qty, $arr_key) ? $item_actual_qty[$arr_key] : 0;
+            $issued_qty = Arr::exists($consumed_qty, $arr_key) ? $consumed_qty[$arr_key] : 0;
+            $reserved_qty = Arr::exists($stock_reservation_qty, $arr_key) ? $stock_reservation_qty[$arr_key] : 0;
+
+            $available_qty = ($actual_qty - $issued_qty);
+            $available_qty = ($available_qty - $reserved_qty);
+            $available_qty = ($available_qty < 0) ? 0 : $available_qty;
 
             $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-
-            $part_nos = implode(', ', $part_nos->toArray());
+            $part_nos = Arr::exists($part_nos_query, $d->item_code) ? $part_nos_query[$d->item_code] : 0;
 
             $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
-            $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+            $parent_warehouse = (Arr::exists($parent_warehouses, $d->s_warehouse)) ? $parent_warehouses[$d->s_warehouse] : null;
 
-            // check if production order exist
-            $production_order = DB::table('tabWork Order')->where('name', $d->work_order)->first();
-
-            $delivery_date = ($production_order) ? $production_order->delivery_date : null;
-            // $order_status = 'Unknown Status';
+            $delivery_date = (Arr::exists($work_order_delivery_date, $d->work_order)) ? $work_order_delivery_date[$d->work_order] : null;
             $order_status = null;
-            // if($production_order){
-            //     if($production_order->sales_order) {
-            //         $per_item_delivery_date = DB::table('tabSales Order Item')->where('parent', $production_order->sales_order)
-            //             ->where('item_code', $production_order->parent_item_code)->first();
-
-            //         if($per_item_delivery_date){
-            //             $delivery_date = $per_item_delivery_date->rescheduled_delivery_date;
-            //         }
-
-            //         $sales_order_query = DB::table('tabSales Order')->where('name', $production_order->sales_order)->first();
-            //         if($sales_order_query) {
-            //             $order_status = ($sales_order_query->per_delivered > 0 && $sales_order_query->per_delivered < 100) ? 'Partially Delivered' : 'Fully Delivered';
-            //             $order_status = ($sales_order_query->per_delivered <= 0) ? 'To Deliver' : $order_status;
-            //         }
-            //     } else {
-            //         $material_request_query = DB::table('tabMaterial Request')->where('name', $production_order->material_request)->first();
-            //         if($material_request_query) {
-            //             $order_status = $material_request_query->status;
-            //         }
-            //     }
-            // }
 
             $list[] = [
                 'customer' => $d->so_customer_name,

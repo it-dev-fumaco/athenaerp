@@ -44,7 +44,7 @@
 							<h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
 						</div>
 						<div class="table-responsive p-0">
-							<table class="table table-hover">
+							<table class="table table-hover" style="font-size: 10pt;">
 								<col style="width: 17%;">
 								<col style="width: 33%;">
 								<col style="width: 15%;">
@@ -78,13 +78,13 @@
 											<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 										</td>
 										<td class="text-center">
-											<span class="qty" style="font-size: 14pt;"><b>@{{ x.qty_to_manufacture }}</b></span>
+											<span class="qty" style="font-size: 12pt;"><b>@{{ x.qty_to_manufacture }}</b></span>
 										</td>
 										<td class="text-center">
-											<span class="badge badge-success qty" style="font-size: 14pt;"><b>@{{ x.qty_to_receive }}</b></span>
+											<span class="badge badge-success qty" style="font-size: 12pt;"><b>@{{ x.qty_to_receive }}</b></span>
 										</td>
 										<td class="text-center">
-											<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 11pt;">@{{ x.delivery_date }}</span>
+											<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 10pt;">@{{ x.delivery_date }}</span>
 											<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
 										</td>
 										<td class="text-center">
