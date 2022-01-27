@@ -78,7 +78,12 @@
 												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-												<img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" style="width: 200px !important;">
+												{{-- <img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" style="width: 200px !important;"> --}}
+												<picture>
+													<source srcset="{{ asset('storage/') .''. explode('.', $img)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
+													<source srcset="{{ asset('storage/') .''. $img }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
+													<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
+												</picture>
 											</a>
 										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
@@ -283,6 +288,9 @@
 		}
 </style>
 
+@endsection
+
+@section('script')
 <script>
 	function activeBtn(){
 		var values = [];
@@ -299,10 +307,4 @@
 	}
 	window.onload=activeBtn;
 </script>
-
-
-@endsection
-
-@section('script')
-
 @endsection

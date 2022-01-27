@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Arr;
 use Auth;
 use DB;
+use Webp;
 
 class MainController extends Controller
 {
@@ -1895,15 +1896,21 @@ class MainController extends Controller
             foreach ($files as $i => $file) {
                //get filename with extension
                 $filenamewithextension = $file->getClientOriginalName();
-                //get filename without extension
+                // //get filename without extension
                 $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
                 //get file extension
                 $extension = $file->getClientOriginalExtension();
                 //filename to store
                 $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.' . $extension;
-                // Storage::put('public/employees/'. $filenametostore, fopen($file, 'r+'));
-                Storage::put('public/img/'. $filenametostore, fopen($file, 'r+'));
 
+                $destinationPath = storage_path('app/public/img/');
+
+                $webp = Webp::make($file);
+
+                if($webp->save(storage_path('app/public/img/'.round(microtime(true)) . $i . '-'. $request->item_code.'.webp'))) {
+                    $file->move($destinationPath, $filenametostore);
+                }
+    
                 $item_images_arr[] = [
                     'name' => uniqid(),
                     'creation' => $now->toDateTimeString(),
@@ -1917,7 +1924,7 @@ class MainController extends Controller
                     'image_path' => $filenametostore
                 ];
             }
-
+            
             DB::table('tabItem Images')->insert($item_images_arr);
 
             return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been uploaded.']);

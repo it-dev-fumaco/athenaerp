@@ -1637,7 +1637,12 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 							var image_src = storage + '/' + d;
 							$("<div class=\"col-md-4 pip img_upload\">" +
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
-							"<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
+							// "<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
+							"<picture>" +
+								'<source srcset="' + storage + '/' + d.split('.')[0] + '" type="image/webp" class="img-responsive" style="width: 100% !important;">' +
+								'<source srcset="' + image_src + '" type="image/jpeg" class="img-responsive" style="width: 100% !important;">' +
+								'<img src="' + image_src + '" alt="' + d.split('.')[0] + '" class="img-responsive hover" style="width: 100% !important;">' +
+							'</picture>' +
 							"<span class=\"add-fav remove\">&times;</span>" +
 							"</div>").insertAfter("#image-previews");
 						});
