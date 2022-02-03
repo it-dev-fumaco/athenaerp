@@ -958,7 +958,7 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.name as id', 'dri.warehouse', 'psi.status', 'psi.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom')
             ->first();
 
         if(!$q){
@@ -1009,6 +1009,12 @@ class MainController extends Controller
 
         $available_qty = $this->get_available_qty($q->item_code, $q->warehouse);
 
+        $uom_conversion = [];
+        if ($q->uom != $q->stock_uom) {
+            $uom_conversion = DB::table('tabUOM Conversion Detail')->where('parent', $q->item_code)
+                ->whereIn('uom', [$q->uom, $q->stock_uom])->orderBy('idx', 'asc')->get();
+        }
+
         $data = [
             'id' => $q->id,
 	        'barcode' => $q->barcode,
@@ -1020,13 +1026,15 @@ class MainController extends Controller
             'sales_order' => $q->sales_order,
             'status' => $q->status,
             'stock_uom' => $q->stock_uom,
+            'uom' => $q->uom,
             'qty' => ($q->qty * 1),
             'warehouse' => $q->warehouse,
             'available_qty' => $available_qty,
             'is_bundle' => $is_bundle,
             'product_bundle_items' => $product_bundle_items,
             'dri_name' => $q->dri_name,
-            'stock_reservation' => $stock_reservation_details
+            'stock_reservation' => $stock_reservation_details,
+            'uom_conversion' => $uom_conversion
         ];
 
         $is_stock_entry = false;
@@ -3171,8 +3179,8 @@ class MainController extends Controller
                 ->where('ps.docstatus', 0)
                 ->where('dri.docstatus', 0)
                 ->whereIn('dri.warehouse', $allowed_warehouses)
-                ->select('dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->groupBy('dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.stock_uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->select('dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
+                ->groupBy('dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
                 ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")->get();
 
         $list = [];
@@ -3192,13 +3200,14 @@ class MainController extends Controller
                 'customer' => $d->customer,
                 'sales_order' => $d->sales_order,
                 'id' => $d->id,
+                'part_nos' => $part_nos,
                 'status' => $d->status,
                 'name' => $d->name,
                 'delivery_note' => $d->delivery_note,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 'qty' => $d->qty,
-                'stock_uom' => $d->stock_uom,
+                'stock_uom' => $d->uom,
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                 'type' => 'picking_slip',
@@ -3232,6 +3241,7 @@ class MainController extends Controller
                     'customer' => $d->customer_1,
                     'sales_order' => $d->sales_order_no,
                     'id' => $d->id,
+                    'part_nos' => $part_nos,
                     'status' => $d->status,
                     'name' => $d->name,
                     'delivery_note' => null,

@@ -80,14 +80,17 @@
 												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
 												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 											</td>
-											<td class="text-center" style="font-size: 14pt;">@{{ x.qty | number:2 }}</td>
+											<td class="text-center">
+												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
+												<span class="d-block">@{{ x.stock_uom }}</span>
+											</td>
 											<td class="text-center">
 												<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 10pt;">@{{ x.delivery_date }}</span>
 												<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
 											</td>
 											<td class="text-center">
 												<span class="d-block">@{{ x.sales_order }}</span>
-												<span class="d-block">@{{ x.delivery_note }}</span>
+												<span class="d-none">@{{ x.delivery_note }}</span>
 												<small class="d-block mt-2">@{{ x.customer }}</small>
 												<small class="d-block mt-3">@{{ x.classification }}</small>
 											</td>
