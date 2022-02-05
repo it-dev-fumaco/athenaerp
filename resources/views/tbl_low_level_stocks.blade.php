@@ -29,9 +29,9 @@
                     <div class="p-1">
                         <a href="{{ asset('storage/') . $img }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
                             <picture>
-                                <source srcset="{{ asset('storage/') .''. explode('.', $img)[0].'.webp' }}" type="image/webp" class="img-size-50">
-                                <source srcset="{{ asset('storage/') .''. $img }}" type="image/jpeg" class="img-size-50">
-                                <img src="{{ asset('storage/') .''. $img }}" class="img-size-50">
+                                <source srcset="{{ asset('storage/').explode('.', $img)[0].'.webp' }}" type="image/webp" class="img-size-50">
+                                <source srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="img-size-50">
+                                <img src="{{ asset('storage/').$img }}" class="img-size-50">
                             </picture>
                         </a>
                     </div>

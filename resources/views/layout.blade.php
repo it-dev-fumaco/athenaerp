@@ -49,12 +49,34 @@
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
 					<div class="row w-100">
-						<div class="col-xl-9 col-lg-10 col-md-10">
+						<div class="col-xl-9 col-lg-10 col-md-12">
 							<div class="row">
-								<div class="col-md-9 col-xl-5 col-lg-3 text-center">
+								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-center">
 									<a href="/" class="navbar-brand">
 										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 									</a>
+								</div>
+								<div class="col-2 col-md-3 d-block d-lg-none">
+									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
+										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
+											<div class="btn-group icon-container mt-2" role="group">
+												<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="40" height="40"><i class="fas fa-caret-down ml-2"></i>
+											</div>
+										</a>
+										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+											<span class="dropdown-header">Warehouse Access</span>
+											<div id="allowed-warehouse-div">
+												<div class="dropdown-divider"></div>
+												<a href="#" class="dropdown-item text-center">
+													<i class="fas fa-info-circle mr-2"></i>	No warehouse assigned	  
+												</a>
+											</div>
+											<div class="dropdown-divider"></div>
+											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
+												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
+											</a>
+										</div>
+									</li>
 								</div>
 								<div class="col-md-12 col-xl-7 col-lg-9 align-middle">
 									<form role="search" method="GET" action="/search_results" id="search-form">
@@ -63,12 +85,12 @@
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											<div class="input-group-append mr-3 ml-3" id="item-group-filter-parent" style="font-size: 11pt;">
+											<div class="input-group-append" id="item-group-filter-parent" style="font-size: 11pt;">
 												<select id="item-group-filter" class="btn btn-default">
 												</select>
 											</div>
 											<button class="btn btn-default" type="submit">
-												<i class="fas fa-search"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Search</span>
+												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
 											</button>
 										</div>
 									</form>
@@ -76,7 +98,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
+						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-8 text-right">
 									<a class="nav-link text-white" data-toggle="dropdown" href="#">
@@ -93,7 +115,7 @@
 										</div>
 									</div>
 								</li>
-								<li class="nav-item dropdown text-right">
+								<li class="d-none d-lg-block nav-item dropdown text-right">
 									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
 								</li>
 							</ul>
@@ -297,6 +319,22 @@
 			transition: all 200ms ease-in;
 			transform: scale(1.2);
 		}
+		.mob-dropdown-container{
+			position: absolute !important;
+			right: 0 !important;
+			top: 5 !important;
+		}
+		@media (max-width: 575.98px) {
+			.copyright{
+				font-size: 10pt;
+			}
+		}
+	  	@media (max-width: 767.98px) {
+			.copyright{
+				font-size: 10pt;
+			}
+		}
+
 	</style>
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
@@ -784,7 +822,7 @@
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong>Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong class="copyright">Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 

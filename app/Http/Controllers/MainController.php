@@ -1909,16 +1909,23 @@ class MainController extends Controller
                 //get file extension
                 $extension = $file->getClientOriginalExtension();
                 //filename to store
-                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.' . $extension;
+                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
 
                 $destinationPath = storage_path('app/public/img/');
+
+                $jpeg_file = round(microtime(true)) . $i . '-'. $request->item_code.$extension;
 
                 $webp = Webp::make($file);
 
                 if($webp->save(storage_path('app/public/img/'.round(microtime(true)) . $i . '-'. $request->item_code.'.webp'))) {
-                    $file->move($destinationPath, $filenametostore);
+                    $file->move($destinationPath, $jpeg_file);
                 }
-    
+
+                $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
+                if (file_exists($jpeg_path)) {
+                    unlink($jpeg_path);
+                }
+
                 $item_images_arr[] = [
                     'name' => uniqid(),
                     'creation' => $now->toDateTimeString(),
