@@ -35,25 +35,6 @@ class MainController extends Controller
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
-        // $itemClass = DB::table('tabItem')->where('disabled', 0)
-        //     ->where('has_variants', 0)->where('is_stock_item', 1)->select('item_classification')
-        //     ->where('description', 'LIKE', "%".$request->searchString."%" )
-        //     ->where('item_classification', 'LIKE', $request->classification)
-        //     ->orWhere('name', 'LIKE', "%".$request->searchString."%")
-        //     ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
-        //     ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
-        //     ->orWhere('item_classification', 'LIKE', '%'.$request->searchString.'%')
-        //     ->orderby('item_classification','asc')
-        //     ->distinct('item_classification')
-        //     ->get();
-
-        // $itemClassCount = count($itemClass);
-        // if($itemClassCount >= 2){
-        //     $getFirst = $itemClass->keys()->first();
-        //     $itemClass = $itemClass->forget($getFirst); // First item is null, first item is removed
-        // }
-
-        // $items = DB::table('tabItem')->where('disabled', 0)
         if($request->wh == ''){
 
         $itemQ = DB::table('tabItem')->where('disabled', 0)
@@ -128,11 +109,6 @@ class MainController extends Controller
         $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
         $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->paginate(20);
 
-        // return $items;
-        // $WhFilter = $itemWhFilter->where('d.default_warehouse', $request->wh)->get();
-        // return $WhFilter;
-
-        // return $items;
 
         $input = [];
 
@@ -149,29 +125,6 @@ class MainController extends Controller
 
             $saveSrch = DB::table('tabAthena Inventory Search History')->insert($input);
         }
-
-        // $test = $item->join('tabItem Default as d', 'i.item_code', 'd.parent')
-        //     ->where('d.default_warehouse', $request->wh)
-        //     ->get();
-        // return $test;
-            // return $itemClass;
-        // $transaction_test = DB::table('tabAthena Transactions as a')
-        //     ->join('tabItem as i', 'i.name', 'a.item_code')
-        //     ->select('a.item_code')->where('i.description', 'LIKE', '%'.$request->searchString.'%')
-        //     ->selectRaw('count(a.item_code) as qty')
-        //     ->groupBy('a.item_code')
-        //     ->orderby('qty', 'desc')
-        //     ->get();
-        // $transaction_test = DB::table('tabItem')->select('name')
-        //     ->selectRaw(DB::raw('(select count(item_code) as qty from `tabAthena Transactions`)'))
-        //     // ->select(DB::raw('(select count(item_code) as qty from `tabAthena Transactions` group by item_code order by qty desc;)'))
-        //     ->orderByRaw(DB::raw('(select count(item_code) from `tabAthena Transactions`)'), 'desc')
-        //     // ->groupBy(DB::raw('(select item_code from `tabAthena Transactions`)'))
-        //     ->get();
-            
-        // return $transaction_test;
-
-        // return $items;
 
         $url = $request->fullUrl();
 
@@ -229,9 +182,6 @@ class MainController extends Controller
             }
 
             $part_nos = DB::table('tabItem Supplier')->where('parent', $row->name)->pluck('supplier_part_no');
-
-            // $item_default_warehouse = DB::table('tabItem Default')->where   ('parent', $row->name)->first();
-            // $default_warehouse = ($item_default_warehouse) ? $item_default_warehouse->default_warehouse : null;
 
             $part_nos = implode(', ', $part_nos->toArray());
 
@@ -1828,7 +1778,7 @@ class MainController extends Controller
                 'actual_qty' => $row->actual_qty * 1,
                 'qty_after_transaction' => $row->qty_after_transaction * 1,
                 'ref_no' => $ref_no,
-                'date_modified' => $date_modified,
+                'date_modified' => Carbon::parse($date_modified),
                 'session_user' => $session_user,
                 'posting_date' => $row->posting_date,//cccc
             ];

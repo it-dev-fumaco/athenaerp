@@ -1,27 +1,38 @@
+<br class="d-md-none">
 <table class="table table-hover" style="font-size: 11pt;">
     <thead>
       <tr>
-        <th scope="col" class="col-xs-2" style="text-align:center;">Transaction No.</th>
-        <th scope="col" class="col-xs-2" style="text-align:center;">Warehouse</th>
-        <th scope="col" class="col-xs-3" style="text-align:center;">Transaction</th>
-        <th scope="col" class="col-xs-1" style="text-align:center;">Qty</th>
-        <th scope="col" class="col-xs-1" style="text-align:center;">Balance Qty</th>
-        <th scope="col" class="col-xs-1" style="text-align:center;">Ref. No.</th>
-        <th scope="col" class="col-xs-1" style="text-align:center;">Date</th>
-        <th scope="col" class="col-xs-2" style="text-align:center;">Transact by</th>
+        <th scope="col" class="col-xs-2 font-responsive text-center">Transaction No.</th>
+        <th scope="col" class="col-xs-2 font-responsive text-center d-md-none">Details</th>
+        <th scope="col" class="col-xs-2 font-responsive text-center d-none d-sm-table-cell">Warehouse</th>
+        <th scope="col" class="col-xs-3 font-responsive text-center d-none d-sm-table-cell">Transaction</th>
+        <th scope="col" class="col-xs-1 font-responsive text-center d-none d-sm-table-cell">Qty</th>
+        <th scope="col" class="col-xs-1 font-responsive text-center d-none d-sm-table-cell">Balance Qty</th>
+        <th scope="col" class="col-xs-1 font-responsive text-center d-none d-sm-table-cell">Ref. No.</th>
+        <th scope="col" class="col-xs-1 font-responsive text-center d-none d-sm-table-cell">Date</th>
+        <th scope="col" class="col-xs-2 font-responsive text-center d-none d-sm-table-cell">Transact by</th>
       </tr>
     </thead>
     <tbody>
     @forelse ($list as $row)
     <tr>
-        <td style="text-align:center;">{{ $row['voucher_no'] }}</td>
-        <td style="text-align:center;">{{ $row['warehouse'] }}</td>
-        <td style="text-align:center;">{{ $row['transaction'] }}</td>
-        <td style="text-align:center;">{{ $row['actual_qty'] }}</td>
-        <td style="text-align:center;">{{ $row['qty_after_transaction'] }}</td>
-        <td style="text-align:center;">{{ $row['ref_no'] }}</td>
-        <td style="text-align:center;">{{ $row['date_modified'] }}</td>
-        <td style="text-align:center;">{{ $row['session_user'] }}</td>
+        <td class="text-center font-responsive">{{ $row['voucher_no'] }}</td>
+        <td class="d-md-none font-responsive" style="width: 70%">
+          <span><b>Warehouse:</b> {{ $row['warehouse'] }}</span><br>
+          <span><b>Transaction:</b> {{ $row['transaction'] }}</span><br>
+          <span><b>Qty:</b> {{ $row['actual_qty'] }}</span><br>
+          <span><b>Balance Qty:</b> {{ $row['qty_after_transaction'] }}</span><br>
+          <span><b>Ref. No.:</b> {{ $row['ref_no'] }}</span><br>
+          <span><b>Date:</b> {{ $row['date_modified'] }}</span><br>
+          <span><b>Transact by:</b> {{ $row['session_user'] }}</span>
+        </td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['warehouse'] }}</td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['transaction'] }}</td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['actual_qty'] }}</td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['qty_after_transaction'] }}</td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['ref_no'] }}</td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['date_modified'] }}</td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['session_user'] }}</td>
       </tr>
     @empty
     <tr>

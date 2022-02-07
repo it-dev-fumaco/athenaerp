@@ -247,50 +247,12 @@
 		border: none;
 	}
 
-	/* .classPanel{
-		min-width: 150px; 
-		height: 58px; 
-		display: inline-block; 
-		margin: 5px; 
-		background-color: white;
-		padding-right: 5px;
-		border-radius: 5px;
-		transition: .4s;
+	.responsive-item-code{
+		font-size: 14pt
 	}
-
-	.classPanelAbbr{
-		background-color: #001F3F !important;
-		min-width: 50px;
-		height: 58px; 
-		display: inline-block; 
-		color: #fff; 
-		padding: 11px;
-		font-weight: 700;
-		font-size: 20px;
-		border-top-left-radius: 5px;
-		border-bottom-left-radius: 5px;
-		margin-right: -2px;
+	.responsive-description{
+		font-size: 11pt
 	}
-
-	.classPanelName{
-		min-width: 100px;
-		min-height: 60px;
-		display: inline-block;
-		text-align: center;
-	}
-	
-	.classPanelBtn{
-		color: #000;
-		border: white;
-		border-top-right-radius: 5px;
-		border-bottom-right-radius: 5px;
-		min-height: 50px;
-		min-width: 150px !important;
-		display: inline-block !important;
-		cursor: pointer;
-		transition: .4s;
-	} */
-
 	.category-btn-grp{
 		transition: .4s;
 	}
@@ -298,10 +260,6 @@
 	.category-btn-grp:hover{
 		box-shadow: 8px 1px 12px #001F3F;
 	}
-
-	/* .classPanel:focus{
-		outline: none !important;
-	} */
 
 	.cLink{
 		text-decoration: none !important;
@@ -355,8 +313,11 @@
 		background-color: #fff;
 		border-radius: 0 5px 5px 0
 	}
+	.stock-ledger-table-font{
+		font-size: 11pt;
+	}
 	@media (max-width: 575.98px) {
-        .font-responsive{
+        .font-responsive, .responsive-item-code, .stock-ledger-table-font{
 			font-size: 10pt !important;
 		}
 		.item-class, .item-name{
@@ -395,7 +356,7 @@
 		}
     }
   	@media (max-width: 767.98px) {
-        .font-responsive{
+        .font-responsive, .responsive-description, .stock-ledger-table-font{
 			font-size: 10pt !important;
 		}
 		#warehouse-filter-parent{
@@ -436,22 +397,3 @@
 </style>
 
 @endsection
-
-{{-- @section('script')
-<script>
-	function activeBtn(){
-		var values = [];
-		$('input:button').each(
-			function() {
-				if (values.indexOf(this.value) >= 0) {
-					$(this).css("box-shadow", "8px 1px 12px #001F3F");
-				} else {
-					$(this).css("border-color", "");
-					values.push(this.value);
-				}
-			}
-		);
-	}
-	window.onload=activeBtn;
-</script>
-@endsection --}}

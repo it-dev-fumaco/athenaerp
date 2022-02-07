@@ -328,10 +328,16 @@
 			.copyright{
 				font-size: 10pt;
 			}
+			.responsive-modal-title{
+				font-size: 12pt;
+			}
 		}
 	  	@media (max-width: 767.98px) {
 			.copyright{
 				font-size: 10pt;
+			}
+			.responsive-modal-title{
+				font-size: 12pt;
 			}
 		}
 
@@ -341,7 +347,7 @@
 		<div class="modal-dialog" role="document" style="min-width: 90%;">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h4 class="modal-title">Item Inquiry</h4>
+					<h4 class="modal-title responsive-modal-title">Item Inquiry</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
@@ -353,17 +359,29 @@
 							<div class="nav-tabs-custom">
 								<ul class="nav nav-tabs" id="item-tabs" role="tablist">
 									<li class="nav-item">
-										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">Item Info</a>
+										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">
+											<span class="d-none d-md-block">Item Info</span>
+											<i class="fas fa-info d-block d-md-none"></i>
+										</a>
 									</li>
 									<li class="nav-item">
-										<a class="nav-link" data-toggle="pill" href="#tab_2" role="tab" aria-controls="custom-tabs-three-2" aria-selected="false">Athena Transactions</a>
+										<a class="nav-link" data-toggle="pill" href="#tab_2" role="tab" aria-controls="custom-tabs-three-2" aria-selected="false">
+											<span class="d-none d-md-block">Athena Transactions</span>
+											<i class="fas fa-boxes d-block d-md-none"></i>
+										</a>
 									</li>
 									<li class="nav-item">
-										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">ERP Submitted Transaction Histories</a>
+										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">
+											<span class="d-none d-md-block">ERP Submitted Transaction Histories</span>
+											<i class="fas fa-history d-block d-md-none"></i>
+										</a>
 									</li>
 									@if(in_array(Auth::user()->user_group, ['Inventory Manager']))
 									<li class="nav-item">
-										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">Stock Reservations</a>
+										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">
+											<span class="d-none d-md-block">Stock Reservations</span>
+											<i class="fas fa-warehouse d-block d-md-none"></i>
+										</a>
 									</li>
 									@endif
 								</ul>
@@ -384,13 +402,13 @@
 																	<i class="far fa-calendar-alt"></i>
 																</span>
 															</div>
-															<input type="text" name="dates" class="form-control float-right" id="ath_dates" placeholder="Select a Range">
+															<input type="text" name="dates" class="form-control float-right font-responsive" id="ath_dates" placeholder="Select a Range">
 														</div>
 													</div>
 												</div>
 												
 												<div class="col-md-2 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
 														<select name="ath-src-warehouse" id="ath-src-warehouse-filter" class="form-control">
 															
 														</select>
@@ -398,7 +416,7 @@
 												</div>
 
 												<div class="col-md-2 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
 														<select name="ath-to-warehouse" id="ath-to-warehouse-filter" class="form-control">
 															
 														</select>
@@ -406,7 +424,7 @@
 												</div>
 
 												<div class="col-md-2 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="warehouse-user-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="warehouse-user-filter-parent" style="z-index: 1050">
 														<select name="warehouse_user" id="warehouse-user-filter" class="form-control">
 															
 														</select>
@@ -414,9 +432,9 @@
 												</div>
 
 												<div class="col-md-2" style="display: inline-block">
-													<button class="btn btn-secondary" id="athReset">Reset Filters</button>
+													<button class="btn btn-secondary font-responsive" id="athReset">Reset Filters</button>
 												</div>
-												<div class="box-body table-responsive no-padding" id="athena-transactions-table"></div>
+												<div class="box-body table-responsive no-padding font-responsive" id="athena-transactions-table"></div>
 											</div>
 										</div>
 									</div>
@@ -426,20 +444,19 @@
 												
 												<div class="col-md-3 p-0" style="display: inline-block;">
 													<div class="form-group m-1">
-														{{-- <label>Date range:</label> --}}
 														<div class="input-group">
 															<div class="input-group-prepend">
 																<span class="input-group-text">
 																	<i class="far fa-calendar-alt"></i>
 																</span>
 															</div>
-															<input type="text" name="erpdates" class="form-control float-right" id="erp_dates">
+															<input type="text" name="erpdates" class="form-control float-right font-responsive" id="erp_dates">
 														</div>
 													</div>
 												</div>
 
 												<div class="col-md-3 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="erp-warehouse-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="erp-warehouse-filter-parent" style="z-index: 1050">
 														<select name="erp-warehouse" id="erp-warehouse-filter" class="form-control">
 															
 														</select>
@@ -447,7 +464,7 @@
 												</div>
 
 												<div class="col-md-3 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
 														<select name="erp-warehouse-user" id="erp-warehouse-user-filter" class="form-control">
 															
 														</select>
@@ -455,10 +472,10 @@
 												</div>
 
 												<div class="col-md-2" style="display: inline-block">
-													<button class="btn btn-secondary" id="erpReset">Reset Filters</button>
+													<button class="btn btn-secondary font-responsive" id="erpReset">Reset Filters</button>
 												</div>
 
-												<div class="box-body table-responsive no-padding" id="stock-ledger-table"></div>
+												<div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
 											</div>
 										</div>
 									</div>
@@ -469,9 +486,9 @@
 													$attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
 												@endphp
 												<div class="float-right m-2">
-													<button class="btn btn-primary" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
+													<button class="btn btn-primary font-responsive" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
 												</div>
-												<div class="box-body table-responsive no-padding" id="stock-reservation-table"></div>
+												<div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
 											</div>
 										</div>
 									</div>
@@ -481,7 +498,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" id="resetAll" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" id="resetAll" class="btn btn-default font-responsive" data-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
