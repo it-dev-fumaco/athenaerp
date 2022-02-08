@@ -35,8 +35,8 @@ return [
     'drivers' => [
 
         'cwebp' => [
-            // 'path' => '/usr/local/bin/cwebp',
-            'path' => 'C:\xampp\htdocs\cwebp'
+            'path' => '/usr/local/bin/cwebp',
+            //'path' => 'C:\xampp\htdocs\cwebp'
         ],
 
     ],
