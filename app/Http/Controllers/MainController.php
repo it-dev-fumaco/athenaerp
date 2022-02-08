@@ -291,7 +291,7 @@ class MainController extends Controller
                 ->orWhere('item_group', 'like', '%'.$request->search_string.'%')
                 ->orWhere('stock_uom', 'like', '%'.$request->search_string.'%')
                 ->orWhere('supplier_part_no', 'like', '%'.$request->search_string.'%')
-                ->orWhere('manufacturer_part_no', 'like', '%'.$request->search_string.'%');
+                ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->search_string."%");
             })
             ->select('tabItem.name', 'description', 'item_image_path')
             ->orderBy('tabItem.modified', 'desc')->paginate(8);
