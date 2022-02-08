@@ -69,14 +69,14 @@
 									<div class="col-md-3 display-inline-block float-left p-2 text-center">
 										@forelse ($row['item_image_paths'] as $item_image)
 											@php
-												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
+												$img = ($item_image->image_path) ? "/img/" . explode('.',$item_image->image_path)[0].'.webp' : "/icon/no_img.webp";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
 												<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
 											</a>
 										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-												<img src="{{ asset('storage/icon/no_img.png') }}" class="img-thumbnail search-thumbnail">
+												<img src="{{ asset('storage/icon/no_img.webp') }}" class="img-thumbnail search-thumbnail">
 											</a>
 										@endforelse
 										<div class="text-center d-block d-md-none"><br/>

@@ -3,52 +3,36 @@
         <div class="box box-solid mt-2">
             <div class="row">
                 @php
-                    $img_1 = (array_key_exists(0, $item_images)) ? '/img/' . $item_images[0] : '/icon/no_img.png';
+                    $img_1 = (array_key_exists(0, $item_images)) ? '/img/' . explode('.', $item_images[0])[0].'.webp' : '/icon/no_img.webp';
                     $img_1_alt = (array_key_exists(0, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_1)[0], '-') : null;
-                    $img_2 = (array_key_exists(1, $item_images)) ? '/img/' . $item_images[1] : '/icon/no_img.png';
+                    $img_2 = (array_key_exists(1, $item_images)) ? '/img/' . explode('.', $item_images[1])[0].'.webp' : '/icon/no_img.webp';
                     $img_2_alt = (array_key_exists(1, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_2)[0], '-') : null;
-                    $img_3 = (array_key_exists(2, $item_images)) ? '/img/' . $item_images[2] : '/icon/no_img.png';
+                    $img_3 = (array_key_exists(2, $item_images)) ? '/img/' . explode('.', $item_images[2])[0].'.webp' : '/icon/no_img.webp';
                     $img_3_alt = (array_key_exists(2, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_3)[0], '-') : null;
-                    $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . $item_images[3] : '/icon/no_img.png';
+                    $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                     $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
                 @endphp
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-12">
                             <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <picture>
-                                    <source srcset="{{ asset('storage/') .''. explode('.', $img_1)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
-                                    <source srcset="{{ asset('storage/') .''. $img_1 }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
-                                    <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : 'border border-secondary' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
-                                </picture>
+                                <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : 'border border-secondary' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
                             </a>
                         </div>
                         <div class="col-4 mt-2">
                             <a href="{{ asset('storage/') . $img_2 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <picture>
-                                    <source srcset="{{ asset('storage/') .''. explode('.', $img_2)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
-                                    <source srcset="{{ asset('storage/') .''. $img_2 }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
-                                    <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                </picture>
+                                <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
                             </a>
                         </div>
                         <div class="col-4 mt-2"> 
                             <a href="{{ asset('storage/') . $img_3 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <picture>
-                                    <source srcset="{{ asset('storage/') .''. explode('.', $img_3)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
-                                    <source srcset="{{ asset('storage/') .''. $img_3 }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
-                                    <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                </picture>
+                                <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
                             </a>
                         </div>
                         <div class="col-4 mt-2">
                             <a href="{{ asset('storage/') . $img_4 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 <div class="text-white">
-                                    <picture>
-                                        <source srcset="{{ asset('storage/') .''. explode('.', $img_4)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
-                                        <source srcset="{{ asset('storage/') .''. $img_4 }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
-                                        <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                    </picture>
+                                    <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
                                     @if(count($item_images) > 4)
                                         <div class="card-img-overlay text-center">
                                             <h5 class="card-title m-1 font-weight-bold">MORE</h5>
@@ -184,7 +168,7 @@
                             <div class="d-flex flex-row">
                                 <div class="pt-2 pb-2 pr-1 pl-1">
                                     @php
-                                        $img = ($a['item_alternative_image']) ? '/img/' . $a['item_alternative_image'] : '/icon/no_img.png';
+                                        $img = ($a['item_alternative_image']) ? '/img/' . explode('.', $a['item_alternative_image'])[0].'.webp' : '/icon/no_img.webp';
                                     @endphp
                                     <a href="{{ asset('storage') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
                                         <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80">
