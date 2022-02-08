@@ -49,12 +49,34 @@
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
 					<div class="row w-100">
-						<div class="col-xl-9 col-lg-10 col-md-10">
+						<div class="col-xl-9 col-lg-10 col-md-12">
 							<div class="row">
-								<div class="col-md-9 col-xl-5 col-lg-3 text-center">
+								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-center">
 									<a href="/" class="navbar-brand">
 										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 									</a>
+								</div>
+								<div class="col-2 col-md-3 d-block d-lg-none">
+									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
+										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
+											<div class="btn-group icon-container mt-2" role="group">
+												<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="40" height="40"><i class="fas fa-caret-down ml-2"></i>
+											</div>
+										</a>
+										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+											<span class="dropdown-header">Warehouse Access</span>
+											<div id="allowed-warehouse-div">
+												<div class="dropdown-divider"></div>
+												<a href="#" class="dropdown-item text-center">
+													<i class="fas fa-info-circle mr-2"></i>	No warehouse assigned	  
+												</a>
+											</div>
+											<div class="dropdown-divider"></div>
+											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
+												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
+											</a>
+										</div>
+									</li>
 								</div>
 								<div class="col-md-12 col-xl-7 col-lg-9 align-middle">
 									<form role="search" method="GET" action="/search_results" id="search-form">
@@ -63,12 +85,12 @@
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											<div class="input-group-append mr-3 ml-3" id="item-group-filter-parent" style="font-size: 11pt;">
+											<div class="input-group-append" id="item-group-filter-parent" style="font-size: 11pt;">
 												<select id="item-group-filter" class="btn btn-default">
 												</select>
 											</div>
 											<button class="btn btn-default" type="submit">
-												<i class="fas fa-search"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Search</span>
+												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
 											</button>
 										</div>
 									</form>
@@ -76,7 +98,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
+						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-8 text-right">
 									<a class="nav-link text-white" data-toggle="dropdown" href="#">
@@ -93,7 +115,7 @@
 										</div>
 									</div>
 								</li>
-								<li class="nav-item dropdown text-right">
+								<li class="d-none d-lg-block nav-item dropdown text-right">
 									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
 								</li>
 							</ul>
@@ -297,13 +319,35 @@
 			transition: all 200ms ease-in;
 			transform: scale(1.2);
 		}
+		.mob-dropdown-container{
+			position: absolute !important;
+			right: 0 !important;
+			top: 5 !important;
+		}
+		@media (max-width: 575.98px) {
+			.copyright{
+				font-size: 10pt;
+			}
+			.responsive-modal-title{
+				font-size: 12pt;
+			}
+		}
+	  	@media (max-width: 767.98px) {
+			.copyright{
+				font-size: 10pt;
+			}
+			.responsive-modal-title{
+				font-size: 12pt;
+			}
+		}
+
 	</style>
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
 		<div class="modal-dialog" role="document" style="min-width: 90%;">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h4 class="modal-title">Item Inquiry</h4>
+					<h4 class="modal-title responsive-modal-title">Item Inquiry</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
@@ -315,17 +359,29 @@
 							<div class="nav-tabs-custom">
 								<ul class="nav nav-tabs" id="item-tabs" role="tablist">
 									<li class="nav-item">
-										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">Item Info</a>
+										<a class="nav-link active" data-toggle="pill" href="#tab_1" role="tab" aria-controls="custom-tabs-three-1" aria-selected="true">
+											<span class="d-none d-md-block">Item Info</span>
+											<i class="fas fa-info d-block d-md-none"></i>
+										</a>
 									</li>
 									<li class="nav-item">
-										<a class="nav-link" data-toggle="pill" href="#tab_2" role="tab" aria-controls="custom-tabs-three-2" aria-selected="false">Athena Transactions</a>
+										<a class="nav-link" data-toggle="pill" href="#tab_2" role="tab" aria-controls="custom-tabs-three-2" aria-selected="false">
+											<span class="d-none d-md-block">Athena Transactions</span>
+											<i class="fas fa-boxes d-block d-md-none"></i>
+										</a>
 									</li>
 									<li class="nav-item">
-										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">ERP Submitted Transaction Histories</a>
+										<a class="nav-link" data-toggle="pill" href="#tab_3" role="tab" aria-controls="custom-tabs-three-3" aria-selected="false">
+											<span class="d-none d-md-block">ERP Submitted Transaction Histories</span>
+											<i class="fas fa-history d-block d-md-none"></i>
+										</a>
 									</li>
 									@if(in_array(Auth::user()->user_group, ['Inventory Manager']))
 									<li class="nav-item">
-										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">Stock Reservations</a>
+										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">
+											<span class="d-none d-md-block">Stock Reservations</span>
+											<i class="fas fa-warehouse d-block d-md-none"></i>
+										</a>
 									</li>
 									@endif
 								</ul>
@@ -346,13 +402,13 @@
 																	<i class="far fa-calendar-alt"></i>
 																</span>
 															</div>
-															<input type="text" name="dates" class="form-control float-right" id="ath_dates" placeholder="Select a Range">
+															<input type="text" name="dates" class="form-control float-right font-responsive" id="ath_dates" placeholder="Select a Range">
 														</div>
 													</div>
 												</div>
 												
 												<div class="col-md-2 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
 														<select name="ath-src-warehouse" id="ath-src-warehouse-filter" class="form-control">
 															
 														</select>
@@ -360,7 +416,7 @@
 												</div>
 
 												<div class="col-md-2 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
 														<select name="ath-to-warehouse" id="ath-to-warehouse-filter" class="form-control">
 															
 														</select>
@@ -368,7 +424,7 @@
 												</div>
 
 												<div class="col-md-2 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="warehouse-user-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="warehouse-user-filter-parent" style="z-index: 1050">
 														<select name="warehouse_user" id="warehouse-user-filter" class="form-control">
 															
 														</select>
@@ -376,9 +432,9 @@
 												</div>
 
 												<div class="col-md-2" style="display: inline-block">
-													<button class="btn btn-secondary" id="athReset">Reset Filters</button>
+													<button class="btn btn-secondary font-responsive" id="athReset">Reset Filters</button>
 												</div>
-												<div class="box-body table-responsive no-padding" id="athena-transactions-table"></div>
+												<div class="box-body table-responsive no-padding font-responsive" id="athena-transactions-table"></div>
 											</div>
 										</div>
 									</div>
@@ -388,20 +444,19 @@
 												
 												<div class="col-md-3 p-0" style="display: inline-block;">
 													<div class="form-group m-1">
-														{{-- <label>Date range:</label> --}}
 														<div class="input-group">
 															<div class="input-group-prepend">
 																<span class="input-group-text">
 																	<i class="far fa-calendar-alt"></i>
 																</span>
 															</div>
-															<input type="text" name="erpdates" class="form-control float-right" id="erp_dates">
+															<input type="text" name="erpdates" class="form-control float-right font-responsive" id="erp_dates">
 														</div>
 													</div>
 												</div>
 
 												<div class="col-md-3 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="erp-warehouse-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="erp-warehouse-filter-parent" style="z-index: 1050">
 														<select name="erp-warehouse" id="erp-warehouse-filter" class="form-control">
 															
 														</select>
@@ -409,7 +464,7 @@
 												</div>
 
 												<div class="col-md-3 p-2" style="display: inline-block">
-													<div class="form-group m-0" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
+													<div class="form-group m-0 font-responsive" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
 														<select name="erp-warehouse-user" id="erp-warehouse-user-filter" class="form-control">
 															
 														</select>
@@ -417,10 +472,10 @@
 												</div>
 
 												<div class="col-md-2" style="display: inline-block">
-													<button class="btn btn-secondary" id="erpReset">Reset Filters</button>
+													<button class="btn btn-secondary font-responsive" id="erpReset">Reset Filters</button>
 												</div>
 
-												<div class="box-body table-responsive no-padding" id="stock-ledger-table"></div>
+												<div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
 											</div>
 										</div>
 									</div>
@@ -431,9 +486,9 @@
 													$attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
 												@endphp
 												<div class="float-right m-2">
-													<button class="btn btn-primary" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
+													<button class="btn btn-primary font-responsive" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
 												</div>
-												<div class="box-body table-responsive no-padding" id="stock-reservation-table"></div>
+												<div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
 											</div>
 										</div>
 									</div>
@@ -443,7 +498,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" id="resetAll" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" id="resetAll" class="btn btn-default font-responsive" data-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -784,7 +839,7 @@
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong>Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong class="copyright">Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 
@@ -1634,7 +1689,7 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					url: '/get_item_images/' + item_code,
 					success: function(response){
 						$.each(response, function(i, d){
-							var image_src = storage + '/' + d;
+							var image_src = storage + '/' + d.split('.')[0] + '.webp';
 							$("<div class=\"col-md-4 pip img_upload\">" +
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
 							"<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +

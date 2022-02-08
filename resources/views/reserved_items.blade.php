@@ -3,10 +3,10 @@
     <li class="item">
         <div class="product-img">
             @php
-                $img = ($item['image']) ? "/img/" . $item['image'] : "/icon/no_img.png";
+                $img = ($item['image']) ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
             @endphp
             <a href="{{ asset('storage/') .$img }}" data-toggle="lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
-                <img src="{{ asset('storage/') . $img }}" class="img-size-50">
+                <img src="{{ asset('storage/') .''. $img }}" class="img-size-50">
             </a>
         </div>
         <div class="product-info">

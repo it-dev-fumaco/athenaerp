@@ -23,12 +23,12 @@
         <tr>
             <td class="text-justify p-2 align-middle">
                 @php
-                    $img = ($row['image']) ? "/img/" . $row['image'] : "/icon/no_img.png";
+                    $img = ($row['image']) ? "/img/" . explode('.',$row['image'])[0].'.webp' : "/icon/no_img.webp";
                 @endphp
                 <div class="d-flex flex-row">
                     <div class="p-1">
                         <a href="{{ asset('storage/') . $img }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
-                            <img src="{{ asset('storage/') . $img }}" class="img-size-50 d-inline-block">
+                            <img src="{{ asset('storage/').$img }}" class="img-size-50">
                         </a>
                     </div>
                     <div class="p-1">

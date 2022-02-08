@@ -131,6 +131,8 @@
                                         <span class="font-weight-bold">{{ $data['item_code'] }}</span> <span class="badge badge-info {{ ($data['is_bundle'] === false) ? 'd-none' : '' }}" style="font-size: 11pt;">Product Bundle</span>
                                         <small class="d-block text-justify">{{ $data['description'] }}</small>
                                         <dl>
+                                            <dt>UoM</dt>
+                                            <dd>{{ $data['uom'] }}</dd>
                                             <dt>Available Qty</dt>
                                             <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
                                             <dt class="mt-1">Reference No:</dt>
@@ -140,6 +142,12 @@
                                             </dd>
                                         </dl>
                                     </div>
+                                    @if (count($data['uom_conversion']) > 0)
+                                    <div class="col-md-12 text-center">
+                                        <span class="font-weight-bold d-blo1ck">UoM Conversion:</span>
+                                        {{ number_format($data['uom_conversion'][0]->conversion_factor) . ' ' . $data['uom_conversion'][1]->uom .' = ' . number_format($data['uom_conversion'][1]->conversion_factor) . ' ' . $data['uom_conversion'][0]->uom }}
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                             @if($data['stock_reservation'])

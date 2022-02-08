@@ -4,31 +4,25 @@
 ])
 
 @section('content')
-<div class="content">
-	<div class="content-header pt-3">
+<div class="content p-0 m-0">
+	<div class="content-header pt-3 p-0 m-0">
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="container-fluid itemClassContainer overflow-auto">
-						<input type="button" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden="">
+					<div class="container-fluid itemClassContainer overflow-auto p-0">
 						@foreach($itemClass as $itemClass1)
-							<a class="itemClassBubble" href="{{ request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) }}">	
-								<div class="classPanel">
-									<div class="classPanelAbbr">
-										<i>{{substr($itemClass1->item_classification, 0, 2)}}</i>
-									</div>
-									<div class="classPanelName">
-										<input type="button" class="classPanelBtn bg-white" id="das" name="text[]" value="{{substr($itemClass1->item_classification, 4)}}" readonly>
-									</div>
+							@php
+								$item_class = explode('-', $itemClass1->item_classification);
+								$abbr = $item_class[0];
+								$name = $item_class[1];
+							@endphp
+							<a class="itemClassBubble" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">	
+								<div class="btn-group category-btn-grp {{ request('classification') == $itemClass1->item_classification ? 'custom-border' : '' }} mb-2" role="group">
+									<button type="button" class="btn category-abbr-btn font-italic"><b>{{ $abbr }}</b></button>
+									<button type="button" class="btn category-name-btn">{{ $name }}</button>
 								</div>
 							</a>
-							@if(count($itemClass) == 1)
-								<script>
-									$('.itemClassBubble').attr("href", "{!! request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}")
-								</script>
-							@endif
  						@endforeach
-						{{-- $('.itemClassBubble').attr("href", "{{ url()->current().'?'.http_build_query(array_merge(request()->except('searchString'))) }}") --}}
 					</div>
 					<div class="card card-gray card-outline">
 						<div class="card-header p-0">
@@ -44,24 +38,24 @@
 								<div class="col-md-6">
 									<div class="row">
 										<div class="col-md-6 p-1">
-												<div class="float-right form-group m-0 w-55" id="warehouse-filter-parent" style="font-size: 11pt;">
-													<select name="warehouse" id="warehouse-filter" class="form-control" style="width: 200px; font-size: 19px !important;">
-														
-													</select>
-												  </div>
+											<div class="form-group m-0 w-55" id="warehouse-filter-parent" style="font-size: 11pt;">
+												<select name="warehouse" id="warehouse-filter" class="form-control">
+													
+												</select>
+											</div>
 										</div>
-										<div class="col-md-3 p-1 text-center">
-											<div class="form-group m-0">
+										<div class="col-7 col-md-3 p-1 text-center">
+											<div class="form-group m-0r">
 												<label>
-												  <input type="checkbox" class="minimal" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
-												  
-												  <span style="font-size: 12px;">Remove zero-qty items</span>
+													<input type="checkbox" class="minimal" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
+													
+													<span style="font-size: 12px;">Remove zero-qty items</span>
 												</label>
-											  </div>
+											</div>
 										</div>
-										<div class="col-md-3 text-right p-1">
-											<span class="font-weight-bold m-1">TOTAL:</span>
-											<span class="badge bg-info mr-2" style="font-size: 13pt;">{{ number_format($items->total()) }}</span>
+										<div class="col-5 col-md-3 text-right p-1">
+											<span class="font-weight-bold m-1 font-responsive">TOTAL:</span>
+											<span class="badge bg-info mr-2 font-responsive" style="font-size: 13pt;">{{ number_format($items->total()) }}</span>
 										</div>
 									</div>
 								</div>
@@ -75,17 +69,24 @@
 									<div class="col-md-3 display-inline-block float-left p-2 text-center">
 										@forelse ($row['item_image_paths'] as $item_image)
 											@php
-												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
+												$img = ($item_image->image_path) ? "/img/" . explode('.',$item_image->image_path)[0].'.webp' : "/icon/no_img.webp";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-												<img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" style="width: 200px !important;">
+												<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
 											</a>
 										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-												<img src="{{ asset('storage/icon/no_img.png') }}" class="img-thumbnail" width="200">
+												<img src="{{ asset('storage/icon/no_img.webp') }}" class="img-thumbnail search-thumbnail">
 											</a>
 										@endforelse
-										<div class="text-center" style="margin: 1px;"><br/>
+										<div class="text-center d-block d-md-none"><br/>
+											<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+												<div class="btn btn-sm btn-primary">
+													<i class="fa fa-file"></i> View Item Details
+												</div>
+											</a>
+										</div>
+										<div class="text-center d-none d-md-block" style="margin: 1px;"><br/>
 											<a href="#" class="cLink view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 												<div class="btn btn-primary">
 													<i class="fa fa-file"></i>
@@ -100,15 +101,15 @@
 									</div>
 									<div class="col-md-9 display-inline-block float-right p-2">
 										<div class="col-md-12 p-2 text-justify">
-											<span class="font-italic" style="font-size: 12px;">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
-											<span class="text-justify" style="font-size: 13px;"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}<br/>
+											<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
+											<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}<br/>
 											<b>Part No(s)</b> {{ ($row['part_nos']) ? $row['part_nos'] : '-' }} </span>
 										</div>
-										<table class="table table-sm table-bordered" style="font-size: 13px;">
+										<table class="table table-sm table-bordered warehouse-table">
 											<tr>
-												<th class="col-sm-6 text-center">Warehouse</th>
-												<th class="col-sm-3 text-center">Reserved Qty</th>
-												<th class="col-sm-3 text-center">Available Qty</th>
+												<th class="text-center wh-cell">Warehouse</th>
+												<th class="text-center qtr-cell">Reserved Qty</th>
+												<th class="text-center qtr-cell">Available Qty</th>
 											</tr>
 											@forelse($row['item_inventory'] as $inv)
 												<tr>
@@ -145,7 +146,7 @@
 												<div class="modal-dialog" role="document">
 													<div class="modal-content">
 														<div class="modal-header">
-															<h4 class="modal-title">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+															<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
 															<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 														</div>
 														<form></form>
@@ -154,13 +155,15 @@
 																<col style="width: 70%;">
 																<col style="width: 30%;">
 																<tr>
-																	<th class="text-center">Warehouse</th>
-																	<th class="text-center">Available Qty</th>
+																	<th class="consignment-th text-center">Warehouse</th>
+																	<th class="consignment-th text-center">Available Qty</th>
 																</tr>
 																@forelse($row['consignment_warehouses'] as $con)
 																<tr>
-																	<td>{{ $con['warehouse'] }}</td>
-																	<td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+																	<td class="consignment-name">{{ $con['warehouse'] }}</td>
+																	<td class="text-center">
+																		<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																	</td>
 																</tr>
 																@empty
 																<tr>
@@ -187,7 +190,7 @@
 							</div>
 						</div><!-- new table -->
 
-						<div class="ml-3 clearfix" style="font-size: 15pt; display: block;">
+						<div class="ml-3 clearfix pagination" style="display: block;">
 							{{ $items->links() }}
 						</div>
 					</div>
@@ -199,6 +202,14 @@
 
 
 <style>
+	html,body
+{
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    overflow-x: hidden !important; 
+}
 	.itemClassContainer{
 		min-height: 1px;
 		/* overflow: auto; */
@@ -215,55 +226,18 @@
 		border: none;
 	}
 
-	.classPanel{
-		min-width: 150px; 
-		height: 58px; 
-		display: inline-block; 
-		margin: 5px; 
-		background-color: white;
-		padding-right: 5px;
-		border-radius: 5px;
+	.responsive-item-code{
+		font-size: 14pt
 	}
-
-	.classPanelAbbr{
-		background-color: #001F3F !important;
-		min-width: 50px;
-		height: 55px; 
-		display: inline-block; 
-		color: #fff; 
-		padding: 11px;
-		font-weight: 700;
-		font-size: 20px;
-		border-top-left-radius: 5px;
-		border-bottom-left-radius: 5px;
-		margin-right: -2px;
+	.responsive-description{
+		font-size: 11pt
 	}
-
-	.classPanelName{
-		min-width: 100px;
-		min-height: 60px;
-		display: inline-block;
-		text-align: center;
-	}
-	
-	.classPanelBtn{
-		color: #000;
-		border: white;
-		border-top-right-radius: 5px;
-		border-bottom-right-radius: 5px;
-		min-height: 50px;
-		min-width: 150px !important;
-		display: inline-block !important;
-		cursor: pointer;
+	.category-btn-grp{
 		transition: .4s;
 	}
 
-	.classPanelBtn:hover{
+	.category-btn-grp:hover{
 		box-shadow: 8px 1px 12px #001F3F;
-	}
-
-	.classPanelBtn:focus{
-		outline: none !important;
 	}
 
 	.cLink{
@@ -281,28 +255,124 @@
 		.nohover:hover {
 		background-color: #fff;
 		}
-</style>
-
-<script>
-	function activeBtn(){
-		var values = [];
-		$('input:button').each(
-			function() {
-				if (values.indexOf(this.value) >= 0) {
-					$(this).css("box-shadow", "8px 1px 12px #001F3F");
-				} else {
-					$(this).css("border-color", "");
-					values.push(this.value);
-				}
-			}
-		);
+	
+	#warehouse-filter-parent{
+		width: 200px;
+		float: right;
 	}
-	window.onload=activeBtn;
-</script>
-
-
-@endsection
-
-@section('script')
+	.search-img{
+		width: 100%;
+		max-width: 100%;
+	}
+	.search-thumbnail{
+		width: 200px;
+	}
+	.item-class{
+		font-size: 12px;
+	}
+	.item-name, .warehouse-table{
+		font-size: 13px;
+	}
+	.wh-cell{
+		width: 50%;
+	}
+	.qty-cell{
+		width: 25%;
+	}
+	.pagination{
+		font-size: 15px;
+	}
+	.category-abbr-btn{
+		background-color: #001F3F;
+		color: #fff;
+		border-radius: 5px 0 0 5px;
+		font-size: 20px;
+	}
+	.category-name-btn{
+		background-color: #fff;
+		border-radius: 0 5px 5px 0
+	}
+	.stock-ledger-table-font{
+		font-size: 11pt;
+	}
+	@media (max-width: 575.98px) {
+        .font-responsive, .responsive-item-code, .stock-ledger-table-font{
+			font-size: 10pt !important;
+		}
+		.item-class, .item-name{
+			font-size: 9pt !important;
+		}
+		#warehouse-filter-parent{
+			width: 90% !important;
+			float: none;
+			margin-left: 5% !important;
+		}
+		.search-img, .search-thumbnail{
+			max-width: 220px !important;
+		}
+		.consignment-head{
+			font-size: 11pt;
+		}
+		.wh-cell{
+			width: 40% !important;
+		}
+		.qty-cell{
+			width: 30% !important;
+		}
+		.badge, .consignment-name, .warehouse-table, .consignment-th{
+			font-size: 8pt !important;
+		}
+		.pagination{
+			font-size: 9pt !important;
+			padding: 0 !important;
+			margin: 0 auto !important;
+		}
+		.page-link{
+			padding: 10px !important;
+		}
+		.category-abbr-btn{
+			font-size: 16px;
+		}
+    }
+  	@media (max-width: 767.98px) {
+        .font-responsive, .responsive-description, .stock-ledger-table-font{
+			font-size: 10pt !important;
+		}
+		#warehouse-filter-parent{
+			width: 90% !important;
+			float: none;
+			margin-left: 5% !important;
+		}
+		.search-img, .search-thumbnail{
+			max-width: 220px !important;
+		}
+		.consignment-head{
+			font-size: 11pt;
+		}
+		.wh-cell{
+			width: 40% !important;
+		}
+		.qty-cell{
+			width: 30% !important;
+		}
+		.badge, .consignment-name, .warehouse-table, .consignment-th{
+			font-size: 8pt !important;
+		}
+		.pagination{
+			font-size: 9pt !important;
+			padding: 0 !important;
+			margin: 0 auto !important;
+		}
+		.page-link{
+			padding: 10px !important;
+		}
+		.category-abbr-btn{
+			font-size: 16px;
+		}
+    }
+	.custom-border{
+		box-shadow: 8px 1px 12px #001F3F;
+	}
+</style>
 
 @endsection
