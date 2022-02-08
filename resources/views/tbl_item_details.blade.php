@@ -15,7 +15,7 @@
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-12">
-                            <a href="{{ asset('storage/') .''. $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                            <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 <picture>
                                     <source srcset="{{ asset('storage/') .''. explode('.', $img_1)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
                                     <source srcset="{{ asset('storage/') .''. $img_1 }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
@@ -24,7 +24,7 @@
                             </a>
                         </div>
                         <div class="col-4 mt-2">
-                            <a href="{{ asset('storage/') .''. $img_2 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                            <a href="{{ asset('storage/') . $img_2 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 <picture>
                                     <source srcset="{{ asset('storage/') .''. explode('.', $img_2)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
                                     <source srcset="{{ asset('storage/') .''. $img_2 }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
@@ -33,7 +33,7 @@
                             </a>
                         </div>
                         <div class="col-4 mt-2"> 
-                            <a href="{{ asset('storage/') .''. $img_3 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                            <a href="{{ asset('storage/') . $img_3 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 <picture>
                                     <source srcset="{{ asset('storage/') .''. explode('.', $img_3)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
                                     <source srcset="{{ asset('storage/') .''. $img_3 }}" type="image/jpeg" class="img-responsive" style="width: 100% !important;">
@@ -42,7 +42,7 @@
                             </a>
                         </div>
                         <div class="col-4 mt-2">
-                            <a href="{{ asset('storage/') .''. $img_4 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                            <a href="{{ asset('storage/') . $img_4 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 <div class="text-white">
                                     <picture>
                                         <source srcset="{{ asset('storage/') .''. explode('.', $img_4)[0].'.webp' }}" type="image/webp" class="img-responsive" style="width: 100% !important;">
@@ -187,11 +187,7 @@
                                         $img = ($a['item_alternative_image']) ? '/img/' . $a['item_alternative_image'] : '/icon/no_img.png';
                                     @endphp
                                     <a href="{{ asset('storage') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
-                                        <picture>
-                                            <source srcset="{{ asset('storage/') .''. explode('.', $img)[0].'.webp' }}" type="image/webp" class="rounded" width="80" height="80">
-                                            <source srcset="{{ asset('storage/') .''. $img }}" type="image/jpeg" class="rounded" width="80" height="80">
-                                            <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80">
-                                        </picture>
+                                        <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80">
                                     </a>
                                 </div>
                                 <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}">

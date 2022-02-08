@@ -1863,11 +1863,12 @@ class MainController extends Controller
 
                 $destinationPath = storage_path('app/public/img/');
 
-                $jpeg_file = round(microtime(true)) . $i . '-'. $request->item_code.$extension;
+                $jpeg_file = round(microtime(true)) . $i . '-'. $request->item_code.'.'.$extension;
 
                 $webp = Webp::make($file);
+                $webp_file_name = round(microtime(true)) . $i . '-'. $request->item_code.'.webp';
 
-                if($webp->save(storage_path('app/public/img/'.round(microtime(true)) . $i . '-'. $request->item_code.'.webp'))) {
+                if($webp->save(storage_path('app/public/img/'.$webp_file_name))) {
                     $file->move($destinationPath, $jpeg_file);
                 }
 

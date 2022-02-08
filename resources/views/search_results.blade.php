@@ -10,8 +10,6 @@
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="container-fluid itemClassContainer overflow-auto p-0">
-						{{-- <input type="button" id="classFromURL" name="text[]" value="{{ substr(request('classification'), 4) }}" hidden=""> --}}
-						{{-- <input type="button" id="classFromURL" name="text[]" value="{{ request('classification') ? explode('-', request('classification'))[1] : '' }}" hidden> --}}
 						@foreach($itemClass as $itemClass1)
 							@php
 								$item_class = explode('-', $itemClass1->item_classification);
@@ -19,26 +17,11 @@
 								$name = $item_class[1];
 							@endphp
 							<a class="itemClassBubble" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">	
-								{{-- <div class="classPanel {{ request('classification') == $itemClass1->item_classification ? 'custom-border' : '' }}">
-									<div class="classPanelAbbr">
-										<i>{{ $abbr }}</i>
-									</div>
-									<div class="classPanelName">
-										<input type="button" class="classPanelBtn bg-white" id="das" name="text[]" value="{{ $name }}" readonly>
-									</div>
-								</div> --}}
 								<div class="btn-group category-btn-grp {{ request('classification') == $itemClass1->item_classification ? 'custom-border' : '' }} mb-2" role="group">
 									<button type="button" class="btn category-abbr-btn font-italic"><b>{{ $abbr }}</b></button>
 									<button type="button" class="btn category-name-btn">{{ $name }}</button>
-									{{-- <button type="button" class="d-block d-md-none btn font-italic" style="background-color: #001F3F; color: #fff; border-radius: 8px 0 0 8px"><b>{{ $abbr }}</b></button>
-									<button type="button" class="d-block d-md-none btn" style="background-color: #fff; border-radius: 0 8px 8px 0">{{ $name }}</button> --}}
 								</div>
 							</a>
-							{{-- @if(count($itemClass) == 1)
-								<script>
-									$('.itemClassBubble').attr("href", "{!! request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}")
-								</script>
-							@endif --}}
  						@endforeach
 					</div>
 					<div class="card card-gray card-outline">
@@ -89,11 +72,7 @@
 												$img = ($item_image->image_path) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}" class="{{ (!$loop->first) ? 'd-none' : '' }}">
-												<picture>
-													<source srcset="{{ asset('storage/') .''. explode('.', $img)[0].'.webp' }}" type="image/webp" class="search-img img-responsive">
-													<source srcset="{{ asset('storage/') .''. $img }}" type="image/jpeg" class="search-img img-responsive">
-													<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
-												</picture>
+												<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
 											</a>
 										@empty
 											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
