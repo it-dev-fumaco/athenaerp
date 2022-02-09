@@ -36,43 +36,31 @@ class MainController extends Controller
         $search_str = explode(' ', $request->searchString);
 
         if($request->wh == ''){
+            $itemQ = DB::table('tabItem')->where('disabled', 0)
+                ->where('has_variants', 0)->where('is_stock_item', 1)->where('item_classification', 'LIKE', $request->classification)
+                ->when($request->searchString, function ($query) use ($search_str, $request) {
+                    return $query->where(function($q) use ($search_str, $request) {
+                        foreach ($search_str as $str) {
+                            $q->where('description', 'LIKE', "%".$str."%");
+                        }
 
-        $itemQ = DB::table('tabItem')->where('disabled', 0)
-            ->where('has_variants', 0)->where('is_stock_item', 1)->where('item_classification', 'LIKE', $request->classification)
-            ->when($request->searchString, function ($query) use ($search_str, $request) {
-                return $query->where(function($q) use ($search_str, $request) {
-                    foreach ($search_str as $str) {
-                        $q->where('description', 'LIKE', "%".$str."%");
-                    }
-
-                    $q->orWhere('name', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere('item_classification', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
-                        // ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
+                        $q->orWhere('name', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('item_classification', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
+                    });
+                })
+                ->when($request->group, function($q) use ($request){
+                    return $q->where('item_group', $request->group);
+                })
+                ->when($request->classification, function($q) use ($request){
+                    return $q->where('item_classification', $request->classification);
+                })
+                ->when($request->check_qty, function($q) use ($request){
+                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 });
-            })
-            // ->when($request->wh, function($q) use ($request){
-			// 	return $q->where('default_warehouse', $request->wh);
-            // })
-            // ->when($request->wh, function($q) use ($request){
-            //     $item_default_warehouse = DB::table('tabItem Default')->where   ('parent', $row->name)->first();
-            //     $default_warehouse = ($item_default_warehouse) ? $item_default_warehouse->default_warehouse : null;
-			// 	return $q->where('default_warehouse', $default_warehouse);
-            // })
-            
-            ->when($request->group, function($q) use ($request){
-				return $q->where('item_group', $request->group);
-            })
-            ->when($request->classification, function($q) use ($request){
-				return $q->where('item_classification', $request->classification);
-            })
-            ->when($request->check_qty, function($q) use ($request){
-				return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-			});
         }else{
-            
             $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)->join('tabItem Default as d', 'd.parent', 'tabItem.name')
                 ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)->where('tabItem.item_classification', 'LIKE', $request->classification)
                 ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -85,7 +73,6 @@ class MainController extends Controller
                             ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
                             ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
                             ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
-                            // ->orWhere('manufacturer_part_no', 'LIKE', "%".$request->searchString."%")
                             ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
                     });
                 })
@@ -104,16 +91,12 @@ class MainController extends Controller
             
         $itemClassQuery = Clone $itemQ;
         $itemsQuery = Clone $itemQ;
-        $itemWhFilter = Clone $itemQ;
 
         $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
         $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->paginate(20);
 
-
-        $input = [];
-
         if($request->searchString != ''){
-            $input[] = [
+            DB::table('tabAthena Inventory Search History')->insert([
                 'name' => uniqid(),
                 'creation' => Carbon::now(),
                 'modified' => Carbon::now(),
@@ -121,9 +104,7 @@ class MainController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'search_string' => $request->searchString,
                 'total_result' => $items->total()
-            ];
-
-            $saveSrch = DB::table('tabAthena Inventory Search History')->insert($input);
+            ]);
         }
 
         $url = $request->fullUrl();
@@ -134,41 +115,104 @@ class MainController extends Controller
             return number_format($items->total());
         }
 
+        $item_codes = array_column($items->items(), 'item_code');
+
+        $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->whereIn('item_code', $item_codes)
+            ->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
+        
+        $item_warehouses = array_column($item_inventory->toArray(), 'warehouse');
+
+        $item_inventory = collect($item_inventory)->groupBy('item_code')->toArray();
+
+        $stock_reservation = StockReservation::whereIn('item_code', $item_codes)
+            ->whereIn('warehouse', $item_warehouses)->where('status', 'Active')
+            ->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
+            ->groupBy('item_code', 'warehouse')->get();
+        $stock_reservation = collect($stock_reservation)->groupBy('item')->toArray();
+
+        $ste_total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+            ->whereIn('item_code', $item_codes)->whereIn('s_warehouse', $item_warehouses)
+            ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
+            ->groupBy('item_code', 's_warehouse')->get();
+        $ste_total_issued = collect($ste_total_issued)->groupBy('item')->toArray();
+
+        $at_total_issued = DB::table('tabAthena Transactions as at')
+            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+            ->join('tabPacking Slip Item as psi', 'ps.name', 'ps.parent')
+            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+            ->where('psi.status', 'Issued')
+            ->whereIn('at.item_code', $item_codes)->whereIn('at.source_warehouse', $item_warehouses)
+            ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
+            ->groupBy('at.item_code', 'at.source_warehouse')->get();
+        $at_total_issued = collect($at_total_issued)->groupBy('item')->toArray();
+
+        $lowLevelStock = DB::table('tabItem Reorder')
+            ->whereIn('parent', $item_codes)->whereIn('warehouse', $item_warehouses)
+            ->selectRaw('SUM(warehouse_reorder_level) as total_warehouse_reorder_level, CONCAT(parent, "-", warehouse) as item')
+            ->groupBy('parent', 'warehouse')->get();
+        $lowLevelStock = collect($lowLevelStock)->groupBy('item')->toArray();
+
+        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
+        $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
+
+        $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
+            ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
+
         $item_list = [];
         foreach ($items as $row) {
-            $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $row->name)
-                ->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
+            $item_images = [];
+            if (array_key_exists($row->name, $item_image_paths)) {
+                $item_images = $item_image_paths[$row->name];
+            }
 
-            $item_image_paths = DB::table('tabItem Images')->where('parent', $row->name)->get();
+            $part_nos = Arr::exists($part_nos_query, $row->name) ? $part_nos_query[$row->name] : null;
 
             $site_warehouses = [];
             $consignment_warehouses = [];
-            foreach ($item_inventory as $value) {
-                $reserved_qty = StockReservation::where('item_code', $value->item_code)
-                    ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
+            $item_inventory_arr = [];
+            if (array_key_exists($row->name, $item_inventory)) {
+                $item_inventory_arr = $item_inventory[$row->name];
+            }
+            foreach ($item_inventory_arr as $value) {
+                $reserved_qty = 0;
+                if (array_key_exists($value->item_code . '-' . $value->warehouse, $stock_reservation)) {
+                    $reserved_qty = $stock_reservation[$value->item_code . '-' . $value->warehouse][0]['total_reserved_qty'];
+                }
 
-                $consumed_qty = StockReservation::where('item_code', $value->item_code)
-                    ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('consumed_qty');
+                $consumed_qty = 0;
+                if (array_key_exists($value->item_code . '-' . $value->warehouse, $stock_reservation)) {
+                    $consumed_qty = $stock_reservation[$value->item_code . '-' . $value->warehouse][0]['total_consumed_qty'];
+                }
 
                 $reserved_qty = $reserved_qty - $consumed_qty;
 
-                $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+                $issued_qty = 0;
+                if (array_key_exists($value->item_code . '-' . $value->warehouse, $ste_total_issued)) {
+                    $issued_qty = $ste_total_issued[$value->item_code . '-' . $value->warehouse][0]->total_issued;
+                }
 
-                $lowLevelStock = DB::table('tabItem Reorder')->select('parent', 'warehouse')
-                        ->where('parent', $value->item_code)
-                        ->where('warehouse', $value->warehouse)->sum('warehouse_reorder_level');
+                if (array_key_exists($value->item_code . '-' . $value->warehouse, $at_total_issued)) {
+                    $issued_qty += $at_total_issued[$value->item_code . '-' . $value->warehouse][0]->total_issued;
+                }
+
+                $actual_qty = $value->actual_qty - $issued_qty;
+
+                $warehouse_reorder_level = 0;
+                if (array_key_exists($value->item_code . '-' . $value->warehouse, $lowLevelStock)) {
+                    $warehouse_reorder_level = $lowLevelStock[$value->item_code . '-' . $value->warehouse][0]->total_warehouse_reorder_level;
+                }
                         
                 if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
-                    
                     $consignment_warehouses[] = [
                         'warehouse' => $value->warehouse,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                         'stock_uom' => $value->stock_uom,
-                        'warehouse_reorder_level' => $lowLevelStock,
+                        'warehouse_reorder_level' => $warehouse_reorder_level,
                     ];
-                    
                 }else{
                     $site_warehouses[] = [
                         'warehouse' => $value->warehouse,
@@ -176,26 +220,21 @@ class MainController extends Controller
                         'actual_qty' => $actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                         'stock_uom' => $value->stock_uom,
-                        'warehouse_reorder_level' => $lowLevelStock,
+                        'warehouse_reorder_level' => $warehouse_reorder_level,
                     ];
                 }
             }
 
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $row->name)->pluck('supplier_part_no');
-
-            $part_nos = implode(', ', $part_nos->toArray());
-
             $item_list[] = [
                 'name' => $row->name,
                 'description' => $row->description,
-                'item_image_paths' => $item_image_paths,
+                'item_image_paths' => $item_images,
                 'part_nos' => $part_nos,
                 'item_group' => $row->item_group,
                 'stock_uom' => $row->stock_uom,
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
-                // 'default_warehouse' => $default_warehouse
             ];
         }
 

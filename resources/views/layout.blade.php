@@ -64,14 +64,6 @@
 											</div>
 										</a>
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-											<span class="dropdown-header">Warehouse Access</span>
-											<div id="allowed-warehouse-div">
-												<div class="dropdown-divider"></div>
-												<a href="#" class="dropdown-item text-center">
-													<i class="fas fa-info-circle mr-2"></i>	No warehouse assigned	  
-												</a>
-											</div>
-											<div class="dropdown-divider"></div>
 											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
 												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
 											</a>
@@ -103,17 +95,8 @@
 								<li class="nav-item dropdown col-8 text-right">
 									<a class="nav-link text-white" data-toggle="dropdown" href="#">
 										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
-										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span> <i class="fas fa-caret-down ml-2"></i>
+										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
 									</a>
-								  	<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-										<span class="dropdown-header">Warehouse Access</span>
-										<div id="allowed-warehouse-div">
-											<div class="dropdown-divider"></div>
-											<a href="#" class="dropdown-item text-center">
-												<i class="fas fa-info-circle mr-2"></i>	No warehouse assigned	  
-											</a>
-										</div>
-									</div>
 								</li>
 								<li class="d-none d-lg-block nav-item dropdown text-right">
 									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
@@ -978,23 +961,24 @@
 				$('#search-form').submit();
 			});
 
-			allowed_parent_warehouses();
-			function allowed_parent_warehouses(){
-				$.ajax({
-					type: 'GET',
-					url: '/allowed_parent_warehouses',
-					success: function(response){
-						var r = '';
-						$.each(response, function(i, d){
-							r += '<div class="dropdown-divider"></div>' +
-								'<a href="#" class="dropdown-item">' +
-								'<i class="fas fa-warehouse mr-2"></i>' + d + '</a>'
-						});
+			// allowed_parent_warehouses();
+			// function allowed_parent_warehouses(){
+			// 	$.ajax({
+			// 		type: 'GET',
+			// 		url: '/allowed_parent_warehouses',
+			// 		success: function(response){
+			// 			var r = '';
+			// 			$.each(response, function(i, d){
+			// 				console.log(d);
+			// 				r += '<div class="dropdown-divider"></div>' +
+			// 					'<a href="#" class="dropdown-item">' +
+			// 					'<i class="fas fa-warehouse mr-2"></i>' + d + '</a>'
+			// 			});
 
-						$('#allowed-warehouse-div').html(r);
-					}
-				});
-			}
+			// 			$('#allowed-warehouse-div').html(r);
+			// 		}
+			// 	});
+			// }
 
 			// get_low_stock_level_items();
 			// get_reserved_items();
