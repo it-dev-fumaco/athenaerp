@@ -27,9 +27,10 @@
 </head>
 
 <style>
-	@font-face { font-family: 'Montserrat'; src: url({{ asset('font/Montserrat/Montserrat-Regular.ttf') }}); } 
+	@font-face { font-family: 'Poppins'; src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }}); } 
 	*:not(i):not(.fa){
-		font-family: 'Montserrat' !important;
+		font-family: 'Poppins' !important;
+		letter-spacing: 0.4px;
 	}
 
 	.blink-reservation {
