@@ -2,7 +2,7 @@
   @forelse($q as $item)
   <li class="truncate selected-item border-bottom" data-val="{{ $item->name }}">
     @php
-    $img = ($item->item_image_path) ? "/img/" . $item->item_image_path : "/icon/no_img.png";
+    $img = ($item->item_image_path) ? "/img/" . explode('.', $item->item_image_path)[0].'.webp' : "/icon/no_img.webp";
     @endphp
     <div class="d-flex flex-row">
       <div class="p-2 text-truncate d-inline-block" style="width: 90%;">
