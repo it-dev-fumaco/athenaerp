@@ -75,7 +75,7 @@
 												<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
 											</a>
 										@empty
-											<a href="{{ asset('storage/icon/no_img.png') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
+											<a href="{{ asset('storage/icon/no_img.webp') }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
 												<img src="{{ asset('storage/icon/no_img.webp') }}" class="img-thumbnail search-thumbnail">
 											</a>
 										@endforelse
