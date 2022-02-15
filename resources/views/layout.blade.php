@@ -1497,8 +1497,6 @@
 			});
 
 			function view_item_details(item_code){
-				
-
 				$.ajax({
 					type: 'GET',
 					url: '/get_item_details/' + item_code,
