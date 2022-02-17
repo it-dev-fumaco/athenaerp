@@ -198,17 +198,17 @@
 											<div class="card card-danger card-outline">
 												<div class="card-header d-flex p-0">
 													<ul class="nav nav-pills p-2">
-													  <li class="nav-item"><a class="nav-link active" href="#tab_1-1" data-toggle="tab"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a></li>
-													  <li class="nav-item"><a class="nav-link" href="#tab_2-1" data-toggle="tab"><i class="fas fa-list-alt"></i> Stock Movement(s)</a></li>
+													  <li class="nav-item"><a class="font-responsive nav-link active" href="#tab_1-1" data-toggle="tab"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a></li>
+													  <li class="nav-item"><a class="font-responsive nav-link" href="#tab_2-1" data-toggle="tab"><i class="fas fa-list-alt"></i> Stock Movement(s)</a></li>
 													</ul>
 												</div>
 												<div class="card-body p-0">
 													<div class="tab-content">
-													  <div class="tab-pane active" id="tab_1-1">
+													  <div class="tab-pane font-responsive active" id="tab_1-1">
 														<div id="low-level-stock-table" style="margin-top: -32px;"></div>
 													  </div>
 													  
-													  <div class="tab-pane" id="tab_2-1">
+													  <div class="tab-pane font-responsive" id="tab_2-1">
 														<div id="athena-logs-table"></div>
 														<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
 															@php
@@ -237,7 +237,7 @@
 										<div class="col-xl-4">
 											<div class="row">
 												<div class="col-xl-12">
-													<div class="card card-info card-outline">
+													<div class="card card-info card-outline font-responsive">
 														<div class="card-header">
 															<h3 class="card-title font-weight-bold">Inventory Accuracy</h3>
 															<div class="card-tools">
@@ -295,7 +295,7 @@
 													</div>
 												</div>
 												<div class="col-xl-12">
-													<div class="card card-success card-outline">
+													<div class="card card-success card-outline font-responsive">
 														<div class="card-header">
 															<h3 class="card-title font-weight-bold">Reserved Items</h3>
 															<div class="card-tools">
@@ -554,10 +554,10 @@
                         stat = (percentage >= v.percentage_sku) ? 'fa-thumbs-up' : 'fa-thumbs-down';
                         color = (percentage >= v.percentage_sku) ? 'green' : 'red';
                         row += '<tr>' +
-                           '<td>' + v.item_classification + '</td>' +
-                           '<td>' + v.warehouse + '</td>' + 
-                           '<td class="text-center"><i class="fa '+stat+'" style="color:'+color+';"></i> ' + percentage.toFixed(2) + '%</td>' + 
-                           '<td class="text-center">' + target.toFixed(2) + '%</td>' +
+                           '<td class="inv-accuracy-tbl-item-class">' + v.item_classification + '</td>' +
+                           '<td class="inv-accuracy-tbl-item-class">' + v.warehouse + '</td>' + 
+                           '<td class="text-center inv-accuracy-tbl-item-class"><i class="fa '+stat+'" style="color:'+color+';"></i> ' + percentage.toFixed(2) + '%</td>' + 
+                           '<td class="text-center inv-accuracy-tbl-item-class">' + target.toFixed(2) + '%</td>' +
                            '</tr>';
                      });
                   }else{
