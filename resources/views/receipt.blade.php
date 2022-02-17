@@ -47,19 +47,20 @@
 						</div>
 						<div class="card-body p-0">
 							<div class="table-responsive p-0">
-								<table class="table table-hover" style="font-size: 10pt;">
-									<col style="width: 10%;">
-									<col style="width: 17%;">
-									<col style="width: 43%;">
-									<col style="width: 15%;">
-									<col style="width: 15%;">
+								<table class="table table-hover dashboard-table" style="font-size: 10pt;">
+									<col style="width: 10%;"><!-- Purchase Receipt -->
+									<col style="width: 17%;"><!-- Transaction Date -->
+									<col style="width: 43%;"><!-- Item Description -->
+									<col style="width: 15%;"><!-- Qty -->
+									<col style="width: 15%;"><!-- Ref. No. -->
 									<thead>
 										<tr>
 											<th scope="col" class="text-center">Purchase Receipt</th>
-											<th scope="col" class="text-center">Transaction Date</th>
-											<th scope="col" class="text-center">Item Description</th>
-											<th scope="col" class="text-center">Qty</th>
-											<th scope="col" class="text-center">Ref. No.</th>
+											<th scope="col" class="text-center d-lg-none">Details</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Transaction Date</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Item Description</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Qty</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Ref. No.</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -67,8 +68,40 @@
 											<td class="text-center"><span class="d-block mt-1">@{{ x.parent }}</span></td>
 											<td class="text-center">
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
+												<div class="d-block d-lg-none">
+													<div class="font-weight-bold">
+														<span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
+														<span class="badge badge-success mr-2" ng-if="x.status === 'Received'">@{{ x.status }}</span>
+														<span class="badge badge-warning mr-2" ng-if="x.status === 'To Receive'">@{{ x.status }}</span>
+														<i class="fas fa-arrow-right ml-2 mr-2"></i> 
+														<span>@{{ x.warehouse }}</span>
+													</div>
+													<span class="d-block">@{{ x.description }}</span>'
+													<table class="table">
+														<tr>
+															<td class="p-1"><b>Part No(s):</b></td>
+															<td class="p-1">@{{ x.part_nos }}</td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Created by:</b></td>
+															<td class="p-1">@{{ x.owner }}</td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Qty:</b></td>
+															<td class="p-1">@{{ x.qty | number:2 }}</td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Available Stock:</b></td>
+															<td class="p-1">@{{ x.available_qty | number:2 }}</td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Ref. No.:</b></td>
+															<td class="p-1">@{{ x.ref_no }}</td>
+														</tr>
+													</table>
+												</div>
 											</td>
-											<td class="text-justify">
+											<td class="text-justify d-none d-lg-table-cell">
 												<div class="d-block font-weight-bold">
 													<span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
 													<span class="badge badge-success mr-2" ng-if="x.status === 'Received'">@{{ x.status }}</span>
@@ -80,12 +113,12 @@
 												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
 												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Created by:</b> @{{ x.owner }}</small>
 											</td>
-											<td class="text-center">
+											<td class="text-center d-none d-lg-table-cell">
 												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
 												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }}</span>
 											</td>
-											<td class="text-center">@{{ x.ref_no }}</td>
+											<td class="text-center d-none d-lg-table-cell">@{{ x.ref_no }}</td>
 										</tr>
 									</tbody>
 								</table>
