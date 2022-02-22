@@ -25,7 +25,7 @@
                             <div class="row">
                                 <div class="col-4 mt-3">
                                     @php
-                                        $img = ($q['img']) ? "/img/" . $q['img'] : "/icon/no_img.png";
+                                        $img = ($q['img']) ? "/img/" . explode('.', $q['img'])[0]'.webp' : "/icon/no_img.webp";
                                     @endphp
                                         <a href="{{ asset('storage/') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $q['item_code'] }}" data-title="{{ $q['item_code'] }}">
                                         <img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" style="width: 100%;" class="item_image">

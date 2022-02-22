@@ -29,7 +29,7 @@
                             <div class="row">
                                 <div class="col-4 mt-3">
                                     @php
-                                        $img = ($data['img']) ? "/img/" . $data['img'] : "/icon/no_img.png";
+                                        $img = ($data['img']) ? "/img/" . explode('.', $data['img'])[0].'.webp' : "/icon/no_img.webp";
                                     @endphp
                                     <a href="{{ asset('storage/') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $data['item_code'] }}" data-title="{{ $data['item_code'] }}">
                                         <img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" style="width: 100%;" class="item_image">
