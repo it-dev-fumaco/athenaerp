@@ -73,6 +73,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_item_details/{item_code}', 'MainController@get_item_details');
     Route::get('/get_athena_transactions/{item_code}', 'MainController@get_athena_transactions');
     Route::get('/get_stock_ledger/{item_code}', 'MainController@get_stock_ledger');
+    Route::get('/form_warehouse_location/{item_code}', 'MainController@form_warehouse_location');
+    Route::post('/edit_warehouse_location', 'MainController@edit_warehouse_location');
 
     Route::get('/print_barcode/{item_code}', 'MainController@print_barcode');
 

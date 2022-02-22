@@ -54,6 +54,9 @@
                     </dl>
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
+                        @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))
+                            <button class="btn btn-primary p-1 float-right" id="warehouse-location-btn" data-item-code="{{ $item_details->name }}" style="font-size: 12px;">Update Warehouse Location</button>
+                        @endif
                     </div>
                     <div class="box box-solid p-0">
                         <div class="box-header with-border">

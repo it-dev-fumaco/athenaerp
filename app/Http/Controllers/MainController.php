@@ -1533,6 +1533,32 @@ class MainController extends Controller
         }
     }
 
+    public function form_warehouse_location($item_code){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $warehouses = DB::table('tabBin')->whereIn('warehouse', $allowed_warehouses)->where('item_code', $item_code)->select('warehouse', 'location')->get();
+
+        return view('form_warehouse_location', compact('warehouses'));
+    }
+
+    public function edit_warehouse_location(Request $request){
+        DB::beginTransaction();
+        try {
+            $locations = $request->location;
+            $warehouses = $request->warehouses;
+            foreach($locations as $key => $location){
+                DB::table('tabBin')->where('warehouse', $warehouses[$key])->update(['location' => strtoupper($location)]);
+            }
+            
+            DB::commit();
+            return redirect()->back()->with('success', 'Warehouse location updated!');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Error');
+        }
+    }
+
     public function get_item_details(Request $request, $item_code){
         $item_details = DB::table('tabItem')->where('name', $item_code)->first();
 
@@ -1635,7 +1661,9 @@ class MainController extends Controller
 
         $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses'));
+        $user_group = Auth::user()->user_group;
+
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
