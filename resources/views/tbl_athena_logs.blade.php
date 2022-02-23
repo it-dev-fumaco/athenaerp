@@ -50,7 +50,7 @@
                     @endif
                 </td>
             </tr>
-            <tr>
+            <tr class="d-lg-none">
                 <td colspan=6>
                     <table class="table">
                         <tr>

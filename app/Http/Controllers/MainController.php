@@ -1666,8 +1666,13 @@ class MainController extends Controller
         $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
         $user_group = Auth::user()->user_group;
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+        $warehouses = collect($site_warehouses)->pluck('warehouse');
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group'));
+        $warehouse_check = array_intersect($warehouses->toArray(), $allowed_warehouses->toArray());
+
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'warehouse_check'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
