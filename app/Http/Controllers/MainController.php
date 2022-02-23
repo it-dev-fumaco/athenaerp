@@ -1848,6 +1848,10 @@ class MainController extends Controller
                 $session_user = null;
             }
 
+            if($date_modified and $date_modified != '--'){
+                $date_modified = Carbon::parse($date_modified);
+            }
+
             $list[] = [
                 'voucher_no' => $voucher_no,
                 'warehouse' => $row->warehouse,
@@ -1855,7 +1859,7 @@ class MainController extends Controller
                 'actual_qty' => $row->actual_qty * 1,
                 'qty_after_transaction' => $row->qty_after_transaction * 1,
                 'ref_no' => $ref_no,
-                'date_modified' => Carbon::parse($date_modified),
+                'date_modified' => $date_modified,
                 'session_user' => $session_user,
                 'posting_date' => $row->posting_date,//cccc
             ];
@@ -1883,22 +1887,21 @@ class MainController extends Controller
                 });
 
             }
-        
         }
-            $currentPage = LengthAwarePaginator::resolveCurrentPage();
-            // Create a new Laravel collection from the array data
-            $itemCollection = collect($list);
-            // Define how many items we want to be visible in each page
-            $perPage = 10;
-            // Slice the collection to get the items to display in current page
-            $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
-            // Create our paginator and pass it to the view
-            $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
-            // set url path for generted links
-            $paginatedItems->setPath($request->url());
+        
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data
+        $itemCollection = collect($list);
+        // Define how many items we want to be visible in each page
+        $perPage = 10;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
 
-            $list = $paginatedItems;
-
+        $list = $paginatedItems;
         return view('tbl_stock_ledger', compact('list', 'logs', 'item_code'));
         // return view('tbl_stock_ledger', compact('logs', 'item_code', 'wh_users'));
     }
