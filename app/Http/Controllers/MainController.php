@@ -118,7 +118,7 @@ class MainController extends Controller
         $item_codes = array_column($items->items(), 'item_code');
 
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->whereIn('item_code', $item_codes)
-            ->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
         
         $item_warehouses = array_column($item_inventory->toArray(), 'warehouse');
 
@@ -207,6 +207,7 @@ class MainController extends Controller
                 if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
                     $consignment_warehouses[] = [
                         'warehouse' => $value->warehouse,
+                        'location' => $value->location,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
@@ -216,6 +217,7 @@ class MainController extends Controller
                 }else{
                     $site_warehouses[] = [
                         'warehouse' => $value->warehouse,
+                        'location' => $value->location,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
@@ -1533,6 +1535,32 @@ class MainController extends Controller
         }
     }
 
+    public function form_warehouse_location($item_code){
+        $user = Auth::user()->frappe_userid;
+        $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+        $warehouses = DB::table('tabBin')->whereIn('warehouse', $allowed_warehouses)->where('item_code', $item_code)->select('warehouse', 'location')->get();
+
+        return view('form_warehouse_location', compact('warehouses'));
+    }
+
+    public function edit_warehouse_location(Request $request){
+        DB::beginTransaction();
+        try {
+            $locations = $request->location;
+            $warehouses = $request->warehouses;
+            foreach($locations as $key => $location){
+                DB::table('tabBin')->where('warehouse', $warehouses[$key])->update(['location' => strtoupper($location)]);
+            }
+            
+            DB::commit();
+            return redirect()->back()->with('success', 'Warehouse location updated!');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Error');
+        }
+    }
+
     public function get_item_details(Request $request, $item_code){
         $item_details = DB::table('tabItem')->where('name', $item_code)->first();
 
@@ -1544,7 +1572,7 @@ class MainController extends Controller
 
         // get item inventory stock list
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
-                ->select('item_code', 'warehouse', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
+                ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
         $site_warehouses = [];
         $consignment_warehouses = [];
         foreach ($item_inventory as $value) {
@@ -1560,6 +1588,7 @@ class MainController extends Controller
             if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
                 $consignment_warehouses[] = [
                     'warehouse' => $value->warehouse,
+                    'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
                     'actual_qty' => $actual_qty,
                     'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
@@ -1568,6 +1597,7 @@ class MainController extends Controller
             }else{
                 $site_warehouses[] = [
                     'warehouse' => $value->warehouse,
+                    'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
                     'actual_qty' => $actual_qty,
                     'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
@@ -1635,7 +1665,9 @@ class MainController extends Controller
 
         $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses'));
+        $user_group = Auth::user()->user_group;
+
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){

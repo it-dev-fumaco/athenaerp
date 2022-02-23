@@ -45,19 +45,20 @@
 						</div>
 						<div class="card-body p-0">
 							<div class="table-responsive p-0">
-								<table class="table table-hover" style="font-size: 10pt;">
-									<col style="width: 17%;">
-									<col style="width: 43%;">
-									<col style="width: 15%;">
-									<col style="width: 15%;">
-									<col style="width: 10%;">
+								<table class="table table-hover dashboard-table" style="font-size: 10pt;">
+									<col style="width: 17%;"><!-- Transaction -->
+									<col style="width: 43%;"><!-- Item Description -->
+									<col style="width: 15%;"><!-- Qty -->
+									<col style="width: 15%;"><!-- Ref. No. -->
+									<col style="width: 10%;"><!-- Actions -->
 									<thead>
 										<tr>
 											<th scope="col" class="text-center">Transaction</th>
-											<th scope="col" class="text-center">Item Description</th>
-											<th scope="col" class="text-center">Qty</th>
-											<th scope="col" class="text-center">Ref. No.</th>
-											<th scope="col" class="text-center">Actions</th>
+											<th scope="col" class="text-center d-lg-none">Details</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Item Description</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Qty</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Ref. No.</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell">Actions</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -65,6 +66,9 @@
 											<td class="text-center">
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<small class="d-block mt-1">@{{ x.parent }}</small>
+												<div class="d-block d-lg-none">
+													<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}">
+												</div>
 											</td>
 											<td class="text-justify">
 												<div class="d-block font-weight-bold">
@@ -76,19 +80,48 @@
 													<span>@{{ x.t_warehouse }}</span>
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
-												<span class="d-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
-												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
+												<span class="d-none d-lg-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
+												<small class="d-none d-lg-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
+												<div class="d-block d-lg-none">
+													<table class="table font-responsive">
+														<tr>
+															<td class="p-1"><b>Part No(s):</b></td>
+															<td class="p-1">@{{ x.part_nos }}</td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Requested by:</b></td>
+															<td class="p-1">@{{ x.owner }}</td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Qty:</b></td>
+															<td class="p-1">@{{ x.qty | number:2 }}</td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Available Stock:</b></td>
+															<td class="p-1"><span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }}</span></td>
+														</tr>
+														<tr>
+															<td class="p-1"><b>Ref. No.</b></td>
+															<td class="p-1" style="white-space: nowrap !important">@{{ x.sales_order_no }}</td>
+														</tr>
+														<tr>
+															<td colspan=2 class="p-1 text-center">
+																@{{ x.transfer_as }}
+															</td>
+														</tr>
+													</table>
+												</div>
 											</td>
-											<td class="text-center">
+											<td class="text-center d-none d-lg-table-cell">
 												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
 												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }}</span>
 											</td>
-											<td class="text-center">
+											<td class="text-center d-none d-lg-table-cell">
 												<span class="d-block">@{{ x.sales_order_no }}</span>
 												<span class="d-block">@{{ x.transfer_as }}</span>
 											</td>
-											<td class="text-center">
+											<td class="text-center d-none d-lg-table-cell">
 												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}">
 											</td>
 										</tr>

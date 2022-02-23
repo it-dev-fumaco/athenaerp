@@ -111,6 +111,9 @@
 														<tr>
 															<td class="text-center" >
 																{{ $inv['warehouse'] }}
+																@if ($inv['location'])
+																	<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
+																@endif
 															</td>
 															<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
 															<td class="text-center">
@@ -153,7 +156,12 @@
 																		</tr>
 																		@forelse($row['consignment_warehouses'] as $con)
 																		<tr>
-																			<td class="consignment-name">{{ $con['warehouse'] }}</td>
+																			<td class="consignment-name">
+																				{{ $con['warehouse'] }}
+																				@if ($con['location'])
+																					<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																				@endif
+																			</td>
 																			<td class="text-center">
 																				<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
 																			</td>

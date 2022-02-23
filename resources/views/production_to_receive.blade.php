@@ -44,7 +44,7 @@
 							<h5 class="m-0"><i class="fas fa-sync-alt fa-spin"></i> <span class="ml-2">Loading ...</span></h5>
 						</div>
 						<div class="table-responsive p-0">
-							<table class="table table-hover" style="font-size: 10pt;">
+							<table class="table table-hover dashboard-table" style="font-size: 10pt;">
 								<col style="width: 17%;">
 								<col style="width: 33%;">
 								<col style="width: 15%;">
@@ -54,19 +54,23 @@
 								<thead>
 									<tr>
 										<th scope="col" class="text-center">Transaction</th>
-										<th scope="col" class="text-center">Item Description</th>
-										<th scope="col" class="text-center">Qty to Manufacture</th>
-										<th scope="col" class="text-center">Qty to Receive</th>
-										<th scope="col" class="text-center">Delivery Date</th>
-										<th scope="col" class="text-center">Ref. No.</th>
-										<th scope="col" class="text-center">Actions</th>
+										<th scope="col" class="text-center d-lg-none">Details</th>
+										<th scope="col" class="text-center d-none d-lg-table-cell">Item Description</th>
+										<th scope="col" class="text-center d-none d-lg-table-cell">Qty to Manufacture</th>
+										<th scope="col" class="text-center d-none d-lg-table-cell">Qty to Receive</th>
+										<th scope="col" class="text-center d-none d-lg-table-cell">Delivery Date</th>
+										<th scope="col" class="text-center d-none d-lg-table-cell">Ref. No.</th>
+										<th scope="col" class="text-center d-none d-lg-table-cell">Actions</th>
 									</tr>
 								</thead>
 								<tbody>
 									<tr ng-repeat="x in mt_filtered = (pr | filter:searchText | filter: fltr)">
 										<td class="text-center">
 											<span class="d-block font-weight-bold">@{{ x.created_at }}</span>
-											<small class="d-block mt-1 production-order">@{{ x.production_order }}</small>	
+											<small class="d-block mt-1 production-order">@{{ x.production_order }}</small>
+											<div class="d-block d-lg-none">
+												<img src="dist/img/check.png" class="img-circle checkout feedback-details" data-id="@{{ x.production_order }}">
+											</div>
 										</td>
 										<td class="text-justify">
 											<div class="d-block font-weight-bold">
@@ -75,23 +79,57 @@
 												<i class="fas fa-arrow-right ml-3 mr-2"></i> <span class="target-warehouse">@{{ x.fg_warehouse }}</span>
 											</div>
 											<span class="d-block description">@{{ x.description }}</span>
-											<small class="d-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
+											<small class="d-none d-lg-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
+											<div class="d-block d-lg-none">
+												<table class="table">
+													<tr>
+														<td class="p-1"><b>Requested by:</b></td>
+														<td class="p-1">@{{ x.owner }}</td>
+													</tr>
+													<tr>
+														<td class="p-1"><b>Qty to Manufacture:</b></td>
+														<td class="p-1"><span class="qty">@{{ x.qty_to_manufacture }}</span></td>
+													</tr>
+													<tr>
+														<td class="p-1"><b>Qty to Receive</b></td>
+														<td class="p-1"><span class="badge badge-success qty">@{{ x.qty_to_receive }}</span></td>
+													</tr>
+													<tr>
+														<td class="p-1"><b>Delivery Date:</b></td>
+														<td class="p-1">
+															<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 10pt;">@{{ x.delivery_date }}</span>
+															<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
+														</td>
+													</tr>
+													<tr>
+														<td class="p-1"><b>Ref. No.:</b></td>
+														<td class="p-1">
+															<span class="reference-no">@{{ x.sales_order_no }}@{{ x.material_request }}</span>
+														</td>
+													</tr>
+													<tr>
+														<td colspan=2 class="text-center p-1">
+															<small class="customer">@{{ x.customer }}</small>
+														</td>
+													</tr>
+												</table>
+											</div>
 										</td>
-										<td class="text-center">
+										<td class="text-center d-none d-lg-table-cell">
 											<span class="qty" style="font-size: 12pt;"><b>@{{ x.qty_to_manufacture }}</b></span>
 										</td>
-										<td class="text-center">
+										<td class="text-center d-none d-lg-table-cell">
 											<span class="badge badge-success qty" style="font-size: 12pt;"><b>@{{ x.qty_to_receive }}</b></span>
 										</td>
-										<td class="text-center">
+										<td class="text-center d-none d-lg-table-cell">
 											<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 10pt;">@{{ x.delivery_date }}</span>
 											<span ng-if="x.delivery_status == null">@{{ x.delivery_date }}</span>
 										</td>
-										<td class="text-center">
+										<td class="text-center d-none d-lg-table-cell">
 											<span class="reference-no d-block">@{{ x.sales_order_no }}@{{ x.material_request }}</span>
 											<small class="customer d-block">@{{ x.customer }}</small>
 										</td>
-										<td class="text-center">
+										<td class="text-center d-none d-lg-table-cell">
 											<img src="dist/img/check.png" class="img-circle checkout feedback-details" data-id="@{{ x.production_order }}">
 										</td>
 									</tr>

@@ -114,34 +114,37 @@
 			@if(!in_array($activePage, ['search_results', 'dashboard']))
 			<div class="row m-0 pb-0">
 				<div class="col-xl-5 p-3">
-					<h2><a href="/" class="btn btn-default float-left pt-2 pb-2 pr-3 pl-3 mr-2 ">
+					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
 						<i class="fas fa-home"></i>
-					</a>{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
+					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
+					<h4 class="d-block d-lg-none"><a href="/" class="btn btn-default">
+						<i class="fas fa-home"></i>
+					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h4>
 				</div>
-				<div class="col-xl-7 pr-4 pt-2 text-right">
+				<div class="col-xl-7 pt-2 dashboard-btn-grp">
 					<a class="btn btn-app bg-primary" href="/returns">
-						<i class="fas fa-undo"></i> Returns
+						<i class="fas fa-undo"></i> <span class="d-none d-lg-inline">Returns</span>
 					</a>
 					<a class="btn btn-app bg-info" href="/production_to_receive">
-						<i class="far fa-check-circle"></i> Feedback
+						<i class="far fa-check-circle"></i> <span class="d-none d-lg-inline">Feedback</span>
 					</a>
 					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
-						<i class="fas fa-exchange-alt"></i> Transfer
+						<i class="fas fa-exchange-alt"></i> <span class="d-none d-lg-inline">Transfer</span>
 					</a>
 					<a class="btn btn-app bg-purple" href="/receipts">
-						<i class="fas fa-boxes"></i> PO Receipts
+						<i class="fas fa-boxes"></i> <span class="d-none d-lg-inline">PO Receipts</span>
 					</a>
 					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
-						<i class="fas fa-tasks"></i> Withdrawals
+						<i class="fas fa-tasks"></i> <span class="d-none d-lg-inline">Withdrawals</span>
 					</a>
 					<a class="btn btn-app bg-indigo" href="/material_issue">
-						<i class="fas fa-dolly"></i> Material Issue
+						<i class="fas fa-dolly"></i> <span class="d-none d-lg-inline">Material Issue</span>
 					</a>
 					<a class="btn btn-app bg-navy" href="/picking_slip">
-						<i class="fas fa-truck"></i> Deliveries
+						<i class="fas fa-truck"></i> <span class="d-none d-lg-inline">Deliveries</span>
 					</a>
 					<a class="btn btn-app bg-teal" href="/replacements">
-						<i class="fas fa-retweet"></i> Replacement
+						<i class="fas fa-retweet"></i> <span class="d-none d-lg-inline">Replacement</span>
 					</a>
 				</div>
 			</div>
@@ -303,10 +306,26 @@
 			transition: all 200ms ease-in;
 			transform: scale(1.2);
 		}
+
 		.mob-dropdown-container{
 			position: absolute !important;
 			right: 0 !important;
 			top: 5 !important;
+		}
+		.low-lvl-stk-tbl-item-desc, .tbl-athena-logs-tbl-item-description{
+			width: 35%;
+		}
+		.tbl-athena-logs-table{
+			font-size: 0.8rem;
+		}
+		.low-lvl-stock-badge{
+			font-size: 11pt;
+		}
+		.returns-badge, #reserved-items-pagination{
+			font-size: 12pt;
+		}
+		.dashboard-btn-grp{
+			text-align: right;
 		}
 		@media (max-width: 575.98px) {
 			.copyright{
@@ -315,6 +334,27 @@
 			.responsive-modal-title{
 				font-size: 12pt;
 			}
+			.low-lvl-stk-tbl-item-desc, .tbl-athena-logs-tbl-item-description{
+				width: 90% !important;
+			}
+			.font-responsive, .tbl-athena-logs-table, .low-lvl-stock-badge, .returns-badge, #reserved-items-pagination{
+				font-size: 10pt;
+			}
+			.inv-accuracy-tbl-item-class{
+				padding: 5px !important;
+			}
+			.dashboard-table td{
+				word-break: break-word !important;
+			}
+			.dashboard-btn-grp{
+				text-align: center !important;
+			}
+			.page-link{
+				padding: 9px !important;
+			}
+			.low-lvl-stock-total{
+				margin-top: 13px !important;
+			}
 		}
 	  	@media (max-width: 767.98px) {
 			.copyright{
@@ -322,6 +362,27 @@
 			}
 			.responsive-modal-title{
 				font-size: 12pt;
+			}
+			.low-lvl-stk-tbl-item-desc, .tbl-athena-logs-tbl-item-description{
+				width: 90% !important;
+			}
+			.font-responsive, .tbl-athena-logs-table, .low-lvl-stock-badge, .returns-badge, #reserved-items-pagination{
+				font-size: 10pt;
+			}
+			.inv-accuracy-tbl-item-class{
+				padding: 5px !important;
+			}
+			.dashboard-table td{
+				word-break: break-word !important;
+			}
+			.dashboard-btn-grp{
+				text-align: center !important;
+			}
+			.page-link{
+				padding: 9px !important;
+			}
+			.low-lvl-stock-total{
+				margin-top: 13px !important;
 			}
 		}
 
@@ -483,6 +544,22 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" id="resetAll" class="btn btn-default font-responsive" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="warehouseLocationModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-md" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="warehouseLocationModalLabel">Update Warehouse Location</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div id="warehouse-location" class="container-fluid"></div>
 				</div>
 			</div>
 		</div>
@@ -1494,6 +1571,19 @@
 				$('#view-item-details-modal .modal-title').text(item_code + " [" + item_classification + "]");
 
 				view_item_details(item_code);
+			});
+
+			$(document).on('click', '#warehouse-location-btn', function(e){
+				var item_code = $(this).data('item-code');
+
+				$.ajax({
+					type: 'GET',
+					url: '/form_warehouse_location/' + item_code,
+					success: function(response){
+						$('#warehouse-location').html(response);
+						$('#warehouseLocationModal').modal('show');
+					}
+				});
 			});
 
 			function view_item_details(item_code){
