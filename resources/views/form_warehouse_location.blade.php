@@ -9,5 +9,6 @@
             </div>
         </div>
     @endforeach
+    <input type="text" name="item_code" value="{{ $item_code }}" hidden readonly>
     <button class="btn btn-primary float-right" type="submit">Submit</button>
   </form>

@@ -1541,7 +1541,7 @@ class MainController extends Controller
 
         $warehouses = DB::table('tabBin')->whereIn('warehouse', $allowed_warehouses)->where('item_code', $item_code)->select('warehouse', 'location')->get();
 
-        return view('form_warehouse_location', compact('warehouses'));
+        return view('form_warehouse_location', compact('warehouses', 'item_code'));
     }
 
     public function edit_warehouse_location(Request $request){
@@ -1550,7 +1550,7 @@ class MainController extends Controller
             $locations = $request->location;
             $warehouses = $request->warehouses;
             foreach($locations as $key => $location){
-                DB::table('tabBin')->where('warehouse', $warehouses[$key])->update(['location' => strtoupper($location)]);
+                DB::table('tabBin')->where('warehouse', $warehouses[$key])->where('item_code', $request->item_code)->update(['location' => strtoupper($location)]);
             }
             
             DB::commit();
