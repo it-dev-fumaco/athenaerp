@@ -70,7 +70,12 @@
                                     </thead>
                                     @forelse ($site_warehouses as $stock)
                                     <tr>
-                                        <td class="p-1 font-responsive">{{ $stock['warehouse'] }}</td>
+                                        <td class="p-1 font-responsive">
+                                            {{ $stock['warehouse'] }}
+                                            @if ($stock['location'])
+                                                <small class="text-muted font-italic"> - {{ $stock['location'] }}</small>
+                                            @endif
+                                        </td>
                                         <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                         <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                         <td class="text-center p-1">
@@ -106,7 +111,12 @@
                                                         </tr>
                                                         @forelse($consignment_warehouses as $con)
                                                         <tr>
-                                                            <td>{{ $con['warehouse'] }}</td>
+                                                            <td>
+                                                                {{ $con['warehouse'] }}
+                                                                @if ($con['location'])
+                                                                    <small class="text-muted font-italic"> - {{ $con['location'] }}</small>
+                                                                @endif
+                                                            </td>
                                                             <td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
                                                         </tr>
                                                         @empty
