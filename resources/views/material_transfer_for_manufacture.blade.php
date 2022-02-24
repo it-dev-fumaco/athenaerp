@@ -68,7 +68,7 @@
 											<td class="text-center">
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<small class="d-block mt-1">@{{ x.production_order }}</small>
-												<div class="d-block d-lg-block"><br>
+												<div class="d-block d-lg-none"><br>
 													<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.name }}">
 												</div>
 											</td>
