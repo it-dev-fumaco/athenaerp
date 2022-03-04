@@ -163,17 +163,17 @@ class MainController extends Controller
         $item_list = [];
         foreach ($items as $row) {
             $item_images = [];
-            if (array_key_exists($row->item_code, $item_image_paths)) {
-                $item_images = $item_image_paths[$row->item_code];
+            if (array_key_exists($row->name, $item_image_paths)) {
+                $item_images = $item_image_paths[$row->name];
             }
 
-            $part_nos = Arr::exists($part_nos_query, $row->item_code) ? $part_nos_query[$row->item_code] : null;
+            $part_nos = Arr::exists($part_nos_query, $row->name) ? $part_nos_query[$row->name] : null;
 
             $site_warehouses = [];
             $consignment_warehouses = [];
             $item_inventory_arr = [];
-            if (array_key_exists($row->item_code, $item_inventory)) {
-                $item_inventory_arr = $item_inventory[$row->item_code];
+            if (array_key_exists($row->name, $item_inventory)) {
+                $item_inventory_arr = $item_inventory[$row->name];
             }
             foreach ($item_inventory_arr as $value) {
                 $reserved_qty = 0;
@@ -228,7 +228,7 @@ class MainController extends Controller
             }
 
             $item_list[] = [
-                'name' => $row->item_code,
+                'name' => $row->name,
                 'description' => $row->description,
                 'item_image_paths' => $item_images,
                 'part_nos' => $part_nos,
