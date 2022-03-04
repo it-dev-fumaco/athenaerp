@@ -49,7 +49,7 @@
 		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
-					<div class="row w-100">
+					<div class="row w-100 p-0 m-0">
 						<div class="col-xl-9 col-lg-10 col-md-12">
 							<div class="row">
 								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-center">
@@ -71,20 +71,22 @@
 										</div>
 									</li>
 								</div>
-								<div class="col-md-12 col-xl-7 col-lg-9 align-middle">
-									<form role="search" method="GET" action="/search_results" id="search-form">
+								<div class="col-md-12 col-xl-7 col-lg-9 p-0 mx-auto align-middle">
+									<form role="search" method="GET" action="/search_results" id="search-form" class="pb-1">
 										<input type="checkbox" id="cb-1" name="check_qty" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											<div class="input-group-append" id="item-group-filter-parent" style="font-size: 11pt;">
-												<select id="item-group-filter" class="btn btn-default">
-												</select>
+											<div class="input-group-append d-none d-lg-block" id="item-group-filter-parent" style="font-size: 11pt;">
+												<select id="item-group-filter" class="btn btn-default"></select>
 											</div>
 											<button class="btn btn-default" type="submit">
 												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
 											</button>
+										</div>
+										<div class="input-group-append w-100 d-block d-lg-none" id="mobile-item-group-filter-parent" style="font-size: 11pt;">
+											<select id="mobile-item-group-filter" class="btn btn-default w-100"></select>
 										</div>
 									</form>
 									<div id="suggesstion-box" class="mr-2 ml-2"></div>
@@ -385,7 +387,11 @@
 				margin-top: 13px !important;
 			}
 		}
-
+		@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+			#select2-mobile-item-group-filter-container{
+				margin-top: -10px !important;
+			}
+		}
 	</style>
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
@@ -1502,8 +1508,19 @@
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
                 event.preventDefault();
-                $(this).ekkoLightbox({
-					showArrows: true,
+                // $(this).ekkoLightbox({
+				// 	showArrows: true,
+				// });
+				var item_code = $(this).data('title');
+
+				$.ajax({
+					type: "GET",
+					url: "/search_results_images",
+					data: { item_code: item_code },
+					success: function (data) {
+						$('#images-modal').modal('show');
+						$('#image-container').html(data);
+					}
 				});
 			});
 			
@@ -2062,7 +2079,35 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				}
 			});
 
+			$('#mobile-item-group-filter').select2({
+				dropdownParent: $('#mobile-item-group-filter-parent'),
+				placeholder: grpPlaceholder,
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.item_groups
+						};
+					},
+					cache: true
+				}
+			});
+
 			$(document).on('select2:select', '#item-group-filter', function(e){
+				var data = e.params.data;
+
+				$('#grp-1').val(data.id);
+				// $('#search-form').submit();
+			});
+
+			$(document).on('select2:select', '#mobile-item-group-filter', function(e){
 				var data = e.params.data;
 
 				$('#grp-1').val(data.id);

@@ -84,7 +84,7 @@
 											<div class="text-center" style="margin: 1px;"><br/>
 												<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 													<div class="btn btn-primary">
-														<i class="fa fa-file"></i> <span class="d-inline d-xl-none" style="font-size: 10pt">View Item Details</span>
+														<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
 													</div>
 												</a>
 												<a href="#" class="cLink d-none d-xl-inline" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
