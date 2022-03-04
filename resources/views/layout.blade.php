@@ -1508,20 +1508,20 @@
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
                 event.preventDefault();
-                // $(this).ekkoLightbox({
-				// 	showArrows: true,
-				// });
-				var item_code = $(this).data('title');
-
-				$.ajax({
-					type: "GET",
-					url: "/search_results_images",
-					data: { item_code: item_code },
-					success: function (data) {
-						$('#images-modal').modal('show');
-						$('#image-container').html(data);
-					}
+                $(this).ekkoLightbox({
+					showArrows: true,
 				});
+				// var item_code = $(this).data('title');
+
+				// $.ajax({
+				// 	type: "GET",
+				// 	url: "/search_results_images",
+				// 	data: { item_code: item_code },
+				// 	success: function (data) {
+				// 		$('#images-modal').modal('show');
+				// 		$('#image-container').html(data);
+				// 	}
+				// });
 			});
 			
 			$.ajaxSetup({
