@@ -4,6 +4,11 @@
 ])
 
 @section('content')
+<div id="overlayer">
+<div class="spinner-border" role="status" id="preload-spinner">
+	<span class="sr-only">Loading...</span>
+</div>
+</div>
 <div class="content p-0 m-0">
 	<div class="content-header pt-3 p-0 m-0">
 		<div class="container-fluid">
@@ -281,7 +286,6 @@
 	</div>
 </div>
 
-
 <style>
 	html,body
 {
@@ -290,6 +294,7 @@
     margin: 0px !important;
     padding: 0px !important;
     overflow-x: hidden !important; 
+	position:relative;
 }
 	.itemClassContainer{
 		min-height: 1px;
@@ -454,6 +459,24 @@
 	.custom-border{
 		box-shadow: 8px 1px 12px #001F3F;
 	}
+	#overlayer{
+		width:100%;
+		height:100%;  
+		position:absolute;
+		z-index:1;
+		background:rgba(74,74,74, 0.4);
+	}
+	#preload-spinner{
+		position:sticky;
+		top: 50vh;
+    	left: 50%;
+		z-index:1;
+	}
 </style>
-
+<script>
+	$(document).ready(function(){
+		$("#preload-spinner").delay(2000).fadeOut("slow");
+  		$("#overlayer").delay(2000).fadeOut("slow");
+	});
+</script>
 @endsection
