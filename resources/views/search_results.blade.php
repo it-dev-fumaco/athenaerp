@@ -477,9 +477,9 @@
 	}
 </style>
 <script>
-	$(document).ready(function(){
+	// $(document).ready(function(){
 		$("#preload-spinner").delay(2000).fadeOut("slow");
 		$("#overlay").delay(2000).fadeOut("slow");
-	});
+	// });
 </script>
 @endsection
