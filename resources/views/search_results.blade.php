@@ -4,6 +4,11 @@
 ])
 
 @section('content')
+<div id="overlay">
+	<div class="spinner-border" role="status" id="preload-spinner">
+		<span class="sr-only">Loading...</span>
+	</div>
+</div>
 <div class="content p-0 m-0">
 	<div class="content-header pt-3 p-0 m-0">
 		<div class="container-fluid">
@@ -110,7 +115,7 @@
 											<div class="text-center" style="margin: 1px;"><br/>
 												<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 													<div class="btn btn-primary">
-														<i class="fa fa-file"></i> <span class="d-inline d-xl-none" style="font-size: 10pt">View Item Details</span>
+														<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
 													</div>
 												</a>
 												<a href="#" class="cLink d-none d-xl-inline" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
@@ -307,7 +312,6 @@
 	</div>
 </div>
 
-
 <style>
 	html,body
 {
@@ -316,6 +320,7 @@
     margin: 0px !important;
     padding: 0px !important;
     overflow-x: hidden !important; 
+	position:relative;
 }
 	.itemClassContainer{
 		min-height: 1px;
@@ -479,6 +484,22 @@
     }
 	.custom-border{
 		box-shadow: 8px 1px 12px #001F3F;
+	}
+	
+	#overlay{
+		width:100%;
+		height:100%;  
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index:1;
+		background:rgba(255,255,255, 1);
+	}
+	#preload-spinner{
+		position: absolute;
+		top: 50vh !important;
+    	left: 48% !important;
+		z-index:1;
 	}
 </style>
 <script>
