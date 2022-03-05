@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\StockReservation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Auth;
 use DB;
 use Webp;
@@ -241,6 +242,26 @@ class MainController extends Controller
         }
 
         return view('search_results', compact('item_list', 'items', 'itemClass'));
+    }
+
+    public function search_results_images(Request $request){
+        if($request->ajax()){
+            $item_images = DB::table('tabItem Images')->where('parent', $request->item_code)->get();
+
+            $dir = $request->dir == 'next' ? 0 : count($item_images) - 1;
+    
+            $img = isset($item_images[$request->img_key]) ? $item_images[$request->img_key]->image_path : $item_images[$dir]->image_path;
+            $current_key = isset($item_images[$request->img_key]) ? $request->img_key : $dir;
+            
+            $img_arr = [
+                'item_code' => $request->item_code,
+                'alt' => Str::slug(explode('.', $item_images[$current_key]->image_path)[0]),
+                'image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
+                'current_img_key' => $current_key
+            ];
+                    
+            return $img_arr;
+        }
     }
 
     public function reserved_qty(Request $request){

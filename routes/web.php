@@ -34,6 +34,7 @@ Route::group(['middleware' => 'auth'], function(){
     
     Route::get('/', 'MainController@index');
     Route::get('/search_results', 'MainController@search_results');
+    Route::get('/search_results_images', 'MainController@search_results_images');
     Route::get('/dashboard_data', 'MainController@dashboard_data');
     
     Route::get('/logout', 'LoginController@logout');

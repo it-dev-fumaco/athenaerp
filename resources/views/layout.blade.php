@@ -1502,10 +1502,10 @@
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
                 event.preventDefault();
-                $(this).ekkoLightbox({
-					showArrows: true,
-				});
+				var item_code = $(this).data('title');
+				$('#'+item_code+'-images-modal').modal('show');
 			});
+
 			
 			$.ajaxSetup({
 				headers: {
