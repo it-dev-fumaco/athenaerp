@@ -4,10 +4,10 @@
 ])
 
 @section('content')
-<div id="overlayer">
-<div class="spinner-border" role="status" id="preload-spinner">
-	<span class="sr-only">Loading...</span>
-</div>
+<div id="overlay">
+	<div class="spinner-border" role="status" id="preload-spinner">
+		<span class="sr-only">Loading...</span>
+	</div>
 </div>
 <div class="content p-0 m-0">
 	<div class="content-header pt-3 p-0 m-0">
@@ -459,24 +459,27 @@
 	.custom-border{
 		box-shadow: 8px 1px 12px #001F3F;
 	}
-	#overlayer{
+	
+	#overlay{
 		width:100%;
 		height:100%;  
-		position:absolute;
+		position: absolute;
+		top: 0;
+		left: 0;
 		z-index:1;
-		background:rgba(74,74,74, 0.4);
+		background:rgba(255,255,255, 1);
 	}
 	#preload-spinner{
-		position:sticky;
-		top: 50vh;
-    	left: 50%;
+		position: absolute;
+		top: 50vh !important;
+    	left: 48% !important;
 		z-index:1;
 	}
 </style>
 <script>
 	$(document).ready(function(){
 		$("#preload-spinner").delay(2000).fadeOut("slow");
-  		$("#overlayer").delay(2000).fadeOut("slow");
+		$("#overlay").delay(2000).fadeOut("slow");
 	});
 </script>
 @endsection
