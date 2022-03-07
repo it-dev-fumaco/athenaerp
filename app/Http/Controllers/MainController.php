@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\StockReservation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Auth;
 use DB;
 use Webp;
@@ -59,7 +60,7 @@ class MainController extends Controller
                 })
                 ->when($request->check_qty, function($q) use ($request){
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-                });
+                })->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification');
         }else{
             $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)->join('tabItem Default as d', 'd.parent', 'tabItem.name')
                 ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)->where('tabItem.item_classification', 'LIKE', $request->classification)
@@ -86,7 +87,7 @@ class MainController extends Controller
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 })
                 ->where('d.default_warehouse', $request->wh)
-                ->select('tabItem.name', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'd.default_warehouse');
+                ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'd.default_warehouse');
         }
             
         $itemClassQuery = Clone $itemQ;
@@ -163,17 +164,17 @@ class MainController extends Controller
         $item_list = [];
         foreach ($items as $row) {
             $item_images = [];
-            if (array_key_exists($row->name, $item_image_paths)) {
-                $item_images = $item_image_paths[$row->name];
+            if (array_key_exists($row->item_code, $item_image_paths)) {
+                $item_images = $item_image_paths[$row->item_code];
             }
 
-            $part_nos = Arr::exists($part_nos_query, $row->name) ? $part_nos_query[$row->name] : null;
+            $part_nos = Arr::exists($part_nos_query, $row->item_code) ? $part_nos_query[$row->item_code] : null;
 
             $site_warehouses = [];
             $consignment_warehouses = [];
             $item_inventory_arr = [];
-            if (array_key_exists($row->name, $item_inventory)) {
-                $item_inventory_arr = $item_inventory[$row->name];
+            if (array_key_exists($row->item_code, $item_inventory)) {
+                $item_inventory_arr = $item_inventory[$row->item_code];
             }
             foreach ($item_inventory_arr as $value) {
                 $reserved_qty = 0;
@@ -228,7 +229,7 @@ class MainController extends Controller
             }
 
             $item_list[] = [
-                'name' => $row->name,
+                'name' => $row->item_code,
                 'description' => $row->description,
                 'item_image_paths' => $item_images,
                 'part_nos' => $part_nos,
@@ -241,6 +242,26 @@ class MainController extends Controller
         }
 
         return view('search_results', compact('item_list', 'items', 'itemClass'));
+    }
+
+    public function search_results_images(Request $request){
+        if($request->ajax()){
+            $item_images = DB::table('tabItem Images')->where('parent', $request->item_code)->get();
+
+            $dir = $request->dir == 'next' ? 0 : count($item_images) - 1;
+    
+            $img = isset($item_images[$request->img_key]) ? $item_images[$request->img_key]->image_path : $item_images[$dir]->image_path;
+            $current_key = isset($item_images[$request->img_key]) ? $request->img_key : $dir;
+            
+            $img_arr = [
+                'item_code' => $request->item_code,
+                'alt' => Str::slug(explode('.', $item_images[$current_key]->image_path)[0]),
+                'image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
+                'current_img_key' => $current_key
+            ];
+                    
+            return $img_arr;
+        }
     }
 
     public function reserved_qty(Request $request){
