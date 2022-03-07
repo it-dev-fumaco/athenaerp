@@ -4,11 +4,6 @@
 ])
 
 @section('content')
-<div id="overlay">
-	<div class="spinner-border" role="status" id="preload-spinner">
-		<span class="sr-only">Loading...</span>
-	</div>
-</div>
 <div class="content p-0 m-0">
 	<div class="content-header pt-3 p-0 m-0">
 		<div class="container-fluid">
@@ -485,27 +480,9 @@
 	.custom-border{
 		box-shadow: 8px 1px 12px #001F3F;
 	}
-	
-	#overlay{
-		width:100%;
-		height:100%;  
-		position: absolute;
-		top: 0;
-		left: 0;
-		z-index:1;
-		background:rgba(255,255,255, 1);
-	}
-	#preload-spinner{
-		position: absolute;
-		top: 50vh !important;
-    	left: 48% !important;
-		z-index:1;
-	}
+
 </style>
 <script>
-	$("#preload-spinner").delay(2000).fadeOut("slow");
-	$("#overlay").delay(2000).fadeOut("slow");
-
 	function nextImg(item_code){
 		var current_img = $('#'+item_code+'-image-data').text();
 		$.ajax({
