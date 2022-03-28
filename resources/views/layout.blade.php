@@ -188,9 +188,9 @@
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											<div class="input-group-append d-none d-lg-block" id="item-group-filter-parent" style="font-size: 11pt;">
+											{{-- <div class="input-group-append d-none d-lg-block" id="item-group-filter-parent" style="font-size: 11pt;">
 												<select id="item-group-filter" class="btn btn-default"></select>
-											</div>
+											</div> --}}
 											<button class="btn btn-default" type="submit">
 												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
 											</button>
