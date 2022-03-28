@@ -88,10 +88,9 @@
 						</div>
 						<div class="card card-gray card-outline col-12 col-xl-10">
 							<div class="container-fluid"><!-- new table -->
-								<div class="row">
 								@forelse ($item_list as $row)
 									<div class="row border border-outline-secondary">
-										<div class="col-1 p-2">
+										<div class="col-1 p-2 border">
 											@php
 												$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 											@endphp
@@ -243,7 +242,6 @@
 										<h5>No result(s) found.</h5>
 									</div>
 								@endforelse
-								</div>
 							</div><!-- new table -->
 
 							<div class="mt-3 ml-3 clearfix pagination" style="display: block;">
