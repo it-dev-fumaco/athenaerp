@@ -15,6 +15,9 @@
 								<div class="card m-0">
 									<div class="row">
 										<div class="col-8">
+											@php
+												$promodiser_restriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+											@endphp
 											<button class="btn text-left pt-0 d-none d-xl-inline" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
 												<p class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 10pt !important">
 													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
@@ -51,6 +54,14 @@
 																	<span style="font-size: 9pt;">Remove zero-qty items</span>
 																</label>
 															</div>
+															@if ($promodiser_restriction)
+																<div>
+																	<label>
+																		<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('promodiser_warehouse')) ? 'checked' : null }} >
+																		<span style="font-size: 9pt;">Warehouse Assigned to Me</span>
+																	</label>
+																</div>
+															@endif
 															
 															<label class="text-center" style="font-size: 9pt;">Category Filter</label>
 															<ul class="feed-item">
@@ -75,19 +86,19 @@
 										<div class="card-body p-0">
 											<div class="col-10 mx-auto">
 												<div class="row pt-2">
-													<div class="col-4 text-right">
+													<div class="col-4 mx-auto text-right">
 														<label style="display: inline-block">Select Item Group&nbsp;&nbsp;</label>
 														<div class="input-group-append text-left w-50" id="item-group-filter-parent" style="font-size: 11pt;display: inline-block">
 															<select id="item-group-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-4 text-right">
+													<div class="col-4 mx-auto text-right">
 														<label class="mt-2">Select Warehouse&nbsp;&nbsp;</label>
-														<div class="form-group text-left m-0 w-50" id="warehouse-filter-parent" style="font-size: 11pt;">
+														<div class="form-group text-left m-0" id="warehouse-filter-parent" style="font-size: 11pt; width: 55%">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-4 text-center">
+													<div class="col-{{ $promodiser_restriction ? 2 : 4 }} mx-auto text-center">
 														<div class="form-group m-0r">
 															<label>
 																<input type="checkbox" class="minimal cb-2" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
@@ -96,6 +107,17 @@
 															</label>
 														</div>
 													</div>
+													@if ($promodiser_restriction)
+														<div class="col-2 mx-auto text-center">
+															<div class="form-group m-0r">
+																<label>
+																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('promodiser_warehouse')) ? 'checked' : null }} >
+																	
+																	<span style="font-size: 12px;">Warehouse Assigned to Me</span>
+																</label>
+															</div>
+														</div>
+													@endif
 												</div>
 											</div>
 										</div>
