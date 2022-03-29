@@ -23,7 +23,12 @@
 	<!-- datepicker -->
 	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
 	<style>
-	
+		* {
+			-webkit-overflow-scrolling: touch !important;
+		}
+		html, body{
+			scroll-behavior: smooth !important;
+		}
 
 		#loader-wrapper {
 			position: fixed;
@@ -195,9 +200,9 @@
 												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
 											</button>
 										</div>
-										<div class="input-group-append w-100 d-block d-lg-none" id="mobile-item-group-filter-parent" style="font-size: 11pt;">
+										{{-- <div class="input-group-append w-100 d-block d-lg-none" id="mobile-item-group-filter-parent" style="font-size: 11pt;">
 											<select id="mobile-item-group-filter" class="btn btn-default w-100"></select>
-										</div>
+										</div> --}}
 									</form>
 									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
@@ -495,11 +500,6 @@
 			}
 			.low-lvl-stock-total{
 				margin-top: 13px !important;
-			}
-		}
-		@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
-			#select2-mobile-item-group-filter-container{
-				margin-top: -10px !important;
 			}
 		}
 	</style>
@@ -1129,6 +1129,7 @@
 				grpPlaceholder = "Item Group";
 			}
 
+			// Search Results Warehouse Filter
 			$('#warehouse-filter').select2({
 				dropdownParent: $('#warehouse-filter-parent'),
 				// placeholder: whName.trim() != null ? whName : "Select Warehouse",
@@ -1158,6 +1159,37 @@
 				$('#wh-1').val(data.id);
 				$('#search-form').submit();
 			});
+
+			$('#mobile-warehouse-filter').select2({
+				dropdownParent: $('#mobile-warehouse-filter-parent'),
+				// placeholder: whName.trim() != null ? whName : "Select Warehouse",
+				placeholder: whPlaceholder,
+
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.warehouses
+						};
+					},
+					cache: true
+				}
+			});
+
+			$(document).on('select2:select', '#mobile-warehouse-filter', function(e){
+				var data = e.params.data;
+
+				$('#wh-1').val(data.id);
+				$('#search-form').submit();
+			});
+			// Search Results Warehouse Filter
 
 			// allowed_parent_warehouses();
 			// function allowed_parent_warehouses(){
@@ -1205,12 +1237,12 @@
 				radioClass: 'iradio_minimal-blue'
 			});
 
-			$('#cb-2').on('ifChecked', function(event){
+			$('.cb-2').on('ifChecked', function(event){
 				$("#cb-1").prop("checked", true);
 				$('#search-form').submit();
 			});
 
-			$('#cb-2').on('ifUnchecked', function(event){
+			$('.cb-2').on('ifUnchecked', function(event){
 				$("#cb-1").prop("checked", false);
 				$('#search-form').submit();
 			});
@@ -1625,6 +1657,13 @@
 
 				var item_code = $(this).data('title');
 				$('#'+item_code+'-images-modal').modal('show');
+			});
+
+			$(document).on('click', '[data-toggle="mobile-lightbox"]', function(event) {
+                event.preventDefault();
+
+				var item_code = $(this).data('title');
+				$('#mobile-'+item_code+'-images-modal').modal('show');
 			});
 
 			
