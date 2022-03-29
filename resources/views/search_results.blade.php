@@ -9,23 +9,8 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="container-fluid itemClassContainer overflow-auto p-0">
-						@foreach($itemClass as $itemClass1)
-							@php
-								$item_class = explode('-', $itemClass1->item_classification);
-								$abbr = $item_class[0];
-								$name = $item_class[1];
-							@endphp
-							<a class="itemClassBubble" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">	
-								<div class="btn-group category-btn-grp {{ request('classification') == $itemClass1->item_classification ? 'custom-border' : '' }} mb-2" role="group">
-									<button type="button" class="btn category-abbr-btn font-italic"><b>{{ $abbr }}</b></button>
-									<button type="button" class="btn category-name-btn">{{ $name }}</button>
-								</div>
-							</a>
- 						@endforeach
-					</div>
 					<div class="row">
-						<div class="col-12">
+						<div class="col-12 card card-gray card-outline m-0">
 							<div id="accordion" class="col-12 p-0">
 								<div class="card m-0">
 									<div class="row">
@@ -73,24 +58,41 @@
 								</div>
 							</div>
 						</div>
-						<div class="card card-gray d-none d-xl-block card-outline col-2">
-							{{-- <div class="card mb-3">
-								<div class="card-header text-white font-weight-bold" style="font-size: 0.75rem; background-color: #001F3F;">Filters</div>
-								<div class="card-body">
-									@foreach ($itemClass as $itemClass1)
-										<div class="form-check">
-											<input type="checkbox" class="form-check-input" name="{{ $itemClass1->item_classification }}" value="{{ $itemClass1->item_classification}}">
-											<label class="form-check-label" style="font-size: 0.8rem;">{{ $itemClass1->item_classification }}</label>
+						<div class="card d-none d-xl-block col-2"><!-- Category Sidebar -->
+							<div class="card mb-3">
+								@php
+									$item_class = collect($itemClass)->chunk(90);
+								@endphp
+								<label class="text-center p-2">Category Filter</label>
+								@if (count($item_class) > 1)
+									<ul class="nav nav-tabs" role="tablist">
+										@foreach ($item_class as $i => $item)
+											<li class="nav-item">
+												<a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#class-category-{{ $i + 1 }}">{{ $i + 1 }}</a>
+											</li>
+										@endforeach
+									</ul>
+								@endif
+								<div class="tab-content">
+									@for($i = 0; $i < count($item_class); $i++)
+										<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
+											<ul class="feed-item">
+												@foreach ($item_class[$i] as $itemClass1)
+													<li class="p-2">
+														<a href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">{{ $itemClass1->item_classification }}</a>
+													</li>
+												@endforeach
+											</ul>
 										</div>
-									@endforeach
+									@endfor
 								</div>
-							</div> --}}
+							</div>
 						</div>
-						<div class="card card-gray card-outline col-12 col-xl-10">
+						<div class="card col-12 col-xl-10">
 							<div class="container-fluid"><!-- new table -->
 								@forelse ($item_list as $row)
 									<div class="row border border-outline-secondary">
-										<div class="col-1 p-2 border">
+										<div class="col-1 p-2">
 											@php
 												$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 											@endphp
@@ -431,7 +433,9 @@
 	.custom-border{
 		box-shadow: 8px 1px 12px #001F3F;
 	}
-
+	.feed-item {
+		list-style-type: none;
+	}
 </style>
 <script>
 	function nextImg(item_code){
