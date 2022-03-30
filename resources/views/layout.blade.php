@@ -193,16 +193,11 @@
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											{{-- <div class="input-group-append d-none d-lg-block" id="item-group-filter-parent" style="font-size: 11pt;">
-												<select id="item-group-filter" class="btn btn-default"></select>
-											</div> --}}
 											<button class="btn btn-default" type="submit">
 												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
 											</button>
 										</div>
-										{{-- <div class="input-group-append w-100 d-block d-lg-none" id="mobile-item-group-filter-parent" style="font-size: 11pt;">
-											<select id="mobile-item-group-filter" class="btn btn-default w-100"></select>
-										</div> --}}
+										
 									</form>
 									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
@@ -1160,35 +1155,6 @@
 				$('#search-form').submit();
 			});
 
-			$('#mobile-warehouse-filter').select2({
-				dropdownParent: $('#mobile-warehouse-filter-parent'),
-				// placeholder: whName.trim() != null ? whName : "Select Warehouse",
-				placeholder: whPlaceholder,
-
-				ajax: {
-					url: '/get_select_filters',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results: response.warehouses
-						};
-					},
-					cache: true
-				}
-			});
-
-			$(document).on('select2:select', '#mobile-warehouse-filter', function(e){
-				var data = e.params.data;
-
-				$('#wh-1').val(data.id);
-				$('#search-form').submit();
-			});
 			// Search Results Warehouse Filter
 
 			// allowed_parent_warehouses();
@@ -2222,39 +2188,11 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				}
 			});
 
-			$('#mobile-item-group-filter').select2({
-				dropdownParent: $('#mobile-item-group-filter-parent'),
-				placeholder: grpPlaceholder,
-				ajax: {
-					url: '/get_select_filters',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results: response.item_groups
-						};
-					},
-					cache: true
-				}
-			});
-
 			$(document).on('select2:select', '#item-group-filter', function(e){
 				var data = e.params.data;
 
 				$('#grp-1').val(data.id);
-				// $('#search-form').submit();
-			});
-
-			$(document).on('select2:select', '#mobile-item-group-filter', function(e){
-				var data = e.params.data;
-
-				$('#grp-1').val(data.id);
-				// $('#search-form').submit();
+				$('#search-form').submit();
 			});
 
 			// Item group filter

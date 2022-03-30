@@ -18,15 +18,15 @@
 											@php
 												$promodiser_restriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
 											@endphp
-											<button class="btn text-left pt-0 d-none d-xl-inline" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-												<p class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 10pt !important">
-													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
-												</p>
-											</button>
-
 											<button class="btn text-left pt-0 d-inline d-xl-none" data-toggle="modal" data-target="#mobile-filters-modal">
 												<p class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 10pt !important">
 													<i class="fa fa-bars"></i>&nbsp;Filters
+												</p>
+											</button>
+
+											<button class="btn text-left pt-0" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+												<p class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 10pt !important">
+													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
 												</p>
 											</button>
 
@@ -35,34 +35,6 @@
 												<div class="modal-dialog" role="document">
 													<div class="modal-content">
 														<div class="modal-body">
-															<div>
-																<label class="text-center" style="font-size: 9pt;">Select Item Group</label>
-																<div class="input-group-append text-left w-100" id="mobile-item-group-filter-parent" style="font-size: 9pt;display: inline-block">
-																	<select id="mobile-item-group-filter" class="btn btn-default"></select>
-																</div>
-															</div>
-															<br>
-															<div>
-																<label class="text-center" style="font-size: 9pt;">Select Warehouse</label>
-																<div class="form-group text-left w-100" id="mobile-warehouse-filter-parent" style="font-size: 9pt;">
-																	<select name="warehouse" id="mobile-warehouse-filter" class="form-control"></select>
-																</div>
-															</div>
-															<div>
-																<label>
-																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
-																	<span style="font-size: 9pt;">Remove zero-qty items</span>
-																</label>
-															</div>
-															@if ($promodiser_restriction)
-																<div>
-																	<label>
-																		<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('promodiser_warehouse')) ? 'checked' : null }} >
-																		<span style="font-size: 9pt;">Warehouse Assigned to Me</span>
-																	</label>
-																</div>
-															@endif
-															
 															<label class="text-center" style="font-size: 9pt;">Category Filter</label>
 															<div>
 																@foreach ($itemClass as $itemClass1)
@@ -93,31 +65,42 @@
 									
 									<div id="collapseOne" class="collapse border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
 										<div class="card-body p-0">
-											<div class="col-10 mx-auto">
+											<div class="col-12 col-xl-10 mx-auto">
 												<div class="row pt-2">
-													<div class="col-4 mx-auto text-right">
-														<label style="display: inline-block">Select Item Group&nbsp;&nbsp;</label>
-														<div class="input-group-append text-left w-50" id="item-group-filter-parent" style="font-size: 11pt;display: inline-block">
+													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
+														<label class="mt-2 font-responsive" style="display: inline-block">Select Item Group&nbsp;</label>
+														<div class="input-group-append text-left float-right" id="item-group-filter-parent" style="font-size: 11pt;display: inline-block">
 															<select id="item-group-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-4 mx-auto text-right">
-														<label class="mt-2">Select Warehouse&nbsp;&nbsp;</label>
-														<div class="form-group text-left m-0" id="warehouse-filter-parent" style="font-size: 11pt; width: 55%">
+													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
+														<label class="mt-2 font-responsive">Select Warehouse&nbsp;</label>
+														<div class="form-group text-left m-0 float-right" id="warehouse-filter-parent" style="font-size: 11pt;">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-{{ $promodiser_restriction ? 2 : 4 }} mx-auto text-center">
-														<div class="form-group m-0r">
-															<label>
-																<input type="checkbox" class="minimal cb-2" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
-																
-																<span style="font-size: 12px;">Remove zero-qty items</span>
-															</label>
+													<div class="col-12 col-md-8 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
+														<div class="row">
+															<div class="form-group m-0r col-12 m-0">
+																<label>
+																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
+																	
+																	<span style="font-size: 12px;">Remove zero-qty items</span>
+																</label>
+															</div>
+															@if ($promodiser_restriction)
+																<div class="form-group m-0r col-12 d-block d-xl-none m-0">
+																	<label>
+																		<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('promodiser_warehouse')) ? 'checked' : null }} >
+																		
+																		<span style="font-size: 12px;">Warehouse Assigned to Me</span>
+																	</label>
+																</div>
+															@endif
 														</div>
 													</div>
 													@if ($promodiser_restriction)
-														<div class="col-2 mx-auto text-center">
+														<div class="col-8 col-xl-2 d-none d-xl-block mx-auto text-center">
 															<div class="form-group m-0r">
 																<label>
 																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('promodiser_warehouse')) ? 'checked' : null }} >
@@ -131,433 +114,436 @@
 											</div>
 										</div>
 									</div>
-								</div>
-							</div>
-						</div>
-						<div class="card d-none d-xl-block col-2"><!-- Category Sidebar -->
-							<div class="card mb-3">
-								@php
-									$item_class = collect($itemClass)->chunk(80);
-								@endphp
-								<label class="text-center p-2">Category Filter</label>
-								@if (count($item_class) > 1)
-									<ul class="nav nav-tabs" role="tablist">
-										@foreach ($item_class as $i => $item)
-											<li class="nav-item">
-												<a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#class-category-{{ $i + 1 }}">{{ $i + 1 }}</a>
-											</li>
-										@endforeach
-									</ul>
-								@endif
-								<div class="tab-content">
-									@for($i = 0; $i < count($item_class); $i++)
-										<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
-											@foreach ($item_class[$i] as $itemClass1)
+									<div class="row">
+										<div class="col-2 d-none d-xl-block">
+											<div class="card mb-3">
 												@php
-													$abbr = explode(' - ', $itemClass1->item_classification)[0];
-													$name = explode(' - ', $itemClass1->item_classification)[1];
+													$item_class = collect($itemClass)->chunk(80);
 												@endphp
-												<div class="p-2">
-													<a class="" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">
-														<div class="btn-group w-100 category-btn" role="group">
-															<div class="btn btn-sm w-25" style="background-color: #001F3F; color: #fff;">{{ $abbr }}</div>
-															<div class="btn btn-sm w-75 border border-outline-secondary">{{ $name }}</div>
-														</div>
-													</a>
-												</div>
-											@endforeach
-										</div>
-									@endfor
-								</div>
-							</div>
-						</div>
-						<div class="card col-12 col-xl-10">
-							<div class="container-fluid m-0">
-								@forelse ($item_list as $row)
-									<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
-										<div class="row">
-											<div class="col-1 p-2">
-												@php
-													$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-												@endphp
-												<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-													<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
-												</a>
-	
-												<div class="modal fade" id="{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-													<div class="modal-dialog" role="document">
-														<div class="modal-content">
-															<div class="modal-header">
-															<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-																<span aria-hidden="true">&times;</span>
-															</button>
-															</div>
-															<div class="modal-body">
-																<div id="image-container" class="container-fluid">
-																	<div id="carouselExampleControls" class="carousel slide" data-interval="false">
-																		<div class="carousel-inner">
-																			<div class="carousel-item active">
-																				<img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
-																			</div>
-																			<span class='d-none' id="{{ $row['name'] }}-image-data">0</span>
+												<label class="text-center p-2">Category Filter</label>
+												@if (count($item_class) > 1)
+													<ul class="nav nav-tabs" role="tablist">
+														@foreach ($item_class as $i => $item)
+															<li class="nav-item">
+																<a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#class-category-{{ $i + 1 }}">{{ $i + 1 }}</a>
+															</li>
+														@endforeach
+													</ul>
+												@endif
+												<div class="tab-content">
+													@for($i = 0; $i < count($item_class); $i++)
+														<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
+															@foreach ($item_class[$i] as $itemClass1)
+																@php
+																	$abbr = explode(' - ', $itemClass1->item_classification)[0];
+																	$name = explode(' - ', $itemClass1->item_classification)[1];
+																@endphp
+																<div class="p-2">
+																	<a class="" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">
+																		<div class="btn-group w-100 category-btn" role="group">
+																			<div class="btn btn-sm w-25" style="background-color: #001F3F; color: #fff;">{{ $abbr }}</div>
+																			<div class="btn btn-sm w-75 border border-outline-secondary">{{ $name }}</div>
 																		</div>
-																		<a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['name'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-																			<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-																			<span class="sr-only">Previous</span>
-																		</a>
-																		<a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['name'] }}')" role="button" data-slide="next" style="color: #000 !important">
-																			<span class="carousel-control-next-icon" aria-hidden="true"></span>
-																			<span class="sr-only">Next</span>
-																		</a>
+																	</a>
+																</div>
+															@endforeach
+														</div>
+													@endfor
+												</div>
+											</div>
+										</div>
+										<div class="col-12 col-xl-10">
+											<div class="container-fluid m-0">
+												@forelse ($item_list as $row)
+													<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
+														<div class="row">
+															<div class="col-1 p-2">
+																@php
+																	$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+																@endphp
+																<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
+																	<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
+																</a>
+					
+																<div class="modal fade" id="{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+																	<div class="modal-dialog" role="document">
+																		<div class="modal-content">
+																			<div class="modal-header">
+																			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+																				<span aria-hidden="true">&times;</span>
+																			</button>
+																			</div>
+																			<div class="modal-body">
+																				<div id="image-container" class="container-fluid">
+																					<div id="carouselExampleControls" class="carousel slide" data-interval="false">
+																						<div class="carousel-inner">
+																							<div class="carousel-item active">
+																								<img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+																							</div>
+																							<span class='d-none' id="{{ $row['name'] }}-image-data">0</span>
+																						</div>
+																						<a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['name'] }}')" role="button" data-slide="prev" style="color: #000 !important">
+																							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+																							<span class="sr-only">Previous</span>
+																						</a>
+																						<a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['name'] }}')" role="button" data-slide="next" style="color: #000 !important">
+																							<span class="carousel-control-next-icon" aria-hidden="true"></span>
+																							<span class="sr-only">Next</span>
+																						</a>
+																					</div>
+																				</div>
+																			</div>
+																		</div>
 																	</div>
 																</div>
-															</div>
-														</div>
-													</div>
-												</div>
-	
-												<div class="text-center" style="margin: 1px;"><br/>
-													<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
-														<div class="btn btn-primary">
-															<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
-														</div>
-													</a>
-													<a href="#" class="cLink d-none d-xl-inline" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-														<div class="btn btn-warning">
-															<i class="fa fa-qrcode"></i>
-														</div>
-													</a>
-												</div>
-											</div>
-											<div class="col-5">
-												<div class="col-md-12 p-2 text-justify">
-													<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
-													<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}</span>
-													@if ($row['part_nos'])
-														<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
-													@endif
-												</div>
-											</div>
-											<div class="col-5">
-												<table class="table table-sm table-bordered warehouse-table">
-													<tr>
-														<th class="text-center wh-cell">Warehouse</th>
-														<th class="text-center qtr-cell">Reserved Qty</th>
-														<th class="text-center qtr-cell">Available Qty</th>
-													</tr>
-													@forelse($row['item_inventory'] as $inv)
-														<tr>
-															<td class="text-center" >
-																{{ $inv['warehouse'] }}
-																@if ($inv['location'])
-																	<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
-																@endif
-															</td>
-															<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-															<td class="text-center">
-																@if($inv['available_qty'] == 0)
-																	<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																	<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																@else
-																	<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																@endif
-															</td>
-														</tr>
-													@empty
-														<tr>
-															<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
-														</tr>
-													@endforelse
-												</table>
-												<div class="col-md-12"><!-- View Consignment Warehouse -->
-													@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
-													<div class="text-center">
-														<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
-													</div>
-		
-													<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-														<div class="modal-dialog" role="document">
-															<div class="modal-content">
-																<div class="modal-header">
-																	<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
-																	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					
+																<div class="text-center" style="margin: 1px;"><br/>
+																	<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																		<div class="btn btn-primary">
+																			<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
+																		</div>
+																	</a>
+																	<a href="#" class="cLink d-none d-xl-inline" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
+																		<div class="btn btn-warning">
+																			<i class="fa fa-qrcode"></i>
+																		</div>
+																	</a>
 																</div>
-																<form></form>
-																<div class="modal-body">
-																	<table class="table table-hover m-0">
-																		<col style="width: 70%;">
-																		<col style="width: 30%;">
+															</div>
+															<div class="col-5">
+																<div class="col-md-12 p-2 text-justify">
+																	<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
+																	<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}</span>
+																	@if ($row['part_nos'])
+																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
+																	@endif
+																</div>
+															</div>
+															<div class="col-5">
+																<table class="table table-sm table-bordered warehouse-table">
+																	<tr>
+																		<th class="text-center wh-cell">Warehouse</th>
+																		<th class="text-center qtr-cell">Reserved Qty</th>
+																		<th class="text-center qtr-cell">Available Qty</th>
+																	</tr>
+																	@forelse($row['item_inventory'] as $inv)
 																		<tr>
-																			<th class="consignment-th text-center">Warehouse</th>
-																			<th class="consignment-th text-center">Available Qty</th>
-																		</tr>
-																		@forelse($row['consignment_warehouses'] as $con)
-																		<tr>
-																			<td class="consignment-name">
-																				{{ $con['warehouse'] }}
-																				@if ($con['location'])
-																					<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																			<td class="text-center" >
+																				{{ $inv['warehouse'] }}
+																				@if ($inv['location'])
+																					<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
 																				@endif
 																			</td>
+																			<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
 																			<td class="text-center">
-																				<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																				@if($inv['available_qty'] == 0)
+																					<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																				@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
+																					<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																				@else
+																					<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																				@endif
 																			</td>
 																		</tr>
-																		@empty
+																	@empty
 																		<tr>
-																			<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																			<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
 																		</tr>
-																		@endforelse
-																	</table>
-																</div>
-																<div class="modal-footer">
-																	<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-																</div>
-															</div>
-														</div>
-													</div>
-													@endif
-												</div><!-- View Consignment Warehouse -->
-											</div>
-											<div class="col-1">{{-- Price --}}
-											</div>
-										</div>
-									</div>
-									<div class="d-block d-xl-none border border-outline-secondary"><!-- Mobile/Tablet -->
-										<div class="row">
-											<div class="col-3 col-lg-2 col-xl-3">
-												@php
-													$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-												@endphp
-												<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-													<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover w-100">
-												</a>
-
-												<div class="modal fade" id="mobile-{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-													<div class="modal-dialog" role="document">
-														<div class="modal-content">
-															<div class="modal-header">
-															<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-																<span aria-hidden="true">&times;</span>
-															</button>
-															</div>
-															<div class="modal-body">
-																<div id="image-container" class="container-fluid">
-																	<div id="carouselExampleControls" class="carousel slide" data-interval="false">
-																		<div class="carousel-inner">
-																			<div class="carousel-item active">
-																				<img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+																	@endforelse
+																</table>
+																<div class="col-md-12"><!-- View Consignment Warehouse -->
+																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																	<div class="text-center">
+																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
+																	</div>
+						
+																	<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+																		<div class="modal-dialog" role="document">
+																			<div class="modal-content">
+																				<div class="modal-header">
+																					<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+																				</div>
+																				<form></form>
+																				<div class="modal-body">
+																					<table class="table table-hover m-0">
+																						<col style="width: 70%;">
+																						<col style="width: 30%;">
+																						<tr>
+																							<th class="consignment-th text-center">Warehouse</th>
+																							<th class="consignment-th text-center">Available Qty</th>
+																						</tr>
+																						@forelse($row['consignment_warehouses'] as $con)
+																						<tr>
+																							<td class="consignment-name">
+																								{{ $con['warehouse'] }}
+																								@if ($con['location'])
+																									<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																								@endif
+																							</td>
+																							<td class="text-center">
+																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																							</td>
+																						</tr>
+																						@empty
+																						<tr>
+																							<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																						</tr>
+																						@endforelse
+																					</table>
+																				</div>
+																				<div class="modal-footer">
+																					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																				</div>
 																			</div>
-																			<span class='d-none' id="mobile-{{ $row['name'] }}-image-data">0</span>
 																		</div>
-																		<a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['name'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-																			<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-																			<span class="sr-only">Previous</span>
-																		</a>
-																		<a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['name'] }}')" role="button" data-slide="next" style="color: #000 !important">
-																			<span class="carousel-control-next-icon" aria-hidden="true"></span>
-																			<span class="sr-only">Next</span>
-																		</a>
 																	</div>
-																</div>
+																	@endif
+																</div><!-- View Consignment Warehouse -->
+															</div>
+															<div class="col-1"><!-- Price -->
 															</div>
 														</div>
 													</div>
-												</div>
-												<br><br>
-												<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
-													<div class="btn btn-sm btn-primary w-100">
-														<i class="fa fa-file font-responsive"></i> <span class="d-inline font-responsive">View</span>
-													</div>
-												</a>
-											</div>
-											<div class="col-9 col-lg-10 col-xl-9">
-												<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
-												<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! $row['description'] !!}</span>
-												@if ($row['part_nos'])
-													<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
-												@endif
-												<div class="d-none d-md-block">
-													<table class="table table-sm table-bordered warehouse-table">
-														<tr>
-															<th class="text-center wh-cell">Warehouse</th>
-															<th class="text-center qtr-cell">Reserved Qty</th>
-															<th class="text-center qtr-cell">Available Qty</th>
-														</tr>
-														@forelse($row['item_inventory'] as $inv)
-															<tr>
-																<td class="text-center" >
-																	{{ $inv['warehouse'] }}
-																	@if ($inv['location'])
-																		<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
-																	@endif
-																</td>
-																<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-																<td class="text-center">
-																	@if($inv['available_qty'] == 0)
-																		<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																	@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																		<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																	@else
-																		<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																	@endif
-																</td>
-															</tr>
-														@empty
-															<tr>
-																<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
-															</tr>
-														@endforelse
-													</table>
-													<div class="container-fluid mb-2"><!-- View Consignment Warehouse -->
-														@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
-														<div class="text-center">
-															<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#tablet-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
-														</div>
-			
-														<div class="modal fade" id="tablet-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-															<div class="modal-dialog" role="document">
-																<div class="modal-content">
-																	<div class="modal-header">
-																		<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
-																		<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+													<div class="d-block d-xl-none border border-outline-secondary"><!-- Mobile/Tablet -->
+														<div class="row">
+															<div class="col-3 col-lg-2 col-xl-3">
+																@php
+																	$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+																@endphp
+																<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
+																	<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover w-100">
+																</a>
+				
+																<div class="modal fade" id="mobile-{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+																	<div class="modal-dialog" role="document">
+																		<div class="modal-content">
+																			<div class="modal-header">
+																			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+																				<span aria-hidden="true">&times;</span>
+																			</button>
+																			</div>
+																			<div class="modal-body">
+																				<div id="image-container" class="container-fluid">
+																					<div id="carouselExampleControls" class="carousel slide" data-interval="false">
+																						<div class="carousel-inner">
+																							<div class="carousel-item active">
+																								<img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+																							</div>
+																							<span class='d-none' id="mobile-{{ $row['name'] }}-image-data">0</span>
+																						</div>
+																						<a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['name'] }}')" role="button" data-slide="prev" style="color: #000 !important">
+																							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+																							<span class="sr-only">Previous</span>
+																						</a>
+																						<a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['name'] }}')" role="button" data-slide="next" style="color: #000 !important">
+																							<span class="carousel-control-next-icon" aria-hidden="true"></span>
+																							<span class="sr-only">Next</span>
+																						</a>
+																					</div>
+																				</div>
+																			</div>
+																		</div>
 																	</div>
-																	<form></form>
-																	<div class="modal-body">
-																		<table class="table table-hover m-0">
-																			<col style="width: 70%;">
-																			<col style="width: 30%;">
+																</div>
+																<br><br>
+																<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																	<div class="btn btn-sm btn-primary w-100">
+																		<i class="fa fa-file font-responsive"></i> <span class="d-inline font-responsive">View</span>
+																	</div>
+																</a>
+															</div>
+															<div class="col-9 col-lg-10 col-xl-9">
+																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
+																<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! $row['description'] !!}</span>
+																@if ($row['part_nos'])
+																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
+																@endif
+																<div class="d-none d-md-block">
+																	<table class="table table-sm table-bordered warehouse-table">
+																		<tr>
+																			<th class="text-center wh-cell">Warehouse</th>
+																			<th class="text-center qtr-cell">Reserved Qty</th>
+																			<th class="text-center qtr-cell">Available Qty</th>
+																		</tr>
+																		@forelse($row['item_inventory'] as $inv)
 																			<tr>
-																				<th class="consignment-th text-center">Warehouse</th>
-																				<th class="consignment-th text-center">Available Qty</th>
-																			</tr>
-																			@forelse($row['consignment_warehouses'] as $con)
-																			<tr>
-																				<td class="consignment-name">
-																					{{ $con['warehouse'] }}
-																					@if ($con['location'])
-																						<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																				<td class="text-center" >
+																					{{ $inv['warehouse'] }}
+																					@if ($inv['location'])
+																						<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
 																					@endif
 																				</td>
+																				<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
 																				<td class="text-center">
-																					<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																					@if($inv['available_qty'] == 0)
+																						<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
+																						<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@else
+																						<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@endif
 																				</td>
 																			</tr>
-																			@empty
+																		@empty
 																			<tr>
-																				<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																				<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
 																			</tr>
-																			@endforelse
-																		</table>
-																	</div>
-																	<div class="modal-footer">
-																		<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-																	</div>
+																		@endforelse
+																	</table>
+																	<div class="container-fluid mb-2"><!-- View Consignment Warehouse -->
+																		@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																		<div class="text-center">
+																			<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#tablet-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
+																		</div>
+							
+																		<div class="modal fade" id="tablet-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+																			<div class="modal-dialog" role="document">
+																				<div class="modal-content">
+																					<div class="modal-header">
+																						<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+																					</div>
+																					<form></form>
+																					<div class="modal-body">
+																						<table class="table table-hover m-0">
+																							<col style="width: 70%;">
+																							<col style="width: 30%;">
+																							<tr>
+																								<th class="consignment-th text-center">Warehouse</th>
+																								<th class="consignment-th text-center">Available Qty</th>
+																							</tr>
+																							@forelse($row['consignment_warehouses'] as $con)
+																							<tr>
+																								<td class="consignment-name">
+																									{{ $con['warehouse'] }}
+																									@if ($con['location'])
+																										<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																									@endif
+																								</td>
+																								<td class="text-center">
+																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																								</td>
+																							</tr>
+																							@empty
+																							<tr>
+																								<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																							</tr>
+																							@endforelse
+																						</table>
+																					</div>
+																					<div class="modal-footer">
+																						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																					</div>
+																				</div>
+																			</div>
+																		</div>
+																		@endif
+																	</div><!-- View Consignment Warehouse -->
 																</div>
 															</div>
 														</div>
-														@endif
-													</div><!-- View Consignment Warehouse -->
+														<div class="row d-block d-md-none">
+															<div class="container-fluid mt-1 mb-3">
+																<table class="table table-sm table-bordered warehouse-table">
+																	<tr>
+																		<th class="text-center wh-cell">Warehouse</th>
+																		<th class="text-center qtr-cell">Reserved Qty</th>
+																		<th class="text-center qtr-cell">Available Qty</th>
+																	</tr>
+																	@forelse($row['item_inventory'] as $inv)
+																		<tr>
+																			<td class="text-center" >
+																				{{ $inv['warehouse'] }}
+																				@if ($inv['location'])
+																					<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
+																				@endif
+																			</td>
+																			<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
+																			<td class="text-center">
+																				@if($inv['available_qty'] == 0)
+																					<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																				@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
+																					<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																				@else
+																					<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																				@endif
+																			</td>
+																		</tr>
+																	@empty
+																		<tr>
+																			<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
+																		</tr>
+																	@endforelse
+																</table>
+																<div class="container-fluid"><!-- View Consignment Warehouse -->
+																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																	<div class="text-center">
+																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#mobile-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
+																	</div>
+						
+																	<div class="modal fade" id="mobile-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+																		<div class="modal-dialog" role="document">
+																			<div class="modal-content">
+																				<div class="modal-header">
+																					<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+																				</div>
+																				<form></form>
+																				<div class="modal-body">
+																					<table class="table table-hover m-0">
+																						<col style="width: 70%;">
+																						<col style="width: 30%;">
+																						<tr>
+																							<th class="consignment-th text-center">Warehouse</th>
+																							<th class="consignment-th text-center">Available Qty</th>
+																						</tr>
+																						@forelse($row['consignment_warehouses'] as $con)
+																						<tr>
+																							<td class="consignment-name">
+																								{{ $con['warehouse'] }}
+																								@if ($con['location'])
+																									<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																								@endif
+																							</td>
+																							<td class="text-center">
+																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																							</td>
+																						</tr>
+																						@empty
+																						<tr>
+																							<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																						</tr>
+																						@endforelse
+																					</table>
+																				</div>
+																				<div class="modal-footer">
+																					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																				</div>
+																			</div>
+																		</div>
+																	</div>
+																	@endif
+																</div><!-- View Consignment Warehouse -->
+															</div>
+														</div>
+													</div>
+												@empty
+													<div class="col-md-12 text-center" style="padding: 25px;">
+														<h5>No result(s) found.</h5>
+													</div>
+												@endforelse
+											</div><!-- new table -->
+				
+											<div class="mt-3 ml-3 clearfix pagination" style="display: block;">
+												<div class="col-md-4 float-right">
+													{{ $items->links() }}
 												</div>
 											</div>
 										</div>
-										<div class="row d-block d-md-none">
-											<div class="container-fluid mt-1 mb-3">
-												<table class="table table-sm table-bordered warehouse-table">
-													<tr>
-														<th class="text-center wh-cell">Warehouse</th>
-														<th class="text-center qtr-cell">Reserved Qty</th>
-														<th class="text-center qtr-cell">Available Qty</th>
-													</tr>
-													@forelse($row['item_inventory'] as $inv)
-														<tr>
-															<td class="text-center" >
-																{{ $inv['warehouse'] }}
-																@if ($inv['location'])
-																	<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
-																@endif
-															</td>
-															<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-															<td class="text-center">
-																@if($inv['available_qty'] == 0)
-																	<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																	<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																@else
-																	<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																@endif
-															</td>
-														</tr>
-													@empty
-														<tr>
-															<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
-														</tr>
-													@endforelse
-												</table>
-												<div class="container-fluid"><!-- View Consignment Warehouse -->
-													@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
-													<div class="text-center">
-														<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#mobile-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
-													</div>
-		
-													<div class="modal fade" id="mobile-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-														<div class="modal-dialog" role="document">
-															<div class="modal-content">
-																<div class="modal-header">
-																	<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
-																	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-																</div>
-																<form></form>
-																<div class="modal-body">
-																	<table class="table table-hover m-0">
-																		<col style="width: 70%;">
-																		<col style="width: 30%;">
-																		<tr>
-																			<th class="consignment-th text-center">Warehouse</th>
-																			<th class="consignment-th text-center">Available Qty</th>
-																		</tr>
-																		@forelse($row['consignment_warehouses'] as $con)
-																		<tr>
-																			<td class="consignment-name">
-																				{{ $con['warehouse'] }}
-																				@if ($con['location'])
-																					<small class="text-muted font-italic">- {{ $con['location'] }}</small>
-																				@endif
-																			</td>
-																			<td class="text-center">
-																				<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
-																			</td>
-																		</tr>
-																		@empty
-																		<tr>
-																			<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
-																		</tr>
-																		@endforelse
-																	</table>
-																</div>
-																<div class="modal-footer">
-																	<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-																</div>
-															</div>
-														</div>
-													</div>
-													@endif
-												</div><!-- View Consignment Warehouse -->
-											</div>
-										</div>
 									</div>
-								@empty
-									<div class="col-md-12 text-center" style="padding: 25px;">
-										<h5>No result(s) found.</h5>
-									</div>
-								@endforelse
-							</div><!-- new table -->
-
-							<div class="mt-3 ml-3 clearfix pagination" style="display: block;">
-								<div class="col-md-4 float-right">
-									{{ $items->links() }}
-								</div>
+									
+								</div><!-- Card End -->
 							</div>
 						</div>
 					</div>
@@ -704,6 +690,19 @@
 	.modal.left.fade.in .modal-dialog{
 		left: 0;
 	}
+
+	.filter-container{
+		text-align: right;
+	}
+
+	#warehouse-filter-parent, #item-group-filter-parent{
+		width: 55%;
+	}
+
+	.checkbox-container{
+		text-align: center;
+	}
+
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{
 			font-size: 10pt !important;
@@ -742,6 +741,15 @@
 		.category-abbr-btn{
 			font-size: 16px;
 		}
+		.filter-container{
+			text-align: left !important;
+		}
+		#warehouse-filter-parent, #item-group-filter-parent{
+			width: 57% !important;
+		}
+		.checkbox-container{
+			text-align: left !important;
+		}
     }
   	@media (max-width: 767.98px) {
         .font-responsive, .responsive-description, .stock-ledger-table-font{
@@ -778,10 +786,28 @@
 		.category-abbr-btn{
 			font-size: 16px;
 		}
+		.filter-container{
+			text-align: left !important;
+		}
+		#warehouse-filter-parent, #item-group-filter-parent{
+			width: 57% !important;
+		}
+		.checkbox-container{
+			text-align: left !important;
+		}
     }
 	@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
 		.modal.left .modal-dialog{
 			width: 240px;
+		}
+		.filter-container{
+			text-align: left !important;
+		}
+		#warehouse-filter-parent, #item-group-filter-parent{
+			width: 65% !important;
+		}
+		.checkbox-container{
+			text-align: left !important;
 		}
 	}
 </style>
