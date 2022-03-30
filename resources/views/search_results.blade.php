@@ -155,9 +155,10 @@
 										<div class="col-12 col-xl-10">
 											<div class="container-fluid m-0">
 												@forelse ($item_list as $row)
+													<div class="mb-1"></div>
 													<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
-														<div class="row">
-															<div class="col-1 p-2">
+														<div class="row m-0">
+															<div class="col-1 p-1">
 																@php
 																	$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 																@endphp
@@ -197,7 +198,7 @@
 																	</div>
 																</div>
 					
-																<div class="text-center" style="margin: 1px;"><br/>
+																<div class="text-center mt-2 mb-1">
 																	<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 																		<div class="btn btn-primary">
 																			<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
@@ -210,16 +211,16 @@
 																	</a>
 																</div>
 															</div>
-															<div class="col-5">
-																<div class="col-md-12 p-2 text-justify">
+															<div class="col-5 p-1">
+																<div class="col-md-12 m-0 text-justify">
 																	<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
-																	<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}</span>
+																	<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['part_nos'])
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																	@endif
 																</div>
 															</div>
-															<div class="col-5">
+															<div class="col-5 p-1">
 																<table class="table table-sm table-bordered warehouse-table">
 																	<tr>
 																		<th class="text-center wh-cell">Warehouse</th>
@@ -252,7 +253,7 @@
 																	@endforelse
 																</table>
 																<div class="col-md-12"><!-- View Consignment Warehouse -->
-																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																	@if(count($row['consignment_warehouses']) > 0)
 																	<div class="text-center">
 																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
 																	</div>

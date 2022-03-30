@@ -115,11 +115,31 @@ class MainController extends Controller
         if($request->get_total){
             return number_format($items->total());
         }
-
+        
         $item_codes = array_column($items->items(), 'item_code');
 
+        $allow_warehouse = [];
+        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        if ($is_promodiser) {
+            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+        }
+
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->whereIn('item_code', $item_codes)
-            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
+            ->when($is_promodiser, function($q) use ($allow_warehouse) {
+                return $q->whereIn('warehouse', $allow_warehouse);
+            })
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
+            ->get();
         
         $item_warehouses = array_column($item_inventory->toArray(), 'warehouse');
 
@@ -205,7 +225,7 @@ class MainController extends Controller
                     $warehouse_reorder_level = $lowLevelStock[$value->item_code . '-' . $value->warehouse][0]->total_warehouse_reorder_level;
                 }
                         
-                if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
+                if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                     $consignment_warehouses[] = [
                         'warehouse' => $value->warehouse,
                         'location' => $value->location,
@@ -1591,9 +1611,30 @@ class MainController extends Controller
 
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->get();
 
+        $allow_warehouse = [];
+        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        if ($is_promodiser) {
+            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+        }
+
         // get item inventory stock list
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
-                ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')->get();
+            ->when($is_promodiser, function($q) use ($allow_warehouse) {
+                return $q->whereIn('warehouse', $allow_warehouse);
+            })
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
+            ->get();
+
         $site_warehouses = [];
         $consignment_warehouses = [];
         foreach ($item_inventory as $value) {
@@ -1606,7 +1647,7 @@ class MainController extends Controller
             $reserved_qty = $reserved_qty - $consumed_qty;
 
             $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
-            if($value->parent_warehouse == "P2 Consignment Warehouse - FI") {
+            if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                 $consignment_warehouses[] = [
                     'warehouse' => $value->warehouse,
                     'location' => $value->location,

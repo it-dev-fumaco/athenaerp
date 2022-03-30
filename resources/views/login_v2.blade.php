@@ -22,9 +22,14 @@
     <div class="bg2"></div>
   </div>
   <div class="form">
+    <h3 style="margin-bottom: 3%; margin-top: 0; text-align: center;">Athena<span style="font-weight: 900;">ERP</span> Inventory</h3>
+    <div style="text-align: center; color: #CE1E09; font-size: 12pt; margin: 8px;">
+      @if($errors->any())
+      {!! $errors->first() !!}
+      @endif
+    </div>
     <form role="form" method="POST" action="/login_user">
       @csrf
-      <h3 style="margin-bottom: 3%; margin-top: 0; text-align: center;">Athena<span style="font-weight: 900;">ERP</span> Inventory</h3>
     <label for="account">Username</label>
     <div class="input-box">
       <input type="text" placeholder="Username" value="{{ old('email') }}" name="email" spellcheck="false" required/>
