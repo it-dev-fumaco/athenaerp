@@ -52,6 +52,12 @@
                         <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                         <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                     </dl>
+                    @if ($user_pricelist)
+                    <p class="mt-2 mb-2 text-center">
+                        <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($price_list_rate, 2, '.', ',') }}</span>
+                        <span class="d-block" style="font-size: 12pt;">{{ $user_pricelist }}</span>
+                    </p>
+                    @endif
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                         @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))

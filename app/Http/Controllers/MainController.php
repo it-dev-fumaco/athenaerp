@@ -134,6 +134,17 @@ class MainController extends Controller
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
         }
 
+        $price_list_rates = [];
+        $user_pricelist = Auth::user()->price_list;
+        if ($user_pricelist) {
+            $price_list_rates = DB::table('tabItem Price')
+                ->where('price_list', $user_pricelist)->whereIn('item_code', $item_codes)
+                ->select('item_code', 'price_list', 'modified', 'price_list_rate')
+                ->orderBy('modified', 'desc')->get();
+        }
+
+        $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
+
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->whereIn('item_code', $item_codes)
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
                 return $q->whereIn('warehouse', $allow_warehouse);
@@ -248,6 +259,8 @@ class MainController extends Controller
                 }
             }
 
+            $price_list_rate = array_key_exists($row->item_code, $price_list_rates) ? $price_list_rates[$row->item_code][0]->price_list_rate : '-';
+
             $item_list[] = [
                 'name' => $row->item_code,
                 'description' => $row->description,
@@ -258,6 +271,8 @@ class MainController extends Controller
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
+                'price_list' => $user_pricelist,
+                'price_list_rate' => $price_list_rate
             ];
         }
 
@@ -1627,6 +1642,15 @@ class MainController extends Controller
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
         }
 
+        $price_list_rate = 0;
+        $user_pricelist = Auth::user()->price_list;
+        if ($user_pricelist) {
+            $item_price = DB::table('tabItem Price')
+                ->where('price_list', $user_pricelist)->where('item_code', $item_code)
+                ->orderBy('modified', 'desc')->select('price_list_rate')->first();
+            $price_list_rate = $item_price ? $item_price->price_list_rate : 0;
+        }
+
         // get item inventory stock list
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
@@ -1729,7 +1753,7 @@ class MainController extends Controller
 
         $user_group = Auth::user()->user_group;
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group'));
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'price_list_rate', 'user_pricelist'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -1893,8 +1917,8 @@ class MainController extends Controller
 
             if(in_array($transaction, ['Material Transfer for Manufacture', 'Material Transfer', 'Material Issue'])){
                 $ste_details = DB::table('tabStock Entry Detail')->where('parent', $row->voucher_no)->where('item_code', $item_code)->first();
-                $date_modified = $ste_details->date_modified;
-                $session_user = $ste_details->session_user;
+                $date_modified = $ste_details ? $ste_details->date_modified : null;
+                $session_user = $ste_details ? $ste_details->session_user : null;
             }elseif($transaction == 'Manufacture'){
                 $ste_details = DB::table('tabStock Entry')->where('name', $row->voucher_no)->first();
                 $date_modified = $ste_details->modified;

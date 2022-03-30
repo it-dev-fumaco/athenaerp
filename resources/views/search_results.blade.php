@@ -211,12 +211,18 @@
 																	</a>
 																</div>
 															</div>
-															<div class="col-5 p-1">
+															<div class="col-6 p-1">
 																<div class="col-md-12 m-0 text-justify">
 																	<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
 																	<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['part_nos'])
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
+																	@endif
+																	@if ($row['price_list'] && $row['price_list_rate'] != '-')
+																	<p class="mt-3 mb-2">
+																		<span class="d-block font-weight-bold" style="font-size: 13pt;">{{ '₱ ' . number_format($row['price_list_rate'], 2, '.', ',') }}</span>
+																		<span class="d-block" style="font-size: 9pt;">{{ $row['price_list'] }}</span>
+																  	</p>
 																	@endif
 																</div>
 															</div>
@@ -302,13 +308,11 @@
 																	@endif
 																</div><!-- View Consignment Warehouse -->
 															</div>
-															<div class="col-1"><!-- Price -->
-															</div>
 														</div>
 													</div>
 													<div class="d-block d-xl-none border border-outline-secondary"><!-- Mobile/Tablet -->
-														<div class="row">
-															<div class="col-3 col-lg-2 col-xl-3">
+														<div class="row m-0">
+															<div class="col-3 col-lg-2 col-xl-3 p-1">
 																@php
 																	$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 																@endphp
@@ -347,8 +351,8 @@
 																		</div>
 																	</div>
 																</div>
-																<br><br>
-																<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																
+																<a href="#" class="view-item-details mt-2 mb-2 d-block" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 																	<div class="btn btn-sm btn-primary w-100">
 																		<i class="fa fa-file font-responsive"></i> <span class="d-inline font-responsive">View</span>
 																	</div>
@@ -356,9 +360,15 @@
 															</div>
 															<div class="col-9 col-lg-10 col-xl-9">
 																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
-																<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! $row['description'] !!}</span>
+																<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}</span>
 																@if ($row['part_nos'])
 																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
+																@endif
+																@if ($row['price_list'] && $row['price_list_rate'] != '-')
+																<p class="mt-3 mb-2">
+																	<span class="d-block font-weight-bold" style="font-size: 13pt;">{{ '₱ ' . number_format($row['price_list_rate'], 2, '.', ',') }}</span>
+																	<span class="d-block" style="font-size: 9pt;">{{ $row['price_list'] }}</span>
+																</p>
 																@endif
 																<div class="d-none d-md-block">
 																	<table class="table table-sm table-bordered warehouse-table">
@@ -444,9 +454,9 @@
 																</div>
 															</div>
 														</div>
-														<div class="row d-block d-md-none">
-															<div class="container-fluid mt-1 mb-3">
-																<table class="table table-sm table-bordered warehouse-table">
+														<div class="row m-0 p-1 d-block d-md-none">
+															<div class="container-fluid mb-1">
+																<table class="table table-sm table-bordered warehouse-table m-0 p-0">
 																	<tr>
 																		<th class="text-center wh-cell">Warehouse</th>
 																		<th class="text-center qtr-cell">Reserved Qty</th>
