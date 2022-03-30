@@ -5,13 +5,13 @@
 
 @section('content')
 <div class="content p-0 m-0">
-	<div class="content-header pt-3 p-0 m-0">
+	<div class="content-header p-0 m-0">
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="row">
-						<div class="col-12 card card-gray card-outline m-0">
-							<div id="accordion" class="col-12 p-0">
+						<div class="col-12">
+							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0">
 								<div class="card m-0">
 									<div class="row">
 										<div class="col-8">
@@ -64,13 +64,22 @@
 															@endif
 															
 															<label class="text-center" style="font-size: 9pt;">Category Filter</label>
-															<ul class="feed-item">
-																@foreach ($itemClass as $i => $itemClass1)
-																	<li class="p-2" style="font-size: 9pt;">
-																		<a href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">{{ $itemClass1->item_classification }}</a>
-																	</li>
+															<div>
+																@foreach ($itemClass as $itemClass1)
+																	@php
+																	$abbr = explode(' - ', $itemClass1->item_classification)[0];
+																	$name = explode(' - ', $itemClass1->item_classification)[1];
+																@endphp
+																	<div class="p-2">
+																		<a class="" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">
+																			<div class="btn-group w-100 category-btn" role="group">
+																				<div class="btn btn-sm w-25" style="background-color: #001F3F; color: #fff;">{{ $abbr }}</div>
+																				<div class="btn btn-sm w-75 border border-outline-secondary">{{ $name }}</div>
+																			</div>
+																		</a>
+																	</div>
 																@endforeach
-															</ul>
+															</div>
 														</div>
 
 													</div><!-- modal-content -->
@@ -128,7 +137,7 @@
 						<div class="card d-none d-xl-block col-2"><!-- Category Sidebar -->
 							<div class="card mb-3">
 								@php
-									$item_class = collect($itemClass)->chunk(90);
+									$item_class = collect($itemClass)->chunk(80);
 								@endphp
 								<label class="text-center p-2">Category Filter</label>
 								@if (count($item_class) > 1)
@@ -143,20 +152,27 @@
 								<div class="tab-content">
 									@for($i = 0; $i < count($item_class); $i++)
 										<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
-											<ul class="feed-item">
-												@foreach ($item_class[$i] as $itemClass1)
-													<li class="p-2">
-														<a href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">{{ $itemClass1->item_classification }}</a>
-													</li>
-												@endforeach
-											</ul>
+											@foreach ($item_class[$i] as $itemClass1)
+												@php
+													$abbr = explode(' - ', $itemClass1->item_classification)[0];
+													$name = explode(' - ', $itemClass1->item_classification)[1];
+												@endphp
+												<div class="p-2">
+													<a class="" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">
+														<div class="btn-group w-100 category-btn" role="group">
+															<div class="btn btn-sm w-25" style="background-color: #001F3F; color: #fff;">{{ $abbr }}</div>
+															<div class="btn btn-sm w-75 border border-outline-secondary">{{ $name }}</div>
+														</div>
+													</a>
+												</div>
+											@endforeach
 										</div>
 									@endfor
 								</div>
 							</div>
 						</div>
 						<div class="card col-12 col-xl-10">
-							<div class="container-fluid">
+							<div class="container-fluid m-0">
 								@forelse ($item_list as $row)
 									<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
 										<div class="row">
@@ -647,6 +663,47 @@
 	.stock-ledger-table-font{
 		font-size: 11pt;
 	}
+	.category-btn{
+		transition: .4s;
+	}
+	.category-btn:hover{
+		box-shadow: #001F3F 2px 2px 8px;
+	}
+	.custom-border{
+		box-shadow: 8px 1px 12px #001F3F;
+	}
+
+	.modal.left .modal-dialog{
+		position: fixed;
+		margin: auto;
+		width: 320px;
+		height: 100%;
+		-webkit-transform: translate3d(0%, 0, 0);
+		    -ms-transform: translate3d(0%, 0, 0);
+		     -o-transform: translate3d(0%, 0, 0);
+		        transform: translate3d(0%, 0, 0);
+	}
+
+	.modal.left .modal-content{
+		height: 100%;
+		overflow-y: auto;
+	}
+	
+	.modal.left .modal-body{
+		padding: 15px 15px 80px;
+	}
+
+	/*Left*/
+	.modal.left.fade .modal-dialog{
+		-webkit-transition: opacity 0.3s linear, left 0.3s ease-out;
+		   -moz-transition: opacity 0.3s linear, left 0.3s ease-out;
+		     -o-transition: opacity 0.3s linear, left 0.3s ease-out;
+		        transition: opacity 0.3s linear, left 0.3s ease-out;
+	}
+	
+	.modal.left.fade.in .modal-dialog{
+		left: 0;
+	}
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{
 			font-size: 10pt !important;
@@ -722,43 +779,10 @@
 			font-size: 16px;
 		}
     }
-	.custom-border{
-		box-shadow: 8px 1px 12px #001F3F;
-	}
-	.feed-item {
-		list-style-type: none;
-	}
-
-.modal.left .modal-dialog{
-		position: fixed;
-		margin: auto;
-		width: 320px;
-		height: 100%;
-		-webkit-transform: translate3d(0%, 0, 0);
-		    -ms-transform: translate3d(0%, 0, 0);
-		     -o-transform: translate3d(0%, 0, 0);
-		        transform: translate3d(0%, 0, 0);
-	}
-
-	.modal.left .modal-content{
-		height: 100%;
-		overflow-y: auto;
-	}
-	
-	.modal.left .modal-body{
-		padding: 15px 15px 80px;
-	}
-
-/*Left*/
-	.modal.left.fade .modal-dialog{
-		-webkit-transition: opacity 0.3s linear, left 0.3s ease-out;
-		   -moz-transition: opacity 0.3s linear, left 0.3s ease-out;
-		     -o-transition: opacity 0.3s linear, left 0.3s ease-out;
-		        transition: opacity 0.3s linear, left 0.3s ease-out;
-	}
-	
-	.modal.left.fade.in .modal-dialog{
-		left: 0;
+	@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+		.modal.left .modal-dialog{
+			width: 240px;
+		}
 	}
 </style>
 <script>
