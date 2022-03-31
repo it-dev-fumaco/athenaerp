@@ -2,11 +2,18 @@
   @forelse($q as $item)
   <li class="truncate selected-item border-bottom" data-val="{{ $item->name }}">
     @php
-    $img = ($item->item_image_path) ? "/img/" . explode('.', $item->item_image_path)[0].'.webp' : "/icon/no_img.webp";
+    // $img = ($item->item_image_path) ? "/img/" . explode('.', $item->item_image_path)[0].'.webp' : "/icon/no_img.webp";
+      $img = ($item->item_image_path) ? "/img/" . $item->item_image_path : "/icon/no_img.png";
+      $img_webp = ($item->item_image_path) ? "/img/" . explode('.',$item->item_image_path)[0].'.webp' : "/icon/no_img.webp";
     @endphp
     <div class="d-flex flex-row">
       <div class="p-2 text-truncate d-inline-block" style="width: 90%;">
-        <img src="{{ asset('storage') }}{{ $img }}" style="float:left;width: 60px; height: 60px;margin-right: 10px;">
+        {{-- <img src="{{ asset('storage') }}{{ $img }}" style="float:left;width: 60px; height: 60px;margin-right: 10px;"> --}}
+        <picture>
+          <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" style="float:left;width: 60px; height: 60px;margin-right: 10px;">
+          <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" style="float:left;width: 60px; height: 60px;margin-right: 10px;">
+          <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" style="float:left;width: 60px; height: 60px;margin-right: 10px;">
+        </picture>
         <b>{{ $item->name }}</b>
         <br>{{ $item->description }}
       </div>

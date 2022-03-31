@@ -69,10 +69,16 @@
 									<div class="row">
 										<div class="col-md-3 display-inline-block p-2 text-center">
 											@php
-												$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+												$img = ($row['item_image_paths']) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
+												$img_webp = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 											@endphp
 											<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-												<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
+												{{-- <img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover"> --}}
+												<picture>
+													<source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="search-img img-responsive hover">
+													<source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="search-img img-responsive hover">
+													<img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
+												</picture>
 											</a>
 
 											<div class="modal fade" id="{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
