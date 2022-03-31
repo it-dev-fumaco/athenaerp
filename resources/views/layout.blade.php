@@ -29,7 +29,6 @@
 		html, body{
 			scroll-behavior: smooth !important;
 		}
-
 		#loader-wrapper {
 			position: fixed;
 			top: 0;
@@ -37,8 +36,8 @@
 			width: 100%;
 			height: 100%;
 			z-index: 99999;
-		  }
-		  #loader {
+		}
+		#loader {
 			display: block;
 			position: relative;
 			left: 50%;
@@ -52,9 +51,8 @@
 			-webkit-animation: spin 2s linear infinite; /* Chrome, Opera 15+, Safari 5+ */
 			animation: spin 2s linear infinite; /* Chrome, Firefox 16+, IE 10+, Opera */
 			z-index: 999999;
-		  }
-		
-		  #loader:before {
+		}
+		#loader:before {
 			content: "";
 			position: absolute;
 			top: 5px;
@@ -66,9 +64,8 @@
 			border-top-color: #e74c3c;
 			-webkit-animation: spin 3s linear infinite; /* Chrome, Opera 15+, Safari 5+ */
 			animation: spin 3s linear infinite; /* Chrome, Firefox 16+, IE 10+, Opera */
-		  }
-		
-		  #loader:after {
+		}
+		#loader:after {
 			content: "";
 			position: absolute;
 			top: 15px;
@@ -80,197 +77,81 @@
 			border-top-color: #f9c922;
 			-webkit-animation: spin 1.5s linear infinite; /* Chrome, Opera 15+, Safari 5+ */
 			animation: spin 1.5s linear infinite; /* Chrome, Firefox 16+, IE 10+, Opera */
-		  }
-		
-		  @-webkit-keyframes spin {
+		}
+		@-webkit-keyframes spin {
 			0%   { 
-			  -webkit-transform: rotate(0deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-			  -ms-transform: rotate(0deg);  /* IE 9 */
-			  transform: rotate(0deg);  /* Firefox 16+, IE 10+, Opera */
+				-webkit-transform: rotate(0deg);  /* Chrome, Opera 15+, Safari 3.1+ */
+				-ms-transform: rotate(0deg);  /* IE 9 */
+				transform: rotate(0deg);  /* Firefox 16+, IE 10+, Opera */
 			}
 			100% {
-			  -webkit-transform: rotate(360deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-			  -ms-transform: rotate(360deg);  /* IE 9 */
-			  transform: rotate(360deg);  /* Firefox 16+, IE 10+, Opera */
+				-webkit-transform: rotate(360deg);  /* Chrome, Opera 15+, Safari 3.1+ */
+				-ms-transform: rotate(360deg);  /* IE 9 */
+				transform: rotate(360deg);  /* Firefox 16+, IE 10+, Opera */
 			}
-		  }
-		  @keyframes spin {
+		}
+		@keyframes spin {
 			0%   { 
-			  -webkit-transform: rotate(0deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-			  -ms-transform: rotate(0deg);  /* IE 9 */
-			  transform: rotate(0deg);  /* Firefox 16+, IE 10+, Opera */
+				-webkit-transform: rotate(0deg);  /* Chrome, Opera 15+, Safari 3.1+ */
+				-ms-transform: rotate(0deg);  /* IE 9 */
+				transform: rotate(0deg);  /* Firefox 16+, IE 10+, Opera */
 			}
 			100% {
-			  -webkit-transform: rotate(360deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-			  -ms-transform: rotate(360deg);  /* IE 9 */
-			  transform: rotate(360deg);  /* Firefox 16+, IE 10+, Opera */
+				-webkit-transform: rotate(360deg);  /* Chrome, Opera 15+, Safari 3.1+ */
+				-ms-transform: rotate(360deg);  /* IE 9 */
+				transform: rotate(360deg);  /* Firefox 16+, IE 10+, Opera */
 			}
-		  }
-		
-		  #loader-wrapper .loader-section {
+		}
+		#loader-wrapper .loader-section {
 			position: fixed;
 			top: 0;
 			width: 100%;
 			height: 100%;
 			background-color:  #e5e7e9 ;
 			z-index: 1000;
-			/* opacity: 50%; */
 			-webkit-transform: translateX(0);  /* Chrome, Opera 15+, Safari 3.1+ */
 			-ms-transform: translateX(0);  /* IE 9 */
 			transform: translateX(0);  /* Firefox 16+, IE 10+, Opera */
-		  }
-		
-		  .loaded #loader {
+		}
+		.loaded #loader {
 			opacity: 0;
 			-webkit-transition: all 0.3s ease-out;  
 			transition: all 0.3s ease-out;
-		  }
-		  .loaded #loader-wrapper {
+		}
+		.loaded #loader-wrapper {
 			visibility: hidden;
 			-webkit-transform: translateY(-100%);  /* Chrome, Opera 15+, Safari 3.1+ */
 			-ms-transform: translateY(-100%);  /* IE 9 */
 			transform: translateY(-100%);  /* Firefox 16+, IE 10+, Opera */
 			-webkit-transition: all 0.3s 1s ease-out;  
 			transition: all 0.3s 1s ease-out;
-		  }
-		
-			@font-face { font-family: 'Poppins'; src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }}); } 
-			*:not(i):not(.fa){
-				font-family: 'Poppins' !important;
-				letter-spacing: 0.4px;
+		}
+		@font-face { font-family: 'Poppins'; src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }}); } 
+		*:not(i):not(.fa){
+			font-family: 'Poppins' !important;
+			letter-spacing: 0.4px;
+		}
+		.blink-reservation {
+			animation: blinker 1.10s linear infinite;
+		}
+		@keyframes blinker {
+			50% {
+				opacity: 0;
 			}
-		
-			.blink-reservation {
-				animation: blinker 1.10s linear infinite;
-			}
-			
-			@keyframes blinker {
-				50% {
-					opacity: 0;
-				}
-			}
-		</style>
-		
-	
-</head>
-
-<body class="hold-transition layout-top-nav">
-	<div id="loader-wrapper">
-		<div id="loader"></div>
-		<div class="loader-section section-left"></div>
-		<div class="loader-section section-right"></div>
-	</div>
-	<div class="wrapper">
-		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
-			<div class="container-fluid">
-				<div class="d-flex flex-grow-1">
-					<div class="row w-100 p-0 m-0">
-						<div class="col-xl-9 col-lg-10 col-md-12">
-							<div class="row">
-								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-center">
-									<a href="/" class="navbar-brand">
-										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
-									</a>
-								</div>
-								<div class="col-2 col-md-3 d-block d-lg-none">
-									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
-											<div class="btn-group icon-container mt-2" role="group">
-												<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="40" height="40"><i class="fas fa-caret-down ml-2"></i>
-											</div>
-										</a>
-										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
-												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
-											</a>
-										</div>
-									</li>
-								</div>
-								<div class="col-md-12 col-xl-7 col-lg-9 p-0 mx-auto align-middle">
-									<form role="search" method="GET" action="/search_results" id="search-form" class="pb-1">
-										<input type="checkbox" id="cb-1" name="check_qty" hidden>
-										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
-										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
-										<div class="input-group p-1">
-											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
-											<button class="btn btn-default" type="submit">
-												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
-											</button>
-										</div>
-										
-									</form>
-									<div id="suggesstion-box" class="mr-2 ml-2"></div>
-								</div>
-							</div>
-						</div>
-						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
-							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
-								<li class="nav-item dropdown col-8 text-right">
-									<a class="nav-link text-white" data-toggle="dropdown" href="#">
-										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
-										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
-									</a>
-								</li>
-								<li class="d-none d-lg-block nav-item dropdown text-right">
-									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
-								</li>
-							</ul>
-						</div>
-					</div>
-				</div>
-			</div>
-		</nav>
-
-
-		<div class="content-wrapper">
-			@if(!in_array($activePage, ['search_results', 'dashboard']))
-			<div class="row m-0 pb-0">
-				<div class="col-xl-5 p-3">
-					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
-						<i class="fas fa-home"></i>
-					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
-					<h4 class="d-block d-lg-none"><a href="/" class="btn btn-default">
-						<i class="fas fa-home"></i>
-					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h4>
-				</div>
-				<div class="col-xl-7 pt-2 dashboard-btn-grp">
-					<a class="btn btn-app bg-primary" href="/returns">
-						<i class="fas fa-undo"></i> <span class="d-none d-lg-inline">Returns</span>
-					</a>
-					<a class="btn btn-app bg-info" href="/production_to_receive">
-						<i class="far fa-check-circle"></i> <span class="d-none d-lg-inline">Feedback</span>
-					</a>
-					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
-						<i class="fas fa-exchange-alt"></i> <span class="d-none d-lg-inline">Transfer</span>
-					</a>
-					<a class="btn btn-app bg-purple" href="/receipts">
-						<i class="fas fa-boxes"></i> <span class="d-none d-lg-inline">PO Receipts</span>
-					</a>
-					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
-						<i class="fas fa-tasks"></i> <span class="d-none d-lg-inline">Withdrawals</span>
-					</a>
-					<a class="btn btn-app bg-indigo" href="/material_issue">
-						<i class="fas fa-dolly"></i> <span class="d-none d-lg-inline">Material Issue</span>
-					</a>
-					<a class="btn btn-app bg-navy" href="/picking_slip">
-						<i class="fas fa-truck"></i> <span class="d-none d-lg-inline">Deliveries</span>
-					</a>
-					<a class="btn btn-app bg-teal" href="/replacements">
-						<i class="fas fa-retweet"></i> <span class="d-none d-lg-inline">Replacement</span>
-					</a>
-				</div>
-			</div>
-			@endif
-			<!-- /.content-header -->
-		
-			<!-- Main content -->
-			@yield('content')
-			<!-- /.content -->
-			
-		</div>
-	<!-- /.content-wrapper -->
-
-	<style>
+		}
+		#item-preloader {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			opacity: 0.5;
+			background: rgba( 235, 237, 239 );
+			transition: opacity 200ms ease-in-out;
+			border-radius: 4px;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			min-height: 300px;
+		}
 		.remove{
 			position: absolute;
 			top: 15%;
@@ -286,28 +167,23 @@
 			border-radius: 2px;
 			text-align: center;
 		}
-
 		.col-md-13 {
 			width: 19%;
 			margin: 0.5%;
 		}
-		
 		.imgPreview {
 			border: 1px solid #ddd;
 			border-radius: 4px;
 			padding: 5px;
 		}
-			
 		.upload-btn{
 			padding: 6px 12px;
 		}
-		
 		.fileUpload {
 			position: relative;
 			overflow: hidden;
 			font-size: 9pt;
 		}
-		
 		.fileUpload input.upload {
 			position: absolute;
 			top: 0;
@@ -318,9 +194,7 @@
 			opacity: 0;
 			filter: alpha(opacity=0);
 		}
-		
-		#btn
-		{
+		#btn {
 			display:inline-block;
 			border:0;
 			position: relative;
@@ -333,9 +207,7 @@
 			transition: all 200ms ease-in;
 			transform: scale(1);
 		}
-
-		#btn:hover
-		{
+		#btn:hover {
 			box-shadow: 0px 0px 50px #000000;
 			z-index: 2;
 			-webkit-transition: all 200ms ease-in;
@@ -347,7 +219,6 @@
 			transition: all 200ms ease-in;
 			transform: scale(1.2);
 		}
-
 		#suggesstion-box {
 			position:absolute;
 			width: 95%;
@@ -358,7 +229,6 @@
 			display: block;
 			z-index: 11;
 		}
-		
 		#d {
 			display: inline-block;
 			border: 0;
@@ -372,7 +242,6 @@
 			transition: all 200ms ease-in;
 			transform: scale(1);
 		}
-
 		#d:hover {
 			box-shadow: 0px 0px 50px #000000;
 			z-index: 2;
@@ -385,13 +254,11 @@
 			transition: all 200ms ease-in;
 			transform: scale(1.2);
 		}
-
 		.active_dash {
 			-moz-box-shadow: 0 0 5px 5px #888;
 			-webkit-box-shadow: 0 0 5px 5px#888;
 			box-shadow: 0 0 5px 5px #888;
 		}
-
 		.checkout {
 			display: inline-block;
 			border: 0;
@@ -405,7 +272,6 @@
 			transition: all 200ms ease-in;
 			transform: scale(1);
 		}
-	
 		.checkout:hover {
 			box-shadow: 0px 0px 50px #000000;
 			z-index: 2;
@@ -418,7 +284,6 @@
 			transition: all 200ms ease-in;
 			transform: scale(1.2);
 		}
-
 		.mob-dropdown-container{
 			position: absolute !important;
 			right: 0 !important;
@@ -497,7 +362,134 @@
 				margin-top: 13px !important;
 			}
 		}
+		.select2{
+			width: 100% !important;
+		}
+		.select2-selection__rendered {
+			line-height: 31px !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 37px !important;
+			padding-top: 1.5%;
+		}
+		.select2-selection__arrow {
+			height: 36px !important;
+		}
 	</style>
+</head>
+<body class="hold-transition layout-top-nav">
+	<div id="loader-wrapper">
+		<div id="loader"></div>
+		<div class="loader-section section-left"></div>
+		<div class="loader-section section-right"></div>
+	</div>
+	<div class="wrapper">
+		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
+			<div class="container-fluid">
+				<div class="d-flex flex-grow-1">
+					<div class="row w-100 p-0 m-0">
+						<div class="col-xl-9 col-lg-10 col-md-12">
+							<div class="row">
+								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-center">
+									<a href="/" class="navbar-brand">
+										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
+									</a>
+								</div>
+								<div class="col-2 col-md-3 d-block d-lg-none">
+									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
+										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
+											<div class="btn-group icon-container mt-2" role="group">
+												<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="40" height="40"><i class="fas fa-caret-down ml-2"></i>
+											</div>
+										</a>
+										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
+												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
+											</a>
+										</div>
+									</li>
+								</div>
+								<div class="col-md-12 col-xl-7 col-lg-9 p-0 mx-auto align-middle">
+									<form role="search" method="GET" action="/search_results" id="search-form" class="pb-1">
+										<input type="checkbox" id="cb-1" name="check_qty" hidden>
+										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
+										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
+										<div class="input-group p-1">
+											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
+											<button class="btn btn-default" type="submit">
+												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
+											</button>
+										</div>
+										
+									</form>
+									<div id="suggesstion-box" class="mr-2 ml-2"></div>
+								</div>
+							</div>
+						</div>
+						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
+							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
+								<li class="nav-item dropdown col-8 text-right">
+									<a class="nav-link text-white" data-toggle="dropdown" href="#">
+										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
+										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
+									</a>
+								</li>
+								<li class="d-none d-lg-block nav-item dropdown text-right">
+									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</nav>
+		<div class="content-wrapper">
+			@if(!in_array($activePage, ['search_results', 'dashboard']))
+			<div class="row m-0 pb-0">
+				<div class="col-xl-5 p-3">
+					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
+						<i class="fas fa-home"></i>
+					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
+					<h4 class="d-block d-lg-none"><a href="/" class="btn btn-default">
+						<i class="fas fa-home"></i>
+					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h4>
+				</div>
+				<div class="col-xl-7 pt-2 dashboard-btn-grp">
+					<a class="btn btn-app bg-primary" href="/returns">
+						<i class="fas fa-undo"></i> <span class="d-none d-lg-inline">Returns</span>
+					</a>
+					<a class="btn btn-app bg-info" href="/production_to_receive">
+						<i class="far fa-check-circle"></i> <span class="d-none d-lg-inline">Feedback</span>
+					</a>
+					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
+						<i class="fas fa-exchange-alt"></i> <span class="d-none d-lg-inline">Transfer</span>
+					</a>
+					<a class="btn btn-app bg-purple" href="/receipts">
+						<i class="fas fa-boxes"></i> <span class="d-none d-lg-inline">PO Receipts</span>
+					</a>
+					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
+						<i class="fas fa-tasks"></i> <span class="d-none d-lg-inline">Withdrawals</span>
+					</a>
+					<a class="btn btn-app bg-indigo" href="/material_issue">
+						<i class="fas fa-dolly"></i> <span class="d-none d-lg-inline">Material Issue</span>
+					</a>
+					<a class="btn btn-app bg-navy" href="/picking_slip">
+						<i class="fas fa-truck"></i> <span class="d-none d-lg-inline">Deliveries</span>
+					</a>
+					<a class="btn btn-app bg-teal" href="/replacements">
+						<i class="fas fa-retweet"></i> <span class="d-none d-lg-inline">Replacement</span>
+					</a>
+				</div>
+			</div>
+			@endif
+			<!-- /.content-header -->
+		
+			<!-- Main content -->
+			@yield('content')
+			<!-- /.content -->
+			
+		</div>
+	<!-- /.content-wrapper -->
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
 		<div class="modal-dialog" role="document" style="min-width: 90%;">
@@ -543,6 +535,11 @@
 								</ul>
 								<div class="tab-content">
 									<div class="tab-pane active" id="tab_1">
+										<div id="item-preloader">
+											<div class="spinner-border" role="status">
+												<span class="sr-only">Loading...</span>
+											</div>
+										</div>
 										<div id="item-detail-content"></div>
 									</div>
 									<div class="tab-pane" id="tab_2">
@@ -551,7 +548,6 @@
 												
 												<div class="col-md-3 p-0" style="display: inline-block;">
 													<div class="form-group m-1">
-														{{-- <label>Date range:</label> --}}
 														<div class="input-group">
 															<div class="input-group-prepend">
 																<span class="input-group-text">
@@ -562,31 +558,21 @@
 														</div>
 													</div>
 												</div>
-												
 												<div class="col-md-2 p-2" style="display: inline-block">
 													<div class="form-group m-0 font-responsive" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
-														<select name="ath-src-warehouse" id="ath-src-warehouse-filter" class="form-control">
-															
-														</select>
+														<select name="ath-src-warehouse" id="ath-src-warehouse-filter" class="form-control"></select>
 													</div>
 												</div>
-
 												<div class="col-md-2 p-2" style="display: inline-block">
 													<div class="form-group m-0 font-responsive" id="ath-to-warehouse-filter-parent" style="z-index: 1050">
-														<select name="ath-to-warehouse" id="ath-to-warehouse-filter" class="form-control">
-															
-														</select>
+														<select name="ath-to-warehouse" id="ath-to-warehouse-filter" class="form-control"></select>
 													</div>
 												</div>
-
 												<div class="col-md-2 p-2" style="display: inline-block">
 													<div class="form-group m-0 font-responsive" id="warehouse-user-filter-parent" style="z-index: 1050">
-														<select name="warehouse_user" id="warehouse-user-filter" class="form-control">
-															
-														</select>
+														<select name="warehouse_user" id="warehouse-user-filter" class="form-control"></select>
 													</div>
 												</div>
-
 												<div class="col-md-2" style="display: inline-block">
 													<button class="btn btn-secondary font-responsive" id="athReset">Reset Filters</button>
 												</div>
@@ -597,7 +583,6 @@
 									<div class="tab-pane" id="tab_3">
 										<div class="row">
 											<div class="col-md-12">
-												
 												<div class="col-md-3 p-0" style="display: inline-block;">
 													<div class="form-group m-1">
 														<div class="input-group">
@@ -610,27 +595,19 @@
 														</div>
 													</div>
 												</div>
-
 												<div class="col-md-3 p-2" style="display: inline-block">
 													<div class="form-group m-0 font-responsive" id="erp-warehouse-filter-parent" style="z-index: 1050">
-														<select name="erp-warehouse" id="erp-warehouse-filter" class="form-control">
-															
-														</select>
+														<select name="erp-warehouse" id="erp-warehouse-filter" class="form-control"></select>
 													</div>
 												</div>
-
 												<div class="col-md-3 p-2" style="display: inline-block">
 													<div class="form-group m-0 font-responsive" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
-														<select name="erp-warehouse-user" id="erp-warehouse-user-filter" class="form-control">
-															
-														</select>
+														<select name="erp-warehouse-user" id="erp-warehouse-user-filter" class="form-control"></select>
 													</div>
 												</div>
-
 												<div class="col-md-2" style="display: inline-block">
 													<button class="btn btn-secondary font-responsive" id="erpReset">Reset Filters</button>
 												</div>
-
 												<div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
 											</div>
 										</div>
@@ -723,7 +700,6 @@
 						<h4 class="modal-title">Upload Image</h4>
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					</div>
-					
 					<div class="modal-body">
 						<div class="row">
 							<div class="col-md-12">
@@ -739,7 +715,6 @@
 								</div>
 							</div>
 						</div>
-						
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -750,21 +725,6 @@
 		</form>
 	</div>
 
-	<style>
-		.select2{
-			width: 100% !important;
-		}
-		.select2-selection__rendered {
-			line-height: 31px !important;
-		}
-		.select2-container .select2-selection--single {
-			height: 37px !important;
-			padding-top: 1.5%;
-		}
-		.select2-selection__arrow {
-			height: 36px !important;
-		}
-	</style>
 
 	<div class="modal fade" id="add-stock-reservation-modal">
 		<form id="stock-reservation-form" method="POST" action="/create_reservation" autocomplete="off">
@@ -1695,7 +1655,7 @@
 				var item_classification = $(this).data('item-classification');
 
 				$('#view-item-details-modal .modal-title').text(item_code + " [" + item_classification + "]");
-
+				$('#view-item-details-modal').modal('show');
 				view_item_details(item_code);
 			});
 
@@ -1713,11 +1673,14 @@
 			});
 
 			function view_item_details(item_code){
+				$('#item-preloader').removeClass('d-none');
+				$('#item-detail-content').empty();
 				$.ajax({
 					type: 'GET',
 					url: '/get_item_details/' + item_code,
 					success: function(response){
 						$('#item-detail-content').html(response);
+						$('#item-preloader').addClass('d-none');
 						$('#view-item-details-modal').modal('show');
 					}
 				});

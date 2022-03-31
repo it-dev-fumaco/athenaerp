@@ -16,7 +16,7 @@
                     <div class="row">
                         <div class="col-12">
                             <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : 'border border-secondary' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
+                                <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
                             </a>
                         </div>
                         <div class="col-4 mt-2">
@@ -52,7 +52,7 @@
                         <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                         <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                     </dl>
-                    @if ($user_pricelist)
+                    @if ($user_pricelist && $price_list_rate != '-')
                     <p class="mt-2 mb-2 text-center">
                         <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($price_list_rate, 2, '.', ',') }}</span>
                         <span class="d-block" style="font-size: 12pt;">{{ $user_pricelist }}</span>
