@@ -30,6 +30,11 @@ class MainController extends Controller
             return redirect('/search_results');
         }
 
+        if(Auth::user()->user_group == 'Promodiser'){
+            $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
+            return view('index_promodiser', compact('assigned_consignment_store'));
+        }
+
         return view('index');
     }
 

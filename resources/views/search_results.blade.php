@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'ERPInventory',
+    'namePage' => 'Search Result(s)',
     'activePage' => 'search_results',
 ])
 
@@ -227,12 +227,14 @@
 																</div>
 															</div>
 															<div class="col-5 p-1">
-																<table class="table table-sm table-bordered warehouse-table">
-																	<tr>
-																		<th class="text-center wh-cell">Warehouse</th>
-																		<th class="text-center qtr-cell">Reserved Qty</th>
-																		<th class="text-center qtr-cell">Available Qty</th>
-																	</tr>
+																<table class="table table-sm table-bordered warehouse-table table-hover">
+																	<thead>
+																		<tr>
+																			<th class="text-center wh-cell">Warehouse</th>
+																			<th class="text-center qtr-cell">Reserved Qty</th>
+																			<th class="text-center qtr-cell">Available Qty</th>
+																		</tr>
+																	</thead>
 																	@forelse($row['item_inventory'] as $inv)
 																		<tr>
 																			<td class="text-center" >
@@ -371,12 +373,14 @@
 																</p>
 																@endif
 																<div class="d-none d-md-block">
-																	<table class="table table-sm table-bordered warehouse-table">
-																		<tr>
-																			<th class="text-center wh-cell">Warehouse</th>
-																			<th class="text-center qtr-cell">Reserved Qty</th>
-																			<th class="text-center qtr-cell">Available Qty</th>
-																		</tr>
+																	<table class="table table-sm table-bordered warehouse-table table-striped">
+																		<thead>
+																			<tr>
+																				<th class="text-center wh-cell">Warehouse</th>
+																				<th class="text-center qtr-cell">Reserved Qty</th>
+																				<th class="text-center qtr-cell">Available Qty</th>
+																			</tr>
+																		</thead>
 																		@forelse($row['item_inventory'] as $inv)
 																			<tr>
 																				<td class="text-center" >
@@ -456,12 +460,14 @@
 														</div>
 														<div class="row m-0 p-1 d-block d-md-none">
 															<div class="container-fluid mb-1">
-																<table class="table table-sm table-bordered warehouse-table m-0 p-0">
-																	<tr>
-																		<th class="text-center wh-cell">Warehouse</th>
-																		<th class="text-center qtr-cell">Reserved Qty</th>
-																		<th class="text-center qtr-cell">Available Qty</th>
-																	</tr>
+																<table class="table table-sm table-bordered warehouse-table table-striped m-0 p-0">
+																	<thead>
+																		<tr>
+																			<th class="text-center wh-cell">Warehouse</th>
+																			<th class="text-center qtr-cell">Reserved Qty</th>
+																			<th class="text-center qtr-cell">Available Qty</th>
+																		</tr>
+																	</thead>
 																	@forelse($row['item_inventory'] as $inv)
 																		<tr>
 																			<td class="text-center" >
