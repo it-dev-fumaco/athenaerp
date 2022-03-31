@@ -8,7 +8,7 @@
       <div class="p-2 text-truncate d-inline-block" style="width: 90%;">
         <img src="{{ asset('storage') }}{{ $img }}" style="float:left;width: 60px; height: 60px;margin-right: 10px;">
         <b>{{ $item->name }}</b>
-        <br>{{ $item->description }}
+        <br><span style="font-size: 10pt;">{{ $item->description }}</span>
       </div>
       <div class="p-2 align-middle text-center" style="width: 10%;">
           <a class="btn btn-default" href="?searchString={{ $item->name }}&search=">
