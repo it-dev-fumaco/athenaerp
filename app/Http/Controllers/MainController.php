@@ -32,10 +32,38 @@ class MainController extends Controller
 
         if(Auth::user()->user_group == 'Promodiser'){
             $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
+
             return view('index_promodiser', compact('assigned_consignment_store'));
         }
 
         return view('index');
+    }
+
+    public function consignmentItemStock($warehouse, Request $request) {
+        $search_string = $request->q;
+        $consignment_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)
+            ->when($search_string, function($q) use ($search_string){
+                return $q->where('bin.item_code', 'LIKE', "%".$search_string."%")->orWhere('item.description', 'LIKE', "%".$search_string."%");
+            })
+            ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification')->orderBy('bin.actual_qty', 'desc')->paginate(20);
+
+        $item_codes = array_column($consignment_stocks->items(), 'item_code');
+
+        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+        $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
+
+        $price_list_rates = [];
+        $user_pricelist = Auth::user()->price_list;
+        if ($user_pricelist) {
+            $price_list_rates = DB::table('tabItem Price')
+                ->where('price_list', $user_pricelist)->whereIn('item_code', $item_codes)
+                ->select('item_code', 'price_list', 'modified', 'price_list_rate')
+                ->orderBy('modified', 'desc')->get();
+        }
+
+        $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
+
+        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse'));
     }
 
     public function search_results(Request $request){
