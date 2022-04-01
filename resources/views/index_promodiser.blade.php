@@ -10,8 +10,17 @@
 			<div class="row pt-3">
 				<div class="col-sm-12">
                     <div class="card card-secondary card-outline">
-                        <div class="card-header d-flex p-0">
-                            <div id="first-chart" class="d-none" data-el="{{ str_slug($assigned_consignment_store[0], '-') }}" data-store="{{ $assigned_consignment_store[0] }}"></div>
+                        <div id="first-chart" class="d-none" data-el="{{ str_slug($assigned_consignment_store[0], '-') }}" data-store="{{ $assigned_consignment_store[0] }}"></div>
+                        <div class="card-header d-none d-xl-block"> <!-- Desktop Chart Control -->
+                            <ul class="nav nav-pills p-2">
+                                @foreach ($assigned_consignment_store as $n => $store)
+                                <li class="nav-item">
+                                    <a class="c-store font-responsive nav-link {{ $loop->first ? 'active' : '' }}" href="#tab{{ $n }}" data-toggle="tab" data-el="{{ str_slug($store, '-') }}">{{ $store }}</a>
+                                </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <div class="card-header d-block d-xl-none"> <!-- Mobile Chart Control -->
                             <select class="form-control custom-select" id="chart-select">
                                 @foreach ($assigned_consignment_store as $n => $store)
                                     <option data-el="{{ str_slug($store, '-') }}" data-store="{{ $store }}" {{ $loop->first ? 'selected' : null }} data-tab="#tab{{ $n }}">{{ $store }}</option>
@@ -81,12 +90,20 @@ $(document).ready(function() {
         consignment_chart('sales-chart-' + el, warehouse);
     }
 
-    $('#chart-select').change(function(){
+    $('#chart-select').change(function(){ // Mobile chart control
         var el = $(this).find(':selected').data('el');
         var warehouse = $(this).find(':selected').data('store');
         var tab = $(this).find(':selected').data('tab');
 
         change_tab(tab);
+        get_item_stock(el, warehouse);
+        consignment_chart('sales-chart-' + el, warehouse);
+    });
+
+    $('.c-store').click(function(){ // Desktop chart control
+        var warehouse = $(this).text();
+        var el = $(this).data('el');
+
         get_item_stock(el, warehouse);
         consignment_chart('sales-chart-' + el, warehouse);
     });
@@ -139,9 +156,6 @@ $(document).ready(function() {
             type: "GET",
             url: "/consignment_sales/" + warehouse,
             success: function (data) {
-                console.log(data.data)
-                
-                // var $salesChart = $('#' + el);
                 // eslint-disable-next-line no-unused-vars
                 new Chart($('#' + el), {
                     type: 'bar',
