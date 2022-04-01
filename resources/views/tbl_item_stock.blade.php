@@ -1,20 +1,20 @@
-<div class="float-right" style="margin-top: -30px;">
+<div class="float-right" style="margin-top: -32px;">
     Total: <span class="badge badge-info" style="font-size: 10pt;">{{ $consignment_stocks->total() }}</span>
 </div>
 <table class="table table-bordered m-0 table-striped" style="font-size: 10pt;">
     <thead>
         <tr>
             <th class="text-center" style="width: 70%;">Item Description</th>
-            <th class="text-center" style="width: 15%;">Available Qty</th>
-            <th class="text-center" style="width: 15%;">Price</th>
+            <th class="text-center d-none d-sm-table-cell" style="width: 15%; white-space: nowrap">Available Qty</th>
+            <th class="text-center d-none d-sm-table-cell" style="width: 15%;">Price</th>
         </tr>    
     </thead>
     <tbody>
         @forelse ($consignment_stocks as $row)
         <tr>
             <td class="text-justify align-middle">
-                <div class="d-flex flex-row">        
-                    <div class="pt-1 pb-1 align-self-center">
+                <div class="d-flex row">        
+                    <div class="col-3 col-xl-1">
                         @php
                             $item_image = null;
                             if (array_key_exists($row->item_code, $item_image_paths)) {
@@ -28,13 +28,31 @@
                         @endphp
                         <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
                             <picture>
-                                <source srcset="{{ asset('storage/') . $img_webp }}" type="image/webp" style="width: 60px;">
-                                <source srcset="{{ asset('storage/') . $img }}" style="width: 60px;">
-                                <img src="{{ asset('storage/') . $img }}" alt="{{ str_slug($img, '-') }}" style="width: 60px;">
+                                <source srcset="{{ asset('storage/') . $img_webp }}" type="image/webp" class="w-100">
+                                <source srcset="{{ asset('storage/') . $img }}" class="w-100">
+                                <img src="{{ asset('storage/') . $img }}" alt="{{ str_slug($img, '-') }}" class="w-100">
                             </picture>
                         </a>
                     </div>
-                    <div class="pl-2 align-self-center">
+                    <div class="col-9 d-block d-sm-none">
+                        <table class="w-100">
+                            <tr>
+                                <th class="p-1 text-center" style="white-space: nowrap">Available Qty</th>
+                                <th class="p-1 text-center">Price</th>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">
+                                    @if ($stock_qty > 0)
+                                        <span class="badge badge-success">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
+                                    @else
+                                        <span class="badge badge-danger">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
+                                    @endif
+                                </td>
+                                <td class="p-1 text-center font-weight-bold">{{ $price_list_rate }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-12 col-sm-9 col-xl-11">
                         <span class="font-weight-bold view-item-details" data-item-code="{{ $row->item_code }}" data-item-classification="{{ $row->item_classification }}" style="cursor:pointer;">{{ $row->item_code }}</span>
                         <span class="d-block">{!! strip_tags($row->description) !!}</span>
                     </div>
@@ -71,14 +89,14 @@
                     </div>
                 </div>
             </td>
-            <td class="text-center align-middle" style="font-size: 13pt;">
+            <td class="text-center align-middle d-none d-sm-table-cell" style="font-size: 13pt;">
                 @if ($stock_qty > 0)
                 <span class="badge badge-success">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
                 @else
                 <span class="badge badge-danger">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
                 @endif
             </td>
-            <td class="text-center align-middle font-weight-bold">{{ $price_list_rate }}</td>
+            <td class="text-center align-middle d-none d-sm-table-cell font-weight-bold">{{ $price_list_rate }}</td>
         </tr>
         @empty
         <tr>

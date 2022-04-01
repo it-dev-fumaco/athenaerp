@@ -11,22 +11,24 @@
 				<div class="col-sm-12">
                     <div class="card card-secondary card-outline">
                         <div class="card-header d-flex p-0">
-                            <ul class="nav nav-pills p-2">
+                            <div id="first-chart" class="d-none" data-el="{{ str_slug($assigned_consignment_store[0], '-') }}" data-store="{{ $assigned_consignment_store[0] }}"></div>
+                            <select class="form-control custom-select" id="chart-select">
                                 @foreach ($assigned_consignment_store as $n => $store)
-                                <li class="nav-item">
-                                    <a class="c-store font-responsive nav-link {{ $loop->first ? 'active' : '' }}" href="#tab{{ $n }}" data-toggle="tab" data-el="{{ str_slug($store, '-') }}">{{ $store }}</a>
-                                </li>
+                                    <option data-el="{{ str_slug($store, '-') }}" data-store="{{ $store }}" {{ $loop->first ? 'selected' : null }} data-tab="#tab{{ $n }}">{{ $store }}</option>
                                 @endforeach
-                            </ul>
+                            </select>
                         </div>
                         <div class="card-body p-0">
                             <div class="tab-content p-0">
                                 @foreach ($assigned_consignment_store as $m => $store)
                                 <div class="tab-pane p-0 {{ $loop->first ? 'active' : '' }}" id="tab{{ $m }}">
                                     <div class="row m-0 p-0">
-                                        <div class="col-md-12" style="border: 1px solid;">
+                                        <div class="col-md-12">
                                             <div class="position-relative m-4">
-                                                <canvas id="sales-chart-{{ str_slug($store, '-') }}" height="400"></canvas>
+                                                <canvas id="sales-chart-{{ str_slug($store, '-') }}" class="canvas"></canvas>
+                                            </div>
+                                            <div class="container-fluid text-center">
+                                                <span style="font-size: 20px;"><b>Inventory Stocks</b></span>
                                             </div>
                                         </div>
                                         <div class="col-md-4 mt-2">
@@ -49,20 +51,50 @@
 		</div>
 	</div>
 </div>
+<style>
+    .canvas{
+        height: 400px;
+    }
+    @media (max-width: 575.98px) {
+        .canvas{
+            height: 200px;
+        }
+    }
+    @media (max-width: 767.98px) {
+        .canvas{
+            height: 200px;
+        }
+    }
+</style>
 @endsection
 
 @section('script')
 
 <script>
-$(document).ready(function(e){
-    $('.c-store').each(function() {
-        var el = $(this).data('el');
-        var warehouse = $(this).text();
+$(document).ready(function() {
+    load_first_chart();
+    function load_first_chart(){
+        var el = $('#first-chart').data('el');
+        var warehouse = $('#first-chart').data('store');
 
         get_item_stock(el, warehouse);
+        consignment_chart('sales-chart-' + el, warehouse);
+    }
 
+    $('#chart-select').change(function(){
+        var el = $(this).find(':selected').data('el');
+        var warehouse = $(this).find(':selected').data('store');
+        var tab = $(this).find(':selected').data('tab');
+
+        change_tab(tab);
+        get_item_stock(el, warehouse);
         consignment_chart('sales-chart-' + el, warehouse);
     });
+
+    function change_tab(tab){
+        $('.tab-pane').removeClass('active');
+        $(tab).addClass('active');
+    }
 
     function get_item_stock(el, warehouse, q = null, page = null) {
         $.ajax({
@@ -107,7 +139,7 @@ $(document).ready(function(e){
             type: "GET",
             url: "/consignment_sales/" + warehouse,
             success: function (data) {
-                console.log(data)
+                console.log(data.data)
                 
                 // var $salesChart = $('#' + el);
                 // eslint-disable-next-line no-unused-vars
@@ -153,7 +185,20 @@ $(document).ready(function(e){
                                 display: true,
                                 ticks: ticksStyle
                             }]
-                        }
+                        },
+                        tooltips: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return "₱ " + tooltipItem.yLabel.toLocaleString();
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Sales Report',
+                            fontSize: 22,
+                            fontColor: '#000000'
+                        },
                     }
                 });
             }
