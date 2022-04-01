@@ -69,6 +69,13 @@ class MainController extends Controller
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
+        $user = null;
+        $assigned_consignment_store = [];
+        if($request->assigned_to_me){
+            $user = Auth::user()->frappe_userid;
+            $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
+        }
+
         if($request->wh == ''){
             $itemQ = DB::table('tabItem')->where('disabled', 0)
                 ->where('has_variants', 0)->where('is_stock_item', 1)->where('item_classification', 'LIKE', $request->classification)
@@ -93,7 +100,12 @@ class MainController extends Controller
                 })
                 ->when($request->check_qty, function($q) use ($request){
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-                })->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification');
+                })
+                ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
+                    return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
+                        ->whereIn('tabBin.warehouse', $assigned_consignment_store);
+                })
+                ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification');
         }else{
             $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)->join('tabItem Default as d', 'd.parent', 'tabItem.name')
                 ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)->where('tabItem.item_classification', 'LIKE', $request->classification)
@@ -119,10 +131,14 @@ class MainController extends Controller
                 ->when($request->check_qty, function($q) use ($request){
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 })
+                ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
+                    return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
+                        ->whereIn('tabBin.warehouse', $assigned_consignment_store);
+                })
                 ->where('d.default_warehouse', $request->wh)
                 ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'd.default_warehouse');
         }
-            
+
         $itemClassQuery = Clone $itemQ;
         $itemsQuery = Clone $itemQ;
 
@@ -184,7 +200,7 @@ class MainController extends Controller
             })
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
             ->get();
-        
+
         $item_warehouses = array_column($item_inventory->toArray(), 'warehouse');
 
         $item_inventory = collect($item_inventory)->groupBy('item_code')->toArray();

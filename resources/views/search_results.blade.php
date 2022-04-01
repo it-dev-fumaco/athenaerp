@@ -91,7 +91,7 @@
 															@if ($promodiser_restriction)
 																<div class="form-group m-0r col-12 d-block d-xl-none m-0">
 																	<label>
-																		<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('promodiser_warehouse')) ? 'checked' : null }} >
+																		<input type="checkbox" class="minimal" id="mobile-promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
 																		
 																		<span style="font-size: 12px;">Warehouse Assigned to Me</span>
 																	</label>
@@ -103,7 +103,7 @@
 														<div class="col-8 col-xl-2 d-none d-xl-block mx-auto text-center">
 															<div class="form-group m-0r">
 																<label>
-																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('promodiser_warehouse')) ? 'checked' : null }} >
+																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
 																	
 																	<span style="font-size: 12px;">Warehouse Assigned to Me</span>
 																</label>
@@ -118,7 +118,7 @@
 										<div class="col-2 d-none d-xl-block">
 											<div class="card mb-3">
 												@php
-													$item_class = collect($itemClass)->chunk(80);
+													$item_class = collect($itemClass)->chunk(55);
 												@endphp
 												<label class="text-center p-2">Category Filter</label>
 												@if (count($item_class) > 1)
@@ -216,6 +216,7 @@
 																	<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
 																	<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['part_nos'])
+																		<br>
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																	@endif
 																	@if ($row['price_list'] && $row['price_list_rate'] != '-')
@@ -364,6 +365,7 @@
 																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
 																<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}</span>
 																@if ($row['part_nos'])
+																	<br>
 																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																@endif
 																@if ($row['price_list'] && $row['price_list_rate'] != '-')
