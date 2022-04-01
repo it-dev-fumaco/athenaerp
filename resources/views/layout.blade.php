@@ -412,6 +412,7 @@
 								<div class="col-md-12 col-xl-7 col-lg-9 p-0 mx-auto align-middle">
 									<form role="search" method="GET" action="/search_results" id="search-form" class="pb-1">
 										<input type="checkbox" id="cb-1" name="check_qty" hidden>
+										<input type="checkbox" id="assigned-to-me" name="assigned_to_me" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<div class="input-group p-1">
@@ -1172,7 +1173,29 @@
 				$("#cb-1").prop("checked", false);
 				$('#search-form').submit();
 			});
-						
+
+			// Warehouse Assigned to me - Promodiser
+			$('#promodiser-warehouse').on('ifChecked', function(event){
+				$("#assigned-to-me").prop("checked", true);
+				$('#search-form').submit();
+			});
+
+			$('#promodiser-warehouse').on('ifUnchecked', function(event){
+				$("#assigned-to-me").prop("checked", false);
+				$('#search-form').submit();
+			});
+
+			$('#mobile-promodiser-warehouse').on('ifChecked', function(event){
+				$("#assigned-to-me").prop("checked", true);
+				$('#search-form').submit();
+			});
+
+			$('#mobile-promodiser-warehouse').on('ifUnchecked', function(event){
+				$("#assigned-to-me").prop("checked", false);
+				$('#search-form').submit();
+			});
+			// Warehouse Assigned to me - Promodiser
+
 			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
 				e.preventDefault();
 
