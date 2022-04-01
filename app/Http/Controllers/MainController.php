@@ -429,10 +429,14 @@ class MainController extends Controller
     }
 
     public function load_suggestion_box(Request $request){
+        $search_str = explode(' ', $request->search_string);
         $q = DB::table('tabItem')->leftJoin('tabItem Supplier', 'tabItem Supplier.parent', 'tabItem.name')->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
-            ->where(function($q) use ($request) {
-                $q->where('tabItem.name', 'like', '%'.$request->search_string.'%')
+            ->where(function($q) use ($search_str, $request) {
+                foreach ($search_str as $str) {
+                    $q->where('tabItem.description', 'LIKE', "%".$str."%");
+                }
+                $q->orWhere('tabItem.name', 'like', '%'.$request->search_string.'%')
                 ->orWhere('item_classification', 'like', '%'.$request->search_string.'%')
                 ->orWhere('item_group', 'like', '%'.$request->search_string.'%')
                 ->orWhere('stock_uom', 'like', '%'.$request->search_string.'%')
