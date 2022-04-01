@@ -4248,4 +4248,24 @@ class MainController extends Controller
             }
         }
     }
+
+    public function consignmentSalesReport($warehouse, Request $request) {
+        $year = $request->year;
+        $year = 2021;
+        $query = DB::table('tabSales Order')->where('docstatus', 1)
+            ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
+            ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(base_grand_total) as grand_total')
+            ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();
+
+        $result = [];
+        $month_name = [null, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+        for ($i=1; $i <= 12; $i++) { 
+            $result[$month_name[$i]] = array_key_exists($i, $query) ? $query[$i] : 0;
+        }
+
+        return [
+            'labels' => collect($result)->keys(),
+            'data' => array_values($result)
+        ];
+    }
 }

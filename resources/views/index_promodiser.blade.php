@@ -24,6 +24,11 @@
                                 @foreach ($assigned_consignment_store as $m => $store)
                                 <div class="tab-pane p-0 {{ $loop->first ? 'active' : '' }}" id="tab{{ $m }}">
                                     <div class="row m-0 p-0">
+                                        <div class="col-md-12" style="border: 1px solid;">
+                                            <div class="position-relative m-4">
+                                                <canvas id="sales-chart-{{ str_slug($store, '-') }}" height="400"></canvas>
+                                            </div>
+                                        </div>
                                         <div class="col-md-4 mt-2">
                                             <div class="input-group">
                                                 <input type="text" class="form-control" placeholder="Search..." id="s{{ str_slug($store, '-') }}" autocomplete="off">
@@ -55,6 +60,8 @@ $(document).ready(function(e){
         var warehouse = $(this).text();
 
         get_item_stock(el, warehouse);
+
+        consignment_chart('sales-chart-' + el, warehouse);
     });
 
     function get_item_stock(el, warehouse, q = null, page = null) {
@@ -86,6 +93,72 @@ $(document).ready(function(e){
       
         get_item_stock(el, warehouse, query);
     });
+
+    var ticksStyle = {
+        fontColor: '#495057',
+        fontStyle: 'bold'
+    }
+    
+    var mode = 'index';
+    var intersect = true;
+
+    function consignment_chart(el, warehouse) {
+        $.ajax({
+            type: "GET",
+            url: "/consignment_sales/" + warehouse,
+            success: function (data) {
+                console.log(data)
+                
+                // var $salesChart = $('#' + el);
+                // eslint-disable-next-line no-unused-vars
+                new Chart($('#' + el), {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            backgroundColor: '#0774C0',
+                            borderColor: '#0774C0',
+                            data: data.data
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        tooltips: {
+                            mode: mode,
+                            intersect: intersect
+                        },
+                        hover: {
+                            mode: mode,
+                            intersect: intersect
+                        },
+                        legend: {
+                            display: false
+                        },
+                        scales: {
+                            yAxes: [{
+                                ticks: $.extend({
+                                    beginAtZero: true,
+                                    // Include a dollar sign in the ticks
+                                    callback: function (value) {
+                                        if (value >= 1000) {
+                                            value /= 1000
+                                            value += 'k'
+                                        }
+
+                                        return '₱' + value;
+                                    }
+                                }, ticksStyle)
+                            }],
+                            xAxes: [{
+                                display: true,
+                                ticks: ticksStyle
+                            }]
+                        }
+                    }
+                });
+            }
+        });
+    }
 });
 </script>
 
