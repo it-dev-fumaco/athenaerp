@@ -85,10 +85,10 @@ class MainController extends Controller
                             $q->where('description', 'LIKE', "%".$str."%");
                         }
 
-                        $q->orWhere('name', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('item_classification', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('stock_uom', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('item_group', 'LIKE', "%".$request->searchString."%")
+                        $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
+                            ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
                             ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
                     });
                 })
