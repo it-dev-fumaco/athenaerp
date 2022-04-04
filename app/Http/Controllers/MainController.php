@@ -141,6 +141,18 @@ class MainController extends Controller
 
         $itemClassQuery = Clone $itemQ;
         $itemsQuery = Clone $itemQ;
+        $itemsGroupQuery = Clone $itemQ;
+
+        $itemGroups = $itemsGroupQuery->select('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')->groupBy('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')->get()->toArray();
+
+        $a = array_column($itemGroups, 'item_group');
+        $a1 = array_column($itemGroups, 'item_group_level_1');
+        $a2 = array_column($itemGroups, 'item_group_level_2');
+        $a3 = array_column($itemGroups, 'item_group_level_3');
+        $a4 = array_column($itemGroups, 'item_group_level_4');
+        $a5 = array_column($itemGroups, 'item_group_level_5');
+
+        $igs = array_unique(array_merge($a, $a1, $a2, $a3, $a4, $a5));
 
         $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
         $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->paginate(20);
@@ -325,7 +337,39 @@ class MainController extends Controller
             ];
         }
 
-        return view('search_results', compact('item_list', 'items', 'itemClass'));
+        $root = DB::table('tabItem Group')->where('parent_item_group', '')->pluck('name')->first();
+
+        $item_group = DB::table('tabItem Group')
+            ->whereIn('item_group_name', $igs)
+            ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent')->get();
+
+        $all = collect($item_group)->groupBy('parent');
+
+        $item_groups = collect($item_group)->where('parent_item_group', $root)->groupBy('name')->toArray();
+        $item_group_array = $this->item_group_tree(1, $item_groups, $all);
+
+        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array'));
+    }
+
+    private function item_group_tree($current_lvl, $group, $all){
+        $current_lvl = $current_lvl + 1;
+
+        $lvl_arr = [];
+        foreach($group as $lvl){
+            $next_level = isset($all[$lvl[0]->name]) ? collect($all[$lvl[0]->name])->groupBy('name') : [];
+            if($next_level){
+                $nxt = $this->item_group_tree($current_lvl, $next_level, $all);
+                $lvl_arr[$lvl[0]->name] = [
+                    'lvl'.$current_lvl => $nxt
+                ];
+            }else{
+                $lvl_arr[$lvl[0]->name] = [
+                    'lvl'.$current_lvl => $next_level
+                ];
+            }
+        }
+
+        return $lvl_arr;
     }
 
     public function search_results_images(Request $request){

@@ -115,8 +115,8 @@
 										</div>
 									</div>
 									<div class="row">
-										<div class="col-2 d-none d-xl-block">
-											<div class="card mb-3">
+										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
+											{{-- <div class="card mb-3">
 												@php
 													$item_class = collect($itemClass)->chunk(55);
 												@endphp
@@ -130,7 +130,7 @@
 														@endforeach
 													</ul>
 												@endif
-												<div class="tab-content">
+												<div class="tab-content"><!-- Item Classification -->
 													@for($i = 0; $i < count($item_class); $i++)
 														<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
 															@foreach ($item_class[$i] as $itemClass1)
@@ -150,9 +150,28 @@
 														</div>
 													@endfor
 												</div>
+											</div> --}}
+											<div class="tree container"><!-- Item Group -->
+												<ul style="padding-left: 0 !important">
+													@foreach (array_keys($item_groups) as $item)
+														<li>
+															@php
+																$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
+															@endphp
+															<span class="w-100">
+																<a style="color: #000; font-size: 10pt; {{ request('group') == $item ? 'text-decoration: underline;' : null }}" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item, 'lvl' => 2]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null, 'lvl' => 2]) !!}">
+																	<i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i>&nbsp;{{ $item }}
+																</a>
+															</span>
+															@if ($lvl2)
+																@include('search_results_item_group_tree', ['all' => $all, 'groups' => $lvl2, 'current_lvl' => 2, 'prev_obj' => $item])
+															@endif
+														</li>
+													@endforeach
+												</ul>
 											</div>
 										</div>
-										<div class="col-12 col-xl-10">
+										<div class="col-12 col-xl-{{ $item_groups ? '10' : '12' }}">
 											<div class="container-fluid m-0">
 												@forelse ($item_list as $row)
 													<div class="mb-1"></div>
@@ -722,6 +741,59 @@
 		text-align: center;
 	}
 
+	.tree li {
+		list-style-type:none;
+		margin:0;
+		padding:10px 5px 0 5px;
+		position:relative
+	}
+	.tree li::before, 
+	.tree li::after {
+		content:'';
+		left:-20px;
+		position:absolute;
+		right:auto
+	}
+	.tree li::before {
+		border-left:2px solid #000;
+		bottom:50px;
+		height:100%;
+		top:0;
+		width:1px
+	}
+	.tree li::after {
+		border-top:2px solid #000;
+		height:20px;
+		top:25px;
+		width:25px
+	}
+	.tree li span {
+		-moz-border-radius:5px;
+		-webkit-border-radius:5px;
+		/* border:2px solid #000; */
+		border-radius:3px;
+		display:inline-block;
+		padding:3px 8px;
+		text-decoration:none;
+		cursor:pointer;
+		transition: .4s;
+		color: #000;
+	}
+
+	.tree>ul>li::before,
+	.tree>ul>li::after {
+		border:0
+	}
+	.tree li:last-child::before {
+		height:27px
+	}
+
+	[aria-expanded="false"] > .expanded,
+	[aria-expanded="true"] > .collapsed {
+		display: none;
+	}
+    
+    
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{
 			font-size: 10pt !important;
