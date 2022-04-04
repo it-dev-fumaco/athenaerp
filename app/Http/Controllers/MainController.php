@@ -93,7 +93,12 @@ class MainController extends Controller
                     });
                 })
                 ->when($request->group, function($q) use ($request){
-                    return $q->where('item_group', $request->group);
+                    return $q->where('tabItem.item_group', $request->group)
+                        ->orWhere('tabItem.item_group_level_1', $request->group)
+                        ->orWhere('tabItem.item_group_level_2', $request->group)
+                        ->orWhere('tabItem.item_group_level_3', $request->group)
+                        ->orWhere('tabItem.item_group_level_4', $request->group)
+                        ->orWhere('tabItem.item_group_level_5', $request->group);
                 })
                 ->when($request->classification, function($q) use ($request){
                     return $q->where('item_classification', $request->classification);
@@ -123,7 +128,12 @@ class MainController extends Controller
                     });
                 })
                 ->when($request->group, function($q) use ($request){
-                    return $q->where('tabItem.item_group', $request->group);
+                    return $q->where('tabItem.item_group', $request->group)
+                        ->orWhere('tabItem.item_group_level_1', $request->group)
+                        ->orWhere('tabItem.item_group_level_2', $request->group)
+                        ->orWhere('tabItem.item_group_level_3', $request->group)
+                        ->orWhere('tabItem.item_group_level_4', $request->group)
+                        ->orWhere('tabItem.item_group_level_5', $request->group);
                 })
                 ->when($request->classification, function($q) use ($request){
                     return $q->where('tabItem.item_classification', $request->classification);
