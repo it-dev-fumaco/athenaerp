@@ -159,7 +159,7 @@
 																$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
 															@endphp
 															<span class="w-100">
-																<a style="color: #000; font-size: 10pt; {{ request('group') == $item ? 'text-decoration: underline;' : null }}" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item, 'lvl' => 2]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null, 'lvl' => 2]) !!}">
+																<a style="color: #000; font-size: 10pt; {{ request('group') == $item ? 'text-decoration: underline;' : null }}" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
 																	<i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i>&nbsp;{{ $item }}
 																</a>
 															</span>

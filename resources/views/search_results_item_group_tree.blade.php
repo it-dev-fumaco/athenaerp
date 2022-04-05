@@ -5,7 +5,7 @@
 		@endphp
 		<li>
             <span class="w-100">
-				<a style="color: #000; font-size: 10pt; {{ request('group') == $group ? 'text-decoration: underline;' : null }}" href="{!! $next_level ? request()->fullUrlWithQuery(['group' => $group, 'lvl' => $current_lvl + 1]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $group, 'wh' => null, 'classification' => null, 'lvl' => $current_lvl + 1]) !!}">
+				<a style="color: #000; font-size: 10pt; {{ request('group') == $group ? 'text-decoration: underline;' : null }}" href="{!! $next_level ? request()->fullUrlWithQuery(['group' => $group]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $group, 'wh' => null, 'classification' => null]) !!}">
                 	<i class="far {{ $next_level ? 'fa-folder-open' : 'fa-file' }}"></i>&nbsp;{{ $group }}
 				</a>
             </span>
