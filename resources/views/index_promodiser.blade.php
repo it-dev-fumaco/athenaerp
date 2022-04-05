@@ -32,7 +32,7 @@
                                 @foreach ($assigned_consignment_store as $m => $store)
                                 <div class="tab-pane p-0 {{ $loop->first ? 'active' : '' }}" id="tab{{ $m }}">
                                     <div class="row m-0 p-0">
-                                        <div class="col-md-12">
+                                        <div class="col-md-8 offset-md-2">
                                             <div class="position-relative m-4">
                                                 <canvas id="sales-chart-{{ str_slug($store, '-') }}" class="canvas"></canvas>
                                             </div>
@@ -40,7 +40,7 @@
                                                 <span style="font-size: 20px;"><b>Inventory Stocks</b></span>
                                             </div>
                                         </div>
-                                        <div class="col-md-4 mt-2">
+                                        <div class="col-md-4 offset-md-8 mt-2">
                                             <div class="input-group">
                                                 <input type="text" class="form-control" placeholder="Search..." id="s{{ str_slug($store, '-') }}" autocomplete="off">
                                                 <span class="input-group-append">
@@ -62,7 +62,7 @@
 </div>
 <style>
     .canvas{
-        height: 400px;
+        height: 300px;
     }
     @media (max-width: 575.98px) {
         .canvas{

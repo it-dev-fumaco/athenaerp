@@ -1,4 +1,4 @@
-<div class="float-right" style="margin-top: -32px;">
+<div class="float-left" style="margin-top: -32px;">
     Total: <span class="badge badge-info" style="font-size: 10pt;">{{ $consignment_stocks->total() }}</span>
 </div>
 <table class="table table-bordered m-0 table-striped" style="font-size: 10pt;">
