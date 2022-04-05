@@ -163,6 +163,11 @@ class MainController extends Controller
         $a5 = array_column($itemGroups, 'item_group_level_5');
 
         $igs = array_unique(array_merge($a, $a1, $a2, $a3, $a4, $a5));
+        $parent_of_selected_group = max(array_keys(array_filter($igs))) - 1;
+
+        $selected_parent = DB::table('tabItem Group')->where('parent_item_group', $igs[$parent_of_selected_group])->pluck('item_group_name')->toArray();
+
+        $igs = array_unique(array_merge($igs, $selected_parent));
 
         $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
         $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->paginate(20);
