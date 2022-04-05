@@ -4,7 +4,8 @@
 <table class="table table-bordered m-0 table-striped" style="font-size: 10pt;">
     <thead>
         <tr>
-            <th class="text-center" style="width: 70%;">Item Description</th>
+            <th class="text-center" style="width: 55%;">Item Description</th>
+            <th class="text-center" style="width: 15%;">Item Classification</th>
             <th class="text-center d-none d-sm-table-cell" style="width: 15%; white-space: nowrap">Available Qty</th>
             <th class="text-center d-none d-sm-table-cell" style="width: 15%;">Price</th>
         </tr>    
@@ -89,6 +90,7 @@
                     </div>
                 </div>
             </td>
+            <td class="text-center align-middle font-weight-bold">{{ $row->item_classification }}</td>
             <td class="text-center align-middle d-none d-sm-table-cell" style="font-size: 13pt;">
                 @if ($stock_qty > 0)
                 <span class="badge badge-success">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
