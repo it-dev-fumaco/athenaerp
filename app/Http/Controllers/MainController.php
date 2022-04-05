@@ -341,6 +341,16 @@ class MainController extends Controller
 
             $price_list_rate = array_key_exists($row->item_code, $price_list_rates) ? $price_list_rates[$row->item_code][0]->price_list_rate : '-';
 
+            if ($request->check_qty == 'on') {
+                $site_warehouses = collect($site_warehouses)->filter(function ($value, $key) {
+                    return $value['available_qty'] > 0;
+                });
+
+                $consignment_warehouses = collect($consignment_warehouses)->filter(function ($value, $key) {
+                    return $value['available_qty'] > 0;
+                });
+            }
+
             $item_list[] = [
                 'name' => $row->item_code,
                 'description' => $row->description,

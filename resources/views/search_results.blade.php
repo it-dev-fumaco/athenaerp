@@ -218,16 +218,22 @@
 																</div>
 					
 																<div class="text-center mt-2 mb-1">
-																	<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
-																		<div class="btn btn-primary">
-																			<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
+																	<div class="d-flex flex-row">
+																		<div class="p-1 col-6">
+																			<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																				<div class="btn btn-primary btn-xs btn-block">
+																					<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
+																				</div>
+																			</a>
 																		</div>
-																	</a>
-																	<a href="#" class="cLink d-none d-xl-inline" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-																		<div class="btn btn-warning">
-																			<i class="fa fa-qrcode"></i>
+																		<div class="p-1 col-6">
+																			<a href="#" class="cLink d-none d-xl-inline" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
+																				<div class="btn btn-warning btn-xs btn-block">
+																					<i class="fa fa-qrcode"></i>
+																				</div>
+																			</a>
 																		</div>
-																	</a>
+																	</div>
 																</div>
 															</div>
 															<div class="col-6 p-1">
