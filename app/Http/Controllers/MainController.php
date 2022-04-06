@@ -33,7 +33,14 @@ class MainController extends Controller
         if(Auth::user()->user_group == 'Promodiser'){
             $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
 
-            return view('index_promodiser', compact('assigned_consignment_store'));
+            $transaction_date = DB::table('tabSales Order')->where('docstatus', 1)->pluck('transaction_date');
+            $years = collect($transaction_date)->map(function ($q){
+                return Carbon::parse($q)->format('Y');
+            });
+
+            $years = array_unique($years->toArray());
+
+            return view('index_promodiser', compact('assigned_consignment_store', 'years'));
         }
 
         return view('index');
@@ -4360,7 +4367,7 @@ class MainController extends Controller
     }
 
     public function consignmentSalesReport($warehouse, Request $request) {
-        $year = Carbon::now()->format('Y');
+        $year = $request->year ? $request->year : Carbon::now()->format('Y');
         $query = DB::table('tabSales Order')->where('docstatus', 1)
             ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
             ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(base_grand_total) as grand_total')

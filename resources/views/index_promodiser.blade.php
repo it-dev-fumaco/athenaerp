@@ -30,8 +30,17 @@
                         <div class="card-body p-0">
                             <div class="tab-content p-0">
                                 @foreach ($assigned_consignment_store as $m => $store)
+                                <input type="hidden" id="year-placeholder-{{ str_slug($store, '-') }}" value="{{ Carbon\Carbon::now()->format('Y') }}">
                                 <div class="tab-pane p-0 {{ $loop->first ? 'active' : '' }}" id="tab{{ $m }}">
                                     <div class="row m-0 p-0">
+                                        <div class="col-12 col-md-4 offset-md-8">
+                                            <label>Select Year</label>
+                                            <select class="form-control" name="year" id="year-filter-{{ str_slug($store, '-') }}" onchange="year_filter(this)">
+                                                @foreach ($years as $year)
+                                                    <option value="{{ $year }}" {{ $year == Carbon\Carbon::now()->format('Y') ? 'selected' : null }} data-el="{{ str_slug($store, '-') }}" data-store="{{ $store }}" data-year="{{ $year }}">{{ $year }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                         <div class="col-md-8 offset-md-2">
                                             <div class="position-relative m-4">
                                                 <canvas id="sales-chart-{{ str_slug($store, '-') }}" class="canvas"></canvas>
@@ -80,7 +89,6 @@
 @section('script')
 
 <script>
-$(document).ready(function() {
     load_first_chart();
     function load_first_chart(){
         var el = $('#first-chart').data('el');
@@ -90,22 +98,34 @@ $(document).ready(function() {
         consignment_chart('sales-chart-' + el, warehouse);
     }
 
+    function year_filter(filter){
+        var selected = filter.options[filter.selectedIndex];
+        var el = selected.dataset.el;
+        var warehouse = selected.dataset.store;
+        var year = selected.dataset.year;
+        $('#year-placeholder-'+el).val(year); // keep selected year when changing tabs
+    
+        consignment_chart('sales-chart-' + el, warehouse, year);
+    }
+
     $('#chart-select').change(function(){ // Mobile chart control
         var el = $(this).find(':selected').data('el');
         var warehouse = $(this).find(':selected').data('store');
         var tab = $(this).find(':selected').data('tab');
+        var year = $('#year-placeholder-'+el).val();
 
         change_tab(tab);
         get_item_stock(el, warehouse);
-        consignment_chart('sales-chart-' + el, warehouse);
+        consignment_chart('sales-chart-' + el, warehouse, year);
     });
 
     $('.c-store').click(function(){ // Desktop chart control
         var warehouse = $(this).text();
         var el = $(this).data('el');
+        var year = $('#year-placeholder-'+el).val();
 
         get_item_stock(el, warehouse);
-        consignment_chart('sales-chart-' + el, warehouse);
+        consignment_chart('sales-chart-' + el, warehouse, year);
     });
 
     function change_tab(tab){
@@ -151,10 +171,13 @@ $(document).ready(function() {
     var mode = 'index';
     var intersect = true;
 
-    function consignment_chart(el, warehouse) {
+    function consignment_chart(el, warehouse, year = {{ Carbon\Carbon::now()->format('Y') }}) {
         $.ajax({
             type: "GET",
             url: "/consignment_sales/" + warehouse,
+            data: {
+                'year': year
+            },
             success: function (data) {
                 // eslint-disable-next-line no-unused-vars
                 new Chart($('#' + el), {
@@ -218,7 +241,6 @@ $(document).ready(function() {
             }
         });
     }
-});
 </script>
 
 @endsection
