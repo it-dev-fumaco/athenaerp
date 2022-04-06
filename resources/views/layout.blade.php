@@ -9,6 +9,7 @@
 
 	{{--  <!-- Google Font: Source Sans Pro -->  --}}
 	<link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
+	<link rel="stylesheet" href="{{ asset('/updated/icons/font-awesome.min.css') }}">
 	{{--  <!-- Font Awesome Icons -->  --}}
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
 	{{--  <!-- Ekko Lightbox -->  --}}
@@ -415,13 +416,13 @@
 										<input type="checkbox" id="assigned-to-me" name="assigned_to_me" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
+										<input type="hidden" name="classification" id="class-1" value="{{ request('classification') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
 											<button class="btn btn-default" type="submit">
 												<i class="fas fa-search"></i> <span class="d-none d-xl-inline-block">Search</span>
 											</button>
 										</div>
-										
 									</form>
 									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
@@ -2153,9 +2154,40 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			// ERP Warehouse
 
 			// Item group filter
-			$('#item-group-filter').select2({
-				dropdownParent: $('#item-group-filter-parent'),
-				placeholder: grpPlaceholder,
+			// $('#item-group-filter').select2({
+			// 	dropdownParent: $('#item-group-filter-parent'),
+			// 	placeholder: grpPlaceholder,
+			// 	ajax: {
+			// 		url: '/get_select_filters',
+			// 		method: 'GET',
+			// 		dataType: 'json',
+			// 		data: function (data) {
+			// 			return {
+			// 				q: data.term // search term
+			// 			};
+			// 		},
+			// 		processResults: function (response) {
+			// 			return {
+			// 				results: response.item_groups
+			// 			};
+			// 		},
+			// 		cache: true
+			// 	}
+			// });
+
+			// $(document).on('select2:select', '#item-group-filter', function(e){
+			// 	var data = e.params.data;
+
+			// 	$('#grp-1').val(data.id);
+			// 	$('#search-form').submit();
+			// });
+
+			// Item group filter
+
+			// Item group filter
+			$('#item-class-filter').select2({
+				dropdownParent: $('#item-class-filter-parent'),
+				placeholder: 'Item Classification',
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -2167,20 +2199,19 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					},
 					processResults: function (response) {
 						return {
-							results: response.item_groups
+							results: response.item_class_filter
 						};
 					},
 					cache: true
 				}
 			});
 
-			$(document).on('select2:select', '#item-group-filter', function(e){
+			$(document).on('select2:select', '#item-class-filter', function(e){
 				var data = e.params.data;
 
-				$('#grp-1').val(data.id);
+				$('#class-1').val(data.id);
 				$('#search-form').submit();
 			});
-
 			// Item group filter
 
 

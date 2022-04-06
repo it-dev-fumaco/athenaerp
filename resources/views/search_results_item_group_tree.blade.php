@@ -3,10 +3,10 @@
     	@php
 			$next_level = isset($all[$group]) ? collect($all[$group])->groupBy('name') : [];
 		@endphp
-		<li>
-            <span class="w-100">
-				<a style="color: #000; font-size: 10pt; {{ request('group') == $group ? 'text-decoration: underline;' : null }}" href="{!! $next_level ? request()->fullUrlWithQuery(['group' => $group]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $group, 'wh' => null, 'classification' => null]) !!}">
-                	<i class="far {{ $next_level ? 'fa-folder-open' : 'fa-file' }}"></i>&nbsp;{{ $group }}
+		<li style="margin-left: -10px">
+            <span class="w-100 sub-item {{ request('group') == $group ? 'selected-tree-item' : 'tree-item' }}">
+				<a style="font-size: 10pt; color: {{ request('group') == $group ? '#fff' : '#000' }}" href="{!! $next_level ? request()->fullUrlWithQuery(['group' => $group]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $group, 'wh' => null, 'classification' => null]) !!}">
+					<i class="far {{ $next_level ? 'fa-folder-open' : 'fa-file' }}"></i>&nbsp;{{ $group }}
 				</a>
             </span>
 			@if($next_level)

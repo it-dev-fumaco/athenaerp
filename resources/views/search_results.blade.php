@@ -11,6 +11,35 @@
 				<div class="col-sm-12">
 					<div class="row">
 						<div class="col-12">
+							<div class="container-fluid d-block d-md-none">
+								<div class="row mb-2">
+									<div class="col-7">
+										<p class="card-title mt-1 font-weight-bold" style="font-size: 8pt">
+											@if(request('searchString') && request('searchString') != '') 
+												Search result(s) for "{{ request('searchString') }}"
+											@else
+												Item List
+											@endif
+										</p>
+									</div>
+									<div class="col-5 text-right">
+										@if (request()->all())
+											<p class="card-title mt-1 ml-4 font-weight-bold float-right" style="font-size: 8pt">
+												<a href="/search_results">
+													<i class="fa fa-refresh"></i>&nbsp;Clear Searches
+												</a>
+											</p>
+										@endif
+									</div>
+								</div>
+								<div class="row mb-2">
+									<span class="text-muted" style="font-size: 8pt">
+										@foreach ($breadcrumbs as $breadcrumb)
+											{{ !$loop->first ? ' / ' : null }}<a href="{!! request()->fullUrlWithQuery(['group' => $breadcrumb]) !!}" class="text-muted" style="text-decoration: none !important; text-transform: none !important;"><span style="{{ $loop->last ? 'font-weight: 700; color: #212529' : null }}">{{ $breadcrumb }}</span></a>
+										@endforeach
+									</span>
+								</div>
+							</div>
 							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0">
 								<div class="card m-0">
 									<div class="row">
@@ -24,17 +53,39 @@
 												</p>
 											</button>
 
-											<button class="btn text-left pt-0" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+											<button class="float-left btn text-left pt-0" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
 												<p class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 10pt !important">
 													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
 												</p>
 											</button>
+
+											<p class="card-title mt-2 ml-4 font-weight-bold d-none d-md-inline" style="font-size: 14px;">
+												@if(request('searchString') && request('searchString') != '') 
+													Search result(s) for "{{ request('searchString') }}"
+												@else
+													Item List
+												@endif
+												&nbsp;
+												<small class="text-muted">
+													@foreach ($breadcrumbs as $breadcrumb)
+														{{ !$loop->first ? ' / ' : null }}<a href="{!! request()->fullUrlWithQuery(['group' => $breadcrumb]) !!}" class="text-muted" style="text-decoration: none !important; text-transform: none !important;"><span style="{{ $loop->last ? 'font-weight: 700; color: #212529' : null }}">{{ $breadcrumb }}</span></a>
+													@endforeach
+												</small>
+											</p>
+											@if (request()->all())
+												<p class="card-title mt-2 ml-4 font-weight-bold d-none d-md-inline" style="font-size: 14px;">
+													<a href="/search_results">
+														<i class="fa fa-refresh"></i>&nbsp;Clear Searches
+													</a>
+												</p>
+											@endif
 
 											<!-- Filters Modal -->
 											<div class="modal left fade" id="mobile-filters-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
 												<div class="modal-dialog" role="document">
 													<div class="modal-content">
 														<div class="modal-body">
+															{{-- <!-- Item Classification -->
 															<label class="text-center" style="font-size: 9pt;">Category Filter</label>
 															<div>
 																@foreach ($itemClass as $itemClass1)
@@ -51,6 +102,28 @@
 																		</a>
 																	</div>
 																@endforeach
+															</div> --}}
+															<div class="tree container"><!-- Item Group -->
+																<ul style="padding-left: 0 !important">
+																	@foreach (array_keys($item_groups) as $item)
+																		@php
+																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
+																		@endphp
+																		<li>
+																			<span class="w-100 p-0" style="border: none !important">
+																				<a style="color: #000; font-size: 10pt;" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
+																					<div class="btn-group w-100" role="group" aria-label="Basic example">
+																						<button type="button" class="btn w-25" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
+																						<button type="button" class="btn w-75" style="border: 2px solid #001F3F">{{ $item }}</button>
+																					</div>
+																				</a>
+																			</span>
+																			@if ($lvl2)
+																				@include('search_results_item_group_tree', ['all' => $all, 'groups' => $lvl2, 'current_lvl' => 2, 'prev_obj' => $item])
+																			@endif
+																		</li>
+																	@endforeach
+																</ul>
 															</div>
 														</div>
 
@@ -67,10 +140,16 @@
 										<div class="card-body p-0">
 											<div class="col-12 col-xl-10 mx-auto">
 												<div class="row pt-2">
-													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
+													{{-- <div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
 														<label class="mt-2 font-responsive" style="display: inline-block">Select Item Group&nbsp;</label>
 														<div class="input-group-append text-left float-right" id="item-group-filter-parent" style="font-size: 11pt;display: inline-block">
 															<select id="item-group-filter" class="btn btn-default"></select>
+														</div>
+													</div> --}}
+													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
+														<label class="mt-2 font-responsive" style="display: inline-block">Select Item Class&nbsp;</label>
+														<div class="input-group-append text-left float-right" id="item-class-filter-parent" style="font-size: 11pt;display: inline-block">
+															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
 													</div>
 													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
@@ -116,24 +195,24 @@
 									</div>
 									<div class="row">
 										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
-											{{-- <div class="card mb-3">
+											<div class="card mb-3">
 												@php
-													$item_class = collect($itemClass)->chunk(55);
+													$category = collect(array_keys($item_groups))->chunk(5);
 												@endphp
 												<label class="text-center p-2">Category Filter</label>
-												@if (count($item_class) > 1)
+												@if (count($category) > 1)
 													<ul class="nav nav-tabs" role="tablist">
-														@foreach ($item_class as $i => $item)
+														@foreach ($category as $i => $item)
 															<li class="nav-item">
 																<a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#class-category-{{ $i + 1 }}">{{ $i + 1 }}</a>
 															</li>
 														@endforeach
 													</ul>
 												@endif
-												<div class="tab-content"><!-- Item Classification -->
-													@for($i = 0; $i < count($item_class); $i++)
+												<div class="tab-content">
+													@for($i = 0; $i < count($category); $i++)
 														<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
-															@foreach ($item_class[$i] as $itemClass1)
+															{{-- @foreach ($item_class[$i] as $itemClass1)<!-- Item Classification -->
 																@php
 																	$abbr = explode(' - ', $itemClass1->item_classification)[0];
 																	$name = explode(' - ', $itemClass1->item_classification)[1];
@@ -146,29 +225,32 @@
 																		</div>
 																	</a>
 																</div>
-															@endforeach
+															@endforeach --}}
+															<div class="tree container"><!-- Item Group -->
+																<ul style="padding-left: 0 !important">
+																	@foreach ($category[$i] as $item)
+																		@php
+																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
+																		@endphp
+																		<li>
+																			<span class="w-100 p-0" style="border: none !important">
+																				<a style="color: #000; font-size: 10pt;" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
+																					<div class="btn-group w-100" role="group" aria-label="Basic example">
+																						<button type="button" class="btn w-25" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
+																						<button type="button" class="btn w-75" style="border: 2px solid #001F3F">{{ $item }}</button>
+																					</div>
+																				</a>
+																			</span>
+																			@if ($lvl2)
+																				@include('search_results_item_group_tree', ['all' => $all, 'groups' => $lvl2, 'current_lvl' => 2, 'prev_obj' => $item])
+																			@endif
+																		</li>
+																	@endforeach
+																</ul>
+															</div>
 														</div>
 													@endfor
 												</div>
-											</div> --}}
-											<div class="tree container"><!-- Item Group -->
-												<ul style="padding-left: 0 !important">
-													@foreach (array_keys($item_groups) as $item)
-														<li>
-															@php
-																$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
-															@endphp
-															<span class="w-100">
-																<a style="color: #000; font-size: 10pt; {{ request('group') == $item ? 'text-decoration: underline;' : null }}" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
-																	<i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i>&nbsp;{{ $item }}
-																</a>
-															</span>
-															@if ($lvl2)
-																@include('search_results_item_group_tree', ['all' => $all, 'groups' => $lvl2, 'current_lvl' => 2, 'prev_obj' => $item])
-															@endif
-														</li>
-													@endforeach
-												</ul>
 											</div>
 										</div>
 										<div class="col-12 col-xl-{{ $item_groups ? '10' : '12' }}">
@@ -222,7 +304,7 @@
 																		<div class="p-1 col-6">
 																			<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 																				<div class="btn btn-primary btn-xs btn-block">
-																					<i class="fa fa-file"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
+																					<i class="fa fa-search"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
 																				</div>
 																			</a>
 																		</div>
@@ -382,7 +464,7 @@
 																
 																<a href="#" class="view-item-details mt-2 mb-2 d-block" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
 																	<div class="btn btn-sm btn-primary w-100">
-																		<i class="fa fa-file font-responsive"></i> <span class="d-inline font-responsive">View</span>
+																		<i class="fa fa-search font-responsive"></i> <span class="d-inline font-responsive">View</span>
 																	</div>
 																</a>
 															</div>
@@ -706,7 +788,7 @@
 	.modal.left .modal-dialog{
 		position: fixed;
 		margin: auto;
-		width: 320px;
+		width: 320px !important;
 		height: 100%;
 		-webkit-transform: translate3d(0%, 0, 0);
 		    -ms-transform: translate3d(0%, 0, 0);
@@ -776,7 +858,6 @@
 	.tree li span {
 		-moz-border-radius:5px;
 		-webkit-border-radius:5px;
-		/* border:2px solid #000; */
 		border-radius:3px;
 		display:inline-block;
 		padding:3px 8px;
@@ -798,7 +879,15 @@
 	[aria-expanded="true"] > .collapsed {
 		display: none;
 	}
-    
+
+	.tree-item{
+		color: #000;
+	}
+
+	.selected-tree-item{
+		background-color: #001F3F;
+		color: #fff;
+	}
     
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{

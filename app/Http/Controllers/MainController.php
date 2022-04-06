@@ -164,9 +164,19 @@ class MainController extends Controller
 
         $igs = array_unique(array_merge($a, $a1, $a2, $a3, $a4, $a5));
 
+        $breadcrumbs = [];
+        if($request->group and $igs){
+            foreach($igs as $ig){
+                array_push($breadcrumbs, $ig);
+                if($ig == $request->group){
+                    break;
+                }
+            }
+        }
+
         if($request->group){
             $selected_group = DB::table('tabItem Group')->where('item_group_name', $request->group)->first();
-            if(!$selected_group->is_group){
+            if($selected_group and !$selected_group->is_group){
                 $item_groups_based_on_parent = DB::table('tabItem Group')->where('parent_item_group', $selected_group->parent_item_group)->pluck('item_group_name')->toArray();
 
                 $igs = array_unique(array_merge($igs, $item_groups_based_on_parent));
@@ -369,15 +379,17 @@ class MainController extends Controller
         $root = DB::table('tabItem Group')->where('parent_item_group', '')->pluck('name')->first();
 
         $item_group = DB::table('tabItem Group')
-            ->whereIn('item_group_name', $igs)
+            ->when(array_filter($request->all()), function ($q) use ($igs, $request){
+                $q->whereIn('item_group_name', $igs);
+            })
             ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent')->get();
 
         $all = collect($item_group)->groupBy('parent');
 
-        $item_groups = collect($item_group)->where('parent_item_group', $root)->groupBy('name')->toArray();
+        $item_groups = collect($item_group)->where('parent_item_group', $root)->where('is_group', 1)->groupBy('name')->toArray();
         $item_group_array = $this->item_group_tree(1, $item_groups, $all);
 
-        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array'));
+        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs'));
     }
 
     private function item_group_tree($current_lvl, $group, $all){
@@ -389,11 +401,13 @@ class MainController extends Controller
             if($next_level){
                 $nxt = $this->item_group_tree($current_lvl, $next_level, $all);
                 $lvl_arr[$lvl[0]->name] = [
-                    'lvl'.$current_lvl => $nxt
+                    'lvl'.$current_lvl => $nxt,
+                    'is_group' => $lvl[0]->is_group
                 ];
             }else{
                 $lvl_arr[$lvl[0]->name] = [
-                    'lvl'.$current_lvl => $next_level
+                    'lvl'.$current_lvl => $next_level,
+                    'is_group' => $lvl[0]->is_group
                 ];
             }
         }
@@ -533,6 +547,8 @@ class MainController extends Controller
         $item_classification = DB::table('tabItem Classification')
             ->orderBy('name', 'asc')->pluck('name');
 
+        $item_class_filter = DB::table('tabItem Classification')->where('name', 'LIKE', '%'.$request->q.'%')->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
+
         // $WHusers = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->pluck('warehouse_user');
         $Athena_wh_users = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->where('warehouse_user','LIKE', '%'.$request->q.'%')
             ->selectRaw('warehouse_user as id, warehouse_user as text')->get();
@@ -558,6 +574,7 @@ class MainController extends Controller
             'warehouse' => $ERP_wh,
             'session_user' => $ERP_wh_users,
             'item_groups' => $item_groups,
+            'item_class_filter' => $item_class_filter,
             'item_classification' => $item_classification,
         ]);
     }
