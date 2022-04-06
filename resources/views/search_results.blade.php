@@ -86,7 +86,7 @@
 													<div class="modal-content">
 														<div class="modal-body">
 															{{-- <!-- Item Classification -->
-															<label class="text-center" style="font-size: 9pt;">Category Filter</label>
+															<label class="text-center" style="font-size: 8pt;">Category Filter</label>
 															<div>
 																@foreach ($itemClass as $itemClass1)
 																	@php
@@ -132,7 +132,7 @@
 											</div><!-- modal -->
 										</div>
 										<div class="col-4 text-right">
-											<p class="font-weight-bold m-1 font-responsive d-inline">TOTAL: <span class="badge badge-info font-responsive">{{ number_format($items->total()) }}</span></p>
+											<p class="font-weight-bold m-1 font-responsive d-inline">TOTAL: <span class="badge badge-info font-responsive" style="font-size: 13pt !important;">{{ number_format($items->total()) }}</span></p>
 										</div>
 									</div>
 									
@@ -184,7 +184,7 @@
 																<label>
 																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
 																	
-																	<span style="font-size: 12px;">Warehouse Assigned to Me</span>
+																	<span style="font-size: 11px;">Warehouse Assigned to Me</span>
 																</label>
 															</div>
 														</div>
@@ -199,7 +199,7 @@
 												@php
 													$category = collect(array_keys($item_groups))->chunk(5);
 												@endphp
-												<label class="text-center p-2">Category Filter</label>
+												<label class="text-center p-2" style="font-size: 9pt !important;">Category Filter</label>
 												@if (count($category) > 1)
 													<ul class="nav nav-tabs" role="tablist">
 														@foreach ($category as $i => $item)
@@ -209,7 +209,7 @@
 														@endforeach
 													</ul>
 												@endif
-												<div class="tab-content">
+												<div class="tab-content"  >
 													@for($i = 0; $i < count($category); $i++)
 														<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
 															{{-- @foreach ($item_class[$i] as $itemClass1)<!-- Item Classification -->
@@ -227,7 +227,7 @@
 																</div>
 															@endforeach --}}
 															<div class="tree container"><!-- Item Group -->
-																<ul style="padding-left: 0 !important">
+																<ul style="padding-left: 0 !important" >
 																	@foreach ($category[$i] as $item)
 																		@php
 																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
@@ -319,16 +319,16 @@
 																</div>
 															</div>
 															<div class="col-6 p-1">
-																<div class="col-md-12 m-0 text-justify">
-																	<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
-																	<span class="text-justify item-name"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
+																<div class="col-md-12 m-0 text-justify" >
+																	<span class="font-italic item-class" >{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
+																	<span class="text-justify item-name" style="font-size: 9pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['part_nos'])
 																		<br>
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																	@endif
 																	@if ($row['price_list'] && $row['price_list_rate'] != '-')
 																	<p class="mt-3 mb-2">
-																		<span class="d-block font-weight-bold" style="font-size: 13pt;">{{ '₱ ' . number_format($row['price_list_rate'], 2, '.', ',') }}</span>
+																		<span class="d-block font-weight-bold" style="font-size: 9pt;">{{ '₱ ' . number_format($row['price_list_rate'], 2, '.', ',') }}</span>
 																		<span class="d-block" style="font-size: 9pt;">{{ $row['price_list'] }}</span>
 																  	</p>
 																	@endif
@@ -707,17 +707,17 @@
 	}
 
 	.responsive-item-code{
-		font-size: 14pt
+		font-size: 12pt
 	}
 	.responsive-description{
-		font-size: 11pt
+		font-size: 10pt
 	}
 	.category-btn-grp{
 		transition: .4s;
 	}
 
 	.category-btn-grp:hover{
-		box-shadow: 8px 1px 12px #001F3F;
+		box-shadow: 8px 1px 11px #001F3F;
 	}
 
 	.cLink{
@@ -782,7 +782,7 @@
 		box-shadow: #001F3F 2px 2px 8px;
 	}
 	.custom-border{
-		box-shadow: 8px 1px 12px #001F3F;
+		box-shadow: 8px 1px 10px #001F3F;
 	}
 
 	.modal.left .modal-dialog{
