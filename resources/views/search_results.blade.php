@@ -118,7 +118,7 @@
 										</div>
 									</div>
 									
-									<div id="collapseOne" class="collapse show border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
+									<div id="collapseOne" class="collapse border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
 										<div class="card-body p-0">
 											<div class="col-12 mx-auto">
 												<div class="row pt-2">
