@@ -395,7 +395,10 @@ class MainController extends Controller
             ->when(array_filter($request->all()), function ($q) use ($igs, $request){
                 $q->whereIn('item_group_name', $igs);
             })
-            ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent')->get();
+            ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
+            ->orderByRaw('LENGTH(order_no)', 'ASC')
+            ->orderBy('order_no', 'DESC')
+            ->get();
 
         $all = collect($item_group)->groupBy('parent');
 

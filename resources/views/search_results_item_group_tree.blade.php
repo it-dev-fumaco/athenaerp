@@ -5,7 +5,7 @@
 		@endphp
 		<li style="margin-left: -10px">
             <span class="w-100 sub-item {{ request('group') == $group ? 'selected-tree-item' : 'tree-item' }}">
-				<a style="font-size: 10pt; color: {{ request('group') == $group ? '#fff' : '#000' }}" href="{!! $next_level ? request()->fullUrlWithQuery(['group' => $group]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $group, 'wh' => null, 'classification' => null]) !!}">
+				<a style="font-size: 10pt; letter-spacing: -1px !important; color: inherit;" href="{!! $next_level ? request()->fullUrlWithQuery(['group' => $group]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $group, 'wh' => null, 'classification' => null]) !!}">
 					<i class="far {{ $next_level ? 'fa-folder-open' : 'fa-file' }}"></i>&nbsp;{{ $group }}
 				</a>
             </span>

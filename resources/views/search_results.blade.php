@@ -161,7 +161,7 @@
 														</div>
 													</div>
 													@if ($promodiser_restriction)
-														<div class="col-8 col-xl-2 d-none d-xl-block mx-auto text-center">
+														<div class="col-8 col-xl-2 d-none d-xl-block mx-auto text-center border border-secondary">
 															<div class="form-group m-0r">
 																<label>
 																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
@@ -192,11 +192,11 @@
 																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
 																		@endphp
 																		<li>
-																			<span class="w-75 p-0" style="border: none !important">
-																				<a style="color: #000; font-size: 10pt;" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
+																			<span class="p-0 w-75 tree-item" style="border: none !important">
+																				<a style="color: inherit; font-size: 10pt;" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
 																					<div class="btn-group w-100" role="group" aria-label="Basic example">
 																						<button type="button" class="btn w-25 p-0" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
-																						<button type="button" class="btn w-75 p-0" style="border: 2px solid #001F3F; font-size: 10pt">{{ $item }}</button>
+																						<button type="button" class="btn w-75 p-0" style="border: 2px solid #001F3F; font-size: 10pt; color: inherit">{{ $item }}</button>
 																					</div>
 																				</a>
 																			</span>
@@ -288,7 +288,7 @@
 															</div>
 															<div class="col-6 p-1">
 																<div class="col-md-12 m-0 text-justify" >
-																	<span class="font-italic item-class" >{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
+																	<span class="font-italic item-class" >{{ $row['item_classification'] }}</span><br/>
 																	<span class="text-justify item-name" style="font-size: 9pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['part_nos'])
 																		<br>
@@ -303,39 +303,41 @@
 																</div>
 															</div>
 															<div class="col-5 p-1">
-																<table class="table table-sm table-bordered warehouse-table table-hover">
-																	<thead>
-																		<tr>
-																			<th class="text-center wh-cell">Warehouse</th>
-																			<th class="text-center qtr-cell">Reserved Qty</th>
-																			<th class="text-center qtr-cell">Available Qty</th>
-																		</tr>
-																	</thead>
-																	@forelse($row['item_inventory'] as $inv)
-																		<tr>
-																			<td class="text-center" >
-																				{{ $inv['warehouse'] }}
-																				@if ($inv['location'])
-																					<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
-																				@endif
-																			</td>
-																			<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-																			<td class="text-center">
-																				@if($inv['available_qty'] == 0)
-																					<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																				@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																					<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																				@else
-																					<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																				@endif
-																			</td>
-																		</tr>
-																	@empty
-																		<tr>
-																			<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
-																		</tr>
-																	@endforelse
-																</table>
+																@if ($row['item_inventory'])
+																	<table class="table table-sm table-bordered warehouse-table table-hover">
+																		<thead>
+																			<tr>
+																				<th class="text-center wh-cell">Warehouse</th>
+																				<th class="text-center qtr-cell text-muted">Reserved Qty</th>
+																				<th class="text-center qtr-cell">Available Qty</th>
+																			</tr>
+																		</thead>
+																		@foreach($row['item_inventory'] as $inv)
+																			<tr>
+																				<td class="text-center" >
+																					{{ $inv['warehouse'] }}
+																					@if ($inv['location'])
+																						<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
+																					@endif
+																				</td>
+																				<td class="text-center">
+																					<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
+																				</td>
+																				<td class="text-center">
+																					@if($inv['available_qty'] == 0)
+																						<span class="badge badge-secondary" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
+																						<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@else
+																						<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@endif
+																				</td>
+																			</tr>
+																		@endforeach
+																	</table>
+																@else
+																	<p class="text-center pt-2">No Available Stock on All Warehouses</p>
+																@endif
 																<div class="col-md-12"><!-- View Consignment Warehouse -->
 																	@if(count($row['consignment_warehouses']) > 0)
 																	<div class="text-center">
@@ -367,7 +369,7 @@
 																								@endif
 																							</td>
 																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
 																							</td>
 																						</tr>
 																						@empty
@@ -450,39 +452,42 @@
 																</p>
 																@endif
 																<div class="d-none d-md-block">
-																	<table class="table table-sm table-bordered warehouse-table table-striped">
-																		<thead>
-																			<tr>
-																				<th class="text-center wh-cell">Warehouse</th>
-																				<th class="text-center qtr-cell">Reserved Qty</th>
-																				<th class="text-center qtr-cell">Available Qty</th>
-																			</tr>
-																		</thead>
-																		@forelse($row['item_inventory'] as $inv)
-																			<tr>
-																				<td class="text-center" >
-																					{{ $inv['warehouse'] }}
-																					@if ($inv['location'])
-																						<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
-																					@endif
-																				</td>
-																				<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-																				<td class="text-center">
-																					@if($inv['available_qty'] == 0)
-																						<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																						<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@else
-																						<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@endif
-																				</td>
-																			</tr>
-																		@empty
-																			<tr>
-																				<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
-																			</tr>
-																		@endforelse
-																	</table>
+																	@if ($row['item_inventory'])
+																		<table class="table table-sm table-bordered warehouse-table table-striped">
+																			<thead>
+																				<tr>
+																					<th class="text-center wh-cell">Warehouse</th>
+																					<th class="text-center qtr-cell text-muted">Reserved Qty</th>
+																					<th class="text-center qtr-cell">Available Qty</th>
+																				</tr>
+																			</thead>
+																			@foreach($row['item_inventory'] as $inv)
+																				<tr>
+																					<td class="text-center" >
+																						{{ $inv['warehouse'] }}
+																						@if ($inv['location'])
+																							<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
+																						@endif
+																					</td>
+																					<td class="text-center">
+																						<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
+																					</td>
+																					<td class="text-center">
+																						@if($inv['available_qty'] == 0)
+																							<span class="badge badge-secondary" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																						@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
+																							<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																						@else
+																							<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																						@endif
+																					</td>
+																				</tr>
+																			@endforeach
+																		</table>
+																	@else
+																		<p class="text-center pt-2 font-responsive">No Available Stock on All Warehouses</p>
+																	@endif
+																	
 																	<div class="container-fluid mb-2"><!-- View Consignment Warehouse -->
 																		@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
 																		<div class="text-center">
@@ -514,7 +519,7 @@
 																									@endif
 																								</td>
 																								<td class="text-center">
-																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
 																								</td>
 																							</tr>
 																							@empty
@@ -537,39 +542,42 @@
 														</div>
 														<div class="row m-0 p-1 d-block d-md-none">
 															<div class="container-fluid mb-1">
-																<table class="table table-sm table-bordered warehouse-table table-striped m-0 p-0">
-																	<thead>
-																		<tr>
-																			<th class="text-center wh-cell">Warehouse</th>
-																			<th class="text-center qtr-cell">Reserved Qty</th>
-																			<th class="text-center qtr-cell">Available Qty</th>
-																		</tr>
-																	</thead>
-																	@forelse($row['item_inventory'] as $inv)
-																		<tr>
-																			<td class="text-center" >
-																				{{ $inv['warehouse'] }}
-																				@if ($inv['location'])
-																					<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
-																				@endif
-																			</td>
-																			<td class="text-center">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</td>
-																			<td class="text-center">
-																				@if($inv['available_qty'] == 0)
-																					<span class="badge badge-danger" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																				@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																					<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																				@else
-																					<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																				@endif
-																			</td>
-																		</tr>
-																	@empty
-																		<tr>
-																			<td colspan="12" class="text-center" style="border: none;">NO WAREHOUSE ASSIGNED</td>
-																		</tr>
-																	@endforelse
-																</table>
+																@if ($row['item_inventory'])
+																	<table class="table table-sm table-bordered warehouse-table table-striped m-0 p-0">
+																		<thead>
+																			<tr>
+																				<th class="text-center wh-cell">Warehouse</th>
+																				<th class="text-center qtr-cell text-muted">Reserved Qty</th>
+																				<th class="text-center qtr-cell">Available Qty</th>
+																			</tr>
+																		</thead>
+																		@foreach($row['item_inventory'] as $inv)
+																			<tr>
+																				<td class="text-center" >
+																					{{ $inv['warehouse'] }}
+																					@if ($inv['location'])
+																						<small class="text-muted font-italic"> - {{ $inv['location'] }}</small>
+																					@endif
+																				</td>
+																				<td class="text-center">
+																					<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
+																				</td>
+																				<td class="text-center">
+																					@if($inv['available_qty'] == 0)
+																						<span class="badge badge-secondary" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
+																						<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@else
+																						<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
+																					@endif
+																				</td>
+																			</tr>
+																		@endforeach
+																	</table>
+																@else
+																	<p class="text-center pt-2 font-responsive">No Available Stock on All Warehouses</p>
+																@endif
+																
 																<div class="container-fluid"><!-- View Consignment Warehouse -->
 																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
 																	<div class="text-center">
@@ -601,7 +609,7 @@
 																								@endif
 																							</td>
 																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
 																							</td>
 																						</tr>
 																						@empty
@@ -849,7 +857,12 @@
 		transition: .4s;
 	}
 
-	.selected-tree-item{
+	.tree-item:hover{
+		color: #fff !important;
+		background-color: #001F3F !important;
+	}
+
+	.selected-tree-item{,
 		background-color: #001F3F;
 		color: #fff;
 	}
