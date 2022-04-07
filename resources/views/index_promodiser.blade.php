@@ -33,7 +33,7 @@
                                 <input type="hidden" id="year-placeholder-{{ str_slug($store, '-') }}" value="{{ Carbon\Carbon::now()->format('Y') }}">
                                 <div class="tab-pane p-0 {{ $loop->first ? 'active' : '' }}" id="tab{{ $m }}">
                                     <div class="row m-0 p-0">
-                                        <div class="col-12 col-md-4 offset-md-8">
+                                        <div class="col-12 col-md-4 mx-auto">
                                             <label>Select Year</label>
                                             <select class="form-control" name="year" id="year-filter-{{ str_slug($store, '-') }}" onchange="year_filter(this)">
                                                 @foreach ($years as $year)

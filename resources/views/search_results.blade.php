@@ -171,11 +171,11 @@
 									</div>
 									<div class="row">
 										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
-											<div class="container mb-3 p-3">
+											<div class="card mb-3 pt-0">
 												@php
 													$category = collect(array_keys($item_groups))->chunk(5);
 												@endphp
-												<center><span class="p-2" style="font-size: 12pt !important;">Category Filter</span></center>
+												<center><span class="mt-0 pt-0" style="font-size: 12pt !important;">Category Filter</span></center>
 												<div class="tab-content">
 													@for($i = 0; $i < count($category); $i++)
 														<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
@@ -186,11 +186,11 @@
 																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
 																		@endphp
 																		<li>
-																			<span class="w-100 p-0" style="border: none !important">
+																			<span class="w-75 p-0" style="border: none !important">
 																				<a style="color: #000; font-size: 10pt;" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
 																					<div class="btn-group w-100" role="group" aria-label="Basic example">
 																						<button type="button" class="btn w-25 p-0" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
-																						<button type="button" class="btn w-75 p-0" style="border: 2px solid #001F3F">{{ $item }}</button>
+																						<button type="button" class="btn w-75 p-0" style="border: 2px solid #001F3F; font-size: 10pt">{{ $item }}</button>
 																					</div>
 																				</a>
 																			</span>
