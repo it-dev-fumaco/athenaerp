@@ -118,29 +118,29 @@
 										</div>
 									</div>
 									
-									<div id="collapseOne" class="collapse border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
+									<div id="collapseOne" class="collapse show border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
 										<div class="card-body p-0">
 											<div class="col-12 mx-auto">
 												<div class="row pt-2">
-													<div class="col-12 col-md-8 col-xl-2 mx-auto pt-2 general-filter-label">
+													<div class="col-12 col-xl-2 mx-auto general-filter-label">
 														<label>Search For:</label>
 													</div>
-													<div class="col-12 col-md-8 col-xl-2 mx-auto">
-														<div class="input-group-append text-left w-100" id="item-class-filter-parent" style="font-size: 11pt;display: inline-block">
+													<div class="col-12 col-md-6 col-xl-2 mx-auto">
+														<div class="form-group text-left m-0 w-100 mx-auto" id="item-class-filter-parent" style="font-size: 10pt;">
 															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-2 mx-auto">
-														<div class="form-group text-left m-0 w-100" id="warehouse-filter-parent" style="font-size: 11pt;">
+													<div class="col-12 col-md-6 col-xl-2 mx-auto">
+														<div class="form-group text-left m-0 w-100 mx-auto" id="warehouse-filter-parent" style="font-size: 10pt;">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-2 mx-auto">
-														<div class="form-group text-left m-0 w-100" id="brand-filter-parent" style="font-size: 11pt;">
+													<div class="col-12 col-md-6 col-xl-2 mx-auto">
+														<div class="form-group text-left m-0 w-100 mx-auto" id="brand-filter-parent" style="font-size: 10pt;">
 															<select name="brand" id="brand-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
+													<div class="col-12 col-md-6 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
 														<div class="row">
 															<div class="form-group m-0r col-12 m-0">
 																<label>
@@ -181,7 +181,7 @@
 												@php
 													$category = collect(array_keys($item_groups))->chunk(3);
 												@endphp
-												<center><span class="mt-0 pt-0" style="font-size: 12pt !important;">Category Filter</span></center>
+												{{-- <center><span class="mt-0 pt-0" style="font-size: 12pt !important;">Category Filter</span></center> --}}
 												<div class="tab-content">
 													@for($i = 0; $i < count($category); $i++)
 														<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
@@ -324,13 +324,16 @@
 																					<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
 																				</td>
 																				<td class="text-center">
-																					@if($inv['available_qty'] == 0)
-																						<span class="badge badge-secondary" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																						<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@else
-																						<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@endif
+																					@php
+																						if($inv['available_qty'] == 0){
+																							$uom_badge = 'secondary';
+																						}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
+																							$uom_badge = 'warning';
+																						}else{
+																							$uom_badge = 'success';
+																						}
+																					@endphp
+																					<span class="badge badge-{{ $uom_badge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
 																				</td>
 																			</tr>
 																		@endforeach
@@ -371,7 +374,7 @@
 																								@endif
 																							</td>
 																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
 																							</td>
 																						</tr>
 																						@empty
@@ -475,13 +478,16 @@
 																						<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
 																					</td>
 																					<td class="text-center">
-																						@if($inv['available_qty'] == 0)
-																							<span class="badge badge-secondary" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																						@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																							<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																						@else
-																							<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																						@endif
+																						@php
+																							if($inv['available_qty'] == 0){
+																								$uom_badge = 'secondary';
+																							}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
+																								$uom_badge = 'warning';
+																							}else{
+																								$uom_badge = 'success';
+																							}
+																						@endphp
+																						<span class="badge badge-{{ $uom_badge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
 																					</td>
 																				</tr>
 																			@endforeach
@@ -523,7 +529,7 @@
 																									@endif
 																								</td>
 																								<td class="text-center">
-																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
 																								</td>
 																							</tr>
 																							@empty
@@ -567,13 +573,23 @@
 																					<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
 																				</td>
 																				<td class="text-center">
-																					@if($inv['available_qty'] == 0)
+																					{{-- @if($inv['available_qty'] == 0)
 																						<span class="badge badge-secondary" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
 																					@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
 																						<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
 																					@else
 																						<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@endif
+																					@endif --}}
+																					@php
+																						if($inv['available_qty'] == 0){
+																							$uom_badge = 'secondary';
+																						}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
+																							$uom_badge = 'warning';
+																						}else{
+																							$uom_badge = 'success';
+																						}
+																					@endphp
+																					<span class="badge badge-{{ $uom_badge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
 																				</td>
 																			</tr>
 																		@endforeach
@@ -716,10 +732,6 @@
 		background-color: #fff;
 		}
 	
-	#warehouse-filter-parent{
-		width: 200px;
-		float: right;
-	}
 	.search-img{
 		width: 100%;
 		max-width: 100%;
@@ -808,7 +820,7 @@
 	.tree li {
 		list-style-type:none;
 		margin:0;
-		padding:10px 5px 0 5px;
+		/* padding:10px 5px 0 5px; */
 		position:relative
 	}
 	.tree li::before, 
@@ -828,7 +840,7 @@
 	.tree li::after {
 		border-top:2px solid #000;
 		height:20px;
-		top:25px;
+		top:15px;
 		width:25px
 	}
 	.tree li span {
@@ -848,7 +860,7 @@
 		border:0
 	}
 	.tree li:last-child::before {
-		height:27px
+		height:15px
 	}
 
 	[aria-expanded="false"] > .expanded,
@@ -874,6 +886,16 @@
 	.general-filter-label{
 		text-align: right;
 	}
+
+	.select2-container--default .select2-selection--single{
+		padding: 0 !important;
+		height: 25px !important;
+	}
+
+	.select2-container--default .select2-selection--single .select2-selection__arrow {
+		height: 25px !important;
+	}
+
 
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{
