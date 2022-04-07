@@ -11,7 +11,7 @@
 				<div class="col-sm-12">
 					<div class="row">
 						<div class="col-12">
-							<div class="container-fluid d-block d-md-none">
+							<div class="container-fluid d-block d-xl-none">
 								<div class="row mb-2">
 									<div class="col-7">
 										<p class="card-title mt-1 font-weight-bold" style="font-size: 8pt">
@@ -59,7 +59,7 @@
 												</p>
 											</button>
 
-											<p class="card-title mt-2 ml-4 d-none d-md-inline" style="font-size: 14px;">
+											<p class="card-title mt-2 ml-4 d-none d-xl-inline" style="font-size: 14px;">
 												@if(request('searchString') && request('searchString') != '') 
 													Search result(s) for "{{ request('searchString') }}"
 												@else
@@ -73,7 +73,7 @@
 												</small>
 											</p>
 											@if (array_filter(request()->all()))
-												<p class="card-title mt-2 ml-4 d-none d-md-inline" style="font-size: 14px;">
+												<p class="card-title mt-2 ml-4 d-none d-xl-inline" style="font-size: 14px;">
 													<a href="/search_results">
 														<i class="fa fa-refresh"></i>&nbsp;Clear Searches
 													</a>
@@ -121,26 +121,26 @@
 									<div id="collapseOne" class="collapse border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
 										<div class="card-body p-0">
 											<div class="col-12 mx-auto">
-												<div class="row pt-2 border border-success">
-													<div class="col-12 col-md-8 col-xl-2 mx-auto pt-2 text-right border border-secondary">
+												<div class="row pt-2">
+													<div class="col-12 col-md-8 col-xl-2 mx-auto pt-2 general-filter-label">
 														<label>Search For:</label>
 													</div>
-													<div class="col-12 col-md-8 col-xl-2 mx-auto border border-secondary">
+													<div class="col-12 col-md-8 col-xl-2 mx-auto">
 														<div class="input-group-append text-left w-100" id="item-class-filter-parent" style="font-size: 11pt;display: inline-block">
 															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-2 mx-auto border border-secondary">
+													<div class="col-12 col-md-8 col-xl-2 mx-auto">
 														<div class="form-group text-left m-0 w-100" id="warehouse-filter-parent" style="font-size: 11pt;">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-2 mx-auto border border-secondary">
+													<div class="col-12 col-md-8 col-xl-2 mx-auto">
 														<div class="form-group text-left m-0 w-100" id="brand-filter-parent" style="font-size: 11pt;">
 															<select name="brand" id="brand-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container border border-secondary">
+													<div class="col-12 col-md-8 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
 														<div class="row">
 															<div class="form-group m-0r col-12 m-0">
 																<label>
@@ -161,7 +161,7 @@
 														</div>
 													</div>
 													@if ($promodiser_restriction)
-														<div class="col-8 col-xl-2 d-none d-xl-block mx-auto text-center border border-secondary">
+														<div class="col-8 col-xl-2 d-none d-xl-block mx-auto text-center">
 															<div class="form-group m-0r">
 																<label>
 																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
@@ -179,7 +179,7 @@
 										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
 											<div class="card mb-3 pt-0">
 												@php
-													$category = collect(array_keys($item_groups))->chunk(5);
+													$category = collect(array_keys($item_groups))->chunk(3);
 												@endphp
 												<center><span class="mt-0 pt-0" style="font-size: 12pt !important;">Category Filter</span></center>
 												<div class="tab-content">
@@ -336,7 +336,9 @@
 																		@endforeach
 																	</table>
 																@else
-																	<p class="text-center pt-2">No Available Stock on All Warehouses</p>
+																	<div class="h-100 d-flex align-items-center">
+																		<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
+																	</div>
 																@endif
 																<div class="col-md-12"><!-- View Consignment Warehouse -->
 																	@if(count($row['consignment_warehouses']) > 0)
@@ -485,7 +487,9 @@
 																			@endforeach
 																		</table>
 																	@else
-																		<p class="text-center pt-2 font-responsive">No Available Stock on All Warehouses</p>
+																		<div class="h-100 d-flex align-items-center">
+																			<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
+																		</div>
 																	@endif
 																	
 																	<div class="container-fluid mb-2"><!-- View Consignment Warehouse -->
@@ -867,6 +871,10 @@
 		color: #fff;
 	}
 
+	.general-filter-label{
+		text-align: right;
+	}
+
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{
 			font-size: 10pt !important;
@@ -906,6 +914,9 @@
 		.checkbox-container{
 			text-align: left !important;
 		}
+		.general-filter-label{
+			text-align: left;
+		}
     }
   	@media (max-width: 767.98px) {
         .font-responsive, .responsive-description, .stock-ledger-table-font{
@@ -943,6 +954,9 @@
 		.checkbox-container{
 			text-align: left !important;
 		}
+		.general-filter-label{
+			text-align: left;
+		}
     }
 	@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
 		.modal.left .modal-dialog{
@@ -953,6 +967,9 @@
 		}
 		.checkbox-container{
 			text-align: left !important;
+		}
+		.general-filter-label{
+			text-align: left;
 		}
 	}
 </style>

@@ -397,7 +397,7 @@ class MainController extends Controller
             })
             ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
             ->orderByRaw('LENGTH(order_no)', 'ASC')
-            ->orderBy('order_no', 'DESC')
+            ->orderBy('order_no', 'ASC')
             ->get();
 
         $all = collect($item_group)->groupBy('parent');
