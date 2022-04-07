@@ -48,18 +48,18 @@
 												$promodiser_restriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
 											@endphp
 											<button class="btn text-left pt-0 d-inline d-xl-none" data-toggle="modal" data-target="#mobile-filters-modal">
-												<p class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 10pt !important">
+												<p class="card-title mt-2 ml-4" style="font-size: 10pt !important">
 													<i class="fa fa-bars"></i>&nbsp;Filters
 												</p>
 											</button>
 
 											<button class="float-left btn text-left pt-0" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-												<p class="card-title mt-2 ml-4 font-weight-bold" style="font-size: 10pt !important">
+												<p class="card-title mt-2 ml-4" style="font-size: 10pt !important">
 													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
 												</p>
 											</button>
 
-											<p class="card-title mt-2 ml-4 font-weight-bold d-none d-md-inline" style="font-size: 14px;">
+											<p class="card-title mt-2 ml-4 d-none d-md-inline" style="font-size: 14px;">
 												@if(request('searchString') && request('searchString') != '') 
 													Search result(s) for "{{ request('searchString') }}"
 												@else
@@ -73,7 +73,7 @@
 												</small>
 											</p>
 											@if (request()->all())
-												<p class="card-title mt-2 ml-4 font-weight-bold d-none d-md-inline" style="font-size: 14px;">
+												<p class="card-title mt-2 ml-4 d-none d-md-inline" style="font-size: 14px;">
 													<a href="/search_results">
 														<i class="fa fa-refresh"></i>&nbsp;Clear Searches
 													</a>
@@ -85,24 +85,6 @@
 												<div class="modal-dialog" role="document">
 													<div class="modal-content">
 														<div class="modal-body">
-															{{-- <!-- Item Classification -->
-															<label class="text-center" style="font-size: 8pt;">Category Filter</label>
-															<div>
-																@foreach ($itemClass as $itemClass1)
-																	@php
-																	$abbr = explode(' - ', $itemClass1->item_classification)[0];
-																	$name = explode(' - ', $itemClass1->item_classification)[1];
-																@endphp
-																	<div class="p-2">
-																		<a class="" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">
-																			<div class="btn-group w-100 category-btn" role="group">
-																				<div class="btn btn-sm w-25" style="background-color: #001F3F; color: #fff;">{{ $abbr }}</div>
-																				<div class="btn btn-sm w-75 border border-outline-secondary">{{ $name }}</div>
-																			</div>
-																		</a>
-																	</div>
-																@endforeach
-															</div> --}}
 															<div class="tree container"><!-- Item Group -->
 																<ul style="padding-left: 0 !important">
 																	@foreach (array_keys($item_groups) as $item)
@@ -140,12 +122,6 @@
 										<div class="card-body p-0">
 											<div class="col-12 col-xl-10 mx-auto">
 												<div class="row pt-2">
-													{{-- <div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
-														<label class="mt-2 font-responsive" style="display: inline-block">Select Item Group&nbsp;</label>
-														<div class="input-group-append text-left float-right" id="item-group-filter-parent" style="font-size: 11pt;display: inline-block">
-															<select id="item-group-filter" class="btn btn-default"></select>
-														</div>
-													</div> --}}
 													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
 														<label class="mt-2 font-responsive" style="display: inline-block">Select Item Class&nbsp;</label>
 														<div class="input-group-append text-left float-right" id="item-class-filter-parent" style="font-size: 11pt;display: inline-block">
@@ -195,37 +171,14 @@
 									</div>
 									<div class="row">
 										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
-											<div class="card mb-3">
+											<div class="container mb-3 p-3">
 												@php
 													$category = collect(array_keys($item_groups))->chunk(5);
 												@endphp
-												<label class="text-center p-2" style="font-size: 9pt !important;">Category Filter</label>
-												@if (count($category) > 1)
-													<ul class="nav nav-tabs" role="tablist">
-														@foreach ($category as $i => $item)
-															<li class="nav-item">
-																<a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#class-category-{{ $i + 1 }}">{{ $i + 1 }}</a>
-															</li>
-														@endforeach
-													</ul>
-												@endif
-												<div class="tab-content"  >
+												<center><span class="p-2" style="font-size: 12pt !important;">Category Filter</span></center>
+												<div class="tab-content">
 													@for($i = 0; $i < count($category); $i++)
 														<div id="class-category-{{ $i + 1 }}" class="container tab-pane {{ $i == 0 ? 'active' : null }}" style="padding: 8px 0 0 0;">
-															{{-- @foreach ($item_class[$i] as $itemClass1)<!-- Item Classification -->
-																@php
-																	$abbr = explode(' - ', $itemClass1->item_classification)[0];
-																	$name = explode(' - ', $itemClass1->item_classification)[1];
-																@endphp
-																<div class="p-2">
-																	<a class="" href="{!! count($itemClass) > 1 ?  request()->fullUrlWithQuery(['classification' => $itemClass1->item_classification]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => null, 'wh' => null, 'classification' => $itemClass1->item_classification]) !!}">
-																		<div class="btn-group w-100 category-btn" role="group">
-																			<div class="btn btn-sm w-25" style="background-color: #001F3F; color: #fff;">{{ $abbr }}</div>
-																			<div class="btn btn-sm w-75 border border-outline-secondary">{{ $name }}</div>
-																		</div>
-																	</a>
-																</div>
-															@endforeach --}}
 															<div class="tree container"><!-- Item Group -->
 																<ul style="padding-left: 0 !important" >
 																	@foreach ($category[$i] as $item)
@@ -236,8 +189,8 @@
 																			<span class="w-100 p-0" style="border: none !important">
 																				<a style="color: #000; font-size: 10pt;" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
 																					<div class="btn-group w-100" role="group" aria-label="Basic example">
-																						<button type="button" class="btn w-25" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
-																						<button type="button" class="btn w-75" style="border: 2px solid #001F3F">{{ $item }}</button>
+																						<button type="button" class="btn w-25 p-0" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
+																						<button type="button" class="btn w-75 p-0" style="border: 2px solid #001F3F">{{ $item }}</button>
 																					</div>
 																				</a>
 																			</span>
@@ -251,6 +204,15 @@
 														</div>
 													@endfor
 												</div>
+												@if (count($category) > 1)
+													<ul class="nav nav-tabs" role="tablist">
+														@foreach ($category as $i => $item)
+															<li class="nav-item">
+																<a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#class-category-{{ $i + 1 }}">{{ $i + 1 }}</a>
+															</li>
+														@endforeach
+													</ul>
+												@endif
 											</div>
 										</div>
 										<div class="col-12 col-xl-{{ $item_groups ? '10' : '12' }}">
