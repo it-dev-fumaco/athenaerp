@@ -110,6 +110,9 @@ class MainController extends Controller
                 ->when($request->classification, function($q) use ($request){
                     return $q->where('item_classification', $request->classification);
                 })
+                ->when($request->brand, function($q) use ($request){
+                    return $q->where('brand', $request->brand);
+                })
                 ->when($request->check_qty, function($q) use ($request){
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 })
@@ -144,6 +147,9 @@ class MainController extends Controller
                 })
                 ->when($request->classification, function($q) use ($request){
                     return $q->where('tabItem.item_classification', $request->classification);
+                })
+                ->when($request->brand, function($q) use ($request){
+                    return $q->where('brand', $request->brand);
                 })
                 ->when($request->check_qty, function($q) use ($request){
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
@@ -556,6 +562,8 @@ class MainController extends Controller
 
         $item_class_filter = DB::table('tabItem Classification')->where('name', 'LIKE', '%'.$request->q.'%')->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
+        $brand_filter = DB::table('tabBrand')->where('name', 'LIKE', '%'.$request->q.'%')->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
+
         // $WHusers = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->pluck('warehouse_user');
         $Athena_wh_users = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->where('warehouse_user','LIKE', '%'.$request->q.'%')
             ->selectRaw('warehouse_user as id, warehouse_user as text')->get();
@@ -583,6 +591,7 @@ class MainController extends Controller
             'item_groups' => $item_groups,
             'item_class_filter' => $item_class_filter,
             'item_classification' => $item_classification,
+            'brand' => $brand_filter
         ]);
     }
 

@@ -23,7 +23,7 @@
 										</p>
 									</div>
 									<div class="col-5 text-right">
-										@if (request()->all())
+										@if (array_filter(request()->all()))
 											<p class="card-title mt-1 ml-4 font-weight-bold float-right" style="font-size: 8pt">
 												<a href="/search_results">
 													<i class="fa fa-refresh"></i>&nbsp;Clear Searches
@@ -72,7 +72,7 @@
 													@endforeach
 												</small>
 											</p>
-											@if (request()->all())
+											@if (array_filter(request()->all()))
 												<p class="card-title mt-2 ml-4 d-none d-md-inline" style="font-size: 14px;">
 													<a href="/search_results">
 														<i class="fa fa-refresh"></i>&nbsp;Clear Searches
@@ -120,21 +120,27 @@
 									
 									<div id="collapseOne" class="collapse border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
 										<div class="card-body p-0">
-											<div class="col-12 col-xl-10 mx-auto">
-												<div class="row pt-2">
-													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
-														<label class="mt-2 font-responsive" style="display: inline-block">Select Item Class&nbsp;</label>
-														<div class="input-group-append text-left float-right" id="item-class-filter-parent" style="font-size: 11pt;display: inline-block">
+											<div class="col-12 mx-auto">
+												<div class="row pt-2 border border-success">
+													<div class="col-12 col-md-8 col-xl-2 mx-auto pt-2 text-right border border-secondary">
+														<label>Search For:</label>
+													</div>
+													<div class="col-12 col-md-8 col-xl-2 mx-auto border border-secondary">
+														<div class="input-group-append text-left w-100" id="item-class-filter-parent" style="font-size: 11pt;display: inline-block">
 															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-4 mx-auto filter-container">
-														<label class="mt-2 font-responsive">Select Warehouse&nbsp;</label>
-														<div class="form-group text-left m-0 float-right" id="warehouse-filter-parent" style="font-size: 11pt;">
+													<div class="col-12 col-md-8 col-xl-2 mx-auto border border-secondary">
+														<div class="form-group text-left m-0 w-100" id="warehouse-filter-parent" style="font-size: 11pt;">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-8 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
+													<div class="col-12 col-md-8 col-xl-2 mx-auto border border-secondary">
+														<div class="form-group text-left m-0 w-100" id="brand-filter-parent" style="font-size: 11pt;">
+															<select name="brand" id="brand-filter" class="form-control"></select>
+														</div>
+													</div>
+													<div class="col-12 col-md-8 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container border border-secondary">
 														<div class="row">
 															<div class="form-group m-0r col-12 m-0">
 																<label>
@@ -783,10 +789,6 @@
 		text-align: right;
 	}
 
-	#warehouse-filter-parent, #item-group-filter-parent{
-		width: 55%;
-	}
-
 	.checkbox-container{
 		text-align: center;
 	}
@@ -844,24 +846,20 @@
 
 	.tree-item{
 		color: #000;
+		transition: .4s;
 	}
 
 	.selected-tree-item{
 		background-color: #001F3F;
 		color: #fff;
 	}
-    
+
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{
 			font-size: 10pt !important;
 		}
 		.item-class, .item-name{
 			font-size: 9pt !important;
-		}
-		#warehouse-filter-parent{
-			width: 90% !important;
-			float: none;
-			margin-left: 5% !important;
 		}
 		.search-img, .search-thumbnail{
 			max-width: 220px !important;
@@ -891,9 +889,6 @@
 		}
 		.filter-container{
 			text-align: left !important;
-		}
-		#warehouse-filter-parent, #item-group-filter-parent{
-			width: 57% !important;
 		}
 		.checkbox-container{
 			text-align: left !important;
@@ -903,11 +898,6 @@
         .font-responsive, .responsive-description, .stock-ledger-table-font{
 			font-size: 10pt !important;
 		}
-		#warehouse-filter-parent{
-			width: 90% !important;
-			float: none;
-			margin-left: 5% !important;
-		}
 		.search-img, .search-thumbnail{
 			max-width: 220px !important;
 		}
@@ -936,9 +926,6 @@
 		}
 		.filter-container{
 			text-align: left !important;
-		}
-		#warehouse-filter-parent, #item-group-filter-parent{
-			width: 57% !important;
 		}
 		.checkbox-container{
 			text-align: left !important;
@@ -950,9 +937,6 @@
 		}
 		.filter-container{
 			text-align: left !important;
-		}
-		#warehouse-filter-parent, #item-group-filter-parent{
-			width: 65% !important;
 		}
 		.checkbox-container{
 			text-align: left !important;

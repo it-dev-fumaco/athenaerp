@@ -417,6 +417,7 @@
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<input type="hidden" name="classification" id="class-1" value="{{ request('classification') }}">
+										<input type="hidden" name="brand" id="brand-1" value="{{ request('brand') }}">
 										<div class="input-group p-1">
 											<input type="text" class="form-control" autocomplete="off" placeholder="Search" name="searchString" id="searchid" value="{{ request('searchString') }}">
 											<button class="btn btn-default" type="submit">
@@ -1069,6 +1070,8 @@
 			let getParam = new URLSearchParams(window.location.search);
 			let grp = getParam.get('group');
 			let whName = getParam.get('wh');
+			let classification = getParam.get('classification');
+			let brand = getParam.get('brand');
 
 			if(whName === ''){
 				whPlaceholder = "Select Warehouse";
@@ -1084,6 +1087,22 @@
 				grpPlaceholder = grp;
 			}else{
 				grpPlaceholder = "Item Group";
+			}
+
+			if(classification === ''){
+				classPlaceholder = "Item Classification";
+			}else if(classification != null){
+				classPlaceholder = classification;
+			}else{
+				classPlaceholder = "Item Classification";
+			}
+
+			if(brand === ''){
+				brandPlaceholder = "Select Brand";
+			}else if(brand != null){
+				brandPlaceholder = brand;
+			}else{
+				brandPlaceholder = "Select Brand";
 			}
 
 			// Search Results Warehouse Filter
@@ -2153,41 +2172,41 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			});
 			// ERP Warehouse
 
-			// Item group filter
-			// $('#item-group-filter').select2({
-			// 	dropdownParent: $('#item-group-filter-parent'),
-			// 	placeholder: grpPlaceholder,
-			// 	ajax: {
-			// 		url: '/get_select_filters',
-			// 		method: 'GET',
-			// 		dataType: 'json',
-			// 		data: function (data) {
-			// 			return {
-			// 				q: data.term // search term
-			// 			};
-			// 		},
-			// 		processResults: function (response) {
-			// 			return {
-			// 				results: response.item_groups
-			// 			};
-			// 		},
-			// 		cache: true
-			// 	}
-			// });
+			// Brand filter
+			$('#brand-filter').select2({
+				dropdownParent: $('#brand-filter-parent'),
+				placeholder: brandPlaceholder,
+				ajax: {
+					url: '/get_select_filters',
+					method: 'GET',
+					dataType: 'json',
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
+					},
+					processResults: function (response) {
+						return {
+							results: response.brand
+						};
+					},
+					cache: true
+				}
+			});
 
-			// $(document).on('select2:select', '#item-group-filter', function(e){
-			// 	var data = e.params.data;
+			$(document).on('select2:select', '#brand-filter', function(e){
+				var data = e.params.data;
 
-			// 	$('#grp-1').val(data.id);
-			// 	$('#search-form').submit();
-			// });
+				$('#brand-1').val(data.id);
+				$('#search-form').submit();
+			});
 
-			// Item group filter
-
-			// Item group filter
+			// Brand filter
+			
+			// Item class filter
 			$('#item-class-filter').select2({
 				dropdownParent: $('#item-class-filter-parent'),
-				placeholder: 'Item Classification',
+				placeholder: classPlaceholder,
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -2212,7 +2231,7 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				$('#class-1').val(data.id);
 				$('#search-form').submit();
 			});
-			// Item group filter
+			// Item class filter
 
 
 			$('#athReset').click(function(){
