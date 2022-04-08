@@ -191,9 +191,9 @@
 																		@php
 																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
 																		@endphp
-																		<li>
+																		<li class="{{ !$lvl2 ? 'p-2' : 'p-0' }}">
 																			<span class="p-0 w-75 tree-item" style="border: none !important">
-																				<a style="color: inherit; font-size: 10pt;" href="{!! $lvl2 ? request()->fullUrlWithQuery(['group' => $item]) : request()->fullUrlWithQuery(['searchString' => null, 'group' => $item, 'wh' => null, 'classification' => null]) !!}">
+																				<a style="color: inherit; font-size: 10pt;" href="{!! request()->fullUrlWithQuery(['group' => $item]) !!}">
 																					<div class="btn-group w-100" role="group" aria-label="Basic example">
 																						<button type="button" class="btn w-25 p-0" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
 																						<button type="button" class="btn w-75 p-0" style="border: 2px solid #001F3F; font-size: 10pt; color: inherit">{{ $item }}</button>
