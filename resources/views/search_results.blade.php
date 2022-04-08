@@ -878,9 +878,9 @@
 		background-color: #001F3F !important;
 	}
 
-	.selected-tree-item{,
+	.selected-tree-item{
 		background-color: #001F3F;
-		color: #fff;
+		color: #fff !important;
 	}
 
 	.general-filter-label{
