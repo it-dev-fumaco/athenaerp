@@ -73,14 +73,23 @@
     .canvas{
         height: 300px;
     }
+    .consignment-total{
+        margin-top: -32px;
+    }
     @media (max-width: 575.98px) {
         .canvas{
             height: 200px;
+        }
+        .consignment-total{
+            margin-top: 0;
         }
     }
     @media (max-width: 767.98px) {
         .canvas{
             height: 200px;
+        }
+        .consignment-total{
+            margin-top: 0;
         }
     }
 </style>
