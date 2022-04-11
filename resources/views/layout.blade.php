@@ -1894,10 +1894,16 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					url: '/get_item_images/' + item_code,
 					success: function(response){
 						$.each(response, function(i, d){
-							var image_src = storage + '/' + d.split('.')[0] + '.webp';
+							var image_src = storage + '/' + d;
+							var image_src_webp = storage + '/' + d.split('.')[0] + '.webp';
 							$("<div class=\"col-md-4 pip img_upload\">" +
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
-							"<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
+							// "<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
+							"<picture>" +
+							"<source srcset=\"" + image_src_webp + "\" type=\"image/webp\" class=\"img-thumbnail\">" +
+							"<source srcset=\"" + image_src + "\" type=\"image/jpeg\" class=\"img-thumbnail\">" +
+							"<img src=\"" + image_src + "\" class=\"img-thumbnail\">" +
+							"</picture>" +
 							"<span class=\"add-fav remove\">&times;</span>" +
 							"</div>").insertAfter("#image-previews");
 						});

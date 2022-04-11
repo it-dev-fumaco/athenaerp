@@ -2187,7 +2187,7 @@ class MainController extends Controller
                 //get file extension
                 $extension = $file->getClientOriginalExtension();
                 //filename to store
-                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
+                // $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
 
                 $destinationPath = storage_path('app/public/img/');
 
@@ -2200,10 +2200,10 @@ class MainController extends Controller
                     $file->move($destinationPath, $jpeg_file);
                 }
 
-                $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
-                if (file_exists($jpeg_path)) {
-                    unlink($jpeg_path);
-                }
+                // $jpeg_path = storage_path('app/public/img/'.$jpeg_file); // Delete Jpeg
+                // if (file_exists($jpeg_path)) {
+                //     unlink($jpeg_path);
+                // }
 
                 $item_images_arr[] = [
                     'name' => uniqid(),
@@ -2215,7 +2215,7 @@ class MainController extends Controller
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => $filenametostore
+                    'image_path' => $jpeg_file//$filenametostore
                 ];
             }
             
