@@ -15,7 +15,7 @@
                         <div class="col-md-8">
                             <p style="color:#001F3F !important; font-size:1.3rem !important; margin: 0;">Oops! Page not found.</p>
                             <p style="color:#58595A !important; font-size:0.95rem !important; margin: 0;">The page your are looking for might have been removed, had its name changed or is temporarily unavailable.</p><br>
-                            <p style="color:#58595A !important; font-size:0.95rem !important; margin: 0;">Please contact support at it@fumaco.local</p>
+                            <p style="color:#58595A !important; font-size:0.95rem !important; margin: 0;">Please contact support at it@fumaco.local or it@fumaco.com</p>
                             <a href="/" class="btn btn-primary mt-3" style="background-color: #001F3F; border: none">RETURN TO HOMEPAGE</a>
                         </div>
                     </div>
