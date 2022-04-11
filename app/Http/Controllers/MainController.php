@@ -56,7 +56,7 @@ class MainController extends Controller
             ->when($search_string, function($q) use ($search_string){
                 return $q->where('bin.item_code', 'LIKE', "%".$search_string."%")->orWhere('item.description', 'LIKE', "%".$search_string."%");
             })
-            ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification')->orderBy('bin.actual_qty', 'desc')->paginate(20);
+            ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification', 'item.item_group')->orderBy('bin.actual_qty', 'desc')->paginate(20);
 
         $item_codes = array_column($consignment_stocks->items(), 'item_code');
 
@@ -397,38 +397,100 @@ class MainController extends Controller
 
         $item_group = DB::table('tabItem Group')
             ->when(array_filter($request->all()), function ($q) use ($igs, $request){
-                $q->whereIn('item_group_name', $igs);
+                $q->whereIn('item_group_name', $igs)
+                    ->orWhere('item_group_name', 'LIKE', '%'.$request->searchString.'%');
             })
             ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
             ->orderByRaw('LENGTH(order_no)', 'ASC')
             ->orderBy('order_no', 'ASC')
             ->get();
 
-        $all = collect($item_group)->groupBy('parent');
+        $all_item_group = DB::table('tabItem Group')->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')->get();
+        $all = collect($all_item_group)->groupBy('parent_item_group');
 
         $item_groups = collect($item_group)->where('parent_item_group', $root)->where('is_group', 1)->groupBy('name')->toArray();
-        $item_group_array = $this->item_group_tree(1, $item_groups, $all);
+        // $sub_items = array_filter($request->all()) ? collect($item_group)->where('parent_item_group', '!=', $root)->groupBy('name')->toArray() : [];
+        $sub_items = array_filter($request->all()) ? collect($item_group)->where('parent_item_group', '!=', $root) : [];
+
+        $arr = [];
+        if($sub_items){
+            $item_group_arr = [];
+            $test_array = [];
+            $igs_collection = collect($all_item_group)->groupBy('item_group_name');
+            session()->forget('igs_array');
+            if(!session()->has('igs_array')){
+                session()->put('igs_array', []);
+            }
+
+            foreach($sub_items as $a){
+                if(!in_array($a->item_group_name, session()->get('igs_array'))){
+                    session()->push('igs_array', $a->item_group_name);
+                }
+
+                $this->check_item_group_tree($a->parent_item_group, $igs_collection);
+            }
+
+            $igs_array = session()->get('igs_array');
+
+            $arr = array_filter($igs_array);
+        }
+
+        // $item_group_array = $this->item_group_tree(1, $item_groups, $all);
+        $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
         return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs'));
     }
 
-    private function item_group_tree($current_lvl, $group, $all){
+    private function check_item_group_tree($parent, $igs_collection){
+        $item_group = isset($igs_collection[$parent]) ? $igs_collection[$parent][0] : [];
+        $item_groups = session()->get('igs_array');
+        if($item_group){
+            if(!in_array($item_group->item_group_name, $item_groups)){
+                session()->push('igs_array', $item_group->item_group_name);
+            }
+
+            $this->check_item_group_tree($item_group->parent_item_group, $igs_collection);
+            return 1;
+        }
+    }
+
+    private function item_group_tree($current_lvl, $group, $all, $igs_array = []){
         $current_lvl = $current_lvl + 1;
 
         $lvl_arr = [];
-        foreach($group as $lvl){
-            $next_level = isset($all[$lvl[0]->name]) ? collect($all[$lvl[0]->name])->groupBy('name') : [];
-            if($next_level){
-                $nxt = $this->item_group_tree($current_lvl, $next_level, $all);
-                $lvl_arr[$lvl[0]->name] = [
-                    'lvl'.$current_lvl => $nxt,
-                    'is_group' => $lvl[0]->is_group
-                ];
-            }else{
-                $lvl_arr[$lvl[0]->name] = [
-                    'lvl'.$current_lvl => $next_level,
-                    'is_group' => $lvl[0]->is_group
-                ];
+        if($igs_array){
+            foreach($group as $lvl){
+                $next_level = isset($all[$lvl[0]->name]) ? collect($all[$lvl[0]->name])->groupBy('name') : [];
+                if(in_array($lvl[0]->name, $igs_array)){
+                    if($next_level){
+                        $nxt = $this->item_group_tree($current_lvl, $next_level, $all, $igs_array);
+                        $lvl_arr[$lvl[0]->name] = [
+                            'lvl'.$current_lvl => $nxt,
+                            'is_group' => $lvl[0]->is_group,
+                        ];
+                    }else{
+                        $lvl_arr[$lvl[0]->name] = [
+                            'lvl'.$current_lvl => $next_level,
+                            'is_group' => $lvl[0]->is_group,
+                        ];
+                    }
+                }
+            }
+        }else{
+            foreach($group as $lvl){
+                $next_level = isset($all[$lvl[0]->name]) ? collect($all[$lvl[0]->name])->groupBy('name') : [];
+                if($next_level){
+                    $nxt = $this->item_group_tree($current_lvl, $next_level, $all);
+                    $lvl_arr[$lvl[0]->name] = [
+                        'lvl'.$current_lvl => $nxt,
+                        'is_group' => $lvl[0]->is_group,
+                    ];
+                }else{
+                    $lvl_arr[$lvl[0]->name] = [
+                        'lvl'.$current_lvl => $next_level,
+                        'is_group' => $lvl[0]->is_group,
+                    ];
+                }
             }
         }
 
@@ -2191,7 +2253,7 @@ class MainController extends Controller
                 //get file extension
                 $extension = $file->getClientOriginalExtension();
                 //filename to store
-                // $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
+                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
 
                 $destinationPath = storage_path('app/public/img/');
 
@@ -2204,10 +2266,10 @@ class MainController extends Controller
                     $file->move($destinationPath, $jpeg_file);
                 }
 
-                // $jpeg_path = storage_path('app/public/img/'.$jpeg_file); // Delete Jpeg
-                // if (file_exists($jpeg_path)) {
-                //     unlink($jpeg_path);
-                // }
+                $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
+                if (file_exists($jpeg_path)) {
+                    unlink($jpeg_path);
+                }
 
                 $item_images_arr[] = [
                     'name' => uniqid(),
@@ -2219,7 +2281,7 @@ class MainController extends Controller
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => $jpeg_file//$filenametostore
+                    'image_path' => $filenametostore
                 ];
             }
             

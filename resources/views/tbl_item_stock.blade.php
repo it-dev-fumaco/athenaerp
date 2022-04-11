@@ -5,6 +5,7 @@
     <thead>
         <tr>
             <th class="text-center" style="width: 55%;">Item Description</th>
+            <th class="text-center d-none d-sm-table-cell" style="width: 15%;">Item Group</th>
             <th class="text-center d-none d-sm-table-cell" style="width: 15%;">Item Classification</th>
             <th class="text-center d-none d-sm-table-cell" style="width: 15%; white-space: nowrap">Available Qty</th>
             <th class="text-center d-none d-sm-table-cell" style="width: 15%;">Price</th>
@@ -54,7 +55,8 @@
                         </table>
                     </div>
                     <div class="col-12 col-sm-9 col-xl-11">
-                        <span class="font-weight-bold view-item-details" data-item-code="{{ $row->item_code }}" data-item-classification="{{ $row->item_classification }}" style="cursor:pointer;">{{ $row->item_code }} <span class="d-inline d-sm-none">- {{ $row->item_classification }}</span> </span>
+                        <span class="font-weight-bold view-item-details" data-item-code="{{ $row->item_code }}" data-item-classification="{{ $row->item_classification }}" style="cursor:pointer;">{{ $row->item_code }}</span>
+                        <span class="d-inline d-sm-none"><br>{{ $row->item_classification.' - '.$row->item_group }}</span>
                         <span class="d-block">{!! strip_tags($row->description) !!}</span>
                     </div>
                 </div>
@@ -90,6 +92,7 @@
                     </div>
                 </div>
             </td>
+            <td class="text-center align-middle font-weight-bold d-none d-sm-table-cell">{{ $row->item_group }}</td>
             <td class="text-center align-middle font-weight-bold d-none d-sm-table-cell">{{ $row->item_classification }}</td>
             <td class="text-center align-middle d-none d-sm-table-cell" style="font-size: 13pt;">
                 @if ($stock_qty > 0)
@@ -98,7 +101,7 @@
                 <span class="badge badge-danger">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
                 @endif
             </td>
-            <td class="text-center align-middle d-none d-sm-table-cell font-weight-bold">{{ $price_list_rate }}</td>
+            <td class="text-center align-middle d-none d-sm-table-cell font-weight-bold" style="white-space: nowrap !important">{{ $price_list_rate }}</td>
         </tr>
         @empty
         <tr>
