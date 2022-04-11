@@ -40,7 +40,11 @@ class MainController extends Controller
 
             $years = array_unique($years->toArray());
 
-            return view('index_promodiser', compact('assigned_consignment_store', 'years'));
+            if (count($assigned_consignment_store) > 0) {
+                return view('index_promodiser', compact('assigned_consignment_store', 'years'));
+            }
+
+            return redirect('/search_results');
         }
 
         return view('index');
