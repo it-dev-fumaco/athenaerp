@@ -52,7 +52,7 @@ class MainController extends Controller
             ->when($search_string, function($q) use ($search_string){
                 return $q->where('bin.item_code', 'LIKE', "%".$search_string."%")->orWhere('item.description', 'LIKE', "%".$search_string."%");
             })
-            ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification')->orderBy('bin.actual_qty', 'desc')->paginate(20);
+            ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification', 'item.item_group')->orderBy('bin.actual_qty', 'desc')->paginate(20);
 
         $item_codes = array_column($consignment_stocks->items(), 'item_code');
 
