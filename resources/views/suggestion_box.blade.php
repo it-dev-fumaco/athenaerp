@@ -15,7 +15,7 @@
           <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" style="float:left;width: 60px; height: 60px;margin-right: 10px;">
         </picture>
         <b>{{ $item->name }}</b>
-        <br>{{ $item->description }}
+        <br><span style="font-size: 10pt;">{{ $item->description }}</span>
       </div>
       <div class="p-2 align-middle text-center" style="width: 10%;">
           <a class="btn btn-default" href="?searchString={{ $item->name }}&search=">

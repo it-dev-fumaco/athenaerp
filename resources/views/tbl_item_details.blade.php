@@ -22,13 +22,8 @@
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-12">
-                            <a href="{{ asset('storage'.$img_1) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                {{-- <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : 'border border-secondary' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}"> --}}
-                                <picture>
-                                    <source srcset="{{ asset('storage'.$img_1_webp) }}" type="image/webp" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
-                                    <source srcset="{{ asset('storage'.$img_1) }}" type="image/jpeg" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
-                                    <img src="{{ asset('storage'.$img_1) }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : 'border border-secondary' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
-                                </picture>
+                            <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
                             </a>
                         </div>
                         <div class="col-4 mt-2">
@@ -79,6 +74,12 @@
                         <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                         <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                     </dl>
+                    @if ($user_pricelist && $price_list_rate != '-')
+                    <p class="mt-2 mb-2 text-center">
+                        <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($price_list_rate, 2, '.', ',') }}</span>
+                        <span class="d-block" style="font-size: 12pt;">{{ $user_pricelist }}</span>
+                    </p>
+                    @endif
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                         @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))
@@ -90,10 +91,15 @@
                             <div class="box-body table-responsive">
                                 <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
                                     <thead>
-                                        <th scope="col" class="font-responsive text-center p-1">Warehouse</th>
-                                        <th scope="col" class="font-responsive text-center p-1">Reserved Qty</th>
-                                        <th scope="col" class="font-responsive text-center p-1">Actual Qty</th>
-                                        <th scope="col" class="font-responsive text-center p-1">Available Qty</th>
+                                        <tr>
+                                            <th scope="col" rowspan=2 class="font-responsive text-center p-1">Warehouse</th>
+                                            <th scope="col" colspan=3 class="font-responsive text-center p-1">Quantity</th>
+                                        </tr>
+                                        <tr>
+                                            <th scope="col" class="font-responsive text-center p-1 text-muted">Reserved</th>
+                                            <th scope="col" class="font-responsive text-center p-1">Actual</th>
+                                            <th scope="col" class="font-responsive text-center p-1">Available</th>
+                                        </tr>
                                     </thead>
                                     @forelse ($site_warehouses as $stock)
                                     <tr>
@@ -103,10 +109,12 @@
                                                 <small class="text-muted font-italic"> - {{ $stock['location'] }}</small>
                                             @endif
                                         </td>
-                                        <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
+                                        <td class="text-center p-1 font-responsive">
+                                            <small class="text-muted">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</small>
+                                        </td>
                                         <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                         <td class="text-center p-1">
-                                            <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'danger' }} font-responsive" style="font-size: 11pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
+                                            <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 11pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
                                         </td>
                                     </tr>
                                     @empty
@@ -144,7 +152,7 @@
                                                                     <small class="text-muted font-italic"> - {{ $con['location'] }}</small>
                                                                 @endif
                                                             </td>
-                                                            <td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'danger' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+                                                            <td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
                                                         </tr>
                                                         @empty
                                                         <tr>
@@ -225,7 +233,7 @@
                                         <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
                                         <small class="font-italic font-responsive" style="font-size: 9pt;">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
                                         <br>
-                                        <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'danger' }} font-responsive">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
+                                        <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                     </div>
                                 </a>
                             </div>

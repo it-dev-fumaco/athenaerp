@@ -17,14 +17,19 @@
 	
 	<body>
 		
-<div class="bg-box">
+  <div class="bg-box">
     <div class="bg1"></div>
     <div class="bg2"></div>
   </div>
   <div class="form">
+    <h3 style="margin-bottom: 3%; margin-top: 0; text-align: center;">Athena<span style="font-weight: 900;">ERP</span> Inventory</h3>
+    <div style="text-align: center; color: #CE1E09; font-size: 12pt; margin: 8px;">
+      @if($errors->any())
+      {!! $errors->first() !!}
+      @endif
+    </div>
     <form role="form" method="POST" action="/login_user">
       @csrf
-      <h3 style="margin-bottom: 3%; margin-top: 0; text-align: center;">Athena<span style="font-weight: 900;">ERP</span> Inventory</h3>
     <label for="account">Username</label>
     <div class="input-box">
       <input type="text" placeholder="Username" value="{{ old('email') }}" name="email" spellcheck="false" required/>
@@ -53,12 +58,39 @@
     }
     @media (max-width: 768px) {
       html {
-        font-size: calc(100vw / 768 * 100);
+        font-size: calc(130vw / 768 * 100);
+      }
+      body{
+        padding: 10px !important;
+      }
+      .form{
+        width: 500px !important;
+      }
+      .form label, .form input{
+        font-size: 0.23rem !important;
       }
     }
+
+    @media (max-width: 575.98px) {
+      body{
+        padding: 10px !important;
+      }
+      .form label, .form input{
+        font-size: 0.23rem !important;
+      }
+    }
+		@media (max-width: 767.98px) {
+      body{
+        padding: 10px !important;
+      }
+      .form label, .form input{
+        font-size: 0.23rem !important;
+      }
+    }
+
     
     body {
-    margin: 0;
+      margin: 0;
       min-height: 100vh;
       padding: 0.5rem 1rem;
       display: flex;
@@ -130,7 +162,7 @@
       border: none;
       border-radius: 0.3rem;
       padding: 0.1rem 0.3rem;
-      /* padding-left: 0.5rem; */
+      padding-left: 0.5rem;
       font-family: inherit;
     }
     .form input:focus, .form input:focus-within {

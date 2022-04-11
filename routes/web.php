@@ -120,4 +120,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/create_material_request/{id}', 'MainController@create_material_request');
     Route::get('/consignment_warehouses', 'MainController@consignment_warehouses');
     Route::post('/create_feedback', 'MainController@create_feedback');
+    Route::get('/consignment_stock/{warehouse}', 'MainController@consignmentItemStock');
+    Route::get('/consignment_sales/{warehouse}', 'MainController@consignmentSalesReport');
 });
