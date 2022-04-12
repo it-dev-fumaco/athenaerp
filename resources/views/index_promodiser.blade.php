@@ -33,18 +33,47 @@
                                 <input type="hidden" id="year-placeholder-{{ str_slug($store, '-') }}" value="{{ Carbon\Carbon::now()->format('Y') }}">
                                 <div class="tab-pane p-0 {{ $loop->first ? 'active' : '' }}" id="tab{{ $m }}">
                                     <div class="row m-0 p-0">
-                                        <div class="col-12 col-md-4 mx-auto">
-                                            <label>Select Year</label>
-                                            <select class="form-control" name="year" id="year-filter-{{ str_slug($store, '-') }}" onchange="year_filter(this)">
-                                                @foreach ($years as $year)
-                                                    <option value="{{ $year }}" {{ $year == Carbon\Carbon::now()->format('Y') ? 'selected' : null }} data-el="{{ str_slug($store, '-') }}" data-store="{{ $store }}" data-year="{{ $year }}">{{ $year }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-8 offset-md-2">
+                                        <div class="col-xl-8">
+                                            <div class="row">
+                                                <div class="d-none d-md-block col-md-6 col-xl-4 p-4">
+                                                    <h4>Sales Report</h4>
+                                                </div>
+                                                <div class="col-12 col-md-6 offset-xl-4 col-xl-4">
+                                                    <label>Select Year</label>
+                                                    <select class="form-control" name="year" id="year-filter-{{ str_slug($store, '-') }}" onchange="year_filter(this)">
+                                                        @foreach ($years as $year)
+                                                            <option value="{{ $year }}" {{ $year == Carbon\Carbon::now()->format('Y') ? 'selected' : null }} data-el="{{ str_slug($store, '-') }}" data-store="{{ $store }}" data-year="{{ $year }}">{{ $year }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 d-block d-md-none p-2 text-center">
+                                                    <h5>Sales Report</h5>
+                                                </div>
+                                            </div>
                                             <div class="position-relative m-4">
                                                 <canvas id="sales-chart-{{ str_slug($store, '-') }}" class="canvas"></canvas>
                                             </div>
+                                        </div>
+                                        <div class="col-12 col-xl-4">
+                                            <center><label>Inventory Summary</label></center>
+                                            <div class="card p-2">
+                                                <div class="row">
+                                                    <div class="col-8 col-md-5 offset-md-3">Total number of items:</div>
+                                                    <div class="col-4 col-md-2">
+                                                        <span id="item-qty-{{ str_slug($store, '-') }}">0</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card p-2">
+                                                <div class="row">
+                                                    <div class="col-8 col-md-5 offset-md-3">Total number of stocks:</div>
+                                                    <div class="col-4 col-md-2">
+                                                        <span id="stock-qty-{{ str_slug($store, '-') }}">0</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
                                             <div class="container-fluid text-center">
                                                 <span style="font-size: 20px;"><b>Inventory Stocks</b></span>
                                             </div>
@@ -238,13 +267,7 @@
                                     return "₱ " + tooltipItem.yLabel.toLocaleString();
                                 }
                             }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Sales Report',
-                            fontSize: 22,
-                            fontColor: '#000000'
-                        },
+                        }
                     }
                 });
             }
