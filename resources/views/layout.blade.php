@@ -434,7 +434,7 @@
 								<li class="nav-item dropdown col-8 text-right">
 									<a class="nav-link text-white" data-toggle="dropdown" href="#">
 										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
-										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::user()->full_name }}</span>
+										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 									</a>
 								</li>
 								<li class="d-none d-lg-block nav-item dropdown text-right">
@@ -527,7 +527,7 @@
 											<i class="fas fa-history d-block d-md-none"></i>
 										</a>
 									</li>
-									@if(in_array(Auth::user()->user_group, ['Inventory Manager']))
+									@if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
 									<li class="nav-item">
 										<a class="nav-link" data-toggle="pill" href="#tab_4" role="tab" aria-controls="custom-tabs-three-4" aria-selected="false">
 											<span class="d-none d-md-block">Stock Reservations</span>
@@ -619,7 +619,10 @@
 										<div class="row">
 											<div class="col-md-12">
 												@php
-													$attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+													$attr = null;
+													if(Auth::check()){
+														$attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+													}
 												@endphp
 												<div class="float-right m-2">
 													<button class="btn btn-primary font-responsive" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
