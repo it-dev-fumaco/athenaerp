@@ -59,6 +59,8 @@ class MainController extends Controller
             })
             ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification', 'item.item_group')->orderBy('bin.actual_qty', 'desc')->paginate(20);
 
+        $total_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)->sum('bin.actual_qty');
+
         $item_codes = array_column($consignment_stocks->items(), 'item_code');
 
         $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
@@ -75,7 +77,7 @@ class MainController extends Controller
 
         $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
 
-        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse'));
+        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', ''));
     }
 
     public function search_results(Request $request){
@@ -183,12 +185,12 @@ class MainController extends Controller
 
         $select_columns = array_filter($select_columns);
 
-        $itemQ = DB::table('tabItem')->where('disabled', 0)
-            ->where('has_variants', 0)->where('is_stock_item', 1)
+        $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
+            ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
                     foreach ($search_str as $str) {
-                        $q->where('description', 'LIKE', "%".$str."%");
+                        $q->where('tabItem.description', 'LIKE', "%".$str."%");
                     }
 
                     $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
@@ -199,10 +201,10 @@ class MainController extends Controller
                 });
             })// Item group filter is moved for search results accuracy
             ->when($request->classification, function($q) use ($request){
-                return $q->where('item_classification', $request->classification);
+                return $q->where('tabItem.item_classification', $request->classification);
             })
             ->when($request->brand, function($q) use ($request){
-                return $q->where('brand', $request->brand);
+                return $q->where('tabItem.brand', $request->brand);
             })
             ->when($request->check_qty, function($q){
                 return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
@@ -275,11 +277,11 @@ class MainController extends Controller
 
                 $breadcrumbs = array_reverse(session()->get('breadcrumbs'));
             
-                if(!$selected_group->is_group){
-                    $item_groups_based_on_parent = DB::table('tabItem Group')->where('parent_item_group', $selected_group->parent_item_group)->pluck('item_group_name')->toArray();
+                // if(!$selected_group->is_group){
+                //     $item_groups_based_on_parent = DB::table('tabItem Group')->where('parent_item_group', $selected_group->parent_item_group)->pluck('item_group_name')->toArray();
     
-                    $igs = array_unique(array_merge($igs, $item_groups_based_on_parent));
-                }
+                //     $igs = array_unique(array_merge($igs, $item_groups_based_on_parent));
+                // }
             }
         }
 
@@ -488,8 +490,14 @@ class MainController extends Controller
             ->orderBy('order_no', 'ASC')
             ->get();
 
-        $all_item_group = DB::table('tabItem Group')->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')->get();
-        $all = collect($all_item_group)->groupBy('parent_item_group');
+        // $all_item_group = DB::table('tabItem Group')
+        //     ->when($igs, function ($q) use ($igs){
+        //         $q->whereIn('item_group_name', $igs);
+        //     })
+        //     ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')->get();
+
+        // $all = collect($all_item_group)->groupBy('parent_item_group');
+        $all = collect($item_group)->groupBy('parent_item_group');
 
         $item_groups = collect($item_group)->where('parent_item_group', $root)->where('is_group', 1)->groupBy('name')->toArray();
         // $sub_items = array_filter($request->all()) ? collect($item_group)->where('parent_item_group', '!=', $root)->groupBy('name')->toArray() : [];
@@ -498,8 +506,8 @@ class MainController extends Controller
         $arr = [];
         if($sub_items){
             $item_group_arr = [];
-            $test_array = [];
-            $igs_collection = collect($all_item_group)->groupBy('item_group_name');
+            $igs_collection = collect($item_group)->groupBy('item_group_name');
+            // $igs_collection = collect($all_item_group)->groupBy('item_group_name');
             session()->forget('igs_array');
             if(!session()->has('igs_array')){
                 session()->put('igs_array', []);
