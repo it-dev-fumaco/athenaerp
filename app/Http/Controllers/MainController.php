@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Auth;
 use DB;
 use Webp;
+use \Illuminate\Pagination\Paginator;
 
 class MainController extends Controller
 {
@@ -83,90 +84,169 @@ class MainController extends Controller
             $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
         }
 
-        if($request->wh == ''){
-            $itemQ = DB::table('tabItem')->where('disabled', 0)
-                ->where('has_variants', 0)->where('is_stock_item', 1)->where('item_classification', 'LIKE', $request->classification)
-                ->when($request->searchString, function ($query) use ($search_str, $request) {
-                    return $query->where(function($q) use ($search_str, $request) {
-                        foreach ($search_str as $str) {
-                            $q->where('description', 'LIKE', "%".$str."%");
-                        }
+        // if($request->wh == ''){
+        //     $itemQ = DB::table('tabItem')->where('disabled', 0)
+        //         ->where('has_variants', 0)->where('is_stock_item', 1)//->where('item_classification', 'LIKE', $request->classification)
+        //         ->when($request->searchString, function ($query) use ($search_str, $request) {
+        //             return $query->where(function($q) use ($search_str, $request) {
+        //                 foreach ($search_str as $str) {
+        //                     $q->where('description', 'LIKE', "%".$str."%");
+        //                 }
 
-                        $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
-                    });
-                })
-                ->when($request->group, function($q) use ($request){
-                    return $q->where('tabItem.item_group', $request->group)
-                        ->orWhere('tabItem.item_group_level_1', $request->group)
-                        ->orWhere('tabItem.item_group_level_2', $request->group)
-                        ->orWhere('tabItem.item_group_level_3', $request->group)
-                        ->orWhere('tabItem.item_group_level_4', $request->group)
-                        ->orWhere('tabItem.item_group_level_5', $request->group);
-                })
-                ->when($request->classification, function($q) use ($request){
-                    return $q->where('item_classification', $request->classification);
-                })
-                ->when($request->brand, function($q) use ($request){
-                    return $q->where('brand', $request->brand);
-                })
-                ->when($request->check_qty, function($q) use ($request){
-                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-                })
-                ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
-                    return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
-                        ->whereIn('tabBin.warehouse', $assigned_consignment_store);
-                })
-                ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification');
-        }else{
-            $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)->join('tabItem Default as d', 'd.parent', 'tabItem.name')
-                ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)->where('tabItem.item_classification', 'LIKE', $request->classification)
-                ->when($request->searchString, function ($query) use ($search_str, $request) {
-                    return $query->where(function($q) use ($search_str, $request) {
-                        foreach ($search_str as $str) {
-                            $q->where('tabItem.description', 'LIKE', "%".$str."%");
-                        }
+        //                 $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
+        //             });
+        //         })
+        //         ->when($request->group, function($q) use ($request){
+        //             return $q->where('tabItem.item_group', $request->group)
+        //                 ->orWhere('tabItem.item_group_level_1', $request->group)
+        //                 ->orWhere('tabItem.item_group_level_2', $request->group)
+        //                 ->orWhere('tabItem.item_group_level_3', $request->group)
+        //                 ->orWhere('tabItem.item_group_level_4', $request->group)
+        //                 ->orWhere('tabItem.item_group_level_5', $request->group);
+        //         })
+        //         ->when($request->classification, function($q) use ($request){
+        //             return $q->where('item_classification', $request->classification);
+        //         })
+        //         ->when($request->brand, function($q) use ($request){
+        //             return $q->where('brand', $request->brand);
+        //         })
+        //         ->when($request->check_qty, function($q) use ($request){
+        //             return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+        //         })
+        //         ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
+        //             return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
+        //                 ->whereIn('tabBin.warehouse', $assigned_consignment_store);
+        //         })
+        //         ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'tabItem.item_group_level_1', 'tabItem.item_group_level_2', 'tabItem.item_group_level_3', 'tabItem.item_group_level_4', 'tabItem.item_group_level_5');
+        // }else{
+        //     $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)->join('tabItem Default as d', 'd.parent', 'tabItem.name')
+        //         ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)//->where('tabItem.item_classification', 'LIKE', $request->classification)
+        //         ->when($request->searchString, function ($query) use ($search_str, $request) {
+        //             return $query->where(function($q) use ($search_str, $request) {
+        //                 foreach ($search_str as $str) {
+        //                     $q->where('tabItem.description', 'LIKE', "%".$str."%");
+        //                 }
 
-                        $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
-                            ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
-                    });
-                })
-                ->when($request->group, function($q) use ($request){
-                    return $q->where('tabItem.item_group', $request->group)
-                        ->orWhere('tabItem.item_group_level_1', $request->group)
-                        ->orWhere('tabItem.item_group_level_2', $request->group)
-                        ->orWhere('tabItem.item_group_level_3', $request->group)
-                        ->orWhere('tabItem.item_group_level_4', $request->group)
-                        ->orWhere('tabItem.item_group_level_5', $request->group);
-                })
-                ->when($request->classification, function($q) use ($request){
-                    return $q->where('tabItem.item_classification', $request->classification);
-                })
-                ->when($request->brand, function($q) use ($request){
-                    return $q->where('brand', $request->brand);
-                })
-                ->when($request->check_qty, function($q) use ($request){
-                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-                })
-                ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
-                    return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
-                        ->whereIn('tabBin.warehouse', $assigned_consignment_store);
-                })
-                ->where('d.default_warehouse', $request->wh)
-                ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'd.default_warehouse');
-        }
+        //                 $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
+        //                     ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
+        //             });
+        //         })
+        //         ->when($request->group, function($q) use ($request){
+        //             return $q->where('tabItem.item_group',  $request->group)
+        //                 ->orWhere('tabItem.item_group_level_1',  $request->group)
+        //                 ->orWhere('tabItem.item_group_level_2',  $request->group)
+        //                 ->orWhere('tabItem.item_group_level_3',  $request->group)
+        //                 ->orWhere('tabItem.item_group_level_4',  $request->group)
+        //                 ->orWhere('tabItem.item_group_level_5',  $request->group);
+        //         })
+        //         ->when($request->classification, function($q) use ($request){
+        //             return $q->where('tabItem.item_classification', $request->classification);
+        //         })
+        //         ->when($request->brand, function($q) use ($request){
+        //             return $q->where('brand', $request->brand);
+        //         })
+        //         ->when($request->check_qty, function($q) use ($request){
+        //             return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+        //         })
+        //         ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
+        //             return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
+        //                 ->whereIn('tabBin.warehouse', $assigned_consignment_store);
+        //         })
+        //         ->where('d.default_warehouse', $request->wh)
+        //         ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'd.default_warehouse', 'tabItem.item_group_level_1', 'tabItem.item_group_level_2', 'tabItem.item_group_level_3', 'tabItem.item_group_level_4', 'tabItem.item_group_level_5');
+        // }
+
+        $select_columns = [
+            'tabItem.name as item_code',
+            'tabItem.description',
+            'tabItem.item_group',
+            'tabItem.stock_uom',
+            'tabItem.item_classification',
+            'tabItem.item_group_level_1 as lvl1',
+            'tabItem.item_group_level_2 as lvl2',
+            'tabItem.item_group_level_3 as lvl3',
+            'tabItem.item_group_level_4 as lvl4',
+            'tabItem.item_group_level_5 as lvl5',
+            $request->wh ? 'd.default_warehouse' : null
+        ];
+
+        $select_columns = array_filter($select_columns);
+
+        $itemQ = DB::table('tabItem')->where('disabled', 0)
+            ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->when($request->searchString, function ($query) use ($search_str, $request) {
+                return $query->where(function($q) use ($search_str, $request) {
+                    foreach ($search_str as $str) {
+                        $q->where('description', 'LIKE', "%".$str."%");
+                    }
+
+                    $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
+                        ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
+                        ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
+                        ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
+                        ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
+                });
+            })// Item group filter is moved for search results accuracy
+            ->when($request->classification, function($q) use ($request){
+                return $q->where('item_classification', $request->classification);
+            })
+            ->when($request->brand, function($q) use ($request){
+                return $q->where('brand', $request->brand);
+            })
+            ->when($request->check_qty, function($q){
+                return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+            })
+            ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
+                return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
+                    ->whereIn('tabBin.warehouse', $assigned_consignment_store);
+            })
+            ->when($request->wh, function($q) use ($request){
+                return $q->join('tabItem Default as d', 'd.parent', 'tabItem.name')
+                    ->where('d.default_warehouse', $request->wh);
+            })
+            ->select($select_columns);
 
         $itemClassQuery = Clone $itemQ;
         $itemsQuery = Clone $itemQ;
         $itemsGroupQuery = Clone $itemQ;
 
-        $itemGroups = $itemsGroupQuery->select('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')->groupBy('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')->get()->toArray();
+        $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
+        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->get();//->paginate(20);
+
+        $included_item_groups = [];
+        if($request->group){ // Item Group Filter
+            $items = $items->map(function ($q) use ($request){
+                if(in_array($request->group, [$q->item_group, $q->lvl1, $q->lvl2, $q->lvl3, $q->lvl4, $q->lvl5])){
+                    return $q;
+                }
+            });
+    
+            $items = $items->filter(function ($q){
+                return !is_null($q);
+            });
+    
+            $included_item_groups = $items->groupBy('item_group', 'lvl1', 'lvl2', 'lvl3', 'lvl4', 'lvl5')->toArray();
+        }
+
+        $itemGroups = $itemsGroupQuery
+            ->when($request->group, function ($q) use ($included_item_groups){
+                return $q->whereIn('item_group', array_keys($included_item_groups))
+                    ->orWhereIn('item_group_level_1', array_keys($included_item_groups))
+                    ->orWhereIn('item_group_level_2', array_keys($included_item_groups))
+                    ->orWhereIn('item_group_level_3', array_keys($included_item_groups))
+                    ->orWhereIn('item_group_level_4', array_keys($included_item_groups))
+                    ->orWhereIn('item_group_level_5', array_keys($included_item_groups));
+            })
+            ->select('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')
+            ->groupBy('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')
+            ->get()->toArray();
 
         $a = array_column($itemGroups, 'item_group');
         $a1 = array_column($itemGroups, 'item_group_level_1');
@@ -178,26 +258,29 @@ class MainController extends Controller
         $igs = array_unique(array_merge($a, $a1, $a2, $a3, $a4, $a5));
 
         $breadcrumbs = [];
-        if($request->group and $igs){
-            foreach($igs as $ig){
-                array_push($breadcrumbs, $ig);
-                if($ig == $request->group){
-                    break;
+        if($request->group){
+            $selected_group = DB::table('tabItem Group')->where('item_group_name', $request->group)->first();
+            if($selected_group){
+                session()->forget('breadcrumbs');
+                if(!session()->has('breadcrumbs')){
+                    session()->put('breadcrumbs', []);
+                }
+
+                session()->push('breadcrumbs', $request->group);
+                $this->breadcrumbs($selected_group->parent_item_group);
+
+                $breadcrumbs = array_reverse(session()->get('breadcrumbs'));
+            
+                if(!$selected_group->is_group){
+                    $item_groups_based_on_parent = DB::table('tabItem Group')->where('parent_item_group', $selected_group->parent_item_group)->pluck('item_group_name')->toArray();
+    
+                    $igs = array_unique(array_merge($igs, $item_groups_based_on_parent));
                 }
             }
         }
 
-        if($request->group){
-            $selected_group = DB::table('tabItem Group')->where('item_group_name', $request->group)->first();
-            if($selected_group and !$selected_group->is_group){
-                $item_groups_based_on_parent = DB::table('tabItem Group')->where('parent_item_group', $selected_group->parent_item_group)->pluck('item_group_name')->toArray();
-
-                $igs = array_unique(array_merge($igs, $item_groups_based_on_parent));
-            }
-        }
-
-        $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
-        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->paginate(20);
+        $total_items = count($items);
+        $items = new Paginator($items, 20);
 
         if($request->searchString != ''){
             DB::table('tabAthena Inventory Search History')->insert([
@@ -207,7 +290,7 @@ class MainController extends Controller
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'search_string' => $request->searchString,
-                'total_result' => $items->total()
+                'total_result' => $total_items
             ]);
         }
 
@@ -216,7 +299,7 @@ class MainController extends Controller
         $items->withPath($url);
         
         if($request->get_total){
-            return number_format($items->total());
+            return number_format($total_items);
         }
         
         $item_codes = array_column($items->items(), 'item_code');
@@ -434,7 +517,17 @@ class MainController extends Controller
         // $item_group_array = $this->item_group_tree(1, $item_groups, $all);
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs'));
+        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root'));
+    }
+
+    private function breadcrumbs($parent){
+        session()->push('breadcrumbs', $parent);
+
+        $root_parent = DB::table('tabItem Group')->where('item_group_name', $parent)->pluck('parent_item_group')->first();
+        if($root_parent){
+            $this->breadcrumbs($root_parent);
+        }
+        return 1;
     }
 
     private function check_item_group_tree($parent, $igs_collection){
