@@ -179,12 +179,12 @@ class MainController extends Controller
 
         $select_columns = array_filter($select_columns);
 
-        $itemQ = DB::table('tabItem')->where('disabled', 0)
-            ->where('has_variants', 0)->where('is_stock_item', 1)
+        $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
+            ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
                     foreach ($search_str as $str) {
-                        $q->where('description', 'LIKE', "%".$str."%");
+                        $q->where('tabItem.description', 'LIKE', "%".$str."%");
                     }
 
                     $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
@@ -195,10 +195,10 @@ class MainController extends Controller
                 });
             })// Item group filter is moved for search results accuracy
             ->when($request->classification, function($q) use ($request){
-                return $q->where('item_classification', $request->classification);
+                return $q->where('tabItem.item_classification', $request->classification);
             })
             ->when($request->brand, function($q) use ($request){
-                return $q->where('brand', $request->brand);
+                return $q->where('tabItem.brand', $request->brand);
             })
             ->when($request->check_qty, function($q){
                 return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
