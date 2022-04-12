@@ -68,7 +68,7 @@
 												&nbsp;
 												<small class="text-muted">
 													@foreach ($breadcrumbs as $breadcrumb)
-														{{ !$loop->first ? ' / ' : null }}<a href="{!! request()->fullUrlWithQuery(['group' => $breadcrumb]) !!}" class="text-muted" style="text-decoration: none !important; text-transform: none !important;"><span style="{{ $loop->last ? 'font-weight: 700; color: #212529' : null }}">{{ $breadcrumb }}</span></a>
+														{{ !$loop->first ? ' / ' : null }}<a href="{!! request()->fullUrlWithQuery(['group' => $breadcrumb == $root ? null : $breadcrumb]) !!}" class="text-muted" style="text-decoration: none !important; text-transform: none !important;"><span style="{{ $loop->last ? 'font-weight: 700; color: #212529' : null }}">{{ $breadcrumb }}</span></a>
 													@endforeach
 												</small>
 											</p>
@@ -114,7 +114,7 @@
 											</div><!-- modal -->
 										</div>
 										<div class="col-4 text-right">
-											<p class="font-weight-bold m-1 font-responsive d-inline">TOTAL: <span class="badge badge-info font-responsive" style="font-size: 13pt !important;">{{ number_format($items->total()) }}</span></p>
+											<p class="font-weight-bold m-1 font-responsive d-inline">TOTAL: <span class="badge badge-info font-responsive" style="font-size: 13pt !important;">{{ number_format($total_items) }}</span></p>
 										</div>
 									</div>
 									
