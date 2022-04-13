@@ -35,18 +35,18 @@
       $img_webp = ($item->item_image_path) ? "/img/" . explode('.',$item->item_image_path)[0].'.webp' : "/icon/no_img.webp";
     @endphp
     <div class="search-row row w-100 p-2" style="border-bottom: 1px solid #ccc;">
-      <div class="col-2 text-center">
+      <div class="text-center pl-2" style="width: 60px !important;">
         <picture>
-          <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" style="width: 60px; height: 60px;" class="mx-auto">
-          <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" style="width: 60px; height: 60px;" class="mx-auto">
-          <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" style="width: 60px; height: 60px;" class="mx-auto">
+          <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" style=" height: 60px;" class="w-100">
+          <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" style="height: 60px;" class="w-100">
+          <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" style="height: 60px;" class="w-100">
         </picture>
       </div>
-      <div class="col-9 text-truncate">
-        <b>{{ $item->name }}</b>
+      <div class="col-8 col-md-10 col-lg-9 col-xl-10 text-truncate">
+        <span style="font-size: 10pt;"><b>{{ $item->name }}</b></span>
         <br><span style="font-size: 10pt;">{{ $item->description }}</span>
       </div>
-      <div class="col-1">
+      <div class="col">
         <a class="btn btn-default" href="?searchString={{ $item->name }}&search=">
           <i class="fa fa-arrow-right"></i>
         </a>
