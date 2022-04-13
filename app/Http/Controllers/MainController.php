@@ -77,7 +77,7 @@ class MainController extends Controller
 
         $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
 
-        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', ''));
+        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', 'total_stocks'));
     }
 
     public function search_results(Request $request){
@@ -185,6 +185,11 @@ class MainController extends Controller
 
         $select_columns = array_filter($select_columns);
 
+        $check_qty = 1;
+        if($request->has('check_qty')){
+            $check_qty = $request->check_qty == 'on' ? 1 : 0;
+        }
+
         $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
             ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -206,7 +211,7 @@ class MainController extends Controller
             ->when($request->brand, function($q) use ($request){
                 return $q->where('tabItem.brand', $request->brand);
             })
-            ->when($request->check_qty, function($q){
+            ->when($check_qty == 1, function($q){
                 return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
             })
             ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
@@ -496,18 +501,15 @@ class MainController extends Controller
         //     })
         //     ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')->get();
 
-        // $all = collect($all_item_group)->groupBy('parent_item_group');
         $all = collect($item_group)->groupBy('parent_item_group');
 
         $item_groups = collect($item_group)->where('parent_item_group', $root)->where('is_group', 1)->groupBy('name')->toArray();
-        // $sub_items = array_filter($request->all()) ? collect($item_group)->where('parent_item_group', '!=', $root)->groupBy('name')->toArray() : [];
         $sub_items = array_filter($request->all()) ? collect($item_group)->where('parent_item_group', '!=', $root) : [];
 
         $arr = [];
         if($sub_items){
             $item_group_arr = [];
             $igs_collection = collect($item_group)->groupBy('item_group_name');
-            // $igs_collection = collect($all_item_group)->groupBy('item_group_name');
             session()->forget('igs_array');
             if(!session()->has('igs_array')){
                 session()->put('igs_array', []);
@@ -526,7 +528,6 @@ class MainController extends Controller
             $arr = array_filter($igs_array);
         }
 
-        // $item_group_array = $this->item_group_tree(1, $item_groups, $all);
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
         return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root'));

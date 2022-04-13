@@ -412,7 +412,10 @@
 								</div>
 								<div class="col-md-12 col-xl-7 col-lg-9 p-0 mx-auto align-middle">
 									<form role="search" method="GET" action="/search_results" id="search-form" class="pb-1">
-										<input type="checkbox" id="cb-1" name="check_qty" hidden>
+										@php
+											$check_qty = request('check_qty') ? request('check_qty') : 'on';
+										@endphp
+										<input type="hidden" id="cb-1" name="check_qty" value="{{ $check_qty }}">
 										<input type="checkbox" id="assigned-to-me" name="assigned_to_me" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
@@ -1188,12 +1191,12 @@
 			});
 
 			$('.cb-2').on('ifChecked', function(event){
-				$("#cb-1").prop("checked", true);
+				$("#cb-1").val('on');
 				$('#search-form').submit();
 			});
 
 			$('.cb-2').on('ifUnchecked', function(event){
-				$("#cb-1").prop("checked", false);
+				$("#cb-1").val('off');
 				$('#search-form').submit();
 			});
 
