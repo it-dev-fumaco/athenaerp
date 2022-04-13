@@ -190,7 +190,29 @@ class MainController extends Controller
             $check_qty = $request->check_qty == 'on' ? 1 : 0;
         }
 
+        // $allowed_warehouses = [];
+        // if (Auth::user()->user_group == 'Promodiser') {
+        //     $allowed_warehouses = DB::table('tabWarehouse Access')->where('parent', Auth::user()->name)->pluck('warehouse');
+        // }
+
+        $allow_warehouse = [];
+        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        if ($is_promodiser) {
+            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+        }
+
         $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
+            ->join('tabBin as bin', 'bin.item_code', 'tabItem.name')
             ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
@@ -211,8 +233,15 @@ class MainController extends Controller
             ->when($request->brand, function($q) use ($request){
                 return $q->where('tabItem.brand', $request->brand);
             })
-            ->when($check_qty == 1, function($q){
-                return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+            ->when($check_qty == 1, function($q) use ($allow_warehouse){
+                // return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                return $q->when(Auth::user()->user_group != 'Promodiser', function ($q){
+                        return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                    })
+                    ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($allow_warehouse){
+                        $allowed_warehouse = collect($allow_warehouse)->implode('","');
+                        return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouse.'"))'), '>', 0);
+                    });
             })
             ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
                 return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
@@ -315,21 +344,21 @@ class MainController extends Controller
         
         $item_codes = array_column($items->items(), 'item_code');
 
-        $allow_warehouse = [];
-        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
-        if ($is_promodiser) {
-            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
-                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
-                ->pluck('w.name')->toArray();
+        // $allow_warehouse = [];
+        // $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        // if ($is_promodiser) {
+        //     $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+        //         ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
+        //         ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+        //         ->pluck('w.name')->toArray();
 
-            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
-                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
-                ->pluck('w.name')->toArray();
+        //     $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+        //         ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
+        //         ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+        //         ->pluck('w.name')->toArray();
 
-            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
-        }
+        //     $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+        // }
 
         $price_list_rates = [];
         $user_pricelist = Auth::user()->price_list;

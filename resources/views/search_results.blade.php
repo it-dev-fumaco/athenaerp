@@ -348,55 +348,55 @@
 																		<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																	</div>
 																@endif
-																<div class="col-md-12"><!-- View Consignment Warehouse -->
-																	@if(count($row['consignment_warehouses']) > 0)
-																	<div class="text-center">
-																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
-																	</div>
-						
-																	<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-																		<div class="modal-dialog" role="document">
-																			<div class="modal-content">
-																				<div class="modal-header">
-																					<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
-																					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-																				</div>
-																				<form></form>
-																				<div class="modal-body">
-																					<table class="table table-hover m-0">
-																						<col style="width: 70%;">
-																						<col style="width: 30%;">
-																						<tr>
-																							<th class="consignment-th text-center">Warehouse</th>
-																							<th class="consignment-th text-center">Available Qty</th>
-																						</tr>
-																						@forelse($row['consignment_warehouses'] as $con)
-																						<tr>
-																							<td class="consignment-name">
-																								{{ $con['warehouse'] }}
-																								@if ($con['location'])
-																									<small class="text-muted font-italic">- {{ $con['location'] }}</small>
-																								@endif
-																							</td>
-																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
-																							</td>
-																						</tr>
-																						@empty
-																						<tr>
-																							<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
-																						</tr>
-																						@endforelse
-																					</table>
-																				</div>
-																				<div class="modal-footer">
-																					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																@if (Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																	<div class="col-md-12"><!-- View Consignment Warehouse -->
+																		<div class="text-center">
+																			<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
+																		</div>
+							
+																		<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+																			<div class="modal-dialog" role="document">
+																				<div class="modal-content">
+																					<div class="modal-header">
+																						<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+																					</div>
+																					<form></form>
+																					<div class="modal-body">
+																						<table class="table table-hover m-0">
+																							<col style="width: 70%;">
+																							<col style="width: 30%;">
+																							<tr>
+																								<th class="consignment-th text-center">Warehouse</th>
+																								<th class="consignment-th text-center">Available Qty</th>
+																							</tr>
+																							@forelse($row['consignment_warehouses'] as $con)
+																							<tr>
+																								<td class="consignment-name">
+																									{{ $con['warehouse'] }}
+																									@if ($con['location'])
+																										<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																									@endif
+																								</td>
+																								<td class="text-center">
+																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																								</td>
+																							</tr>
+																							@empty
+																							<tr>
+																								<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																							</tr>
+																							@endforelse
+																						</table>
+																					</div>
+																					<div class="modal-footer">
+																						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																					</div>
 																				</div>
 																			</div>
 																		</div>
-																	</div>
-																	@endif
-																</div><!-- View Consignment Warehouse -->
+																	</div><!-- View Consignment Warehouse -->
+																@endif
 															</div>
 														</div>
 													</div>
@@ -502,56 +502,55 @@
 																			<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																		</div>
 																	@endif
-																	
-																	<div class="container-fluid mb-2"><!-- View Consignment Warehouse -->
-																		@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
-																		<div class="text-center">
-																			<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#tablet-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
-																		</div>
-							
-																		<div class="modal fade" id="tablet-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-																			<div class="modal-dialog" role="document">
-																				<div class="modal-content">
-																					<div class="modal-header">
-																						<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
-																						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-																					</div>
-																					<form></form>
-																					<div class="modal-body">
-																						<table class="table table-hover m-0">
-																							<col style="width: 70%;">
-																							<col style="width: 30%;">
-																							<tr>
-																								<th class="consignment-th text-center">Warehouse</th>
-																								<th class="consignment-th text-center">Available Qty</th>
-																							</tr>
-																							@forelse($row['consignment_warehouses'] as $con)
-																							<tr>
-																								<td class="consignment-name">
-																									{{ $con['warehouse'] }}
-																									@if ($con['location'])
-																										<small class="text-muted font-italic">- {{ $con['location'] }}</small>
-																									@endif
-																								</td>
-																								<td class="text-center">
-																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
-																								</td>
-																							</tr>
-																							@empty
-																							<tr>
-																								<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
-																							</tr>
-																							@endforelse
-																						</table>
-																					</div>
-																					<div class="modal-footer">
-																						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																	@if (Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																		<div class="container-fluid mb-2"><!-- View Consignment Warehouse -->
+																			<div class="text-center">
+																				<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#tablet-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
+																			</div>
+								
+																			<div class="modal fade" id="tablet-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+																				<div class="modal-dialog" role="document">
+																					<div class="modal-content">
+																						<div class="modal-header">
+																							<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+																						</div>
+																						<form></form>
+																						<div class="modal-body">
+																							<table class="table table-hover m-0">
+																								<col style="width: 70%;">
+																								<col style="width: 30%;">
+																								<tr>
+																									<th class="consignment-th text-center">Warehouse</th>
+																									<th class="consignment-th text-center">Available Qty</th>
+																								</tr>
+																								@forelse($row['consignment_warehouses'] as $con)
+																								<tr>
+																									<td class="consignment-name">
+																										{{ $con['warehouse'] }}
+																										@if ($con['location'])
+																											<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																										@endif
+																									</td>
+																									<td class="text-center">
+																										<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																									</td>
+																								</tr>
+																								@empty
+																								<tr>
+																									<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																								</tr>
+																								@endforelse
+																							</table>
+																						</div>
+																						<div class="modal-footer">
+																							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																						</div>
 																					</div>
 																				</div>
 																			</div>
-																		</div>
-																		@endif
-																	</div><!-- View Consignment Warehouse -->
+																		</div><!-- View Consignment Warehouse -->
+																	@endif
 																</div>
 															</div>
 														</div>
@@ -602,56 +601,55 @@
 																@else
 																	<p class="text-center pt-2 font-responsive">No Available Stock on All Warehouses</p>
 																@endif
-																
-																<div class="container-fluid"><!-- View Consignment Warehouse -->
-																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
-																	<div class="text-center">
-																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#mobile-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
-																	</div>
-						
-																	<div class="modal fade" id="mobile-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-																		<div class="modal-dialog" role="document">
-																			<div class="modal-content">
-																				<div class="modal-header">
-																					<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
-																					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-																				</div>
-																				<form></form>
-																				<div class="modal-body">
-																					<table class="table table-hover m-0">
-																						<col style="width: 70%;">
-																						<col style="width: 30%;">
-																						<tr>
-																							<th class="consignment-th text-center">Warehouse</th>
-																							<th class="consignment-th text-center">Available Qty</th>
-																						</tr>
-																						@forelse($row['consignment_warehouses'] as $con)
-																						<tr>
-																							<td class="consignment-name">
-																								{{ $con['warehouse'] }}
-																								@if ($con['location'])
-																									<small class="text-muted font-italic">- {{ $con['location'] }}</small>
-																								@endif
-																							</td>
-																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
-																							</td>
-																						</tr>
-																						@empty
-																						<tr>
-																							<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
-																						</tr>
-																						@endforelse
-																					</table>
-																				</div>
-																				<div class="modal-footer">
-																					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																@if (Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																	<div class="container-fluid"><!-- View Consignment Warehouse -->
+																		<div class="text-center">
+																			<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#mobile-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
+																		</div>
+							
+																		<div class="modal fade" id="mobile-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
+																			<div class="modal-dialog" role="document">
+																				<div class="modal-content">
+																					<div class="modal-header">
+																						<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+																					</div>
+																					<form></form>
+																					<div class="modal-body">
+																						<table class="table table-hover m-0">
+																							<col style="width: 70%;">
+																							<col style="width: 30%;">
+																							<tr>
+																								<th class="consignment-th text-center">Warehouse</th>
+																								<th class="consignment-th text-center">Available Qty</th>
+																							</tr>
+																							@forelse($row['consignment_warehouses'] as $con)
+																							<tr>
+																								<td class="consignment-name">
+																									{{ $con['warehouse'] }}
+																									@if ($con['location'])
+																										<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																									@endif
+																								</td>
+																								<td class="text-center">
+																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																								</td>
+																							</tr>
+																							@empty
+																							<tr>
+																								<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
+																							</tr>
+																							@endforelse
+																						</table>
+																					</div>
+																					<div class="modal-footer">
+																						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+																					</div>
 																				</div>
 																			</div>
 																		</div>
-																	</div>
-																	@endif
-																</div><!-- View Consignment Warehouse -->
+																	</div><!-- View Consignment Warehouse -->
+																@endif
 															</div>
 														</div>
 													</div>
