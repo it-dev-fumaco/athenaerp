@@ -73,7 +73,7 @@ class MainController extends Controller
 
         $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
 
-        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', ''));
+        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', 'total_stocks'));
     }
 
     public function search_results(Request $request){
