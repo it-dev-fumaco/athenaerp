@@ -143,8 +143,14 @@
 													<div class="col-12 col-md-6 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
 														<div class="row">
 															<div class="form-group m-0r col-12 m-0">
+																@php
+																	$check_qty = 1;
+																	if(request('check_qty')){
+																		$check_qty = request('check_qty') == 'on' ? 1 : 0;
+																	}
+																@endphp
 																<label>
-																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ (request('check_qty')) ? 'checked' : null }} >
+																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ $check_qty == 1 ? 'checked' : null }} >
 																	
 																	<span style="font-size: 12px;">Remove zero-qty items</span>
 																</label>
