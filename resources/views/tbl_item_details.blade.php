@@ -74,18 +74,17 @@
                         <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                         <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                     </dl>
-                    @if(!in_array($user_group, ['Warehouse Personnel']))
+                   
                     <p class="mt-2 mb-2 text-center">
+                    @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
                         <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                         <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
-                    </p>
                     @endif
                     @if ($user_group == 'Manager')
-                    <p class="mt-2 mb-2 text-center">
                         <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                         <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
-                    </p>
                     @endif
+                    </p>
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                         @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))

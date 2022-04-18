@@ -2049,30 +2049,33 @@ class MainController extends Controller
     }
 
     public function get_athena_transactions(Request $request, $item_code){
-        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->get();//->paginate(10);
-        if($request->wh_user != '' and $request->wh_user != 'null'){
-            $logs = $logs->where('warehouse_user', $request->wh_user);
-        }
+        $user_group = Auth::user()->user_group;
+        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)
+            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($request){
+                return $q->where('warehouse_user', $request->wh_user);
+            })
+            ->when($request->src_wh != '' and $request->src_wh != 'null', function($q) use ($request){
+                return $q->where('source_warehouse', $request->src_wh);
+            })
+            ->when($request->trg_wh != '' and $request->trg_wh != 'null', function($q) use ($request){
+                return $q->where('target_warehouse', $request->trg_wh);
+            })
+            ->when($request->ath_dates != '' and $request->ath_dates != 'null', function($q) use ($request){
+                $dates = explode(' to ', $request->ath_dates);
+                $from = Carbon::parse($dates[0]);
+                $to = Carbon::parse($dates[1])->endOfDay();
+                return $q->whereBetween('transaction_date',[$from, $to]);
+            })
+            ->orderBy('transaction_date', 'desc')->paginate(10);
 
-        if($request->src_wh != '' and $request->src_wh != 'null'){
-            $logs = $logs->where('source_warehouse', $request->src_wh);
-        }
+        $ste_names = array_column($logs->items(), 'reference_parent');
 
-        if($request->trg_wh != '' and $request->trg_wh != 'null'){
-            $logs = $logs->where('target_warehouse', $request->trg_wh);
-        }
-
-        if($request->ath_dates != '' and $request->ath_dates != 'null'){
-            $dates = explode(' to ', $request->ath_dates);
-            $from = Carbon::parse($dates[0]);
-            $to = Carbon::parse($dates[1])->endOfDay();
-            $logs = $logs->whereBetween('transaction_date',[$from, $to]);
-        }
+        $ste_remarks = DB::table('tabStock Entry')->whereIn('name', $ste_names)
+            ->select('purpose', 'transfer_as', 'receive_as', 'issue_as', 'name')->get();
+        
+        $ste_remarks = collect($ste_remarks)->groupBy('name')->toArray();
 
         $list = [];
-
-        $user_group = DB::table('tabWarehouse Users')->where('wh_user', Auth::user()->wh_user)->first();
-
         foreach($logs as $row){
             $ps_ref = ['Packing Slip', 'Picking Slip'];
             $reference_type = (in_array($row->reference_type, $ps_ref)) ? 'Packing Slip' : $row->reference_type;
@@ -2089,6 +2092,25 @@ class MainController extends Controller
                     $status = 'SUBMITTED';
                 }
             }
+
+            $remarks = [];
+            $remarks = (array_key_exists($row->reference_parent, $ste_remarks)) ? $ste_remarks[$row->reference_parent] : [];
+            if (count($remarks) > 0) {
+                if($remarks[0]->purpose == 'Material Issue') {
+                    $remarks = $remarks[0]->issue_as;
+                } elseif ($remarks[0]->purpose == 'Material Transfer') {
+                    $remarks = $remarks[0]->transfer_as;
+                } elseif ($remarks[0]->purpose == 'Material Receipt') {
+                    $remarks = $remarks[0]->receive_as;
+                } elseif ($remarks[0]->purpose == 'Material Transfer for Manufacture') {
+                    $remarks = 'Materials Withdrawal';
+                } else {
+                    $remarks = '-';
+                }
+            } else {
+                $remarks = null;
+            }
+            
             $list[] = [
                 'reference_name' => $row->reference_name,
                 'item_code' => $row->item_code,
@@ -2101,23 +2123,10 @@ class MainController extends Controller
                 'reference_no' => $row->reference_no,
                 'transaction_date' => $row->transaction_date,
                 'warehouse_user' => $row->warehouse_user,
-                'status' => $status
+                'status' => $status,
+                'remarks' => $remarks
             ];
         }
-
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-            // Create a new Laravel collection from the array data
-            $itemCollection = collect($list);
-            // Define how many items we want to be visible in each page
-            $perPage = 10;
-            // Slice the collection to get the items to display in current page
-            $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
-            // Create our paginator and pass it to the view
-            $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
-            // set url path for generted links
-            $paginatedItems->setPath($request->url());
-
-            $list = $paginatedItems;
 
         return view('tbl_athena_transactions', compact('list', 'logs', 'item_code', 'user_group'));
     }

@@ -1,5 +1,5 @@
 <br class="d-md-none">
-<table class="table">
+<table class="table" style="font-size: 9pt;">
     <thead>
     <tr>
         <th scope="col" class="text-center">Transaction No.</th>
@@ -11,7 +11,7 @@
         <th scope="col" class="text-center d-none d-sm-table-cell">Ref. No.</th>
         <th scope="col" class="text-center d-none d-sm-table-cell">Date</th>
         <th scope="col" class="text-center d-none d-sm-table-cell">Transact by</th>
-        <th scope="col" class="text-center d-none d-sm-table-cell"></th>
+        <th scope="col" class="text-center d-none d-sm-table-cell">Remarks</th>
     </tr>
     </thead>
     <tbody>
@@ -30,7 +30,7 @@
                 <span class="d-block">{{ $row['reference_parent'] }}<br/></span>
                 <span class="badge {{ $label }}">{{ $row['status'] }}</span>
                 <div class="d-md-none mt-2">
-                    @if($user_group->user_group == 'Inventory Manager')
+                    @if($user_group == 'Inventory Manager')
                     <button type="button" id="cancel-btn" class="btn btn-danger btn-sm cancel-transaction" data-toggle="modal" data-target="#mob-cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
                         Cancel
                     </button>
@@ -91,7 +91,8 @@
             <td class="text-center d-none d-sm-table-cell">{{ $row['reference_no'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['transaction_date'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['warehouse_user'] }}</td>
-            @if($user_group->user_group == 'Inventory Manager')
+            <td class="text-center d-none d-sm-table-cell">{{ $row['remarks'] }}</td>
+            @if($user_group == 'Inventory Manager')
                 <td class="text-center d-none d-sm-table-cell">
                     <button type="button" id="cancel-btn" class="btn btn-danger btn-sm cancel-transaction" data-toggle="modal" data-target="#cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
                         Cancel
@@ -133,7 +134,7 @@
 </table>
 
 <div class="box-footer clearfix" id="athena-transactions-pagination" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
-    {{ $list->links() }}
+    {{ $logs->links() }}
 </div>
 <style>
     .cancel-modal{
