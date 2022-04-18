@@ -476,6 +476,10 @@ class MainController extends Controller
                 $consignment_warehouses = collect($consignment_warehouses)->filter(function ($value, $key) {
                     return $value['available_qty'] > 0;
                 });
+
+                if(count($site_warehouses) == 0 and count($consignment_warehouses) == 0){
+                    continue;
+                }
             }
 
             $item_list[] = [
