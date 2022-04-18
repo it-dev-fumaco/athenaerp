@@ -202,6 +202,12 @@ class MainController extends Controller
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
         }
 
+        $item_codes_based_on_warehouse_assigned = [];
+        if(isset($request->assigned_to_me)){
+            $item_codes_based_on_warehouse_assigned = DB::table('tabBin')->whereIn('warehouse', $assigned_consignment_store)->select('item_code', 'warehouse')->get();
+            $item_codes_based_on_warehouse_assigned = array_keys(collect($item_codes_based_on_warehouse_assigned)->groupBy('item_code')->toArray());
+        }
+
         $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
             ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -231,9 +237,8 @@ class MainController extends Controller
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 }
             })
-            ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
-                return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
-                    ->whereIn('tabBin.warehouse', $assigned_consignment_store);
+            ->when($request->assigned_to_me, function($q) use ($item_codes_based_on_warehouse_assigned){
+                return $q->whereIn('tabItem.name', $item_codes_based_on_warehouse_assigned);
             })
             ->when($request->wh, function($q) use ($request){
                 return $q->join('tabItem Default as d', 'd.parent', 'tabItem.name')
@@ -246,7 +251,7 @@ class MainController extends Controller
         $itemsGroupQuery = Clone $itemQ;
 
         $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
-        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->get();//->paginate(20);
+        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->get();//->paginate(20);        
 
         $included_item_groups = [];
         if($request->group){ // Item Group Filter
