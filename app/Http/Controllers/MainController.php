@@ -206,6 +206,12 @@ class MainController extends Controller
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
         }
 
+        $item_codes_based_on_warehouse_assigned = [];
+        if(isset($request->assigned_to_me)){
+            $item_codes_based_on_warehouse_assigned = DB::table('tabBin')->whereIn('warehouse', $assigned_consignment_store)->select('item_code', 'warehouse')->get();
+            $item_codes_based_on_warehouse_assigned = array_keys(collect($item_codes_based_on_warehouse_assigned)->groupBy('item_code')->toArray());
+        }
+
         $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
             ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -235,9 +241,8 @@ class MainController extends Controller
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 }
             })
-            ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
-                return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
-                    ->whereIn('tabBin.warehouse', $assigned_consignment_store);
+            ->when($request->assigned_to_me, function($q) use ($item_codes_based_on_warehouse_assigned){
+                return $q->whereIn('tabItem.name', $item_codes_based_on_warehouse_assigned);
             })
             ->when($request->wh, function($q) use ($request){
                 return $q->join('tabItem Default as d', 'd.parent', 'tabItem.name')
@@ -250,7 +255,7 @@ class MainController extends Controller
         $itemsGroupQuery = Clone $itemQ;
 
         $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
-        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->get();//->paginate(20);
+        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->get();//->paginate(20);        
 
         $included_item_groups = [];
         if($request->group){ // Item Group Filter
@@ -1971,14 +1976,27 @@ class MainController extends Controller
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
         }
 
-        $price_list_rate = 0;
-        $user_pricelist = Auth::user()->price_list;
-        if ($user_pricelist) {
-            $item_price = DB::table('tabItem Price')
-                ->where('price_list', $user_pricelist)->where('item_code', $item_code)
-                ->orderBy('modified', 'desc')->select('price_list_rate')->first();
-            $price_list_rate = $item_price ? $item_price->price_list_rate : 0;
+        $last_purchase_rate = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group')->orderBy('po.creation', 'desc')->first();
+        $minimum_selling_price = 0;
+        if ($last_purchase_rate) {
+            if ($last_purchase_rate->supplier_group == 'Imported') {
+                $last_purchase_rate = DB::table('tabLanded Cost Voucher as a')
+                    ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                    ->where('a.docstatus', 1)->where('b.item_code', $item_code)
+                    ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'i.description', 'b.rate', 'b.valuation_rate', 'i.item_classification', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
+                    ->orderBy('transaction_date', 'desc')
+                    ->first();
+
+                if ($last_purchase_rate) {
+                    $minimum_selling_price = $last_purchase_rate->rate;
+                }
+            } else {
+                $minimum_selling_price = $last_purchase_rate->base_rate;
+            }
         }
+
+        $minimum_selling_price = $minimum_selling_price * 1.3;
 
         // get item inventory stock list
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
@@ -2082,7 +2100,7 @@ class MainController extends Controller
 
         $user_group = Auth::user()->user_group;
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'price_list_rate', 'user_pricelist'));
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
