@@ -80,7 +80,7 @@
                         <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                         <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
                     @endif
-                    @if ($user_group == 'Manager')
+                    @if ($user_group == 'Manager' && $minimum_selling_price > 0)
                         <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                         <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
                     @endif
