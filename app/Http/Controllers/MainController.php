@@ -2096,7 +2096,7 @@ class MainController extends Controller
                 'item_code' => $row->item_code,
                 'source_warehouse' => $row->source_warehouse,
                 'target_warehouse' => $row->target_warehouse,
-                'reference_type' => $row->reference_type,
+                'reference_type' => $row->purpose,
                 'issued_qty' => $row->issued_qty * 1,
                 'reference_no' => $row->reference_no,
                 'transaction_date' => $row->transaction_date,
