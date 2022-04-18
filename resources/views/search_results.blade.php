@@ -349,7 +349,7 @@
 																	</div>
 																@endif
 																<div class="col-md-12"><!-- View Consignment Warehouse -->
-																	@if(count($row['consignment_warehouses']) > 0)
+																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
 																	<div class="text-center">
 																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
 																	</div>

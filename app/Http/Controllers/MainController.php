@@ -190,6 +190,22 @@ class MainController extends Controller
             $check_qty = $request->check_qty == 'on' ? 1 : 0;
         }
 
+        $allow_warehouse = [];
+        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        if ($is_promodiser) {
+            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->pluck('w.name')->toArray();
+
+            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+        }
+
         $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
             ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
@@ -204,15 +220,20 @@ class MainController extends Controller
                         ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
                         ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
                 });
-            })// Item group filter is moved for search results accuracy
+            })
             ->when($request->classification, function($q) use ($request){
                 return $q->where('tabItem.item_classification', $request->classification);
             })
             ->when($request->brand, function($q) use ($request){
                 return $q->where('tabItem.brand', $request->brand);
             })
-            ->when($check_qty == 1, function($q){
-                return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+            ->when($check_qty == 1, function($q) use ($allow_warehouse){
+                if(Auth::user()->user_group == 'Promodiser'){
+                    $allowed_warehouses = collect($allow_warehouse)->implode('","');
+                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
+                }else{
+                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                }
             })
             ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
                 return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
@@ -312,24 +333,8 @@ class MainController extends Controller
         if($request->get_total){
             return number_format($total_items);
         }
-        
+
         $item_codes = array_column($items->items(), 'item_code');
-
-        $allow_warehouse = [];
-        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
-        if ($is_promodiser) {
-            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
-                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
-                ->pluck('w.name')->toArray();
-
-            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
-                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
-                ->pluck('w.name')->toArray();
-
-            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
-        }
 
         $price_list_rates = [];
         $user_pricelist = Auth::user()->price_list;
@@ -494,12 +499,6 @@ class MainController extends Controller
             ->orderByRaw('LENGTH(order_no)', 'ASC')
             ->orderBy('order_no', 'ASC')
             ->get();
-
-        // $all_item_group = DB::table('tabItem Group')
-        //     ->when($igs, function ($q) use ($igs){
-        //         $q->whereIn('item_group_name', $igs);
-        //     })
-        //     ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')->get();
 
         $all = collect($item_group)->groupBy('parent_item_group');
 
