@@ -657,7 +657,7 @@
 													</div>
 												@empty
 													<div class="col-md-12 text-center" style="padding: 25px;">
-														<h5>No result(s) found.</h5>
+														<h5>No result(s) found / Stocks not available</h5>
 													</div>
 												@endforelse
 											</div><!-- new table -->
