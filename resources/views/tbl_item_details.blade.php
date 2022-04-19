@@ -1,5 +1,5 @@
 <div class="row p-1 bg-white">
-    <div class="col-md-8">
+    <div class="col-12 col-lg-8">
         <div class="box box-solid mt-2">
             <div class="row">
                 @php
@@ -74,17 +74,18 @@
                         <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                         <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                     </dl>
-                   
-                    <p class="mt-2 mb-2 text-center">
-                    @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
-                        <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
-                        <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
-                    @endif
-                    @if ($user_group == 'Manager' && $minimum_selling_price > 0)
-                        <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
-                        <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
-                    @endif
-                    </p>
+                    <div class="d-block d-lg-none">
+                        <p class="mt-2 mb-2 text-center">
+                            @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
+                                <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                                <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                            @endif
+                            @if ($user_group == 'Manager' && $minimum_selling_price > 0)
+                                <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
+                                <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
+                            @endif
+                        </p>
+                    </div>
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                         @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))
@@ -180,25 +181,134 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="d-none d-lg-block col-lg-4">
         <div class="box box-solid">
             <div class="box-body table-responsive no-padding">
-                <table class="table table-sm table-bordered" style="font-size: 11pt;">
-                    <thead>
-                        <th scope="col" colspan ="2"  class="text-center responsive-description"><i class="fas fa-list-alt"></i> Specification</th>
-                    </thead>
-                    @forelse ($item_attributes as $attr)
-                    <tr>
-                        <td class="font-responsive">{{ $attr->attribute }}</td>
-                        <td class="text-center font-responsive">{{ $attr->attribute_value }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="2" class="text-center font-responsive">No Item Attribute(s)</td>
-                    </tr>
-                    @endforelse
-                </table>
+                <p class="mt-2 mb-2 text-center">
+                    @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
+                        <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                        <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                    @endif
+                    @if ($user_group == 'Manager' && $minimum_selling_price > 0)
+                        <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
+                        <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
+                    @endif
+                </p>
             </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card-header border-bottom-0">
+            <h3 class="card-title font-responsive"><i class="fas fa-project-diagram"></i> Variants</h3>
+        </div>
+    </div>
+    <div class="d-block d-lg-none col-12">
+        <div class="box box-solid">
+            @php
+                $variants = collect($co_variants)->chunk(5);
+            @endphp
+            <div class="divs tab-content">
+                @for($i = 0; $i < count($variants); $i++)
+                    <div id="mob-variant-page-{{ $i + 1 }}" class="mob-tab tab-pane {{ $i == 0 ? 'active' : null }}">
+                        @php
+                            $first_item_name = \Illuminate\Support\Str::limit($item_details->item_name, 30, $end='...')
+                        @endphp
+                        <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $item_details->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt;border-bottom: 2px solid #28A745; color: #28A745;"><b>{{ $item_details->name }}</b> - {{ $first_item_name }} <i class="fa fa-chevron-down float-right"></i></button>
+                            
+                        <div class="collapse multi-collapse show" id="variant-data-{{ $item_details->name }}">
+                            <table class="table" style="font-size: 9pt;">
+                                @foreach ($attribute_names as $attribute_name)
+                                    <tr>
+                                        @php
+                                            $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                        @endphp
+                                        <td>{{ $attribute_name }}</td>
+                                        <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                    </tr>
+                                @endforeach
+                            </table>
+                        </div>
+                        @foreach ($variants[$i] as $variant)
+                            @if ($item_details->name == $variant->name)
+                                @continue
+                            @endif
+                            @php
+                                $item_name = \Illuminate\Support\Str::limit($variant->item_name, 30, $end='...')
+                            @endphp
+                            <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $variant->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt; border-bottom: 1px solid #C4C4C4"><b>{{ $variant->name }}</b> - {{ $item_name }} <i class="fa fa-chevron-down float-right"></i></button>
+                            
+                            <div class="collapse multi-collapse" id="variant-data-{{ $variant->name }}">
+                                <table class="table" style="font-size: 9pt;">
+                                    @foreach ($attribute_names as $attribute_name)
+                                        <tr>
+                                            @php
+                                                $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                            @endphp
+                                            <td>{{ $attribute_name }}</td>
+                                            <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </table>
+                            </div>
+                        @endforeach
+                    </div>
+                @endfor
+                <button class="btn float-left" id="btn-prev" style="font-size: 9pt; color: #007BFF"><i class="fa fa-chevron-left"></i> Previous</button>
+                <button class="btn float-right" id="btn-next" style="font-size: 9pt; color: #007BFF">Next <i class="fa fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="d-none d-lg-block col-12 mt-2">
+        <div class="box box-solid">
+            @php
+                $variants = collect($co_variants)->chunk(5);
+            @endphp
+            <div class="tab-content">
+                @for($i = 0; $i < count($variants); $i++)
+                    <div id="variant-page-{{ $i + 1 }}" class="tab-pane {{ $i == 0 ? 'active' : null }}">
+                        <table id="variants-table" class="table table-bordered" style="font-size: 10pt;">
+                            <tr>
+                                <th>Item Code</th>
+                                @foreach ($attribute_names as $attribute_name)
+                                    <th>{{ $attribute_name }}</th>
+                                @endforeach
+                            </tr>
+                            <tr style="background-color: #001F3F; color: #fff; font-weight: bold !important; font-size: 11pt;">
+                                <td class="text-center table-highlight">{{ $item_details->name }}</td>
+                                @foreach($attribute_names as $attribute_name)
+                                    @php
+                                        $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                    @endphp
+                                    <td class="text-center table-highlight">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                @endforeach
+                            </tr>
+                            @foreach ($variants[$i] as $variant)
+                                @if ($item_details->name == $variant->name)
+                                    @continue
+                                @endif
+                                <tr style="font-size: 9pt;">
+                                    <td>{{ $variant->name }}</td>
+                                    @foreach ($attribute_names as $attribute_name)
+                                        @php
+                                            $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                        @endphp
+                                        <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </table>
+                    </div>
+                @endfor
+            </div>
+            @if (count($variants) > 1)
+                <ul class="nav nav-tabs variant-tabs mb-3" role="tablist">
+                    @foreach ($variants as $i => $item)
+                        <li class="nav-item">
+                            <a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#variant-page-{{ $i + 1 }}">{{ $i + 1 }}</a>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
         </div>
     </div>
     <div class="col-md-12">
@@ -254,3 +364,31 @@
         </div>
     </div>
 </div>
+<style>
+    .table-highlight{
+        border: 2px solid rgba(0, 31, 63, 0.3) !important;
+    }
+    .variant-tabs{
+        border-top: 1px solid #DEE2E6 !important;
+    }
+
+    .variant-tabs .nav-item .active{
+        border-top: none !important;
+        border-bottom: 1px solid #DEE2E6 !important;
+    }
+</style>
+<script>
+     var divs = $('.divs>div');
+    var now = 0; // currently shown div
+    divs.hide().first().show();
+    $("#btn-next").click(function (e) {
+        divs.eq(now).hide();
+        now = (now + 1 < divs.length) ? now + 1 : 0;
+        divs.eq(now).show(); // show next
+    });
+    $("#btn-prev").click(function (e) {
+        divs.eq(now).hide();
+        now = (now > 0) ? now - 1 : divs.length - 1;
+        divs.eq(now).show(); // or .css('display','block');
+    });
+</script>

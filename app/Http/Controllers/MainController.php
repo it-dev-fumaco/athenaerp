@@ -2045,7 +2045,17 @@ class MainController extends Controller
 
         $user_group = Auth::user()->user_group;
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price'));
+        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->select('name', 'item_name')->get();
+        $variant_item_codes = collect($co_variants)->map(function ($q){
+            return $q->name;
+        });
+
+        $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->get();
+        $attribute_names = collect($attributes)->map(function ($q){
+            return $q->attribute;
+        })->unique();
+
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
