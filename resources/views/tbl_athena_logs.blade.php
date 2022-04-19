@@ -1,11 +1,11 @@
 <div class="table-responsive p-0" style="height: 650px;">
     <table class="table table-bordered table-hover tbl-athena-logs-table dashboard-table">
-        <col style="width: 17%;"><!-- Date -->
+        <col class="tbl-athena-logs-tbl-date"><!-- Date -->
         <col class="tbl-athena-logs-tbl-item-description"><!-- Item Description -->
-        <col style="width: 18%;"><!-- Warehouse -->
-        <col style="width: 10%;"><!-- Qty -->
-        <col style="width: 10%;"><!-- Ref. No. -->
-        <col style="width: 15%;"><!-- Transact by -->
+        <col class="tbl-athena-logs-tbl-warehouse"><!-- Warehouse -->
+        <col class="tbl-athena-logs-tbl-qty"><!-- Qty -->
+        <col class="tbl-athena-logs-tbl-ref"><!-- Ref. No. -->
+        <col class="tbl-athena-logs-tbl-user"><!-- Transact by -->
         <thead>
             <tr>
                 <th scope="col" class="text-center align-middle">Date</th>
@@ -50,7 +50,7 @@
                     @endif
                 </td>
             </tr>
-            <tr>
+            <tr class="d-lg-none">
                 <td colspan=6>
                     <table class="table">
                         <tr>

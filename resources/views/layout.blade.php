@@ -312,7 +312,10 @@
 			.responsive-modal-title{
 				font-size: 12pt;
 			}
-			.low-lvl-stk-tbl-item-desc, .tbl-athena-logs-tbl-item-description{
+			.low-lvl-stk-tbl-item-desc{
+				width: 100% !important;
+			}
+			.tbl-athena-logs-tbl-item-description{
 				width: 90% !important;
 			}
 			.font-responsive, .tbl-athena-logs-table, .low-lvl-stock-badge, .returns-badge, #reserved-items-pagination{
@@ -332,6 +335,21 @@
 			}
 			.low-lvl-stock-total{
 				margin-top: 13px !important;
+			}
+			.tbl-athena-logs-tbl-date{
+				width: 20% !important;
+			}
+			.tbl-athena-logs-tbl-warehouse{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-qty{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-ref{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-user{
+				width: auto !important;
 			}
 		}
 	  	@media (max-width: 767.98px) {
@@ -341,7 +359,10 @@
 			.responsive-modal-title{
 				font-size: 12pt;
 			}
-			.low-lvl-stk-tbl-item-desc, .tbl-athena-logs-tbl-item-description{
+			.low-lvl-stk-tbl-item-desc{
+				width: 100% !important;
+			}
+			.tbl-athena-logs-tbl-item-description{
 				width: 90% !important;
 			}
 			.font-responsive, .tbl-athena-logs-table, .low-lvl-stock-badge, .returns-badge, #reserved-items-pagination{
@@ -361,6 +382,41 @@
 			}
 			.low-lvl-stock-total{
 				margin-top: 13px !important;
+			}
+			.tbl-athena-logs-tbl-date{
+				width: 20% !important;
+			}
+			.tbl-athena-logs-tbl-warehouse{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-qty{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-ref{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-user{
+				width: auto !important;
+			}
+		}
+		@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+			.low-lvl-stk-tbl-item-desc{
+				width: 100% !important;
+			}
+			.tbl-athena-logs-tbl-date{
+				width: 20% !important;
+			}
+			.tbl-athena-logs-tbl-warehouse{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-qty{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-ref{
+				width: auto !important;
+			}
+			.tbl-athena-logs-tbl-user{
+				width: auto !important;
 			}
 		}
 		.select2{
@@ -375,6 +431,21 @@
 		}
 		.select2-selection__arrow {
 			height: 36px !important;
+		}
+		.tbl-athena-logs-tbl-date{
+			width: 17%;
+		}
+		.tbl-athena-logs-tbl-warehouse{
+			width: 18%;
+		}
+		.tbl-athena-logs-tbl-qty{
+			width: 10%;
+		}
+		.tbl-athena-logs-tbl-ref{
+			width: 10%;
+		}
+		.tbl-athena-logs-tbl-user{
+			width: 15%;
 		}
 	</style>
 </head>
