@@ -2426,6 +2426,10 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			// Transactions Warehouse Filter
 		});
 
+		function close_modal(modal){
+			$(modal).modal('hide');
+		}
+
 		function nextImg(item_code){
 		if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { // mobile/tablet
 			var current_img = $('#mobile-'+item_code+'-image-data').text();
