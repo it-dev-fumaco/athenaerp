@@ -17,29 +17,29 @@ use \Illuminate\Pagination\Paginator;
 
 class MainController extends Controller
 {
-    public function testing(){//FG13945
-        $co_variants = DB::table('tabItem')->where('variant_of', 'FG13941')->pluck('name');
+    // public function testing(){//FG13945
+    //     $co_variants = DB::table('tabItem')->where('variant_of', 'FG13941')->pluck('name');
 
-        return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->select('parent', 'attribute', 'attribute_value')->get();
-        // return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->pluck('attribute', 'attribute_value');
+    //     return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->select('parent', 'attribute', 'attribute_value')->get();
+    //     // return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->pluck('attribute', 'attribute_value');
 
-        $attribute_names = collect($attributes)->map(function ($q){
-            return $q->attribute;
-        })->unique();
+    //     $attribute_names = collect($attributes)->map(function ($q){
+    //         return $q->attribute;
+    //     })->unique();
 
-        $test_arr = [];
-        foreach($co_variants as $variants){
-            $test_arr[$variants] = [
-                'item_code' => $variants
-            ];
-        }
+    //     $test_arr = [];
+    //     foreach($co_variants as $variants){
+    //         $test_arr[$variants] = [
+    //             'item_code' => $variants
+    //         ];
+    //     }
 
-        return $test_arr;
+    //     return $test_arr;
 
-        return $test = collect($attributes)->groupBy('parent');
-        return $test['FG13945'];
-        return $co_variants;
-    }
+    //     return $test = collect($attributes)->groupBy('parent');
+    //     return $test['FG13945'];
+    //     return $co_variants;
+    // }
 
     public function allowed_parent_warehouses(){
         $user = Auth::user()->frappe_userid;
