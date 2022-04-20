@@ -275,7 +275,8 @@
 																<div class="text-center mt-2 mb-1">
 																	<div class="d-flex flex-row">
 																		<div class="p-1 col-6">
-																			<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																			{{-- <a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}"> --}}
+																			<a href="/get_item_details/{{ $row['name'] }}">
 																				<div class="btn btn-primary btn-xs btn-block">
 																					<i class="fa fa-search"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
 																				</div>

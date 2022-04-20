@@ -521,7 +521,7 @@
 			</div>
 		</nav>
 		<div class="content-wrapper">
-			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page']))
+			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile']))
 			<div class="row m-0 pb-0">
 				<div class="col-xl-5 p-3">
 					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
@@ -1884,7 +1884,8 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					type: 'GET',
 					url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
 					success: function(response){
-						$('#athena-transactions-table').html(response);
+						// $('#athena-transactions-table').html(response);
+						$('#athena-transactions').html(response);
 					}
 				});
 				}
@@ -1947,7 +1948,6 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					}
 				});
 				}
-			
 			}
 
 			$(document).on('click', '.upload-item-image', function(e){

@@ -1930,10 +1930,12 @@ class MainController extends Controller
         }
 
         $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group')->orderBy('po.creation', 'desc')->first();
+            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
 
         $item_rate = 0;
+        $last_purchase_date = null;
         if ($last_purchase_order) {
+            $last_purchase_date = Carbon::parse($last_purchase_order->creation)->format('M d, Y h:i A');
             if ($last_purchase_order->supplier_group == 'Imported') {
                 $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')
                     ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
@@ -2113,7 +2115,8 @@ class MainController extends Controller
             return $q->attribute;
         })->unique();
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr'));
+        // return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
