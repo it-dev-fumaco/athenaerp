@@ -311,6 +311,12 @@ class MainController extends Controller
         $website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
             ->whereIn('item_code', $item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
 
+        $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+
+        $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+        $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+
         $item_list = [];
         foreach ($items as $row) {
             $item_images = [];
@@ -395,9 +401,9 @@ class MainController extends Controller
                 }
             }
 
-            $minimum_selling_price = $item_rate * 1.3;
+            $minimum_selling_price = $item_rate * $minimum_price_computation;
 
-            $default_price = $item_rate * 2;
+            $default_price = $item_rate * $standard_price_computation;
             $website_price = array_key_exists($row->item_code, $website_prices) ? $website_prices[$row->item_code] : 0;
 
             $default_price = ($website_price > 0) ? $website_price : $default_price;
@@ -1933,9 +1939,15 @@ class MainController extends Controller
             }
         }
 
-        $minimum_selling_price = $item_rate * 1.3;
+        $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
 
-        $default_price = $item_rate * 2;
+        $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+        $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+
+        $minimum_selling_price = $item_rate * $minimum_price_computation;
+
+        $default_price = $item_rate * $standard_price_computation;
         $website_price = DB::table('tabItem Price')
             ->where('price_list', 'Website Price List')->where('selling', 1)
             ->where('item_code', $item_code)->orderBy('modified', 'desc')
