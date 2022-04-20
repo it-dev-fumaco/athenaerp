@@ -323,7 +323,9 @@
                                                     @continue
                                                 @endif
                                                 <tr style="font-size: 9pt;">
-                                                    <td class="text-center" style="position:sticky; left: 0; width: 12%">{{ $variant->name }}</td>
+                                                    <td class="text-center" style="position:sticky; left: 0; width: 12%">
+                                                        <a href="/get_item_details/{{ $variant->name }}">{{ $variant->name }}</a>
+                                                    </td>
                                                     @foreach ($attribute_names as $attribute_name)
                                                         @php
                                                             $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();

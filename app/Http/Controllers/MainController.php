@@ -1907,6 +1907,10 @@ class MainController extends Controller
     public function get_item_details(Request $request, $item_code){
         $item_details = DB::table('tabItem')->where('name', $item_code)->first();
 
+        if(!$item_details){
+            abort(404);
+        }
+        
         if($request->json){
             return response()->json($item_details);
         }
