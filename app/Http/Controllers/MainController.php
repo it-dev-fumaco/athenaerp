@@ -17,6 +17,30 @@ use \Illuminate\Pagination\Paginator;
 
 class MainController extends Controller
 {
+    public function testing(){//FG13945
+        $co_variants = DB::table('tabItem')->where('variant_of', 'FG13941')->pluck('name');
+
+        return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->select('parent', 'attribute', 'attribute_value')->get();
+        // return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->pluck('attribute', 'attribute_value');
+
+        $attribute_names = collect($attributes)->map(function ($q){
+            return $q->attribute;
+        })->unique();
+
+        $test_arr = [];
+        foreach($co_variants as $variants){
+            $test_arr[$variants] = [
+                'item_code' => $variants
+            ];
+        }
+
+        return $test_arr;
+
+        return $test = collect($attributes)->groupBy('parent');
+        return $test['FG13945'];
+        return $co_variants;
+    }
+
     public function allowed_parent_warehouses(){
         $user = Auth::user()->frappe_userid;
         return DB::table('tabWarehouse Access')
@@ -317,7 +341,22 @@ class MainController extends Controller
         }
 
         $total_items = count($items);
-        $items = new Paginator($items, 20);
+        // $items = new Paginator($items, 20);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data3
+        $itemCollection = collect($items);
+        // Define how many items we want to be visible in each page
+        $perPage = 20;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+        $items = $paginatedItems;
+
+        $url = $request->fullUrl();
+        $items->withPath($url);
 
         if($request->searchString != ''){
             DB::table('tabAthena Inventory Search History')->insert([
@@ -330,10 +369,6 @@ class MainController extends Controller
                 'total_result' => $total_items
             ]);
         }
-
-        $url = $request->fullUrl();
-
-        $items->withPath($url);
         
         if($request->get_total){
             return number_format($total_items);
