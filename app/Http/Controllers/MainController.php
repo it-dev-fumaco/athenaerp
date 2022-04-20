@@ -299,20 +299,30 @@ class MainController extends Controller
         $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
 
-        $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-            ->where('po.docstatus', 1)->whereIn('poi.item_code', $item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
+        $user_department = Auth::user()->department;
+        // get departments NOT allowed to view prices
+        $not_allowed_department = DB::table('tabPrice Restricted Department')->pluck('department')->toArray();
 
-        $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
-            ->where('a.docstatus', 1)->whereIn('b.item_code', $item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
-        
-        $last_purchase_order_rates = collect($last_purchase_order)->groupBy('item_code')->toArray();
-        $last_landed_cost_voucher_rates = collect($last_landed_cost_voucher)->groupBy('item_code')->toArray();
+        $last_purchase_order = [];
+        $last_landed_cost_voucher = [];
+        $price_settings = [];
+        $website_prices = [];
+        if (!in_array($user_department, $not_allowed_department)) {
+            $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                ->where('po.docstatus', 1)->whereIn('poi.item_code', $item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
 
-        $website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
-            ->whereIn('item_code', $item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+            $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                ->where('a.docstatus', 1)->whereIn('b.item_code', $item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
+            
+            $last_purchase_order_rates = collect($last_purchase_order)->groupBy('item_code')->toArray();
+            $last_landed_cost_voucher_rates = collect($last_landed_cost_voucher)->groupBy('item_code')->toArray();
 
-        $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
-            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+            $website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
+                ->whereIn('item_code', $item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+
+            $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+        }
 
         $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
         $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
@@ -477,7 +487,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root'));
+        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'not_allowed_department', 'user_department'));
     }
 
     private function breadcrumbs($parent){
