@@ -263,37 +263,46 @@
             @php
                 $variants = collect($co_variants)->chunk(5);
             @endphp
-            <div class="tab-content">
+            <div class="tab-content" style="overflow-x: auto; white-space: nowrap;">
                 @for($i = 0; $i < count($variants); $i++)
                     <div id="variant-page-{{ $i + 1 }}" class="tab-pane {{ $i == 0 ? 'active' : null }}">
                         <table id="variants-table" class="table table-bordered" style="font-size: 10pt;">
                             <tr>
-                                <th>Item Code</th>
+                                <th class="text-center">Item Code</th>
                                 @foreach ($attribute_names as $attribute_name)
-                                    <th>{{ $attribute_name }}</th>
+                                    <th class="text-center">{{ $attribute_name }}</th>
                                 @endforeach
+                                <th class="text-center">Price</th>
                             </tr>
-                            <tr style="background-color: #001F3F; color: #fff; font-weight: bold !important; font-size: 11pt;">
-                                <td class="text-center table-highlight">{{ $item_details->name }}</td>
+                            <tr class="highlight-row">
+                                <td class="text-center table-highlight pb-3 pt-3">{{ $item_details->name }}</td>
                                 @foreach($attribute_names as $attribute_name)
                                     @php
                                         $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
                                     @endphp
-                                    <td class="text-center table-highlight">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                    <td class="text-center table-highlight pb-3 pt-3">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
                                 @endforeach
+                                <td class="text-center table-highlight pb-3 pt-3">{{ $default_price > 0 ? '₱ ' . number_format($default_price, 2, '.', ',') : 'n/a' }}</td>
                             </tr>
                             @foreach ($variants[$i] as $variant)
                                 @if ($item_details->name == $variant->name)
                                     @continue
                                 @endif
                                 <tr style="font-size: 9pt;">
-                                    <td>{{ $variant->name }}</td>
+                                    <td class="text-center">{{ $variant->name }}</td>
                                     @foreach ($attribute_names as $attribute_name)
                                         @php
                                             $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
                                         @endphp
-                                        <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                        <td class="text-center">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
                                     @endforeach
+                                    @php
+                                        $price = 0;
+                                        if(isset($variants_price_arr[$variant->name])){
+                                            $price = $variants_price_arr[$variant->name][0];
+                                        }
+                                    @endphp
+                                    <td class="text-center">{{ $price > 0 ? '₱ ' . number_format($price, 2, '.', ',') : 'n/a' }}</td>
                                 </tr>
                             @endforeach
                         </table>
@@ -367,6 +376,14 @@
 <style>
     .table-highlight{
         border: 2px solid rgba(0, 31, 63, 0.3) !important;
+    }
+
+    .highlight-row{
+        background-color: #001F3F;
+        color: #fff;
+        font-weight: bold !important;
+        font-size: 11pt;
+        box-shadow: 2px 2px 8px #000000;
     }
     .variant-tabs{
         border-top: 1px solid #DEE2E6 !important;

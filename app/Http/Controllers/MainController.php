@@ -17,6 +17,30 @@ use \Illuminate\Pagination\Paginator;
 
 class MainController extends Controller
 {
+    public function testing(){//FG13945
+        $co_variants = DB::table('tabItem')->where('variant_of', 'FG13941')->pluck('name');
+
+        return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->select('parent', 'attribute', 'attribute_value')->get();
+        // return $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $co_variants)->pluck('attribute', 'attribute_value');
+
+        $attribute_names = collect($attributes)->map(function ($q){
+            return $q->attribute;
+        })->unique();
+
+        $test_arr = [];
+        foreach($co_variants as $variants){
+            $test_arr[$variants] = [
+                'item_code' => $variants
+            ];
+        }
+
+        return $test_arr;
+
+        return $test = collect($attributes)->groupBy('parent');
+        return $test['FG13945'];
+        return $co_variants;
+    }
+
     public function allowed_parent_warehouses(){
         $user = Auth::user()->frappe_userid;
         return DB::table('tabWarehouse Access')
@@ -1921,6 +1945,7 @@ class MainController extends Controller
 
         $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
             ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group')->orderBy('po.creation', 'desc')->first();
+
         $item_rate = 0;
         if ($last_purchase_order) {
             if ($last_purchase_order->supplier_group == 'Imported') {
@@ -2057,17 +2082,52 @@ class MainController extends Controller
 
         $user_group = Auth::user()->user_group;
 
+        // variants
         $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->select('name', 'item_name')->get();
         $variant_item_codes = collect($co_variants)->map(function ($q){
             return $q->name;
         });
+
+        $variants_last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+            ->where('po.docstatus', 1)->whereIn('poi.item_code', $variant_item_codes)->select('poi.base_rate', 'po.supplier_group', 'poi.item_code', 'po.creation')->orderBy('po.creation', 'desc')->get();
+        $var_last_po = collect($variants_last_purchase_order)->groupBy('item_code');
+
+        $variants_last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')
+            ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+            ->where('a.docstatus', 1)->whereIn('b.item_code', $variant_item_codes)
+            ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
+            ->orderBy('transaction_date', 'desc')->get();
+        $var_last_landed_cost_voucher = collect($variants_last_landed_cost_voucher)->groupBy('item_code');
+
+        $variants_website_price = DB::table('tabItem Price')
+            ->where('price_list', 'Website Price List')->where('selling', 1)
+            ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')
+            ->select('item_code', 'price_list_rate', 'price_list')->get();
+        $var_website_price = collect($variants_website_price)->groupBy('item_code');
+
+        $default_price = ($website_price) ? $website_price->price_list_rate : $default_price;
+
+        $variants_price_arr = [];
+        foreach($variant_item_codes as $variant){
+            $variant_rate = 0;
+            if(isset($var_last_po[$variant])){
+                if($var_last_po[$variant][0]->supplier_group == 'Imported'){
+                    $variant_rate = isset($var_last_landed_cost_voucher[$variant]) ? $var_last_landed_cost_voucher[$variant][0]->valuation_rate : 0;
+                }else{
+                    $variant_rate = $var_last_po[$variant][0]->base_rate;
+                }
+            }
+
+            $variants_default_price = isset($var_website_price[$variant]) ? $var_website_price[$variant][0]->price_list_rate : $variant_rate * 2;
+            $variants_price_arr[$variant] = [$variants_default_price];
+        }
 
         $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->get();
         $attribute_names = collect($attributes)->map(function ($q){
             return $q->attribute;
         })->unique();
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes'));
+        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
