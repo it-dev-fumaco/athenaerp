@@ -445,7 +445,8 @@
 																	</div>
 																</div>
 																
-																<a href="#" class="view-item-details mt-2 mb-2 d-block" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																{{-- <a href="#" class="view-item-details mt-2 mb-2 d-block" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}"> --}}
+																<a href="/get_item_details/{{ $row['name'] }}">
 																	<div class="btn btn-sm btn-primary w-100">
 																		<i class="fa fa-search font-responsive"></i> <span class="d-inline font-responsive">View</span>
 																	</div>

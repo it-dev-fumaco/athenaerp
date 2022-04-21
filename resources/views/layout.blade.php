@@ -2284,35 +2284,34 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			});
 			// Item class filter
 
+			// $('#athReset').click(function(){
+			// 	item_code = $('#selected-item-code').text();
+			// 	$('#ath-to-warehouse-filter').empty();
+			// 	$('#ath-src-warehouse-filter').empty();
+			// 	$('#warehouse-user-filter').empty();
+			// 	$(function() {
+			// 		$("#ath_dates").daterangepicker({
+			// 			ranges: {
+			// 				'Today': [moment(), moment()],
+			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
+			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+			// 			},
+			// 			locale: {
+			// 				format: 'YYYY-MMM-DD',
+			// 				separator: " to "
+			// 			},
+			// 			// startDate: moment().subtract(30, 'days'), endDate: moment(),
+			// 			startDate: '2018-01-01', endDate: moment(),
 
-			$('#athReset').click(function(){
-				item_code = $('#selected-item-code').text();
-				$('#ath-to-warehouse-filter').empty();
-				$('#ath-src-warehouse-filter').empty();
-				$('#warehouse-user-filter').empty();
-				$(function() {
-					$("#ath_dates").daterangepicker({
-						ranges: {
-							'Today': [moment(), moment()],
-							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-							'This Month': [moment().startOf('month'), moment().endOf('month')],
-							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-						},
-						locale: {
-							format: 'YYYY-MMM-DD',
-							separator: " to "
-						},
-						// startDate: moment().subtract(30, 'days'), endDate: moment(),
-						startDate: '2018-01-01', endDate: moment(),
-
-					});
-				});
-				$("#ath_dates").val('');
-				$("#ath_dates").attr("placeholder","Select Date Range");
-				get_athena_transactions(item_code);
-			})
+			// 		});
+			// 	});
+			// 	$("#ath_dates").val('');
+			// 	$("#ath_dates").attr("placeholder","Select Date Range");
+			// 	get_athena_transactions(item_code);
+			// })
 
 			// $('#erpReset').click(function(){
 			// 	item_code = $('#selected-item-code').text();

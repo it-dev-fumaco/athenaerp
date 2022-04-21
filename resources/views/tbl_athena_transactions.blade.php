@@ -66,23 +66,6 @@
                 <span><b>Transaction: </b>{{ $row['reference_type'] }}</span><br>
                 <span><b>Issued Qty: </b>{{ $row['issued_qty'] }}</span><br>
                 <span><b>Date: </b>{{ $row['transaction_date'] }}</span><br>
-                <table class="table table-bordered p-0">
-                    <tr>
-                        <td colspan=2 class="text-center p-1"><b>Warehouse</b></td>
-                    </tr>
-                    <tr>
-                        <td class="p-1"><b>From:</b></td>
-                        <td class="p-1">{{ $row['source_warehouse'] }}</td>
-                    </tr>
-                    <tr>
-                        <td class="p-1"><b>To:</b></td>
-                        <td class="p-1">{{ $row['target_warehouse'] }}</td>
-                    </tr>
-                    <tr>
-                        <td class="p-1"><b>User:</b></td>
-                        <td class="p-1">{{ $row['warehouse_user'] }}</td>
-                    </tr>
-                </table>
             </td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['source_warehouse'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['target_warehouse'] }}</td>
@@ -124,6 +107,27 @@
                     </div>
                 </td>
             @endif
+        </tr>
+        <tr class="d-md-none">
+            <td colspan=12>
+                <table class="table table-bordered p-0 font-responsive">
+                    <tr>
+                        <td colspan=2 class="text-center p-1"><b>Warehouse</b></td>
+                    </tr>
+                    <tr>
+                        <td class="p-1"><b>From:</b></td>
+                        <td class="p-1">{{ $row['source_warehouse'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-1"><b>To:</b></td>
+                        <td class="p-1">{{ $row['target_warehouse'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-1"><b>User:</b></td>
+                        <td class="p-1">{{ $row['warehouse_user'] }}</td>
+                    </tr>
+                </table>
+            </td>
         </tr>
         @empty
         <tr>

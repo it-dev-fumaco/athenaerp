@@ -12,13 +12,22 @@
                 </div>
                 <ul class="nav nav-tabs" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active" data-toggle="tab" href="#item-info">Item Info</a>
+                        <a class="nav-link active" data-toggle="tab" href="#item-info">
+                            <span class="d-none d-md-block">Item Info</span>
+                            <i class="fas fa-info d-block d-md-none"></i>
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="get-athena-transactions" data-toggle="tab" href="#athena-logs">Athena Transactions</a>
+                        <a class="nav-link" id="get-athena-transactions" data-toggle="tab" href="#athena-logs">
+                            <span class="d-none d-md-block">Athena Transactions</span>
+                            <i class="fas fa-boxes d-block d-md-none"></i>
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#history">ERP Submitted Transaction Histories</a>
+                        <a class="nav-link" data-toggle="tab" href="#history">
+                            <span class="d-none d-md-block">ERP Submitted Transaction Histories</span>
+                            <i class="fas fa-history d-block d-md-none"></i>
+                        </a>
                     </li>
                     @if ($user_group == 'Manager')
                     <li class="nav-item">
@@ -29,7 +38,7 @@
                 <div class="tab-content">
                     <div id="item-info" class="container-fluid tab-pane active bg-white">
                         <div class="row">
-                            <div class="col-10 col-lg-8">
+                            <div class="col-12 col-lg-8">
                                 <div class="box box-solid mt-2">
                                     <div class="row">
                                         @php
@@ -158,7 +167,7 @@
                                                                 </td>
                                                                 <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                                                 <td class="text-center p-1">
-                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 11pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
+                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
                                                                 </td>
                                                             </tr>
                                                             @empty
@@ -443,6 +452,36 @@
                     </div>
         
                     <div id="history" class="container-fluid tab-pane bg-white border border-secondary">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="col-md-3 p-0" style="display: inline-block;">
+                                    <div class="form-group m-1">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    <i class="far fa-calendar-alt"></i>
+                                                </span>
+                                            </div>
+                                            <input type="text" name="erpdates" class="form-control float-right font-responsive" id="erp_dates">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 p-2" style="display: inline-block">
+                                    <div class="form-group m-0 font-responsive" id="erp-warehouse-filter-parent" style="z-index: 1050">
+                                        <select name="erp-warehouse" id="erp-warehouse-filter" class="form-control"></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 p-2" style="display: inline-block">
+                                    <div class="form-group m-0 font-responsive" id="erp-warehouse-user-filter-parent" style="z-index: 1050">
+                                        <select name="erp-warehouse-user" id="erp-warehouse-user-filter" class="form-control"></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2" style="display: inline-block">
+                                    <button class="btn btn-secondary font-responsive" id="erpReset">Reset Filters</button>
+                                </div>
+                                <div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
+                            </div>
+                        </div>
                         <div id="stock-ledger" class="col-12"></div>
                     </div>
                     @if ($user_group == 'Manager')
@@ -580,15 +619,120 @@
             get_purchase_history(page);
         });
 
-        function get_avg_purchase_rate(){
-            var item_code = '{{ $item_details->name }}';
-            $.ajax({
-                type: 'GET',
-                url: '/avg_purchase_rate/' + item_code,
-                success: function(response){
-                    $('.avg-purchase-rate-div').text(response);
-                }
+        $("#ath_dates").daterangepicker({
+            placeholder: 'Select Date Range',
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                // format: 'YYYY-MM-DD',
+                format: 'YYYY-MMM-DD',
+                separator: " to "
+            },
+            startDate: moment().subtract(30, 'days'), endDate: moment(),
+            // startDate: '2018-06-01', endDate: moment(),
+        });
+        $("#ath_dates").val('');
+        $("#ath_dates").attr("placeholder","Select Date Range");
+
+        $("#erp_dates").daterangepicker({
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                format: 'YYYY-MMM-DD',
+                separator: " to "
+            },
+            startDate: moment().subtract(30, 'days'), endDate: moment(),
+        });
+
+        $("#erp_dates").val('');
+		$("#erp_dates").attr("placeholder","Select Date Range");
+
+        $('#erpReset').click(function(){
+            $('#erp-warehouse-filter').empty();
+            $('#erp-warehouse-user-filter').empty();
+            $(function() {
+                $("#erp_dates").daterangepicker({
+                    ranges: {
+                        'Today': [moment(), moment()],
+                        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                        'This Month': [moment().startOf('month'), moment().endOf('month')],
+                        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                    },
+                    locale: {
+                        format: 'YYYY-MMM-DD',
+                        separator: " to "
+                    },
+                    // startDate: moment().subtract(30, 'days'), endDate: moment(),
+                    startDate: '2018-01-01', endDate: moment(),
+
+                });
             });
-        }
+            $("#erp_dates").val('');
+            $("#erp_dates").attr("placeholder","Select Date Range");
+            get_stock_ledger();
+
+        })
+
+        $('#resetAll').click(function(){
+            $('#ath-to-warehouse-filter').empty();
+            $('#ath-src-warehouse-filter').empty();
+            $('#warehouse-user-filter').empty();
+            $('#erp-warehouse-filter').empty();
+            $('#erp-warehouse-user-filter').empty();
+            $(function() {
+                $("#ath_dates").daterangepicker({
+                    ranges: {
+                        'Today': [moment(), moment()],
+                        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                        'This Month': [moment().startOf('month'), moment().endOf('month')],
+                        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                    },
+                    locale: {
+                        format: 'YYYY-MMM-DD',
+                        separator: " to "
+                    },
+                    startDate: moment().subtract(30, 'days'), endDate: moment(),
+                });
+            });
+            $(function() {
+                $("#erp_dates").daterangepicker({
+                    ranges: {
+                        'Today': [moment(), moment()],
+                        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                        'This Month': [moment().startOf('month'), moment().endOf('month')],
+                        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                    },
+                    locale: {
+                        format: 'YYYY-MMM-DD',
+                        separator: " to "
+                    },
+                    startDate: moment().subtract(30, 'days'), endDate: moment(),
+                });
+            });
+            $("#erp_dates").val('');
+            $("#erp_dates").attr("placeholder","Select Date Range");
+            $("#ath_dates").val('');
+            $("#ath_dates").attr("placeholder","Select Date Range");
+            get_stock_ledger();
+            get_athena_transactions();
+        });
     </script>
 @endsection
