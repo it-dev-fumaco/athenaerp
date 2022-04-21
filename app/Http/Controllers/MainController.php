@@ -1918,11 +1918,13 @@ class MainController extends Controller
             $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
@@ -1981,6 +1983,7 @@ class MainController extends Controller
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
+            ->where('stock_warehouse', 1)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
             ->get();
 
@@ -4639,5 +4642,21 @@ class MainController extends Controller
             ->orderBy('po.creation', 'desc')->paginate(10);
 
         return view('tbl_item_purchase_history', compact('list'));
+    }
+
+    public function avgPurchaseRate($item_code, Request $request) {
+        if ($request->ajax()) {
+            $list = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                ->where('po.docstatus', 1)->where('poi.item_code', $item_code)
+                ->select('po.supplier', 'po.name', 'po.transaction_date', 'poi.base_rate', 'po.supplier_group')
+                ->orderBy('po.creation', 'desc')->get();
+
+            $sum = collect($list)->sum('base_rate');
+            $count = collect($list)->count();
+
+            $average = $sum / $count;
+
+            return '₱ ' . number_format($average, 2, '.', ',');
+        }
     }
 }

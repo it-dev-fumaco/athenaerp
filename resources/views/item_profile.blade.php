@@ -230,16 +230,16 @@
                                             @endif
                                             @if ($user_group == 'Manager')
                                                 @if ($minimum_selling_price > 0)
-                                                    <br>
-                                                    <span class="d-block font-weight-bold" style="font-size: 11pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
+                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                                                     <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
                                                 @endif
                                                 @if ($item_rate > 0)
-                                                    <br>
-                                                    <span class="d-block font-weight-bold" style="font-size: 11pt;">{{ '₱ ' . number_format($item_rate, 2, '.', ',') }}</span>
+                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($item_rate, 2, '.', ',') }}</span>
                                                     <span class="d-inline-block" style="font-size: 9pt;">Last Purchase Rate</span>
                                                     <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $last_purchase_date }}</span>
                                                 @endif
+                                                <span class="d-block font-weight-bold avg-purchase-rate-div mt-3" style="font-size: 11pt;">₱ 0.00</span>
+                                                <span class="d-inline-block" style="font-size: 9pt;">Average Purchase Rate</span>
                                             @endif
                                             @endif
                                         </p>
@@ -560,6 +560,7 @@
 
         @if ($user_group == 'Manager')
         get_purchase_history();
+        get_avg_purchase_rate();
         @endif
 
         function get_purchase_history(page){
@@ -578,5 +579,16 @@
             var page = $(this).attr('href').split('page=')[1];
             get_purchase_history(page);
         });
+
+        function get_avg_purchase_rate(){
+            var item_code = '{{ $item_details->name }}';
+            $.ajax({
+                type: 'GET',
+                url: '/avg_purchase_rate/' + item_code,
+                success: function(response){
+                    $('.avg-purchase-rate-div').text(response);
+                }
+            });
+        }
     </script>
 @endsection
