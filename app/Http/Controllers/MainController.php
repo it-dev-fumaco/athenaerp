@@ -1933,44 +1933,53 @@ class MainController extends Controller
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
         }
 
-        $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
+        $user_department = Auth::user()->department;
+        // get departments NOT allowed to view prices
+        $not_allowed_department = DB::table('tabPrice Restricted Department')->pluck('department')->toArray();
 
         $item_rate = 0;
         $last_purchase_date = null;
-        if ($last_purchase_order) {
-            $last_purchase_date = Carbon::parse($last_purchase_order->creation)->format('M d, Y h:i A');
-            if ($last_purchase_order->supplier_group == 'Imported') {
-                $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')
-                    ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
-                    ->where('a.docstatus', 1)->where('b.item_code', $item_code)
-                    ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
-                    ->orderBy('transaction_date', 'desc')
-                    ->first();
+        $website_price = [];
+        $minimum_selling_price = 0;
+        $default_price = 0;
+        if (!in_array($user_department, $not_allowed_department)) {
+            $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
 
-                if ($last_landed_cost_voucher) {
-                    $item_rate = $last_landed_cost_voucher->valuation_rate;
+            if ($last_purchase_order) {
+                $last_purchase_date = Carbon::parse($last_purchase_order->creation)->format('M. d, Y h:i:A');
+                if ($last_purchase_order->supplier_group == 'Imported') {
+                    $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')
+                        ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                        ->where('a.docstatus', 1)->where('b.item_code', $item_code)
+                        ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
+                        ->orderBy('transaction_date', 'desc')
+                        ->first();
+    
+                    if ($last_landed_cost_voucher) {
+                        $item_rate = $last_landed_cost_voucher->valuation_rate;
+                    }
+                } else {
+                    $item_rate = $last_purchase_order->base_rate;
                 }
-            } else {
-                $item_rate = $last_purchase_order->base_rate;
             }
+
+            $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+
+            $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+            $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+
+            $minimum_selling_price = $item_rate * $minimum_price_computation;
+
+            $default_price = $item_rate * $standard_price_computation;
+            $website_price = DB::table('tabItem Price')
+                ->where('price_list', 'Website Price List')->where('selling', 1)
+                ->where('item_code', $item_code)->orderBy('modified', 'desc')
+                ->select('price_list_rate', 'price_list')->first();
+
+            $default_price = ($website_price) ? $website_price->price_list_rate : $default_price;
         }
-
-        $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
-            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
-
-        $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
-        $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
-
-        $minimum_selling_price = $item_rate * $minimum_price_computation;
-
-        $default_price = $item_rate * $standard_price_computation;
-        $website_price = DB::table('tabItem Price')
-            ->where('price_list', 'Website Price List')->where('selling', 1)
-            ->where('item_code', $item_code)->orderBy('modified', 'desc')
-            ->select('price_list_rate', 'price_list')->first();
-
-        $default_price = ($website_price) ? $website_price->price_list_rate : $default_price;
 
         // get item inventory stock list
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
@@ -2119,8 +2128,7 @@ class MainController extends Controller
             return $q->attribute;
         })->unique();
 
-        // return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr'));
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'not_allowed_department', 'user_department'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -2364,8 +2372,8 @@ class MainController extends Controller
         $paginatedItems->setPath($request->url());
 
         $list = $paginatedItems;
+        
         return view('tbl_stock_ledger', compact('list', 'logs', 'item_code'));
-        // return view('tbl_stock_ledger', compact('logs', 'item_code', 'wh_users'));
     }
 
     public function print_barcode($item_code){
@@ -4627,5 +4635,14 @@ class MainController extends Controller
             'labels' => collect($result)->keys(),
             'data' => array_values($result)
         ];
+    }
+
+    public function purchaseRateHistory($item_code) {
+        $list = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)
+            ->select('po.supplier', 'po.name', 'po.transaction_date', 'poi.base_rate', 'po.supplier_group')
+            ->orderBy('po.creation', 'desc')->paginate(10);
+
+        return view('tbl_item_purchase_history', compact('list'));
     }
 }
