@@ -1939,7 +1939,9 @@ class MainController extends Controller
         $website_price = [];
         $minimum_selling_price = 0;
         $default_price = 0;
+        $avgPurchaseRate = '₱ 0.00';
         if (!in_array($user_department, $not_allowed_department)) {
+            $avgPurchaseRate = $this->avgPurchaseRate($item_code);
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
                 ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
 
@@ -2126,7 +2128,7 @@ class MainController extends Controller
             return $q->attribute;
         })->unique();
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'not_allowed_department', 'user_department'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'not_allowed_department', 'user_department', 'avgPurchaseRate'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
