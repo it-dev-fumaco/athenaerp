@@ -142,7 +142,7 @@
                                             </dd>
                                         </dl>
                                     </div>
-                                    @if (count($data['uom_conversion']) > 0)
+                                    @if (count($data['uom_conversion']) > 1)
                                     <div class="col-md-12 text-center">
                                         <span class="font-weight-bold d-blo1ck">UoM Conversion:</span>
                                         {{ number_format($data['uom_conversion'][0]->conversion_factor) . ' ' . $data['uom_conversion'][1]->uom .' = ' . number_format($data['uom_conversion'][1]->conversion_factor) . ' ' . $data['uom_conversion'][0]->uom }}

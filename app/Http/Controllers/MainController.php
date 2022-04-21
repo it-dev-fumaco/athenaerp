@@ -238,7 +238,7 @@ class MainController extends Controller
                     $allowed_warehouses = collect($allow_warehouse)->implode('","');
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
                 }else{
-                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                    return $q->where(DB::raw('(SELECT COUNT(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 }
             })
             ->when($request->assigned_to_me, function($q) use ($item_codes_based_on_warehouse_assigned){
@@ -1999,7 +1999,7 @@ class MainController extends Controller
                 $last_purchase_rate = DB::table('tabLanded Cost Voucher as a')
                     ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
                     ->where('a.docstatus', 1)->where('b.item_code', $item_code)
-                    ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'i.description', 'b.rate', 'b.valuation_rate', 'i.item_classification', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
+                    ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
                     ->orderBy('transaction_date', 'desc')
                     ->first();
 
