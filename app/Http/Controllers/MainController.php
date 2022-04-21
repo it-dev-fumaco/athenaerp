@@ -4646,19 +4646,17 @@ class MainController extends Controller
         return view('tbl_item_purchase_history', compact('list'));
     }
 
-    public function avgPurchaseRate($item_code, Request $request) {
-        if ($request->ajax()) {
-            $list = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-                ->where('po.docstatus', 1)->where('poi.item_code', $item_code)
-                ->select('po.supplier', 'po.name', 'po.transaction_date', 'poi.base_rate', 'po.supplier_group')
-                ->orderBy('po.creation', 'desc')->get();
+    public function avgPurchaseRate($item_code) {
+        $list = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)
+            ->select('po.supplier', 'po.name', 'po.transaction_date', 'poi.base_rate', 'po.supplier_group')
+            ->orderBy('po.creation', 'desc')->get();
 
-            $sum = collect($list)->sum('base_rate');
-            $count = collect($list)->count();
+        $sum = collect($list)->sum('base_rate');
+        $count = collect($list)->count();
 
-            $average = $sum / $count;
+        $average = $sum / $count;
 
-            return '₱ ' . number_format($average, 2, '.', ',');
-        }
+        return '₱ ' . number_format($average, 2, '.', ',');
     }
 }

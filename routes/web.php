@@ -124,5 +124,4 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/consignment_sales/{warehouse}', 'MainController@consignmentSalesReport');
 
     Route::get('/purchase_rate_history/{item_code}', 'MainController@purchaseRateHistory');
-    Route::get('/avg_purchase_rate/{item_code}', 'MainController@avgPurchaseRate');
 });

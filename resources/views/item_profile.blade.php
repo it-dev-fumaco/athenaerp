@@ -600,7 +600,6 @@
 
         @if ($user_group == 'Manager')
         get_purchase_history();
-        get_avg_purchase_rate();
         @endif
 
         function get_purchase_history(page){
