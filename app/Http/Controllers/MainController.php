@@ -1910,7 +1910,7 @@ class MainController extends Controller
         if(!$item_details){
             abort(404);
         }
-        
+
         if($request->json){
             return response()->json($item_details);
         }
@@ -3535,6 +3535,24 @@ class MainController extends Controller
         }
 
         return response()->json($chart_data);
+    }
+
+    public function monthly_inventory_audit(Request $request){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
+        $from = $request->date ? Carbon::parse(explode(' - ', $request->date)[0]) : Carbon::now()->subDays(30);
+        $to = $request->date ? Carbon::parse(explode(' - ', $request->date)[1]) : Carbon::now();
+
+        $inv_audit = DB::table('tabMonthly Inventory Audit')->whereIn('warehouse', $assigned_consignment_store)->where('docstatus', 1)->whereDate('from', '>=', $from)->whereDate('to', '<=', $to)
+            ->when($request->search, function ($q) use ($request){
+                return $q->where('name', 'like', '%'.$request->search.'%');
+            })
+            ->when($request->store, function ($q) use ($request){
+                return $q->where('warehouse', $request->store);
+            })
+            ->select('name', 'warehouse', 'from', 'to', 'audited_by', 'employee_name', 'average_accuracy_rate')->orderBy('creation', 'desc')->paginate(20);
+
+        return view('monthly_inv_audit', compact('inv_audit', 'assigned_consignment_store'));
     }
 
     public function returns(){

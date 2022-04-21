@@ -72,6 +72,9 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="p-2 w-100 border border-secondary">
+                                                <a href="/monthly_inventory_audit" class="btn btn-primary">Monthly Inventory Audit</a>
+                                            </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="container-fluid text-center">
