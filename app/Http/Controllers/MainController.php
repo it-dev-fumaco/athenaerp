@@ -113,11 +113,13 @@ class MainController extends Controller
             $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
@@ -155,7 +157,7 @@ class MainController extends Controller
                     $allowed_warehouses = collect($allow_warehouse)->implode('","');
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
                 }else{
-                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                    return $q->where(DB::raw('(SELECT COUNT(name) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                 }
             })
             ->when($request->assigned_to_me, function($q) use ($item_codes_based_on_warehouse_assigned){
@@ -256,6 +258,7 @@ class MainController extends Controller
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
+            ->where('stock_warehouse', 1)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
             ->get();
 
@@ -419,14 +422,6 @@ class MainController extends Controller
             $default_price = ($website_price > 0) ? $website_price : $default_price;
 
             if ($request->check_qty == 'on') {
-                $site_warehouses = collect($site_warehouses)->filter(function ($value, $key) {
-                    return $value['available_qty'] > 0;
-                });
-
-                $consignment_warehouses = collect($consignment_warehouses)->filter(function ($value, $key) {
-                    return $value['available_qty'] > 0;
-                });
-
                 if(count($site_warehouses) == 0 and count($consignment_warehouses) == 0){
                     continue;
                 }
