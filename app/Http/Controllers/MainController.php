@@ -157,7 +157,8 @@ class MainController extends Controller
                     $allowed_warehouses = collect($allow_warehouse)->implode('","');
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
                 }else{
-                    return $q->where(DB::raw('(SELECT COUNT(name) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                    // return $q->where(DB::raw('(SELECT COUNT(name) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                    return $q->where(DB::raw('(SELECT COUNT(`tabItem`.name) FROM `tabBin` JOIN tabWarehouse ON tabWarehouse.name = `tabBin`.warehouse WHERE `tabBin`.item_code = `tabItem`.name and `tabWarehouse`.stock_warehouse = 1)'), '>', 0);
                 }
             })
             ->when($request->assigned_to_me, function($q) use ($item_codes_based_on_warehouse_assigned){
@@ -230,7 +231,23 @@ class MainController extends Controller
         }
 
         $total_items = count($items);
-        $items = new Paginator($items, 20);
+
+        // Get current page form url e.x. &page=1
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data3
+        $itemCollection = collect($items);
+        // Define how many items we want to be visible in each page
+        $perPage = 20;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+        $items = $paginatedItems;
+
+        $url = $request->fullUrl();
+        $items->withPath($url);
 
         if($request->searchString != ''){
             DB::table('tabAthena Inventory Search History')->insert([
@@ -243,10 +260,6 @@ class MainController extends Controller
                 'total_result' => $total_items
             ]);
         }
-
-        $url = $request->fullUrl();
-
-        $items->withPath($url);
         
         if($request->get_total){
             return number_format($total_items);
@@ -420,12 +433,6 @@ class MainController extends Controller
             $website_price = array_key_exists($row->item_code, $website_prices) ? $website_prices[$row->item_code] : 0;
 
             $default_price = ($website_price > 0) ? $website_price : $default_price;
-
-            if ($request->check_qty == 'on') {
-                if(count($site_warehouses) == 0 and count($consignment_warehouses) == 0){
-                    continue;
-                }
-            }
 
             $item_list[] = [
                 'name' => $row->item_code,
