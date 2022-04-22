@@ -91,6 +91,7 @@ class MainController extends Controller
             'tabItem.description',
             'tabItem.item_group',
             'tabItem.stock_uom',
+            'tabItem.custom_item_cost',
             'tabItem.item_classification',
             'tabItem.item_group_level_1 as lvl1',
             'tabItem.item_group_level_2 as lvl2',
@@ -425,6 +426,10 @@ class MainController extends Controller
                 } else {
                     $item_rate = $last_purchase_order->base_rate;
                 }
+            }
+
+            if ($item_rate <= 0) {
+                $item_rate = $row->custom_item_cost;
             }
 
             $minimum_selling_price = $item_rate * $minimum_price_computation;
@@ -1917,8 +1922,6 @@ class MainController extends Controller
             return response()->json($item_details);
         }
 
-        $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->get();
-
         $allow_warehouse = [];
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
         if ($is_promodiser) {
@@ -1947,6 +1950,7 @@ class MainController extends Controller
         $minimum_selling_price = 0;
         $default_price = 0;
         $avgPurchaseRate = '₱ 0.00';
+        $last_purchase_rate = 0;
         if (!in_array($user_department, $not_allowed_department)) {
             $avgPurchaseRate = $this->avgPurchaseRate($item_code);
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
@@ -1976,6 +1980,12 @@ class MainController extends Controller
             $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
             $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
 
+            $last_purchase_rate = $item_rate;
+
+            if ($item_rate <= 0) {
+                $item_rate = $item_details->custom_item_cost;
+            }
+
             $minimum_selling_price = $item_rate * $minimum_price_computation;
 
             $default_price = $item_rate * $standard_price_computation;
@@ -1994,20 +2004,48 @@ class MainController extends Controller
             })
             ->where('stock_warehouse', 1)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
-            ->get();
+            ->get()->toArray();
+
+        $stock_warehouses = array_column($item_inventory, 'warehouse');
+
+        $stock_reserves = [];
+        if (count($stock_warehouses) > 0) {
+            $stock_reserves = StockReservation::where('item_code', $item_code)
+                ->whereIn('warehouse', $stock_warehouses)->where('status', 'Active')
+                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(reserve_qty) as consumed_qty, warehouse')
+                ->groupBy('warehouse')->get();
+
+            $stock_reserves = collect($stock_reserves)->groupBy('warehouse')->toArray();
+
+            $ste_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+                ->where('item_code', $item_code)->whereIn('s_warehouse', $stock_warehouses)
+                ->selectRaw('SUM(qty) as qty, s_warehouse')->groupBy('s_warehouse')
+                ->pluck('qty', 's_warehouse')->toArray();
+
+            $at_issued = DB::table('tabAthena Transactions as at')
+                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'ps.parent')
+                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+                ->where('psi.status', 'Issued')
+                ->where('at.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
+                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
+                ->pluck('qty', 's_warehouse')->toArray();
+        }
 
         $site_warehouses = [];
         $consignment_warehouses = [];
         foreach ($item_inventory as $value) {
-            $reserved_qty = StockReservation::where('item_code', $value->item_code)
-                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
+            $reserved_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['reserved_qty'] : 0;
+            $consumed_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['consumed_qty'] : 0;
+            $ste_issued_qty = array_key_exists($value->warehouse, $ste_issued) ? $ste_issued[$value->warehouse] : 0;
+            $at_issued_qty = array_key_exists($value->warehouse, $at_issued) ? $at_issued[$value->warehouse] : 0;
 
-            $consumed_qty = StockReservation::where('item_code', $value->item_code)
-                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('consumed_qty');
-
+            $issued_qty = $ste_issued_qty + $at_issued_qty;
             $reserved_qty = $reserved_qty - $consumed_qty;
 
-            $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+            $actual_qty = $value->actual_qty - $issued_qty;
             if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                 $consignment_warehouses[] = [
                     'warehouse' => $value->warehouse,
@@ -2028,29 +2066,33 @@ class MainController extends Controller
                 ];
             }
         }
-
         // get item images
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
         $production_item_alternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
             ->where('p.item_code', $item_details->name)->where('p.item_alternative_for', '!=', $item_details->name)
-            ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get();
-        foreach($production_item_alternatives as $a){
-            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+            ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get()->toArray();
 
-            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+        $production_item_alternative_item_codes = array_column($production_item_alternatives, 'item_code');
+        $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', $production_item_alternative_item_codes)->pluck('image_path')->toArray();
+        $production_item_alt_actual_stock = DB::table('tabBin')->whereIn('item_code', $production_item_alternative_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')
+            ->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+        foreach($production_item_alternatives as $a){
+            $item_alternative_image = array_key_exists($a->item_code, $item_alternative_images) ? $item_alternative_images[$a->item_code] : null;
+            $actual_stocks = array_key_exists($a->item_code, $production_item_alt_actual_stock) ? $production_item_alt_actual_stock[$a->item_code] : 0;
 
             if(count($item_alternatives) < 7){
                 $item_alternatives[] = [
                     'item_code' => $a->item_code,
                     'description' => $a->description,
-                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                    'item_alternative_image' => $item_alternative_image,
                     'actual_stocks' => $actual_stocks
                 ];
             }
         }
-
+       
+        $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
         // get item alternatives based on parent item code
         $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
         foreach($q as $a){
@@ -2091,51 +2133,62 @@ class MainController extends Controller
         $user_group = Auth::user()->user_group;
 
         // variants
-        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->select('name', 'item_name')->get();
-        $variant_item_codes = collect($co_variants)->map(function ($q){
-            return $q->name;
-        });
-
-        $variants_last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-            ->where('po.docstatus', 1)->whereIn('poi.item_code', $variant_item_codes)->select('poi.base_rate', 'po.supplier_group', 'poi.item_code', 'po.creation')->orderBy('po.creation', 'desc')->get();
-        $var_last_po = collect($variants_last_purchase_order)->groupBy('item_code');
-
-        $variants_last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')
-            ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
-            ->where('a.docstatus', 1)->whereIn('b.item_code', $variant_item_codes)
-            ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
-            ->orderBy('transaction_date', 'desc')->get();
-        $var_last_landed_cost_voucher = collect($variants_last_landed_cost_voucher)->groupBy('item_code');
-
-        $variants_website_price = DB::table('tabItem Price')
-            ->where('price_list', 'Website Price List')->where('selling', 1)
-            ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')
-            ->select('item_code', 'price_list_rate', 'price_list')->get();
-        $var_website_price = collect($variants_website_price)->groupBy('item_code');
-
-        $default_price = ($website_price) ? $website_price->price_list_rate : $default_price;
+        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
+        $variant_item_codes = array_column($co_variants->items(), 'name');
 
         $variants_price_arr = [];
-        foreach($variant_item_codes as $variant){
-            $variant_rate = 0;
-            if(isset($var_last_po[$variant])){
-                if($var_last_po[$variant][0]->supplier_group == 'Imported'){
-                    $variant_rate = isset($var_last_landed_cost_voucher[$variant]) ? $var_last_landed_cost_voucher[$variant][0]->valuation_rate : 0;
-                }else{
-                    $variant_rate = $var_last_po[$variant][0]->base_rate;
-                }
+        if (!in_array($user_department, $not_allowed_department)) {
+            // get item cost for items with 0 last purchase rate
+            $item_custom_cost = [];
+            foreach ($co_variants->items() as $row) {
+                $item_custom_cost[$row->name] = $row->custom_item_cost;
             }
 
-            $variants_default_price = isset($var_website_price[$variant]) ? $var_website_price[$variant][0]->price_list_rate : $variant_rate * 2;
-            $variants_price_arr[$variant] = [$variants_default_price];
+            $variants_last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                ->where('po.docstatus', 1)->whereIn('poi.item_code', $variant_item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
+
+            $variants_last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                ->where('a.docstatus', 1)->whereIn('b.item_code', $variant_item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
+            
+            $variants_last_purchase_order_rates = collect($variants_last_purchase_order)->groupBy('item_code')->toArray();
+            $variants_last_landed_cost_voucher_rates = collect($variants_last_landed_cost_voucher)->groupBy('item_code')->toArray();
+
+            $variants_website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
+                ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+        
+            foreach($variant_item_codes as $variant){
+                $variants_default_price = 0;
+                $variant_rate = 0;
+                if(array_key_exists($variant, $variants_last_purchase_order_rates)){
+                    if($variants_last_purchase_order_rates[$variant][0]->supplier_group == 'Imported'){
+                        $variant_rate = isset($variants_last_landed_cost_voucher[$variant]) ? $variants_last_landed_cost_voucher[$variant][0]->valuation_rate : 0;
+                    }else{
+                        $variant_rate = $variants_last_purchase_order_rates[$variant][0]->base_rate;
+                    }
+                }
+
+                // custom item cost 
+                if ($variant_rate <= 0) {
+                    $variant_rate = array_key_exists($variant, $item_custom_cost) ? $item_custom_cost[$variant] : 0;
+                }
+
+                $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variant_rate * $standard_price_computation;
+                $variants_price_arr[$variant] = $variants_default_price;
+            }
         }
 
-        $attributes = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->get();
-        $attribute_names = collect($attributes)->map(function ($q){
+        $attributes_query = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
+
+        $attribute_names = collect($attributes_query)->map(function ($q){
             return $q->attribute;
         })->unique();
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'not_allowed_department', 'user_department', 'avgPurchaseRate'));
+        $attributes = [];
+        foreach ($attributes_query as $row) {
+            $attributes[$row->parent][$row->attribute] = $row->attribute_value;
+        }
+
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'not_allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -4662,8 +4715,16 @@ class MainController extends Controller
         $sum = collect($list)->sum('base_rate');
         $count = collect($list)->count();
 
-        $average = $sum / $count;
+        $average = ($sum > 0) ? $sum / $count : 0;
 
         return '₱ ' . number_format($average, 2, '.', ',');
+    }
+
+    public function updateItemCost($item_code, Request $request) {
+        if ($request->price > 0) {
+            DB::table('tabItem')->where('name', $item_code)->update(['custom_item_cost' => $request->price]);
+        }
+
+        return '₱ ' . number_format($request->price, 2, '.', ',');;
     }
 }

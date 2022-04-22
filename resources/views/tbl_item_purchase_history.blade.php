@@ -1,5 +1,5 @@
 <h5 class="m-2">Item Purchase Rate History</h5>
-<table class="table table-sm table-striped table-bordered">
+<table class="table table-sm table-striped table-bordered" style="font-size: 9pt;">
     <thead>
         <th class="text-center" style="width: 15%;">Transaction Date</th>
         <th class="text-center" style="width: 15%;">Purchase Order No.</th>

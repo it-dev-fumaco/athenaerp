@@ -1,5 +1,5 @@
 <br class="d-md-none">
-<table class="table" style="font-size: 9pt;">
+<table class="table table-sm table-bordered table-striped table-hover" style="font-size: 9pt;">
     <thead>
     <tr>
         <th scope="col" class="text-center">Transaction No.</th>
@@ -131,7 +131,7 @@
         </tr>
         @empty
         <tr>
-            <td colspan="8" style="text-align:center;">No Records Found.</td>
+            <td colspan="9" style="text-align:center;">No Records Found.</td>
         </tr>
         @endforelse
     </tbody>

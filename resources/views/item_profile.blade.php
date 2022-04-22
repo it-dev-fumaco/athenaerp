@@ -29,7 +29,7 @@
                             <i class="fas fa-history d-block d-md-none"></i>
                         </a>
                     </li>
-                    @if ($user_group == 'Manager')
+                    @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
                     </li>
@@ -120,17 +120,19 @@
                                                         <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                         <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
                                                     @endif
-                                                    @if ($user_group == 'Manager' && $minimum_selling_price > 0)
+                                                    @if (in_array($user_group, ['Manager', 'Director']) && $minimum_selling_price > 0)
                                                         <span class="d-block font-weight-bold mt-3" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                                                         <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
                                                     @endif
-                                                    @if ($item_rate > 0)
-                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($item_rate, 2, '.', ',') }}</span>
+                                                    @if ($last_purchase_rate > 0)
+                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($last_purchase_rate, 2, '.', ',') }}</span>
                                                     <span class="d-inline-block" style="font-size: 9pt;">Last Purchase Rate</span>
                                                     <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $last_purchase_date }}</span>
                                                 @endif
+                                                @if ($avgPurchaseRate > 0)
                                                 <span class="d-block font-weight-bold avg-purchase-rate-div mt-3" style="font-size: 11pt;">{{ $avgPurchaseRate }}</span>
                                                 <span class="d-inline-block" style="font-size: 9pt;">Average Purchase Rate</span>
+                                                @endif
                                                 @endif
                                                 </p>
                                             </div>
@@ -146,7 +148,7 @@
                                                         <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
                                                             <thead>
                                                                 <tr>
-                                                                    <th scope="col" rowspan=2 class="font-responsive text-center p-1">Warehouse</th>
+                                                                    <th scope="col" rowspan=2 class="font-responsive text-center p-1 align-middle">Warehouse</th>
                                                                     <th scope="col" colspan=3 class="font-responsive text-center p-1">Quantity</th>
                                                                 </tr>
                                                                 <tr>
@@ -238,18 +240,20 @@
                                                 <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                 <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
                                             @endif
-                                            @if ($user_group == 'Manager')
+                                            @if (in_array($user_group, ['Manager', 'Director']))
                                                 @if ($minimum_selling_price > 0)
                                                     <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                                                     <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
                                                 @endif
-                                                @if ($item_rate > 0)
-                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($item_rate, 2, '.', ',') }}</span>
+                                                @if ($last_purchase_rate > 0)
+                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($last_purchase_rate, 2, '.', ',') }}</span>
                                                     <span class="d-inline-block" style="font-size: 9pt;">Last Purchase Rate</span>
                                                     <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $last_purchase_date }}</span>
                                                 @endif
+                                                @if ($avgPurchaseRate > 0)
                                                 <span class="d-block font-weight-bold avg-purchase-rate-div mt-3" style="font-size: 11pt;">{{ $avgPurchaseRate }}</span>
                                                 <span class="d-inline-block" style="font-size: 9pt;">Average Purchase Rate</span>
+                                                @endif
                                             @endif
                                             @endif
                                         </p>
@@ -261,126 +265,159 @@
                                     <h3 class="card-title font-responsive"><i class="fas fa-project-diagram"></i> Variants</h3>
                                 </div>
                             </div>
-                            <div class="d-block d-lg-none col-12">
+                            {{-- <div class="d-block d-lg-none col-12">
                                 <div class="box box-solid">
                                     @php
                                         $variants = collect($co_variants)->chunk(5);
                                     @endphp
                                     <div class="divs tab-content">
                                         @for($i = 0; $i < count($variants); $i++)
-                                            <div id="mob-variant-page-{{ $i + 1 }}" class="mob-tab tab-pane {{ $i == 0 ? 'active' : null }}">
-                                                @php
-                                                    $first_item_name = \Illuminate\Support\Str::limit($item_details->item_name, 30, $end='...')
-                                                @endphp
-                                                <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $item_details->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt;border-bottom: 2px solid #28A745; color: #28A745;"><b>{{ $item_details->name }}</b> - {{ $first_item_name }} <i class="fa fa-chevron-down float-right"></i></button>
+                                        <div id="mob-variant-page-{{ $i + 1 }}" class="mob-tab tab-pane {{ $i == 0 ? 'active' : null }}">
+                                            @php
+                                                $first_item_name = \Illuminate\Support\Str::limit($item_details->item_name, 30, $end='...')
+                                            @endphp
+                                            <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $item_details->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt;border-bottom: 2px solid #28A745; color: #28A745;"><b>{{ $item_details->name }}</b> - {{ $first_item_name }} <i class="fa fa-chevron-down float-right"></i></button>
                                                     
-                                                <div class="collapse multi-collapse show" id="variant-data-{{ $item_details->name }}">
-                                                    <table class="table" style="font-size: 9pt;">
-                                                        @foreach ($attribute_names as $attribute_name)
-                                                            <tr>
-                                                                @php
-                                                                    $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
-                                                                @endphp
-                                                                <td>{{ $attribute_name }}</td>
-                                                                <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </table>
-                                                </div>
-                                                @foreach ($variants[$i] as $variant)
-                                                    @if ($item_details->name == $variant->name)
-                                                        @continue
-                                                    @endif
-                                                    @php
-                                                        $item_name = \Illuminate\Support\Str::limit($variant->item_name, 30, $end='...')
-                                                    @endphp
-                                                    <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $variant->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt; border-bottom: 1px solid #C4C4C4"><b>{{ $variant->name }}</b> - {{ $item_name }} <i class="fa fa-chevron-down float-right"></i></button>
-                                                    
-                                                    <div class="collapse multi-collapse" id="variant-data-{{ $variant->name }}">
-                                                        <table class="table" style="font-size: 9pt;">
-                                                            @foreach ($attribute_names as $attribute_name)
-                                                                <tr>
-                                                                    @php
-                                                                        $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
-                                                                    @endphp
-                                                                    <td>{{ $attribute_name }}</td>
-                                                                    <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </table>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endfor
-                                        @if (count($variants) > 1)
-                                            <button class="btn float-left" id="btn-prev" style="font-size: 9pt; color: #007BFF"><i class="fa fa-chevron-left"></i> Previous</button>
-                                            <button class="btn float-right" id="btn-next" style="font-size: 9pt; color: #007BFF">Next <i class="fa fa-chevron-right"></i></button>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="container d-none d-lg-block col-12 mt-2">
-                                <div class="box box-solid">
-                                    @php
-                                        $variants = collect($co_variants)->where('parent', '!=', $item_details->name)->chunk(10);
-                                    @endphp
-                                    <div class="tab-content">
-                                        @for($i = 0; $i < count($variants); $i++)
-                                            <div id="variant-page-{{ $i + 1 }}" class="tab-pane {{ $i == 0 ? 'active' : null }}">
-                                                <table id="variants-table" class="table table-bordered" style="font-size: 10pt;">
+                                            <div class="collapse multi-collapse show" id="variant-data-{{ $item_details->name }}">
+                                                <table class="table" style="font-size: 9pt;">
+                                                    @foreach ($attribute_names as $attribute_name)
                                                     <tr>
-                                                        <th class="text-center" style="position:sticky; left: 0; width: 12%">Item Code</th>
-                                                        @foreach ($attribute_names as $attribute_name)
-                                                            <th class="text-center">{{ $attribute_name }}</th>
-                                                        @endforeach
-                                                        <th class="text-center">Price</th>
+                                                        @php
+                                                            $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                                        @endphp
+                                                        <td>{{ $attribute_name }}</td>
+                                                        <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
                                                     </tr>
-                                                    <tr class="highlight-row">
-                                                        <td class="text-center table-highlight pb-3 pt-3" style="position:sticky; left: 0; width: 12%">{{ $item_details->name }}</td>
-                                                        @foreach($attribute_names as $attribute_name)
+                                                    @endforeach
+                                                </table>
+                                            </div>
+                                            @foreach ($variants[$i] as $variant)
+                                            @if ($item_details->name == $variant->name)
+                                                @continue
+                                            @endif
+                                            @php
+                                                $item_name = \Illuminate\Support\Str::limit($variant->item_name, 30, $end='...')
+                                            @endphp
+                                            <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $variant->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt; border-bottom: 1px solid #C4C4C4"><b>{{ $variant->name }}</b> - {{ $item_name }} <i class="fa fa-chevron-down float-right"></i></button>
+                                            
+                                            <div class="collapse multi-collapse" id="variant-data-{{ $variant->name }}">
+                                                <table class="table" style="font-size: 9pt;">
+                                                    @foreach ($attribute_names as $attribute_name)
+                                                        <tr>
                                                             @php
-                                                                $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                                                $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
                                                             @endphp
-                                                            <td class="text-center table-highlight pb-3 pt-3">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
-                                                        @endforeach
-                                                        <td class="text-center table-highlight pb-3 pt-3">{{ $default_price > 0 ? '₱ ' . number_format($default_price, 2, '.', ',') : 'n/a' }}</td>
-                                                    </tr>
-                                                    @foreach ($variants[$i] as $variant)
-                                                        @if ($item_details->name == $variant->name)
-                                                            @continue
-                                                        @endif
-                                                        <tr style="font-size: 9pt;">
-                                                            <td class="text-center" style="position:sticky; left: 0; width: 12%">
-                                                                <a href="/get_item_details/{{ $variant->name }}">{{ $variant->name }}</a>
-                                                            </td>
-                                                            @foreach ($attribute_names as $attribute_name)
-                                                                @php
-                                                                    $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
-                                                                @endphp
-                                                                <td class="text-center">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
-                                                            @endforeach
-                                                            @php
-                                                                $price = 0;
-                                                                if(isset($variants_price_arr[$variant->name])){
-                                                                    $price = $variants_price_arr[$variant->name][0];
-                                                                }
-                                                            @endphp
-                                                            <td class="text-center">{{ $price > 0 ? '₱ ' . number_format($price, 2, '.', ',') : 'n/a' }}</td>
+                                                            <td>{{ $attribute_name }}</td>
+                                                            <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
                                                         </tr>
                                                     @endforeach
                                                 </table>
                                             </div>
-                                        @endfor
-                                    </div>
-                                    @if (count($variants) > 1)
-                                        <ul class="nav nav-tabs variant-tabs mb-3" role="tablist">
-                                            @foreach ($variants as $i => $item)
-                                                <li class="nav-item">
-                                                    <a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#variant-page-{{ $i + 1 }}">{{ $i + 1 }}</a>
-                                                </li>
                                             @endforeach
-                                        </ul>
-                                    @endif
+                                        </div>
+                                        
+                                        @endfor
+                                        @if (count($variants) > 1)
+                                        <button class="btn float-left" id="btn-prev" style="font-size: 9pt; color: #007BFF"><i class="fa fa-chevron-left"></i> Previous</button>
+                                        <button class="btn float-right" id="btn-next" style="font-size: 9pt; color: #007BFF">Next <i class="fa fa-chevron-right"></i></button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div> --}}
+                            <div class="container d-none d-lg-block col-12 mt-2">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="table-responsive" id="example">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col" class="text-center" style="background-color: #CCD1D1;">Item Code</th>
+                                                        @foreach ($attribute_names as $attribute_name)
+                                                        <th scope="col" class="text-center text-nowrap">{{ $attribute_name }}</th>
+                                                        @endforeach
+                                                        @if (!in_array($user_department, $not_allowed_department)) 
+                                                        @if (in_array($user_group, ['Manager', 'Director']))
+                                                        <th scope="col" class="text-center text-nowrap">Price</th>
+                                                        @endif
+                                                        @endif
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr class="highlight-row">
+                                                        <th scope="row" class="text-center align-middle" style="background-color: #001F3F !important;">{{ $item_details->name }}</th>
+                                                        @foreach ($attribute_names as $attribute_name)
+                                                        <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
+                                                        @endforeach
+                                                        @if (!in_array($user_department, $not_allowed_department)) 
+                                                        @if (in_array($user_group, ['Manager', 'Director']))
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @if ($default_price > 0)
+                                                            {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
+                                                            @else
+                                                            <span class="entered-price d-none">0.00</span>
+                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
+                                                                @csrf
+                                                                <div class="input-group" style="width: 120px;">
+                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
+                                                                    <div class="input-group-append">
+                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                            @endif
+                                                        </td>
+                                                        @endif
+                                                        @endif
+                                                    </tr>
+                                                    @foreach ($co_variants as $variant)
+                                                    <tr style="font-size: 9pt;">
+                                                        <td class="text-center align-middle font-weight-bold text-dark" style="background-color: #CCD1D1;">
+                                                            <a href="/get_item_details/{{ $variant->name }}">{{ $variant->name }}</a>
+                                                        </td>
+                                                        @foreach ($attribute_names as $attribute_name)
+                                                        @php
+                                                            $attr_val = null;
+                                                            if (array_key_exists($variant->name, $attributes)) {
+                                                                $attr_val = array_key_exists($attribute_name, $attributes[$variant->name]) ? $attributes[$variant->name][$attribute_name] : null;
+                                                            }
+                                                        @endphp
+                                                        <td class="text-center align-middle p-2">{{ $attr_val }}</td>
+                                                        @endforeach
+                                                        @php
+                                                            $price = 0;
+                                                            if(array_key_exists($variant->name, $variants_price_arr)){
+                                                                $price = $variants_price_arr[$variant->name];
+                                                            }
+                                                        @endphp
+                                                        @if (!in_array($user_department, $not_allowed_department)) 
+                                                         @if (in_array($user_group, ['Manager', 'Director']))
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @if ($price > 0)
+                                                            {{ '₱ ' . number_format($price, 2, '.', ',') }}
+                                                            @else
+                                                            <span class="entered-price d-none">0.00</span>
+                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
+                                                                @csrf
+                                                                <div class="input-group" style="width: 120px;">
+                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
+                                                                    <div class="input-group-append">
+                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                            @endif
+                                                        </td>
+                                                        @endif
+                                                        @endif
+                                                    </tr>
+                                                @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="m-2">
+                                    {{ $co_variants->links() }}
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -430,7 +467,7 @@
                         </div>
                     </div>
         
-                    <div id="athena-logs" class="container-fluid tab-pane bg-white">
+                    <div id="athena-logs" class="container-fluid tab-pane bg-white p-2">
                         <div class="col-md-2 p-2" style="display: inline-block">
                             <div class="form-group m-0 font-responsive" id="ath-src-warehouse-filter-parent" style="z-index: 1050">
                                 <select name="ath-src-warehouse" id="ath-src-warehouse-filter" class="form-control"></select>
@@ -452,7 +489,7 @@
                         <div id="athena-transactions" class="col-12"></div>
                     </div>
         
-                    <div id="history" class="container-fluid tab-pane bg-white border border-secondary">
+                    <div id="history" class="container-fluid tab-pane bg-white p-2">
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="col-md-3 p-0" style="display: inline-block;">
@@ -485,7 +522,7 @@
                         </div>
                         <div id="stock-ledger" class="col-12"></div>
                     </div>
-                    @if ($user_group == 'Manager')
+                    @if (in_array($user_group, ['Manager', 'Director']))
                     <div id="purchase-history" class="container-fluid tab-pane bg-white">
                         <div id="purchase-history-div" class="p-3 col-12"></div>
                     </div>
@@ -495,6 +532,23 @@
         </div>
     </div>
     <style>
+        #example tr > *:first-child {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            min-width: 10rem;
+            z-index: 1;
+        }
+
+        #example tr > *:first-child::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: -1;
+        }
         .custom-body {
             min-width: 406px;
             max-width: 406px;
@@ -505,7 +559,7 @@
         }
 
         .highlight-row{
-            background-color: #001F3F;
+            background-color: #001F3F !important;
             color: #fff;
             font-weight: bold !important;
             font-size: 11pt;
@@ -523,19 +577,37 @@
 @endsection
 @section('script')
     <script>
-        var divs = $('.divs>div');
-        var now = 0; // currently shown div
-        divs.hide().first().show();
-        $("#btn-next").click(function (e) {
-            divs.eq(now).hide();
-            now = (now + 1 < divs.length) ? now + 1 : 0;
-            divs.eq(now).show(); // show next
+
+        $(document).on('submit', '.update-price-form', function(e){
+            e.preventDefault();
+
+            var entered_price = $(this).parent().find('.entered-price');
+            var frm = $(this);
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    // $('#athena-transactions').html(response);
+                    console.log(response)
+                    entered_price.removeClass('d-none').text(response);
+                    frm.remove();
+                }
+            });
         });
-        $("#btn-prev").click(function (e) {
-            divs.eq(now).hide();
-            now = (now > 0) ? now - 1 : divs.length - 1;
-            divs.eq(now).show(); // or .css('display','block');
-        });
+        // var divs = $('.divs>div');
+        // var now = 0; // currently shown div
+        // divs.hide().first().show();
+        // $("#btn-next").click(function (e) {
+        //     divs.eq(now).hide();
+        //     now = (now + 1 < divs.length) ? now + 1 : 0;
+        //     divs.eq(now).show(); // show next
+        // });
+        // $("#btn-prev").click(function (e) {
+        //     divs.eq(now).hide();
+        //     now = (now > 0) ? now - 1 : divs.length - 1;
+        //     divs.eq(now).show(); // or .css('display','block');
+        // });
         // $('#get-athena-transactions').click(function (){
         //     get_athena_transactions('{{ $item_details->name }}');
         // });
@@ -598,7 +670,7 @@
             get_stock_ledger(page);
         });
 
-        @if ($user_group == 'Manager')
+        @if (in_array($user_group, ['Manager', 'Director']))
         get_purchase_history();
         @endif
 
@@ -684,7 +756,6 @@
             $("#erp_dates").val('');
             $("#erp_dates").attr("placeholder","Select Date Range");
             get_stock_ledger();
-
         })
 
         $('#resetAll').click(function(){
@@ -731,8 +802,6 @@
             $("#erp_dates").attr("placeholder","Select Date Range");
             $("#ath_dates").val('');
             $("#ath_dates").attr("placeholder","Select Date Range");
-            get_stock_ledger();
-            get_athena_transactions();
         });
     </script>
 @endsection
