@@ -294,7 +294,7 @@
 															<div class="col-6 p-1">
 																<div class="col-md-12 m-0 text-justify" >
 																	<span class="font-italic item-class" >{{ $row['item_classification'] }}</span><br/>
-																	<span class="text-justify item-name" style="font-size: 9pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
+																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['part_nos'])
 																		<br>
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
