@@ -2141,6 +2141,7 @@ class MainController extends Controller
         $variant_item_codes = array_column($co_variants->items(), 'name');
 
         $variants_price_arr = [];
+        $variants_cost_arr = [];
         if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             // get item cost for items with 0 last purchase rate
             $item_custom_cost = [];
@@ -2178,6 +2179,7 @@ class MainController extends Controller
 
                 $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variant_rate * $standard_price_computation;
                 $variants_price_arr[$variant] = $variants_default_price;
+                $variants_cost_arr[$variant] = $variant_rate;
             }
         }
 
@@ -2194,7 +2196,7 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -4733,6 +4735,22 @@ class MainController extends Controller
             DB::table('tabItem')->where('name', $item_code)->update(['custom_item_cost' => $request->price]);
         }
 
-        return '₱ ' . number_format($request->price, 2, '.', ',');;
+        $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+
+        $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+        $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+
+        $price = $request->price;
+
+        $standard_price = $price * $standard_price_computation;
+
+        $item_cost = '₱ ' . number_format($price, 2, '.', ',');
+        $standard_price = '₱ ' . number_format($standard_price, 2, '.', ',');
+
+        return [
+            'item_cost' => $item_cost,
+            'standard_price' => $standard_price
+        ];
     }
 }
