@@ -51,7 +51,7 @@
                 </td>
             </tr>
             <tr>
-                <td colspan=6>
+                <td class="d-lg-none" colspan=6>
                     <table class="table">
                         <tr>
                             <td class="p-1">

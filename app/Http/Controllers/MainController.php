@@ -630,7 +630,10 @@ class MainController extends Controller
             $img_arr = [
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $item_images[$current_key]->image_path)[0]),
-                'image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
+                'orig_image_path' => asset('storage/').'/img/'.$img,
+                'orig_path' => Storage::disk('public')->exists('/img/'.$img) ? 1 : 0,
+                'webp_image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
+                'webp_path' => Storage::disk('public')->exists('/img/'.explode('.',$img)[0]) ? 1 : 0,
                 'current_img_key' => $current_key
             ];
                     
@@ -2387,23 +2390,25 @@ class MainController extends Controller
                 //get file extension
                 $extension = $file->getClientOriginalExtension();
                 //filename to store
-                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
+                $micro_time = round(microtime(true));
+                
+                $filenametostore = $micro_time . $i . '-'. $request->item_code.'.'.$extension;//round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
 
                 $destinationPath = storage_path('app/public/img/');
 
-                $jpeg_file = round(microtime(true)) . $i . '-'. $request->item_code.'.'.$extension;
+                $jpeg_file = $micro_time . $i . '-'. $request->item_code.'.'.$extension;
 
                 $webp = Webp::make($file);
-                $webp_file_name = round(microtime(true)) . $i . '-'. $request->item_code.'.webp';
+                $webp_file_name = $micro_time . $i . '-'. $request->item_code.'.webp';
 
                 if($webp->save(storage_path('app/public/img/'.$webp_file_name))) {
                     $file->move($destinationPath, $jpeg_file);
                 }
 
-                $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
-                if (file_exists($jpeg_path)) {
-                    unlink($jpeg_path);
-                }
+                // $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
+                // if (file_exists($jpeg_path)) {
+                //     unlink($jpeg_path);
+                // }
 
                 $item_images_arr[] = [
                     'name' => uniqid(),
