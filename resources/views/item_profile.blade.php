@@ -671,7 +671,7 @@
             window.history.back();
         });
 
-        // get_athena_transactions();
+        get_athena_transactions();
         function get_athena_transactions(page){
             var item_code = '{{ $item_details->name }}';
             var ath_src = $('#ath-src-warehouse-filter').val();
@@ -687,7 +687,7 @@
             });
         }
 
-        // get_stock_ledger();
+        get_stock_ledger();
         function get_stock_ledger(page){
             var item_code = '{{ $item_details->name }}';
             var erp_user = $('#erp-warehouse-user-filter').val();
