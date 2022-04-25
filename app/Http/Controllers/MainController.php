@@ -631,7 +631,7 @@ class MainController extends Controller
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $item_images[$current_key]->image_path)[0]),
                 'orig_image_path' => asset('storage/').'/img/'.$img,
-                'webp_image_path' => Storage::disk('public')->exists('/img/'.explode('.',$img)[0]) ? asset('storage/').'/img/'.explode('.', $img)[0].'.webp' : null,
+                'webp_image_path' => Storage::disk('public')->exists('/img/'.explode('.',$img)[0].'.webp') ? asset('storage/').'/img/'.explode('.', $img)[0].'.webp' : null,
                 'current_img_key' => $current_key
             ];
                     
