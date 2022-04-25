@@ -109,7 +109,7 @@
                                         </div>
                                         <div class="col-md-10">
                                             <br class="d-block d-md-none"/>
-                                            <dl>
+                                            <dl class="ml-3">
                                                 <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                                                 <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                                             </dl>
@@ -141,13 +141,13 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            <div class="card-header border-bottom-0 p-1">
+                                            <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                                                 @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))
                                                     <button class="btn btn-primary p-1 float-right" id="warehouse-location-btn" data-item-code="{{ $item_details->name }}" style="font-size: 12px;">Update Warehouse Location</button>
                                                 @endif
                                             </div>
-                                            <div class="box box-solid p-0">
+                                            <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
                                                     <div class="box-body table-responsive">
                                                         <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
