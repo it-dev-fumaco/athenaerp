@@ -58,7 +58,7 @@
                                             $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                                             $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
                                         @endphp
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
@@ -107,7 +107,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-9">
+                                        <div class="col-md-10">
                                             <br class="d-block d-md-none"/>
                                             <dl>
                                                 <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
