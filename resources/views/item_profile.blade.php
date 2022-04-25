@@ -314,6 +314,7 @@
                                                             @if ($default_price > 0)
                                                             {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
                                                             @else
+                                                            <center>
                                                             <span class="entered-price d-none">0.00</span>
                                                             <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
                                                                 @csrf
@@ -324,6 +325,7 @@
                                                                     </div>
                                                                 </div>
                                                             </form>
+                                                        </center>
                                                             @endif
                                                         </td>
                                                         @endif
