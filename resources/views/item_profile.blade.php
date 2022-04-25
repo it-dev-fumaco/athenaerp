@@ -284,7 +284,7 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <th scope="col" class="text-center text-nowrap">{{ $attribute_name }}</th>
                                                         @endforeach
-                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
+                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
                                                         <th scope="col" class="text-center text-nowrap">Price</th>
                                                         @endif
                                                         @if (in_array($user_group, ['Manager', 'Director']))
@@ -298,21 +298,12 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
                                                         @endforeach
-                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
+                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
                                                         <td class="text-center align-middle text-nowrap">
                                                             @if ($default_price > 0)
                                                             {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
                                                             @else
-                                                            <span class="entered-price d-none">0.00</span>
-                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
-                                                                @csrf
-                                                                <div class="input-group" style="width: 120px;">
-                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
-                                                                    <div class="input-group-append">
-                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
-                                                                    </div>
-                                                                </div>
-                                                            </form>
+                                                            --
                                                             @endif
                                                         </td>
                                                         @endif
@@ -355,21 +346,12 @@
                                                                 $price = $variants_price_arr[$variant->name];
                                                             }
                                                         @endphp
-                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
+                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
                                                         <td class="text-center align-middle text-nowrap">
                                                             @if ($price > 0)
                                                             {{ '₱ ' . number_format($price, 2, '.', ',') }}
                                                             @else
-                                                            <span class="entered-price d-none">0.00</span>
-                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
-                                                                @csrf
-                                                                <div class="input-group" style="width: 120px;">
-                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
-                                                                    <div class="input-group-append">
-                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
-                                                                    </div>
-                                                                </div>
-                                                            </form>
+                                                            --
                                                             @endif
                                                         </td>
                                                         @endif

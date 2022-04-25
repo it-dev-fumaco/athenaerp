@@ -2176,6 +2176,8 @@ class MainController extends Controller
             }
         }
 
+        array_push($variant_item_codes, $item_details->name);
+
         $attributes_query = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
 
         $attribute_names = collect($attributes_query)->map(function ($q){
