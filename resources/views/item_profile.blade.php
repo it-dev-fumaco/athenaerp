@@ -10,7 +10,7 @@
                 <div style="position: absolute; right: 8px; top: -10px;">
                     <img src="{{ asset('storage/icon/back.png') }}" style="width: 45px; cursor: pointer;" id="back-btn">
                 </div>
-                <ul class="nav nav-tabs" role="tablist">
+                <ul class="nav nav-tabs" role="tablist" style="font-size: 10pt;">
                     <li class="nav-item">
                         <a class="nav-link active" data-toggle="tab" href="#item-info">
                             <span class="d-none d-md-block">Item Info</span>
@@ -110,8 +110,8 @@
                                         <div class="col-md-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
-                                                <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
-                                                <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                                                <dt class="responsive-item-code" style="font-size: 12pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
+                                                <dd class="responsive-description" style="font-size: 9pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                                             </dl>
                                             <div class="d-block d-lg-none">
                                                 <p class="mt-2 mb-2 text-center">
@@ -150,7 +150,7 @@
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
                                                     <div class="box-body table-responsive">
-                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
+                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 9pt;">
                                                             <thead>
                                                                 <tr>
                                                                     <th scope="col" rowspan=2 class="font-responsive text-center p-1 align-middle">Warehouse</th>
@@ -171,11 +171,11 @@
                                                                     @endif
                                                                 </td>
                                                                 <td class="text-center p-1 font-responsive">
-                                                                    <small class="text-muted">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</small>
+                                                                    <span class="text-muted">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</span>
                                                                 </td>
                                                                 <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                                                 <td class="text-center p-1">
-                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
+                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 9pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
                                                                 </td>
                                                             </tr>
                                                             @empty
@@ -287,10 +287,10 @@
                                                         <th scope="col" class="text-center text-nowrap1 align-middle" style="width: 350px;">{{ $attribute_name }}</th>
                                                         @endforeach
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
-                                                        <th scope="col" class="text-center text-nowrap align-middle">Cost</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 1000px;">Cost</th>
                                                         @endif
                                                         @if (in_array($user_group, ['Manager', 'Director']))
-                                                        <th scope="col" class="text-center text-nowrap align-middle">Cost</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 1000px;">Cost</th>
                                                         @endif
                                                     </tr>
                                                 </thead>
@@ -410,7 +410,7 @@
                                                                 </picture>
                                                             </a>
                                                         </div>
-                                                        <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}">
+                                                        <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}" style="font-size: 9pt;">
                                                             <div class="p-1 text-justify">
                                                                 <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
                                                                 <small class="font-italic font-responsive" style="font-size: 9pt;">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
