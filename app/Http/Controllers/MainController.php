@@ -415,16 +415,16 @@ class MainController extends Controller
             $last_landed_cost_voucher_rates = collect($last_landed_cost_voucher)->groupBy('item_code')->toArray();
 
             $item_rate = 0;
-            $last_purchase_order = array_key_exists($row->item_code, $last_purchase_order_rates) ? $last_purchase_order_rates[$row->item_code][0] : [];
-            if ($last_purchase_order) {
-                if ($last_purchase_order->supplier_group == 'Imported') {
+            $last_purchase_order_arr = array_key_exists($row->item_code, $last_purchase_order_rates) ? $last_purchase_order_rates[$row->item_code][0] : [];
+            if ($last_purchase_order_arr) {
+                if ($last_purchase_order_arr->supplier_group == 'Imported') {
                     $last_landed_cost_voucher = array_key_exists($row->item_code, $last_landed_cost_voucher_rates) ? $last_landed_cost_voucher_rates[$row->item_code][0] : [];
                     
                     if ($last_landed_cost_voucher) {
                         $item_rate = $last_landed_cost_voucher->valuation_rate;
                     }
                 } else {
-                    $item_rate = $last_purchase_order->base_rate;
+                    $item_rate = $last_purchase_order_arr->base_rate;
                 }
             }
 
@@ -449,7 +449,7 @@ class MainController extends Controller
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
-                'default_price' => $default_price
+                'default_price' => $default_price,
             ];
         }
 
