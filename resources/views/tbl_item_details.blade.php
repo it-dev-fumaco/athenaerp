@@ -4,18 +4,22 @@
             <div class="row">
                 @php
                     $img_1 = (array_key_exists(0, $item_images)) ? '/img/' . $item_images[0] : '/icon/no_img.png';
+                    $img_1_name = isset($item_images[0]) ? $item_images[0] :  null;
                     $img_1_webp = (array_key_exists(0, $item_images)) ? '/img/' . explode('.', $item_images[0])[0].'.webp' : '/icon/no_img.webp';
                     $img_1_alt = (array_key_exists(0, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_1)[0], '-') : null;
                     
                     $img_2 = (array_key_exists(1, $item_images)) ? '/img/' . $item_images[1] : '/icon/no_img.png';
+                    $img_2_name = isset($item_images[1]) ? $item_images[1] :  null;
                     $img_2_webp = (array_key_exists(1, $item_images)) ? '/img/' . explode('.', $item_images[1])[0].'.webp' : '/icon/no_img.webp';
                     $img_2_alt = (array_key_exists(1, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_2)[0], '-') : null;
                     
                     $img_3 = (array_key_exists(2, $item_images)) ? '/img/' . $item_images[2] : '/icon/no_img.png';
+                    $img_3_name = isset($item_images[2]) ? $item_images[2] :  null;
                     $img_3_webp = (array_key_exists(2, $item_images)) ? '/img/' . explode('.', $item_images[2])[0].'.webp' : '/icon/no_img.webp';
                     $img_3_alt = (array_key_exists(2, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_3)[0], '-') : null;
                     
                     $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . $item_images[3] : '/icon/no_img.png';
+                    $img_4_name = isset($item_images[3]) ? $item_images[3] :  null;
                     $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                     $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
                 @endphp
@@ -23,38 +27,68 @@
                     <div class="row">
                         <div class="col-12">
                             <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
+                                {{-- <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}"> --}}
+                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_1_name)[0].'.webp'))
+                                    <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
+                                @elseif(!Storage::disk('public')->exists('/img/'.$img_1_name))
+                                    <img src="{{ asset('storage/') .''. $img_1_webp }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
+                                @else
+                                    <picture>
+                                        <source srcset="{{ asset('storage'.$img_1_webp) }}" type="image/webp" class="img-responsive">
+                                        <source srcset="{{ asset('storage'.$img_1) }}" type="image/jpeg" class="img-responsive">
+                                            <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
+                                    </picture>
+                                @endif
                             </a>
                         </div>
                         <div class="col-4 mt-2">
                             <a href="{{ asset('storage/'.$img_2) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 {{-- <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
-                                <picture>
-                                    <source srcset="{{ asset('storage'.$img_2_webp) }}" type="image/webp" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                    <source srcset="{{ asset('storage'.$img_2) }}" type="image/jpeg" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                    <img src="{{ asset('storage'.$img_2) }}" alt="{{ $img_2_alt }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                </picture>
+                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_2_name)[0].'.webp'))
+                                    <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                @elseif(!Storage::disk('public')->exists('/img/'.$img_2_name))
+                                    <img src="{{ asset('storage/') .''. $img_2_webp }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                @else
+                                    <picture>
+                                        <source srcset="{{ asset('storage'.$img_2_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+                                        <source srcset="{{ asset('storage'.$img_2) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+                                        <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                    </picture>
+                                @endif
                             </a>
                         </div>
                         <div class="col-4 mt-2"> 
                             <a href="{{ asset('storage/'.$img_3) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 {{-- <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
-                                <picture>
-                                    <source srcset="{{ asset('storage'.$img_3_webp) }}" type="image/webp" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                    <source srcset="{{ asset('storage'.$img_3) }}" type="image/jpeg" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                    <img src="{{ asset('storage'.$img_3) }}" alt="{{ $img_3_alt }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                </picture>
+                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_3_name)[0].'.webp'))
+                                    <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                @elseif(!Storage::disk('public')->exists('/img/'.$img_3_name))
+                                    <img src="{{ asset('storage/') .''. $img_3_webp }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                @else
+                                    <picture>
+                                        <source srcset="{{ asset('storage'.$img_3_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+                                        <source srcset="{{ asset('storage'.$img_3) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+                                        <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                    </picture>
+                                @endif
                             </a>
                         </div>
                         <div class="col-4 mt-2">
                             <a href="{{ asset('storage'.$img_4) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                 <div class="text-white">
                                     {{-- <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
-                                    <picture>
-                                        <source srcset="{{ asset('storage'.$img_4_webp) }}" type="image/webp" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                        <source srcset="{{ asset('storage'.$img_4) }}" type="image/jpeg" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                        <img src="{{ asset('storage'.$img_4) }}" alt="{{ $img_4_alt }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                    </picture>
+                                    @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_4_name)[0].'.webp'))
+                                        <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                    @elseif(!Storage::disk('public')->exists('/img/'.$img_3_name))
+                                        <img src="{{ asset('storage/') .''. $img_4_webp }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                    @else
+                                        <picture>
+                                            <source srcset="{{ asset('storage'.$img_4_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+                                            <source srcset="{{ asset('storage'.$img_4) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+                                            <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                        </picture>
+                                    @endif
+                                    
                                     @if(count($item_images) > 4)
                                         <div class="card-img-overlay text-center">
                                             <h5 class="card-title m-1 font-weight-bold">MORE</h5>
@@ -221,11 +255,17 @@
                                     @endphp
                                     <a href="{{ asset('storage' . $img) }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
                                         {{-- <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80"> --}}
-                                        <picture>
-                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="rounded" width="80" height="80">
-                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="rounded" width="80" height="80">
-                                            <img src="{{ asset('storage'.$img) }}" class="rounded" width="80" height="80">
-                                        </picture>
+                                        @if(!Storage::disk('public')->exists('/img/'.explode('.', $a['item_alternative_image'])[0].'.webp'))
+                                            <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80">
+                                        @elseif(!Storage::disk('public')->exists('/img/'.$a['item_alternative_image']))
+                                            <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80">
+                                        @else
+                                            <picture>
+                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="rounded" width="80" height="80">
+                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="rounded" width="80" height="80">
+                                                <img src="{{ asset('storage'.$img) }}" class="rounded" width="80" height="80">
+                                            </picture>
+                                        @endif
                                     </a>
                                 </div>
                                 <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}">

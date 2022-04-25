@@ -4,9 +4,21 @@
         <div class="product-img">
             @php
                 $img = ($item['image']) ? "/img/" . $item['image'] : "/icon/no_img.png";
+                $img_webp = ($item['image']) ? "/img/" . explode('.', $item['image'])[0] : "/icon/no_img.webp";
             @endphp
             <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
-                <img src="{{ asset('storage/') }}{{ $img }}" class="img-size-50">
+                {{-- <img src="{{ asset('storage/') }}{{ $img }}" class="img-size-50"> --}}
+                @if(!Storage::disk('public')->exists('/img/'.explode('.', $item['image'])[0].'.webp'))
+                    <img src="{{ asset('storage/').$img }}" class="img-size-50">
+                @elseif(!Storage::disk('public')->exists('/img/'.$item['image']))
+                    <img src="{{ asset('storage/').$img_webp }}" class="img-size-50">
+                @else
+                    <picture>
+                        <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-size-50">
+                        <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-size-50">
+                        <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-size-50">
+                    </picture>
+                @endif
             </a>
         </div>
         <div class="product-info">
