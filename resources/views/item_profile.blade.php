@@ -278,7 +278,7 @@
                                     <div class="col-md-12">
                                         <div class="table-responsive" id="example">
                                             <table class="table">
-                                                <thead>
+                                                <thead style="font-size: 9pt;">
                                                     <tr>
                                                         <th scope="col" class="text-center" style="background-color: #CCD1D1;">Item Code</th>
                                                         @foreach ($attribute_names as $attribute_name)
