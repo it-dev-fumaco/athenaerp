@@ -7,7 +7,7 @@
     <div class="container-fluid p-3">
         <div class="row">
             <div class="col-md-12">
-                <div style="position: absolute; right: 8px; top: -10px;">
+                <div style="position: absolute; right: 70px; top: -10px;">
                     <img src="{{ asset('storage/icon/back.png') }}" style="width: 45px; cursor: pointer;" id="back-btn">
                 </div>
                 <ul class="nav nav-tabs" role="tablist" style="font-size: 10pt;">
