@@ -268,11 +268,13 @@
                                     </div>
                                 </div>
                             </div>
+                            @if (count($co_variants) > 0)
                             <div class="col-12">
                                 <div class="card-header border-bottom-0">
-                                    <h3 class="card-title font-responsive"><i class="fas fa-project-diagram"></i> Variants</h3>
+                                    <h3 class="card-title font-responsive mt-5"><i class="fas fa-project-diagram"></i> Variants</h3>
                                 </div>
                             </div>
+                            @endif
                             <div class="container d-none d-lg-block col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
@@ -386,7 +388,7 @@
                             </div>
                             <div class="col-md-12">
                                 <div class="card-header border-bottom-0">
-                                    <h3 class="card-title font-responsive"><i class="fas fa-filter"></i> Item Alternatives</h3>
+                                    <h3 class="card-title font-responsive mb-3 mt-5"><i class="fas fa-filter"></i> Item Alternatives</h3>
                                 </div>
                                 <div class="d-flex flex-row flex-nowrap overflow-auto">
                                     @forelse($item_alternatives as $a)
