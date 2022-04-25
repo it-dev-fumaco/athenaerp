@@ -1,5 +1,5 @@
 <br class="d-md-none">
-<table class="table">
+<table class="table table-sm table-bordered table-striped table-hover" style="font-size: 9pt;">
     <thead>
     <tr>
         <th scope="col" class="text-center">Transaction No.</th>
@@ -11,7 +11,7 @@
         <th scope="col" class="text-center d-none d-sm-table-cell">Ref. No.</th>
         <th scope="col" class="text-center d-none d-sm-table-cell">Date</th>
         <th scope="col" class="text-center d-none d-sm-table-cell">Transact by</th>
-        <th scope="col" class="text-center d-none d-sm-table-cell"></th>
+        <th scope="col" class="text-center d-none d-sm-table-cell">Remarks</th>
     </tr>
     </thead>
     <tbody>
@@ -30,7 +30,7 @@
                 <span class="d-block">{{ $row['reference_parent'] }}<br/></span>
                 <span class="badge {{ $label }}">{{ $row['status'] }}</span>
                 <div class="d-md-none mt-2">
-                    @if($user_group->user_group == 'Inventory Manager')
+                    @if($user_group == 'Inventory Manager')
                     <button type="button" id="cancel-btn" class="btn btn-danger btn-sm cancel-transaction" data-toggle="modal" data-target="#mob-cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
                         Cancel
                     </button>
@@ -66,23 +66,6 @@
                 <span><b>Transaction: </b>{{ $row['reference_type'] }}</span><br>
                 <span><b>Issued Qty: </b>{{ $row['issued_qty'] }}</span><br>
                 <span><b>Date: </b>{{ $row['transaction_date'] }}</span><br>
-                <table class="table table-bordered p-0">
-                    <tr>
-                        <td colspan=2 class="text-center p-1"><b>Warehouse</b></td>
-                    </tr>
-                    <tr>
-                        <td class="p-1"><b>From:</b></td>
-                        <td class="p-1">{{ $row['source_warehouse'] }}</td>
-                    </tr>
-                    <tr>
-                        <td class="p-1"><b>To:</b></td>
-                        <td class="p-1">{{ $row['target_warehouse'] }}</td>
-                    </tr>
-                    <tr>
-                        <td class="p-1"><b>User:</b></td>
-                        <td class="p-1">{{ $row['warehouse_user'] }}</td>
-                    </tr>
-                </table>
             </td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['source_warehouse'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['target_warehouse'] }}</td>
@@ -91,7 +74,8 @@
             <td class="text-center d-none d-sm-table-cell">{{ $row['reference_no'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['transaction_date'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['warehouse_user'] }}</td>
-            @if($user_group->user_group == 'Inventory Manager')
+            <td class="text-center d-none d-sm-table-cell">{{ $row['remarks'] }}</td>
+            @if($user_group == 'Inventory Manager')
                 <td class="text-center d-none d-sm-table-cell">
                     <button type="button" id="cancel-btn" class="btn btn-danger btn-sm cancel-transaction" data-toggle="modal" data-target="#cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
                         Cancel
@@ -124,16 +108,37 @@
                 </td>
             @endif
         </tr>
+        <tr class="d-md-none">
+            <td colspan=12>
+                <table class="table table-bordered p-0 font-responsive">
+                    <tr>
+                        <td colspan=2 class="text-center p-1"><b>Warehouse</b></td>
+                    </tr>
+                    <tr>
+                        <td class="p-1"><b>From:</b></td>
+                        <td class="p-1">{{ $row['source_warehouse'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-1"><b>To:</b></td>
+                        <td class="p-1">{{ $row['target_warehouse'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-1"><b>User:</b></td>
+                        <td class="p-1">{{ $row['warehouse_user'] }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
         @empty
         <tr>
-            <td colspan="8" style="text-align:center;">No Records Found.</td>
+            <td colspan="9" style="text-align:center;">No Records Found.</td>
         </tr>
         @endforelse
     </tbody>
 </table>
 
 <div class="box-footer clearfix" id="athena-transactions-pagination" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
-    {{ $list->links() }}
+    {{ $logs->links() }}
 </div>
 <style>
     .cancel-modal{

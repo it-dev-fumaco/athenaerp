@@ -90,90 +90,12 @@ class MainController extends Controller
             $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
         }
 
-        // if($request->wh == ''){
-        //     $itemQ = DB::table('tabItem')->where('disabled', 0)
-        //         ->where('has_variants', 0)->where('is_stock_item', 1)//->where('item_classification', 'LIKE', $request->classification)
-        //         ->when($request->searchString, function ($query) use ($search_str, $request) {
-        //             return $query->where(function($q) use ($search_str, $request) {
-        //                 foreach ($search_str as $str) {
-        //                     $q->where('description', 'LIKE', "%".$str."%");
-        //                 }
-
-        //                 $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
-        //             });
-        //         })
-        //         ->when($request->group, function($q) use ($request){
-        //             return $q->where('tabItem.item_group', $request->group)
-        //                 ->orWhere('tabItem.item_group_level_1', $request->group)
-        //                 ->orWhere('tabItem.item_group_level_2', $request->group)
-        //                 ->orWhere('tabItem.item_group_level_3', $request->group)
-        //                 ->orWhere('tabItem.item_group_level_4', $request->group)
-        //                 ->orWhere('tabItem.item_group_level_5', $request->group);
-        //         })
-        //         ->when($request->classification, function($q) use ($request){
-        //             return $q->where('item_classification', $request->classification);
-        //         })
-        //         ->when($request->brand, function($q) use ($request){
-        //             return $q->where('brand', $request->brand);
-        //         })
-        //         ->when($request->check_qty, function($q) use ($request){
-        //             return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-        //         })
-        //         ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
-        //             return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
-        //                 ->whereIn('tabBin.warehouse', $assigned_consignment_store);
-        //         })
-        //         ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'tabItem.item_group_level_1', 'tabItem.item_group_level_2', 'tabItem.item_group_level_3', 'tabItem.item_group_level_4', 'tabItem.item_group_level_5');
-        // }else{
-        //     $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)->join('tabItem Default as d', 'd.parent', 'tabItem.name')
-        //         ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)//->where('tabItem.item_classification', 'LIKE', $request->classification)
-        //         ->when($request->searchString, function ($query) use ($search_str, $request) {
-        //             return $query->where(function($q) use ($search_str, $request) {
-        //                 foreach ($search_str as $str) {
-        //                     $q->where('tabItem.description', 'LIKE', "%".$str."%");
-        //                 }
-
-        //                 $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
-        //                     ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
-        //             });
-        //         })
-        //         ->when($request->group, function($q) use ($request){
-        //             return $q->where('tabItem.item_group',  $request->group)
-        //                 ->orWhere('tabItem.item_group_level_1',  $request->group)
-        //                 ->orWhere('tabItem.item_group_level_2',  $request->group)
-        //                 ->orWhere('tabItem.item_group_level_3',  $request->group)
-        //                 ->orWhere('tabItem.item_group_level_4',  $request->group)
-        //                 ->orWhere('tabItem.item_group_level_5',  $request->group);
-        //         })
-        //         ->when($request->classification, function($q) use ($request){
-        //             return $q->where('tabItem.item_classification', $request->classification);
-        //         })
-        //         ->when($request->brand, function($q) use ($request){
-        //             return $q->where('brand', $request->brand);
-        //         })
-        //         ->when($request->check_qty, function($q) use ($request){
-        //             return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
-        //         })
-        //         ->when($request->assigned_to_me, function($q) use ($assigned_consignment_store){
-        //             return $q->join('tabBin', 'tabItem.name', 'tabBin.item_code')
-        //                 ->whereIn('tabBin.warehouse', $assigned_consignment_store);
-        //         })
-        //         ->where('d.default_warehouse', $request->wh)
-        //         ->select('tabItem.name as item_code', 'tabItem.description', 'tabItem.item_group', 'tabItem.stock_uom', 'tabItem.item_classification', 'd.default_warehouse', 'tabItem.item_group_level_1', 'tabItem.item_group_level_2', 'tabItem.item_group_level_3', 'tabItem.item_group_level_4', 'tabItem.item_group_level_5');
-        // }
-
         $select_columns = [
             'tabItem.name as item_code',
             'tabItem.description',
             'tabItem.item_group',
             'tabItem.stock_uom',
+            'tabItem.custom_item_cost',
             'tabItem.item_classification',
             'tabItem.item_group_level_1 as lvl1',
             'tabItem.item_group_level_2 as lvl2',
@@ -196,11 +118,13 @@ class MainController extends Controller
             $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
@@ -238,7 +162,7 @@ class MainController extends Controller
                     $allowed_warehouses = collect($allow_warehouse)->implode('","');
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
                 }else{
-                    return $q->where(DB::raw('(SELECT COUNT(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
+                    return $q->where(DB::raw('(SELECT COUNT(`tabItem`.name) FROM `tabBin` JOIN tabWarehouse ON tabWarehouse.name = `tabBin`.warehouse WHERE `tabBin`.item_code = `tabItem`.name and `tabWarehouse`.stock_warehouse = 1)'), '>', 0);
                 }
             })
             ->when($request->assigned_to_me, function($q) use ($item_codes_based_on_warehouse_assigned){
@@ -307,17 +231,11 @@ class MainController extends Controller
                 $this->breadcrumbs($selected_group->parent_item_group);
 
                 $breadcrumbs = array_reverse(session()->get('breadcrumbs'));
-            
-                // if(!$selected_group->is_group){
-                //     $item_groups_based_on_parent = DB::table('tabItem Group')->where('parent_item_group', $selected_group->parent_item_group)->pluck('item_group_name')->toArray();
-    
-                //     $igs = array_unique(array_merge($igs, $item_groups_based_on_parent));
-                // }
             }
         }
 
         $total_items = count($items);
-        // $items = new Paginator($items, 20);
+
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         // Create a new Laravel collection from the array data3
         $itemCollection = collect($items);
@@ -352,21 +270,11 @@ class MainController extends Controller
 
         $item_codes = array_column($items->items(), 'item_code');
 
-        $price_list_rates = [];
-        $user_pricelist = Auth::user()->price_list;
-        if ($user_pricelist) {
-            $price_list_rates = DB::table('tabItem Price')
-                ->where('price_list', $user_pricelist)->whereIn('item_code', $item_codes)
-                ->select('item_code', 'price_list', 'modified', 'price_list_rate')
-                ->orderBy('modified', 'desc')->get();
-        }
-
-        $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
-
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->whereIn('item_code', $item_codes)
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
+            ->where('stock_warehouse', 1)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
             ->get();
 
@@ -409,6 +317,34 @@ class MainController extends Controller
 
         $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
+
+        $user_department = Auth::user()->department;
+        // get departments NOT allowed to view prices
+        $allowed_department = DB::table('tabDeparment with Price Access')->pluck('department')->toArray();
+
+        $last_purchase_order = [];
+        $last_landed_cost_voucher = [];
+        $price_settings = [];
+        $website_prices = [];
+        if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
+            $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                ->where('po.docstatus', 1)->whereIn('poi.item_code', $item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
+
+            $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                ->where('a.docstatus', 1)->whereIn('b.item_code', $item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
+            
+            $last_purchase_order_rates = collect($last_purchase_order)->groupBy('item_code')->toArray();
+            $last_landed_cost_voucher_rates = collect($last_landed_cost_voucher)->groupBy('item_code')->toArray();
+
+            $website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
+                ->whereIn('item_code', $item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+
+            $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+        }
+
+        $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+        $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
 
         $item_list = [];
         foreach ($items as $row) {
@@ -477,21 +413,33 @@ class MainController extends Controller
                 }
             }
 
-            $price_list_rate = array_key_exists($row->item_code, $price_list_rates) ? $price_list_rates[$row->item_code][0]->price_list_rate : '-';
+            $last_purchase_order_rates = collect($last_purchase_order)->groupBy('item_code')->toArray();
+            $last_landed_cost_voucher_rates = collect($last_landed_cost_voucher)->groupBy('item_code')->toArray();
 
-            if ($request->check_qty == 'on') {
-                $site_warehouses = collect($site_warehouses)->filter(function ($value, $key) {
-                    return $value['available_qty'] > 0;
-                });
-
-                $consignment_warehouses = collect($consignment_warehouses)->filter(function ($value, $key) {
-                    return $value['available_qty'] > 0;
-                });
-
-                if(count($site_warehouses) == 0 and count($consignment_warehouses) == 0){
-                    continue;
+            $item_rate = 0;
+            $last_purchase_order_arr = array_key_exists($row->item_code, $last_purchase_order_rates) ? $last_purchase_order_rates[$row->item_code][0] : [];
+            if ($last_purchase_order_arr) {
+                if ($last_purchase_order_arr->supplier_group == 'Imported') {
+                    $last_landed_cost_voucher = array_key_exists($row->item_code, $last_landed_cost_voucher_rates) ? $last_landed_cost_voucher_rates[$row->item_code][0] : [];
+                    
+                    if ($last_landed_cost_voucher) {
+                        $item_rate = $last_landed_cost_voucher->valuation_rate;
+                    }
+                } else {
+                    $item_rate = $last_purchase_order_arr->base_rate;
                 }
             }
+
+            if ($item_rate <= 0) {
+                $item_rate = $row->custom_item_cost;
+            }
+
+            $minimum_selling_price = $item_rate * $minimum_price_computation;
+
+            $default_price = $item_rate * $standard_price_computation;
+            $website_price = array_key_exists($row->item_code, $website_prices) ? $website_prices[$row->item_code] : 0;
+
+            $default_price = ($website_price > 0) ? $website_price : $default_price;
 
             $item_list[] = [
                 'name' => $row->item_code,
@@ -503,8 +451,7 @@ class MainController extends Controller
                 'item_classification' => $row->item_classification,
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
-                'price_list' => $user_pricelist,
-                'price_list_rate' => $price_list_rate
+                'default_price' => $default_price,
             ];
         }
 
@@ -549,7 +496,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root'));
+        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department'));
     }
 
     private function breadcrumbs($parent){
@@ -1972,11 +1919,13 @@ class MainController extends Controller
     public function get_item_details(Request $request, $item_code){
         $item_details = DB::table('tabItem')->where('name', $item_code)->first();
 
+        if(!$item_details){
+            abort(404);
+        }
+
         if($request->json){
             return response()->json($item_details);
         }
-
-        $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->get();
 
         $allow_warehouse = [];
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
@@ -1984,58 +1933,125 @@ class MainController extends Controller
             $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
                 ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
         }
 
-        $last_purchase_rate = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group')->orderBy('po.creation', 'desc')->first();
+        $user_department = Auth::user()->department;
+        $user_group = Auth::user()->user_group;
+        // get departments allowed to view prices
+        $allowed_department = DB::table('tabDeparment with Price Access')->pluck('department')->toArray();
+
+        $item_rate = 0;
+        $last_purchase_date = null;
+        $website_price = [];
         $minimum_selling_price = 0;
-        if ($last_purchase_rate) {
-            if ($last_purchase_rate->supplier_group == 'Imported') {
-                $last_purchase_rate = DB::table('tabLanded Cost Voucher as a')
-                    ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
-                    ->where('a.docstatus', 1)->where('b.item_code', $item_code)
-                    ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
-                    ->orderBy('transaction_date', 'desc')
-                    ->first();
+        $default_price = 0;
+        $avgPurchaseRate = '₱ 0.00';
+        $last_purchase_rate = 0;
+        if (in_array($user_department, $allowed_department) || in_array($user_group, ['Manager', 'Director'])) {
+            $avgPurchaseRate = $this->avgPurchaseRate($item_code);
+            $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
 
-                if ($last_purchase_rate) {
-                    $minimum_selling_price = $last_purchase_rate->rate;
+            if ($last_purchase_order) {
+                $last_purchase_date = Carbon::parse($last_purchase_order->creation)->format('M. d, Y h:i:A');
+                if ($last_purchase_order->supplier_group == 'Imported') {
+                    $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')
+                        ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                        ->where('a.docstatus', 1)->where('b.item_code', $item_code)
+                        ->select('a.creation', 'a.name as purchase_order', 'b.item_code', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
+                        ->orderBy('transaction_date', 'desc')
+                        ->first();
+    
+                    if ($last_landed_cost_voucher) {
+                        $item_rate = $last_landed_cost_voucher->valuation_rate;
+                    }
+                } else {
+                    $item_rate = $last_purchase_order->base_rate;
                 }
-            } else {
-                $minimum_selling_price = $last_purchase_rate->base_rate;
             }
-        }
 
-        $minimum_selling_price = $minimum_selling_price * 1.3;
+            $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+
+            $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+            $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+
+            $last_purchase_rate = $item_rate;
+
+            if ($item_rate <= 0) {
+                $item_rate = $item_details->custom_item_cost;
+            }
+
+            $minimum_selling_price = $item_rate * $minimum_price_computation;
+
+            $default_price = $item_rate * $standard_price_computation;
+            $website_price = DB::table('tabItem Price')
+                ->where('price_list', 'Website Price List')->where('selling', 1)
+                ->where('item_code', $item_code)->orderBy('modified', 'desc')
+                ->select('price_list_rate', 'price_list')->first();
+
+            $default_price = ($website_price) ? $website_price->price_list_rate : $default_price;
+        }
 
         // get item inventory stock list
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
+            ->where('stock_warehouse', 1)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
-            ->get();
+            ->get()->toArray();
+
+        $stock_warehouses = array_column($item_inventory, 'warehouse');
+
+        $stock_reserves = [];
+        if (count($stock_warehouses) > 0) {
+            $stock_reserves = StockReservation::where('item_code', $item_code)
+                ->whereIn('warehouse', $stock_warehouses)->where('status', 'Active')
+                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(reserve_qty) as consumed_qty, warehouse')
+                ->groupBy('warehouse')->get();
+
+            $stock_reserves = collect($stock_reserves)->groupBy('warehouse')->toArray();
+
+            $ste_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+                ->where('item_code', $item_code)->whereIn('s_warehouse', $stock_warehouses)
+                ->selectRaw('SUM(qty) as qty, s_warehouse')->groupBy('s_warehouse')
+                ->pluck('qty', 's_warehouse')->toArray();
+
+            $at_issued = DB::table('tabAthena Transactions as at')
+                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'ps.parent')
+                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+                ->where('psi.status', 'Issued')
+                ->where('at.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
+                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
+                ->pluck('qty', 's_warehouse')->toArray();
+        }
 
         $site_warehouses = [];
         $consignment_warehouses = [];
         foreach ($item_inventory as $value) {
-            $reserved_qty = StockReservation::where('item_code', $value->item_code)
-                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('reserve_qty');
+            $reserved_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['reserved_qty'] : 0;
+            $consumed_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['consumed_qty'] : 0;
+            $ste_issued_qty = array_key_exists($value->warehouse, $ste_issued) ? $ste_issued[$value->warehouse] : 0;
+            $at_issued_qty = array_key_exists($value->warehouse, $at_issued) ? $at_issued[$value->warehouse] : 0;
 
-            $consumed_qty = StockReservation::where('item_code', $value->item_code)
-                ->where('warehouse', $value->warehouse)->where('status', 'Active')->sum('consumed_qty');
-
+            $issued_qty = $ste_issued_qty + $at_issued_qty;
             $reserved_qty = $reserved_qty - $consumed_qty;
 
-            $actual_qty = $value->actual_qty - $this->get_issued_qty($value->item_code, $value->warehouse);
+            $actual_qty = $value->actual_qty - $issued_qty;
             if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                 $consignment_warehouses[] = [
                     'warehouse' => $value->warehouse,
@@ -2056,29 +2072,33 @@ class MainController extends Controller
                 ];
             }
         }
-
         // get item images
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
         $production_item_alternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
             ->where('p.item_code', $item_details->name)->where('p.item_alternative_for', '!=', $item_details->name)
-            ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get();
-        foreach($production_item_alternatives as $a){
-            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+            ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get()->toArray();
 
-            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
+        $production_item_alternative_item_codes = array_column($production_item_alternatives, 'item_code');
+        $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', $production_item_alternative_item_codes)->pluck('image_path')->toArray();
+        $production_item_alt_actual_stock = DB::table('tabBin')->whereIn('item_code', $production_item_alternative_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')
+            ->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+        foreach($production_item_alternatives as $a){
+            $item_alternative_image = array_key_exists($a->item_code, $item_alternative_images) ? $item_alternative_images[$a->item_code] : null;
+            $actual_stocks = array_key_exists($a->item_code, $production_item_alt_actual_stock) ? $production_item_alt_actual_stock[$a->item_code] : 0;
 
             if(count($item_alternatives) < 7){
                 $item_alternatives[] = [
                     'item_code' => $a->item_code,
                     'description' => $a->description,
-                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                    'item_alternative_image' => $item_alternative_image,
                     'actual_stocks' => $actual_stocks
                 ];
             }
         }
-
+       
+        $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
         // get item alternatives based on parent item code
         $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
         foreach($q as $a){
@@ -2116,36 +2136,95 @@ class MainController extends Controller
 
         $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
-        $user_group = Auth::user()->user_group;
+        // variants
+        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
+        $variant_item_codes = array_column($co_variants->items(), 'name');
 
-        return view('tbl_item_details', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price'));
+        $variants_price_arr = [];
+        if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
+            // get item cost for items with 0 last purchase rate
+            $item_custom_cost = [];
+            foreach ($co_variants->items() as $row) {
+                $item_custom_cost[$row->name] = $row->custom_item_cost;
+            }
+
+            $variants_last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                ->where('po.docstatus', 1)->whereIn('poi.item_code', $variant_item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
+
+            $variants_last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                ->where('a.docstatus', 1)->whereIn('b.item_code', $variant_item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
+            
+            $variants_last_purchase_order_rates = collect($variants_last_purchase_order)->groupBy('item_code')->toArray();
+            $variants_last_landed_cost_voucher_rates = collect($variants_last_landed_cost_voucher)->groupBy('item_code')->toArray();
+
+            $variants_website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
+                ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+        
+            foreach($variant_item_codes as $variant){
+                $variants_default_price = 0;
+                $variant_rate = 0;
+                if(array_key_exists($variant, $variants_last_purchase_order_rates)){
+                    if($variants_last_purchase_order_rates[$variant][0]->supplier_group == 'Imported'){
+                        $variant_rate = isset($variants_last_landed_cost_voucher[$variant]) ? $variants_last_landed_cost_voucher[$variant][0]->valuation_rate : 0;
+                    }else{
+                        $variant_rate = $variants_last_purchase_order_rates[$variant][0]->base_rate;
+                    }
+                }
+
+                // custom item cost 
+                if ($variant_rate <= 0) {
+                    $variant_rate = array_key_exists($variant, $item_custom_cost) ? $item_custom_cost[$variant] : 0;
+                }
+
+                $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variant_rate * $standard_price_computation;
+                $variants_price_arr[$variant] = $variants_default_price;
+            }
+        }
+
+        array_push($variant_item_codes, $item_details->name);
+
+        $attributes_query = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
+
+        $attribute_names = collect($attributes_query)->map(function ($q){
+            return $q->attribute;
+        })->unique();
+
+        $attributes = [];
+        foreach ($attributes_query as $row) {
+            $attributes[$row->parent][$row->attribute] = $row->attribute_value;
+        }
+
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
-        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->orderBy('transaction_date', 'desc')->get();//->paginate(10);
-        if($request->wh_user != '' and $request->wh_user != 'null'){
-            $logs = $logs->where('warehouse_user', $request->wh_user);
-        }
+        $user_group = Auth::user()->user_group;
+        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)
+            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($request){
+                return $q->where('warehouse_user', $request->wh_user);
+            })
+            ->when($request->src_wh != '' and $request->src_wh != 'null', function($q) use ($request){
+                return $q->where('source_warehouse', $request->src_wh);
+            })
+            ->when($request->trg_wh != '' and $request->trg_wh != 'null', function($q) use ($request){
+                return $q->where('target_warehouse', $request->trg_wh);
+            })
+            ->when($request->ath_dates != '' and $request->ath_dates != 'null', function($q) use ($request){
+                $dates = explode(' to ', $request->ath_dates);
+                $from = Carbon::parse($dates[0]);
+                $to = Carbon::parse($dates[1])->endOfDay();
+                return $q->whereBetween('transaction_date',[$from, $to]);
+            })
+            ->orderBy('transaction_date', 'desc')->paginate(10);
 
-        if($request->src_wh != '' and $request->src_wh != 'null'){
-            $logs = $logs->where('source_warehouse', $request->src_wh);
-        }
+        $ste_names = array_column($logs->items(), 'reference_parent');
 
-        if($request->trg_wh != '' and $request->trg_wh != 'null'){
-            $logs = $logs->where('target_warehouse', $request->trg_wh);
-        }
-
-        if($request->ath_dates != '' and $request->ath_dates != 'null'){
-            $dates = explode(' to ', $request->ath_dates);
-            $from = Carbon::parse($dates[0]);
-            $to = Carbon::parse($dates[1])->endOfDay();
-            $logs = $logs->whereBetween('transaction_date',[$from, $to]);
-        }
+        $ste_remarks = DB::table('tabStock Entry')->whereIn('name', $ste_names)
+            ->select('purpose', 'transfer_as', 'receive_as', 'issue_as', 'name')->get();
+        
+        $ste_remarks = collect($ste_remarks)->groupBy('name')->toArray();
 
         $list = [];
-
-        $user_group = DB::table('tabWarehouse Users')->where('wh_user', Auth::user()->wh_user)->first();
-
         foreach($logs as $row){
             $ps_ref = ['Packing Slip', 'Picking Slip'];
             $reference_type = (in_array($row->reference_type, $ps_ref)) ? 'Packing Slip' : $row->reference_type;
@@ -2162,6 +2241,25 @@ class MainController extends Controller
                     $status = 'SUBMITTED';
                 }
             }
+
+            $remarks = [];
+            $remarks = (array_key_exists($row->reference_parent, $ste_remarks)) ? $ste_remarks[$row->reference_parent] : [];
+            if (count($remarks) > 0) {
+                if($remarks[0]->purpose == 'Material Issue') {
+                    $remarks = $remarks[0]->issue_as;
+                } elseif ($remarks[0]->purpose == 'Material Transfer') {
+                    $remarks = $remarks[0]->transfer_as;
+                } elseif ($remarks[0]->purpose == 'Material Receipt') {
+                    $remarks = $remarks[0]->receive_as;
+                } elseif ($remarks[0]->purpose == 'Material Transfer for Manufacture') {
+                    $remarks = 'Materials Withdrawal';
+                } else {
+                    $remarks = '-';
+                }
+            } else {
+                $remarks = null;
+            }
+            
             $list[] = [
                 'reference_name' => $row->reference_name,
                 'item_code' => $row->item_code,
@@ -2169,28 +2267,15 @@ class MainController extends Controller
                 'item_code' => $row->item_code,
                 'source_warehouse' => $row->source_warehouse,
                 'target_warehouse' => $row->target_warehouse,
-                'reference_type' => $row->reference_type,
+                'reference_type' => $row->purpose,
                 'issued_qty' => $row->issued_qty * 1,
                 'reference_no' => $row->reference_no,
                 'transaction_date' => $row->transaction_date,
                 'warehouse_user' => $row->warehouse_user,
-                'status' => $status
+                'status' => $status,
+                'remarks' => $remarks
             ];
         }
-
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-            // Create a new Laravel collection from the array data
-            $itemCollection = collect($list);
-            // Define how many items we want to be visible in each page
-            $perPage = 10;
-            // Slice the collection to get the items to display in current page
-            $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
-            // Create our paginator and pass it to the view
-            $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
-            // set url path for generted links
-            $paginatedItems->setPath($request->url());
-
-            $list = $paginatedItems;
 
         return view('tbl_athena_transactions', compact('list', 'logs', 'item_code', 'user_group'));
     }
@@ -2353,8 +2438,8 @@ class MainController extends Controller
         $paginatedItems->setPath($request->url());
 
         $list = $paginatedItems;
+        
         return view('tbl_stock_ledger', compact('list', 'logs', 'item_code'));
-        // return view('tbl_stock_ledger', compact('logs', 'item_code', 'wh_users'));
     }
 
     public function print_barcode($item_code){
@@ -3528,6 +3613,24 @@ class MainController extends Controller
         return response()->json($chart_data);
     }
 
+    public function monthly_inventory_audit(Request $request){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
+        $from = $request->date ? Carbon::parse(explode(' - ', $request->date)[0]) : Carbon::now()->subDays(30);
+        $to = $request->date ? Carbon::parse(explode(' - ', $request->date)[1]) : Carbon::now();
+
+        $inv_audit = DB::table('tabMonthly Inventory Audit')->whereIn('warehouse', $assigned_consignment_store)->where('docstatus', 1)->whereDate('from', '>=', $from)->whereDate('to', '<=', $to)
+            ->when($request->search, function ($q) use ($request){
+                return $q->where('name', 'like', '%'.$request->search.'%');
+            })
+            ->when($request->store, function ($q) use ($request){
+                return $q->where('warehouse', $request->store);
+            })
+            ->select('name', 'warehouse', 'from', 'to', 'audited_by', 'employee_name', 'average_accuracy_rate')->orderBy('creation', 'desc')->paginate(20);
+
+        return view('monthly_inv_audit', compact('inv_audit', 'assigned_consignment_store'));
+    }
+
     public function returns(){
         return view('returns');
     }
@@ -4600,5 +4703,36 @@ class MainController extends Controller
             'labels' => collect($result)->keys(),
             'data' => array_values($result)
         ];
+    }
+
+    public function purchaseRateHistory($item_code) {
+        $list = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)
+            ->select('po.supplier', 'po.name', 'po.transaction_date', 'poi.base_rate', 'po.supplier_group')
+            ->orderBy('po.creation', 'desc')->paginate(10);
+
+        return view('tbl_item_purchase_history', compact('list'));
+    }
+
+    public function avgPurchaseRate($item_code) {
+        $list = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+            ->where('po.docstatus', 1)->where('poi.item_code', $item_code)
+            ->select('po.supplier', 'po.name', 'po.transaction_date', 'poi.base_rate', 'po.supplier_group')
+            ->orderBy('po.creation', 'desc')->get();
+
+        $sum = collect($list)->sum('base_rate');
+        $count = collect($list)->count();
+
+        $average = ($sum > 0) ? $sum / $count : 0;
+
+        return '₱ ' . number_format($average, 2, '.', ',');
+    }
+
+    public function updateItemCost($item_code, Request $request) {
+        if ($request->price > 0) {
+            DB::table('tabItem')->where('name', $item_code)->update(['custom_item_cost' => $request->price]);
+        }
+
+        return '₱ ' . number_format($request->price, 2, '.', ',');;
     }
 }

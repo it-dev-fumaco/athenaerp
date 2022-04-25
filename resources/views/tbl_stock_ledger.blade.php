@@ -1,5 +1,5 @@
 <br class="d-md-none">
-<table class="table table-hover" style="font-size: 11pt;">
+<table class="table table-hover table-sm table-bordered table-striped" style="font-size: 9pt;">
     <thead>
       <tr>
         <th scope="col" class="col-xs-2 font-responsive text-center">Transaction No.</th>

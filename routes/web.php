@@ -122,4 +122,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/create_feedback', 'MainController@create_feedback');
     Route::get('/consignment_stock/{warehouse}', 'MainController@consignmentItemStock');
     Route::get('/consignment_sales/{warehouse}', 'MainController@consignmentSalesReport');
+
+    Route::get('/purchase_rate_history/{item_code}', 'MainController@purchaseRateHistory');
+
+    Route::post('/update_item_price/{item_code}', 'MainController@updateItemCost');
 });

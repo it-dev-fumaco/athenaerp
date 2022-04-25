@@ -312,7 +312,10 @@
 			.responsive-modal-title{
 				font-size: 12pt;
 			}
-			.low-lvl-stk-tbl-item-desc, .tbl-athena-logs-tbl-item-description{
+			.low-lvl-stk-tbl-item-desc{
+				width: 100% !important;
+			}
+			.tbl-athena-logs-tbl-item-description{
 				width: 90% !important;
 			}
 			.font-responsive, .tbl-athena-logs-table, .low-lvl-stock-badge, .returns-badge, #reserved-items-pagination{
@@ -356,7 +359,10 @@
 			.responsive-modal-title{
 				font-size: 12pt;
 			}
-			.low-lvl-stk-tbl-item-desc, .tbl-athena-logs-tbl-item-description{
+			.low-lvl-stk-tbl-item-desc{
+				width: 100% !important;
+			}
+			.tbl-athena-logs-tbl-item-description{
 				width: 90% !important;
 			}
 			.font-responsive, .tbl-athena-logs-table, .low-lvl-stock-badge, .returns-badge, #reserved-items-pagination{
@@ -465,7 +471,7 @@
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
 										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
 											<div class="btn-group icon-container mt-2" role="group">
-												<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="40" height="40"><i class="fas fa-caret-down ml-2"></i>
+												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="40" height="40"><i class="fas fa-caret-down ml-2"></i>
 											</div>
 										</a>
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
@@ -501,7 +507,7 @@
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-8 text-right">
 									<a class="nav-link text-white" data-toggle="dropdown" href="#">
-										<img src="dist/img/avatar04.png" class="img-circle" alt="User Image" width="30" height="30">
+										<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
 										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 									</a>
 								</li>
@@ -515,7 +521,7 @@
 			</div>
 		</nav>
 		<div class="content-wrapper">
-			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page']))
+			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list']))
 			<div class="row m-0 pb-0">
 				<div class="col-xl-5 p-3">
 					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
@@ -1786,63 +1792,63 @@
 				});
 			});
 
-			function view_item_details(item_code){
-				$('#item-preloader').removeClass('d-none');
-				$('#item-detail-content').empty();
-				$.ajax({
-					type: 'GET',
-					url: '/get_item_details/' + item_code,
-					success: function(response){
-						$('#item-detail-content').html(response);
-						$('#item-preloader').addClass('d-none');
-						$('#view-item-details-modal').modal('show');
-					}
-				});
+			// function view_item_details(item_code){
+			// 	$('#item-preloader').removeClass('d-none');
+			// 	$('#item-detail-content').empty();
+			// 	$.ajax({
+			// 		type: 'GET',
+			// 		url: '/get_item_details/' + item_code,
+			// 		success: function(response){
+			// 			$('#item-detail-content').html(response);
+			// 			$('#item-preloader').addClass('d-none');
+			// 			$('#view-item-details-modal').modal('show');
+			// 		}
+			// 	});
 
-				$("#ath_dates").daterangepicker({
-					placeholder: 'Select Date Range',
-					ranges: {
-						'Today': [moment(), moment()],
-						'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-						'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-						'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-						'This Month': [moment().startOf('month'), moment().endOf('month')],
-						'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-					},
-					locale: {
-						// format: 'YYYY-MM-DD',
-						format: 'YYYY-MMM-DD',
-						separator: " to "
-            		},
-					startDate: moment().subtract(30, 'days'), endDate: moment(),
-					// startDate: '2018-06-01', endDate: moment(),
-				});
-				$("#ath_dates").val('');
-				$("#ath_dates").attr("placeholder","Select Date Range");
+			// 	$("#ath_dates").daterangepicker({
+			// 		placeholder: 'Select Date Range',
+			// 		ranges: {
+			// 			'Today': [moment(), moment()],
+			// 			'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			// 			'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+			// 			'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+			// 			'This Month': [moment().startOf('month'), moment().endOf('month')],
+			// 			'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+			// 		},
+			// 		locale: {
+			// 			// format: 'YYYY-MM-DD',
+			// 			format: 'YYYY-MMM-DD',
+			// 			separator: " to "
+            // 		},
+			// 		startDate: moment().subtract(30, 'days'), endDate: moment(),
+			// 		// startDate: '2018-06-01', endDate: moment(),
+			// 	});
+			// 	$("#ath_dates").val('');
+			// 	$("#ath_dates").attr("placeholder","Select Date Range");
 
-				$("#erp_dates").daterangepicker({
-					ranges: {
-						'Today': [moment(), moment()],
-						'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-						'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-						'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-						'This Month': [moment().startOf('month'), moment().endOf('month')],
-						'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-					},
-					locale: {
-						format: 'YYYY-MMM-DD',
-						separator: " to "
-            		},
-					startDate: moment().subtract(30, 'days'), endDate: moment(),
-				});
+			// 	$("#erp_dates").daterangepicker({
+			// 		ranges: {
+			// 			'Today': [moment(), moment()],
+			// 			'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			// 			'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+			// 			'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+			// 			'This Month': [moment().startOf('month'), moment().endOf('month')],
+			// 			'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+			// 		},
+			// 		locale: {
+			// 			format: 'YYYY-MMM-DD',
+			// 			separator: " to "
+            // 		},
+			// 		startDate: moment().subtract(30, 'days'), endDate: moment(),
+			// 	});
 
-				$("#erp_dates").val('');
-				$("#erp_dates").attr("placeholder","Select Date Range");
+			// 	$("#erp_dates").val('');
+			// 	$("#erp_dates").attr("placeholder","Select Date Range");
 
-				get_athena_transactions(item_code);
-				get_stock_ledger(item_code);
-				get_stock_reservation(item_code);
-			}
+			// 	get_athena_transactions(item_code);
+			// 	get_stock_ledger(item_code);
+			// 	get_stock_reservation(item_code);
+			// }
 
 			$(document).on('submit', '.cancel-modal form', function(e){
 				e.preventDefault();
@@ -1878,7 +1884,8 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					type: 'GET',
 					url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
 					success: function(response){
-						$('#athena-transactions-table').html(response);
+						// $('#athena-transactions-table').html(response);
+						$('#athena-transactions').html(response);
 					}
 				});
 				}
@@ -1928,21 +1935,20 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				get_stock_reservation(item_code, page);
 			});
 
-			function get_stock_ledger(item_code, page){
-				if(item_code) {
-	var erp_user = $('#erp-warehouse-user-filter').val();
-				var erp_wh = $('#erp-warehouse-filter').val();
-				var erp_d = $('#erp_dates').val();
-				$.ajax({
-					type: 'GET',
-					url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh + '&erp_d=' + erp_d,
-					success: function(response){
-						$('#stock-ledger-table').html(response);
-					}
-				});
-				}
-			
-			}
+	// 		function get_stock_ledger(item_code, page){
+	// 			if(item_code) {
+	// var erp_user = $('#erp-warehouse-user-filter').val();
+	// 			var erp_wh = $('#erp-warehouse-filter').val();
+	// 			var erp_d = $('#erp_dates').val();
+	// 			$.ajax({
+	// 				type: 'GET',
+	// 				url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh + '&erp_d=' + erp_d,
+	// 				success: function(response){
+	// 					$('#stock-ledger-table').html(response);
+	// 				}
+	// 			});
+	// 			}
+	// 		}
 
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
@@ -2079,18 +2085,7 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				get_athena_transactions(item_code, page);
 			});
 
-			// Athena Transactions Pagination
-
-			// ERP Transactions Pagination
-			$(document).on('click', '#stock-ledger-pagination a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-
-				var page = $(this).attr('href').split('page=')[1];// + user_filter;
-				get_stock_ledger(item_code, page);
-			});
-		
-			// ERP Transactions Pagination
+	
 			
 			//Athena Warehouse Users
 				$('#warehouse-user-filter').select2({//athena warehouse users
@@ -2184,15 +2179,6 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			
 			//Athena Month
 
-			//ERP Month
-			$('#erp_dates').on('change', function(e){ 
-				var item_code = $('#selected-item-code').text();
-				get_stock_ledger(item_code);
-			})
-			
-			
-			//ERP Month
-
 			// ERP Warehouse Users
 			$('#erp-warehouse-user-filter').select2({//warehouse users
 				dropdownParent: $('#erp-warehouse-user-filter-parent'),
@@ -2213,18 +2199,6 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					},
 					cache: true
 				}
-			});
-
-			$(document).on('select2:select', '#erp-warehouse-user-filter', function(e){
-				var item_code = $('#selected-item-code').text();
-				get_stock_ledger(item_code)
-			});
-			// ERP Warehouse Users
-
-			// ERP Warehouse
-			$(document).on('select2:select', '#erp-warehouse-filter', function(e){
-				var item_code = $('#selected-item-code').text();
-				get_stock_ledger(item_code);
 			});
 
 			$('#erp-warehouse-filter').select2({
@@ -2310,115 +2284,118 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			});
 			// Item class filter
 
+			// $('#athReset').click(function(){
+			// 	item_code = $('#selected-item-code').text();
+			// 	$('#ath-to-warehouse-filter').empty();
+			// 	$('#ath-src-warehouse-filter').empty();
+			// 	$('#warehouse-user-filter').empty();
+			// 	$(function() {
+			// 		$("#ath_dates").daterangepicker({
+			// 			ranges: {
+			// 				'Today': [moment(), moment()],
+			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
+			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+			// 			},
+			// 			locale: {
+			// 				format: 'YYYY-MMM-DD',
+			// 				separator: " to "
+			// 			},
+			// 			// startDate: moment().subtract(30, 'days'), endDate: moment(),
+			// 			startDate: '2018-01-01', endDate: moment(),
 
-			$('#athReset').click(function(){
-				item_code = $('#selected-item-code').text();
-				$('#ath-to-warehouse-filter').empty();
-				$('#ath-src-warehouse-filter').empty();
-				$('#warehouse-user-filter').empty();
-				$(function() {
-					$("#ath_dates").daterangepicker({
-						ranges: {
-							'Today': [moment(), moment()],
-							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-							'This Month': [moment().startOf('month'), moment().endOf('month')],
-							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-						},
-						locale: {
-							format: 'YYYY-MMM-DD',
-							separator: " to "
-						},
-						// startDate: moment().subtract(30, 'days'), endDate: moment(),
-						startDate: '2018-01-01', endDate: moment(),
+			// 		});
+			// 	});
+			// 	$("#ath_dates").val('');
+			// 	$("#ath_dates").attr("placeholder","Select Date Range");
+			// 	get_athena_transactions(item_code);
+			// })
 
-					});
-				});
-				$("#ath_dates").val('');
-				$("#ath_dates").attr("placeholder","Select Date Range");
-				get_athena_transactions(item_code);
-			})
+			// $('#erpReset').click(function(){
+			// 	item_code = $('#selected-item-code').text();
+			// 	$('#erp-warehouse-filter').empty();
+			// 	$('#erp-warehouse-user-filter').empty();
+			// 	$(function() {
+			// 		$("#erp_dates").daterangepicker({
+			// 			ranges: {
+			// 				'Today': [moment(), moment()],
+			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
+			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+			// 			},
+			// 			locale: {
+			// 				format: 'YYYY-MMM-DD',
+			// 				separator: " to "
+			// 			},
+			// 			// startDate: moment().subtract(30, 'days'), endDate: moment(),
+			// 			startDate: '2018-01-01', endDate: moment(),
 
-			$('#erpReset').click(function(){
-				item_code = $('#selected-item-code').text();
-				$('#erp-warehouse-filter').empty();
-				$('#erp-warehouse-user-filter').empty();
-				$(function() {
-					$("#erp_dates").daterangepicker({
-						ranges: {
-							'Today': [moment(), moment()],
-							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-							'This Month': [moment().startOf('month'), moment().endOf('month')],
-							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-						},
-						locale: {
-							format: 'YYYY-MMM-DD',
-							separator: " to "
-						},
-						// startDate: moment().subtract(30, 'days'), endDate: moment(),
-						startDate: '2018-01-01', endDate: moment(),
+			// 		});
+			// 	});
+			// 	$("#erp_dates").val('');
+			// 	$("#erp_dates").attr("placeholder","Select Date Range");
+			// 	get_stock_ledger(item_code);
 
-					});
-				});
-				$("#erp_dates").val('');
-				$("#erp_dates").attr("placeholder","Select Date Range");
-				get_stock_ledger(item_code);
+			// })
 
-			})
-
-			$('#resetAll').click(function(){
-				item_code = $('#selected-item-code').text();
-				$('#ath-to-warehouse-filter').empty();
-				$('#ath-src-warehouse-filter').empty();
-				$('#warehouse-user-filter').empty();
-				$('#erp-warehouse-filter').empty();
-				$('#erp-warehouse-user-filter').empty();
-				$(function() {
-					$("#ath_dates").daterangepicker({
-						ranges: {
-							'Today': [moment(), moment()],
-							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-							'This Month': [moment().startOf('month'), moment().endOf('month')],
-							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-						},
-						locale: {
-							format: 'YYYY-MMM-DD',
-							separator: " to "
-						},
-						startDate: moment().subtract(30, 'days'), endDate: moment(),
-					});
-				});
-				$(function() {
-					$("#erp_dates").daterangepicker({
-						ranges: {
-							'Today': [moment(), moment()],
-							'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-							'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-							'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-							'This Month': [moment().startOf('month'), moment().endOf('month')],
-							'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-						},
-						locale: {
-							format: 'YYYY-MMM-DD',
-							separator: " to "
-						},
-						startDate: moment().subtract(30, 'days'), endDate: moment(),
-					});
-				});
-				$("#erp_dates").val('');
-				$("#erp_dates").attr("placeholder","Select Date Range");
-				$("#ath_dates").val('');
-				$("#ath_dates").attr("placeholder","Select Date Range");
-				get_stock_ledger(item_code);
-				get_athena_transactions(item_code);
-			});
+			// $('#resetAll').click(function(){
+			// 	item_code = $('#selected-item-code').text();
+			// 	$('#ath-to-warehouse-filter').empty();
+			// 	$('#ath-src-warehouse-filter').empty();
+			// 	$('#warehouse-user-filter').empty();
+			// 	$('#erp-warehouse-filter').empty();
+			// 	$('#erp-warehouse-user-filter').empty();
+			// 	$(function() {
+			// 		$("#ath_dates").daterangepicker({
+			// 			ranges: {
+			// 				'Today': [moment(), moment()],
+			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
+			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+			// 			},
+			// 			locale: {
+			// 				format: 'YYYY-MMM-DD',
+			// 				separator: " to "
+			// 			},
+			// 			startDate: moment().subtract(30, 'days'), endDate: moment(),
+			// 		});
+			// 	});
+			// 	$(function() {
+			// 		$("#erp_dates").daterangepicker({
+			// 			ranges: {
+			// 				'Today': [moment(), moment()],
+			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
+			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+			// 			},
+			// 			locale: {
+			// 				format: 'YYYY-MMM-DD',
+			// 				separator: " to "
+			// 			},
+			// 			startDate: moment().subtract(30, 'days'), endDate: moment(),
+			// 		});
+			// 	});
+			// 	$("#erp_dates").val('');
+			// 	$("#erp_dates").attr("placeholder","Select Date Range");
+			// 	$("#ath_dates").val('');
+			// 	$("#ath_dates").attr("placeholder","Select Date Range");
+			// 	get_stock_ledger(item_code);
+			// 	get_athena_transactions(item_code);
+			// });
 			// Transactions Warehouse Filter
 		});
+
+		function close_modal(modal){
+			$(modal).modal('hide');
+		}
 
 		function nextImg(item_code){
 			if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { // mobile/tablet

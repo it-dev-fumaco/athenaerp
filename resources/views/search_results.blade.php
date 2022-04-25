@@ -291,7 +291,8 @@
 																<div class="text-center mt-2 mb-1">
 																	<div class="d-flex flex-row">
 																		<div class="p-1 col-6">
-																			<a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																			{{-- <a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}"> --}}
+																			<a href="/get_item_details/{{ $row['name'] }}">
 																				<div class="btn btn-primary btn-xs btn-block">
 																					<i class="fa fa-search"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
 																				</div>
@@ -315,11 +316,17 @@
 																		<br>
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																	@endif
-																	@if ($row['price_list'] && $row['price_list_rate'] != '-')
+																	@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
 																	<p class="mt-3 mb-2">
-																		<span class="d-block font-weight-bold" style="font-size: 9pt;">{{ '₱ ' . number_format($row['price_list_rate'], 2, '.', ',') }}</span>
-																		<span class="d-block" style="font-size: 9pt;">{{ $row['price_list'] }}</span>
-																  	</p>
+																		<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
+																		<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
+																	</p>
+																	@endif
+																	@if(in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
+																	<p class="mt-3 mb-2">
+																		<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
+																		<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
+																	</p>
 																	@endif
 																</div>
 															</div>
@@ -475,7 +482,8 @@
 																	</div>
 																</div>
 																
-																<a href="#" class="view-item-details mt-2 mb-2 d-block" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}">
+																{{-- <a href="#" class="view-item-details mt-2 mb-2 d-block" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}"> --}}
+																<a href="/get_item_details/{{ $row['name'] }}">
 																	<div class="btn btn-sm btn-primary w-100">
 																		<i class="fa fa-search font-responsive"></i> <span class="d-inline font-responsive">View</span>
 																	</div>
@@ -488,10 +496,16 @@
 																	<br>
 																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																@endif
-																@if ($row['price_list'] && $row['price_list_rate'] != '-')
+																@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0) 
 																<p class="mt-3 mb-2">
-																	<span class="d-block font-weight-bold" style="font-size: 13pt;">{{ '₱ ' . number_format($row['price_list_rate'], 2, '.', ',') }}</span>
-																	<span class="d-block" style="font-size: 9pt;">{{ $row['price_list'] }}</span>
+																	<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
+																	<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
+																</p>
+																@endif
+																@if(in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
+																<p class="mt-3 mb-2">
+																	<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
+																	<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
 																</p>
 																@endif
 																<div class="d-none d-md-block">
