@@ -277,18 +277,18 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="table-responsive" id="example">
-                                            <table class="table">
-                                                <thead style="font-size: 9pt;">
+                                            <table class="table table-sm table-bordered table-striped" style="font-size: 9pt;">
+                                                <thead>
                                                     <tr>
-                                                        <th scope="col" class="text-center" style="background-color: #CCD1D1;">Item Code</th>
+                                                        <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
                                                         @foreach ($attribute_names as $attribute_name)
-                                                        <th scope="col" class="text-center text-nowrap">{{ $attribute_name }}</th>
+                                                        <th scope="col" class="text-center text-nowrap1 align-middle" style="width: 350px;">{{ $attribute_name }}</th>
                                                         @endforeach
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
-                                                        <th scope="col" class="text-center text-nowrap">Price</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle">Cost</th>
                                                         @endif
                                                         @if (in_array($user_group, ['Manager', 'Director']))
-                                                        <th scope="col" class="text-center text-nowrap">Price</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle">Cost</th>
                                                         @endif
                                                     </tr>
                                                 </thead>
@@ -525,8 +525,8 @@
         .highlight-row{
             background-color: #001F3F !important;
             color: #fff;
-            font-weight: bold !important;
-            font-size: 11pt;
+            /* font-weight: bold !important; */
+            /* font-size: 11pt; */
             box-shadow: 2px 2px 8px #000000;
         }
         .variant-tabs{
