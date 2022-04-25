@@ -115,25 +115,30 @@
                                             </dl>
                                             <div class="d-block d-lg-none">
                                                 <p class="mt-2 mb-2 text-center">
-                                                    @if (!in_array($user_department, $not_allowed_department)) 
-                                                    @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
+                                                    @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
+                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                                                    <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                                                    @endif
+
+                                                    @if (in_array($user_group, ['Manager', 'Director']))
+                                                        @if ($default_price > 0)
                                                         <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                         <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
-                                                    @endif
-                                                    @if (in_array($user_group, ['Manager', 'Director']) && $minimum_selling_price > 0)
+                                                        @endif
+                                                        @if ($minimum_selling_price > 0)
                                                         <span class="d-block font-weight-bold mt-3" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                                                         <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
+                                                        @endif
+                                                        @if ($last_purchase_rate > 0)
+                                                        <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($last_purchase_rate, 2, '.', ',') }}</span>
+                                                        <span class="d-inline-block" style="font-size: 9pt;">Last Purchase Rate</span>
+                                                        <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $last_purchase_date }}</span>
+                                                        @endif
+                                                        @if ($avgPurchaseRate > 0)
+                                                        <span class="d-block font-weight-bold avg-purchase-rate-div mt-3" style="font-size: 11pt;">{{ $avgPurchaseRate }}</span>
+                                                        <span class="d-inline-block" style="font-size: 9pt;">Average Purchase Rate</span>
+                                                        @endif
                                                     @endif
-                                                    @if ($last_purchase_rate > 0)
-                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($last_purchase_rate, 2, '.', ',') }}</span>
-                                                    <span class="d-inline-block" style="font-size: 9pt;">Last Purchase Rate</span>
-                                                    <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $last_purchase_date }}</span>
-                                                @endif
-                                                @if ($avgPurchaseRate > 0)
-                                                <span class="d-block font-weight-bold avg-purchase-rate-div mt-3" style="font-size: 11pt;">{{ $avgPurchaseRate }}</span>
-                                                <span class="d-inline-block" style="font-size: 9pt;">Average Purchase Rate</span>
-                                                @endif
-                                                @endif
                                                 </p>
                                             </div>
                                             <div class="card-header border-bottom-0 p-1">
@@ -235,12 +240,16 @@
                                 <div class="box box-solid h-100">
                                     <div class="box-body table-responsive no-padding h-100" style="display: flex; justify-content: center; align-items: center;">
                                         <p class="mt-2 mb-2 text-center">
-                                            @if (!in_array($user_department, $not_allowed_department)) 
-                                            @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
+                                            @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
+                                            <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                                            <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                                            @endif
+
+                                            @if (in_array($user_group, ['Manager', 'Director']))
+                                                @if ($default_price > 0)
                                                 <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                 <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
-                                            @endif
-                                            @if (in_array($user_group, ['Manager', 'Director']))
+                                                @endif
                                                 @if ($minimum_selling_price > 0)
                                                     <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                                                     <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
@@ -255,7 +264,6 @@
                                                 <span class="d-inline-block" style="font-size: 9pt;">Average Purchase Rate</span>
                                                 @endif
                                             @endif
-                                            @endif
                                         </p>
                                     </div>
                                 </div>
@@ -265,65 +273,6 @@
                                     <h3 class="card-title font-responsive"><i class="fas fa-project-diagram"></i> Variants</h3>
                                 </div>
                             </div>
-                            {{-- <div class="d-block d-lg-none col-12">
-                                <div class="box box-solid">
-                                    @php
-                                        $variants = collect($co_variants)->chunk(5);
-                                    @endphp
-                                    <div class="divs tab-content">
-                                        @for($i = 0; $i < count($variants); $i++)
-                                        <div id="mob-variant-page-{{ $i + 1 }}" class="mob-tab tab-pane {{ $i == 0 ? 'active' : null }}">
-                                            @php
-                                                $first_item_name = \Illuminate\Support\Str::limit($item_details->item_name, 30, $end='...')
-                                            @endphp
-                                            <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $item_details->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt;border-bottom: 2px solid #28A745; color: #28A745;"><b>{{ $item_details->name }}</b> - {{ $first_item_name }} <i class="fa fa-chevron-down float-right"></i></button>
-                                                    
-                                            <div class="collapse multi-collapse show" id="variant-data-{{ $item_details->name }}">
-                                                <table class="table" style="font-size: 9pt;">
-                                                    @foreach ($attribute_names as $attribute_name)
-                                                    <tr>
-                                                        @php
-                                                            $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
-                                                        @endphp
-                                                        <td>{{ $attribute_name }}</td>
-                                                        <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
-                                                    </tr>
-                                                    @endforeach
-                                                </table>
-                                            </div>
-                                            @foreach ($variants[$i] as $variant)
-                                            @if ($item_details->name == $variant->name)
-                                                @continue
-                                            @endif
-                                            @php
-                                                $item_name = \Illuminate\Support\Str::limit($variant->item_name, 30, $end='...')
-                                            @endphp
-                                            <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $variant->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt; border-bottom: 1px solid #C4C4C4"><b>{{ $variant->name }}</b> - {{ $item_name }} <i class="fa fa-chevron-down float-right"></i></button>
-                                            
-                                            <div class="collapse multi-collapse" id="variant-data-{{ $variant->name }}">
-                                                <table class="table" style="font-size: 9pt;">
-                                                    @foreach ($attribute_names as $attribute_name)
-                                                        <tr>
-                                                            @php
-                                                                $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
-                                                            @endphp
-                                                            <td>{{ $attribute_name }}</td>
-                                                            <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
-                                                        </tr>
-                                                    @endforeach
-                                                </table>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                        
-                                        @endfor
-                                        @if (count($variants) > 1)
-                                        <button class="btn float-left" id="btn-prev" style="font-size: 9pt; color: #007BFF"><i class="fa fa-chevron-left"></i> Previous</button>
-                                        <button class="btn float-right" id="btn-next" style="font-size: 9pt; color: #007BFF">Next <i class="fa fa-chevron-right"></i></button>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div> --}}
                             <div class="container d-none d-lg-block col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
@@ -335,10 +284,11 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <th scope="col" class="text-center text-nowrap">{{ $attribute_name }}</th>
                                                         @endforeach
-                                                        @if (!in_array($user_department, $not_allowed_department)) 
-                                                        @if (in_array($user_group, ['Manager', 'Director']))
+                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                                         <th scope="col" class="text-center text-nowrap">Price</th>
                                                         @endif
+                                                        @if (in_array($user_group, ['Manager', 'Director']))
+                                                        <th scope="col" class="text-center text-nowrap">Price</th>
                                                         @endif
                                                     </tr>
                                                 </thead>
@@ -348,8 +298,7 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
                                                         @endforeach
-                                                        @if (!in_array($user_department, $not_allowed_department)) 
-                                                        @if (in_array($user_group, ['Manager', 'Director']))
+                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                                         <td class="text-center align-middle text-nowrap">
                                                             @if ($default_price > 0)
                                                             {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
@@ -367,6 +316,23 @@
                                                             @endif
                                                         </td>
                                                         @endif
+                                                        @if (in_array($user_group, ['Manager', 'Director']))
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @if ($default_price > 0)
+                                                            {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
+                                                            @else
+                                                            <span class="entered-price d-none">0.00</span>
+                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
+                                                                @csrf
+                                                                <div class="input-group" style="width: 120px;">
+                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
+                                                                    <div class="input-group-append">
+                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                            @endif
+                                                        </td>
                                                         @endif
                                                     </tr>
                                                     @foreach ($co_variants as $variant)
@@ -389,8 +355,7 @@
                                                                 $price = $variants_price_arr[$variant->name];
                                                             }
                                                         @endphp
-                                                        @if (!in_array($user_department, $not_allowed_department)) 
-                                                         @if (in_array($user_group, ['Manager', 'Director']))
+                                                        @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                                         <td class="text-center align-middle text-nowrap">
                                                             @if ($price > 0)
                                                             {{ '₱ ' . number_format($price, 2, '.', ',') }}
@@ -408,6 +373,23 @@
                                                             @endif
                                                         </td>
                                                         @endif
+                                                         @if (in_array($user_group, ['Manager', 'Director']))
+                                                         <td class="text-center align-middle text-nowrap">
+                                                            @if ($price > 0)
+                                                            {{ '₱ ' . number_format($price, 2, '.', ',') }}
+                                                            @else
+                                                            <span class="entered-price d-none">0.00</span>
+                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
+                                                                @csrf
+                                                                <div class="input-group" style="width: 120px;">
+                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
+                                                                    <div class="input-group-append">
+                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                            @endif
+                                                        </td>
                                                         @endif
                                                     </tr>
                                                 @endforeach

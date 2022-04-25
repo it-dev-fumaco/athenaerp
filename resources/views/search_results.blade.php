@@ -300,13 +300,17 @@
 																		<br>
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																	@endif
-																	@if (!in_array($user_department, $not_allowed_department)) 
-																	@if(!in_array(Auth::user()->user_group, ['Warehouse Personnel']) && $row['default_price'] > 0)
+																	@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
 																	<p class="mt-3 mb-2">
 																		<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
 																		<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
 																	</p>
 																	@endif
+																	@if(in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
+																	<p class="mt-3 mb-2">
+																		<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
+																		<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
+																	</p>
 																	@endif
 																</div>
 															</div>
@@ -459,13 +463,17 @@
 																	<br>
 																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																@endif
-																@if (!in_array($user_department, $not_allowed_department)) 
-																@if(!in_array(Auth::user()->user_group, ['Warehouse Personnel']) && $row['default_price'] > 0)
+																@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0) 
 																<p class="mt-3 mb-2">
 																	<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
 																	<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
 																</p>
 																@endif
+																@if(in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
+																<p class="mt-3 mb-2">
+																	<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
+																	<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
+																</p>
 																@endif
 																<div class="d-none d-md-block">
 																	@if ($row['item_inventory'])

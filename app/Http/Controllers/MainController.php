@@ -318,13 +318,13 @@ class MainController extends Controller
 
         $user_department = Auth::user()->department;
         // get departments NOT allowed to view prices
-        $not_allowed_department = DB::table('tabPrice Restricted Department')->pluck('department')->toArray();
+        $allowed_department = DB::table('tabDeparment with Price Access')->pluck('department')->toArray();
 
         $last_purchase_order = [];
         $last_landed_cost_voucher = [];
         $price_settings = [];
         $website_prices = [];
-        if (!in_array($user_department, $not_allowed_department)) {
+        if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
                 ->where('po.docstatus', 1)->whereIn('poi.item_code', $item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
 
@@ -494,7 +494,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'not_allowed_department', 'user_department'));
+        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department'));
     }
 
     private function breadcrumbs($parent){
@@ -1941,8 +1941,9 @@ class MainController extends Controller
         }
 
         $user_department = Auth::user()->department;
-        // get departments NOT allowed to view prices
-        $not_allowed_department = DB::table('tabPrice Restricted Department')->pluck('department')->toArray();
+        $user_group = Auth::user()->user_group;
+        // get departments allowed to view prices
+        $allowed_department = DB::table('tabDeparment with Price Access')->pluck('department')->toArray();
 
         $item_rate = 0;
         $last_purchase_date = null;
@@ -1951,7 +1952,7 @@ class MainController extends Controller
         $default_price = 0;
         $avgPurchaseRate = '₱ 0.00';
         $last_purchase_rate = 0;
-        if (!in_array($user_department, $not_allowed_department)) {
+        if (in_array($user_department, $allowed_department) || in_array($user_group, ['Manager', 'Director'])) {
             $avgPurchaseRate = $this->avgPurchaseRate($item_code);
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
                 ->where('po.docstatus', 1)->where('poi.item_code', $item_code)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
@@ -2130,14 +2131,12 @@ class MainController extends Controller
 
         $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
-        $user_group = Auth::user()->user_group;
-
         // variants
         $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
         $variant_item_codes = array_column($co_variants->items(), 'name');
 
         $variants_price_arr = [];
-        if (!in_array($user_department, $not_allowed_department)) {
+        if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             // get item cost for items with 0 last purchase rate
             $item_custom_cost = [];
             foreach ($co_variants->items() as $row) {
@@ -2188,7 +2187,7 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'not_allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
