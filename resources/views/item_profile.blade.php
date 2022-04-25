@@ -110,8 +110,8 @@
                                         <div class="col-md-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
-                                                <dt class="responsive-item-code" style="font-size: 12pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
-                                                <dd class="responsive-description" style="font-size: 9pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                                                <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
+                                                <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                                             </dl>
                                             <div class="d-block d-lg-none">
                                                 <p class="mt-2 mb-2 text-center">
@@ -150,7 +150,7 @@
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
                                                     <div class="box-body table-responsive">
-                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 9pt;">
+                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
                                                             <thead>
                                                                 <tr>
                                                                     <th scope="col" rowspan=2 class="font-responsive text-center p-1 align-middle">Warehouse</th>
@@ -175,7 +175,7 @@
                                                                 </td>
                                                                 <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                                                 <td class="text-center p-1">
-                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 9pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
+                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 10pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
                                                                 </td>
                                                             </tr>
                                                             @empty
@@ -362,6 +362,7 @@
                                                             @if ($price > 0)
                                                             {{ '₱ ' . number_format($price, 2, '.', ',') }}
                                                             @else
+                                                            <center>
                                                             <span class="entered-price d-none">0.00</span>
                                                             <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
                                                                 @csrf
@@ -372,6 +373,7 @@
                                                                     </div>
                                                                 </div>
                                                             </form>
+                                                        </center>
                                                             @endif
                                                         </td>
                                                         @endif

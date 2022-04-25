@@ -2137,7 +2137,7 @@ class MainController extends Controller
         $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
         // variants
-        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
+        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->where('disabled', 0)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
         $variant_item_codes = array_column($co_variants->items(), 'name');
 
         $variants_price_arr = [];
