@@ -631,9 +631,7 @@ class MainController extends Controller
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $item_images[$current_key]->image_path)[0]),
                 'orig_image_path' => asset('storage/').'/img/'.$img,
-                'orig_path' => Storage::disk('public')->exists('/img/'.$img) ? 1 : 0,
-                'webp_image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
-                'webp_path' => Storage::disk('public')->exists('/img/'.explode('.',$img)[0]) ? 1 : 0,
+                'webp_image_path' => Storage::disk('public')->exists('/img/'.explode('.',$img)[0]) ? asset('storage/').'/img/'.explode('.', $img)[0].'.webp' : null,
                 'current_img_key' => $current_key
             ];
                     
@@ -2382,6 +2380,7 @@ class MainController extends Controller
             $files = $request->file('item_image');
 
             $item_images_arr = [];
+            $unable_to_upload = 0;
             foreach ($files as $i => $file) {
                //get filename with extension
                 $filenamewithextension = $file->getClientOriginalName();
@@ -2390,8 +2389,15 @@ class MainController extends Controller
                 //get file extension
                 $extension = $file->getClientOriginalExtension();
                 //filename to store
-                $micro_time = round(microtime(true));
                 
+                $allowed_extensions = ['jpg', 'jpeg'];
+                if(!in_array($extension, $allowed_extensions)){
+                    $unable_to_upload = $unable_to_upload + 1;
+                    continue;
+                }
+
+                $micro_time = round(microtime(true));
+
                 $filenametostore = $micro_time . $i . '-'. $request->item_code.'.'.$extension;//round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
 
                 $destinationPath = storage_path('app/public/img/');
@@ -2426,7 +2432,7 @@ class MainController extends Controller
             
             DB::table('tabItem Images')->insert($item_images_arr);
 
-            return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been uploaded.']);
+            return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been uploaded.', 'unable' => $unable_to_upload]);
         }else{
             return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been updated.']);
         }

@@ -738,6 +738,7 @@
 				<form></form>
 				<div class="modal-body">
 					<p id="desc"></p>
+					<p id="unable-to-upload"></p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -2026,6 +2027,10 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 						$('#myModalLabel').html('Message');
 						$('#desc').html(response.message);
 
+						if(parseInt(response.unable) > 0){
+							$('#unable-to-upload').html('Unable to upload '+ response.unable +' file(s). Only .jpg and .jpeg files are allowed.');
+						}
+						
 						view_item_details(item_code);
 
 						$('#upload-image-modal').modal('hide');

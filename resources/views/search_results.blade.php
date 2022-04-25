@@ -265,8 +265,14 @@
 																						<div class="carousel-inner">
 																							<div class="carousel-item active">
 																								{{-- <img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img_webp }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img_webp)[0], '-') }}"> --}}
+																								@php
+																									$webp_path = null;
+																									if(isset($row['item_image_paths'][0]) && Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp')){
+																										$webp_path = asset('storage/').$img_webp;
+																									}
+																								@endphp
 																								<picture>
-																									<source id="{{ $row['name'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+																									<source id="{{ $row['name'] }}-webp-image-src" srcset="{{ $webp_path }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
 																									<source id="{{ $row['name'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
 																									<img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
 																								</picture>
@@ -453,7 +459,7 @@
 																							<div class="carousel-item active">
 																								{{-- <img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}"> --}}
 																								<picture>
-																									<source id="mobile-{{ $row['name'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+																									<source id="mobile-{{ $row['name'] }}-webp-image-src" srcset="{{ $webp_path }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
 																									<source id="mobile-{{ $row['name'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
 																									<img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
 																								</picture>
