@@ -2142,6 +2142,7 @@ class MainController extends Controller
 
         $variants_price_arr = [];
         $variants_cost_arr = [];
+        $variants_min_price_arr = [];
         if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             // get item cost for items with 0 last purchase rate
             $item_custom_cost = [];
@@ -2180,6 +2181,7 @@ class MainController extends Controller
                 $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variant_rate * $standard_price_computation;
                 $variants_price_arr[$variant] = $variants_default_price;
                 $variants_cost_arr[$variant] = $variant_rate;
+                $variants_min_price_arr[$variant] = $variant_rate * $minimum_price_computation;
             }
         }
 
@@ -2196,7 +2198,7 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -4744,13 +4746,16 @@ class MainController extends Controller
         $price = $request->price;
 
         $standard_price = $price * $standard_price_computation;
+        $min_price = $price * $minimum_price_computation;
 
         $item_cost = '₱ ' . number_format($price, 2, '.', ',');
         $standard_price = '₱ ' . number_format($standard_price, 2, '.', ',');
+        $min_price = '₱ ' . number_format($min_price, 2, '.', ',');
 
         return [
             'item_cost' => $item_cost,
-            'standard_price' => $standard_price
+            'standard_price' => $standard_price,
+            'min_price' => $min_price
         ];
     }
 }

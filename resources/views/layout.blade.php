@@ -1700,7 +1700,6 @@
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
                 event.preventDefault();
-
 				var item_code = $(this).data('title');
 				$('#'+item_code+'-images-modal').modal('show');
 			});

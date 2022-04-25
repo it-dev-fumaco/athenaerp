@@ -107,6 +107,44 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <div class="modal fade" id="{{ $item_details->name }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div id="image-container" class="container-fluid">
+                                                            <div id="carouselExampleControls" class="carousel slide" data-interval="false">
+                                                                <div class="carousel-inner">
+                                                                    <div class="carousel-item active">
+                                                                        <picture>
+                                                                            <source id="{{ $item_details->name }}-webp-image-src" srcset="{{ asset('storage/').$img_1_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                            <source id="{{ $item_details->name }}-orig-image-src" srcset="{{ asset('storage/').$img_1 }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                            <img class="d-block w-100" id="{{ $item_details->name }}-image" src="{{ asset('storage/').$img_1 }}" alt="{{ $img_1_alt }}">
+                                                                        </picture>
+                                                                    </div>
+                                                                    <span class='d-none' id="{{ $item_details->name }}-image-data">0</span>
+                                                                </div>
+                                                                <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item_details->name }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                                    <span class="sr-only">Previous</span>
+                                                                </a>
+                                                                <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $item_details->name }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                                    <span class="sr-only">Next</span>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
                                         <div class="col-md-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
@@ -284,14 +322,15 @@
                                                     <tr>
                                                         <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
                                                         @foreach ($attribute_names as $attribute_name)
-                                                        <th scope="col" class="text-center text-nowrap1 align-middle" style="width: 350px;">{{ $attribute_name }}</th>
+                                                        <th scope="col" class="text-center align-middle" style="width: 350px;">{{ $attribute_name }}</th>
                                                         @endforeach
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
-                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 1000px;">Standard Price</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
                                                         @endif
                                                         @if (in_array($user_group, ['Manager', 'Director']))
-                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 1000px;">Cost</th>
-                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 1000px;">Standard Price</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Cost</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Min. Selling Price</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
                                                         @endif
                                                     </tr>
                                                 </thead>
@@ -327,6 +366,13 @@
                                                                     </div>
                                                                 </form>
                                                             </center>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @if ($minimum_selling_price > 0)
+                                                            {{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}
+                                                            @else
+                                                            <span id="{{ $item_details->name }}-computed-price-min">--</span>
                                                             @endif
                                                         </td>
                                                         <td class="text-center align-middle text-nowrap">
@@ -390,6 +436,19 @@
                                                                     </div>
                                                                 </form>
                                                             </center>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @php
+                                                                $minprice = 0;
+                                                                if(array_key_exists($variant->name, $variants_min_price_arr)){
+                                                                    $minprice = $variants_min_price_arr[$variant->name];
+                                                                }
+                                                            @endphp
+                                                            @if ($minprice > 0)
+                                                            {{ '₱ ' . number_format($minprice, 2, '.', ',') }}
+                                                            @else
+                                                            <span id="{{ $variant->name }}-computed-price-min">--</span>
                                                             @endif
                                                         </td>
                                                          <td class="text-center align-middle text-nowrap">
@@ -581,6 +640,7 @@
                 success: function(response){
                     entered_price.removeClass('d-none').text(response.item_cost);
                     $('#' + entered_price_computed).text(response.standard_price);
+                    $('#' + entered_price_computed + '-min').text(response.min_price);
                     frm.remove();
                 }
             });
@@ -611,7 +671,7 @@
             window.history.back();
         });
 
-        get_athena_transactions();
+        // get_athena_transactions();
         function get_athena_transactions(page){
             var item_code = '{{ $item_details->name }}';
             var ath_src = $('#ath-src-warehouse-filter').val();
@@ -627,7 +687,7 @@
             });
         }
 
-        get_stock_ledger();
+        // get_stock_ledger();
         function get_stock_ledger(page){
             var item_code = '{{ $item_details->name }}';
             var erp_user = $('#erp-warehouse-user-filter').val();
