@@ -50,8 +50,8 @@
                     @endif
                 </td>
             </tr>
-            <tr class="d-lg-none">
-                <td colspan=6>
+            <tr>
+                <td class="d-lg-none" colspan=6>
                     <table class="table">
                         <tr>
                             <td class="p-1">

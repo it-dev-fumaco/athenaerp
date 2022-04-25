@@ -41,7 +41,11 @@ class MainController extends Controller
 
             $years = array_unique($years->toArray());
 
-            return view('index_promodiser', compact('assigned_consignment_store', 'years'));
+            if (count($assigned_consignment_store) > 0) {
+                return view('index_promodiser', compact('assigned_consignment_store', 'years'));
+            }
+
+            return redirect('/search_results');
         }
 
         return view('index');
@@ -158,7 +162,6 @@ class MainController extends Controller
                     $allowed_warehouses = collect($allow_warehouse)->implode('","');
                     return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
                 }else{
-                    // return $q->where(DB::raw('(SELECT COUNT(name) FROM `tabBin` WHERE item_code = `tabItem`.name)'), '>', 0);
                     return $q->where(DB::raw('(SELECT COUNT(`tabItem`.name) FROM `tabBin` JOIN tabWarehouse ON tabWarehouse.name = `tabBin`.warehouse WHERE `tabBin`.item_code = `tabItem`.name and `tabWarehouse`.stock_warehouse = 1)'), '>', 0);
                 }
             })
@@ -233,7 +236,6 @@ class MainController extends Controller
 
         $total_items = count($items);
 
-        // Get current page form url e.x. &page=1
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         // Create a new Laravel collection from the array data3
         $itemCollection = collect($items);
@@ -575,7 +577,10 @@ class MainController extends Controller
             $img_arr = [
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $item_images[$current_key]->image_path)[0]),
-                'image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
+                'orig_image_path' => asset('storage/').'/img/'.$img,
+                'orig_path' => Storage::disk('public')->exists('/img/'.$img) ? 1 : 0,
+                'webp_image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
+                'webp_path' => Storage::disk('public')->exists('/img/'.explode('.',$img)[0]) ? 1 : 0,
                 'current_img_key' => $current_key
             ];
                     
@@ -2470,23 +2475,25 @@ class MainController extends Controller
                 //get file extension
                 $extension = $file->getClientOriginalExtension();
                 //filename to store
-                $filenametostore = round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
+                $micro_time = round(microtime(true));
+                
+                $filenametostore = $micro_time . $i . '-'. $request->item_code.'.'.$extension;//round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
 
                 $destinationPath = storage_path('app/public/img/');
 
-                $jpeg_file = round(microtime(true)) . $i . '-'. $request->item_code.'.'.$extension;
+                $jpeg_file = $micro_time . $i . '-'. $request->item_code.'.'.$extension;
 
                 $webp = Webp::make($file);
-                $webp_file_name = round(microtime(true)) . $i . '-'. $request->item_code.'.webp';
+                $webp_file_name = $micro_time . $i . '-'. $request->item_code.'.webp';
 
                 if($webp->save(storage_path('app/public/img/'.$webp_file_name))) {
                     $file->move($destinationPath, $jpeg_file);
                 }
 
-                $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
-                if (file_exists($jpeg_path)) {
-                    unlink($jpeg_path);
-                }
+                // $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
+                // if (file_exists($jpeg_path)) {
+                //     unlink($jpeg_path);
+                // }
 
                 $item_images_arr[] = [
                     'name' => uniqid(),

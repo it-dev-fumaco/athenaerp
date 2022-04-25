@@ -234,10 +234,21 @@
 														<div class="row m-0">
 															<div class="col-1 p-1">
 																@php
-																	$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+																	$img = isset($row['item_image_paths'][0]) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
+																	$img_webp = isset($row['item_image_paths'][0]) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 																@endphp
 																<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-																	<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover">
+																	@if(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp'))
+																		<img src="{{ asset('storage/').$img }}" class="img w-100">
+																	@elseif(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.$row['item_image_paths'][0]->image_path))
+																		<img src="{{ asset('storage/').$img_webp }}" class="img w-100">
+																	@else
+																		<picture>
+																			<source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+																			<source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+																			<img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
+																		</picture>
+																	@endif
 																</a>
 					
 																<div class="modal fade" id="{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -253,7 +264,12 @@
 																					<div id="carouselExampleControls" class="carousel slide" data-interval="false">
 																						<div class="carousel-inner">
 																							<div class="carousel-item active">
-																								<img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+																								{{-- <img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img_webp }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img_webp)[0], '-') }}"> --}}
+																								<picture>
+																									<source id="{{ $row['name'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+																									<source id="{{ $row['name'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+																									<img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+																								</picture>
 																							</div>
 																							<span class='d-none' id="{{ $row['name'] }}-image-data">0</span>
 																						</div>
@@ -295,7 +311,7 @@
 															<div class="col-6 p-1">
 																<div class="col-md-12 m-0 text-justify" >
 																	<span class="font-italic item-class" >{{ $row['item_classification'] }}</span><br/>
-																	<span class="text-justify item-name" style="font-size: 9pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
+																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['part_nos'])
 																		<br>
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
@@ -411,10 +427,22 @@
 														<div class="row m-0">
 															<div class="col-3 col-lg-2 col-xl-3 p-1">
 																@php
-																	$img = ($row['item_image_paths']) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+																	$img = isset($row['item_image_paths'][0]) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
+																	$img_webp = isset($row['item_image_paths'][0]) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 																@endphp
 																<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-																	<img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover w-100">
+																	{{-- <img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover w-100"> --}}
+																	@if(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp'))
+																		<img src="{{ asset('storage/').$img }}" class="img w-100">
+																	@elseif(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.$row['item_image_paths'][0]->image_path))
+																		<img src="{{ asset('storage/').$img_webp }}" class="img w-100">
+																	@else
+																		<picture>
+																			<source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+																			<source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+																			<img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
+																		</picture>
+																	@endif
 																</a>
 				
 																<div class="modal fade" id="mobile-{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -430,7 +458,12 @@
 																					<div id="carouselExampleControls" class="carousel slide" data-interval="false">
 																						<div class="carousel-inner">
 																							<div class="carousel-item active">
-																								<img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+																								{{-- <img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}"> --}}
+																								<picture>
+																									<source id="mobile-{{ $row['name'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+																									<source id="mobile-{{ $row['name'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+																									<img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+																								</picture>
 																							</div>
 																							<span class='d-none' id="mobile-{{ $row['name'] }}-image-data">0</span>
 																						</div>
@@ -671,7 +704,7 @@
 													</div>
 												@empty
 													<div class="col-md-12 text-center" style="padding: 25px;">
-														<h5>No result(s) found.</h5>
+														<h5>No result(s) found / Stocks not available</h5>
 													</div>
 												@endforelse
 											</div><!-- new table -->

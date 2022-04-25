@@ -25,10 +25,22 @@
                             <div class="row">
                                 <div class="col-4 mt-3">
                                     @php
-                                        $img = ($q['img']) ? "/img/" . explode('.', $q['img'])[0].'.webp' : "/icon/no_img.webp";
+                                        $img = ($q['img']) ? "/img/" . $q['img'] : "/icon/no_img.png";
+                                        $img_webp = ($q['img']) ? "/img/" . explode('.', $q['img'])[0].'.webp' : "/icon/no_img.webp";
                                     @endphp
-                                        <a href="{{ asset('storage/') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $q['item_code'] }}" data-title="{{ $q['item_code'] }}">
-                                        <img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" style="width: 100%;" class="item_image">
+                                    <a href="{{ asset('storage/') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $q['item_code'] }}" data-title="{{ $q['item_code'] }}">
+                                        {{-- <img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" style="width: 100%;" class="item_image"> --}}
+                                        @if(!Storage::disk('public')->exists('/img/'.explode('.', $q['img'])[0].'.webp'))
+                                            <img class="display-block img-thumbnail item_image w-100" src="{{ asset('storage/') }}{{ $img }}">
+                                        @elseif(!Storage::disk('public')->exists('/img/'.$q['img']))
+                                            <img class="display-block img-thumbnail item_image w-100" src="{{ asset('storage/') }}{{ $img_webp }}">
+                                        @else
+                                            <picture>
+                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="display-block img-thumbnail item_image w-100">
+                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="display-block img-thumbnail item_image w-100">
+                                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="display-block img-thumbnail item_image w-100">
+                                            </picture>
+                                        @endif
                                     </a>
                                 </div>
                                 <div class="col-8 mt-3">

@@ -29,11 +29,22 @@
                             $price_list_rate = array_key_exists($row->item_code, $price_list_rates) ? '₱ ' . number_format($price_list_rates[$row->item_code][0]->price_list_rate, 2, '.', ',') : '-';
                         @endphp
                         <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
-                            <picture>
+                            {{-- <picture>
                                 <source srcset="{{ asset('storage/') . $img_webp }}" type="image/webp" class="w-100">
                                 <source srcset="{{ asset('storage/') . $img }}" class="w-100">
                                 <img src="{{ asset('storage/') . $img }}" alt="{{ str_slug($img, '-') }}" class="w-100">
-                            </picture>
+                            </picture> --}}
+                            @if(!Storage::disk('public')->exists('/img/'.explode('.', $item_image->image_path)[0].'.webp'))
+                                <img class="w-100" src="{{ asset('storage/') }}{{ $img }}">
+                            @elseif(!Storage::disk('public')->exists('/img/'.$item_image->image_path))
+                                <img class="w-100" src="{{ asset('storage/') }}{{ $img_webp }}">
+                            @else
+                                <picture>
+                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="w-100">
+                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="w-100">
+                                    <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
+                                </picture>
+                            @endif
                         </a>
                     </div>
                     <div class="col-9 d-block d-sm-none">
