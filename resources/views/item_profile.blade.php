@@ -7,7 +7,7 @@
     <div class="container-fluid p-3">
         <div class="row">
             <div class="col-md-12">
-                <div style="position: absolute; right: 70px; top: -10px;">
+                <div class="back-btn">
                     <img src="{{ asset('storage/icon/back.png') }}" style="width: 45px; cursor: pointer;" id="back-btn">
                 </div>
                 <ul class="nav nav-tabs" role="tablist" style="font-size: 10pt;">
@@ -31,7 +31,8 @@
                     </li>
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
+                        <a class="nav-link d-none d-md-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
+                        <a class="nav-link d-block d-md-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
                     </li>
                     @endif
                 </ul>
@@ -58,7 +59,7 @@
                                             $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                                             $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
                                         @endphp
-                                        <div class="col-md-2">
+                                        <div class="col-md-4 col-xl-2">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
@@ -107,7 +108,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-10">
+                                        <div class="col-md-8 col-xl-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
                                                 <dt class="responsive-item-code" style="font-size: 12pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
@@ -275,7 +276,7 @@
                                 </div>
                             </div>
                             @endif
-                            <div class="container d-none d-lg-block col-12 mt-2">
+                            <div class="container col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="table-responsive" id="example">
@@ -538,6 +539,35 @@
         .variant-tabs .nav-item .active{
             border-top: none !important;
             border-bottom: 1px solid #DEE2E6 !important;
+        }
+        .back-btn{
+            position: absolute;
+            right: 70px;
+            top: -10px;
+        }
+        @media (max-width: 575.98px) {
+            #example tr > *:first-child {
+                min-width: 5rem;
+            }
+            .pagination{
+                font-size: 10pt !important;
+            }
+        }
+        @media (max-width: 767.98px) {
+            #example tr > *:first-child {
+                min-width: 5rem;
+            }
+            .pagination{
+                font-size: 10pt !important;
+            }
+        }
+        @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+            .pagination{
+                font-size: 10pt !important;
+            }
+            .back-btn{
+                right: 0;
+            }
         }
     </style>
 @endsection
