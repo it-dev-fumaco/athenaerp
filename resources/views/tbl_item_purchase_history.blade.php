@@ -3,8 +3,9 @@
     <thead>
         <th class="text-center" style="width: 15%;">Transaction Date</th>
         <th class="text-center" style="width: 15%;">Purchase Order No.</th>
-        <th class="text-center" style="width: 40%;">Supplier</th>
+        <th class="text-center" style="width: 25%;">Supplier</th>
         <th class="text-center" style="width: 15%;">Supplier Group</th>
+        <th class="text-center" style="width: 15%;">Qty</th>
         <th class="text-center" style="width: 15%;">Rate</th>
     </thead>
     <tbody>
@@ -14,6 +15,7 @@
             <td class="text-center">{{ $row->name }}</td>
             <td class="text-center">{{ $row->supplier }}</td>
             <td class="text-center">{{ $row->supplier_group }}</td>
+            <td class="text-center">{{ number_format($row->qty) . ' ' . $row->stock_uom }}</td>
             <td class="text-center">{{ '₱ ' . number_format($row->base_rate, 2, '.', ',') }}</td>
         </tr>
         @empty
