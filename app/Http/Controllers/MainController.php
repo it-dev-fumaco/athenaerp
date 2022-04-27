@@ -746,7 +746,7 @@ class MainController extends Controller
 
         $total_issued += DB::table('tabAthena Transactions as at')
             ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'ps.parent')
+            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
             ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
@@ -972,27 +972,79 @@ class MainController extends Controller
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")->union($q1)->get();
 
+        $item_codes = array_unique(array_column($q->toArray(), 'item_code'));
+        $s_warehouses = array_unique(array_column($q->toArray(), 's_warehouse'));
+
+        if (count($item_codes) > 0) {
+            // get reserved qty per item
+            $stock_reservation_qty = DB::table('tabStock Reservation')->whereIn('item_code', $item_codes)->whereIn('warehouse', $s_warehouses)
+                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])
+                ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'reserve_qty')->pluck('reserve_qty', 'id');
+
+            $consumed_qty = DB::table('tabStock Reservation')->whereIn('item_code', $item_codes)->whereIn('warehouse', $s_warehouses)
+                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])
+                ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'consumed_qty')->pluck('consumed_qty', 'id');
+
+            // get actual qty per item
+            $item_actual_qty = DB::table('tabBin')->whereIn('item_code', $item_codes)->whereIn('warehouse', $s_warehouses)
+                ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'actual_qty')->pluck('actual_qty', 'id');
+
+            $total_issued_ste = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+                ->whereIn('item_code', $item_codes)->where('s_warehouse', $s_warehouses)
+                ->select(DB::raw('CONCAT(item_code, REPLACE(s_warehouse, " ", "")) as id'), 'qty')->pluck('qty', 'id');
+
+            $total_issued_at = DB::table('tabAthena Transactions as at')
+                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+                ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes)
+                ->whereIn('at.source_warehouse', $s_warehouses)
+                ->select(DB::raw('CONCAT(at.item_code, REPLACE(at.source_warehouse, " ", "")) as id'), 'at.issued_qty')->pluck('at.issued_qty', 'id');
+
+            $material_requests = array_unique(array_column($q->toArray(), 'material_request'));
+            $sales_orders = array_unique(array_column($q->toArray(), 'sales_order_no'));
+
+            $references = DB::table('tabMaterial Request')->whereIn('name', $material_requests)->pluck('customer', 'name');
+
+            $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
+                ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
+
+            $parent_warehouses = DB::table('tabWarehouse')->whereIn('name', $s_warehouses)->pluck('parent_warehouse', 'name');
+        }
+
         $list = [];
         foreach ($q as $d) {
-            $available_qty = $this->get_available_qty($d->item_code, $d->s_warehouse);
+            $arr_key = $d->item_code . str_replace(' ', '', $d->s_warehouse);
+
+            $reserved_qty = Arr::exists($stock_reservation_qty, $arr_key) ? $stock_reservation_qty[$arr_key] : 0;
+            $reserved_qty += Arr::exists($consumed_qty, $arr_key) ? $consumed_qty[$arr_key] : 0;
+            $issued_qty = Arr::exists($total_issued_ste, $arr_key) ? $total_issued_ste[$arr_key] : 0;
+            $issued_qty += Arr::exists($total_issued_at, $arr_key) ? $total_issued_at[$arr_key] : 0;
+            $actual_qty = Arr::exists($item_actual_qty, $arr_key) ? $item_actual_qty[$arr_key] : 0;
+
+            $available_qty = ($actual_qty - $issued_qty);
+            $available_qty = ($available_qty - $reserved_qty);
+            $available_qty = ($available_qty < 0) ? 0 : $available_qty;
 
             if($d->material_request){
-                $customer = DB::table('tabMaterial Request')->where('name', $d->material_request)->first();
+                $customer = Arr::exists($references, $d->material_request) ? $references[$d->material_request] : null;
             }else{
-                $customer = DB::table('tabSales Order')->where('name', $d->sales_order_no)->first();
+                $customer = Arr::exists($references, $d->sales_order_no) ? $references[$d->sales_order_no] : null;
             }
 
-            $ref_no = ($customer) ? $customer->name : null;
-            $customer = ($customer) ? $customer->customer : null;
+            $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+            $part_nos = Arr::exists($part_nos_query, $d->item_code) ? $part_nos_query[$d->item_code] : 0;
 
-            $part_nos = implode(', ', $part_nos->toArray());
+            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
-
-            $parent_warehouse = $this->get_warehouse_parent(($d->transfer_as == 'For Return') ? $d->t_warehouse : $d->s_warehouse);
+            if ($d->transfer_as == 'For Return') {
+                $parent_warehouse = (Arr::exists($parent_warehouses, $d->t_warehouse)) ? $parent_warehouses[$d->t_warehouse] : null; 
+            } else {
+                $parent_warehouse = (Arr::exists($parent_warehouses, $d->s_warehouse)) ? $parent_warehouses[$d->s_warehouse] : null; 
+            }
 
             $list[] = [
                 'customer' => $customer,
