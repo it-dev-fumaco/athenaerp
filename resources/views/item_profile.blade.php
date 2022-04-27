@@ -324,6 +324,7 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <th scope="col" class="text-center align-middle" style="width: 350px;">{{ $attribute_name }}</th>
                                                         @endforeach
+                                                        <th scope="col" class="text-center align-middle">Stock Availability</th>
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
                                                         <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
                                                         @endif
@@ -340,6 +341,9 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
                                                         @endforeach
+                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                            <span class="badge badge-{{ ($item_stock_available > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($item_stock_available > 0) ? 'In Stock' : 'Unavailable' }}</span>
+                                                        </td>
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
                                                         <td class="text-center align-middle text-nowrap">
                                                             @if ($default_price > 0)
@@ -398,6 +402,12 @@
                                                         @endphp
                                                         <td class="text-center align-middle p-2">{{ $attr_val }}</td>
                                                         @endforeach
+                                                        @php
+                                                            $avail_stock = array_key_exists($variant->name, $actual_variant_stocks) ? $actual_variant_stocks[$variant->name] : 0;
+                                                        @endphp
+                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                            <span class="badge badge-{{ ($avail_stock > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($avail_stock > 0) ? 'In Stock' : 'Unavailable' }}</span>
+                                                        </td>
                                                         @php
                                                             $price = 0;
                                                             if(array_key_exists($variant->name, $variants_price_arr)){

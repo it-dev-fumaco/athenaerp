@@ -2124,6 +2124,12 @@ class MainController extends Controller
                 ];
             }
         }
+
+        $item_stock_available = collect($consignment_warehouses)->sum('available_qty');
+        if($item_stock_available <= 0) {
+            $item_stock_available = collect($site_warehouses)->sum('available_qty');
+        }
+
         // get item images
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
         // get item alternatives from production order item table in erp
@@ -2149,7 +2155,7 @@ class MainController extends Controller
                 ];
             }
         }
-       
+
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
         // get item alternatives based on parent item code
         $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
@@ -2213,7 +2219,10 @@ class MainController extends Controller
 
             $variants_website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
                 ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
-        
+
+            $actual_variant_stocks = DB::table('tabBin')->whereIn('item_code', $variant_item_codes)
+                ->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+            
             foreach($variant_item_codes as $variant){
                 $variants_default_price = 0;
                 $variant_rate = 0;
@@ -2250,7 +2259,7 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
