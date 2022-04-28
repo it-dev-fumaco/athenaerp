@@ -4771,12 +4771,32 @@ class MainController extends Controller
     }
 
     public function purchaseRateHistory($item_code) {
+        $item_valuation_rates = [];
         $list = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
             ->where('po.docstatus', 1)->where('poi.item_code', $item_code)
             ->select('po.supplier', 'po.name', 'po.transaction_date', 'poi.base_rate', 'po.supplier_group', 'poi.qty', 'poi.stock_uom')
             ->orderBy('po.creation', 'desc')->paginate(10);
 
-        return view('tbl_item_purchase_history', compact('list'));
+        $imported = collect($list->items())->where('supplier_group', 'Imported')->toArray();
+        $po_names = array_column($imported, 'name');
+        if (count($po_names) > 0) {
+            $purchase_receipts = DB::table('tabPurchase Receipt as pr')->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')
+                ->where('pr.docstatus', 1)->whereIn('pri.purchase_order', $po_names)->where('pri.item_code', $item_code)
+                ->pluck('pri.purchase_order', 'pr.name')->toArray();
+
+            $purchase_receipt_arr = array_keys($purchase_receipts);
+
+            $last_landed_cost_vouchers = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                ->where('a.docstatus', 1)->where('b.item_code', $item_code)->whereIn('b.receipt_document', $purchase_receipt_arr)
+                ->pluck('b.valuation_rate', 'b.receipt_document');
+
+            foreach ($last_landed_cost_vouchers as $pr => $vr) {
+                $po = $purchase_receipts[$pr];
+                $item_valuation_rates[$po] = $vr;
+            }
+        }
+
+        return view('tbl_item_purchase_history', compact('list', 'item_valuation_rates'));
     }
 
     public function avgPurchaseRate($item_code) {
