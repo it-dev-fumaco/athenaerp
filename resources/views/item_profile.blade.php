@@ -29,6 +29,14 @@
                             <i class="fas fa-history d-block d-md-none"></i>
                         </a>
                     </li>
+                    @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#tab_4">
+                            <span class="d-none d-md-block">Stock Reservations</span>
+                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                        </a>
+                    </li>
+                    @endif
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
@@ -577,6 +585,22 @@
                         <div id="purchase-history-div" class="p-3 col-12"></div>
                     </div>
                     @endif
+                    <div class="container-fluid tab-pane bg-white" id="tab_4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @php
+                                    $attr = null;
+                                    if(Auth::check()){
+                                        $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+                                    }
+                                @endphp
+                                <div class="float-right m-2">
+                                    <button class="btn btn-primary font-responsive" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
+                                </div>
+                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -683,6 +707,102 @@
                 url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
                 success: function(response){
                     $('#athena-transactions').html(response);
+                }
+            });
+        }
+
+        get_stock_reservation();
+        function get_stock_reservation(page){
+            var item_code = '{{ $item_details->name }}';
+            $.ajax({
+                type: 'GET',
+                url: '/get_stock_reservation/' + item_code + '?page=' + page,
+                success: function(response){
+                    $('#stock-reservation-table').html(response);
+                }
+            });
+        }
+
+        $(document).on('click', '#stock-reservations-pagination-1 a', function(event){
+            event.preventDefault();
+            var page = $(this).attr('href').split('page=')[1];
+            get_stock_reservation(page);
+        });
+
+        $('#stock-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#add-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        $('#edit-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#edit-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        $('#cancel-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#cancel-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        function showNotification(color, message, icon){
+            $.notify({
+                icon: icon,
+                message: message
+            },{
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: {
+                from: 'top',
+                align: 'center'
                 }
             });
         }
