@@ -2219,7 +2219,7 @@ class MainController extends Controller
                 $to = Carbon::parse($dates[1])->endOfDay();
                 return $q->whereBetween('transaction_date',[$from, $to]);
             })
-            ->orderBy('transaction_date', 'desc')->paginate(10);
+            ->orderBy('transaction_date', 'desc')->paginate(15);
 
         $ste_names = array_column($logs->items(), 'reference_parent');
 
@@ -2433,7 +2433,7 @@ class MainController extends Controller
         // Create a new Laravel collection from the array data
         $itemCollection = collect($list);
         // Define how many items we want to be visible in each page
-        $perPage = 10;
+        $perPage = 20;
         // Slice the collection to get the items to display in current page
         $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
         // Create our paginator and pass it to the view

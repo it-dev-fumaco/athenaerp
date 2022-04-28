@@ -542,7 +542,7 @@
                             </div>
                         </div>
                         <div class="col-md-2" style="display: inline-block">
-                            <button class="btn btn-secondary font-responsive" id="athReset">Reset Filters</button>
+                            <button class="btn btn-secondary font-responsive btn-sm" id="athReset">Reset Filters</button>
                         </div>
                         <div id="athena-transactions" class="col-12"></div>
                     </div>
@@ -573,7 +573,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-2" style="display: inline-block">
-                                    <button class="btn btn-secondary font-responsive" id="erpReset">Reset Filters</button>
+                                    <button class="btn btn-secondary font-responsive btn-sm" id="erpReset">Reset Filters</button>
                                 </div>
                                 <div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
                             </div>
@@ -595,7 +595,7 @@
                                     }
                                 @endphp
                                 <div class="float-right m-2">
-                                    <button class="btn btn-primary font-responsive" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
+                                    <button class="btn btn-primary font-responsive btn-sm" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
                                 </div>
                                 <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
                             </div>

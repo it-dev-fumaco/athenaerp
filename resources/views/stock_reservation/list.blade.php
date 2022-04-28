@@ -1,6 +1,6 @@
 @if(count($webList) > 0)
 <h6 class="font-weight-bold text-uppercase font-responsive"><i class="fas fa-box"></i> Website Stock Reservations</h6>
-<table class="table table-hover stock-ledger-table-font">
+<table class="table table-hover table-bordered table-sm stock-ledger-table-font" style="font-size: 9pt !important;">
     <thead>
         <tr>
             <th class="text-center p-1">Transaction</th>
@@ -56,7 +56,7 @@
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row->warehouse }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row->status }}</span>
+                <span class="badge badge-{{ $badge }}" style="font-size: 9pt;">{{ $row->status }}</span>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
@@ -74,7 +74,7 @@
 
 @iF(count($consignmentList) > 0)
 <h6 class="font-weight-bold text-uppercase font-responsive"><i class="fas fa-box"></i> Consignment Reservations</h6>
-<table class="table table-hover stock-ledger-table-font">
+<table class="table table-hover table-bordered table-sm stock-ledger-table-font" style="font-size: 9pt !important;">
     <thead>
         <tr>
             <th class="text-center p-1">Transaction</th>
@@ -134,7 +134,7 @@
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row1->warehouse }}</td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">{{ $row1->consignment_warehouse }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row1->status }}</span>
+                <span class="badge badge-{{ $badge }}" style="font-size: 9pt;">{{ $row1->status }}</span>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row1->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
@@ -151,7 +151,7 @@
 @endif
 
 <h6 class="font-weight-bold text-uppercase font-responsive"><i class="fas fa-box"></i> In-house Reservations</h6>
-<table class="table table-hover font-responsive">
+<table class="table table-hover table-bordered table-sm font-responsive" style="font-size: 9pt !important;">
     <thead>
         <tr>
             <th class="text-center p-1">Transaction</th>
@@ -214,7 +214,7 @@
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">{{ $row2->sales_person }}</td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">{{ ($row2->valid_until) ? $row2->valid_until : '-' }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row2->status }}</span>
+                <span class="badge badge-{{ $badge }}" style="font-size: 9pt;">{{ $row2->status }}</span>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row2->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
