@@ -29,6 +29,14 @@
                             <i class="fas fa-history d-block d-md-none"></i>
                         </a>
                     </li>
+                    @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#tab_4">
+                            <span class="d-none d-md-block">Stock Reservations</span>
+                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                        </a>
+                    </li>
+                    @endif
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
                         <a class="nav-link d-none d-md-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
@@ -111,8 +119,8 @@
                                         <div class="col-md-8 col-xl-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
-                                                <dt class="responsive-item-code" style="font-size: 12pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
-                                                <dd class="responsive-description" style="font-size: 9pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                                                <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
+                                                <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                                             </dl>
                                             <div class="d-block d-lg-none">
                                                 <p class="mt-2 mb-2 text-center">
@@ -151,7 +159,7 @@
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
                                                     <div class="box-body table-responsive">
-                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 9pt;">
+                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
                                                             <thead>
                                                                 <tr>
                                                                     <th scope="col" rowspan=2 class="font-responsive text-center p-1 align-middle">Warehouse</th>
@@ -176,7 +184,7 @@
                                                                 </td>
                                                                 <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                                                 <td class="text-center p-1">
-                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 9pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
+                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 10pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
                                                                 </td>
                                                             </tr>
                                                             @empty
@@ -285,13 +293,15 @@
                                                     <tr>
                                                         <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
                                                         @foreach ($attribute_names as $attribute_name)
-                                                        <th scope="col" class="text-center text-nowrap1 align-middle" style="width: 350px;">{{ $attribute_name }}</th>
+                                                        <th scope="col" class="text-center align-middle" style="width: 350px;">{{ $attribute_name }}</th>
                                                         @endforeach
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
-                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 1000px;">Cost</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
                                                         @endif
                                                         @if (in_array($user_group, ['Manager', 'Director']))
-                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 1000px;">Cost</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Cost</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Min. Selling Price</th>
+                                                        <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
                                                         @endif
                                                     </tr>
                                                 </thead>
@@ -312,19 +322,35 @@
                                                         @endif
                                                         @if (in_array($user_group, ['Manager', 'Director']))
                                                         <td class="text-center align-middle text-nowrap">
+                                                            @if ($item_rate > 0)
+                                                                {{ '₱ ' . number_format($item_rate, 2, '.', ',') }}
+                                                            @else
+                                                            <center>
+                                                                <span class="entered-price d-none">0.00</span>
+                                                                <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $item_details->name }}-computed-price">
+                                                                    @csrf
+                                                                    <div class="input-group" style="width: 120px;">
+                                                                        <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                        </div>
+                                                                    </div>
+                                                                </form>
+                                                            </center>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @if ($minimum_selling_price > 0)
+                                                            {{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}
+                                                            @else
+                                                            <span id="{{ $item_details->name }}-computed-price-min">--</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center align-middle text-nowrap">
                                                             @if ($default_price > 0)
                                                             {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
                                                             @else
-                                                            <span class="entered-price d-none">0.00</span>
-                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
-                                                                @csrf
-                                                                <div class="input-group" style="width: 120px;">
-                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
-                                                                    <div class="input-group-append">
-                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
-                                                                    </div>
-                                                                </div>
-                                                            </form>
+                                                            <span id="{{ $item_details->name }}-computed-price">--</span>
                                                             @endif
                                                         </td>
                                                         @endif
@@ -358,21 +384,49 @@
                                                             @endif
                                                         </td>
                                                         @endif
-                                                         @if (in_array($user_group, ['Manager', 'Director']))
+                                                        @if (in_array($user_group, ['Manager', 'Director']))
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @php
+                                                                $cost = 0;
+                                                                if(array_key_exists($variant->name, $variants_cost_arr)){
+                                                                    $cost = $variants_cost_arr[$variant->name];
+                                                                }
+                                                            @endphp
+                                                            @if ($cost > 0)
+                                                               {{ '₱ ' . number_format($cost, 2, '.', ',') }}
+                                                            @else
+                                                                <center>
+                                                                <span class="entered-price d-none">0.00</span>
+                                                                <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
+                                                                    @csrf
+                                                                    <div class="input-group" style="width: 120px;">
+                                                                        <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                        </div>
+                                                                    </div>
+                                                                </form>
+                                                            </center>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center align-middle text-nowrap">
+                                                            @php
+                                                                $minprice = 0;
+                                                                if(array_key_exists($variant->name, $variants_min_price_arr)){
+                                                                    $minprice = $variants_min_price_arr[$variant->name];
+                                                                }
+                                                            @endphp
+                                                            @if ($minprice > 0)
+                                                            {{ '₱ ' . number_format($minprice, 2, '.', ',') }}
+                                                            @else
+                                                            <span id="{{ $variant->name }}-computed-price-min">--</span>
+                                                            @endif
+                                                        </td>
                                                          <td class="text-center align-middle text-nowrap">
                                                             @if ($price > 0)
                                                             {{ '₱ ' . number_format($price, 2, '.', ',') }}
                                                             @else
-                                                            <span class="entered-price d-none">0.00</span>
-                                                            <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form">
-                                                                @csrf
-                                                                <div class="input-group" style="width: 120px;">
-                                                                    <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
-                                                                    <div class="input-group-append">
-                                                                        <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
-                                                                    </div>
-                                                                </div>
-                                                            </form>
+                                                            <span id="{{ $variant->name }}-computed-price">--</span>
                                                             @endif
                                                         </td>
                                                         @endif
@@ -451,7 +505,7 @@
                             </div>
                         </div>
                         <div class="col-md-2" style="display: inline-block">
-                            <button class="btn btn-secondary font-responsive" id="athReset">Reset Filters</button>
+                            <button class="btn btn-secondary font-responsive btn-sm" id="athReset">Reset Filters</button>
                         </div>
                         <div id="athena-transactions" class="col-12"></div>
                     </div>
@@ -482,7 +536,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-2" style="display: inline-block">
-                                    <button class="btn btn-secondary font-responsive" id="erpReset">Reset Filters</button>
+                                    <button class="btn btn-secondary font-responsive btn-sm" id="erpReset">Reset Filters</button>
                                 </div>
                                 <div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
                             </div>
@@ -494,6 +548,22 @@
                         <div id="purchase-history-div" class="p-3 col-12"></div>
                     </div>
                     @endif
+                    <div class="container-fluid tab-pane bg-white" id="tab_4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @php
+                                    $attr = null;
+                                    if(Auth::check()){
+                                        $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+                                    }
+                                @endphp
+                                <div class="float-right m-2">
+                                    <button class="btn btn-primary font-responsive btn-sm" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
+                                </div>
+                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -503,7 +573,7 @@
             position: -webkit-sticky;
             position: sticky;
             left: 0;
-            min-width: 10rem;
+            min-width: 7rem;
             z-index: 1;
         }
 
@@ -528,8 +598,6 @@
         .highlight-row{
             background-color: #001F3F !important;
             color: #fff;
-            /* font-weight: bold !important; */
-            /* font-size: 11pt; */
             box-shadow: 2px 2px 8px #000000;
         }
         .variant-tabs{
@@ -578,15 +646,17 @@
             e.preventDefault();
 
             var entered_price = $(this).parent().find('.entered-price');
+            var entered_price_computed = $(this).data('id');
             var frm = $(this);
+
             $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),
                 data: $(this).serialize(),
                 success: function(response){
-                    // $('#athena-transactions').html(response);
-                    console.log(response)
-                    entered_price.removeClass('d-none').text(response);
+                    entered_price.removeClass('d-none').text(response.item_cost);
+                    $('#' + entered_price_computed).text(response.standard_price);
+                    $('#' + entered_price_computed + '-min').text(response.min_price);
                     frm.remove();
                 }
             });
@@ -629,6 +699,102 @@
                 url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
                 success: function(response){
                     $('#athena-transactions').html(response);
+                }
+            });
+        }
+
+        get_stock_reservation();
+        function get_stock_reservation(page){
+            var item_code = '{{ $item_details->name }}';
+            $.ajax({
+                type: 'GET',
+                url: '/get_stock_reservation/' + item_code + '?page=' + page,
+                success: function(response){
+                    $('#stock-reservation-table').html(response);
+                }
+            });
+        }
+
+        $(document).on('click', '#stock-reservations-pagination-1 a', function(event){
+            event.preventDefault();
+            var page = $(this).attr('href').split('page=')[1];
+            get_stock_reservation(page);
+        });
+
+        $('#stock-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#add-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        $('#edit-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#edit-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        $('#cancel-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#cancel-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        function showNotification(color, message, icon){
+            $.notify({
+                icon: icon,
+                message: message
+            },{
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: {
+                from: 'top',
+                align: 'center'
                 }
             });
         }

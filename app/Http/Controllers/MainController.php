@@ -2139,10 +2139,12 @@ class MainController extends Controller
         $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
 
         // variants
-        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
+        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->where('disabled', 0)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
         $variant_item_codes = array_column($co_variants->items(), 'name');
 
         $variants_price_arr = [];
+        $variants_cost_arr = [];
+        $variants_min_price_arr = [];
         if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             // get item cost for items with 0 last purchase rate
             $item_custom_cost = [];
@@ -2180,6 +2182,8 @@ class MainController extends Controller
 
                 $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variant_rate * $standard_price_computation;
                 $variants_price_arr[$variant] = $variants_default_price;
+                $variants_cost_arr[$variant] = $variant_rate;
+                $variants_min_price_arr[$variant] = $variant_rate * $minimum_price_computation;
             }
         }
 
@@ -2196,7 +2200,7 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -2217,7 +2221,7 @@ class MainController extends Controller
                 $to = Carbon::parse($dates[1])->endOfDay();
                 return $q->whereBetween('transaction_date',[$from, $to]);
             })
-            ->orderBy('transaction_date', 'desc')->paginate(10);
+            ->orderBy('transaction_date', 'desc')->paginate(15);
 
         $ste_names = array_column($logs->items(), 'reference_parent');
 
@@ -2431,7 +2435,7 @@ class MainController extends Controller
         // Create a new Laravel collection from the array data
         $itemCollection = collect($list);
         // Define how many items we want to be visible in each page
-        $perPage = 10;
+        $perPage = 20;
         // Slice the collection to get the items to display in current page
         $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
         // Create our paginator and pass it to the view
@@ -4735,7 +4739,26 @@ class MainController extends Controller
             DB::table('tabItem')->where('name', $item_code)->update(['custom_item_cost' => $request->price]);
         }
 
-        return '₱ ' . number_format($request->price, 2, '.', ',');;
+        $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+
+        $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+        $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+
+        $price = $request->price;
+
+        $standard_price = $price * $standard_price_computation;
+        $min_price = $price * $minimum_price_computation;
+
+        $item_cost = '₱ ' . number_format($price, 2, '.', ',');
+        $standard_price = '₱ ' . number_format($standard_price, 2, '.', ',');
+        $min_price = '₱ ' . number_format($min_price, 2, '.', ',');
+
+        return [
+            'item_cost' => $item_cost,
+            'standard_price' => $standard_price,
+            'min_price' => $min_price
+        ];
     }
 
     public function import_from_ecommerce(){

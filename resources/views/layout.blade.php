@@ -1304,68 +1304,68 @@
 				$('#cancel-stock-reservation-modal').modal('show');
 			});
 
-			$('#edit-reservation-form').submit(function(e){
-				e.preventDefault();
+			// $('#edit-reservation-form').submit(function(e){
+			// 	e.preventDefault();
 
-				$.ajax({
-					type: 'POST',
-					url: $(this).attr('action'),
-					data: $(this).serialize(),
-					success: function(response){
-						if (response.error) {
-							showNotification("danger", response.modal_message, "fa fa-info");
-						}else{
-							view_item_details($('#selected-item-code').text());
-							showNotification("success", response.modal_message, "fa fa-check");
-							$('#edit-stock-reservation-modal').modal('hide');
-						}
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-					}
-				});
-			});
+			// 	$.ajax({
+			// 		type: 'POST',
+			// 		url: $(this).attr('action'),
+			// 		data: $(this).serialize(),
+			// 		success: function(response){
+			// 			if (response.error) {
+			// 				showNotification("danger", response.modal_message, "fa fa-info");
+			// 			}else{
+			// 				view_item_details($('#selected-item-code').text());
+			// 				showNotification("success", response.modal_message, "fa fa-check");
+			// 				$('#edit-stock-reservation-modal').modal('hide');
+			// 			}
+			// 		},
+			// 		error: function(jqXHR, textStatus, errorThrown) {
+			// 		}
+			// 	});
+			// });
 
-			$('#stock-reservation-form').submit(function(e){
-				e.preventDefault();
+			// $('#stock-reservation-form').submit(function(e){
+			// 	e.preventDefault();
 
-				$.ajax({
-					type: 'POST',
-					url: $(this).attr('action'),
-					data: $(this).serialize(),
-					success: function(response){
-						if (response.error) {
-							showNotification("danger", response.modal_message, "fa fa-info");
-						}else{
-							view_item_details($('#selected-item-code').text());
-							showNotification("success", response.modal_message, "fa fa-check");
-							$('#add-stock-reservation-modal').modal('hide');
-						}
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-					}
-				});
-			});
+			// 	$.ajax({
+			// 		type: 'POST',
+			// 		url: $(this).attr('action'),
+			// 		data: $(this).serialize(),
+			// 		success: function(response){
+			// 			if (response.error) {
+			// 				showNotification("danger", response.modal_message, "fa fa-info");
+			// 			}else{
+			// 				view_item_details($('#selected-item-code').text());
+			// 				showNotification("success", response.modal_message, "fa fa-check");
+			// 				$('#add-stock-reservation-modal').modal('hide');
+			// 			}
+			// 		},
+			// 		error: function(jqXHR, textStatus, errorThrown) {
+			// 		}
+			// 	});
+			// });
 
-			$('#cancel-reservation-form').submit(function(e){
-				e.preventDefault();
+			// $('#cancel-reservation-form').submit(function(e){
+			// 	e.preventDefault();
 
-				$.ajax({
-					type: 'POST',
-					url: $(this).attr('action'),
-					data: $(this).serialize(),
-					success: function(response){
-						if (response.error) {
-							showNotification("danger", response.modal_message, "fa fa-info");
-						}else{
-							get_stock_reservation($('#selected-item-code').text());
-							showNotification("success", response.modal_message, "fa fa-check");
-							$('#cancel-stock-reservation-modal').modal('hide');
-						}
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-					}
-				});
-			});
+			// 	$.ajax({
+			// 		type: 'POST',
+			// 		url: $(this).attr('action'),
+			// 		data: $(this).serialize(),
+			// 		success: function(response){
+			// 			if (response.error) {
+			// 				showNotification("danger", response.modal_message, "fa fa-info");
+			// 			}else{
+			// 				get_stock_reservation($('#selected-item-code').text());
+			// 				showNotification("success", response.modal_message, "fa fa-check");
+			// 				$('#cancel-stock-reservation-modal').modal('hide');
+			// 			}
+			// 		},
+			// 		error: function(jqXHR, textStatus, errorThrown) {
+			// 		}
+			// 	});
+			// });
 
 			$('#add-stock-reservation-btn').click(function(e){
 				e.preventDefault();
@@ -1700,7 +1700,6 @@
 
 			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
                 event.preventDefault();
-
 				var item_code = $(this).data('title');
 				$('#'+item_code+'-images-modal').modal('show');
 			});
@@ -1892,15 +1891,15 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				
 			}
 
-			function get_stock_reservation(item_code, page){
-				$.ajax({
-					type: 'GET',
-					url: '/get_stock_reservation/' + item_code + '?page=' + page,
-					success: function(response){
-						$('#stock-reservation-table').html(response);
-					}
-				});
-			}
+			// function get_stock_reservation(item_code, page){
+			// 	$.ajax({
+			// 		type: 'GET',
+			// 		url: '/get_stock_reservation/' + item_code + '?page=' + page,
+			// 		success: function(response){
+			// 			$('#stock-reservation-table').html(response);
+			// 		}
+			// 	});
+			// }
 
 			$(document).on('click', '#low-level-stocks-pagination a', function(event){
 				event.preventDefault();
