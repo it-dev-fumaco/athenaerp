@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 use Auth;
 use DB;
 use Webp;
+use File;
+use ZipArchive;
 use \Illuminate\Pagination\Paginator;
 
 class MainController extends Controller
@@ -63,7 +65,7 @@ class MainController extends Controller
 
         $item_codes = array_column($consignment_stocks->items(), 'item_code');
 
-        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
 
         $price_list_rates = [];
@@ -312,7 +314,7 @@ class MainController extends Controller
             ->groupBy('parent', 'warehouse')->get();
         $lowLevelStock = collect($lowLevelStock)->groupBy('item')->toArray();
 
-        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
+        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
         $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
 
         $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
@@ -567,7 +569,7 @@ class MainController extends Controller
 
     public function search_results_images(Request $request){
         if($request->ajax()){
-            $item_images = DB::table('tabItem Images')->where('parent', $request->item_code)->get();
+            $item_images = DB::table('tabItem Images')->where('parent', $request->item_code)->orderBy('idx', 'asc')->get();
 
             $dir = $request->dir == 'next' ? 0 : count($item_images) - 1;
     
@@ -2073,7 +2075,7 @@ class MainController extends Controller
             }
         }
         // get item images
-        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path')->toArray();
+        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path')->toArray();
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
         $production_item_alternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
@@ -2081,7 +2083,7 @@ class MainController extends Controller
             ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get()->toArray();
 
         $production_item_alternative_item_codes = array_column($production_item_alternatives, 'item_code');
-        $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', $production_item_alternative_item_codes)->pluck('image_path')->toArray();
+        $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', $production_item_alternative_item_codes)->orderBy('idx', 'asc')->pluck('image_path')->toArray();
         $production_item_alt_actual_stock = DB::table('tabBin')->whereIn('item_code', $production_item_alternative_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')
             ->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
         foreach($production_item_alternatives as $a){
@@ -2102,7 +2104,7 @@ class MainController extends Controller
         // get item alternatives based on parent item code
         $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
         foreach($q as $a){
-            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
 
             $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
 
@@ -2119,7 +2121,7 @@ class MainController extends Controller
         if(count($item_alternatives) <= 0) {
             $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
             foreach($q as $a){
-                $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+                $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
 
                 $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
 
@@ -3478,7 +3480,7 @@ class MainController extends Controller
     }
 
     public function get_item_images($item_code){
-        return DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path', 'name');
+        return DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path', 'name');
     }
 
     public function set_reservation_as_expired(){
@@ -3508,7 +3510,7 @@ class MainController extends Controller
                     ->whereBetween('mr.transaction_date', [Carbon::now()->subDays(30)->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
                     ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
 
-                $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->first();
+                $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
 
                 $low_level_stocks[] = [
                     'id' => $a->id,
@@ -3559,7 +3561,7 @@ class MainController extends Controller
 
         $list = [];
         foreach($q as $row){
-            $item_image_path = DB::table('tabItem Images')->where('parent', $row->item_code)->first();
+            $item_image_path = DB::table('tabItem Images')->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
 
             $list[] = [
                 'item_code' => $row->item_code,
@@ -4003,7 +4005,7 @@ class MainController extends Controller
             ->where('dr.is_return', 1)->where('dr.docstatus', 0)->where('dri.name', $id)
             ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner')->first();
 
-        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->first();
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
         $img = ($img) ? $img->image_path : null;
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
@@ -4757,5 +4759,90 @@ class MainController extends Controller
             'standard_price' => $standard_price,
             'min_price' => $min_price
         ];
+    }
+
+    public function import_from_ecommerce(){
+        return view('import_from_ecommerce');
+    }
+
+    public function import_images(Request $request){
+        if($request->hasFile('import_zip')){
+            if(!Storage::disk('public')->exists('/export/')){
+                Storage::disk('public')->makeDirectory('/export/');
+            }
+
+            $file = $request->file('import_zip');
+            $file->storeAs('/public/export/', 'imported_athena_images.zip');
+
+            $now = Carbon::now();
+            $zip = new ZipArchive;      
+            if(Storage::disk('public')->exists('/export/imported_athena_images.zip') and $zip->open(storage_path('/app/public/export/imported_athena_images.zip')) === TRUE){
+                $zip->extractTo(storage_path('/app/public/export/'));
+                $zip->close();
+            }
+
+            if(Storage::disk('public')->exists('/export/imported_athena_images.zip')){ // Delete Zip after extracting
+                Storage::disk('public')->delete('/export/imported_athena_images.zip');
+            }
+
+            $imported_files = Storage::disk('public')->files('/export/');
+
+            $images_arr = collect($imported_files)->map(function ($q){
+                $image = explode('/', $q)[1];
+                $image_name = explode('-', $image)[1];
+                if(!in_array(explode('.', $image_name)[1], ['webp', 'WEBP'])){ // Collect .jpg files to save in DB
+                    return [
+                        'item_code' => explode('.', $image_name)[0],
+                        'image' => $image
+                    ];
+                }
+            });
+
+            $images_arr = $images_arr->filter(function ($q){
+                return !is_null($q);
+            });
+
+            // Update order sequence of existing images
+            $item_codes = array_keys(collect($images_arr)->groupBy('item_code')->toArray());
+            foreach($item_codes as $item_code){
+                $athena_images = DB::table('tabItem Images')->where('parent', $item_code)->get();
+                if($athena_images){
+                    $new_idx = count($images_arr);
+                    foreach($athena_images as $i => $ath){
+                        $i = $i + 1;
+                        DB::table('tabItem Images')->where('parent', $item_code)->where('name', $ath->name)->update(['idx' => $new_idx + $i]);
+                    }
+                }
+            }
+
+            // Save in DB
+            if($images_arr){
+                foreach(array_values($images_arr->toArray()) as $a => $image){
+                    $a = $a + 1;
+                    $webp = explode('.', $image['image'])[0].'.webp';
+                    $jpg = $image['image'];
+
+                    $new_images = [
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'idx' => $a,
+                        'parent' => $image['item_code'],
+                        'parentfield' => 'item_images',
+                        'parenttype' => 'Item',
+                        'image_path' => $jpg
+                    ];
+
+                    Storage::disk('public')->move('/export/'.$image['image'], '/img/'.$jpg);
+                    Storage::disk('public')->move('/export/'.explode('.', $image['image'])[0].'.webp', '/img/'.$webp);
+
+                    DB::table('tabItem Images')->insert($new_images);
+                }
+            }
+            return redirect()->back()->with('success', 'E-Commerce Image(s) Imported');
+        }
+        return redirect()->back()->with('error', 'An error occured. Please try again later.');
     }
 }
