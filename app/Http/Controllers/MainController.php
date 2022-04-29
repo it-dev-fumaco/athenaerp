@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 use Auth;
 use DB;
 use Webp;
+use File;
+use ZipArchive;
 use \Illuminate\Pagination\Paginator;
 
 class MainController extends Controller
@@ -4734,5 +4736,90 @@ class MainController extends Controller
         }
 
         return '₱ ' . number_format($request->price, 2, '.', ',');;
+    }
+
+    public function import_from_ecommerce(){
+        return view('import_from_ecommerce');
+    }
+
+    public function import_images(Request $request){
+        if($request->hasFile('import_zip')){
+            if(!Storage::disk('public')->exists('/export/')){
+                Storage::disk('public')->makeDirectory('/export/');
+            }
+
+            $file = $request->file('import_zip');
+            $file->storeAs('/public/export/', 'imported_athena_images.zip');
+
+            $now = Carbon::now();
+            $zip = new ZipArchive;      
+            if(Storage::disk('public')->exists('/export/imported_athena_images.zip') and $zip->open(storage_path('/app/public/export/imported_athena_images.zip')) === TRUE){
+                $zip->extractTo(storage_path('/app/public/export/'));
+                $zip->close();
+            }
+
+            if(Storage::disk('public')->exists('/export/imported_athena_images.zip')){ // Delete Zip after extracting
+                Storage::disk('public')->delete('/export/imported_athena_images.zip');
+            }
+
+            $imported_files = Storage::disk('public')->files('/export/');
+
+            $images_arr = collect($imported_files)->map(function ($q){
+                $image = explode('/', $q)[1];
+                $image_name = explode('-', $image)[1];
+                if(!in_array(explode('.', $image_name)[1], ['webp', 'WEBP'])){ // Collect .jpg files to save in DB
+                    return [
+                        'item_code' => explode('.', $image_name)[0],
+                        'image' => $image
+                    ];
+                }
+            });
+
+            $images_arr = $images_arr->filter(function ($q){
+                return !is_null($q);
+            });
+
+            // Update order sequence of existing images
+            $item_codes = array_keys(collect($images_arr)->groupBy('item_code')->toArray());
+            foreach($item_codes as $item_code){
+                $athena_images = DB::table('tabItem Images')->where('parent', $item_code)->get();
+                if($athena_images){
+                    $new_idx = count($images_arr);
+                    foreach($athena_images as $i => $ath){
+                        $i = $i + 1;
+                        DB::table('tabItem Images')->where('parent', $item_code)->where('name', $ath->name)->update(['idx' => $new_idx + $i]);
+                    }
+                }
+            }
+
+            // Save in DB
+            if($images_arr){
+                foreach(array_values($images_arr->toArray()) as $a => $image){
+                    $a = $a + 1;
+                    $webp = explode('.', $image['image'])[0].'.webp';
+                    $jpg = $image['image'];
+
+                    $new_images = [
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'idx' => $a,
+                        'parent' => $image['item_code'],
+                        'parentfield' => 'item_images',
+                        'parenttype' => 'Item',
+                        'image_path' => $jpg
+                    ];
+
+                    Storage::disk('public')->move('/export/'.$image['image'], '/img/'.$jpg);
+                    Storage::disk('public')->move('/export/'.explode('.', $image['image'])[0].'.webp', '/img/'.$webp);
+
+                    DB::table('tabItem Images')->insert($new_images);
+                }
+            }
+            return redirect()->back()->with('success', 'E-Commerce Image(s) Imported');
+        }
+        return redirect()->back()->with('error', 'An error occured. Please try again later.');
     }
 }

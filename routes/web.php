@@ -36,6 +36,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/search_results', 'MainController@search_results');
     Route::get('/search_results_images', 'MainController@search_results_images');
     Route::get('/dashboard_data', 'MainController@dashboard_data');
+    Route::get('/import_from_ecommerce', 'MainController@import_from_ecommerce');
+    Route::post('/import_images', 'MainController@import_images');
     
     Route::get('/logout', 'LoginController@logout');
         
