@@ -717,7 +717,7 @@
 		</div>
 	</div>
 
-	<div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="warehouseLocationModalLabel" aria-hidden="true">
+	{{-- <div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="warehouseLocationModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-md" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -731,7 +731,7 @@
 				</div>
 			</div>
 		</div>
-	</div>
+	</div> --}}
 
 	<!-- Modal -->
 	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -1778,18 +1778,18 @@
 				view_item_details(item_code);
 			});
 
-			$(document).on('click', '#warehouse-location-btn', function(e){
-				var item_code = $(this).data('item-code');
+			// $(document).on('click', '#warehouse-location-btn', function(e){
+			// 	var item_code = $(this).data('item-code');
 
-				$.ajax({
-					type: 'GET',
-					url: '/form_warehouse_location/' + item_code,
-					success: function(response){
-						$('#warehouse-location').html(response);
-						$('#warehouseLocationModal').modal('show');
-					}
-				});
-			});
+			// 	$.ajax({
+			// 		type: 'GET',
+			// 		url: '/form_warehouse_location/' + item_code,
+			// 		success: function(response){
+			// 			$('#warehouse-location').html(response);
+			// 			$('#warehouseLocationModal').modal('show');
+			// 		}
+			// 	});
+			// });
 
 			// function view_item_details(item_code){
 			// 	$('#item-preloader').removeClass('d-none');

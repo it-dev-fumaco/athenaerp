@@ -152,8 +152,41 @@
                                             </div>
                                             <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
-                                                @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))
-                                                    <button class="btn btn-primary p-1 float-right" id="warehouse-location-btn" data-item-code="{{ $item_details->name }}" style="font-size: 12px;">Update Warehouse Location</button>
+                                                @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']) and $site_warehouses)
+                                                    <button type="button" class="btn btn-primary p-1 float-right" data-toggle="modal" data-target="#warehouseLocationModal" style="font-size: 12px;">
+                                                        Update Warehouse Location
+                                                    </button>
+                                                    
+                                                    <div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog" role="document">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="exampleModalLabel">Update Warehouse Location</h5>
+                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <form action="/edit_warehouse_location" method="post">
+                                                                        @csrf
+                                                                        @forelse ($site_warehouses as $warehouse)
+                                                                            <div class="form-group row">
+                                                                                <label for="location" class="col-12 col-form-label">{{ $warehouse['warehouse'] }}</label>
+                                                                                <div class="col-12">
+                                                                                    <input type="text" name="location[]" class="form-control" value="{{ $warehouse['location'] }}" placeholder="Location">
+                                                                                    <input type="text" name="warehouses[]" class="d-none" value="{{ $warehouse['warehouse'] }}" readonly>
+                                                                                </div>
+                                                                            </div>
+                                                                        @empty
+                                                                            <center><p>No Stock(s)</p></center>
+                                                                        @endforelse
+                                                                        <input type="text" name="item_code" value="{{ $item_details->name }}" hidden readonly>
+                                                                        <button class="btn btn-primary float-right" type="submit">Submit</button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 @endif
                                             </div>
                                             <div class="box box-solid p-0 ml-3">
