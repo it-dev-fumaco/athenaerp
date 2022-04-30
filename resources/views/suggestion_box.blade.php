@@ -31,8 +31,10 @@
 <div id="item-list" class="container-fluid p-0 ul_list" style="border: 1px solid #ccc;">
   @forelse ($q as $item)
     @php
-      $img = ($item->item_image_path) ? "/img/" . $item->item_image_path : "/icon/no_img.png";
-      $img_webp = ($item->item_image_path) ? "/img/" . explode('.',$item->item_image_path)[0].'.webp' : "/icon/no_img.webp";
+      // $img = ($item->item_image_path) ? "/img/" . $item->item_image_path : "/icon/no_img.png";
+      // $img_webp = ($item->item_image_path) ? "/img/" . explode('.',$item->item_image_path)[0].'.webp' : "/icon/no_img.webp";
+      $img = isset($image[$item->name]) ? "/img/" . $image[$item->name][0]->image_path : "/icon/no_img.png";
+      $img_webp = isset($image[$item->name]) ? "/img/" . explode('.',$image[$item->name][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
     @endphp
     <div class="search-row row w-100 p-2" style="border-bottom: 1px solid #ccc;">
       <div class="text-center pl-2" style="width: 60px !important;">
