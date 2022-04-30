@@ -31,7 +31,7 @@
                         <form action="/import_images" method="post" enctype="multipart/form-data">
                             @csrf
                             <div class="custom-file mb-3">
-                                <input type="file" class="custom-file-input" id="customFile" name="import_zip">
+                                <input type="file" class="custom-file-input" id="customFile" name="import_zip" required>
                                 <label class="custom-file-label" for="customFile">Choose File</label>
                             </div>
                             <button class="btn btn-primary">Submit</button>
