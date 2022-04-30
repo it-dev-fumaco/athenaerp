@@ -672,7 +672,8 @@ class MainController extends Controller
 
     public function load_suggestion_box(Request $request){
         $search_str = explode(' ', $request->search_string);
-        $q = DB::table('tabItem')->leftJoin('tabItem Supplier', 'tabItem Supplier.parent', 'tabItem.name')->where('disabled', 0)
+        $q = DB::table('tabItem')
+            ->where('disabled', 0)
             ->where('has_variants', 0)->where('is_stock_item', 1)
             ->where(function($q) use ($search_str, $request) {
                 foreach ($search_str as $str) {
@@ -682,14 +683,20 @@ class MainController extends Controller
                 ->orWhere('item_classification', 'like', '%'.$request->search_string.'%')
                 ->orWhere('item_group', 'like', '%'.$request->search_string.'%')
                 ->orWhere('stock_uom', 'like', '%'.$request->search_string.'%')
-                ->orWhere('supplier_part_no', 'like', '%'.$request->search_string.'%')
                 ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->search_string."%");
             })
             ->select('tabItem.name', 'description', 'item_image_path')
             ->orderBy('tabItem.modified', 'desc')->paginate(8);
 
-        return view('suggestion_box', compact('q'));
-    }//123
+        $item_codes = collect($q->items())->map(function ($q){
+            return $q->name;
+        });
+
+        $image_collection = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
+        $image = collect($image_collection)->groupBy('parent');
+
+        return view('suggestion_box', compact('q', 'image'));
+    }
 
     public function get_select_filters(Request $request){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 0)
@@ -1097,7 +1104,11 @@ class MainController extends Controller
                 ->where('po.production_order', $id)
                 ->select('po.*')->first();
 
-            $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
+            // $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
+            $img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->first()->image_path;
+            if(!$img){
+                $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
+            }
         
             $q = [];
             $q = [
@@ -1205,7 +1216,11 @@ class MainController extends Controller
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
-        $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
+        // $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first()->image_path;
+        if(!$img){
+            $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
+        }
 
         $available_qty = $this->get_available_qty($q->item_code, $q->s_warehouse);
     
@@ -1324,6 +1339,10 @@ class MainController extends Controller
         }
 
         $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first()->image_path;
+        if(!$img){
+            $img = $item_details->item_image_path;
+        }
 
         $is_bundle = false;
         if(!$item_details->is_stock_item){
@@ -1372,7 +1391,7 @@ class MainController extends Controller
         $data = [
             'id' => $q->id,
 	        'barcode' => $q->barcode,
-            'item_image' => $item_details->item_image_path,
+            'item_image' => $img,//$item_details->item_image_path,
             'delivery_note' => $q->delivery_note,
             'description' => $q->description,
             'item_code' => $q->item_code,
@@ -2074,6 +2093,7 @@ class MainController extends Controller
                 ];
             }
         }
+
         // get item images
         $item_images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path')->toArray();
         // get item alternatives from production order item table in erp
@@ -4791,10 +4811,11 @@ class MainController extends Controller
 
                 $imported_files = Storage::disk('public')->files('/export/');
 
-                $images_arr = collect($imported_files)->map(function ($q){
+                // Collect .jpg files to save in DB
+                $collect_images_arr = collect($imported_files)->map(function ($q){
                     $image = explode('/', $q)[1];
                     $image_name = explode('-', $image)[1];
-                    if(!in_array(explode('.', $image_name)[1], ['webp', 'WEBP'])){ // Collect .jpg files to save in DB
+                    if(!in_array(explode('.', $image_name)[1], ['webp', 'WEBP'])){
                         return [
                             'item_code' => explode('.', $image_name)[0],
                             'image' => $image
@@ -4802,53 +4823,59 @@ class MainController extends Controller
                     }
                 });
 
-                $images_arr = $images_arr->filter(function ($q){
+                $collect_images_arr = $collect_images_arr->filter(function ($q){
                     return !is_null($q);
                 });
 
+                $images_arr = collect($collect_images_arr)->groupBy('item_code');
                 if($images_arr){
-                    // Update order sequence of existing images
-                    $item_codes = array_keys(collect($images_arr)->groupBy('item_code')->toArray());
+                    $item_codes = array_keys($images_arr->toArray());
+                    
+                    $collect_athena_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
+                    $athena_images = collect($collect_athena_images)->groupBy('parent');
+
                     foreach($item_codes as $item_code){
-                        $athena_images = DB::table('tabItem Images')->where('parent', $item_code)->get();
-                        if($athena_images){
-                            $new_idx = count($images_arr);
-                            foreach($athena_images as $i => $ath){
+                        // Update order sequence of existing images
+                        if(isset($athena_images[$item_code])){
+                            $new_idx = isset($images_arr[$item_code]) ? count($images_arr[$item_code]) : 0;
+                            foreach($athena_images[$item_code] as $i => $ath){
                                 $i = $i + 1;
                                 DB::table('tabItem Images')->where('parent', $item_code)->where('name', $ath->name)->update(['idx' => $new_idx + $i]);
                             }
                         }
-                    }
 
-                    // Save in DB
-                    foreach(array_values($images_arr->toArray()) as $a => $image){
-                        $a = $a + 1;
-                        $webp = explode('.', $image['image'])[0].'.webp';
-                        $jpg = $image['image'];
+                        // Save new images in DB
+                        if(isset($images_arr[$item_code])){
+                            foreach($images_arr[$item_code] as $a => $image){
+                                $a = $a + 1;
+                                $jpg = explode('-', $image['image'])[0].$a.'-'.explode('-', $image['image'])[1];
+                                $webp = explode('.', $jpg)[0].'.webp';
+        
+                                $new_images = [
+                                    'name' => uniqid(),
+                                    'creation' => $now->toDateTimeString(),
+                                    'modified' => $now->toDateTimeString(),
+                                    'modified_by' => Auth::user()->wh_user,
+                                    'owner' => Auth::user()->wh_user,
+                                    'idx' => $a,
+                                    'from_ecommerce' => 1,
+                                    'parent' => $image['item_code'],
+                                    'parentfield' => 'item_images',
+                                    'parenttype' => 'Item',
+                                    'image_path' => $jpg
+                                ];
+        
+                                if(Storage::disk('public')->exists('/export/'.$image['image']) and !Storage::disk('public')->exists('/img/'.$jpg)){
+                                    Storage::disk('public')->move('/export/'.$image['image'], '/img/'.$jpg);
+                                }
+    
+                                if(Storage::disk('public')->exists('/export/'.explode('.', $image['image'])[0].'.webp') and !Storage::disk('public')->exists('/img/'.$webp)){
+                                    Storage::disk('public')->move('/export/'.explode('.', $image['image'])[0].'.webp', '/img/'.$webp);
+                                }
 
-                        $new_images = [
-                            'name' => uniqid(),
-                            'creation' => $now->toDateTimeString(),
-                            'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'owner' => Auth::user()->wh_user,
-                            'idx' => $a,
-                            'from_ecommerce' => 1,
-                            'parent' => $image['item_code'],
-                            'parentfield' => 'item_images',
-                            'parenttype' => 'Item',
-                            'image_path' => $jpg
-                        ];
-
-                        if(!Storage::disk('public')->exists('/export/'.$jpg)){
-                            Storage::disk('public')->move('/export/'.$jpg, '/img/'.$jpg);
+                                DB::table('tabItem Images')->insert($new_images);
+                            }
                         }
-
-                        if(!Storage::disk('public')->exists('/export/'.$webp)){
-                            Storage::disk('public')->move('/export/'.$webp, '/img/'.$webp);
-                        }
-
-                        DB::table('tabItem Images')->insert($new_images);
                     }
                 }
         
@@ -4858,6 +4885,10 @@ class MainController extends Controller
             return redirect()->back();
         }catch(Exception $e){
             DB::rollback();
+        
+            if(Storage::disk('public')->exists('/export/')){
+                Storage::disk('public')->deleteDirectory('/export/');
+            }
             return redirect()->back()->with('error', 'An error occured. Please try again later.');
         }
     }
