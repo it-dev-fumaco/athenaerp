@@ -114,6 +114,42 @@
                                                 <div class="col-md-12 text-center pt-3">
                                                     <button class="btn btn-primary btn-sm upload-item-image" data-item-code="{{ $item_details->name }}">Upload Image(s)</button>
                                                 </div>
+
+                                                <div class="modal fade" id="{{ $item_details->name }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div id="image-container" class="container-fluid">
+                                                                    <div id="carouselExampleControls" class="carousel slide" data-interval="false">
+                                                                        <div class="carousel-inner">
+                                                                            <div class="carousel-item active">
+                                                                                <picture>
+                                                                                    <source id="{{ $item_details->name }}-webp-image-src" srcset="{{ asset('storage/').$img_1_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                    <source id="{{ $item_details->name }}-orig-image-src" srcset="{{ asset('storage/').$img_1 }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                    <img class="d-block w-100" id="{{ $item_details->name }}-image" src="{{ asset('storage/').$img_1 }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img_1)[0], '-') }}">
+                                                                                </picture>
+                                                                            </div>
+                                                                            <span class='d-none' id="{{ $item_details->name }}-image-data">0</span>
+                                                                        </div>
+                                                                        <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item_details->name }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                                            <span class="sr-only">Previous</span>
+                                                                        </a>
+                                                                        <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $item_details->name }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                                            <span class="sr-only">Next</span>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="col-md-8 col-xl-10">
