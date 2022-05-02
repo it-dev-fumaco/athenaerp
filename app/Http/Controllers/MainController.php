@@ -2232,6 +2232,7 @@ class MainController extends Controller
         $variants_price_arr = [];
         $variants_cost_arr = [];
         $variants_min_price_arr = [];
+        $actual_variant_stocks = [];
         if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             // get item cost for items with 0 last purchase rate
             $item_custom_cost = [];
