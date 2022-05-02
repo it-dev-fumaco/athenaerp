@@ -1156,11 +1156,14 @@ class MainController extends Controller
                 ->where('po.production_order', $id)
                 ->select('po.*')->first();
 
+            $item_img = null;
             // $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
-            $img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->first()->image_path;
-            if(!$img){
-                $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
+            $get_img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->first();
+            if(!$get_img){
+                $item_img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
             }
+
+            $img = $get_img ? $get_img->image_path : $item_img;
         
             $q = [];
             $q = [
@@ -1269,10 +1272,13 @@ class MainController extends Controller
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
         // $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
-        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first()->image_path;
-        if(!$img){
-            $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
+        $item_img = null;
+        $get_img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
+        if(!$get_img){
+            $item_img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
         }
+
+        $img = $get_img ? $get_img->image_path : $item_img;
 
         $available_qty = $this->get_available_qty($q->item_code, $q->s_warehouse);
     
@@ -1391,11 +1397,15 @@ class MainController extends Controller
         }
 
         $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
-        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first()->image_path;
-        if(!$img){
-            $img = $item_details->item_image_path;
+
+        $item_img = null;
+        $get_img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
+        if(!$get_img){
+            $item_img = $item_details->item_image_path;
         }
 
+        $img = $get_img ? $get_img->image_path : $item_img;
+        
         $is_bundle = false;
         if(!$item_details->is_stock_item){
             $is_bundle = DB::table('tabProduct Bundle')->where('name', $q->item_code)->exists();
@@ -3590,7 +3600,15 @@ class MainController extends Controller
                     ->whereBetween('mr.transaction_date', [Carbon::now()->subDays(30)->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
                     ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
 
+                $item_image = null;
                 $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
+                if($item_image_path){
+                    $item_image_path = $item_image_path->image_path;
+                }else{
+                    $item_image_path = DB::table('tabItem')->where('name', $a->item_code)->first();
+                    $item_image = $item_image_path->item_image_path;
+                }
+
 
                 $low_level_stocks[] = [
                     'id' => $a->id,
@@ -3602,7 +3620,7 @@ class MainController extends Controller
                     'warehouse_reorder_level' => $a->warehouse_reorder_level,
                     'warehouse_reorder_qty' => $a->warehouse_reorder_qty,
                     'actual_qty' => $actual_qty,
-                    'image' => ($item_image_path) ? $item_image_path->image_path : null,
+                    'image' => $item_image,
                     'existing_mr' => ($existing_mr) ? $existing_mr->name : null
                 ];
             }
