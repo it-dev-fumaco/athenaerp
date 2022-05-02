@@ -5014,6 +5014,8 @@ class MainController extends Controller
             DB::rollback();
 
             return redirect()->back()->with('error', 'There was a problem updating prices. Please try again.');
+        }
+    }
 
     public function import_from_ecommerce(){
         return view('import_from_ecommerce');
