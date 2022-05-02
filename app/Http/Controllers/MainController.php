@@ -4839,4 +4839,160 @@ class MainController extends Controller
             'min_price' => $min_price
         ];
     }
+
+    public function itemCostList(Request $request) {
+        if (!in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
+            return redirect('/');
+        }
+
+        $item_groups = DB::table('tabItem Group')->where('parent_item_group', 'All Item Groups')->select('name', 'is_group')->get();
+
+        return view('search_item_cost', compact('item_groups'));
+    }
+
+    public function itemGroupPerParent($parent) {
+        $item_groups = DB::table('tabItem Group')->where('parent_item_group', $parent)->selectRaw('name as id, name as text, is_group')->get()->toArray();
+     
+        return response()->json($item_groups);
+    }
+
+    public function getParentItems(Request $request) {
+        $item_group = $request->itemgroup;
+        $item_group_level1 = $request->itemgroup1;
+        $item_group_level2 = $request->itemgroup2;
+        $item_group_level3 = $request->itemgroup3;
+        $item_group_level4 = $request->itemgroup4;
+        $item_group_level5 = $request->itemgroup5;
+        $variant_of = $request->variant_of;
+
+        $templates = DB::table('tabItem')->where('has_variants', 1)
+            ->where('disabled', 0)->where('is_stock_item', 1)
+            ->where('name','LIKE', '%'.$request->q.'%')
+            ->when($item_group, function($q) use ($item_group){
+                return $q->where('item_group', $item_group);
+            })
+            ->when($item_group_level1, function($q) use ($item_group_level1){
+                return $q->where('item_group_level_1', $item_group_level1);
+            })
+            ->when($item_group_level2, function($q) use ($item_group_level2){
+                return $q->where('item_group_level_2', $item_group_level2);
+            })
+            ->when($item_group_level3, function($q) use ($item_group_level3){
+                return $q->where('item_group_level_3', $item_group_level3);
+            })
+            ->when($item_group_level4, function($q) use ($item_group_level4){
+                return $q->where('item_group_level_4', $item_group_level4);
+            })
+            ->when($item_group_level5, function($q) use ($item_group_level5){
+                return $q->where('item_group_level_5', $item_group_level5);
+            });
+
+        if ($request->list) {
+            $list = $templates->when($variant_of, function($q) use ($variant_of){
+                    return $q->where('name', $variant_of);
+                })
+                ->select('name', 'description')->orderBy('name', 'asc')->paginate(30);
+
+            return view('tbl_item_templates', compact('list'));
+        }
+
+        $template_items = $templates->selectRaw('name as id, name as text')
+            ->orderBy('name', 'asc')->limit(20)->get();
+
+        return response()->json($template_items);
+    }
+
+    public function itemVariants($variant_of) {
+        if (!in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
+            return redirect('/');
+        }
+
+        $item_variants = DB::table('tabItem')->where('has_variants', 0)
+            ->where('disabled', 0)->where('is_stock_item', 1)
+            ->where('variant_of', $variant_of)->select('name', 'custom_item_cost')
+            ->get()->toArray();
+
+        $item_codes = array_column($item_variants, 'name');
+
+        $attributes_query = DB::table('tabItem Variant Attribute')->whereIn('parent', $item_codes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
+
+        $attribute_names = collect($attributes_query)->map(function ($q){
+            return $q->attribute;
+        })->unique();
+
+        $attributes = [];
+        foreach ($attributes_query as $row) {
+            $attributes[$row->parent][$row->attribute] = $row->attribute_value;
+        }
+
+        $user_department = Auth::user()->department;
+        $allowed_department = DB::table('tabDeparment with Price Access')->pluck('department')->toArray();
+
+        $prices = [];
+    
+        $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+            ->where('po.docstatus', 1)->whereIn('poi.item_code', $item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
+
+        $last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+            ->where('a.docstatus', 1)->whereIn('b.item_code', $item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
+        
+        $last_purchase_order_rates = collect($last_purchase_order)->groupBy('item_code')->toArray();
+        $last_landed_cost_voucher_rates = collect($last_landed_cost_voucher)->groupBy('item_code')->toArray();
+
+        $website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
+            ->whereIn('item_code', $item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+
+        $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
+            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+
+        $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
+        $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+            
+        foreach($item_variants as $row){
+            $rate = 0;
+            $standard_price = 0;
+            $min_price = 0;
+            if(array_key_exists($row->name, $last_purchase_order_rates)){
+                if($last_purchase_order_rates[$row->name][0]->supplier_group == 'Imported'){
+                    $rate = isset($last_landed_cost_voucher_rates[$row->name]) ? $last_landed_cost_voucher_rates[$row->name][0]->valuation_rate : 0;
+                }else{
+                    $rate = $last_purchase_order_rates[$row->name][0]->base_rate;
+                }
+            }
+            // custom item cost 
+            if ($rate <= 0) {
+                $rate = $row->custom_item_cost ? $row->custom_item_cost : 0;
+            }
+
+            $standard_price = array_key_exists($row->name, $website_prices) ? $website_prices[$row->name] : ($rate * $standard_price_computation);
+            $min_price = ($rate * $minimum_price_computation);
+
+            $prices[$row->name] = [
+                'rate' => $rate,
+                'standard' => $standard_price,
+                'minimum' => $min_price
+            ];
+        }
+
+        return view('view_item_variants', compact('attributes', 'attribute_names', 'item_codes', 'variant_of', 'prices'));
+    }
+
+    public function updateRate(Request $request) {
+        DB::beginTransaction();
+        try {
+            foreach($request->price as $item_code => $value) {
+                if ($value && $value > 0) {
+                    DB::table('tabItem')->where('name', $item_code)->update(['custom_item_cost' => $value]);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Item prices has been updated.');
+        } catch (Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->with('error', 'There was a problem updating prices. Please try again.');
+        }
+    }
 }

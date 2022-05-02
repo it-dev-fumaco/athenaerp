@@ -196,16 +196,21 @@
 									<div class="row">
 										<div class="col-xl-8">
 											<div class="card card-danger card-outline">
-												<div class="card-header d-flex p-0">
+												<div class="card-header d-flex p-0 justify-content-between">
 													<ul class="nav nav-pills p-2">
 													  <li class="nav-item"><a class="font-responsive nav-link active" href="#tab_1-1" data-toggle="tab"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a></li>
 													  <li class="nav-item"><a class="font-responsive nav-link" href="#tab_2-1" data-toggle="tab"><i class="fas fa-list-alt"></i> Stock Movement(s)</a></li>
 													</ul>
+													@if (in_array(Auth::user()->user_group, ['Manager', 'Director']))
+													<div class="ml-auto p-3">
+														<a href="/search_item_cost" class="btn btn-sm btn-secondary">Register Item Cost</a>
+													</div>
+													@endif
 												</div>
 												<div class="card-body p-0">
 													<div class="tab-content">
 													  <div class="tab-pane font-responsive active" id="tab_1-1">
-														<div id="low-level-stock-table" style="margin-top: -32px;"></div>
+														<div id="low-level-stock-table"></div>
 													  </div>
 													  
 													  <div class="tab-pane font-responsive" id="tab_2-1">
