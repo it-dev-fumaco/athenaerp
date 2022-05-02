@@ -27,7 +27,6 @@
                 @else
                 N/A
                 @endif
-                
             </td>
         </tr>
         @empty

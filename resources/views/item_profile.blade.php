@@ -7,7 +7,7 @@
     <div class="container-fluid p-3">
         <div class="row">
             <div class="col-md-12">
-                <div style="position: absolute; right: 70px; top: -10px;">
+                <div class="back-btn">
                     <img src="{{ asset('storage/icon/back.png') }}" style="width: 45px; cursor: pointer;" id="back-btn">
                 </div>
                 <ul class="nav nav-tabs" role="tablist" style="font-size: 10pt;">
@@ -29,9 +29,18 @@
                             <i class="fas fa-history d-block d-md-none"></i>
                         </a>
                     </li>
+                    @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#tab_4">
+                            <span class="d-none d-md-block">Stock Reservations</span>
+                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                        </a>
+                    </li>
+                    @endif
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
+                        <a class="nav-link d-none d-md-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
+                        <a class="nav-link d-block d-md-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
                     </li>
                     @endif
                 </ul>
@@ -58,7 +67,7 @@
                                             $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                                             $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
                                         @endphp
-                                        <div class="col-md-2">
+                                        <div class="col-md-4 col-xl-2">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
@@ -107,45 +116,7 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div class="modal fade" id="{{ $item_details->name }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                            <div class="modal-dialog" role="document">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&times;</span>
-                                                    </button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div id="image-container" class="container-fluid">
-                                                            <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                <div class="carousel-inner">
-                                                                    <div class="carousel-item active">
-                                                                        <picture>
-                                                                            <source id="{{ $item_details->name }}-webp-image-src" srcset="{{ asset('storage/').$img_1_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                            <source id="{{ $item_details->name }}-orig-image-src" srcset="{{ asset('storage/').$img_1 }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                            <img class="d-block w-100" id="{{ $item_details->name }}-image" src="{{ asset('storage/').$img_1 }}" alt="{{ $img_1_alt }}">
-                                                                        </picture>
-                                                                    </div>
-                                                                    <span class='d-none' id="{{ $item_details->name }}-image-data">0</span>
-                                                                </div>
-                                                                <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item_details->name }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                    <span class="sr-only">Previous</span>
-                                                                </a>
-                                                                <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $item_details->name }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                    <span class="sr-only">Next</span>
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-
-                                        <div class="col-md-10">
+                                        <div class="col-md-8 col-xl-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
                                                 <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
@@ -181,8 +152,41 @@
                                             </div>
                                             <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
-                                                @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))
-                                                    <button class="btn btn-primary p-1 float-right" id="warehouse-location-btn" data-item-code="{{ $item_details->name }}" style="font-size: 12px;">Update Warehouse Location</button>
+                                                @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']) and $site_warehouses)
+                                                    <button type="button" class="btn btn-primary p-1 float-right" data-toggle="modal" data-target="#warehouseLocationModal" style="font-size: 12px;">
+                                                        Update Warehouse Location
+                                                    </button>
+                                                    
+                                                    <div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog" role="document">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="exampleModalLabel">Update Warehouse Location</h5>
+                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <form action="/edit_warehouse_location" method="post">
+                                                                        @csrf
+                                                                        @forelse ($site_warehouses as $warehouse)
+                                                                            <div class="form-group row">
+                                                                                <label for="location" class="col-12 col-form-label">{{ $warehouse['warehouse'] }}</label>
+                                                                                <div class="col-12">
+                                                                                    <input type="text" name="location[]" class="form-control" value="{{ $warehouse['location'] }}" placeholder="Location">
+                                                                                    <input type="text" name="warehouses[]" class="d-none" value="{{ $warehouse['warehouse'] }}" readonly>
+                                                                                </div>
+                                                                            </div>
+                                                                        @empty
+                                                                            <center><p>No Stock(s)</p></center>
+                                                                        @endforelse
+                                                                        <input type="text" name="item_code" value="{{ $item_details->name }}" hidden readonly>
+                                                                        <button class="btn btn-primary float-right" type="submit">Submit</button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 @endif
                                             </div>
                                             <div class="box box-solid p-0 ml-3">
@@ -313,7 +317,7 @@
                                 </div>
                             </div>
                             @endif
-                            <div class="container d-none d-lg-block col-12 mt-2">
+                            <div class="container col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="table-responsive" id="example">
@@ -544,7 +548,7 @@
                             </div>
                         </div>
                         <div class="col-md-2" style="display: inline-block">
-                            <button class="btn btn-secondary font-responsive" id="athReset">Reset Filters</button>
+                            <button class="btn btn-secondary font-responsive btn-sm" id="athReset">Reset Filters</button>
                         </div>
                         <div id="athena-transactions" class="col-12"></div>
                     </div>
@@ -575,7 +579,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-2" style="display: inline-block">
-                                    <button class="btn btn-secondary font-responsive" id="erpReset">Reset Filters</button>
+                                    <button class="btn btn-secondary font-responsive btn-sm" id="erpReset">Reset Filters</button>
                                 </div>
                                 <div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
                             </div>
@@ -587,6 +591,22 @@
                         <div id="purchase-history-div" class="p-3 col-12"></div>
                     </div>
                     @endif
+                    <div class="container-fluid tab-pane bg-white" id="tab_4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @php
+                                    $attr = null;
+                                    if(Auth::check()){
+                                        $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+                                    }
+                                @endphp
+                                <div class="float-right m-2">
+                                    <button class="btn btn-primary font-responsive btn-sm" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
+                                </div>
+                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -630,6 +650,35 @@
         .variant-tabs .nav-item .active{
             border-top: none !important;
             border-bottom: 1px solid #DEE2E6 !important;
+        }
+        .back-btn{
+            position: absolute;
+            right: 70px;
+            top: -10px;
+        }
+        @media (max-width: 575.98px) {
+            #example tr > *:first-child {
+                min-width: 5rem;
+            }
+            .pagination{
+                font-size: 10pt !important;
+            }
+        }
+        @media (max-width: 767.98px) {
+            #example tr > *:first-child {
+                min-width: 5rem;
+            }
+            .pagination{
+                font-size: 10pt !important;
+            }
+        }
+        @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+            .pagination{
+                font-size: 10pt !important;
+            }
+            .back-btn{
+                right: 0;
+            }
         }
     </style>
 @endsection
@@ -693,6 +742,102 @@
                 url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
                 success: function(response){
                     $('#athena-transactions').html(response);
+                }
+            });
+        }
+
+        get_stock_reservation();
+        function get_stock_reservation(page){
+            var item_code = '{{ $item_details->name }}';
+            $.ajax({
+                type: 'GET',
+                url: '/get_stock_reservation/' + item_code + '?page=' + page,
+                success: function(response){
+                    $('#stock-reservation-table').html(response);
+                }
+            });
+        }
+
+        $(document).on('click', '#stock-reservations-pagination-1 a', function(event){
+            event.preventDefault();
+            var page = $(this).attr('href').split('page=')[1];
+            get_stock_reservation(page);
+        });
+
+        $('#stock-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#add-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        $('#edit-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#edit-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        $('#cancel-reservation-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.error) {
+                        showNotification("danger", response.modal_message, "fa fa-info");
+                    }else{
+                        get_stock_reservation();
+                        showNotification("success", response.modal_message, "fa fa-check");
+                        $('#cancel-stock-reservation-modal').modal('hide');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                }
+            });
+        });
+
+        function showNotification(color, message, icon){
+            $.notify({
+                icon: icon,
+                message: message
+            },{
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: {
+                from: 'top',
+                align: 'center'
                 }
             });
         }

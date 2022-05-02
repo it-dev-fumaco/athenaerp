@@ -367,7 +367,7 @@
 																		@endforeach
 																	</table>
 																@else
-																	<div class="h-100 d-flex align-items-center">
+																	<div class="h-75 d-flex align-items-center">
 																		<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																	</div>
 																@endif
