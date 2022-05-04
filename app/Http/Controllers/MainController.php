@@ -2117,14 +2117,14 @@ class MainController extends Controller
 
             $at_issued = DB::table('tabAthena Transactions as at')
                 ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'ps.parent')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
                 ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
                 ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
                 ->where('psi.status', 'Issued')->where('at.item_code', $item_code)
                 ->where('psi.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
                 ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
-                ->pluck('qty', 's_warehouse')->toArray();
+                ->pluck('qty', 'source_warehouse')->toArray();
         }
 
         $site_warehouses = [];
