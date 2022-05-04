@@ -298,14 +298,16 @@ class MainController extends Controller
 
         $at_total_issued = DB::table('tabAthena Transactions as at')
             ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'ps.parent')
+            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
             ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
             ->where('psi.status', 'Issued')
-            ->whereIn('at.item_code', $item_codes)->whereIn('at.source_warehouse', $item_warehouses)
+            ->whereIn('at.item_code', $item_codes)
+            ->whereIn('at.source_warehouse', $item_warehouses)
             ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
             ->groupBy('at.item_code', 'at.source_warehouse')->get();
+
         $at_total_issued = collect($at_total_issued)->groupBy('item')->toArray();
 
         $lowLevelStock = DB::table('tabItem Reorder')
@@ -981,8 +983,8 @@ class MainController extends Controller
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")->union($q1)->get();
 
-        $item_codes = array_unique(array_column($q->toArray(), 'item_code'));
-        $s_warehouses = array_unique(array_column($q->toArray(), 's_warehouse'));
+        $item_codes = array_values(array_unique(array_column($q->toArray(), 'item_code')));
+        $s_warehouses = array_values(array_unique(array_column($q->toArray(), 's_warehouse')));
 
         if (count($item_codes) > 0) {
             // get reserved qty per item
@@ -999,8 +1001,9 @@ class MainController extends Controller
                 ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'actual_qty')->pluck('actual_qty', 'id');
 
             $total_issued_ste = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
-                ->whereIn('item_code', $item_codes)->where('s_warehouse', $s_warehouses)
-                ->select(DB::raw('CONCAT(item_code, REPLACE(s_warehouse, " ", "")) as id'), 'qty')->pluck('qty', 'id');
+                ->whereIn('item_code', $item_codes)->whereIn('s_warehouse', $s_warehouses)
+                ->select(DB::raw('CONCAT(item_code, REPLACE(s_warehouse, " ", "")) as id'), DB::raw('sum(qty) as qty'))
+                ->groupBy('item_code', 's_warehouse')->pluck('qty', 'id');
 
             $total_issued_at = DB::table('tabAthena Transactions as at')
                 ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
@@ -1010,7 +1013,8 @@ class MainController extends Controller
                 ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
                 ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes)
                 ->whereIn('at.source_warehouse', $s_warehouses)
-                ->select(DB::raw('CONCAT(at.item_code, REPLACE(at.source_warehouse, " ", "")) as id'), 'at.issued_qty')->pluck('at.issued_qty', 'id');
+                ->select(DB::raw('CONCAT(at.item_code, REPLACE(at.source_warehouse, " ", "")) as id'), DB::raw('sum(at.issued_qty) as issued_qty'))
+                ->groupBy('at.item_code', 'at.source_warehouse')->pluck('issued_qty', 'id');
 
             $material_requests = array_unique(array_column($q->toArray(), 'material_request'));
             $sales_orders = array_unique(array_column($q->toArray(), 'sales_order_no'));
