@@ -302,11 +302,11 @@ class MainController extends Controller
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
             ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
-            ->where('psi.status', 'Issued')
-            ->whereIn('at.item_code', $item_codes)
-            ->whereIn('at.source_warehouse', $item_warehouses)
+            ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes)
+            ->whereIn('psi.item_code', $item_codes)->whereIn('at.source_warehouse', $item_warehouses)
             ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
-            ->groupBy('at.item_code', 'at.source_warehouse')->get();
+            ->groupBy('at.item_code', 'at.source_warehouse')
+            ->get();
 
         $at_total_issued = collect($at_total_issued)->groupBy('item')->toArray();
 
@@ -761,8 +761,8 @@ class MainController extends Controller
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
             ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
-            ->where('psi.status', 'Issued')
-            ->where('at.item_code', $item_code)->where('at.source_warehouse', $warehouse)
+            ->where('psi.status', 'Issued')->where('at.item_code', $item_code)
+            ->where('psi.item_code', $item_code)->where('at.source_warehouse', $warehouse)
             ->sum('at.issued_qty');
 
         return $total_issued;
@@ -1012,7 +1012,7 @@ class MainController extends Controller
                 ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
                 ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
                 ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes)
-                ->whereIn('at.source_warehouse', $s_warehouses)
+                ->whereIn('psi.item_code', $item_codes)->whereIn('at.source_warehouse', $s_warehouses)
                 ->select(DB::raw('CONCAT(at.item_code, REPLACE(at.source_warehouse, " ", "")) as id'), DB::raw('sum(at.issued_qty) as issued_qty'))
                 ->groupBy('at.item_code', 'at.source_warehouse')->pluck('issued_qty', 'id');
 
@@ -2121,8 +2121,8 @@ class MainController extends Controller
                 ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
                 ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
                 ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
-                ->where('psi.status', 'Issued')
-                ->where('at.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
+                ->where('psi.status', 'Issued')->where('at.item_code', $item_code)
+                ->where('psi.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
                 ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
                 ->pluck('qty', 's_warehouse')->toArray();
         }
