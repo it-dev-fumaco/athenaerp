@@ -118,12 +118,12 @@
 										</div>
 									</div>
 									
-									<div id="collapseOne" class="collapse border border-outline-secondary" aria-labelledby="headingOne" data-parent="#accordion">
+									<div id="collapseOne" class="collapse border border-outline-secondary show" aria-labelledby="headingOne" data-parent="#accordion">
 										<div class="card-body p-0">
 											<div class="col-12 mx-auto">
 												<div class="row pt-2">
-													<div class="col-12 col-xl-2 mx-auto general-filter-label">
-														<label>Search For:</label>
+													<div class="col-12 col-xl-2 mx-auto general-filter-label text-left text-xl-right">
+														<label class="font-responsive">Search For:</label>
 													</div>
 													<div class="col-12 col-md-6 col-xl-2 mx-auto">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="item-class-filter-parent" style="font-size: 10pt;">
