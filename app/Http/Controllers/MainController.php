@@ -2105,7 +2105,7 @@ class MainController extends Controller
         if (count($stock_warehouses) > 0) {
             $stock_reserves = StockReservation::where('item_code', $item_code)
                 ->whereIn('warehouse', $stock_warehouses)->where('status', 'Active')
-                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(reserve_qty) as consumed_qty, warehouse')
+                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, warehouse')
                 ->groupBy('warehouse')->get();
 
             $stock_reserves = collect($stock_reserves)->groupBy('warehouse')->toArray();
