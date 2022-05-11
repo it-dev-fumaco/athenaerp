@@ -3432,11 +3432,18 @@ class MainController extends Controller
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
                 ->where('ste.work_order', $production_order)->where('ste.purpose', 'Material Transfer for Manufacture')
                 ->where('ste.docstatus', 1)->where('item_code', $row->item_code)->sum('qty');
+
+            $returned_qty = DB::connection('mysql')->table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.purpose', 'Material Transfer')->where('ste.transfer_as', 'For Return')
+                ->where('ste.work_order', $production_order)
+                ->where('sted.item_code', $row->item_code)->where('ste.docstatus', 1)
+                ->sum('sted.qty');
             
                 
-                DB::table('tabWork Order Item')
-                    ->where('parent', $production_order)
-                    ->where('item_code', $row->item_code)->update(['transferred_qty' => $transferred_qty]);
+            DB::table('tabWork Order Item')
+                ->where('parent', $production_order)->where('item_code', $row->item_code)
+                ->update(['transferred_qty' => $transferred_qty - $returned_qty]);
         }
     }
     
