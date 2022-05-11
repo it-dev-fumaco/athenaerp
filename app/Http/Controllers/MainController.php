@@ -1575,6 +1575,10 @@ class MainController extends Controller
                     if ($steDetails->work_order) {
                         $prodDetails = DB::table('tabWork Order Item')->where('parent', $steDetails->work_order)->where('item_code', $steDetails->item_code)->first();
                         if ($prodDetails) {
+                            DB::connection('mysql')->table('tabWork Order Item')
+                                ->where('parent', $steDetails->work_order)->where('item_code', $prodDetails->item_code)
+                                ->update(['transferred_qty' => $prodDetails->transferred_qty - $steDetails->qty]);
+
                             // check item alternative 
                             if ($prodDetails->item_alternative_for) {
                                 // get original item code
