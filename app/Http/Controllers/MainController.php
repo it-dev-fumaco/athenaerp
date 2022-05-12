@@ -1575,10 +1575,6 @@ class MainController extends Controller
                     if ($steDetails->work_order) {
                         $prodDetails = DB::table('tabWork Order Item')->where('parent', $steDetails->work_order)->where('item_code', $steDetails->item_code)->first();
                         if ($prodDetails) {
-                            DB::connection('mysql')->table('tabWork Order Item')
-                                ->where('parent', $steDetails->work_order)->where('item_code', $prodDetails->item_code)
-                                ->update(['transferred_qty' => $prodDetails->transferred_qty - $steDetails->qty]);
-
                             // check item alternative 
                             if ($prodDetails->item_alternative_for) {
                                 // get original item code
@@ -3355,9 +3351,8 @@ class MainController extends Controller
                     }
                 }
 
+                $production_order_details = DB::table('tabWork Order')->where('name', $draft_ste->work_order)->first();
                 if($draft_ste->purpose == 'Material Transfer for Manufacture'){
-                    $production_order_details = DB::table('tabWork Order')->where('name', $draft_ste->work_order)->first();
-
                     // get total "for quantity" (submitted)
                     $transferred_qty = DB::table('tabStock Entry')
                         ->where('work_order', $draft_ste->work_order)->where('docstatus', 1)
@@ -3396,7 +3391,9 @@ class MainController extends Controller
                     'docstatus' => 1
                 ]);
 
-                $this->update_production_order_items($production_order_details->name);
+                if ($production_order_details) {
+                    $this->update_production_order_items($production_order_details->name);
+                }
 
                 if($draft_ste->purpose == 'Material Transfer for Manufacture'){
                     if($production_order_details->status == 'Not Started'){
