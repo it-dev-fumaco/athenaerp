@@ -3396,9 +3396,9 @@ class MainController extends Controller
                     'docstatus' => 1
                 ]);
 
-                if($draft_ste->purpose == 'Material Transfer for Manufacture'){
-                    $this->update_production_order_items($production_order_details->name);
+                $this->update_production_order_items($production_order_details->name);
 
+                if($draft_ste->purpose == 'Material Transfer for Manufacture'){
                     if($production_order_details->status == 'Not Started'){
                         $values = [
                             'status' => 'In Process',
@@ -3426,23 +3426,25 @@ class MainController extends Controller
     }
 
     public function update_production_order_items($production_order){
-        $production_order_items = DB::table('tabWork Order Item')->where('parent', $production_order)->get();
-        foreach ($production_order_items as $row) {
-            $transferred_qty = DB::table('tabStock Entry as ste')
-                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('ste.work_order', $production_order)->where('ste.purpose', 'Material Transfer for Manufacture')
-                ->where('ste.docstatus', 1)->where('item_code', $row->item_code)->sum('qty');
-
-            $returned_qty = DB::connection('mysql')->table('tabStock Entry as ste')
-                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('ste.purpose', 'Material Transfer')->where('ste.transfer_as', 'For Return')
-                ->where('ste.work_order', $production_order)
-                ->where('sted.item_code', $row->item_code)->where('ste.docstatus', 1)
-                ->sum('sted.qty');
-                
-            DB::table('tabWork Order Item')
-                ->where('parent', $production_order)->where('item_code', $row->item_code)
-                ->update(['transferred_qty' => $transferred_qty, 'returned_qty' => $returned_qty]);
+        if ($production_order) {
+            $production_order_items = DB::table('tabWork Order Item')->where('parent', $production_order)->get();
+            foreach ($production_order_items as $row) {
+                $transferred_qty = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                    ->where('ste.work_order', $production_order)->where('ste.purpose', 'Material Transfer for Manufacture')
+                    ->where('ste.docstatus', 1)->where('item_code', $row->item_code)->sum('qty');
+    
+                $returned_qty = DB::connection('mysql')->table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                    ->where('ste.purpose', 'Material Transfer')->where('ste.transfer_as', 'For Return')
+                    ->where('ste.work_order', $production_order)
+                    ->where('sted.item_code', $row->item_code)->where('ste.docstatus', 1)
+                    ->sum('sted.qty');
+                    
+                DB::table('tabWork Order Item')
+                    ->where('parent', $production_order)->where('item_code', $row->item_code)
+                    ->update(['transferred_qty' => $transferred_qty, 'returned_qty' => $returned_qty]);
+            }
         }
     }
     
