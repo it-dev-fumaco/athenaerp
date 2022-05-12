@@ -3439,11 +3439,10 @@ class MainController extends Controller
                 ->where('ste.work_order', $production_order)
                 ->where('sted.item_code', $row->item_code)->where('ste.docstatus', 1)
                 ->sum('sted.qty');
-            
                 
             DB::table('tabWork Order Item')
                 ->where('parent', $production_order)->where('item_code', $row->item_code)
-                ->update(['transferred_qty' => $transferred_qty - $returned_qty]);
+                ->update(['transferred_qty' => $transferred_qty, 'returned_qty' => $returned_qty]);
         }
     }
     
