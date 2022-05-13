@@ -2641,45 +2641,9 @@ class MainController extends Controller
         $list = [];
 
         $q = DB::connection('mysql_mes')->table('production_order AS po')
-            ->whereNotIn('po.status', ['Cancelled'])
-            ->whereIn('po.fg_warehouse', $allowed_warehouses)
-            ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')
-            ->where('po.produced_qty', '>', 0)
-            ->whereRaw('po.produced_qty > feedback_qty')
-            ->select('po.*')->get();
-
-        // $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
-        //      ->where('purpose','Manufacture')->where('to_warehouse', 'P2 - Housing Temporary - FI')->where('production_order', '!=', '')
-        //      ->where('sed.docstatus', 0)
-        //     ->get();
-
-        // foreach ($se as $row) {
-        //     $parent_warehouse = $this->get_warehouse_parent($row->to_warehouse);
-    
-        //     $owner = ucwords(str_replace('.', ' ', explode('@', $row->creation)[0]));
-    
-        //     $operation_id = 0;
-        //     $operation_name = DB::connection('mysql_mes')->table('operation')->where('operation_id', $operation_id)->first();
-        //     $operation_name = ($operation_name) ? $operation_name->operation_name : '--';
-    
-        //     $list[] = [
-        //         'production_order' => $row->production_order,
-        //         'fg_warehouse' => $row->to_warehouse,
-        //         'sales_order_no' => $row->sales_order_no,
-        //         'material_request' => $row->material_request,
-        //         'customer' => $row->customer,
-        //         'item_code' => $row->item_code,
-        //         'description' => $row->description,
-        //         'qty_to_receive' => $row->actual_qty * 1,
-        //         'qty_to_manufacture' => $row->transfer_qty,
-        //         'stock_uom' => $row->stock_uom,
-        //         'parent_warehouse' => $row->from_warehouse,
-        //         'owner' => $owner,
-        //         'created_at' =>  Carbon::parse($row->creation)->format('M-d-Y h:i A'),
-        //         'operation_name' => $operation_name,
-        //         'delivery_date' => Carbon::parse($row->delivery_date)->format('F d, Y')
-        //     ];
-        // }
+            ->whereNotIn('po.status', ['Cancelled'])->whereIn('po.fg_warehouse', $allowed_warehouses)
+            ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')->where('po.produced_qty', '>', 0)
+            ->whereRaw('po.produced_qty > feedback_qty')->select('po.*')->get();
 
         foreach ($q as $row) {
             $parent_warehouse = $this->get_warehouse_parent($row->fg_warehouse);
@@ -2716,18 +2680,14 @@ class MainController extends Controller
     public function create_stock_ledger_entry($stock_entry){
         try {
             $now = Carbon::now();
-            $stock_entry_qry = DB::table('tabStock Entry')
-                ->where('name', $stock_entry)->first();
+            $stock_entry_qry = DB::table('tabStock Entry')->where('name', $stock_entry)->first();
 
-            $stock_entry_detail = DB::table('tabStock Entry Detail')
-                ->where('parent', $stock_entry)->get();
+            $stock_entry_detail = DB::table('tabStock Entry Detail')->where('parent', $stock_entry)->get();
 
-
-            if ($stock_entry_qry->purpose == 'Material Transfer for Manufacture') {                
+            if (in_array($stock_entry_qry->purpose, ['Material Transfer for Manufacture', 'Material Transfer'])) {                
                 $s_data = [];
                 $t_data = [];
                 foreach ($stock_entry_detail as $row) {
-
                     $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->s_warehouse)
                         ->where('item_code', $row->item_code)->first();
                     
@@ -2737,9 +2697,7 @@ class MainController extends Controller
                     }
                         
                     $s_data[] = [
-
                         'name' => 'ath' . uniqid(),
-
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->email,
@@ -2768,9 +2726,7 @@ class MainController extends Controller
                         'project' => $stock_entry_qry->project,
                         'voucher_no' => $row->parent,
                         'outgoing_rate' => 0,
-
                         'is_cancelled' => 0,
-
                         'qty_after_transaction' => $actual_qty,
                         '_user_tags' => null,
                         'batch_no' => $row->batch_no,
@@ -2781,7 +2737,6 @@ class MainController extends Controller
                     $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
                         ->where('item_code', $row->item_code)->first();
 
-
                     if ($bin_qry) {
                         $actual_qty = $bin_qry->actual_qty;
                         $valuation_rate = $bin_qry->valuation_rate;
@@ -2789,7 +2744,6 @@ class MainController extends Controller
 
                     $t_data[] = [
                         'name' => 'ath' . uniqid(),
-
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->email,
@@ -2818,9 +2772,7 @@ class MainController extends Controller
                         'project' => $stock_entry_qry->project,
                         'voucher_no' => $row->parent,
                         'outgoing_rate' => 0,
-
                         'is_cancelled' => 0,
-
                         'qty_after_transaction' => $actual_qty,
                         '_user_tags' => null,
                         'batch_no' => $row->batch_no,
@@ -2867,14 +2819,11 @@ class MainController extends Controller
                         'company' => 'FUMACO Inc.',
                         '_assign' => null,
                         'item_code' => $row->item_code,
-                        // 'stock_queue' => ,
                         'valuation_rate' => $bin_qry->valuation_rate,
                         'project' => $stock_entry_qry->project,
                         'voucher_no' => $row->parent,
                         'outgoing_rate' => 0,
-
                         'is_cancelled' => 0,
-
                         'qty_after_transaction' => $bin_qry->actual_qty,
                         '_user_tags' => null,
                         'batch_no' => $row->batch_no,
