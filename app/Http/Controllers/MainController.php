@@ -2170,7 +2170,7 @@ class MainController extends Controller
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
         $production_item_alternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
-            ->where('p.item_code', $item_details->name)->where('p.item_alternative_for', '!=', $item_details->name)
+            ->where('p.item_code', $item_details->name)->where('p.item_alternative_for', '!=', $item_details->name)->where('i.stock_uom', $item_details->stock_uom)
             ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get()->toArray();
 
         $production_item_alternative_item_codes = array_column($production_item_alternatives, 'item_code');
@@ -2210,7 +2210,7 @@ class MainController extends Controller
         }
 
         if(count($item_alternatives) <= 0) {
-            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->where('stock_uom', $item_details->stock_uom)->orderBy('modified', 'desc')->get();
             foreach($q as $a){
                 $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
 
