@@ -35,8 +35,13 @@
                 <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row->creation)) }}</span>
                 <small>{{ $row->name }}</small>
                 <div class="col-10 d-md-none mx-auto">
-                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
-                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                    @if (in_array($row->status, ['Active', 'Partially Issued']))
+                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
+                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                    @else
+                        <br>
+                        No Actions Available
+                    @endif
                 </div>
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
@@ -60,8 +65,12 @@
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
-                <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                @if (in_array($row->status, ['Active', 'Partially Issued']))
+                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
+                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                @else
+                    No Actions Available
+                @endif
             </td>
         </tr>
         @endforeach
@@ -111,8 +120,13 @@
                 <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row1->creation)) }}</span>
                 <small>{{ $row1->name }}</small>
                 <div class="d-md-none col-10 mx-auto">
-                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
-                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                    @if (in_array($row1->status, ['Active', 'Partially Issued']))
+                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
+                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                    @else
+                        <br>
+                        No Actions Available
+                    @endif
                 </div>
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
@@ -138,8 +152,12 @@
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row1->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
-                <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                @if (in_array($row1->status, ['Active', 'Partially Issued']))
+                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
+                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                @else
+                    No Actions Available
+                @endif
             </td>
         </tr>
         @endforeach
@@ -189,8 +207,13 @@
                 <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row2->creation)) }}</span>
                 <small>{{ $row2->name }}</small>
                 <div class="d-md-none col-10 mx-auto">
-                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button><br/>
-                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                    @if (in_array($row2->status, ['Active', 'Partially Issued']))
+                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button><br/>
+                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                    @else
+                        <br>
+                        No Actions Available
+                    @endif
                 </div>
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
@@ -218,8 +241,12 @@
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row2->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button>
-                <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                @if (in_array($row2->status, ['Active', 'Partially Issued']))
+                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button>
+                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                @else
+                    No Actions Available
+                @endif
             </td>
         </tr>
         @empty
