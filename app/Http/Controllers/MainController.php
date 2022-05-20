@@ -2256,9 +2256,6 @@ class MainController extends Controller
             $variants_website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
                 ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
 
-            $actual_variant_stocks = DB::table('tabBin')->whereIn('item_code', $variant_item_codes)
-                ->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
-            
             foreach($variant_item_codes as $variant){
                 $variants_default_price = 0;
                 $variant_rate = 0;
@@ -2281,6 +2278,8 @@ class MainController extends Controller
                 $variants_min_price_arr[$variant] = $variant_rate * $minimum_price_computation;
             }
         }
+
+        $actual_variant_stocks = DB::table('tabBin')->whereIn('item_code', $variant_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
 
         array_push($variant_item_codes, $item_details->name);
 
