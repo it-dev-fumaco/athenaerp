@@ -1545,14 +1545,23 @@
 						$('.for-in-house-type').removeClass('d-none');
 						$('.for-online-shop-type').addClass('d-none');
 						$('.for-consignment').addClass('d-none');
+						$('#select-sales-person-c').prop('required', true);
+						$('#select-project-c').prop('required', true);
+						$('#select-branch-warehouse-c').prop('required', false);
 					} else if ($(this).val() == 'Consignment') {
 						$('.for-in-house-type').addClass('d-none');
 						$('.for-online-shop-type').addClass('d-none');
 						$('.for-consignment').removeClass('d-none');
+						$('#select-sales-person-c').prop('required', false);
+						$('#select-project-c').prop('required', false);
+						$('#select-branch-warehouse-c').prop('required', true);
 					} else {
 						$('.for-in-house-type').addClass('d-none');
 						$('.for-online-shop-type').removeClass('d-none');
 						$('.for-consignment').addClass('d-none');
+						$('#select-sales-person-c').prop('required', true);
+						$('#select-project-c').prop('required', true);
+						$('#select-branch-warehouse-c').prop('required', false);
 					}
 				}
 			});
