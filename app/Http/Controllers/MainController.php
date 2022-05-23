@@ -916,10 +916,9 @@ class MainController extends Controller
             $actual_qty = Arr::exists($item_actual_qty, $arr_key) ? $item_actual_qty[$arr_key] : 0;
             $issued_qty = Arr::exists($consumed_qty, $arr_key) ? $consumed_qty[$arr_key] : 0;
             $reserved_qty = Arr::exists($stock_reservation_qty, $arr_key) ? $stock_reservation_qty[$arr_key] : 0;
-
-
-            $available_qty = ($actual_qty - $issued_qty);
-            $available_qty = ($available_qty - $reserved_qty);
+            
+            $remaining_reserved = $reserved_qty - $issued_qty;
+            $available_qty = $actual_qty - $remaining_reserved;
             $available_qty = ($available_qty < 0) ? 0 : $available_qty;
 
             $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
