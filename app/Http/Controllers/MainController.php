@@ -916,7 +916,7 @@ class MainController extends Controller
             $actual_qty = Arr::exists($item_actual_qty, $arr_key) ? $item_actual_qty[$arr_key] : 0;
             $issued_qty = Arr::exists($consumed_qty, $arr_key) ? $consumed_qty[$arr_key] : 0;
             $reserved_qty = Arr::exists($stock_reservation_qty, $arr_key) ? $stock_reservation_qty[$arr_key] : 0;
-            
+
             $remaining_reserved = $reserved_qty - $issued_qty;
             $available_qty = $actual_qty - $remaining_reserved;
             $available_qty = ($available_qty < 0) ? 0 : $available_qty;
@@ -3527,7 +3527,7 @@ class MainController extends Controller
         $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $item_code)
             ->where('warehouse', $warehouse)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
 
-        return ($reserved_qty_for_website + $stock_reservation_qty) + $consumed_qty;
+        return ($reserved_qty_for_website + $stock_reservation_qty) - $consumed_qty;
     }
 
     public function get_item_images($item_code){
