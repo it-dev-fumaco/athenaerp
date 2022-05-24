@@ -17,14 +17,16 @@
         @foreach ($webList as $row)
         @php
             $badge = '';
-            if($row->reserve_qty == round($row->consumed_qty)){
+            if($row->reserve_qty == round($row->consumed_qty) || $row->status == 'Issued'){
                 $badge = 'secondary';
             }else if($row->status == 'Cancelled'){
                 $badge = 'danger';
-            }else if(round($row->consumed_qty) > 0){
+            }else if(round($row->consumed_qty) > 0 || $row->status == 'Partially Issued'){
                 $badge = 'info';
-            }else{
+            }else if($row->status == 'Active'){
                 $badge = 'primary';
+            }else if($row->valid_until < Carbon\Carbon::today() || $row->status == 'Expired'){
+                $badge = 'warning';
             }
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
@@ -101,13 +103,13 @@
         @foreach ($consignmentList as $row1)
         @php
             $badge = '';
-            if($row1->reserve_qty == round($row1->consumed_qty)){
+            if($row1->reserve_qty == round($row1->consumed_qty) || $row1->status == 'Issued'){
                 $badge = 'secondary';
             }else if($row1->status == 'Cancelled'){
                 $badge = 'danger';
-            }else if($row1->valid_until < Carbon\Carbon::today()){
+            }else if($row1->valid_until < Carbon\Carbon::today() || $row1->status == 'Expired'){
                 $badge = 'warning';
-            }else if(round($row1->consumed_qty) > 0){
+            }else if(round($row1->consumed_qty) > 0 || $row1->status == 'Partially Issued'){
                 $badge = 'info';
             }else{
                 $badge = 'primary';
@@ -188,15 +190,15 @@
     @forelse ($inhouseList as $row2)<!-- In-house -->
         @php
             $badge = '';
-            if($row2->reserve_qty == round($row2->consumed_qty)){
+            if($row2->reserve_qty == round($row2->consumed_qty) || $row2->status == 'Issued'){
                 $badge = 'secondary';
             }else if($row2->status == 'Cancelled'){
                 $badge = 'danger';
-            }else if($row2->valid_until < Carbon\Carbon::today()){
+            }else if($row2->valid_until < Carbon\Carbon::today() || $row2->status == 'Expired'){
                 $badge = 'warning';
-            }else if(round($row2->consumed_qty) > 0){
+            }else if(round($row2->consumed_qty) > 0 || $row2->status == 'Partially Issued'){
                 $badge = 'info';
-             }else{
+            }else{
                 $badge = 'primary';
             }
             
