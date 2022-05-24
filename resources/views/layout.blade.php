@@ -852,7 +852,7 @@
 									<div class="col-md-6">
 										<div class="form-group">
 											<label for="" class="d-block">Available Qty</label>
-											<span class="badge badge-danger">
+											<span id="warehouse-badge" class="badge badge-danger">
 												<span id="available-qty-c-text">0</span>
 												<span id="stock-uom-c-text"></span>
 											</span>
@@ -1374,6 +1374,10 @@
 				$('#select-sales-person-c').val(null).trigger('change');
 				$('#select-branch-warehouse-c').val(null).trigger('change');
 				$('#select-project-c').val(null).trigger('change');
+				$('#available-qty-c').val(0);
+				$('#available-qty-c-text').text(0);
+				$('#warehouse-badge').removeClass('badge-success');
+				$('#warehouse-badge').addClass('badge-danger');
 
 				$("#date-valid-until-c").datepicker("update", new Date());
 
