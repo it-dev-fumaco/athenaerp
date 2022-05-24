@@ -2043,6 +2043,7 @@ class MainController extends Controller
         $default_price = 0;
         $avgPurchaseRate = '₱ 0.00';
         $last_purchase_rate = 0;
+        $manual_rate = 0;
         if (in_array($user_department, $allowed_department) || in_array($user_group, ['Manager', 'Director'])) {
             $avgPurchaseRate = $this->avgPurchaseRate($item_code);
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
@@ -2075,6 +2076,7 @@ class MainController extends Controller
             $last_purchase_rate = $item_rate;
 
             if ($item_rate <= 0) {
+                $manual_rate = 1;
                 $item_rate = $item_details->custom_item_cost;
             }
 
@@ -2236,6 +2238,7 @@ class MainController extends Controller
         $variants_cost_arr = [];
         $variants_min_price_arr = [];
         $actual_variant_stocks = [];
+        $manual_price_input = [];
         if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             // get item cost for items with 0 last purchase rate
             $item_custom_cost = [];
@@ -2266,15 +2269,22 @@ class MainController extends Controller
                     }
                 }
 
+                $is_manual_rate = 0;
                 // custom item cost 
                 if ($variant_rate <= 0) {
-                    $variant_rate = array_key_exists($variant, $item_custom_cost) ? $item_custom_cost[$variant] : 0;
+                    if (array_key_exists($variant, $item_custom_cost)) {
+                        $variant_rate = $item_custom_cost[$variant];
+                        $is_manual_rate = 1;
+                    } else {
+                        $variant_rate = 0;
+                    }
                 }
 
                 $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variant_rate * $standard_price_computation;
                 $variants_price_arr[$variant] = $variants_default_price;
                 $variants_cost_arr[$variant] = $variant_rate;
                 $variants_min_price_arr[$variant] = $variant_rate * $minimum_price_computation;
+                $manual_price_input[$variant] = $is_manual_rate;
             }
         }
 
@@ -2293,7 +2303,7 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available'));
+        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){

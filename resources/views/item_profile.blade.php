@@ -395,6 +395,20 @@
                                                         @endif
                                                         @if (in_array($user_group, ['Manager', 'Director']))
                                                         <td class="text-center align-middle text-nowrap">
+                                                            @if ($manual_rate)
+                                                            <center>
+                                                                <span class="entered-price d-none">0.00</span>
+                                                                <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $item_details->name }}-computed-price">
+                                                                    @csrf
+                                                                    <div class="input-group" style="width: 120px;">
+                                                                        <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $item_rate }}" required>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                        </div>
+                                                                    </div>
+                                                                </form>
+                                                            </center>
+                                                            @else
                                                             @if ($item_rate > 0)
                                                                 {{ '₱ ' . number_format($item_rate, 2, '.', ',') }}
                                                             @else
@@ -411,17 +425,18 @@
                                                                 </form>
                                                             </center>
                                                             @endif
+                                                            @endif
                                                         </td>
                                                         <td class="text-center align-middle text-nowrap">
                                                             @if ($minimum_selling_price > 0)
-                                                            {{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}
+                                                            <span id="{{ $item_details->name }}-computed-price-min">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
                                                             @else
                                                             <span id="{{ $item_details->name }}-computed-price-min">--</span>
                                                             @endif
                                                         </td>
                                                         <td class="text-center align-middle text-nowrap">
                                                             @if ($default_price > 0)
-                                                            {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
+                                                            <span id="{{ $item_details->name }}-computed-price">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                             @else
                                                             <span id="{{ $item_details->name }}-computed-price">--</span>
                                                             @endif
@@ -470,7 +485,25 @@
                                                                 if(array_key_exists($variant->name, $variants_cost_arr)){
                                                                     $cost = $variants_cost_arr[$variant->name];
                                                                 }
+                                                                $is_manual = 0;
+                                                                if(array_key_exists($variant->name, $manual_price_input)){
+                                                                    $is_manual = $manual_price_input[$variant->name];
+                                                                }
                                                             @endphp
+                                                             @if ($is_manual)
+                                                             <center>
+                                                                 <span class="entered-price d-none">0.00</span>
+                                                                 <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
+                                                                     @csrf
+                                                                     <div class="input-group" style="width: 120px;">
+                                                                         <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $cost }}" required>
+                                                                         <div class="input-group-append">
+                                                                             <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                         </div>
+                                                                     </div>
+                                                                 </form>
+                                                            </center>
+                                                            @else
                                                             @if ($cost > 0)
                                                                {{ '₱ ' . number_format($cost, 2, '.', ',') }}
                                                             @else
@@ -487,6 +520,7 @@
                                                                 </form>
                                                             </center>
                                                             @endif
+                                                            @endif
                                                         </td>
                                                         <td class="text-center align-middle text-nowrap">
                                                             @php
@@ -496,14 +530,14 @@
                                                                 }
                                                             @endphp
                                                             @if ($minprice > 0)
-                                                            {{ '₱ ' . number_format($minprice, 2, '.', ',') }}
+                                                            <span id="{{ $variant->name }}-computed-price-min">{{ '₱ ' . number_format($minprice, 2, '.', ',') }}</span>
                                                             @else
                                                             <span id="{{ $variant->name }}-computed-price-min">--</span>
                                                             @endif
                                                         </td>
                                                          <td class="text-center align-middle text-nowrap">
                                                             @if ($price > 0)
-                                                            {{ '₱ ' . number_format($price, 2, '.', ',') }}
+                                                            <span id="{{ $variant->name }}-computed-price">{{ '₱ ' . number_format($price, 2, '.', ',') }}</span>
                                                             @else
                                                             <span id="{{ $variant->name }}-computed-price">--</span>
                                                             @endif
@@ -724,42 +758,19 @@
         $(document).on('submit', '.update-price-form', function(e){
             e.preventDefault();
 
-            var entered_price = $(this).parent().find('.entered-price');
             var entered_price_computed = $(this).data('id');
-            var frm = $(this);
 
             $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),
                 data: $(this).serialize(),
                 success: function(response){
-                    entered_price.removeClass('d-none').text(response.item_cost);
                     $('#' + entered_price_computed).text(response.standard_price);
                     $('#' + entered_price_computed + '-min').text(response.min_price);
-                    frm.remove();
+                    showNotification("success", 'Item price updated.', "fa fa-check");
                 }
             });
         });
-        // var divs = $('.divs>div');
-        // var now = 0; // currently shown div
-        // divs.hide().first().show();
-        // $("#btn-next").click(function (e) {
-        //     divs.eq(now).hide();
-        //     now = (now + 1 < divs.length) ? now + 1 : 0;
-        //     divs.eq(now).show(); // show next
-        // });
-        // $("#btn-prev").click(function (e) {
-        //     divs.eq(now).hide();
-        //     now = (now > 0) ? now - 1 : divs.length - 1;
-        //     divs.eq(now).show(); // or .css('display','block');
-        // });
-        // $('#get-athena-transactions').click(function (){
-        //     get_athena_transactions('{{ $item_details->name }}');
-        // });
-
-        // $('#get-stock-ledger').click(function (){
-        //     get_stock_ledger('{{ $item_details->name }}');
-        // });
 
         $('#back-btn').on('click', function(e){
             e.preventDefault();
