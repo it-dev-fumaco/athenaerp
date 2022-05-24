@@ -963,7 +963,7 @@
 											<label for="" class="d-block">Available Qty</label>
 											<span class="badge badge-danger">
 												<span id="available-qty-e-text">0</span>
-												<span id="stock-uom-e-text"></span>
+												<span id="stock-uom-e-text" style="word-wrap: break-word !important; white-space: normal !important"></span>
 											</span>
 											<input type="hidden" class="form-control" name="available_qty" id="available-qty-e" value="0" readonly>
 										</div>
@@ -977,7 +977,7 @@
 									<div class="col-md-12">
 										<div class="form-group">
 											<label for="">Reservation Type</label>
-											<select name="type" class="form-control" id="select-type-e" disabled>
+											<select name="type" class="form-control" id="select-type-e" readonly>
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
 												<option value="Consignment">Consignment</option>
