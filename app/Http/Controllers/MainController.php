@@ -2733,7 +2733,7 @@ class MainController extends Controller
                 ->where('parent', $stock_entry)->get();
 
 
-            if ($stock_entry_qry->purpose == 'Material Transfer for Manufacture') {                
+            if (in_array($stock_entry_qry->purpose, ['Material Transfer for Manufacture', 'Material Transfer'])) {                
                 $s_data = [];
                 $t_data = [];
                 foreach ($stock_entry_detail as $row) {
