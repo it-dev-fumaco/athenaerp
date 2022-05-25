@@ -40,8 +40,8 @@
                                             <img class="display-block img-thumbnail item_image w-100" src="{{ asset('storage/').$img_webp }}">
                                         @else
                                             <picture>
-                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" src="{{ asset('storage/').$img }}" class="display-block img-thumbnail item_image w-100">
-                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" src="{{ asset('storage/').$img }}" class="display-block img-thumbnail item_image w-100">
+                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" src="{{ asset('storage/').$img }}">
+                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" src="{{ asset('storage/').$img }}">
                                                 <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="display-block img-thumbnail item_image w-100">
                                             </picture>
                                         @endif

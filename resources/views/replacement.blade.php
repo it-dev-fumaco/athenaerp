@@ -73,7 +73,10 @@
 												</div>
 											</td>
 											<td class="text-justify">
-												<span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
+												{{-- <span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span> --}}
+												<a href="/get_item_details/@{{ x.item_code }}" target="_blank" style="color: inherit !important">
+													<span class="font-weight-bold">@{{ x.item_code }}</span>
+												</a>
 												<span class="badge badge-success mr-2" ng-if="x.status === 'Issued'">@{{ x.status }}</span>
 												<span class="badge badge-warning mr-2" ng-if="x.status === 'For Checking'">@{{ x.status }}</span>
 												<i class="fas fa-arrow-right ml-2 mr-2"></i> 
