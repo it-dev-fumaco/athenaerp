@@ -1481,10 +1481,12 @@ class MainController extends Controller
 
     public function submit_transaction(Request $request){
         DB::beginTransaction();
-        
         try {
             $steDetails = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->child_tbl_id)
                 ->select('se.name as parent_se', 'se.*', 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status')->first();
+
+            $now = Carbon::now();
+
             if(!$steDetails){
                 return response()->json(['status' => 0, 'message' => 'Record not found.']);
             }
@@ -1514,9 +1516,9 @@ class MainController extends Controller
                 return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
             }
 
-            // if($request->qty > $steDetails->qty){
-            //     return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
-            // }
+            if($request->qty > $steDetails->qty){
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
+            }
 
             $available_qty = $this->get_available_qty($steDetails->item_code, $steDetails->s_warehouse);
             if($steDetails->purpose != 'Material Receipt' && $request->deduct_reserve == 0){
@@ -1599,7 +1601,146 @@ class MainController extends Controller
                         }
                     }
                 }
-            }
+
+                $unissued_qty = $steDetails->qty - $request->qty;
+
+                if($unissued_qty > 0){ // For partial returns create new STE for the remaining qty
+                    $actual_qty = DB::table('tabBin')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->pluck('actual_qty')->first();
+                    $latest_ste = DB::table('tabStock Entry')->where('name', 'like', '%step%')->max('name');
+                    $latest_ste_exploded = explode("-", $latest_ste);
+                    $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
+                    $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
+                    $new_id = 'STEP-'.$new_id;
+
+                    $stock_entry_detail = [
+                        'name' =>  uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => $new_id,
+                        'parentfield' => 'items',
+                        'parenttype' => 'Stock Entry',
+                        'idx' => 1,
+                        't_warehouse' => $steDetails->t_warehouse,
+                        'transfer_qty' => $unissued_qty,
+                        'serial_no' => null,
+                        'expense_account' => 'Cost of Goods Sold - FI',
+                        'cost_center' => 'Main - FI',
+                        'actual_qty' => $actual_qty,
+                        's_warehouse' => $steDetails->s_warehouse,
+                        'item_name' => $steDetails->item_name,
+                        'image' => null,
+                        'additional_cost' => 0,
+                        'stock_uom' => $steDetails->stock_uom,
+                        'basic_amount' => $steDetails->basic_rate * $unissued_qty,
+                        'sample_quantity' => 0,
+                        'uom' => $steDetails->uom,
+                        'basic_rate' => $steDetails->basic_rate,
+                        'description' => $steDetails->description,
+                        'barcode' => null,
+                        'conversion_factor' => $steDetails->conversion_factor,
+                        'item_code' => $steDetails->item_code,
+                        'retain_sample' => 0,
+                        'qty' => $unissued_qty,
+                        'bom_no' => null,
+                        'allow_zero_valuation_rate' => 0,
+                        'material_request_item' => null,
+                        'amount' => $steDetails->basic_rate * $unissued_qty,
+                        'batch_no' => null,
+                        'valuation_rate' => $steDetails->valuation_rate,
+                        'material_request' => null,
+                        't_warehouse_personnel' => null,
+                        's_warehouse_personnel' => null,
+                        'target_warehouse_location' => null,
+                        'source_warehouse_location' => null,
+                        'status' => 'For Checking',
+                        'date_modified' => null,
+                        'session_user' => null,
+                        'remarks' => null,
+                        'return_reference' => $new_id
+                    ];
+
+                    $stock_entry_data = [
+                        'name' => $new_id,
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'use_multi_level_bom' => 0,
+                        'delivery_note_no' => null,
+                        'naming_series' => 'STE-',
+                        'fg_completed_qty' => 0,
+                        'letter_head' => null,
+                        '_liked_by' => null,
+                        'purchase_receipt_no' => null,
+                        'posting_time' => $now->format('H:i:s'),
+                        'to_warehouse' => null,
+                        'title' => 'Material Transfer',
+                        '_comments' => null,
+                        'from_warehouse' => null,
+                        'set_posting_time' => 0,
+                        'purchase_order' => null,
+                        'from_bom' => 0,
+                        'supplier_address' => null,
+                        'supplier' => null,
+                        'source_address_display' => null,
+                        'address_display' => null,
+                        'source_warehouse_address' => null,
+                        'value_difference' => 0,
+                        'credit_note' => null,
+                        'sales_invoice_no' => null,
+                        'company' => 'FUMACO Inc.',
+                        'target_warehouse_address' => null,
+                        'total_outgoing_value' => collect($stock_entry_detail)->sum('basic_amount'),
+                        'supplier_name' => null,
+                        'remarks' => null,
+                        '_user_tags' => null,
+                        'total_additional_costs' => 0,
+                        'bom_no' => null,
+                        'amended_from' => null,
+                        'total_amount' => collect($stock_entry_detail)->sum('basic_amount'),
+                        'total_incoming_value' => collect($stock_entry_detail)->sum('basic_amount'),
+                        'project' => $steDetails->project,
+                        '_assign' => null,
+                        'select_print_heading' => null,
+                        'posting_date' => $now->format('Y-m-d'),
+                        'target_address_display' => null,
+                        'work_order' => $steDetails->work_order,
+                        'purpose' => 'Material Transfer',
+                        'stock_entry_type' => 'Material Transfer',
+                        'shipping_address_contact_person' => null,
+                        'customer_1' => null,
+                        'material_request' => $steDetails->material_request,
+                        'reference_no' => null,
+                        'delivery_date' => null,
+                        'delivery_address' => null,
+                        'city' => null,
+                        'address_line_2' => null,
+                        'address_line_1' => null,
+                        'item_status' => 'For Checking',
+                        'sales_order_no' => $steDetails->sales_order_no,
+                        'transfer_as' => 'For Return',
+                        'workflow_state' => null,
+                        'item_classification' => $steDetails->item_classification,
+                        'bom_repack' => null,
+                        'qty_repack' => 0,
+                        'issue_as' => null,
+                        'receive_as' => null,
+                        'so_customer_name' => $steDetails->so_customer_name,
+                        'order_type' => $steDetails->order_type,
+                    ];
+
+                    DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
+                    DB::table('tabStock Entry')->insert($stock_entry_data);
+                }
+            }            
 
             $stock_reservation_details = [];
             if($request->has_reservation && $request->has_reservation == 1) {
