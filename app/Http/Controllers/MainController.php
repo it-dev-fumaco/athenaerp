@@ -2044,6 +2044,7 @@ class MainController extends Controller
         $default_price = 0;
         $avgPurchaseRate = '₱ 0.00';
         $last_purchase_rate = 0;
+        $manual_rate = 0;
         if (in_array($user_department, $allowed_department) || in_array($user_group, ['Manager', 'Director'])) {
             $avgPurchaseRate = $this->avgPurchaseRate($item_code);
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
@@ -2075,7 +2076,7 @@ class MainController extends Controller
 
             $last_purchase_rate = $item_rate;
 
-            $manual_rate = 0;
+         
             if ($item_rate <= 0) {
                 $manual_rate = 1;
                 $item_rate = $item_details->custom_item_cost;
