@@ -578,7 +578,7 @@
                                                                 </picture>
                                                             </a>
                                                         </div>
-                                                        <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}" style="font-size: 9pt;">
+                                                        <a href="/get_item_details/{{ $a['item_code'] }}" class="text-dark" style="font-size: 9pt;">
                                                             <div class="p-1 text-justify">
                                                                 <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
                                                                 <small class="font-italic font-responsive" style="font-size: 9pt;">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
