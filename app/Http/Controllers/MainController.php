@@ -4174,11 +4174,15 @@ class MainController extends Controller
                 ->where('work_order', $production_order)
                 ->where('purpose', 'Material Transfer for Manufacture')
                 ->where('docstatus', 1)->exists();
-            
+
 			if(!$existing_ste_transfer){
                 return response()->json(['status' => 0, 'message' => 'Materials unavailable.']);
 			}
-            
+
+            if($request->fg_completed_qty <= 0){
+                return response()->json(['status' => 0, 'message' => 'Received quantity cannot be less than or equal to 0.']);
+            }
+
 			$production_order_details = DB::table('tabWork Order')
                 ->where('name', $production_order)->first();
 
