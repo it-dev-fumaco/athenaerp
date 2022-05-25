@@ -2145,7 +2145,7 @@ class MainController extends Controller
                     'warehouse' => $value->warehouse,
                     'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
-                    'actual_qty' => $actual_qty,
+                    'actual_qty' => $value->actual_qty,
                     'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                     'stock_uom' => $value->stock_uom,
                 ];
@@ -2154,7 +2154,7 @@ class MainController extends Controller
                     'warehouse' => $value->warehouse,
                     'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
-                    'actual_qty' => $actual_qty,
+                    'actual_qty' => $value->actual_qty,
                     'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                     'stock_uom' => $value->stock_uom,
                 ];
