@@ -399,7 +399,7 @@ class MainController extends Controller
                         'warehouse' => $value->warehouse,
                         'location' => $value->location,
                         'reserved_qty' => $reserved_qty,
-                        'actual_qty' => $actual_qty,
+                        'actual_qty' => $value->actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                         'stock_uom' => $value->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
@@ -409,7 +409,7 @@ class MainController extends Controller
                         'warehouse' => $value->warehouse,
                         'location' => $value->location,
                         'reserved_qty' => $reserved_qty,
-                        'actual_qty' => $actual_qty,
+                        'actual_qty' => $value->actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
                         'stock_uom' => $value->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
@@ -892,17 +892,39 @@ class MainController extends Controller
         }
 
         $work_order_delivery_date = DB::table('tabWork Order')->whereIn('name', $work_orders_arr)->pluck('delivery_date', 'name');
-        
-        $item_actual_qty = DB::table('tabBin')->whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
-            ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'actual_qty')->pluck('actual_qty', 'id');
-    
-        $stock_reservation_qty = DB::table('tabStock Reservation')->whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
-            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])
-            ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'reserve_qty')->pluck('reserve_qty', 'id');
 
-        $consumed_qty = DB::table('tabStock Reservation')->whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
-            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])
-            ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'consumed_qty')->pluck('consumed_qty', 'id');
+        $item_actual_qty = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
+            ->whereIn('tabBin.item_code', $item_codes_arr)->whereIn('tabBin.warehouse', $s_warehouses_arr)
+            ->where('tabWarehouse.disabled', 0)
+            ->selectRaw('SUM(actual_qty) as actual_qty, CONCAT(item_code, "-", warehouse) as item')
+            ->groupBy('item_code', 'warehouse')->get();
+
+        $item_actual_qty = collect($item_actual_qty)->groupBy('item')->toArray();
+
+        $stock_reservation = StockReservation::whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
+            ->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
+            ->groupBy('item_code', 'warehouse')->get();
+        $stock_reservation = collect($stock_reservation)->groupBy('item')->toArray();
+
+        $ste_total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+            ->whereIn('item_code', $item_codes_arr)->whereIn('s_warehouse', $s_warehouses_arr)
+            ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
+            ->groupBy('item_code', 's_warehouse')->get();
+        $ste_total_issued = collect($ste_total_issued)->groupBy('item')->toArray();
+
+        $at_total_issued = DB::table('tabAthena Transactions as at')
+            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+            ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes_arr)
+            ->whereIn('psi.item_code', $item_codes_arr)->whereIn('at.source_warehouse', $s_warehouses_arr)
+            ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
+            ->groupBy('at.item_code', 'at.source_warehouse')
+            ->get();
+
+        $at_total_issued = collect($at_total_issued)->groupBy('item')->toArray();
 
         $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes_arr)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
@@ -911,15 +933,33 @@ class MainController extends Controller
 
         $list = [];
         foreach ($q as $d) {
-            $arr_key = $d->item_code . str_replace(' ', '', $d->s_warehouse);
+            $reserved_qty = 0;
+            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $stock_reservation)) {
+                $reserved_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse][0]['total_reserved_qty'];
+            }
 
-            $actual_qty = Arr::exists($item_actual_qty, $arr_key) ? $item_actual_qty[$arr_key] : 0;
-            $issued_qty = Arr::exists($consumed_qty, $arr_key) ? $consumed_qty[$arr_key] : 0;
-            $reserved_qty = Arr::exists($stock_reservation_qty, $arr_key) ? $stock_reservation_qty[$arr_key] : 0;
+            $consumed_qty = 0;
+            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $stock_reservation)) {
+                $consumed_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse][0]['total_consumed_qty'];
+            }
 
-            $remaining_reserved = $reserved_qty - $issued_qty;
-            $available_qty = $actual_qty - $remaining_reserved;
-            $available_qty = ($available_qty < 0) ? 0 : $available_qty;
+            $reserved_qty = $reserved_qty - $consumed_qty;
+
+            $issued_qty = 0;
+            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $ste_total_issued)) {
+                $issued_qty = $ste_total_issued[$d->item_code . '-' . $d->s_warehouse][0]->total_issued;
+            }
+
+            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $at_total_issued)) {
+                $issued_qty += $at_total_issued[$d->item_code . '-' . $d->s_warehouse][0]->total_issued;
+            }
+
+            $actual_qty = 0;
+            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $item_actual_qty)) {
+                $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse][0]->actual_qty;
+            }
+
+            $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
 
             $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
@@ -947,7 +987,7 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
-                'balance' => $available_qty,
+                'balance' => $actual_qty,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->work_order,
