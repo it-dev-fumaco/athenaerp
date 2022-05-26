@@ -276,7 +276,7 @@ class MainController extends Controller
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
-            ->where('stock_warehouse', 1)
+            ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
             ->get();
 
@@ -669,7 +669,7 @@ class MainController extends Controller
             ->where('parent', $user)->pluck('warehouse');
 
         return DB::table('tabWarehouse')
-            ->whereIn('parent_warehouse', $allowed_parent_warehouses)->pluck('name');
+            ->where('disabled', 0)->whereIn('parent_warehouse', $allowed_parent_warehouses)->pluck('name');
     }
 
     public function load_suggestion_box(Request $request){
@@ -701,7 +701,7 @@ class MainController extends Controller
     }
 
     public function get_select_filters(Request $request){
-        $warehouses = DB::table('tabWarehouse')->where('is_group', 0)
+        $warehouses = DB::table('tabWarehouse')->where('is_group', 0)->where('disabled', 0)
             ->where('category', 'Physical')
             ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
@@ -787,7 +787,7 @@ class MainController extends Controller
     }
 
     public function get_warehouse_parent($child_warehouse){
-        $q = DB::table('tabWarehouse')->where('name', $child_warehouse)->first();
+        $q = DB::table('tabWarehouse')->where('disabled', 0)->where('name', $child_warehouse)->first();
         if($q){
             return $q->parent_warehouse;
         }
@@ -907,7 +907,7 @@ class MainController extends Controller
         $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes_arr)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
 
-        $parent_warehouses = DB::table('tabWarehouse')->whereIn('name', $s_warehouses_arr)->pluck('parent_warehouse', 'name');
+        $parent_warehouses = DB::table('tabWarehouse')->where('disabled', 0)->whereIn('name', $s_warehouses_arr)->pluck('parent_warehouse', 'name');
 
         $list = [];
         foreach ($q as $d) {
@@ -1023,7 +1023,7 @@ class MainController extends Controller
             $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
                 ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
 
-            $parent_warehouses = DB::table('tabWarehouse')->whereIn('name', $s_warehouses)->pluck('parent_warehouse', 'name');
+            $parent_warehouses = DB::table('tabWarehouse')->where('disabled', 0)->whereIn('name', $s_warehouses)->pluck('parent_warehouse', 'name');
         }
 
         $list = [];
@@ -2237,7 +2237,7 @@ class MainController extends Controller
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
-            ->where('stock_warehouse', 1)
+            ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
             ->get()->toArray();
 
