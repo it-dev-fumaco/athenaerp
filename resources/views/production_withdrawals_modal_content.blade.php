@@ -35,15 +35,14 @@
                                         $img_webp = ($data['img']) ? "/img/" . explode('.', $data['img'])[0].'.webp' : "/icon/no_img.webp";
                                     @endphp
                                     <a href="{{ asset('storage/') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $data['item_code'] }}" data-title="{{ $data['item_code'] }}">
-                                        {{-- <img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" width="100%" class="item_image"> --}}
                                         @if(!Storage::disk('public')->exists('/img/'.explode('.', $data['img'])[0].'.webp'))
                                             <img class="display-block img-thumbnail item_image w-100" src="{{ asset('storage/').$img }}">
                                         @elseif(!Storage::disk('public')->exists('/img/'.$data['img']))
                                             <img class="display-block img-thumbnail item_image w-100" src="{{ asset('storage/').$img_webp }}">
                                         @else
                                             <picture>
-                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" src="{{ asset('storage/').$img }}" class="display-block img-thumbnail item_image w-100">
-                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" src="{{ asset('storage/').$img }}" class="display-block img-thumbnail item_image w-100">
+                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" src="{{ asset('storage/').$img }}">
+                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" src="{{ asset('storage/').$img }}">
                                                 <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="display-block img-thumbnail item_image w-100">
                                             </picture>
                                         @endif

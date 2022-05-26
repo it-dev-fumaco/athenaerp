@@ -240,7 +240,7 @@ class StockReservationController extends Controller
 
          $stock_reservation->warehouse = $request->warehouse;
          $stock_reservation->reserve_qty = $request->reserve_qty;
-         $stock_reservation->valid_until = ($stock_reservation->type == 'In-house') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
+         $stock_reservation->valid_until = ($stock_reservation->type == 'In-house') ? Carbon::parse($request->valid_until)->format('Y-m-d') : null;
          $stock_reservation->sales_person = ($stock_reservation->type == 'In-house') ? $request->sales_person : null;
          $stock_reservation->project = ($stock_reservation->type == 'In-house') ? $request->project : null;
          $stock_reservation->consignment_warehouse = ($stock_reservation->type == 'Consignment') ? $request->consignment_warehouse : null;

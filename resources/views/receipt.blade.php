@@ -70,7 +70,10 @@
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<div class="d-block d-lg-none">
 													<div class="font-weight-bold">
-														<span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
+														{{-- <span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span> --}}
+														<a href="/get_item_details/@{{ x.item_code }}" target="_blank" style="color: inherit !important">
+															<span class="font-weight-bold">@{{ x.item_code }}</span>
+														</a>
 														<span class="badge badge-success mr-2" ng-if="x.status === 'Received'">@{{ x.status }}</span>
 														<span class="badge badge-warning mr-2" ng-if="x.status === 'To Receive'">@{{ x.status }}</span>
 														<i class="fas fa-arrow-right ml-2 mr-2"></i> 

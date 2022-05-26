@@ -74,7 +74,10 @@
 										</td>
 										<td class="text-justify">
 											<div class="d-block font-weight-bold">
-												<span class="view-item-details item-code" data-item-code="@{{ x.item_code }}"><b>@{{ x.item_code }}</b></span>
+												{{-- <span class="view-item-details item-code" data-item-code="@{{ x.item_code }}"><b>@{{ x.item_code }}</b></span> --}}
+												<a href="/get_item_details/@{{ x.item_code }}" target="_blank" style="color: inherit !important">
+													<span class="item-code"><b>@{{ x.item_code }}</b></span>
+												</a>
 												<span class="badge badge-warning">To Receive</span>
 												<i class="fas fa-arrow-right ml-3 mr-2"></i> <span class="target-warehouse">@{{ x.fg_warehouse }}</span>
 											</div>

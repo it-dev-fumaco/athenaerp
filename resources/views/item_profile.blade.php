@@ -489,20 +489,19 @@
                                                                 if(array_key_exists($variant->name, $manual_price_input)){
                                                                     $is_manual = $manual_price_input[$variant->name];
                                                                 }
-                                                                
                                                             @endphp
-                                                            @if ($is_manual)
-                                                            <center>
-                                                                <span class="entered-price d-none">0.00</span>
-                                                                <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
-                                                                    @csrf
-                                                                    <div class="input-group" style="width: 120px;">
-                                                                        <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $cost }}" required>
-                                                                        <div class="input-group-append">
-                                                                            <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
-                                                                        </div>
-                                                                    </div>
-                                                                </form>
+                                                             @if ($is_manual)
+                                                             <center>
+                                                                 <span class="entered-price d-none">0.00</span>
+                                                                 <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
+                                                                     @csrf
+                                                                     <div class="input-group" style="width: 120px;">
+                                                                         <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $cost }}" required>
+                                                                         <div class="input-group-append">
+                                                                             <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
+                                                                         </div>
+                                                                     </div>
+                                                                 </form>
                                                             </center>
                                                             @else
                                                             @if ($cost > 0)
@@ -579,7 +578,7 @@
                                                                 </picture>
                                                             </a>
                                                         </div>
-                                                        <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}" style="font-size: 9pt;">
+                                                        <a href="/get_item_details/{{ $a['item_code'] }}" class="text-dark" style="font-size: 9pt;">
                                                             <div class="p-1 text-justify">
                                                                 <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
                                                                 <small class="font-italic font-responsive" style="font-size: 9pt;">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
@@ -759,7 +758,6 @@
         $(document).on('submit', '.update-price-form', function(e){
             e.preventDefault();
 
-            var entered_price = $(this).parent().find('.entered-price');
             var entered_price_computed = $(this).data('id');
 
             $.ajax({

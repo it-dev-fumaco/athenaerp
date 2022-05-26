@@ -42,5 +42,5 @@
     </tbody>
   </table>
   <div class="box-footer clearfix" id="stock-ledger-pagination" data-item-code="{{ $item_code }}" style="font-size: 10pt;">
-    {{ $list->links() }}
+    {{ $logs->links() }}
   </div>

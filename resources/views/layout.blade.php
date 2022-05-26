@@ -852,7 +852,7 @@
 									<div class="col-md-6">
 										<div class="form-group">
 											<label for="" class="d-block">Available Qty</label>
-											<span class="badge badge-danger">
+											<span id="warehouse-badge" class="badge badge-danger">
 												<span id="available-qty-c-text">0</span>
 												<span id="stock-uom-c-text"></span>
 											</span>
@@ -963,7 +963,7 @@
 											<label for="" class="d-block">Available Qty</label>
 											<span class="badge badge-danger">
 												<span id="available-qty-e-text">0</span>
-												<span id="stock-uom-e-text"></span>
+												<span id="stock-uom-e-text" style="word-wrap: break-word !important; white-space: normal !important"></span>
 											</span>
 											<input type="hidden" class="form-control" name="available_qty" id="available-qty-e" value="0" readonly>
 										</div>
@@ -977,7 +977,7 @@
 									<div class="col-md-12">
 										<div class="form-group">
 											<label for="">Reservation Type</label>
-											<select name="type" class="form-control" id="select-type-e" disabled>
+											<select name="type" class="form-control" id="select-type-e" readonly>
 												<option value="">Select Type</option>
 												<option value="In-house">In-house</option>
 												<option value="Consignment">Consignment</option>
@@ -1374,6 +1374,10 @@
 				$('#select-sales-person-c').val(null).trigger('change');
 				$('#select-branch-warehouse-c').val(null).trigger('change');
 				$('#select-project-c').val(null).trigger('change');
+				$('#available-qty-c').val(0);
+				$('#available-qty-c-text').text(0);
+				$('#warehouse-badge').removeClass('badge-success');
+				$('#warehouse-badge').addClass('badge-danger');
 
 				$("#date-valid-until-c").datepicker("update", new Date());
 
@@ -1545,14 +1549,23 @@
 						$('.for-in-house-type').removeClass('d-none');
 						$('.for-online-shop-type').addClass('d-none');
 						$('.for-consignment').addClass('d-none');
+						$('#select-sales-person-c').prop('required', true);
+						$('#select-project-c').prop('required', true);
+						$('#select-branch-warehouse-c').prop('required', false);
 					} else if ($(this).val() == 'Consignment') {
 						$('.for-in-house-type').addClass('d-none');
 						$('.for-online-shop-type').addClass('d-none');
 						$('.for-consignment').removeClass('d-none');
+						$('#select-sales-person-c').prop('required', false);
+						$('#select-project-c').prop('required', false);
+						$('#select-branch-warehouse-c').prop('required', true);
 					} else {
 						$('.for-in-house-type').addClass('d-none');
 						$('.for-online-shop-type').removeClass('d-none');
 						$('.for-consignment').addClass('d-none');
+						$('#select-sales-person-c').prop('required', true);
+						$('#select-project-c').prop('required', true);
+						$('#select-branch-warehouse-c').prop('required', false);
 					}
 				}
 			});

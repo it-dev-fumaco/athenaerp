@@ -17,14 +17,16 @@
         @foreach ($webList as $row)
         @php
             $badge = '';
-            if($row->reserve_qty == round($row->consumed_qty)){
+            if($row->reserve_qty == round($row->consumed_qty) || $row->status == 'Issued'){
                 $badge = 'secondary';
             }else if($row->status == 'Cancelled'){
                 $badge = 'danger';
-            }else if(round($row->consumed_qty) > 0){
+            }else if(round($row->consumed_qty) > 0 || $row->status == 'Partially Issued'){
                 $badge = 'info';
-            }else{
+            }else if($row->status == 'Active'){
                 $badge = 'primary';
+            }else if($row->valid_until < Carbon\Carbon::today() || $row->status == 'Expired'){
+                $badge = 'warning';
             }
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
@@ -35,8 +37,13 @@
                 <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row->creation)) }}</span>
                 <small>{{ $row->name }}</small>
                 <div class="col-10 d-md-none mx-auto">
-                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
-                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                    @if (in_array($row->status, ['Active', 'Partially Issued']))
+                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
+                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                    @else
+                        <br>
+                        No Actions Available
+                    @endif
                 </div>
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
@@ -60,8 +67,12 @@
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
-                <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                @if (in_array($row->status, ['Active', 'Partially Issued']))
+                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
+                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                @else
+                    No Actions Available
+                @endif
             </td>
         </tr>
         @endforeach
@@ -92,13 +103,13 @@
         @foreach ($consignmentList as $row1)
         @php
             $badge = '';
-            if($row1->reserve_qty == round($row1->consumed_qty)){
+            if($row1->reserve_qty == round($row1->consumed_qty) || $row1->status == 'Issued'){
                 $badge = 'secondary';
             }else if($row1->status == 'Cancelled'){
                 $badge = 'danger';
-            }else if($row1->valid_until < Carbon\Carbon::today()){
+            }else if($row1->valid_until < Carbon\Carbon::today() || $row1->status == 'Expired'){
                 $badge = 'warning';
-            }else if(round($row1->consumed_qty) > 0){
+            }else if(round($row1->consumed_qty) > 0 || $row1->status == 'Partially Issued'){
                 $badge = 'info';
             }else{
                 $badge = 'primary';
@@ -111,8 +122,13 @@
                 <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row1->creation)) }}</span>
                 <small>{{ $row1->name }}</small>
                 <div class="d-md-none col-10 mx-auto">
-                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
-                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                    @if (in_array($row1->status, ['Active', 'Partially Issued']))
+                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
+                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                    @else
+                        <br>
+                        No Actions Available
+                    @endif
                 </div>
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
@@ -138,8 +154,12 @@
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row1->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
-                <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                @if (in_array($row1->status, ['Active', 'Partially Issued']))
+                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Edit</button>
+                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row1->name }}" {{ $attr }}>Cancel</button>
+                @else
+                    No Actions Available
+                @endif
             </td>
         </tr>
         @endforeach
@@ -170,15 +190,15 @@
     @forelse ($inhouseList as $row2)<!-- In-house -->
         @php
             $badge = '';
-            if($row2->reserve_qty == round($row2->consumed_qty)){
+            if($row2->reserve_qty == round($row2->consumed_qty) || $row2->status == 'Issued'){
                 $badge = 'secondary';
             }else if($row2->status == 'Cancelled'){
                 $badge = 'danger';
-            }else if($row2->valid_until < Carbon\Carbon::today()){
+            }else if($row2->valid_until < Carbon\Carbon::today() || $row2->status == 'Expired'){
                 $badge = 'warning';
-            }else if(round($row2->consumed_qty) > 0){
+            }else if(round($row2->consumed_qty) > 0 || $row2->status == 'Partially Issued'){
                 $badge = 'info';
-             }else{
+            }else{
                 $badge = 'primary';
             }
             
@@ -189,8 +209,13 @@
                 <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row2->creation)) }}</span>
                 <small>{{ $row2->name }}</small>
                 <div class="d-md-none col-10 mx-auto">
-                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button><br/>
-                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                    @if (in_array($row2->status, ['Active', 'Partially Issued']))
+                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button><br/>
+                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn font-responsive w-100" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                    @else
+                        <br>
+                        No Actions Available
+                    @endif
                 </div>
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
@@ -218,8 +243,12 @@
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row2->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
-                <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button>
-                <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                @if (in_array($row2->status, ['Active', 'Partially Issued']))
+                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Edit</button>
+                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row2->name }}" {{ $attr }}>Cancel</button>
+                @else
+                    No Actions Available
+                @endif
             </td>
         </tr>
         @empty
