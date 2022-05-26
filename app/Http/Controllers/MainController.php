@@ -2579,15 +2579,58 @@ class MainController extends Controller
     }
 
     public function get_stock_ledger(Request $request, $item_code){
-        $logs = DB::table('tabStock Ledger Entry')->where('item_code', $item_code)
-            ->orderBy('posting_date', 'desc')->orderBy('posting_time', 'desc')->orderBy('name', 'desc')->get();
+        $logs = DB::table('tabStock Ledger Entry as sle')->where('sle.item_code', $item_code)
+            ->select(DB::raw('(SELECT GROUP_CONCAT(name) FROM `tabPacking Slip` where delivery_note = sle.voucher_no) as dr_voucher_no'))
+            ->addSelect(DB::raw('
+                (CASE
+                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT date_modified FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
+                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.date_modified FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                ELSE
+                    sle.posting_date
+                END) as ste_date_modified'
+            ))
+            ->addSelect(DB::raw('
+                (CASE
+                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT session_user FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.session_user FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                END) as ste_session_user'
+            ))
+            ->addSelect(DB::raw('(SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) as ste_purpose'))
+            ->addSelect(DB::raw('(SELECT GROUP_CONCAT(sales_order_no) FROM `tabStock Entry` where name = sle.voucher_no) as ste_sales_order'))
+            ->addSelect(DB::raw('(SELECT GROUP_CONCAT(DISTINCT purchase_order) FROM `tabPurchase Receipt Item` where parent = sle.voucher_no and item_code = sle.item_code) as pr_voucher_no'))
+            ->addSelect('sle.voucher_type', 'sle.voucher_no', 'sle.warehouse', 'sle.actual_qty', 'sle.qty_after_transaction', 'sle.posting_date')
+            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($request){
+				return $q->where(DB::raw('
+                    (CASE
+                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT session_user FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.session_user FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    END)'
+                ), $request->wh_user);
+            })
+            ->when($request->erp_wh != '' and $request->erp_wh != 'null', function($q) use ($request){
+				return $q->where('sle.warehouse', $request->erp_wh);
+            })
+            ->when($request->erp_d != '' and $request->erp_d != 'null', function($q) use ($request){
+                $dates = explode(' to ', $request->erp_d);
 
+				return $q->whereBetween(DB::raw('
+                    (CASE
+                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT date_modified FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
+                        WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.date_modified FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    ELSE
+                        sle.posting_date
+                    END)'
+                ), [$dates[0], $dates[1]]);
+            })
+            ->orderBy('sle.posting_date', 'desc')->orderBy('sle.posting_time', 'desc')
+            ->orderBy('sle.name', 'desc')->paginate(20);
+            
         $list = [];
         foreach($logs as $row){
-
             if($row->voucher_type == 'Delivery Note'){
-                $voucher_no = DB::table('tabPacking Slip')->where('delivery_note', $row->voucher_no)->pluck('name');
-                $voucher_no = implode(', ', $voucher_no->toArray());
+                $voucher_no = $row->dr_voucher_no;
                 $transaction = 'Picking Slip';
             }elseif($row->voucher_type == 'Purchase Receipt'){
                 $transaction = $row->voucher_type;
@@ -2595,44 +2638,25 @@ class MainController extends Controller
                 $transaction = $row->voucher_type;
                 $voucher_no = $row->voucher_no;
             }else{
-                $transaction = DB::table('tabStock Entry')->where('name', $row->voucher_no)->first();
-                $transaction = ($transaction) ? $transaction->purpose : null;
+                $transaction = $row->ste_purpose;
                 $voucher_no = $row->voucher_no;
             }
 
             if($row->voucher_type == 'Delivery Note'){
                 $ref_no = $voucher_no;
             }elseif($row->voucher_type == 'Purchase Receipt'){
-                $voucher_no = DB::table('tabPurchase Receipt Item')->where('parent', $row->voucher_no)->where('item_code', $item_code)->distinct()->pluck('purchase_order');
-                $voucher_no = implode(', ', $voucher_no->toArray());
+                $voucher_no = $row->pr_voucher_no;
                 $ref_no = $voucher_no;
             }elseif($row->voucher_type == 'Stock Entry'){
-                $ref_no = DB::table('tabStock Entry')->where('name', $row->voucher_no)->pluck('sales_order_no');
-                $ref_no = implode(', ', $ref_no->toArray());;
+                $ref_no = $row->ste_sales_order;
             }elseif($row->voucher_type == 'Stock Reconciliation'){
                 $ref_no = $voucher_no;
             }else{
                 $ref_no = null;
             }
 
-            if(in_array($transaction, ['Material Transfer for Manufacture', 'Material Transfer', 'Material Issue'])){
-                $ste_details = DB::table('tabStock Entry Detail')->where('parent', $row->voucher_no)->where('item_code', $item_code)->first();
-                $date_modified = $ste_details ? $ste_details->date_modified : null;
-                $session_user = $ste_details ? $ste_details->session_user : null;
-            }elseif($transaction == 'Manufacture'){
-                $ste_details = DB::table('tabStock Entry')->where('name', $row->voucher_no)->first();
-                $date_modified = $ste_details->modified;
-                $session_user = null;
-            }elseif(in_array($transaction, ['Picking Slip', 'Packing Slip', 'Delivery Note'])){
-                $ps_details = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                    ->where('ps.delivery_note', $row->voucher_no)->where('item_code', $item_code)->first();
-
-                $date_modified = ($ps_details) ? $ps_details->date_modified : '--';
-                $session_user = ($ps_details) ? $ps_details->session_user : '--';
-            }else{
-                $date_modified = $row->posting_date;
-                $session_user = null;
-            }
+            $date_modified = $row->ste_date_modified;
+            $session_user = $row->ste_session_user;
 
             if($date_modified and $date_modified != '--'){
                 $date_modified = Carbon::parse($date_modified);
@@ -2647,48 +2671,10 @@ class MainController extends Controller
                 'ref_no' => $ref_no,
                 'date_modified' => $date_modified,
                 'session_user' => $session_user,
-                'posting_date' => $row->posting_date,//cccc
+                'posting_date' => $row->posting_date,
             ];
-
-            if($request->wh_user != '' and $request->wh_user != 'null'){
-                $list = collect($list)->filter(function ($value, $key) use($request){
-                    return $value['session_user'] == $request->wh_user;
-                });
-            }
-
-            if($request->erp_wh != '' and $request->erp_wh != 'null'){
-                $list = collect($list)->filter(function ($value, $key) use($request){
-                    return $value['warehouse'] == $request->erp_wh;
-                });
-            }
-
-            if($request->erp_d != '' and $request->erp_d != 'null'){
-                $dates = explode(' to ', $request->erp_d);
-
-                $list = collect($list)->filter(function ($value, $key) use($dates){
-                    if($value['date_modified'] >= Carbon::parse($dates[0])
-                        and $value['date_modified'] <= Carbon::parse($dates[1])->endOfDay()){
-                            return $value['date_modified'];
-                        }
-                });
-
-            }
         }
-        
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        // Create a new Laravel collection from the array data
-        $itemCollection = collect($list);
-        // Define how many items we want to be visible in each page
-        $perPage = 20;
-        // Slice the collection to get the items to display in current page
-        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
-        // Create our paginator and pass it to the view
-        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
-        // set url path for generted links
-        $paginatedItems->setPath($request->url());
 
-        $list = $paginatedItems;
-        
         return view('tbl_stock_ledger', compact('list', 'logs', 'item_code'));
     }
 
