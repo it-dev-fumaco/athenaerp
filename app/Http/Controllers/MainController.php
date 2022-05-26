@@ -2256,6 +2256,7 @@ class MainController extends Controller
 
             $last_purchase_rate = $item_rate;
 
+         
             if ($item_rate <= 0) {
                 $manual_rate = 1;
                 $item_rate = $item_details->custom_item_cost;

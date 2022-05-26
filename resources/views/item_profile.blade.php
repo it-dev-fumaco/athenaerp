@@ -507,7 +507,7 @@
                                                             @if ($cost > 0)
                                                                {{ '₱ ' . number_format($cost, 2, '.', ',') }}
                                                             @else
-                                                                <center>
+                                                            <center>
                                                                 <span class="entered-price d-none">0.00</span>
                                                                 <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
                                                                     @csrf
