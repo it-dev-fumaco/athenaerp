@@ -3,30 +3,28 @@
 <table class="table table-hover table-bordered table-sm stock-ledger-table-font" style="font-size: 9pt !important;">
     <thead>
         <tr>
-            <th class="text-center p-1">Transaction</th>
+            <th class="text-center p-1" style="width: 10% !important">Transaction</th>
             <th class="text-center p-1 d-md-none">Details</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Reserved Qty</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Issued Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Reserved Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Issued Qty</th>
             <th class="text-center p-1 d-none d-sm-table-cell">Warehouse</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Status</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Created by</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Action</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Status</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12% !important">Created by</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12% !important">Action</th>
         </tr>
     </thead>
     <tbody>
         @foreach ($webList as $row)
         @php
             $badge = '';
-            if($row->reserve_qty == round($row->consumed_qty) || $row->status == 'Issued'){
-                $badge = 'secondary';
-            }else if($row->status == 'Cancelled'){
-                $badge = 'danger';
-            }else if(round($row->consumed_qty) > 0 || $row->status == 'Partially Issued'){
-                $badge = 'info';
-            }else if($row->status == 'Active'){
+            if($row->status == 'Active'){
                 $badge = 'primary';
-            }else if($row->valid_until < Carbon\Carbon::today() || $row->status == 'Expired'){
-                $badge = 'warning';
+            }else if(round($row->consumed_qty) > 0 && $row->consumed_qty < $row->reserve_qty || $row->status == 'Partially Issued'){
+                $badge = 'info';
+            }else if($row->reserve_qty == round($row->consumed_qty) && $row->status != 'Expired' || $row->status == 'Issued'){
+                $badge = 'success';
+            }else if($row->valid_until < Carbon\Carbon::today() || $row->status == 'Expired' || $row->status == 'Cancelled'){
+                $badge = 'secondary';
             }
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
@@ -88,31 +86,29 @@
 <table class="table table-hover table-bordered table-sm stock-ledger-table-font" style="font-size: 9pt !important;">
     <thead>
         <tr>
-            <th class="text-center p-1">Transaction</th>
+            <th class="text-center p-1" style="width: 10% !important">Transaction</th>
             <th class="text-center p-1 d-md-none">Details</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Reserved Qty</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Issued Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Reserved Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Issued Qty</th>
             <th class="text-center p-1 d-none d-sm-table-cell">Warehouse</th>
             <th class="text-center p-1 d-none d-sm-table-cell">Branch</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Status</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Created by</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Action</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Status</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12% !important">Created by</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12% !important">Action</th>
         </tr>
     </thead>
     <tbody>
         @foreach ($consignmentList as $row1)
         @php
             $badge = '';
-            if($row1->reserve_qty == round($row1->consumed_qty) || $row1->status == 'Issued'){
-                $badge = 'secondary';
-            }else if($row1->status == 'Cancelled'){
-                $badge = 'danger';
-            }else if($row1->valid_until < Carbon\Carbon::today() || $row1->status == 'Expired'){
-                $badge = 'warning';
-            }else if(round($row1->consumed_qty) > 0 || $row1->status == 'Partially Issued'){
-                $badge = 'info';
-            }else{
+            if($row1->status == 'Active'){
                 $badge = 'primary';
+            }else if(round($row1->consumed_qty) > 0 && $row1->consumed_qty < $row1->reserve_qty || $row1->status == 'Partially Issued'){
+                $badge = 'info';
+            }else if($row1->reserve_qty == round($row1->consumed_qty) && $row1->status != 'Expired' || $row1->status == 'Issued'){
+                $badge = 'success';
+            }else if($row1->valid_until < Carbon\Carbon::today() || $row1->status == 'Expired' || $row1->status == 'Cancelled'){
+                $badge = 'secondary';
             }
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
@@ -174,32 +170,30 @@
 <table class="table table-hover table-bordered table-sm font-responsive" style="font-size: 9pt !important;">
     <thead>
         <tr>
-            <th class="text-center p-1">Transaction</th>
+            <th class="text-center p-1" style="width: 10% !important">Transaction</th>
             <th class="text-center p-1 d-md-none">Details</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Reserved Qty</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Issued Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Reserved Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Issued Qty</th>
             <th class="text-center p-1 d-none d-sm-table-cell">Warehouse</th>
             <th class="text-center p-1 d-none d-sm-table-cell">Sales Person</th>
             <th class="text-center p-1 d-none d-sm-table-cell">Validity</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Status</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Created by</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Action</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10% !important">Status</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12% !important">Created by</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12% !important">Action</th>
         </tr>
     </thead>
     <tbody>
     @forelse ($inhouseList as $row2)<!-- In-house -->
         @php
             $badge = '';
-            if($row2->reserve_qty == round($row2->consumed_qty) || $row2->status == 'Issued'){
-                $badge = 'secondary';
-            }else if($row2->status == 'Cancelled'){
-                $badge = 'danger';
-            }else if($row2->valid_until < Carbon\Carbon::today() || $row2->status == 'Expired'){
-                $badge = 'warning';
-            }else if(round($row2->consumed_qty) > 0 || $row2->status == 'Partially Issued'){
-                $badge = 'info';
-            }else{
+            if($row2->status == 'Active'){
                 $badge = 'primary';
+            }else if(round($row2->consumed_qty) > 0 && $row2->consumed_qty < $row2->reserve_qty || $row2->status == 'Partially Issued'){
+                $badge = 'info';
+            }else if($row2->reserve_qty == round($row2->consumed_qty) && $row2->status != 'Expired' || $row2->status == 'Issued'){
+                $badge = 'success';
+            }else if($row2->valid_until < Carbon\Carbon::today() || $row2->status == 'Expired' || $row2->status == 'Cancelled'){
+                $badge = 'secondary';
             }
             
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
