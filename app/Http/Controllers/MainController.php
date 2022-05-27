@@ -2377,34 +2377,86 @@ class MainController extends Controller
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
         // get item alternatives based on parent item code
         $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+        $alternative_item_codes = collect($q)->map(function($q){
+            return $q->name;
+        });
+        
+        // get actual stock qty of all item alternatives
+        $actual_stocks_query = DB::table('tabBin')->whereIn('item_code', $alternative_item_codes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
+        $actual_stocks = collect($actual_stocks_query)->groupBy('item_code');
+        
+        // get total reserved and consumed qty of all item alternatives
+        $stock_reserves_query = StockReservation::whereIn('item_code', $alternative_item_codes)->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, item_code')->groupBy('item_code')->get();
+        $alternative_reserves = collect($stock_reserves_query)->groupBy('item_code');
+        
+        // get draft issued ste of all item alternatives
+        $ste_issued_query = DB::table('tabStock Entry Detail')->where('docstatus', 0)->whereIn('item_code', $alternative_item_codes)->where('status', 'Issued')->selectRaw('SUM(qty) as qty, item_code')->groupBy('item_code')->get();
+        $alternatives_issued_ste = collect($ste_issued_query)->groupBy('item_code');
+        
+        // get draft issued packing slip/drs of all item alternatives
+        $at_issued_query = DB::table('tabAthena Transactions as at')
+            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+            ->where('psi.status', 'Issued')
+            ->whereIn('at.item_code', $alternative_item_codes)
+            ->whereRaw('psi.item_code = at.item_code')
+            ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')->groupBy('at.item_code')
+            ->get();
+        $alternatives_issued_at = collect($at_issued_query)->groupBy('item_code');
+        
         foreach($q as $a){
             $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
-
-            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
-
+            
+            $total_reserved = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('reserved_qty') : 0;
+            $total_consumed = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('consumed_qty') : 0;
+        
+            $total_issued_ste = isset($alternatives_issued_ste[$a->item_code]) ? $alternatives_issued_ste[$a->item_code]->sum('qty') : 0;
+            $total_isset_at = isset($alternatives_issued_at[$a->item_code]) ? $alternatives_issued_at[$a->item_code]->sum('qty') : 0;
+            
+            $total_issued = $total_issued_ste + $total_isset_at;
+            $remaining_reserved = $total_reserved - $total_consumed;
+        
+            $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
+            $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
+            $available_qty = $available_qty > 0 ? $available_qty : 0;
+        
             if(count($item_alternatives) < 7){
                 $item_alternatives[] = [
                     'item_code' => $a->item_code,
                     'description' => $a->description,
                     'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
-                    'actual_stocks' => $actual_stocks
+                    'actual_stocks' => $available_qty
                 ];
             }
         }
-
+        
         if(count($item_alternatives) <= 0) {
-            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->where('stock_uom', $item_details->stock_uom)->orderBy('modified', 'desc')->get();
+            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
             foreach($q as $a){
                 $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
-
-                $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
-
+        
+                $total_reserved = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('reserved_qty') : 0;
+                $total_consumed = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('consumed_qty') : 0;
+                
+                $total_issued_ste = isset($alternatives_issued_ste[$a->item_code]) ? $alternatives_issued_ste[$a->item_code]->sum('qty') : 0;
+                $total_isset_at = isset($alternatives_issued_at[$a->item_code]) ? $alternatives_issued_at[$a->item_code]->sum('qty') : 0;
+                
+                $total_issued = $total_issued_ste + $total_isset_at;
+                $remaining_reserved = $total_reserved - $total_consumed;
+        
+                $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
+                $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
+                $available_qty = $available_qty > 0 ? $available_qty : 0;
+        
                 if(count($item_alternatives) < 7){
                     $item_alternatives[] = [
                         'item_code' => $a->item_code,
                         'description' => $a->description,
                         'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
-                        'actual_stocks' => $actual_stocks
+                        'actual_stocks' => $available_qty
                     ];
                 }
             }
