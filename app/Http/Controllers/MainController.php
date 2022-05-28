@@ -1203,7 +1203,8 @@ class MainController extends Controller
             // $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
             $get_img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->first();
             if(!$get_img){
-                $item_img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
+                $item_img = DB::table('tabItem')->where('name', $data->item_code)->first();
+                $item_img = $item_img ? $item_img->item_image_path : null;
             }
 
             $img = $get_img ? $get_img->image_path : $item_img;
