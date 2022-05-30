@@ -1687,7 +1687,7 @@
 							type: 'GET',
 							url: '/get_available_qty/' + data.item_code + '/' + data.warehouse,
 							success: function(response){
-								var available_qty = parseInt(response) + (data.reserve_qty - data.consumed_qty);
+								var available_qty = parseInt(response); // + (data.reserve_qty - data.consumed_qty);
 								var badge_color = (available_qty > 0) ? 'badge-success' : 'badge-danger';
 								$('#available-qty-e-text').text(available_qty).parent().removeClass('badge-danger badge-success').addClass(badge_color);
 								$('#available-qty-e').val(available_qty);
