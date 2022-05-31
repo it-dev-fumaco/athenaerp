@@ -1694,6 +1694,12 @@
 							}
 						});
 
+						var now = new Date("{{ Carbon\Carbon::now()->format('Y-m-d') }}");
+						var date = new Date(data.valid_until);
+						var date_difference = date.getTime() - now.getTime();
+						var validity_in_days = date_difference > 0 ? date_difference / (1000 * 60 * 60 * 24) : 0;
+						validity_in_days = Math.floor(validity_in_days) > 0 ? Math.floor(validity_in_days) : 0;
+						
 						$('#stock-reservation-id-e').val(data.name);
 						$('#warehouse-e').val(data.warehouse);
 						$('#item-code-e').val(data.item_code);
@@ -1705,6 +1711,7 @@
 						$('#reserve-qty-e').val(data.reserve_qty);
 						$('#status-e').val(data.status);
 						$('#date-valid-until-e').val(data.valid_until);
+						$('#validity-e').val(validity_in_days);
 
 						$('#edit-stock-reservation-modal').modal('show');
 					}
