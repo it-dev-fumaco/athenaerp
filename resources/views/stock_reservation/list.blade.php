@@ -29,6 +29,9 @@
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
             $attr_cancelled = ($row->status == 'Cancelled') ? 'disabled' : '';
+
+            $reserved_qty = (floor($row->reserve_qty) != $row->reserve_qty * 1) ? number_format($row->reserve_qty, 4) : $row->reserve_qty * 1;
+            $consumed_qty = (floor($row->consumed_qty) != $row->consumed_qty * 1) ? number_format($row->consumed_qty, 4) : $row->consumed_qty * 1;
         @endphp
         <tr>
             <td class="text-center align-middle p-1">
@@ -46,17 +49,17 @@
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
                 <center><span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row->status }}</span></center><br/>
-                <span><b>Reserved Qty:</b> {{ number_format($row->reserve_qty).' '.$row->stock_uom }}</span><br>
-                <span><b>Issued Qty:</b> {{ number_format($row->consumed_qty).' '.$row->stock_uom }}</span><br>
+                <span><b>Reserved Qty:</b> {{ ($reserved_qty).' '.$row->stock_uom }}</span><br>
+                <span><b>Issued Qty:</b> {{ ($consumed_qty).' '.$row->stock_uom }}</span><br>
                 <span><b>Warehouse:</b> {{ $row->warehouse }}</span><br>
                 <span><b>Created by:</b> {{ $row->created_by }}</span><br>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ number_format($row->reserve_qty) }}</span>
+                <span class="font-weight-bold">{{ ($reserved_qty) }}</span>
                 <small>{{ $row->stock_uom }}</small>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ number_format($row->consumed_qty) }}</span>
+                <span class="font-weight-bold">{{ ($consumed_qty) }}</span>
                 <small>{{ $row->stock_uom }}</small>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row->warehouse }}</td>
@@ -112,6 +115,9 @@
             }
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+
+            $reserved_qty = (floor($row1->reserve_qty) != $row1->reserve_qty * 1) ? number_format($row1->reserve_qty, 4) : $row1->reserve_qty * 1;
+            $consumed_qty = (floor($row1->consumed_qty) != $row1->consumed_qty * 1) ? number_format($row1->consumed_qty, 4) : $row1->consumed_qty * 1;
         @endphp
         <tr>
             <td class="text-center align-middle p-1">
@@ -129,18 +135,18 @@
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
                 <center><span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row1->status }}</span></center><br/>
-                <span><b>Reserved Qty:</b> {{ number_format($row1->reserve_qty).' '.$row1->stock_uom }}</span><br>
-                <span><b>Issued Qty:</b> {{ number_format($row1->consumed_qty).' '.$row1->stock_uom }}</span><br>
+                <span><b>Reserved Qty:</b> {{ ($reserved_qty).' '.$row1->stock_uom }}</span><br>
+                <span><b>Issued Qty:</b> {{ ($consumed_qty).' '.$row1->stock_uom }}</span><br>
                 <span><b>Warehouse:</b> {{ $row1->warehouse }}</span><br>
                 <span><b>Branch:</b> {{ $row1->consignment_warehouse }}</span><br>
                 <span><b>Created by:</b> {{ $row1->created_by }}</span>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ number_format($row1->reserve_qty) }}</span>
+                <span class="font-weight-bold">{{ ($reserved_qty) }}</span>
                 <small>{{ $row1->stock_uom }}</small>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ number_format($row1->consumed_qty) }}</span>
+                <span class="font-weight-bold">{{ ($consumed_qty) }}</span>
                 <small>{{ $row1->stock_uom }}</small>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row1->warehouse }}</td>
@@ -197,6 +203,9 @@
             }
             
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+
+            $reserved_qty = (floor($row2->reserve_qty) != $row2->reserve_qty * 1) ? number_format($row2->reserve_qty, 4) : $row2->reserve_qty * 1;
+            $consumed_qty = (floor($row2->consumed_qty) != $row2->consumed_qty * 1) ? number_format($row2->consumed_qty, 4) : $row2->consumed_qty * 1;
         @endphp
         <tr>
             <td class="text-center align-middle p-1">
@@ -214,19 +223,19 @@
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
                 <center><span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row2->status }}</span></center><br/>
-                <span><b>Reserved Qty:</b> {{ number_format($row2->reserve_qty).' '.$row2->stock_uom }}</span><br>
-                <span><b>Issued Qty:</b> {{ number_format($row2->consumed_qty).' '.$row2->stock_uom }}</span><br>
+                <span><b>Reserved Qty:</b> {{ ($reserved_qty).' '.$row2->stock_uom }}</span><br>
+                <span><b>Issued Qty:</b> {{ ($consumed_qty).' '.$row2->stock_uom }}</span><br>
                 <span><b>Warehouse:</b> {{ $row2->warehouse }}</span><br>
                 <span><b>Sales Person:</b> {{ $row2->sales_person }}</span><br>
                 <span><b>Validity:</b> {{ ($row2->valid_until) ? $row2->valid_until : '-' }}</span><br>
                 <span><b>Created by:</b> {{ $row2->created_by }}</span>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ number_format($row2->reserve_qty) }}</span>
+                <span class="font-weight-bold">{{ ($reserved_qty) }}</span>
                 <small>{{ $row2->stock_uom }}</small>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ number_format($row2->consumed_qty) }}</span>
+                <span class="font-weight-bold">{{ ($consumed_qty) }}</span>
                 <small>{{ $row2->stock_uom }}</small>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row2->warehouse }}</td>
