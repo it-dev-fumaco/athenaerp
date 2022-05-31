@@ -1200,16 +1200,13 @@ class MainController extends Controller
                 ->where('po.production_order', $id)
                 ->select('po.*')->first();
 
-            $item_img = null;
-            // $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
-            $get_img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->first();
-            if(!$get_img){
-                $item_img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
+            $img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+            if(!$img){
+                $img = DB::table('tabItem')->where('name', $data->item_code)->pluck('item_image_path')->first();
+                $img = $img ? $img : null;
             }
-
-            $img = $get_img ? $get_img->image_path : $item_img;
         
-            $q = [];
+            // $q = [];
             $q = [
                 'production_order' => $data->production_order,
                 'fg_warehouse' => $data->fg_warehouse,
@@ -1315,14 +1312,11 @@ class MainController extends Controller
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
-        // $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
-        $item_img = null;
-        $get_img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
-        if(!$get_img){
-            $item_img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+        if(!$img){
+            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
+            $img = $img ? $img : null;
         }
-
-        $img = $get_img ? $get_img->image_path : $item_img;
 
         $available_qty = $this->get_available_qty($q->item_code, $q->s_warehouse);
     
@@ -1441,14 +1435,12 @@ class MainController extends Controller
         }
 
         $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
-
-        $item_img = null;
-        $get_img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
-        if(!$get_img){
-            $item_img = $item_details->item_image_path;
+        
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+        if(!$img){
+            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
+            $img = $img ? $img : null;
         }
-
-        $img = $get_img ? $get_img->image_path : $item_img;
         
         $is_bundle = false;
         if(!$item_details->is_stock_item){
@@ -3807,7 +3799,7 @@ class MainController extends Controller
                     $item_image_path = $item_image_path->image_path;
                 }else{
                     $item_image_path = DB::table('tabItem')->where('name', $a->item_code)->first();
-                    $item_image = $item_image_path->item_image_path;
+                    $item_image = $item_image_path ? $item_image_path->item_image_path : null;
                 }
 
 
@@ -4304,8 +4296,11 @@ class MainController extends Controller
             ->where('dr.is_return', 1)->where('dr.docstatus', 0)->where('dri.name', $id)
             ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner')->first();
 
-        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
-        $img = ($img) ? $img->image_path : null;
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+        if(!$img){
+            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
+            $img = $img ? $img : null;
+        }
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
