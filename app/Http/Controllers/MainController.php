@@ -1203,7 +1203,7 @@ class MainController extends Controller
             $img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
             if(!$img){
                 $img = DB::table('tabItem')->where('name', $data->item_code)->pluck('item_image_path')->first();
-                $img = $img ? $img : null;
+                $img = $img ? $img : null
             }
         
             // $q = [];
