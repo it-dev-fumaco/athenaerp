@@ -3011,7 +3011,10 @@ class MainController extends Controller
 
                 $stock_ledger_entry = array_merge($s_data, $t_data);
 
-                DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+                $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
+                if (!$existing) {
+                    DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+                }
             } else {
                 $stock_ledger_entry = [];
                 foreach ($stock_entry_detail as $row) {
@@ -3059,8 +3062,11 @@ class MainController extends Controller
                         'posting_date' => $now->format('Y-m-d'),
                     ];
                 }
-    
-                DB::table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+
+                $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
+                if (!$existing) {
+                    DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+                }
             }
 
             return ['success' => true, 'message' => 'Stock ledger entries created.'];
