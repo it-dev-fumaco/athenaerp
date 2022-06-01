@@ -1012,14 +1012,14 @@ class MainController extends Controller
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $allowed_warehouses)->whereNotin('transfer_as', ['Consignment', 'Sample Item', 'For Return'])
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
 
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
             ->whereIn('t_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['For Return', 'Internal Transfer'])
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as')
+            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")->union($q1)->get();
 
         $item_codes = array_values(array_unique(array_column($q->toArray(), 'item_code')));
@@ -1100,6 +1100,7 @@ class MainController extends Controller
 
             $list[] = [
                 'customer' => $customer,
+                'work_order' => $d->work_order,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
@@ -1120,7 +1121,7 @@ class MainController extends Controller
                 'transaction_date' => Carbon::parse($d->creation),
             ];
         }
-        
+
         return response()->json(['records' => $list]);
     }
 
@@ -1199,17 +1200,13 @@ class MainController extends Controller
                 ->where('po.production_order', $id)
                 ->select('po.*')->first();
 
-            $item_img = null;
-            // $img = DB::table('tabItem')->where('name', $data->item_code)->first()->item_image_path;
-            $get_img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->first();
-            if(!$get_img){
-                $item_img = DB::table('tabItem')->where('name', $data->item_code)->first();
-                $item_img = $item_img ? $item_img->item_image_path : null;
+            $img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+            if(!$img){
+                $img = DB::table('tabItem')->where('name', $data->item_code)->pluck('item_image_path')->first();
+                $img = $img ? $img : null;
             }
-
-            $img = $get_img ? $get_img->image_path : $item_img;
         
-            $q = [];
+            // $q = [];
             $q = [
                 'production_order' => $data->production_order,
                 'fg_warehouse' => $data->fg_warehouse,
@@ -1315,14 +1312,11 @@ class MainController extends Controller
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
-        // $img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
-        $item_img = null;
-        $get_img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
-        if(!$get_img){
-            $item_img = DB::table('tabItem')->where('name', $q->item_code)->first()->item_image_path;
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+        if(!$img){
+            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
+            $img = $img ? $img : null;
         }
-
-        $img = $get_img ? $get_img->image_path : $item_img;
 
         $available_qty = $this->get_available_qty($q->item_code, $q->s_warehouse);
     
@@ -1441,14 +1435,12 @@ class MainController extends Controller
         }
 
         $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
-
-        $item_img = null;
-        $get_img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
-        if(!$get_img){
-            $item_img = $item_details->item_image_path;
+        
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+        if(!$img){
+            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
+            $img = $img ? $img : null;
         }
-
-        $img = $get_img ? $get_img->image_path : $item_img;
         
         $is_bundle = false;
         if(!$item_details->is_stock_item){
@@ -1557,7 +1549,7 @@ class MainController extends Controller
                 return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
             }
 
-            if($request->qty > $steDetails->qty){
+            if($steDetails->purpose != 'Material Transfer for Manufacture' && $request->qty > $steDetails->qty){
                 return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
             }
 
@@ -1569,10 +1561,17 @@ class MainController extends Controller
                 }
             }
 
-            $reserved_qty = $this->get_reserved_qty($steDetails->item_code, $steDetails->s_warehouse);
-            if($request->qty > $reserved_qty && $request->deduct_reserve == 1){
-                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><
-                br><br>Available reserved qty is <b>' . $reserved_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
+            $sales_person = DB::table('tabSales Order')->where('name', $steDetails->sales_order_no)->pluck('sales_person')->first();
+
+            $reserved_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
+
+            $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
+            
+            $remaining_reserved = $reserved_qty - $consumed_qty;
+            $remaining_reserved = $remaining_reserved > 0 ? $remaining_reserved : 0;
+
+            if($request->qty > $remaining_reserved && $request->deduct_reserve == 1){ // For deduct from reserved, if requested qty is more than the reserved qty
+                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.']);
             }
 
             $status = $steDetails->status;
@@ -2378,34 +2377,86 @@ class MainController extends Controller
         $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
         // get item alternatives based on parent item code
         $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+        $alternative_item_codes = collect($q)->map(function($q){
+            return $q->name;
+        });
+        
+        // get actual stock qty of all item alternatives
+        $actual_stocks_query = DB::table('tabBin')->whereIn('item_code', $alternative_item_codes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
+        $actual_stocks = collect($actual_stocks_query)->groupBy('item_code');
+        
+        // get total reserved and consumed qty of all item alternatives
+        $stock_reserves_query = StockReservation::whereIn('item_code', $alternative_item_codes)->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, item_code')->groupBy('item_code')->get();
+        $alternative_reserves = collect($stock_reserves_query)->groupBy('item_code');
+        
+        // get draft issued ste of all item alternatives
+        $ste_issued_query = DB::table('tabStock Entry Detail')->where('docstatus', 0)->whereIn('item_code', $alternative_item_codes)->where('status', 'Issued')->selectRaw('SUM(qty) as qty, item_code')->groupBy('item_code')->get();
+        $alternatives_issued_ste = collect($ste_issued_query)->groupBy('item_code');
+        
+        // get draft issued packing slip/drs of all item alternatives
+        $at_issued_query = DB::table('tabAthena Transactions as at')
+            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+            ->where('psi.status', 'Issued')
+            ->whereIn('at.item_code', $alternative_item_codes)
+            ->whereRaw('psi.item_code = at.item_code')
+            ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')->groupBy('at.item_code')
+            ->get();
+        $alternatives_issued_at = collect($at_issued_query)->groupBy('item_code');
+        
         foreach($q as $a){
             $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
-
-            $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
-
+            
+            $total_reserved = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('reserved_qty') : 0;
+            $total_consumed = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('consumed_qty') : 0;
+        
+            $total_issued_ste = isset($alternatives_issued_ste[$a->item_code]) ? $alternatives_issued_ste[$a->item_code]->sum('qty') : 0;
+            $total_isset_at = isset($alternatives_issued_at[$a->item_code]) ? $alternatives_issued_at[$a->item_code]->sum('qty') : 0;
+            
+            $total_issued = $total_issued_ste + $total_isset_at;
+            $remaining_reserved = $total_reserved - $total_consumed;
+        
+            $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
+            $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
+            $available_qty = $available_qty > 0 ? $available_qty : 0;
+        
             if(count($item_alternatives) < 7){
                 $item_alternatives[] = [
                     'item_code' => $a->item_code,
                     'description' => $a->description,
                     'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
-                    'actual_stocks' => $actual_stocks
+                    'actual_stocks' => $available_qty
                 ];
             }
         }
-
+        
         if(count($item_alternatives) <= 0) {
-            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->where('stock_uom', $item_details->stock_uom)->orderBy('modified', 'desc')->get();
+            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
             foreach($q as $a){
                 $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
-
-                $actual_stocks = DB::table('tabBin')->where('item_code', $a->item_code)->sum('actual_qty');
-
+        
+                $total_reserved = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('reserved_qty') : 0;
+                $total_consumed = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('consumed_qty') : 0;
+                
+                $total_issued_ste = isset($alternatives_issued_ste[$a->item_code]) ? $alternatives_issued_ste[$a->item_code]->sum('qty') : 0;
+                $total_isset_at = isset($alternatives_issued_at[$a->item_code]) ? $alternatives_issued_at[$a->item_code]->sum('qty') : 0;
+                
+                $total_issued = $total_issued_ste + $total_isset_at;
+                $remaining_reserved = $total_reserved - $total_consumed;
+        
+                $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
+                $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
+                $available_qty = $available_qty > 0 ? $available_qty : 0;
+        
                 if(count($item_alternatives) < 7){
                     $item_alternatives[] = [
                         'item_code' => $a->item_code,
                         'description' => $a->description,
                         'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
-                        'actual_stocks' => $actual_stocks
+                        'actual_stocks' => $available_qty
                     ];
                 }
             }
@@ -2960,7 +3011,10 @@ class MainController extends Controller
 
                 $stock_ledger_entry = array_merge($s_data, $t_data);
 
-                DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+                $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
+                if (!$existing) {
+                    DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+                }
             } else {
                 $stock_ledger_entry = [];
                 foreach ($stock_entry_detail as $row) {
@@ -3008,8 +3062,11 @@ class MainController extends Controller
                         'posting_date' => $now->format('Y-m-d'),
                     ];
                 }
-    
-                DB::table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+
+                $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
+                if (!$existing) {
+                    DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+                }
             }
 
             return ['success' => true, 'message' => 'Stock ledger entries created.'];
@@ -3746,7 +3803,7 @@ class MainController extends Controller
                     $item_image_path = $item_image_path->image_path;
                 }else{
                     $item_image_path = DB::table('tabItem')->where('name', $a->item_code)->first();
-                    $item_image = $item_image_path->item_image_path;
+                    $item_image = $item_image_path ? $item_image_path->item_image_path : null;
                 }
 
 
@@ -4243,8 +4300,11 @@ class MainController extends Controller
             ->where('dr.is_return', 1)->where('dr.docstatus', 0)->where('dri.name', $id)
             ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner')->first();
 
-        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->first();
-        $img = ($img) ? $img->image_path : null;
+        $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
+        if(!$img){
+            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
+            $img = $img ? $img : null;
+        }
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 

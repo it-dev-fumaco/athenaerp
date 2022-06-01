@@ -1687,13 +1687,19 @@
 							type: 'GET',
 							url: '/get_available_qty/' + data.item_code + '/' + data.warehouse,
 							success: function(response){
-								var available_qty = parseInt(response) + (data.reserve_qty - data.consumed_qty);
+								var available_qty = parseInt(response); // + (data.reserve_qty - data.consumed_qty);
 								var badge_color = (available_qty > 0) ? 'badge-success' : 'badge-danger';
 								$('#available-qty-e-text').text(available_qty).parent().removeClass('badge-danger badge-success').addClass(badge_color);
 								$('#available-qty-e').val(available_qty);
 							}
 						});
 
+						var now = new Date("{{ Carbon\Carbon::now()->format('Y-m-d') }}");
+						var date = new Date(data.valid_until);
+						var date_difference = date.getTime() - now.getTime();
+						var validity_in_days = date_difference > 0 ? date_difference / (1000 * 60 * 60 * 24) : 0;
+						validity_in_days = Math.floor(validity_in_days) > 0 ? Math.floor(validity_in_days) : 0;
+						
 						$('#stock-reservation-id-e').val(data.name);
 						$('#warehouse-e').val(data.warehouse);
 						$('#item-code-e').val(data.item_code);
@@ -1705,6 +1711,7 @@
 						$('#reserve-qty-e').val(data.reserve_qty);
 						$('#status-e').val(data.status);
 						$('#date-valid-until-e').val(data.valid_until);
+						$('#validity-e').val(validity_in_days);
 
 						$('#edit-stock-reservation-modal').modal('show');
 					}
@@ -1791,77 +1798,6 @@
 				view_item_details(item_code);
 			});
 
-			// $(document).on('click', '#warehouse-location-btn', function(e){
-			// 	var item_code = $(this).data('item-code');
-
-			// 	$.ajax({
-			// 		type: 'GET',
-			// 		url: '/form_warehouse_location/' + item_code,
-			// 		success: function(response){
-			// 			$('#warehouse-location').html(response);
-			// 			$('#warehouseLocationModal').modal('show');
-			// 		}
-			// 	});
-			// });
-
-			// function view_item_details(item_code){
-			// 	$('#item-preloader').removeClass('d-none');
-			// 	$('#item-detail-content').empty();
-			// 	$.ajax({
-			// 		type: 'GET',
-			// 		url: '/get_item_details/' + item_code,
-			// 		success: function(response){
-			// 			$('#item-detail-content').html(response);
-			// 			$('#item-preloader').addClass('d-none');
-			// 			$('#view-item-details-modal').modal('show');
-			// 		}
-			// 	});
-
-			// 	$("#ath_dates").daterangepicker({
-			// 		placeholder: 'Select Date Range',
-			// 		ranges: {
-			// 			'Today': [moment(), moment()],
-			// 			'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-			// 			'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-			// 			'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-			// 			'This Month': [moment().startOf('month'), moment().endOf('month')],
-			// 			'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-			// 		},
-			// 		locale: {
-			// 			// format: 'YYYY-MM-DD',
-			// 			format: 'YYYY-MMM-DD',
-			// 			separator: " to "
-            // 		},
-			// 		startDate: moment().subtract(30, 'days'), endDate: moment(),
-			// 		// startDate: '2018-06-01', endDate: moment(),
-			// 	});
-			// 	$("#ath_dates").val('');
-			// 	$("#ath_dates").attr("placeholder","Select Date Range");
-
-			// 	$("#erp_dates").daterangepicker({
-			// 		ranges: {
-			// 			'Today': [moment(), moment()],
-			// 			'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-			// 			'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-			// 			'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-			// 			'This Month': [moment().startOf('month'), moment().endOf('month')],
-			// 			'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-			// 		},
-			// 		locale: {
-			// 			format: 'YYYY-MMM-DD',
-			// 			separator: " to "
-            // 		},
-			// 		startDate: moment().subtract(30, 'days'), endDate: moment(),
-			// 	});
-
-			// 	$("#erp_dates").val('');
-			// 	$("#erp_dates").attr("placeholder","Select Date Range");
-
-			// 	get_athena_transactions(item_code);
-			// 	get_stock_ledger(item_code);
-			// 	get_stock_reservation(item_code);
-			// }
-
 			$(document).on('submit', '.cancel-modal form', function(e){
 				e.preventDefault();
 
@@ -1904,16 +1840,6 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				
 			}
 
-			// function get_stock_reservation(item_code, page){
-			// 	$.ajax({
-			// 		type: 'GET',
-			// 		url: '/get_stock_reservation/' + item_code + '?page=' + page,
-			// 		success: function(response){
-			// 			$('#stock-reservation-table').html(response);
-			// 		}
-			// 	});
-			// }
-
 			$(document).on('click', '#low-level-stocks-pagination a', function(event){
 				event.preventDefault();
 				var page = $(this).attr('href').split('page=')[1];
@@ -1930,38 +1856,23 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation(item_code, page);
+				get_stock_reservation(page);
 			});
 
 			$(document).on('click', '#stock-reservations-pagination-2 a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation(item_code, page);
+				get_stock_reservation(page);
 			});
 
 			$(document).on('click', '#stock-reservations-pagination-3 a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation(item_code, page);
+				get_stock_reservation(page);
 			});
-
-	// 		function get_stock_ledger(item_code, page){
-	// 			if(item_code) {
-	// var erp_user = $('#erp-warehouse-user-filter').val();
-	// 			var erp_wh = $('#erp-warehouse-filter').val();
-	// 			var erp_d = $('#erp_dates').val();
-	// 			$.ajax({
-	// 				type: 'GET',
-	// 				url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh + '&erp_d=' + erp_d,
-	// 				success: function(response){
-	// 					$('#stock-ledger-table').html(response);
-	// 				}
-	// 			});
-	// 			}
-	// 		}
-
+			
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
 
@@ -1989,8 +1900,8 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
 							// "<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
 							"<picture>" +
-							"<source srcset=\"" + image_src_webp + "\" type=\"image/webp\" class=\"img-thumbnail\">" +
-							"<source srcset=\"" + image_src + "\" type=\"image/jpeg\" class=\"img-thumbnail\">" +
+							"<source srcset=\"" + image_src_webp + "\" type=\"image/webp\">" +
+							"<source srcset=\"" + image_src + "\" type=\"image/jpeg\">" +
 							"<img src=\"" + image_src + "\" class=\"img-thumbnail\">" +
 							"</picture>" +
 							"<span class=\"add-fav remove\">&times;</span>" +

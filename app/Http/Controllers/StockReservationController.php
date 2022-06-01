@@ -182,7 +182,14 @@ class StockReservationController extends Controller
       DB::connection('mysql')->beginTransaction();
       try {
          if($request->reserve_qty <= 0) {
-            return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than or equal to 0.']);
+            return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than 0.']);
+         }
+
+         // get total partially issued qty
+         $partially_issued_qty = DB::table('tabStock Reservation')->where('item_code', $request->item_code)->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Partially Issued')->where('sales_person', $request->sales_person)->sum('consumed_qty');
+
+         if($partially_issued_qty > 0 && $partially_issued_qty >= $request->reserve_qty){
+            return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve qty must be greater than the partially issued qty for this reservation.']);
          }
 
          $bin_details = DB::connection('mysql')->table('tabBin')
