@@ -1561,19 +1561,18 @@ class MainController extends Controller
                 }
             }
 
-            // // $reserved_qty = $this->get_reserved_qty($steDetails->item_code, $steDetails->s_warehouse);
-            // $sales_person = DB::table('tabSales Order')->where('name', $steDetails->sales_order_no)->pluck('sales_person')->first();
+            $sales_person = DB::table('tabSales Order')->where('name', $steDetails->sales_order_no)->pluck('sales_person')->first();
 
-            // $reserved_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
+            $reserved_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
 
-            // $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
+            $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
             
-            // $remaining_reserved = $reserved_qty - $consumed_qty;
-            // $remaining_reserved = $remaining_reserved > 0 ? $remaining_reserved : 0;
-            // if($request->qty > $remaining_reserved && $request->deduct_reserve == 1){
-            //     return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><
-            //     br><br>Available reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.']);
-            // }
+            $remaining_reserved = $reserved_qty - $consumed_qty;
+            $remaining_reserved = $remaining_reserved > 0 ? $remaining_reserved : 0;
+
+            if($request->qty > $remaining_reserved && $request->deduct_reserve == 1){ // For deduct from reserved, if requested qty is more than the reserved qty
+                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.']);
+            }
 
             $status = $steDetails->status;
             if($steDetails->purpose == 'Material Receipt' && $steDetails->receive_as == 'Sales Return') {
