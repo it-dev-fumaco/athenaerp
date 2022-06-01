@@ -133,4 +133,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/update_rate', 'MainController@updateRate');
 
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
+    Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
 });

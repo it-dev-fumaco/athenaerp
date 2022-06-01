@@ -21,6 +21,8 @@
 	<!-- iCheck for checkboxes and radio inputs -->
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
 	<link rel="stylesheet" type="text/css" href="{{ asset('css/daterangepicker.css') }}" />
+	<!-- fullCalendar -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/fullcalendar/main.css') }}">
 	<!-- datepicker -->
 	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
 	<style>

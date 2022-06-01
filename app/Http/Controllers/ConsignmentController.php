@@ -10,7 +10,10 @@ use DB;
 class ConsignmentController extends Controller
 {
     public function viewCalendarMenu($branch){
+        return view('consignment.calendar_menu', compact('branch'));
+    }
 
-        return view('consignment.calendar_menu');
+    public function viewProductSoldForm($branch, $transaction_date) {
+
     }
 }
