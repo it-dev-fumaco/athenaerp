@@ -1900,8 +1900,8 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
 							// "<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
 							"<picture>" +
-							"<source srcset=\"" + image_src_webp + "\" type=\"image/webp\" class=\"img-thumbnail\">" +
-							"<source srcset=\"" + image_src + "\" type=\"image/jpeg\" class=\"img-thumbnail\">" +
+							"<source srcset=\"" + image_src_webp + "\" type=\"image/webp\">" +
+							"<source srcset=\"" + image_src + "\" type=\"image/jpeg\">" +
 							"<img src=\"" + image_src + "\" class=\"img-thumbnail\">" +
 							"</picture>" +
 							"<span class=\"add-fav remove\">&times;</span>" +
