@@ -44,7 +44,7 @@ class MainController extends Controller
             $years = array_unique($years->toArray());
 
             if (count($assigned_consignment_store) > 0) {
-                return view('index_promodiser', compact('assigned_consignment_store', 'years'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'years'));
             }
 
             return redirect('/search_results');
@@ -53,34 +53,34 @@ class MainController extends Controller
         return view('index');
     }
 
-    public function consignmentItemStock($warehouse, Request $request) {
-        $search_string = $request->q;
-        $consignment_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)
-            ->when($search_string, function($q) use ($search_string){
-                return $q->where('bin.item_code', 'LIKE', "%".$search_string."%")->orWhere('item.description', 'LIKE', "%".$search_string."%");
-            })
-            ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification', 'item.item_group')->orderBy('bin.actual_qty', 'desc')->paginate(20);
+    // public function consignmentItemStock($warehouse, Request $request) {
+    //     $search_string = $request->q;
+    //     $consignment_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)
+    //         ->when($search_string, function($q) use ($search_string){
+    //             return $q->where('bin.item_code', 'LIKE', "%".$search_string."%")->orWhere('item.description', 'LIKE', "%".$search_string."%");
+    //         })
+    //         ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification', 'item.item_group')->orderBy('bin.actual_qty', 'desc')->paginate(20);
 
-        $total_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)->sum('bin.actual_qty');
+    //     $total_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)->sum('bin.actual_qty');
 
-        $item_codes = array_column($consignment_stocks->items(), 'item_code');
+    //     $item_codes = array_column($consignment_stocks->items(), 'item_code');
 
-        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-        $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
+    //     $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+    //     $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
 
-        $price_list_rates = [];
-        $user_pricelist = Auth::user()->price_list;
-        if ($user_pricelist) {
-            $price_list_rates = DB::table('tabItem Price')
-                ->where('price_list', $user_pricelist)->whereIn('item_code', $item_codes)
-                ->select('item_code', 'price_list', 'modified', 'price_list_rate')
-                ->orderBy('modified', 'desc')->get();
-        }
+    //     $price_list_rates = [];
+    //     $user_pricelist = Auth::user()->price_list;
+    //     if ($user_pricelist) {
+    //         $price_list_rates = DB::table('tabItem Price')
+    //             ->where('price_list', $user_pricelist)->whereIn('item_code', $item_codes)
+    //             ->select('item_code', 'price_list', 'modified', 'price_list_rate')
+    //             ->orderBy('modified', 'desc')->get();
+    //     }
 
-        $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
+    //     $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
 
-        return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', 'total_stocks'));
-    }
+    //     return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', 'total_stocks'));
+    // }
 
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
@@ -4994,24 +4994,24 @@ class MainController extends Controller
         }
     }
 
-    public function consignmentSalesReport($warehouse, Request $request) {
-        $year = $request->year ? $request->year : Carbon::now()->format('Y');
-        $query = DB::table('tabSales Order')->where('docstatus', 1)
-            ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
-            ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(base_grand_total) as grand_total')
-            ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();
+    // public function consignmentSalesReport($warehouse, Request $request) {
+    //     $year = $request->year ? $request->year : Carbon::now()->format('Y');
+    //     $query = DB::table('tabSales Order')->where('docstatus', 1)
+    //         ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
+    //         ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(base_grand_total) as grand_total')
+    //         ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();
         
-        $result = [];
-        $month_name = [null, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-        for ($i=1; $i <= 12; $i++) { 
-            $result[$month_name[$i]] = array_key_exists($i, $query) ? $query[$i] : 0;
-        }
+    //     $result = [];
+    //     $month_name = [null, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+    //     for ($i=1; $i <= 12; $i++) { 
+    //         $result[$month_name[$i]] = array_key_exists($i, $query) ? $query[$i] : 0;
+    //     }
 
-        return [
-            'labels' => collect($result)->keys(),
-            'data' => array_values($result)
-        ];
-    }
+    //     return [
+    //         'labels' => collect($result)->keys(),
+    //         'data' => array_values($result)
+    //     ];
+    // }
 
     public function purchaseRateHistory($item_code) {
         $item_valuation_rates = [];

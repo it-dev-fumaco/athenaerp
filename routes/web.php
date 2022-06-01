@@ -122,8 +122,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/create_material_request/{id}', 'MainController@create_material_request');
     Route::get('/consignment_warehouses', 'MainController@consignment_warehouses');
     Route::post('/create_feedback', 'MainController@create_feedback');
-    Route::get('/consignment_stock/{warehouse}', 'MainController@consignmentItemStock');
-    Route::get('/consignment_sales/{warehouse}', 'MainController@consignmentSalesReport');
+    // Route::get('/consignment_stock/{warehouse}', 'MainController@consignmentItemStock');
+    // Route::get('/consignment_sales/{warehouse}', 'MainController@consignmentSalesReport');
     Route::get('/purchase_rate_history/{item_code}', 'MainController@purchaseRateHistory');
     Route::post('/update_item_price/{item_code}', 'MainController@updateItemCost');
     Route::get('/search_item_cost', 'MainController@itemCostList');
@@ -131,4 +131,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_parent_item', 'MainController@getParentItems');
     Route::get('/view_variants/{parent}', 'MainController@itemVariants');
     Route::post('/update_rate', 'MainController@updateRate');
+
+    Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
 });
