@@ -38,6 +38,7 @@ class ConsignmentController extends Controller
         try {
             $now = Carbon::now();
             $result = [];
+            $no_of_items_updated = 0;
             foreach ($data['item'] as $item_code => $row) {
                 $existing = DB::table('tabConsignment Product Sold')
                     ->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])
@@ -50,10 +51,13 @@ class ConsignmentController extends Controller
                         'qty' => $row['qty'],
                     ];
 
+                    $no_of_items_updated++;
+
                     DB::table('tabConsignment Product Sold')->where('name', $existing->name)->update($values);
                 } else {
                     // for insert
                     if ((float)$row['qty'] > 0) {
+                        $no_of_items_updated++;
                         $result[] = [
                             'name' => uniqid(),
                             'creation' => $now->toDateTimeString(),
@@ -80,9 +84,14 @@ class ConsignmentController extends Controller
                 DB::table('tabConsignment Product Sold')->insert($result);
             }
 
-            // DB::commit();
+            DB::commit();
 
-            return redirect('/product_sold_success')->with(['success' => 'Record successfully updated']);
+            return redirect('/product_sold_success')->with([
+                'success' => 'Record successfully updated',
+                'no_of_items_updated' => $no_of_items_updated,
+                'branch' => $data['branch_warehouse'],
+                'transaction_date' => $data['transaction_date']
+            ]);
         } catch (Exception $e) {
             DB::rollback();
 
