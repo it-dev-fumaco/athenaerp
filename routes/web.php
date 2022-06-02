@@ -134,4 +134,6 @@ Route::group(['middleware' => 'auth'], function(){
 
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
     Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
+    Route::post('/submit_product_sold_form', 'ConsignmentController@submitProductSoldForm');
+    Route::get('/product_sold_success', 'ConsignmentController@productSoldSuccess');
 });
