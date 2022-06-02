@@ -53,6 +53,81 @@ class MainController extends Controller
         return view('index');
     }
 
+    public function beginningInventory(){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
+        return view('consignment.beginning_inventory', compact('assigned_consignment_store'));
+    }
+
+    public function beginningInvItems($branch){
+        $items = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $branch)->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification', 'item.item_group')->orderBy('bin.actual_qty', 'desc')->get();
+
+        $inv_record = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereMonth('transaction_date', Carbon::now()->format('m'))->whereYear('transaction_date', Carbon::now()->format('Y'))->select('item_code', 'opening_stock', 'stocks_displayed', 'price')->get();
+
+        $inventory = collect($inv_record)->groupBy('item_code');
+
+        return view('consignment.beginning_inv_items', compact('items', 'branch', 'inventory'));
+    }
+
+    public function saveBeginningInventory(Request $request){
+        DB::beginTransaction();
+        try {
+            $inv_record = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $request->branch)->whereMonth('transaction_date', Carbon::now()->format('m'))->whereYear('transaction_date', Carbon::now()->format('Y'))->get();
+
+            $opening_stock = $request->opening_stock;
+            $price = $request->price;
+            $item_codes = $request->item_code;
+    
+            $now = Carbon::now()->toDateTimeString();
+    
+            $items = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'item_name', 'stock_uom')->get();
+            $item = collect($items)->groupBy('name');
+
+            $parent = $inv_record ? $inv_record[0]->parent : 'Beginning_Inv_'.Carbon::now()->format('M').'_'.Carbon::now()->format('Y');
+
+            $values = [];
+            foreach($item_codes as $i => $item_code){
+                if($opening_stock[$i] < 0 || $price[$i] < 0){
+                    return redirect()->back()->with('error', 'Cannot enter value below 0');
+                }
+
+                $constant_values = [
+                    'docstatus' => 0,
+                    'idx' => 1,
+                    'item_code' => $item_code,
+                    'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->item_name : null,
+                    'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
+                    'opening_stock' => $opening_stock[$i],
+                    'stocks_displayed' => 0,
+                    'price' => $price[$i],
+                    'status' => 'Draft',
+                ];
+
+                if(!$inv_record){ // Add data if beginning inventory record does not exist
+                    $values['name'] = uniqid();
+                    $values['creation'] = $now;
+                    $values['transaction_date'] = $now;
+                    $values['owner'] = Auth::user()->wh_user;
+                    $values['parent'] = $parent;
+                    $values['branch_warehouse'] = $request->branch;
+
+                    DB::table('tabConsignment Beginning Inventory')->insert($values);
+                }else{ // update data if beginning inventory record exists for the month
+                    $values['modified'] = $now;
+                    $values['modified_by'] = Auth::user()->wh_user;
+
+                    DB::table('tabConsignment Beginning Inventory')->where('parent', $parent)->where('item_code', $item_code)->where('branch_warehouse', $request->branch)->update($values);
+                }
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Inventory Record Saved.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+    }
+
     // public function consignmentItemStock($warehouse, Request $request) {
     //     $search_string = $request->q;
     //     $consignment_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)

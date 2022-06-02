@@ -10,7 +10,12 @@
             <div class="row pt-3">
                 <div class="col-md-12 p-0">
                     <div class="card card-secondary card-outline">
-                        <div class="card-header text-center font-weight-bold">Assigned Consignment Branch</div>
+                        <div class="card-header text-center font-weight-bold">
+                            Assigned Consignment Branch
+                        </div>
+                        <div class="card-header text-right">
+                            <a href="/beginning_inventory" class="btn btn-primary font-responsive float-right">Beginning Inventory</a>
+                        </div>
                         <div class="card-body p-1">
 
                             <table class="table table-bordered" style="font-size: 8pt;">
@@ -22,7 +27,9 @@
                                     @forelse ($assigned_consignment_store as $branch)
                                     <tr>
                                         <td class="text-justify p-2 align-middle">{{ $branch }}</td>
-                                        <td class="text-center p-2"><a href="/view_calendar_menu/{{ $branch }}" class="btn btn-primary btn-xs"><i class="fas fa-search"></i></a></td>
+                                        <td class="text-center p-2">
+                                            <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-primary btn-xs"><i class="fas fa-search"></i></a>
+                                        </td>
                                     </tr> 
                                     @empty
                                     <tr>

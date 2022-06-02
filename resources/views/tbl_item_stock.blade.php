@@ -18,25 +18,17 @@
                 <div class="d-flex row">        
                     <div class="col-3 col-xl-1">
                         @php
-                            $item_image = null;
-                            if (array_key_exists($row->item_code, $item_image_paths)) {
-                                $item_image = $item_image_paths[$row->item_code][0];
-                            }
-                            $img_webp = ($item_image) ? "/img/" . explode('.',$item_image->image_path)[0].'.webp' : "/icon/no_img.webp";
-                            $img = ($item_image) ? "/img/" . $item_image->image_path : "/icon/no_img.png";
+                            $item_image = isset($item_image_paths[$row->item_code]) ? $item_image_paths[$row->item_code][0]->image_path : null;
+                            $img_webp = ($item_image) ? "/img/" . explode('.',$item_image)[0].'.webp' : "/icon/no_img.webp";
+                            $img = ($item_image) ? "/img/" . $item_image : "/icon/no_img.png";
                             $stock_qty = $row->actual_qty * 1;
 
                             $price_list_rate = array_key_exists($row->item_code, $price_list_rates) ? '₱ ' . number_format($price_list_rates[$row->item_code][0]->price_list_rate, 2, '.', ',') : '-';
                         @endphp
                         <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
-                            {{-- <picture>
-                                <source srcset="{{ asset('storage/') . $img_webp }}" type="image/webp" class="w-100">
-                                <source srcset="{{ asset('storage/') . $img }}" class="w-100">
-                                <img src="{{ asset('storage/') . $img }}" alt="{{ str_slug($img, '-') }}" class="w-100">
-                            </picture> --}}
-                            @if(!Storage::disk('public')->exists('/img/'.explode('.', $item_image->image_path)[0].'.webp'))
+                            @if(!Storage::disk('public')->exists('/img/'.explode('.', $item_image)[0].'.webp'))
                                 <img class="w-100" src="{{ asset('storage/') }}{{ $img }}">
-                            @elseif(!Storage::disk('public')->exists('/img/'.$item_image->image_path))
+                            @elseif(!Storage::disk('public')->exists('/img/'.$item_image))
                                 <img class="w-100" src="{{ asset('storage/') }}{{ $img_webp }}">
                             @else
                                 <picture>
@@ -66,7 +58,7 @@
                         </table>
                     </div>
                     <div class="col-12 col-sm-9 col-xl-11">
-                        <span class="font-weight-bold view-item-details" data-item-code="{{ $row->item_code }}" data-item-classification="{{ $row->item_classification }}" style="cursor:pointer;">{{ $row->item_code }}</span>
+                        <span class="font-weight-bold"><a href="/get_item_details/{{ $row->item_code }}" style="color: inherit !important" target="_blank">{{ $row->item_code }}</a></span>
                         <span class="d-inline d-sm-none"><br>{{ $row->item_classification.' - '.$row->item_group }}</span>
                         <span class="d-block">{!! strip_tags($row->description) !!}</span>
                     </div>
