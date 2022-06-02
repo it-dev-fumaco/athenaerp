@@ -122,25 +122,25 @@
 										<div class="card-body p-0">
 											<div class="col-12 mx-auto">
 												<div class="row pt-2">
-													<div class="col-12 col-xl-2 mx-auto general-filter-label text-left text-xl-right">
+													<div class="col-12 col-md-2 mx-auto general-filter-label text-md-right">
 														<label class="font-responsive">Search For:</label>
 													</div>
-													<div class="col-12 col-md-6 col-xl-2 mx-auto">
+													<div class="col-12 col-md-2 mx-auto">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="item-class-filter-parent" style="font-size: 10pt;">
 															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-6 col-xl-2 mx-auto">
+													<div class="col-12 col-md-2 mx-auto">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="warehouse-filter-parent" style="font-size: 10pt;">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-6 col-xl-2 mx-auto">
+													<div class="col-12 col-md-2 mx-auto">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="brand-filter-parent" style="font-size: 10pt;">
 															<select name="brand" id="brand-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-6 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
+													<div class="col-12 col-md-2 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
 														<div class="row">
 															<div class="form-group m-0r col-12 m-0">
 																@php
@@ -156,7 +156,7 @@
 																</label>
 															</div>
 															@if ($promodiser_restriction)
-																<div class="form-group m-0r col-12 d-block d-xl-none m-0">
+																<div class="form-group m-0r col-12 d-block d-md-none m-0">
 																	<label>
 																		<input type="checkbox" class="minimal" id="mobile-promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
 																		
@@ -167,7 +167,7 @@
 														</div>
 													</div>
 													@if ($promodiser_restriction)
-														<div class="col-8 col-xl-2 d-none d-xl-block mx-auto text-center">
+														<div class="col-8 col-md-2 mx-auto d-none d-md-inline text-center">
 															<div class="form-group m-0r">
 																<label>
 																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
