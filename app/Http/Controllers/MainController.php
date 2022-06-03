@@ -91,7 +91,7 @@ class MainController extends Controller
             $sales_report_submission_percentage = count($no_of_submitted_report) > 0 ? (count($no_of_submitted_report) / $duration_in_days) * 100 : 0;
             $sales_report_submission_percentage = round($sales_report_submission_percentage);
 
-            $duration = Carbon::parse($duration_from)->format('F d, Y') . ' - ' . Carbon::parse($duration_to)->format('F d, Y');
+            $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
             if (count($assigned_consignment_store) > 0) {
                 return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage'));

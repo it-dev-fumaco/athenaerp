@@ -13,7 +13,7 @@
                         <div class="info-box-content p-1">
                             <span class="info-box-text" style="font-size: 8pt;">Sales Report Submission</span>
                             <span class="info-box-number">{{ $sales_report_submission_percentage }}%</span>
-                            <span class="progress-description" style="font-size: 7pt;">Duration: {{ $duration }}</span>
+                            <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
                         </div>
                     </div>
                 </div>
