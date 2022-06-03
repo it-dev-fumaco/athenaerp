@@ -14,10 +14,12 @@ class ConsignmentController extends Controller
     }
 
     public function viewProductSoldForm($branch, $transaction_date) {
-        $items = DB::table('tabBin as b')
-            ->join('tabItem as i', 'i.name', 'b.item_code')
+        $items = DB::table('tabConsignment Beginning Inventory as cb')
+            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+            ->join('tabItem as i', 'i.name', 'cbi.item_code')
+            ->where('cb.status', 'Approved')
             ->where('i.disabled', 0)->where('i.is_stock_item', 1)
-            ->where('b.warehouse', $branch)->select('i.item_code', 'i.description')
+            ->where('cb.branch_warehouse', $branch)->select('i.item_code', 'i.description')
             ->orderBy('i.description', 'asc')->get();
 
         $item_codes = collect($items)->pluck('item_code');
@@ -56,27 +58,25 @@ class ConsignmentController extends Controller
                     DB::table('tabConsignment Product Sold')->where('name', $existing->name)->update($values);
                 } else {
                     // for insert
-                    if ((float)$row['qty'] > 0) {
-                        $no_of_items_updated++;
-                        $result[] = [
-                            'name' => uniqid(),
-                            'creation' => $now->toDateTimeString(),
-                            'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'owner' => Auth::user()->wh_user,
-                            'docstatus' => 0,
-                            'parent' => null,
-                            'parentfield' => null,
-                            'parenttype' => null,
-                            'idx' => 0,
-                            'transaction_date' => $data['transaction_date'],
-                            'branch_warehouse' => $data['branch_warehouse'],
-                            'item_code' => $item_code,
-                            'description' => $row['description'],
-                            'qty' => $row['qty'],
-                            'promodiser' => Auth::user()->full_name
-                        ];
-                    }
+                    $no_of_items_updated++;
+                    $result[] = [
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'transaction_date' => $data['transaction_date'],
+                        'branch_warehouse' => $data['branch_warehouse'],
+                        'item_code' => $item_code,
+                        'description' => $row['description'],
+                        'qty' => $row['qty'],
+                        'promodiser' => Auth::user()->full_name
+                    ];
                 }
             }
 

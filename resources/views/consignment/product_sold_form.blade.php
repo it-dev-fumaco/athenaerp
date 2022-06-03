@@ -87,7 +87,7 @@
                                     </tbody>
                                 </table>
                                 <div class="m-3">
-                                    <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> SUBMIT</button>
+                                    <button type="submit" class="btn btn-primary btn-block" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
                             </form>
                         </div>
