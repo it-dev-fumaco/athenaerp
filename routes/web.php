@@ -135,7 +135,10 @@ Route::group(['middleware' => 'auth'], function(){
     // Promodisers
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
     Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
+    Route::post('/submit_product_sold_form', 'ConsignmentController@submitProductSoldForm');
+    Route::get('/product_sold_success', 'ConsignmentController@productSoldSuccess');
     Route::get('/beginning_inventory', 'MainController@beginningInventory');
     Route::get('/beginning_inv_items/{branch}', 'MainController@beginningInvItems');
     Route::post('/save_beginning_inventory', 'MainController@saveBeginningInventory');
+    Route::get('/calendar_data/{branch}', 'ConsignmentController@calendarData');
 });

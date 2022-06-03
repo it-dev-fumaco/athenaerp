@@ -102,4 +102,23 @@ class ConsignmentController extends Controller
     public function productSoldSuccess() {
         return view('consignment.success_page');
     }
+
+    public function calendarData($branch) {
+        $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+            ->select('transaction_date')->groupBy('transaction_date')->get();
+
+        $data = [];
+        foreach ($query as $row) {
+            $data[] = [
+                'title' => '',
+                'start' => $row->transaction_date,
+                'backgroundColor' => '#00a65a', //green
+                'borderColor' => '#00a65a', //green
+                'allDay' => true,
+                'display' => 'background'
+            ];
+        }
+
+        return $data;
+    }
 }
