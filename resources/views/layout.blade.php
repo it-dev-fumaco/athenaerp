@@ -525,6 +525,30 @@
 			</div>
 		</nav>
 		<div class="content-wrapper">
+			@if (Auth::user() && Auth::user()->user_group == 'Promodiser')
+			<div class="row p-0 m-0">
+				<div class="col-md-12 p-2">
+					<div class="btn-group w-100" role="group" aria-label="Button group with nested dropdown">
+						<a href="/" class="btn btn-default" style="width: 33%;">Home</a>
+						<div class="btn-group" role="group" style="width: 33%;">
+							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
+							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
+								<a class="dropdown-item" href="#">Inventory 1</a>
+								<a class="dropdown-item" href="#">Inventory 2</a>
+							</div>
+						</div>
+						<div class="btn-group" role="group" style="width: 33%;">
+							<button id="btnGroupDrop2" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Report</button>
+							<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop2">
+								<a class="dropdown-item" href="#">Report 1</a>
+								<a class="dropdown-item" href="#">Report 2</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			@endif
+			
 			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list', 'import_from_ecommerce', 'beginning_inventory']))
 			<div class="row m-0 pb-0">
 				<div class="col-xl-5 p-3">

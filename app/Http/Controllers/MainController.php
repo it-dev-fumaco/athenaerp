@@ -17,6 +17,8 @@ use File;
 use ZipArchive;
 use \Illuminate\Pagination\Paginator;
 
+use Carbon\CarbonPeriod;
+
 class MainController extends Controller
 {
     public function allowed_parent_warehouses(){
@@ -36,15 +38,63 @@ class MainController extends Controller
         if(Auth::user()->user_group == 'Promodiser'){
             $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
 
-            $transaction_date = DB::table('tabSales Order')->where('docstatus', 1)->pluck('transaction_date');
-            $years = collect($transaction_date)->map(function ($q){
-                return Carbon::parse($q)->format('Y');
+            $currentDateTime = Carbon::now();
+
+            $start_date = Carbon::now()->subMonth();
+            $end_date = Carbon::now()->addMonth();
+
+            $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+
+            $cutoff_1 = 10;
+            $cutoff_2 = 25;
+
+            $date_now = $currentDateTime->format('d-m-Y');
+            
+            $cutoff_period = [];
+            foreach ($period as $date) {
+                $date1 = $date->day($cutoff_1);
+                if ($date1 >= $start_date && $date1 <= $end_date) {
+                    $cutoff_period[] = $date->format('d-m-Y');
+                }
+                $date2 = $date->day($cutoff_2);
+                if ($date2 >= $start_date && $date2 <= $end_date) {
+                    $cutoff_period[] = $date->format('d-m-Y');
+                }
+            }
+
+            $cutoff_period[] = $date_now;
+            // sort array with given user-defined function
+            usort($cutoff_period, function ($time1, $time2) {
+                return strtotime($time1) - strtotime($time2);
             });
 
-            $years = array_unique($years->toArray());
+            $date_now_index = array_search($date_now, $cutoff_period);
+            // set duration from and duration to
+            $duration_from = $cutoff_period[$date_now_index - 1];
+            $duration_to = $cutoff_period[$date_now_index + 1];
+
+            $duration_period = CarbonPeriod::create($duration_from, '1 day' , $duration_to);
+            $no_of_sundays = 0;
+            foreach ($duration_period as $date) {
+                if (strtolower(Carbon::parse($date)->format('l')) == 'sunday') {
+                    $no_of_sundays++;
+                }
+            }
+            // get variables for sales report percentage completion
+            $duration_in_days = Carbon::parse($duration_to)->diffInDays(Carbon::parse($duration_from));
+            // get duration in days except sundays
+            $duration_in_days = $duration_in_days - $no_of_sundays;
+            $no_of_submitted_report = DB::table('tabConsignment Product Sold')
+                ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
+                ->distinct()->pluck('transaction_date');
+
+            $sales_report_submission_percentage = count($no_of_submitted_report) > 0 ? (count($no_of_submitted_report) / $duration_in_days) * 100 : 0;
+            $sales_report_submission_percentage = round($sales_report_submission_percentage);
+
+            $duration = Carbon::parse($duration_from)->format('F d, Y') . ' - ' . Carbon::parse($duration_to)->format('F d, Y');
 
             if (count($assigned_consignment_store) > 0) {
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'years'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage'));
             }
 
             return redirect('/search_results');
