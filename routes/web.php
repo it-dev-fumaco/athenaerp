@@ -132,6 +132,10 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/view_variants/{parent}', 'MainController@itemVariants');
     Route::post('/update_rate', 'MainController@updateRate');
 
+    // Consignment Supervisor
+    Route::get('/beginning_inv_list', 'ConsignmentController@beginningInventoryApproval');
+    Route::post('/approve_beginning_inv/{id}', 'ConsignmentController@approveBeginningInventory');
+
     // Promodisers
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
     Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');

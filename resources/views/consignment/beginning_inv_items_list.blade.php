@@ -24,7 +24,7 @@
                                     <th class="font-responsive text-center d-none d-sm-table-cell">Opening Stock</th>
                                     <th class="font-responsive text-center d-none d-sm-table-cell">Price</th>
                                 </tr>
-                                @foreach ($inventory as $inv)
+                                @forelse ($inventory as $inv)
                                     <tr>
                                         <td class="font-responsive">
                                             {!! '<b>'.$inv->item_code.'</b> - '.$inv->item_description !!}
@@ -44,7 +44,13 @@
                                             ₱ {{ number_format($inv->price * 1, 2) }}
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr>
+                                        <td class="font-responsive text-center" colspan=3>
+                                            No available item(s) / All items for this branch are approved.
+                                        </td>
+                                    </tr>
+                                @endforelse
                             </table>
                         </div>
                     </div>
