@@ -121,4 +121,187 @@ class ConsignmentController extends Controller
 
         return $data;
     }
+
+    public function beginningInventoryList(Request $request){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->get();
+
+        return view('consignment.beginning_inv_list', compact('beginning_inventory'));
+    }
+
+    public function beginningInvItemsList($id){
+        $branch = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('branch_warehouse')->first();
+        $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+
+        return view('consignment.beginning_inv_items_list', compact('inventory', 'branch'));
+    }
+
+    public function beginningInventory(){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
+        $recorded_stores = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->select('name', 'branch_warehouse', 'transaction_date')->get();
+
+        $recorded_stores = collect($recorded_stores)->groupBy('branch_warehouse');
+
+        $null_store = isset($assigned_consignment_store[0]) ? $assigned_consignment_store[0] : null;
+        if($recorded_stores){
+            foreach($assigned_consignment_store as $store){ // Get the first store without beginning inventory record
+                if(!isset($recorded_stores[$store])){
+                    $null_store = $store;
+                    break;
+                }
+            }
+        }
+
+        return view('consignment.beginning_inventory', compact('assigned_consignment_store', 'null_store'));
+    }
+
+    public function beginningInvItems($branch){
+        $inv_record = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->first();
+
+        $items = [];
+        $inv_name = null;
+        if($inv_record){
+            $inv_name = $inv_record->name; 
+            $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $inv_name)->select('item_code', 'item_description', 'stock_uom', 'opening_stock', 'stocks_displayed', 'price')->get();
+
+            foreach($inventory as $inv){
+                $items[] = [
+                    'item_code' => $inv->item_code,
+                    'item_description' => $inv->item_description,
+                    'stock_uom' => $inv->stock_uom,
+                    'opening_stock' => $inv->opening_stock * 1,
+                    'stocks_displayed' => $inv->stocks_displayed * 1,
+                    'price' => $inv->price * 1
+                ];
+            }
+        }else{
+            $bin_items = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $branch)->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description')->orderBy('bin.actual_qty', 'desc')->get();
+
+            foreach($bin_items as $item){
+                $items[] = [
+                    'item_code' => $item->item_code,
+                    'item_description' => $item->description,
+                    'stock_uom' => $item->stock_uom,
+                    'opening_stock' => 0,
+                    'stocks_displayed' => 0,
+                    'price' => 0
+                ];
+            }
+        }
+
+        $item_codes = collect($items)->map(function($q){
+            return $q['item_code'];
+        });
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+        $item_images = collect($item_images)->groupBy('parent');
+
+        return view('consignment.beginning_inv_items', compact('items', 'branch', 'inv_name', 'item_images'));
+    }
+
+    public function saveBeginningInventory(Request $request){
+        DB::beginTransaction();
+        try {
+            $opening_stock = $request->opening_stock;
+            $price = $request->price;
+            $item_codes = $request->item_code;
+            $branch = $request->branch;
+
+            if(max($opening_stock) <= 0 || max($price) <= 0){ // If all values of opening stocks or prices are 0
+                return redirect()->back()->with('error', 'Please input values to '.(max($opening_stock) <= 0 ? 'Opening Stock' : 'Price'));
+            }
+
+            $now = Carbon::now()->toDateTimeString();
+    
+            $items = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'item_name', 'stock_uom')->get();
+            $item = collect($items)->groupBy('name');
+
+            $item_count = 0;
+            if(!$request->inv_name){ // If beginning inventory record does not exist
+                $latest_inv = DB::table('tabConsignment Beginning Inventory')->where('name', 'like', '%inv%')->max('name');
+                $latest_inv_exploded = explode("-", $latest_inv);
+                $inv_id = (($latest_inv) ? $latest_inv_exploded[1] : 0) + 1;
+                $inv_id = str_pad($inv_id, 6, '0', STR_PAD_LEFT);
+                $inv_id = 'INV-'.$inv_id;
+    
+                $values = [
+                    'docstatus' => 0,
+                    'name' => $inv_id,
+                    'idx' => 1,
+                    'status' => 'For Approval',
+                    'branch_warehouse' => $branch,
+                    'creation' => $now,
+                    'transaction_date' => $now,
+                    'owner' => Auth::user()->wh_user,
+                ];
+                
+                DB::table('tabConsignment Beginning Inventory')->insert($values);
+
+                $row_values = [];
+                foreach($item_codes as $item_code){
+                    if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
+                        continue;
+                    }
+
+                    if(isset($opening_stock[$item_code]) && $opening_stock[$item_code] < 0 || isset($price[$item_code]) && $price[$item_code] < 0){
+                        return redirect()->back()->with('error', 'Cannot enter value below 0');
+                    }
+    
+                    $row_values = [
+                        'name' => uniqid(),
+                        'creation' => $now,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => $inv_id,
+                        'idx' => 1,
+                        'item_code' => $item_code,
+                        'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->item_name : null,
+                        'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
+                        'opening_stock' => isset($opening_stock[$item_code]) ? $opening_stock[$item_code] : 0,
+                        'stocks_displayed' => 0,
+                        'status' => 'For Approval',
+                        'price' => isset($price[$item_code]) ? $price[$item_code] : 0
+                    ];
+
+                    $item_count = $i + 1;
+                    DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
+                }
+            }else{
+                DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->update([
+                    'modified' => $now,
+                    'modified_by' => Auth::user()->wh_user
+                ]);
+
+                foreach($item_codes as $i => $item_code){
+                    if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
+                        continue;
+                    }
+
+                    if(isset($opening_stock[$item_code]) && $opening_stock[$item_code] < 0 || isset($price[$item_code]) && $price[$item_code] < 0){
+                        return redirect()->back()->with('error', 'Cannot enter value below 0');
+                    }
+                    
+                    $values = [
+                        'modified' => $now,
+                        'modified_by' => Auth::user()->wh_user,
+                        'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->item_name : null,
+                        'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
+                        'opening_stock' => isset($opening_stock[$item_code]) ? $opening_stock[$item_code] : 0,
+                        'price' => isset($price[$item_code]) ? $price[$item_code] : 0,
+                    ];
+
+                    $item_count = $i + 1;
+                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $item_code)->update($values);
+                }
+            }
+
+            session()->flash('success', 'Inventory Record Saved');
+            DB::commit();
+            return view('consignment.beginning_inv_success', compact('item_count', 'branch'));
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+    }
 }

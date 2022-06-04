@@ -107,9 +107,6 @@
                         <div class="card-header text-center font-weight-bold">
                             Assigned Consignment Branch
                         </div>
-                        <div class="card-header text-right">
-                            <a href="/beginning_inventory" class="btn btn-primary font-responsive float-right">Beginning Inventory</a>
-                        </div>
                         <div class="card-body p-1">
 
                             <table class="table table-bordered" style="font-size: 8pt;">
