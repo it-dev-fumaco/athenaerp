@@ -41,6 +41,16 @@ class ConsignmentController extends Controller
             $now = Carbon::now();
             $result = [];
             $no_of_items_updated = 0;
+
+            $item_prices = DB::table('tabConsignment Beginning Inventory as cb')
+                ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+                ->where('cb.status', 'Approved')
+                ->whereIn('cbi.item_code', array_keys($data['item']))
+                ->where('cb.branch_warehouse', $data['branch_warehouse'])
+                ->select('cb.transaction_date', 'cbi.item_code', 'cbi.price')
+                ->orderBy('cb.transaction_date', 'desc')->get();
+
+            $item_prices = collect($item_prices)->groupBy('item_code')->toArray();
             foreach ($data['item'] as $item_code => $row) {
                 $existing = DB::table('tabConsignment Product Sold')
                     ->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])
@@ -58,6 +68,7 @@ class ConsignmentController extends Controller
                     DB::table('tabConsignment Product Sold')->where('name', $existing->name)->update($values);
                 } else {
                     // for insert
+                    $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
                     $no_of_items_updated++;
                     $result[] = [
                         'name' => uniqid(),
@@ -75,7 +86,9 @@ class ConsignmentController extends Controller
                         'item_code' => $item_code,
                         'description' => $row['description'],
                         'qty' => $row['qty'],
-                        'promodiser' => Auth::user()->full_name
+                        'promodiser' => Auth::user()->full_name,
+                        'price' => (float)$price,
+                        'amount' => ((float)$price * (float)$row['qty'])
                     ];
                 }
             }
