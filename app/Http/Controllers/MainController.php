@@ -38,63 +38,71 @@ class MainController extends Controller
         if(Auth::user()->user_group == 'Promodiser'){
             $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
 
-            $currentDateTime = Carbon::now();
-
-            $start_date = Carbon::now()->subMonth();
-            $end_date = Carbon::now()->addMonth();
-
-            $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
-
-            $cutoff_1 = 10;
-            $cutoff_2 = 25;
-
-            $date_now = $currentDateTime->format('d-m-Y');
-            
-            $cutoff_period = [];
-            foreach ($period as $date) {
-                $date1 = $date->day($cutoff_1);
-                if ($date1 >= $start_date && $date1 <= $end_date) {
-                    $cutoff_period[] = $date->format('d-m-Y');
-                }
-                $date2 = $date->day($cutoff_2);
-                if ($date2 >= $start_date && $date2 <= $end_date) {
-                    $cutoff_period[] = $date->format('d-m-Y');
-                }
-            }
-
-            $cutoff_period[] = $date_now;
-            // sort array with given user-defined function
-            usort($cutoff_period, function ($time1, $time2) {
-                return strtotime($time1) - strtotime($time2);
-            });
-
-            $date_now_index = array_search($date_now, $cutoff_period);
-            // set duration from and duration to
-            $duration_from = $cutoff_period[$date_now_index - 1];
-            $duration_to = $cutoff_period[$date_now_index + 1];
-
-            $duration_period = CarbonPeriod::create($duration_from, '1 day' , $duration_to);
-            $no_of_sundays = 0;
-            foreach ($duration_period as $date) {
-                if (strtolower(Carbon::parse($date)->format('l')) == 'sunday') {
-                    $no_of_sundays++;
-                }
-            }
-            // get variables for sales report percentage completion
-            $duration_in_days = Carbon::parse($duration_to)->diffInDays(Carbon::parse($duration_from));
-            // get duration in days except sundays
-            $duration_in_days = $duration_in_days - $no_of_sundays;
-            $no_of_submitted_report = DB::table('tabConsignment Product Sold')
-                ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
-                ->distinct()->pluck('transaction_date');
-
-            $sales_report_submission_percentage = count($no_of_submitted_report) > 0 ? (count($no_of_submitted_report) / $duration_in_days) * 100 : 0;
-            $sales_report_submission_percentage = round($sales_report_submission_percentage);
-
-            $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
-
             if (count($assigned_consignment_store) > 0) {
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage'));
+                $currentDateTime = Carbon::now();
+
+                $start_date = Carbon::now()->subMonth();
+                $end_date = Carbon::now()->addMonth();
+
+                $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+
+                $cutoff_1 = 10;
+                $cutoff_2 = 25;
+
+                $date_now = $currentDateTime->format('d-m-Y');
+                
+                $cutoff_period = [];
+                foreach ($period as $date) {
+                    $date1 = $date->day($cutoff_1);
+                    if ($date1 >= $start_date && $date1 <= $end_date) {
+                        $cutoff_period[] = $date->format('d-m-Y');
+                    }
+                    $date2 = $date->day($cutoff_2);
+                    if ($date2 >= $start_date && $date2 <= $end_date) {
+                        $cutoff_period[] = $date->format('d-m-Y');
+                    }
+                }
+
+                $cutoff_period[] = $date_now;
+                // sort array with given user-defined function
+                usort($cutoff_period, function ($time1, $time2) {
+                    return strtotime($time1) - strtotime($time2);
+                });
+
+                $date_now_index = array_search($date_now, $cutoff_period);
+                // set duration from and duration to
+                $duration_from = $cutoff_period[$date_now_index - 1];
+                $duration_to = $cutoff_period[$date_now_index + 1];
+
+                $duration_period = CarbonPeriod::create($duration_from, '1 day' , $duration_to);
+                $no_of_sundays = 0;
+                foreach ($duration_period as $date) {
+                    if (strtolower(Carbon::parse($date)->format('l')) == 'sunday') {
+                        $no_of_sundays++;
+                    }
+                }
+                // get variables for sales report percentage completion
+                $duration_in_days = Carbon::parse($duration_to)->diffInDays(Carbon::parse($duration_from));
+                // get duration in days except sundays
+                $duration_in_days = $duration_in_days - $no_of_sundays;
+                $no_of_submitted_report = DB::table('tabConsignment Product Sold')
+                    ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
+                    ->distinct()->pluck('transaction_date');
+
+                $sales_report_submission_percentage = count($no_of_submitted_report) > 0 ? (count($no_of_submitted_report) / $duration_in_days) * 100 : 0;
+                $sales_report_submission_percentage = round($sales_report_submission_percentage);
+
+                $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
+
+                $inv_summary = DB::table('tabBin as b')
+                    ->join('tabItem as i', 'i.name', 'b.item_code')
+                    ->where('i.disabled', 0)->where('i.is_stock_item', 1)
+                    ->whereIn('b.warehouse', $assigned_consignment_store)
+                    // ->where('consigned_qty', '>', 0)
+                    ->select('b.warehouse', DB::raw('SUM(b.actual_qty) as qty'))
+                    ->groupBy('b.warehouse')->pluck('qty', 'warehouse')->toArray();
+
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage', 'inv_summary'));
             }
 
             return redirect('/search_results');
@@ -102,35 +110,6 @@ class MainController extends Controller
 
         return view('index');
     }
-
-    // public function consignmentItemStock($warehouse, Request $request) {
-    //     $search_string = $request->q;
-    //     $consignment_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)
-    //         ->when($search_string, function($q) use ($search_string){
-    //             return $q->where('bin.item_code', 'LIKE', "%".$search_string."%")->orWhere('item.description', 'LIKE', "%".$search_string."%");
-    //         })
-    //         ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description', 'item.item_classification', 'item.item_group')->orderBy('bin.actual_qty', 'desc')->paginate(20);
-
-    //     $total_stocks = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')->where('bin.warehouse', $warehouse)->sum('bin.actual_qty');
-
-    //     $item_codes = array_column($consignment_stocks->items(), 'item_code');
-
-    //     $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-    //     $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
-
-    //     $price_list_rates = [];
-    //     $user_pricelist = Auth::user()->price_list;
-    //     if ($user_pricelist) {
-    //         $price_list_rates = DB::table('tabItem Price')
-    //             ->where('price_list', $user_pricelist)->whereIn('item_code', $item_codes)
-    //             ->select('item_code', 'price_list', 'modified', 'price_list_rate')
-    //             ->orderBy('modified', 'desc')->get();
-    //     }
-
-    //     $price_list_rates = collect($price_list_rates)->groupBy('item_code')->toArray();
-
-    //     return view('tbl_item_stock', compact('consignment_stocks', 'item_image_paths', 'price_list_rates', 'warehouse', 'total_stocks'));
-    // }
 
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
@@ -5044,24 +5023,26 @@ class MainController extends Controller
         }
     }
 
-    // public function consignmentSalesReport($warehouse, Request $request) {
-    //     $year = $request->year ? $request->year : Carbon::now()->format('Y');
-    //     $query = DB::table('tabSales Order')->where('docstatus', 1)
-    //         ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
-    //         ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(base_grand_total) as grand_total')
-    //         ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();
+    public function consignmentSalesReport($warehouse, Request $request) {
+        $year = $request->year ? $request->year : Carbon::now()->format('Y');
+        $query = DB::table('tabConsignment Product Sold')
+            ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
+            ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(amount) as grand_total')
+            ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();
         
-    //     $result = [];
-    //     $month_name = [null, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-    //     for ($i=1; $i <= 12; $i++) { 
-    //         $result[$month_name[$i]] = array_key_exists($i, $query) ? $query[$i] : 0;
-    //     }
+        $result = [];
+        $month_name = [null, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
 
-    //     return [
-    //         'labels' => collect($result)->keys(),
-    //         'data' => array_values($result)
-    //     ];
-    // }
+        $month_now = (int)Carbon::now()->format('m');
+        for ($i=1; $i <= $month_now; $i++) { 
+            $result[$month_name[$i]] = array_key_exists($i, $query) ? $query[$i] : 0;
+        }
+
+        return [
+            'labels' => collect($result)->keys(),
+            'data' => array_values($result)
+        ];
+    }
 
     public function purchaseRateHistory($item_code) {
         $item_valuation_rates = [];

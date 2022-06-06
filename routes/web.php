@@ -122,8 +122,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/create_material_request/{id}', 'MainController@create_material_request');
     Route::get('/consignment_warehouses', 'MainController@consignment_warehouses');
     Route::post('/create_feedback', 'MainController@create_feedback');
-    // Route::get('/consignment_stock/{warehouse}', 'MainController@consignmentItemStock');
-    // Route::get('/consignment_sales/{warehouse}', 'MainController@consignmentSalesReport');
+    Route::get('/consignment_sales/{warehouse}', 'MainController@consignmentSalesReport');
     Route::get('/purchase_rate_history/{item_code}', 'MainController@purchaseRateHistory');
     Route::post('/update_item_price/{item_code}', 'MainController@updateItemCost');
     Route::get('/search_item_cost', 'MainController@itemCostList');
@@ -140,6 +139,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
     Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
     Route::post('/submit_product_sold_form', 'ConsignmentController@submitProductSoldForm');
+    Route::get('/calendar_data/{branch}', 'ConsignmentController@calendarData');
     Route::get('/product_sold_success', 'ConsignmentController@productSoldSuccess');
     Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');
     Route::get('/beginning_inventory_items/{id}', 'ConsignmentController@beginningInvItemsList');
