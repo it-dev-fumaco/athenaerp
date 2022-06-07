@@ -407,7 +407,7 @@ class ConsignmentController extends Controller
                         'price' => isset($price[$item_code]) ? preg_replace("/[^0-9]/", "", $price[$item_code]) : 0
                     ];
 
-                    $item_count = $i + 1;
+                    $item_count = $item_count + 1;
                     DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
                 }
             }else{
@@ -434,7 +434,7 @@ class ConsignmentController extends Controller
                         'price' => isset($price[$item_code]) ? preg_replace("/[^0-9]/", "", $price[$item_code]) : 0,
                     ];
 
-                    $item_count = $i + 1;
+                    $item_count = $item_count + 1;
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $item_code)->update($values);
                 }
             }
