@@ -8,7 +8,6 @@
 	<div class="content-header p-0">
     <div class="container p-0">
       <div class="row p-0 m-0">
-        <div class="col-md-12 text-center"><i class="fas fa-user"></i> {{ Auth::user()->full_name }}</div>
         <div class="col-6 p-1">
           @if (count($assigned_consignment_store) > 1)
           <a href="#" data-toggle="modal" data-target="#select-branch-modal">

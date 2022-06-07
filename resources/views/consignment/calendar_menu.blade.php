@@ -11,13 +11,11 @@
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
-                      <div class="card-header text-left">
-                        <span class="d-block" style="font-size: 11pt;">{{ Auth::user()->full_name }}</span>
-                        <span id="branch-name" class="font-weight-bold d-block">{{ $branch }}</span>
+                      <div class="card-header text-center">
+                        <span id="branch-name" class="font-weight-bold d-block font-responsive">{{ $branch }}</span>
                     </div>
                         <div class="card-body p-2">
                             <div id="calendar"></div>
-
                             <div class="d-flex flex-row mt-4">
                               <div class="p-1 text-success"><i class="fas fa-square" style="font-size: 15pt;"></i></div>
                               <div class="p-1" style="font-size: 9pt;">Submitted Sales Report</div>

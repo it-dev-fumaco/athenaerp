@@ -10,9 +10,8 @@
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
-                        <div class="card-header text-left">
-                            <span class="d-block" style="font-size: 11pt;">{{ Auth::user()->full_name }}</span>
-                            <span id="branch-name" class="font-weight-bold d-block">{{ $branch }}</span>
+                        <div class="card-header text-center">
+                            <span id="branch-name" class="font-weight-bolder d-block" style="font-size: 11pt;">{{ $branch }}</span>
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('success'))
@@ -25,8 +24,8 @@
                                 {{ session()->get('error') }}
                             </div>
                             @endif
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase">Product Sold Entry</h6>
-                            <h5 class="text-center mt-1">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
+                            <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">Product Sold Entry</h6>
+                            <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
                             <form action="/submit_product_sold_form" method="POST" autocomplete="off">
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">

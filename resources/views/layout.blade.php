@@ -479,6 +479,11 @@
 											</div>
 										</a>
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+											<a href="#" class="dropdown-item w-100">
+												<center>
+													<i class="fas fa-user"></i> <span class="d-xl-inline-block">{{ Auth::user()->full_name }}</span>
+												</center>
+											</a>
 											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
 												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
 											</a>
@@ -526,14 +531,14 @@
 		</nav>
 		<div class="content-wrapper">
 			@if (Auth::user() && Auth::user()->user_group == 'Promodiser')
-			<div class="row p-0 m-0">
+			<div class="row p-0 m-0 font-responsive">
 				<div class="col-md-12 p-2">
 					<div class="btn-group w-100" role="group" aria-label="Button group with nested dropdown">
 						<a href="/" class="btn btn-default" style="width: 33%;">Home</a>
 						<div class="btn-group" role="group" style="width: 33%;">
 							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
-								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory List</a>
+								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
 								<a class="dropdown-item" href="#">Inventory 2</a>
 							</div>
 						</div>
