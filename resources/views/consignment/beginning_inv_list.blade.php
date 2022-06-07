@@ -5,24 +5,21 @@
 
 @section('content')
 <div class="content">
-	<div class="content-header pt-0">
+	<div class="content-header p-0">
         <div class="container">
-            <div class="row pt-3">
-                <div class="col-md-12 p-0">
+            <div class="row pt-1">
+                <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
                         <div class="card-header">
-                            <span class="font-responsive">{{ Auth::user()->full_name }}</span>
+                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory</span>
+                            <a href="/beginning_inventory" class="btn btn-xs btn-outline-primary float-right m-0 p-1"><i class="fas fa-plus"></i> Create</a>
                         </div>
-                        <div class="card-header text-center font-weight-bold">
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase">Beginning Inventory</h6><br>
-                            <a href="/beginning_inventory" class="btn btn-xs btn-outline-primary float-right m-0 p-1">Create Inventory Entry</a>
-                        </div>
-                        <div class="card-body p-1">
-                            <table class="table table-bordered">
-                                <tr>
-                                    <th class="font-responsive text-center">Details</th>
-                                    <th class="font-responsive text-center" style="width: 65%;">Branch Warehouse</th>
-                                </tr>
+                        <div class="card-body p-0">
+                            <table class="table table-striped">
+                                <thead class="text-uppercase">
+                                    <th class="font-responsive text-center p-2">Details</th>
+                                    <th class="font-responsive text-center p-2" style="width: 65%;">Branch Warehouse</th>
+                                </thead>
                                 @foreach ($beginning_inventory as $store)
                                     @php
                                         $badge = 'secondary';
@@ -33,12 +30,12 @@
                                         }
                                     @endphp
                                     <tr>
-                                        <td class="font-responsive text-center">
-                                            {{ $store->name }}<br/>
-                                            {{ Carbon\Carbon::parse($store->transaction_date)->format('F d, Y') }}<br/>
+                                        <td class="font-responsive text-center p-2 align-middle">
+                                            <span class="d-block font-weight-bold">{{ $store->name }}</span>
+                                            <small class="d-block">{{ Carbon\Carbon::parse($store->transaction_date)->format('F d, Y') }}</small>
                                             <span class="badge badge-{{ $badge }}">{{ $store->status }}</span>
                                         </td>
-                                        <td class="font-responsive">
+                                        <td class="font-responsive p-2 align-middle">
                                             <a href="/beginning_inventory{{ ($store->status == 'For Approval' ? '/' : '_items/').$store->name }}">{{ $store->branch_warehouse }}</a>
                                         </td>
                                     </tr>
@@ -51,13 +48,4 @@
         </div>
 	</div>
 </div>
-@endsection
-
-@section('style')
-    <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
-    </style>
 @endsection

@@ -3,11 +3,9 @@
     
     <table class="table table-bordered text-left" id="items-table"> 
         <thead>
-            <tr>
-                <th class="font-responsive" style="width: 42%">Item Code</th>
-                <th class="font-responsive">Opening Stock</th>
-                <th class="font-responsive">Price</th>
-            </tr>
+            <th class="font-responsive text-center p-1 align-middle" style="width: 42%">Item Code</th>
+            <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
+            <th class="font-responsive text-center p-1 align-middle">Price</th>
         </thead>
         <tbody>
             @forelse ($items as $item)

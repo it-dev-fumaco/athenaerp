@@ -5,23 +5,21 @@
 
 @section('content')
 <div class="content">
-	<div class="content-header pt-0">
+	<div class="content-header p-0">
         <div class="container">
-            <div class="row pt-3">
-                <div class="col-md-12 p-0">
+            <div class="row pt-1">
+                <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
-                        <div class="card-header">
+                        <div class="card-header text-center">
                             @if(session()->has('error'))
                                 <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <span class="font-responsive">{{ Auth::user()->full_name }}</span>
-                            <span class="font-weight-bold d-block">{{ $branch ? $branch : null }}</span>
+                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory Entry</span>
                         </div>
                         <div class="card-header text-center font-weight-bold">
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase">Beginning Inventory</h6>
-                            <h5 class="text-center mt-1">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h5>
+                            <h5 class="text-center mt-1 font-weight-bold">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h5>
                         </div>
                         <div class="card-body p-1">
                             @if (!$inv_record)
