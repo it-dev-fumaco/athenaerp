@@ -228,8 +228,8 @@
                                             </div>
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
-                                                    <div class="box-body table-responsive">
-                                                        <table class="table table-striped table-bordered table-hover responsive-description"
+                                                    <div class="box-body">
+                                                        <table class="table table-striped table-bordered table-hover responsive-description">
                                                             <thead>
                                                                 <tr>
                                                                     <th scope="col" rowspan=2 class="font-responsive text-center p-1 align-middle">Warehouse</th>
@@ -317,7 +317,7 @@
                             </div>
                             <div class="d-none d-lg-block col-lg-3">
                                 <div class="box box-solid h-100">
-                                    <div class="box-body table-responsive no-padding h-100" style="display: flex; justify-content: center; align-items: center;">
+                                    <div class="box-body no-padding h-100" style="display: flex; justify-content: center; align-items: center;">
                                         <p class="mt-2 mb-2 text-center">
                                             @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                             <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
@@ -357,8 +357,8 @@
                             <div class="container col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div class="table-responsive" id="example">
-                                            <table class="table table-sm table-bordered table-striped" style="font-size: 9pt;">
+                                        <div id="example">
+                                            <table class="table table-sm table-bordered table-striped" style="font-size: 8pt;">
                                                 <thead>
                                                     <tr>
                                                         <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
@@ -382,7 +382,7 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
                                                         @endforeach
-                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                        <td class="text-center align-middle text-nowrap" style="font-size: 8pt;">
                                                             <span class="badge badge-{{ ($item_stock_available > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($item_stock_available > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                         </td>
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
@@ -445,7 +445,7 @@
                                                         @endif
                                                     </tr>
                                                     @foreach ($co_variants as $variant)
-                                                    <tr style="font-size: 9pt;">
+                                                    <tr style="font-size: 8pt;">
                                                         <td class="text-center align-middle font-weight-bold text-dark" style="background-color: #CCD1D1;">
                                                             <a href="/get_item_details/{{ $variant->name }}">{{ $variant->name }}</a>
                                                         </td>
@@ -461,7 +461,7 @@
                                                         @php
                                                             $avail_stock = array_key_exists($variant->name, $actual_variant_stocks) ? $actual_variant_stocks[$variant->name] : 0;
                                                         @endphp
-                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                        <td class="text-center align-middle text-nowrap" style="font-size: 8pt;">
                                                             <span class="badge badge-{{ ($avail_stock > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($avail_stock > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                         </td>
                                                         @php
