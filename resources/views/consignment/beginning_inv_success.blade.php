@@ -27,7 +27,7 @@
                                 </div>
 
                                 <div class="text-center mb-4 mt-4">
-                                    <a href="/beginning_inventory" class="btn bg-lightblue"><i class="fa fa-arrow-left"></i> Go Back</a>
+                                    <a href="/beginning_inventory_list" class="btn bg-lightblue"><i class="fa fa-arrow-left"></i> Go Back</a>
                                 </div>
                             @else
                                 <script>window.location = "/";</script>
