@@ -64,19 +64,20 @@
             <div class="card-body p-0">
               <table class="table table-bordered" style="font-size: 8pt;">
                 <thead class="text-uppercase">
-                  <th class="text-center p-1 align-middle" style="width: 60%;">Branch</th>
-                  <th class="text-center p-1 align-middle" style="width: 20%;">Items on Hand</th>
-                  <th class="text-center p-1 align-middle" style="width: 20%;">To Receive</th>
+                  <th class="text-center p-1 align-middle" style="width: 64%;">Branch</th>
+                  <th class="text-center p-1 align-middle" style="width: 18%;">Items on Hand</th>
+                  <th class="text-center p-1 align-middle" style="width: 18%;">Total Qty</th>
                 </thead>
                 <tbody>
                   @forelse ($assigned_consignment_store as $branch)
                   @php
-                    $items_on_hand = array_key_exists($branch, $inv_summary) ? $inv_summary[$branch] : 0;
+                    $items_on_hand = array_key_exists($branch, $inventory_summary) ? $inventory_summary[$branch]['items_on_hand'] : 0;
+                    $total_qty = array_key_exists($branch, $inventory_summary) ? $inventory_summary[$branch]['total_qty'] : 0;
                   @endphp
                   <tr>
                     <td class="text-justify pt-2 pb-2 pr-1 pl-1 align-middle">{{ $branch }}</td>
                     <td class="text-center pt-2 pb-2 pr-1 pl-1 align-middle font-weight-bold">{{ number_format($items_on_hand) }}</td>
-                    <td class="text-center pt-2 pb-2 pr-1 pl-1 align-middle font-weight-bold">-</td>
+                    <td class="text-center pt-2 pb-2 pr-1 pl-1 align-middle font-weight-bold">{{ number_format($total_qty) }}</td>
                   </tr> 
                   @empty
                   <tr>

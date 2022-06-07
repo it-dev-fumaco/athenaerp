@@ -98,11 +98,21 @@ class MainController extends Controller
                     ->join('tabItem as i', 'i.name', 'b.item_code')
                     ->where('i.disabled', 0)->where('i.is_stock_item', 1)
                     ->whereIn('b.warehouse', $assigned_consignment_store)
-                    // ->where('consigned_qty', '>', 0)
-                    ->select('b.warehouse', DB::raw('SUM(b.actual_qty) as qty'))
-                    ->groupBy('b.warehouse')->pluck('qty', 'warehouse')->toArray();
+                    ->where('consigned_qty', '>', 0)
+                    ->select('b.warehouse', 'b.consigned_qty')
+                    ->get()->toArray();
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage', 'inv_summary'));
+                $inv_summary = collect($inv_summary)->groupBy('warehouse');
+
+                $inventory_summary = [];
+                foreach ($inv_summary as $warehouse => $row) {
+                    $inventory_summary[$warehouse] = [
+                        'items_on_hand' => collect($row)->count(),
+                        'total_qty' => collect($row)->sum('consigned_qty'),
+                    ];
+                }
+
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage', 'inventory_summary'));
             }
 
             return redirect('/search_results');
