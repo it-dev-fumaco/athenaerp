@@ -46,8 +46,10 @@ class MainController extends Controller
 
                 $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
 
-                $cutoff_1 = 10;
-                $cutoff_2 = 25;
+                $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+
+                $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+                $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
                 $date_now = $currentDateTime->format('d-m-Y');
                 
