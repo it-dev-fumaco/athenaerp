@@ -15,6 +15,9 @@
                         <span id="branch-name" class="font-weight-bold d-block font-responsive">{{ $branch }}</span>
                     </div>
                         <div class="card-body p-2">
+                          @if ($due_alert)
+                          <div class="alert alert-warning font-responsive text-center"><i class="fas fa-info-circle"></i> Sales report submission is due tomorrow</div>
+                          @endif
                             <div id="calendar"></div>
                             <div class="d-flex flex-row mt-4">
                               <div class="p-1 text-success"><i class="fas fa-square" style="font-size: 15pt;"></i></div>
@@ -42,6 +45,22 @@
     background-color: var(--fc-today-bg-color, rgba(23, 32, 42, 0.15));
     cursor: disabled;
   }
+
+  .fc .fc-daygrid-day.fc-day-past {
+    background-color: rgb(255, 193, 7, 0.8);
+    opacity: 0.8;
+  }
+
+  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    font-weight: bold;
+    font-size: 15pt;
+  }
+
+  .fc .fc-bg-event {
+    opacity: 0.8;
+  }
+
+  .fc-event-time { display: none !important;}
 </style>
 @endsection
 
@@ -59,6 +78,7 @@
     var calendarEl = document.getElementById('calendar');
 
     var calendar = new Calendar(calendarEl, {
+      timeZone: 'local',
       height: 650,
       headerToolbar: {
         left  : '',
@@ -71,7 +91,7 @@
         {
           url: '/calendar_data/' + $('#branch-name').text(),
         }
-      ],
+      ],   
       dateClick: function(info) {
         if (new Date(info.dateStr) > moment()) {
           showNotification("warning", 'Cannot select this date.', "fa fa-info");
@@ -82,21 +102,21 @@
     });
   
     calendar.render();
-  
+    
     function showNotification(color, message, icon){
-				$.notify({
-				  icon: icon,
-				  message: message
-				},{
-				  type: color,
-				  timer: 500,
-				  z_index: 1060,
-				  placement: {
-					from: 'top',
-					align: 'center'
-				  }
-				});
-			}
-    });
-  </script>
+			$.notify({
+        icon: icon,
+        message: message
+      },{
+        type: color,
+        timer: 500,
+        z_index: 1060,
+        placement: {
+          from: 'top',
+          align: 'center'
+        }
+      });
+    }
+  });
+</script>
 @endsection

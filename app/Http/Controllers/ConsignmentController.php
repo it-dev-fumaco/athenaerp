@@ -4,13 +4,43 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Auth;
 use DB;
 
 class ConsignmentController extends Controller
 {
     public function viewCalendarMenu($branch){
-        return view('consignment.calendar_menu', compact('branch'));
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        if ($sales_report_deadline) {
+            $currentDate = Carbon::now();
+
+            $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+
+            $currentMonth = $currentDate->format('m');
+            $currentYear = $currentDate->format('Y');
+
+            $first_cutoff = Carbon::createFromFormat('m/d/Y', $currentMonth .'/'. $cutoff_1 .'/'. $currentYear)->format('Y-m-d');
+            $second_cutoff = Carbon::createFromFormat('m/d/Y', $currentMonth .'/'. $cutoff_2 .'/'. $currentYear)->format('Y-m-d');
+
+            $due_alert = 0;
+            if ($first_cutoff > $currentDate->format('Y-m-d')) {
+                $date_difference_in_days = Carbon::parse($first_cutoff)->diffInDays($currentDate->format('Y-m-d'));
+                if ($date_difference_in_days <= 1) {
+                    $due_alert = 1;
+                }
+            }
+
+            if ($second_cutoff > $currentDate->format('Y-m-d')) {
+                $date_difference_in_days = Carbon::parse($second_cutoff)->diffInDays($currentDate->format('Y-m-d'));
+                if ($date_difference_in_days <= 1) {
+                    $due_alert = 1;
+                }
+            }
+        }
+
+        return view('consignment.calendar_menu', compact('branch', 'due_alert'));
     }
 
     public function viewProductSoldForm($branch, $transaction_date) {
@@ -116,8 +146,11 @@ class ConsignmentController extends Controller
         return view('consignment.success_page');
     }
 
-    public function calendarData($branch) {
+    public function calendarData($branch, Request $request) {
+        $start = $request->start;
+        $end = $request->end;
         $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+            ->whereBetween('transaction_date', [$start, $end])
             ->select('transaction_date')->groupBy('transaction_date')->get();
 
         $data = [];
@@ -125,13 +158,55 @@ class ConsignmentController extends Controller
             $data[] = [
                 'title' => '',
                 'start' => $row->transaction_date,
-                'backgroundColor' => '#00a65a', //green
-                'borderColor' => '#00a65a', //green
+                'backgroundColor' => '#28a745', //green
+                'borderColor' => '#28a745', //green
                 'allDay' => true,
                 'display' => 'background'
             ];
         }
 
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        if ($sales_report_deadline) {
+            $start_date = Carbon::parse($start);
+            $end_date = Carbon::parse($end);
+    
+            $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+           
+            $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+    
+            $cutoff_period = [];
+            foreach ($period as $date) {
+                $date1 = $date->day($cutoff_1);
+                if ($date1 >= $start_date && $date1 <= $end_date) {
+                    $cutoff_period[] = $date->format('Y-m-d');
+                }
+                $date2 = $date->day($cutoff_2);
+                if ($date2 >= $start_date && $date2 <= $end_date) {
+                    $cutoff_period[] = $date->format('Y-m-d');
+                }
+            }
+            // set duration from and duration to
+            $duration_from = $cutoff_period[0];
+            $duration_to = $cutoff_period[1];
+    
+            $data[] = [
+                'title' => 'Cutoff',
+                'start' => $duration_from,
+                'backgroundColor' => '#2874a6', //green
+                'borderColor' => '#2874a6', //green
+                'allDay' => false,
+            ];
+    
+            $data[] = [
+                'title' => 'Cutoff',
+                'start' => $duration_to,
+                'backgroundColor' => '#2874a6', //green
+                'borderColor' => '#2874a6', //green
+                'allDay' => false,
+            ];
+        }
+    
         return $data;
     }
 
