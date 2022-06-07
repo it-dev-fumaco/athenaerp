@@ -24,6 +24,40 @@
                             <h6 class="font-weight-bold text-center m-1 text-uppercase">Beginning Inventory</h6>
                         </div>
                         <div class="card-body p-1">
+                            <div class="container-fluid">
+                                <form action="/beginning_inv_list" method="get">
+                                    <div class="row p-2">
+                                        <div class="col-2 offset-3">
+                                            <input type="text" class="form-control" name="search" value="{{ request('search') ? request('search') : null }}" placeholder="Search" />
+                                        </div>
+                                        <div class="col-2">
+                                            @php
+                                                $statuses = ['For Approval', 'Approved', 'Cancelled'];
+                                            @endphp
+                                            <select name="status" class="form-control">
+                                                <option value="" disabled {{ !request('status') ? 'selected' : null }}>Select a status</option>
+                                                @foreach ($statuses as $status)
+                                                    <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : null }}>{{ $status }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-2">
+                                            <select name="store" class="form-control">
+                                                <option value="" disabled {{ !request('store') ? 'selected' : null }}>Select a store</option>
+                                                @foreach ($consignment_stores as $store)
+                                                    <option value="{{ $store }}" {{ request('store') == $store ? 'selected' : null }}>{{ $store }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-2">
+                                            <input type="text" name="date" id="date-filter" class="form-control" value="" />
+                                        </div>
+                                        <div class="col-1">
+                                            <button class="btn btn-primary w-100">Search</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                             <table class="table table-bordered" style="font-size: 10pt;">
                                 <tr>
                                     <th class="font-responsive text-center">ID</th>
@@ -138,7 +172,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td class="font-responsive text-center" colspan=6>
+                                        <td class="font-responsive text-center" colspan=7>
                                             No submitted beginning inventory
                                         </td>
                                     </tr>
@@ -154,4 +188,22 @@
         </div>
 	</div>
 </div>
+@endsection
+
+@section('script')
+    <script>
+        $(document).ready(function() {
+            var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : Carbon\Carbon::now()->subDays(7)->format("Y-M-d")  }}'
+            var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : Carbon\Carbon::now()->format("Y-M-d")  }}'
+            $('#date-filter').daterangepicker({
+                opens: 'left',
+                startDate: from_date,
+                endDate: to_date,
+                locale: {
+                    format: 'YYYY-MMM-DD',
+                    separator: " to "
+                },
+            });
+        });
+    </script>
 @endsection

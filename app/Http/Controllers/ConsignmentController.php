@@ -135,8 +135,30 @@ class ConsignmentController extends Controller
         return $data;
     }
 
-    public function beginningInventoryApproval(){
-        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->paginate(10);
+    public function beginningInventoryApproval(Request $request){
+        if(Auth::user()->user_group != 'Consignment Supervisor'){
+            return redirect('/');
+        }
+
+        $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
+        $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
+        
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+            ->when($request->search, function ($q) use ($request){
+                return $q->where('name', 'LIKE', '%'.$request->search.'%')
+                    ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
+            })
+            ->when($request->date, function ($q) use ($from_date, $to_date){
+                return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
+            })
+            ->when($request->store, function ($q) use ($request){
+                return $q->where('branch_warehouse', $request->store);
+            })
+            ->when($request->status, function ($q) use ($request){
+                return $q->where('status', $request->status);
+            })
+            ->orderBy('creation', 'desc')
+            ->paginate(10);
 
         $ids = collect($beginning_inventory->items())->map(function($q){
             return $q->name;
@@ -181,13 +203,21 @@ class ConsignmentController extends Controller
             ];
         }
 
-        return view('consignment.beginning_inventory_list', compact('inv_arr', 'beginning_inventory'));
+        $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->pluck('warehouse');
+        $consignment_stores = collect($consignment_stores)->unique();
+
+        return view('consignment.beginning_inventory_list', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
     }
 
     public function approveBeginningInventory(Request $request, $id){
         DB::beginTransaction();
         try {
             $branch = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('branch_warehouse')->first();
+
+            if(!$branch){
+                return redirect()->back()->with('error', 'Inventory record not found.');
+            }
+
             $now = Carbon::now()->toDateTimeString();
 
             $update_values = [
@@ -196,8 +226,30 @@ class ConsignmentController extends Controller
                 'modified' => $now
             ];
 
+            if($request->status == 'Approved'){
+                $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+
+                foreach($items as $item){
+                    if($item->status != 'For Approval'){ // Skip the approved/cancelled items
+                        continue;
+                    }
+    
+                    DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $branch)->update([
+                        'consigned_qty' => $item->opening_stock,
+                        'modified' => $now,
+                        'modified_by' => Auth::user()->wh_user
+                    ]);
+    
+                    // update each item, allows checking if item for this branch is approved/cancelled
+                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item->item_code)->update($update_values);
+                }
+            }else{
+                // update item status' to cancelled
+                DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
+            }
+            
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
-            DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
+
             DB::commit();
             return redirect()->back()->with('success', 'Beginning Inventory for '.$branch.' was '.$request->status.'.');
         } catch (Exception $e) {
@@ -324,7 +376,7 @@ class ConsignmentController extends Controller
                     'branch_warehouse' => $branch,
                     'creation' => $now,
                     'transaction_date' => $now,
-                    'owner' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->full_name,
                 ];
                 
                 DB::table('tabConsignment Beginning Inventory')->insert($values);
@@ -342,7 +394,7 @@ class ConsignmentController extends Controller
                     $row_values = [
                         'name' => uniqid(),
                         'creation' => $now,
-                        'owner' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->full_name,
                         'docstatus' => 0,
                         'parent' => $inv_id,
                         'idx' => 1,
