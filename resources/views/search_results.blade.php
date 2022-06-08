@@ -125,10 +125,10 @@
 										<div class="card-body p-0">
 											<div class="col-12 mx-auto">
 												<div class="row pt-2">
-													<div class="col-12 col-xl-2 mx-auto general-filter-label text-left text-xl-right">
+													<div class="col-12 col-md-1 col-xl-2 mx-auto general-filter-label text-left text-md-right" style="font-size: 10pt; white-space: nowrap">
 														<label class="font-responsive">Search For:</label>
 													</div>
-													<div class="col-12 col-md-3 col-xl-2 mx-auto">
+													<div class="col-12 col-md-2 col-xl-2 mx-auto">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="item-class-filter-parent" style="font-size: 10pt;">
 															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
@@ -152,21 +152,21 @@
 																		$check_qty = request('check_qty') == 'on' ? 1 : 0;
 																	}
 																@endphp
-																<label>
+																<label style="white-space: nowrap">
 																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ $check_qty == 1 ? 'checked' : null }} >
 																	
-																	<span style="font-size: 12px;">Remove zero-qty items</span>
+																	<span class="filter-font">Remove zero-qty items</span>
 																</label>
 															</div>
 														</div>
 													</div>
 													@if ($promodiser_restriction)
-														<div class="col-8 col-md-2 col-xl-2 mx-auto text-center">
+														<div class="col-8 col-md-3 col-xl-2 mx-auto text-center">
 															<div class="form-group m-0r">
-																<label>
+																<label style="white-space: nowrap">
 																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
 																	
-																	<span style="font-size: 11px;">Warehouse Assigned to Me</span>
+																	<span class="filter-font">Warehouse Assigned to Me</span>
 																</label>
 															</div>
 														</div>
@@ -942,6 +942,9 @@
 		height: 25px !important;
 	}
 
+	.filter-font{
+		font-size: 9pt;
+	}
 
 	@media (max-width: 575.98px) {
         .font-responsive, .responsive-item-code, .stock-ledger-table-font{
@@ -985,6 +988,9 @@
 		.general-filter-label{
 			text-align: left;
 		}
+		.filter-font{
+			font-size: 8pt;
+		}
     }
   	@media (max-width: 767.98px) {
         .font-responsive, .responsive-description, .stock-ledger-table-font{
@@ -1025,6 +1031,9 @@
 		.general-filter-label{
 			text-align: left;
 		}
+		.filter-font{
+			font-size: 8pt;
+		}
     }
 	@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
 		.modal.left .modal-dialog{
@@ -1038,6 +1047,14 @@
 		}
 		.general-filter-label{
 			text-align: left;
+		}
+		.filter-font{
+			font-size: 8pt;
+		}
+	}
+	@media only screen and (min-device-width : 768px) and (orientation : landscape) {
+		.filter-font{
+			font-size: 8pt;
 		}
 	}
 </style>
