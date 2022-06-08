@@ -152,7 +152,7 @@
 																<label>
 																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ $check_qty == 1 ? 'checked' : null }} >
 																	
-																	<span style="font-size: 12px;">Remove zero-qty items</span>
+																	<span style="font-size: 12px;">Remove zero-stocks</span>
 																</label>
 															</div>
 															@if ($promodiser_restriction)
