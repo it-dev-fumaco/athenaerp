@@ -47,7 +47,7 @@
 											@php
 												$promodiser_restriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
 											@endphp
-											<button class="btn text-left pt-0 d-inline d-xl-none" data-toggle="modal" data-target="#mobile-filters-modal">
+											<button class="float-left btn text-left pt-0 d-inline d-xl-none" data-toggle="modal" data-target="#mobile-filters-modal">
 												<p class="card-title mt-2 ml-4" style="font-size: 10pt !important">
 													<i class="fa fa-bars"></i>&nbsp;Filters
 												</p>
@@ -85,6 +85,9 @@
 												<div class="modal-dialog" role="document">
 													<div class="modal-content">
 														<div class="modal-body">
+															<div class="text-right pb-2">
+																<i class="fa fa-close" onclick="close_modal('mobile-filters-modal')" style="cursor: pointer"></i>
+															</div>
 															<div class="tree container"><!-- Item Group -->
 																<ul style="padding-left: 0 !important">
 																	@foreach (array_keys($item_groups) as $item)

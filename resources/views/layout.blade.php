@@ -2384,6 +2384,10 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				}
 			});
 		}
+
+		function close_modal(modal){
+			$('#'+modal).modal('hide');
+		}
 		
 	</script>
 </body>
