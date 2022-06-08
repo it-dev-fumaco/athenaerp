@@ -365,8 +365,8 @@
                             <div class="container col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div class="table-responsive" id="example">
-                                            <table class="table table-sm table-bordered table-striped" style="font-size: 9pt;">
+                                        <div id="example">
+                                            <table class="table table-sm table-bordered table-striped variants-table">
                                                 <thead>
                                                     <tr>
                                                         <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
@@ -390,7 +390,7 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
                                                         @endforeach
-                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                        <td class="text-center align-middle text-nowrap variants-table">
                                                             <span class="badge badge-{{ ($item_stock_available > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($item_stock_available > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                         </td>
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
@@ -453,7 +453,7 @@
                                                         @endif
                                                     </tr>
                                                     @foreach ($co_variants as $variant)
-                                                    <tr style="font-size: 9pt;">
+                                                    <tr class="variants-table">
                                                         <td class="text-center align-middle font-weight-bold text-dark" style="background-color: #CCD1D1;">
                                                             <a href="/get_item_details/{{ $variant->name }}">{{ $variant->name }}</a>
                                                         </td>
@@ -469,7 +469,7 @@
                                                         @php
                                                             $avail_stock = array_key_exists($variant->name, $actual_variant_stocks) ? $actual_variant_stocks[$variant->name] : 0;
                                                         @endphp
-                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                        <td class="text-center align-middle text-nowrap variants-table">
                                                             <span class="badge badge-{{ ($avail_stock > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($avail_stock > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                         </td>
                                                         @php
@@ -741,6 +741,9 @@
         .responsive-description{
             font-size: 11pt;
         }
+        .variants-table{
+            font-size: 9pt;
+        }
         @media (max-width: 575.98px) {
             #example tr > *:first-child {
                 min-width: 5rem;
@@ -753,6 +756,9 @@
             }
             .responsive-description{
                 font-size: 9pt !important;
+            }
+            .variants-table{
+                font-size: 8pt !important;
             }
         }
         @media (max-width: 767.98px) {
@@ -768,6 +774,9 @@
             .responsive-description{
                 font-size: 9pt !important;
             }
+            .variants-table{
+                font-size: 8pt !important;
+            }
         }
         @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
             .pagination{
@@ -782,6 +791,9 @@
             .responsive-description{
                 font-size: 9pt !important;
             }
+            .variants-table{
+                font-size: 8pt !important;
+            }
         }
         @media only screen and (min-device-width : 768px) and (orientation : landscape) {
             .pagination{
@@ -795,6 +807,9 @@
             }
             .responsive-description{
                 font-size: 9pt !important;
+            }
+            .variants-table{
+                font-size: 8pt !important;
             }
         }
     </style>
