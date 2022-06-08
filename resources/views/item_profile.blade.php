@@ -47,7 +47,13 @@
                 <div class="tab-content">
                     <div id="item-info" class="container-fluid tab-pane active bg-white">
                         <div class="row">
-                            <div class="col-12 col-lg-8">
+                            @php
+                                $mngr_col = null;
+                                if(in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])){
+                                    $mngr_col = 'col-lg-9';
+                                }
+                            @endphp
+                            <div class="col-12 {{ $mngr_col }} col-xl-9">
                                 <div class="box box-solid mt-2">
                                     <div class="row">
                                         @php
@@ -67,7 +73,7 @@
                                             $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                                             $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
                                         @endphp
-                                        <div class="col-md-4 col-xl-2">
+                                        <div class="col-md-3 col-lg-2">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
@@ -153,7 +159,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-8 col-xl-10">
+                                        <div class="col-md-9 col-lg-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
                                                 <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
@@ -163,7 +169,7 @@
                                                 <p class="mt-2 mb-2 text-center">
                                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                                     <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
-                                                    <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                                                    <span class="d-block responsive-description" style="font-size: 11pt;">Standard Selling Price</span>
                                                     @endif
 
                                                     @if (in_array($user_group, ['Manager', 'Director']))
@@ -228,8 +234,8 @@
                                             </div>
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
-                                                    <div class="box-body table-responsive">
-                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
+                                                    <div class="box-body">
+                                                        <table class="table table-striped table-bordered table-hover responsive-description" style="font-size: 11pt;">
                                                             <thead>
                                                                 <tr>
                                                                     <th scope="col" rowspan=2 class="font-responsive text-center p-1 align-middle">Warehouse</th>
@@ -254,7 +260,7 @@
                                                                 </td>
                                                                 <td class="text-center p-1 font-responsive">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
                                                                 <td class="text-center p-1">
-                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} font-responsive" style="font-size: 10pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
+                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} responsive-description" style="font-size: 10pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
                                                                 </td>
                                                             </tr>
                                                             @empty
@@ -265,11 +271,11 @@
                                                         </table>
                                                         @if(count($consignment_warehouses) > 0)
                                                             <div class="text-center">
-                                                                <a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcww{{ $item_details->name }}" style="font-size: 12px;">View Consignment Warehouse</a>
+                                                                <a href="#" class="btn btn-primary uppercase p-1 responsive-description" data-toggle="modal" data-target="#vcww{{ $item_details->name }}" style="font-size: 12px;">View Consignment Warehouse</a>
                                                             </div>
                         
                                                             <div class="modal fade" id="vcww{{ $item_details->name }}" tabindex="-1" role="dialog">
-                                                                <div class="modal-dialog" role="document">
+                                                                <div class="modal-dialog modal-xl" role="document">
                                                                     <div class="modal-content">
                                                                         <div class="modal-header">
                                                                             <h4 class="modal-title">{{ $item_details->name }} - Consignment Warehouse(s) </h4>
@@ -281,18 +287,18 @@
                                                                                 <col style="width: 70%;">
                                                                                 <col style="width: 30%;">
                                                                                 <tr>
-                                                                                    <th class="text-center">Warehouse</th>
-                                                                                    <th class="text-center">Available Qty</th>
+                                                                                    <th class="text-center responsive-description">Warehouse</th>
+                                                                                    <th class="text-center responsive-description">Available Qty</th>
                                                                                 </tr>
                                                                                 @forelse($consignment_warehouses as $con)
                                                                                 <tr>
-                                                                                    <td>
+                                                                                    <td class="responsive-description">
                                                                                         {{ $con['warehouse'] }}
                                                                                         @if ($con['location'])
                                                                                             <small class="text-muted font-italic"> - {{ $con['location'] }}</small>
                                                                                         @endif
                                                                                     </td>
-                                                                                    <td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+                                                                                    <td class="text-center responsive-description"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
                                                                                 </tr>
                                                                                 @empty
                                                                                 <tr>
@@ -315,7 +321,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-none d-lg-block col-lg-4">
+                            @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])) 
+                            <div class="d-none d-lg-block col-lg-3">
                                 <div class="box box-solid h-100">
                                     <div class="box-body table-responsive no-padding h-100" style="display: flex; justify-content: center; align-items: center;">
                                         <p class="mt-2 mb-2 text-center">
@@ -347,6 +354,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
                             @if (count($co_variants) > 0)
                             <div class="col-12">
                                 <div class="card-header border-bottom-0">
@@ -357,8 +365,8 @@
                             <div class="container col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div class="table-responsive" id="example">
-                                            <table class="table table-sm table-bordered table-striped" style="font-size: 9pt;">
+                                        <div id="example">
+                                            <table class="table table-sm table-bordered table-striped variants-table">
                                                 <thead>
                                                     <tr>
                                                         <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
@@ -382,7 +390,7 @@
                                                         @foreach ($attribute_names as $attribute_name)
                                                         <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
                                                         @endforeach
-                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                        <td class="text-center align-middle text-nowrap variants-table">
                                                             <span class="badge badge-{{ ($item_stock_available > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($item_stock_available > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                         </td>
                                                         @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
@@ -445,7 +453,7 @@
                                                         @endif
                                                     </tr>
                                                     @foreach ($co_variants as $variant)
-                                                    <tr style="font-size: 9pt;">
+                                                    <tr class="variants-table">
                                                         <td class="text-center align-middle font-weight-bold text-dark" style="background-color: #CCD1D1;">
                                                             <a href="/get_item_details/{{ $variant->name }}">{{ $variant->name }}</a>
                                                         </td>
@@ -461,7 +469,7 @@
                                                         @php
                                                             $avail_stock = array_key_exists($variant->name, $actual_variant_stocks) ? $actual_variant_stocks[$variant->name] : 0;
                                                         @endphp
-                                                        <td class="text-center align-middle text-nowrap" style="font-size: 9pt;">
+                                                        <td class="text-center align-middle text-nowrap variants-table">
                                                             <span class="badge badge-{{ ($avail_stock > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($avail_stock > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                         </td>
                                                         @php
@@ -727,12 +735,30 @@
             right: 70px;
             top: -10px;
         }
+        .responsive-item-code{
+            font-size: 14pt;
+        }
+        .responsive-description{
+            font-size: 11pt;
+        }
+        .variants-table{
+            font-size: 9pt;
+        }
         @media (max-width: 575.98px) {
             #example tr > *:first-child {
                 min-width: 5rem;
             }
             .pagination{
                 font-size: 10pt !important;
+            }
+            .responsive-item-code{
+                font-size: 12pt !important;
+            }
+            .responsive-description{
+                font-size: 9pt !important;
+            }
+            .variants-table{
+                font-size: 8pt !important;
             }
         }
         @media (max-width: 767.98px) {
@@ -742,6 +768,15 @@
             .pagination{
                 font-size: 10pt !important;
             }
+            .responsive-item-code{
+                font-size: 12pt !important;
+            }
+            .responsive-description{
+                font-size: 9pt !important;
+            }
+            .variants-table{
+                font-size: 8pt !important;
+            }
         }
         @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
             .pagination{
@@ -749,6 +784,32 @@
             }
             .back-btn{
                 right: 0;
+            }
+            .responsive-item-code{
+                font-size: 12pt !important;
+            }
+            .responsive-description{
+                font-size: 9pt !important;
+            }
+            .variants-table{
+                font-size: 8pt !important;
+            }
+        }
+        @media only screen and (min-device-width : 768px) and (orientation : landscape) {
+            .pagination{
+                font-size: 10pt !important;
+            }
+            .back-btn{
+                right: 0;
+            }
+            .responsive-item-code{
+                font-size: 12pt !important;
+            }
+            .responsive-description{
+                font-size: 9pt !important;
+            }
+            .variants-table{
+                font-size: 8pt !important;
             }
         }
     </style>
