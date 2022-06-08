@@ -68,9 +68,51 @@ class ConsignmentController extends Controller
 
         DB::beginTransaction();
         try {
-            $now = Carbon::now();
+
+            $transactionDate = Carbon::parse($data['transaction_date']);
+
+            $start_date = Carbon::parse($data['transaction_date'])->subMonth();
+            $end_date = Carbon::parse($data['transaction_date'])->addMonth();
+
+            $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+
+            $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+
+            $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+            $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+
+            $transaction_date = $transactionDate->format('d-m-Y');
+            
+            $cutoff_period = [];
+            foreach ($period as $date) {
+                $date1 = $date->day($cutoff_1);
+                if ($date1 >= $start_date && $date1 <= $end_date) {
+                    $cutoff_period[] = $date->format('d-m-Y');
+                }
+                $date2 = $date->day($cutoff_2);
+                if ($date2 >= $start_date && $date2 <= $end_date) {
+                    $cutoff_period[] = $date->format('d-m-Y');
+                }
+            }
+
+            $cutoff_period[] = $transaction_date;
+            // sort array with given user-defined function
+            usort($cutoff_period, function ($time1, $time2) {
+                return strtotime($time1) - strtotime($time2);
+            });
+
+            $transaction_date_index = array_search($transaction_date, $cutoff_period);
+            // set cutoff date
+            $cutoff_date = Carbon::parse($cutoff_period[$transaction_date_index + 1])->format('Y-m-d');
+            
+            $currentDateTime = Carbon::now();
             $result = [];
             $no_of_items_updated = 0;
+
+            $status = 'On Time';
+            if ($currentDateTime->gt($cutoff_date)) {
+                $status = 'Late';
+            }
 
             $item_prices = DB::table('tabConsignment Beginning Inventory as cb')
                 ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
@@ -88,7 +130,7 @@ class ConsignmentController extends Controller
                 if ($existing) {
                     // for update
                     $values = [
-                        'modified' => $now->toDateTimeString(),
+                        'modified' => $currentDateTime->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'qty' => $row['qty'],
                     ];
@@ -102,8 +144,8 @@ class ConsignmentController extends Controller
                     $no_of_items_updated++;
                     $result[] = [
                         'name' => uniqid(),
-                        'creation' => $now->toDateTimeString(),
-                        'modified' => $now->toDateTimeString(),
+                        'creation' => $currentDateTime->toDateTimeString(),
+                        'modified' => $currentDateTime->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
@@ -118,7 +160,9 @@ class ConsignmentController extends Controller
                         'qty' => $row['qty'],
                         'promodiser' => Auth::user()->full_name,
                         'price' => (float)$price,
-                        'amount' => ((float)$price * (float)$row['qty'])
+                        'status' => $status,
+                        'amount' => ((float)$price * (float)$row['qty']),
+                        'cutoff_date' => $cutoff_date
                     ];
                 }
             }
@@ -158,8 +202,8 @@ class ConsignmentController extends Controller
             $data[] = [
                 'title' => '',
                 'start' => $row->transaction_date,
-                'backgroundColor' => '#28a745', //green
-                'borderColor' => '#28a745', //green
+                'backgroundColor' => '#28a745',
+                'borderColor' => '#28a745',
                 'allDay' => true,
                 'display' => 'background'
             ];
@@ -193,16 +237,16 @@ class ConsignmentController extends Controller
             $data[] = [
                 'title' => 'Cutoff',
                 'start' => $duration_from,
-                'backgroundColor' => '#2874a6', //green
-                'borderColor' => '#2874a6', //green
+                'backgroundColor' => '#2874a6',
+                'borderColor' => '#2874a6',
                 'allDay' => false,
             ];
     
             $data[] = [
                 'title' => 'Cutoff',
                 'start' => $duration_to,
-                'backgroundColor' => '#2874a6', //green
-                'borderColor' => '#2874a6', //green
+                'backgroundColor' => '#2874a6',
+                'borderColor' => '#2874a6',
                 'allDay' => false,
             ];
         }
