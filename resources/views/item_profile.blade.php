@@ -47,7 +47,7 @@
                 <div class="tab-content">
                     <div id="item-info" class="container-fluid tab-pane active bg-white">
                         <div class="row">
-                            <div class="col-12 col-lg-{{ in_array($user_group, ['Manager', 'Director']) ? 9 : 12 }} col-xl-8">
+                            <div class="col-12 col-lg-8">
                                 <div class="box box-solid mt-2">
                                     <div class="row">
                                         @php
@@ -67,7 +67,7 @@
                                             $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                                             $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
                                         @endphp
-                                        <div class="col-md-4 col-lg-2">
+                                        <div class="col-md-4 col-xl-2">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
@@ -153,11 +153,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-8 col-lg-10">
+                                        <div class="col-md-8 col-xl-10">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
-                                                <dt class="responsive-item-code"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
-                                                <dd class="responsive-description" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                                                <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
+                                                <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
                                             </dl>
                                             <div class="d-block d-lg-none">
                                                 <p class="mt-2 mb-2 text-center">
@@ -229,7 +229,7 @@
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
                                                     <div class="box-body table-responsive">
-                                                        <table class="table table-striped table-bordered table-hover responsive-description"
+                                                        <table class="table table-striped table-bordered table-hover" style="font-size: 11pt;">
                                                             <thead>
                                                                 <tr>
                                                                     <th scope="col" rowspan=2 class="font-responsive text-center p-1 align-middle">Warehouse</th>
@@ -269,15 +269,15 @@
                                                             </div>
                         
                                                             <div class="modal fade" id="vcww{{ $item_details->name }}" tabindex="-1" role="dialog">
-                                                                <div class="modal-dialog modal-xl" role="document">
+                                                                <div class="modal-dialog" role="document">
                                                                     <div class="modal-content">
                                                                         <div class="modal-header">
-                                                                            <h5 class="modal-title">{{ $item_details->name }} - Consignment Warehouse(s) </h5>
+                                                                            <h4 class="modal-title">{{ $item_details->name }} - Consignment Warehouse(s) </h4>
                                                                             <button type="button" class="close" onclick="close_modal('#vcww{{ $item_details->name }}')" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                                                         </div>
                                                                         <form></form>
                                                                         <div class="modal-body">
-                                                                            <table class="table table-hover m-0 responsive-description">
+                                                                            <table class="table table-hover m-0">
                                                                                 <col style="width: 70%;">
                                                                                 <col style="width: 30%;">
                                                                                 <tr>
@@ -292,7 +292,7 @@
                                                                                             <small class="text-muted font-italic"> - {{ $con['location'] }}</small>
                                                                                         @endif
                                                                                     </td>
-                                                                                    <td class="text-center"><span class="font-responsive badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+                                                                                    <td class="text-center"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
                                                                                 </tr>
                                                                                 @empty
                                                                                 <tr>
@@ -315,7 +315,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-none d-lg-block col-lg-3">
+                            <div class="d-none d-lg-block col-lg-4">
                                 <div class="box box-solid h-100">
                                     <div class="box-body table-responsive no-padding h-100" style="display: flex; justify-content: center; align-items: center;">
                                         <p class="mt-2 mb-2 text-center">
@@ -727,12 +727,6 @@
             right: 70px;
             top: -10px;
         }
-        .responsive-description{
-			font-size: 11pt;
-		}
-		.responsive-item-code{
-			font-size: 14pt;
-		}
         @media (max-width: 575.98px) {
             #example tr > *:first-child {
                 min-width: 5rem;
@@ -740,12 +734,6 @@
             .pagination{
                 font-size: 10pt !important;
             }
-            .responsive-item-code{
-				font-size: 12pt !important;
-			}
-			.responsive-description{
-				font-size: 10pt !important;
-			}
         }
         @media (max-width: 767.98px) {
             #example tr > *:first-child {
@@ -754,12 +742,6 @@
             .pagination{
                 font-size: 10pt !important;
             }
-            .responsive-item-code{
-				font-size: 12pt !important;
-			}
-			.responsive-description{
-				font-size: 10pt !important;
-			}
         }
         @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
             .pagination{
@@ -768,12 +750,6 @@
             .back-btn{
                 right: 0;
             }
-            .responsive-item-code{
-				font-size: 12pt !important;
-			}
-			.responsive-description{
-				font-size: 10pt !important;
-			}
         }
     </style>
 @endsection

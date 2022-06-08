@@ -757,6 +757,12 @@
 		border: none;
 	}
 
+	.responsive-item-code{
+		font-size: 12pt
+	}
+	.responsive-description{
+		font-size: 10pt
+	}
 	.category-btn-grp{
 		transition: .4s;
 	}
@@ -947,7 +953,7 @@
 
 
 	@media (max-width: 575.98px) {
-        .font-responsive, .stock-ledger-table-font{
+        .font-responsive, .responsive-item-code, .stock-ledger-table-font{
 			font-size: 10pt !important;
 		}
 		.item-class, .item-name{
@@ -990,7 +996,7 @@
 		}
     }
   	@media (max-width: 767.98px) {
-        .font-responsive, .stock-ledger-table-font{
+        .font-responsive, .responsive-description, .stock-ledger-table-font{
 			font-size: 10pt !important;
 		}
 		.search-img, .search-thumbnail{
