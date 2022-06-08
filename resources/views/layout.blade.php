@@ -420,9 +420,6 @@
 			.tbl-athena-logs-tbl-user{
 				width: auto !important;
 			}
-			.font-responsive{
-				font-size: 10pt !important;
-			}
 		}
 		.select2{
 			width: 100% !important;
