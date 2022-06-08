@@ -85,9 +85,6 @@
 												<div class="modal-dialog" role="document">
 													<div class="modal-content">
 														<div class="modal-body">
-															<div class="text-right pb-2">
-																<i class="fa fa-close" id="close-filters-modal" style="cursor: pointer"></i>
-															</div>
 															<div class="tree container"><!-- Item Group -->
 																<ul style="padding-left: 0 !important">
 																	@foreach (array_keys($item_groups) as $item)
@@ -1050,14 +1047,4 @@
 		}
 	}
 </style>
-@endsection
-
-@section('script')
-	<script>
-		$(document).ready(function(){
-			$('#close-filters-modal').click(function(){
-				$('#mobile-filters-modal').modal('hide');
-			});
-		});
-	</script>
 @endsection
