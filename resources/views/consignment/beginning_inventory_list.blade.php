@@ -35,9 +35,9 @@
                                                 $statuses = ['For Approval', 'Approved', 'Cancelled'];
                                             @endphp
                                             <select name="status" class="form-control">
-                                                <option value="" disabled {{ !request('status') ? 'selected' : null }}>Select a status</option>
+                                                <option value="" disabled>Select a status</option>
                                                 @foreach ($statuses as $status)
-                                                    <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : null }}>{{ $status }}</option>
+                                                    <option value="{{ $status }}" {{ request('status') ? ( request('status') == $status ? 'selected' : null) : ($status == 'For Approval' ? 'selected' : null) }}>{{ $status }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -101,10 +101,11 @@
                                                                 <div class="row">
                                                                     <div class="col-8 text-left font-responsive">
                                                                         <b>Branch:</b> {{ $inv['branch'] }}<br/>
-                                                                        <b>Transaction Date:</b> {{ $inv['transaction_date'] }}
+                                                                        <b>Transaction Date:</b> {{ $inv['transaction_date'] }} <br>
+                                                                        <b>Promidiser:</b> {{ $inv['owner'] }}
                                                                     </div>
                                                                     @if ($inv['status'] == 'For Approval')
-                                                                    <div class="col-4">
+                                                                    <div class="col-4 w-100">
                                                                         @php
                                                                             $status_selection = [
                                                                                 ['title' => 'Approve', 'value' => 'Approved'],
@@ -113,7 +114,7 @@
                                                                         @endphp
                                                                         <form action="/approve_beginning_inv/{{ $inv['name'] }}" method="post">
                                                                             @csrf
-                                                                            <div class="input-group">
+                                                                            <div class="input-group pt-2">
                                                                                 <select class="custom-select font-responsive" name="status" id="inputGroupSelect04" required>
                                                                                     <option value="" selected disabled>Select a status</option>
                                                                                     @foreach ($status_selection as $status)

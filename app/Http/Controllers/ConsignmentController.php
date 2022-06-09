@@ -261,6 +261,8 @@ class ConsignmentController extends Controller
 
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
         $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
+
+        $status = $request->status ? $request->status : 'For Approval';
         
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
             ->when($request->search, function ($q) use ($request){
@@ -273,9 +275,7 @@ class ConsignmentController extends Controller
             ->when($request->store, function ($q) use ($request){
                 return $q->where('branch_warehouse', $request->store);
             })
-            ->when($request->status, function ($q) use ($request){
-                return $q->where('status', $request->status);
-            })
+            ->where('status', $status)
             ->orderBy('creation', 'desc')
             ->paginate(10);
 
