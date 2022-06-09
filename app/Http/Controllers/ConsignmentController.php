@@ -417,7 +417,7 @@ class ConsignmentController extends Controller
     public function promodiserDeliveryReport(){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
-        $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)->paginate(10);
+        $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->paginate(10);
         $reference_ste = collect($delivery_report->items())->map(function ($q){
             return $q->name;
         });
@@ -447,6 +447,7 @@ class ConsignmentController extends Controller
                     'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
                     'delivered_qty' => $item->transfer_qty,
                     'stock_uom' => $item->stock_uom,
+                    'price' => $item->basic_rate,
                     'delivery_status' => $item->consignment_status
                 ];
             }
@@ -462,7 +463,6 @@ class ConsignmentController extends Controller
                 'status' => $ste->item_status,
                 'items' => $items_arr,
                 'creation' => $ste->creation,
-                'posting_date' => $ste->posting_date,
                 'delivery_date' => $ste->delivery_date,
                 'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
             ];

@@ -21,9 +21,10 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Delivery Report</span>
+                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Incoming Deliveries</span>
                         </div>
                         <div class="card-body p-1">
+                            <span class="float-right mr-3" style="font-size: 10pt">Total items: {{ count($ste_arr) }}</span>
                             <table class="table table-bordered" style='font-size: 10pt;'>
                                 <tr>
                                     <th class="text-center" style='width: 30%'>Name</th>
@@ -37,7 +38,6 @@
                                         </td>
                                         <td>
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a> <br><br>
-                                            <span><b>Posting Date:</b> {{ Carbon\Carbon::parse($ste['posting_date'])->format('F d, Y') }}</span><br>
                                             <span><b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</span>
 
                                             <div class="modal fade" id="{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -52,8 +52,9 @@
                                                         <div class="modal-body">
                                                             <table class="table table-bordered">
                                                                 <tr>
-                                                                    <th class="text-center" style="width: 55%">Item</th>
-                                                                    <th class="text-center">Delivered Qty</th>
+                                                                    <th class="text-center" style="width: 50%">Item</th>
+                                                                    <th class="text-center"><span style="white-space: nowrap">Delivered</span> Qty</th>
+                                                                    <th class="text-center">Price</th>
                                                                 </tr>
                                                                 @foreach ($ste['items'] as $item)
                                                                     @php
@@ -62,24 +63,27 @@
                                                                         $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
                                                                     @endphp
                                                                     <tr>
-                                                                        <td colspan=2>
+                                                                        <td colspan=3>
                                                                             <div class="row">
-                                                                                <div class="col-7">
+                                                                                <div class="col-6">
                                                                                     <div class="row">
-                                                                                        <div class="col-4 text-center">
+                                                                                        <div class="col-6 text-center">
                                                                                             <picture>
                                                                                                 <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp">
                                                                                                 <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
                                                                                                 <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" width="100%">
                                                                                             </picture>
                                                                                         </div>
-                                                                                        <div class="col-4" style="display: flex; justify-content: center; align-items: center;">
+                                                                                        <div class="col-6" style="display: flex; justify-content: center; align-items: center;">
                                                                                             <b>{{ $item['item_code'] }}</b>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                <div class="col-5 text-center" style="display: flex; justify-content: center; align-items: center;">
+                                                                                <div class="col-3 text-center" style="display: flex; justify-content: center; align-items: center;">
                                                                                     <b>{{ $item['delivered_qty'] * 1 }}</b>&nbsp;<small>{{ $item['stock_uom'] }}</small>
+                                                                                </div>
+                                                                                <div class="col-3 text-center" style="display: flex; justify-content: center; align-items: center;">
+                                                                                    ₱ {{ $item['price'] * 1 }}
                                                                                 </div>
                                                                                 <div id="{{ $id }}-description" class="col-12 ste-description pt-2 text-justify" style="height: 50px; overflow: hidden;">
                                                                                     {{ strip_tags($item['description']) }}
