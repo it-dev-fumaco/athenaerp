@@ -15,13 +15,13 @@
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('success'))
-                            <div class="alert alert-success fade show text-center" role="alert">
-                                {{ session()->get('success') }}
+                            <div class="alert alert-success fade show text-center" role="alert" style="font-size: 10pt;">
+                                {!! session()->get('success') !!}
                             </div>
                             @endif
                             @if(session()->has('error'))
-                            <div class="alert alert-danger fade show text-center" role="alert">
-                                {{ session()->get('error') }}
+                            <div class="alert alert-danger fade show text-center" role="alert" style="font-size: 10pt;">
+                                {!! session()->get('error') !!}
                             </div>
                             @endif
                             <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">Product Sold Entry</h6>
@@ -41,9 +41,16 @@
                                     <tbody>
                                         @forelse ($items as $row)
                                         @php
+                                            $id = $row->item_code;
                                             $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
                                             $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
                                             $qty = array_key_exists($row->item_code, $existing_record) ? ($existing_record[$row->item_code] * 1) : 0;
+                                            $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
+
+                                            if(session()->has('error')) {
+                                                $data = session()->get('old_data');
+                                                $qty = $data['item'][$row->item_code]['qty'];
+                                            }
                                         @endphp
                                         <tr>
                                             <td class="text-justify p-1 align-middle" colspan="2">
@@ -60,21 +67,26 @@
                                                         <span class="font-weight-bold">{{ $row->item_code }}</span>
                                                     </div>
                                                     <div class="p-1 col-5">
-                                                        <div class="input-group p-1">
+                                                        <div class="input-group p-1 justify-content-center">
                                                             <div class="input-group-prepend p-0">
                                                                 <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                             </div>
                                                             <div class="custom-a p-0">
-                                                                <input type="text" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px">
+                                                                <input type="number" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $consigned_qty }}">
                                                             </div>
                                                             <div class="input-group-append p-0">
                                                                 <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
                                                             </div>
                                                         </div>
+                                                        <div class="text-center">
+                                                            <small>Available: {{ $consigned_qty }}</small>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="d-flex flex-row">
-                                                    <div class="p-1">{!! strip_tags($row->description) !!}</div>
+                                                    <div class="p-1 text-justify">
+                                                        <div class="item-description">{!! strip_tags($row->description) !!}</div>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr> 
@@ -96,22 +108,93 @@
         </div>
 	</div>
 </div>
+
+<div class="modal fade" id="success-modal" tabindex="-1" role="dialog" aria-labelledby="success-modalTitle" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <form></form>
+                <div class="d-flex flex-row justify-content-end">
+                    <div class="p-1">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+                @if(session()->has('success'))
+                <p class="text-success text-center mb-0" style="font-size: 5rem; margin-top: -40px;">
+                    <i class="fas fa-check-circle"></i>
+                </p>
+                <p class="text-center text-uppercase mt-0 font-weight-bold">{{ session()->get('success') }}</p>
+                <div class="text-center mb-2" style="font-size: 9pt;">
+                    <span class="d-block font-weight-bold mt-3">{{ session()->get('no_of_items_updated') }}</span>
+                    <small class="d-block">No. of updated Items</small>
+                    <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
+                    <small class="d-block">Transaction Date</small>
+                    <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
+                    <small class="d-block">Branch / Store</small>
+                </div>
+                <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2">
+                        <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to Calendar</a>
+                    </div>
+                </div>
+                <div class="d-flex flex-row justify-content-between">
+                    <div class="p-2">
+                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
+                            <i class="fas fa-arrow-left"></i> {{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('F d, Y') }}
+                        </a>
+                    </div>
+                    <div class="p-2">
+                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
+                            {{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('F d, Y') }} <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+    .morectnt span {
+        display: none;
+    }
+</style>
 @endsection
 
 @section('script')
 <script>
     $(function () {
+        @if (session()->has('success'))
+        $('#success-modal').modal('show');
+        @endif
         $('.qtyplus').click(function(e){
             // Stop acting like a button
             e.preventDefault();
             // Get the field name
             var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+            // get max value
+            var max = fieldName.data('max');
             // Get its current value
             var currentVal = parseInt(fieldName.val());
             // If is not undefined
             if (!isNaN(currentVal)) {
                 // Increment
-                fieldName.val(currentVal + 1);
+                if (currentVal < max) {
+                    fieldName.val(currentVal + 1);
+                }
             } else {
                 // Otherwise put a 0 there
                 fieldName.val(0);
@@ -140,6 +223,32 @@
             $("#items-table tr").filter(function() {
                 $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
             });
+        });
+        
+        var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
+        $('.item-description').each(function() {
+            var content = $(this).text();
+            if (content.length > showTotalChar) {
+                var con = content.substr(0, showTotalChar);
+                var hcon = content.substr(showTotalChar, content.length - showTotalChar);
+                var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="showmoretxt">' + showChar + '</a></span>';
+                $(this).html(txt);
+            }
+        });
+
+        $(".showmoretxt").click(function(e) {
+            e.preventDefault();
+            if ($(this).hasClass("sample")) {
+                $(this).removeClass("sample");
+                $(this).text(showChar);
+            } else {
+                $(this).addClass("sample");
+                $(this).text(hideChar);
+            }
+
+            $(this).parent().prev().toggle();
+            $(this).prev().toggle();
+            return false;
         });
     });
 </script>

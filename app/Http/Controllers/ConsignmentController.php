@@ -67,7 +67,7 @@ class ConsignmentController extends Controller
             ->where('status', 'Approved')->exists();
 
         if (!$existing_inventory) {
-            return response()->json(['status' => 0, 'message' => 'No beginning inventory entry found.']);
+            return response()->json(['status' => 0, 'message' => 'No beginning inventory entry found on <br>'. Carbon::parse($request->date)->format('F d, Y')]);
         }
 
         return response()->json(['status' => 1, 'message' => 'Beginning inventory found.']);
@@ -79,10 +79,13 @@ class ConsignmentController extends Controller
             ->join('tabItem as i', 'i.name', 'cbi.item_code')
             ->where('cb.status', 'Approved')
             ->where('i.disabled', 0)->where('i.is_stock_item', 1)
+            ->whereDate('cb.transaction_date', '<=', Carbon::parse($transaction_date))
             ->where('cb.branch_warehouse', $branch)->select('i.item_code', 'i.description')
             ->orderBy('i.description', 'asc')->get();
 
         $item_codes = collect($items)->pluck('item_code');
+
+        $consigned_stocks = DB::table('tabBin')->whereIn('item_code', $item_codes)->where('warehouse', $branch)->pluck('consigned_qty', 'item_code')->toArray();
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_images = collect($item_images)->groupBy('parent')->toArray();
@@ -90,7 +93,7 @@ class ConsignmentController extends Controller
         $existing_record = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
             ->where('transaction_date', $transaction_date)->pluck('qty', 'item_code')->toArray();
 
-        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record'));
+        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks'));
     }
 
     public function submitProductSoldForm(Request $request) {
@@ -153,11 +156,21 @@ class ConsignmentController extends Controller
                 ->orderBy('cb.transaction_date', 'desc')->get();
 
             $item_prices = collect($item_prices)->groupBy('item_code')->toArray();
+
+            $consigned_stocks = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
+                ->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code')->toArray();
+
             foreach ($data['item'] as $item_code => $row) {
+                $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
                 $existing = DB::table('tabConsignment Product Sold')
                     ->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])
                     ->where('transaction_date', $data['transaction_date'])->first();
                 if ($existing) {
+                    $consigned_qty = $consigned_qty + $existing->qty;
+
+                    DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
+                        ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+
                     // for update
                     $values = [
                         'modified' => $currentDateTime->toDateTimeString(),
@@ -171,6 +184,16 @@ class ConsignmentController extends Controller
                 } else {
                     // for insert
                     $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
+
+                    if ($consigned_qty < (float)$row['qty']) {
+                        return redirect()->back()
+                            ->with(['old_data' => $data])
+                            ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
+                    }
+
+                    DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
+                        ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+                    
                     $no_of_items_updated++;
                     $result[] = [
                         'name' => uniqid(),
@@ -202,6 +225,13 @@ class ConsignmentController extends Controller
             }
 
             DB::commit();
+
+            return redirect()->back()->with([
+                'success' => 'Record successfully updated',
+                'no_of_items_updated' => $no_of_items_updated,
+                'branch' => $data['branch_warehouse'],
+                'transaction_date' => $data['transaction_date']
+            ]);
 
             return redirect('/product_sold_success')->with([
                 'success' => 'Record successfully updated',

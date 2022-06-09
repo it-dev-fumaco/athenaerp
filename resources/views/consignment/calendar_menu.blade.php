@@ -35,7 +35,7 @@
 								</div>
 							</div>
 						</div>
-               </div>
+               		</div>
 				</div>
 			</div>
 		</div>
@@ -133,8 +133,7 @@
 					data: {branch_warehouse: $('#branch-name').text(), date: (info.dateStr)},
 					success: function (response) {
 						if (!response.status) {
-							// showNotification("danger", response.message, "fa fa-info");
-							$('#modal-sm-message').text(response.message);
+							$('#modal-sm-message').html(response.message);
 							$('#modal-sm').modal('show');
 							return false;
 						} else {
