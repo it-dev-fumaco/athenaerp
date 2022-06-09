@@ -43,6 +43,36 @@ class ConsignmentController extends Controller
         return view('consignment.calendar_menu', compact('branch', 'due_alert'));
     }
 
+    public function salesReportDeadline(Request $request) {        
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        if ($sales_report_deadline) {
+            $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+
+            $calendarMonth = $request->month;
+            $calendarYear = $request->year;
+
+            $first_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_1 .'/'. $calendarYear)->format('F d, Y');
+            $second_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_2 .'/'. $calendarYear)->format('F d, Y');
+
+            return 'Deadline: ' . $first_cutoff . ' & ' . $second_cutoff;
+        }
+    }
+
+    public function checkBeginningInventory(Request $request) {
+        // count beginnning inventory based on selected date and branch warehouse
+        $existing_inventory = DB::table('tabConsignment Beginning Inventory')
+            ->where('branch_warehouse', $request->branch_warehouse)
+            ->whereDate('transaction_date', '<=', Carbon::parse($request->date))
+            ->where('status', 'Approved')->exists();
+
+        if (!$existing_inventory) {
+            return response()->json(['status' => 0, 'message' => 'No beginning inventory entry found.']);
+        }
+
+        return response()->json(['status' => 1, 'message' => 'Beginning inventory found.']);
+    }
+
     public function viewProductSoldForm($branch, $transaction_date) {
         $items = DB::table('tabConsignment Beginning Inventory as cb')
             ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
@@ -195,15 +225,22 @@ class ConsignmentController extends Controller
         $end = $request->end;
         $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
             ->whereBetween('transaction_date', [$start, $end])
-            ->select('transaction_date')->groupBy('transaction_date')->get();
+            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))->groupBy('transaction_date')->get();
 
         $data = [];
         foreach ($query as $row) {
+            $status = explode(',', strtolower($row->status));
+
+            $color = '#28a745';
+            if (in_array('late', $status)) {
+                $color = '#dc3545';
+            }
+            // $color = $
             $data[] = [
                 'title' => '',
                 'start' => $row->transaction_date,
-                'backgroundColor' => '#28a745',
-                'borderColor' => '#28a745',
+                'backgroundColor' => $color,
+                'borderColor' => $color,
                 'allDay' => true,
                 'display' => 'background'
             ];
