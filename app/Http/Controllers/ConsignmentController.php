@@ -575,7 +575,7 @@ class ConsignmentController extends Controller
 
                 // Get items from Bin
                 $bin_items = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')
-                    ->where('bin.warehouse', $branch)->whereNotIn('bin.item_code', $inv_items) // do not include approved and for approval items
+                    ->where('bin.warehouse', $branch)->where('actual_qty', '>', 0)->whereNotIn('bin.item_code', $inv_items) // do not include approved and for approval items
                     ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description')->orderBy('bin.actual_qty', 'desc')
                     ->get();
 

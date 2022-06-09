@@ -17,6 +17,7 @@
                             <h6 class="font-weight-bold text-center m-1 text-uppercase">Beginning Inventory</h6>
                         </div>
                         <div class="card-body p-0">
+                            <span class="float-right mr-3" style="font-size: 10pt;">Total items: {{ count($inventory) }}</span>
                             <table class="table table-bordered">
                                 <tr>
                                     <th class="font-responsive text-center p-2" style="width: 50%">Item Description</th>
