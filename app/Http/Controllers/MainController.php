@@ -115,7 +115,15 @@ class MainController extends Controller
                     ];
                 }
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage', 'inventory_summary'));
+                // Incoming deliveries
+                $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->get();
+                $reference_ste = collect($delivery_report)->map(function ($q){
+                    return $q->name;
+                });
+
+                $incoming_deliveries_count = DB::table('tabStock Entry Detail')->whereIn('parent', $reference_ste)->count();
+
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage', 'inventory_summary', 'incoming_deliveries_count'));
             }
 
             return redirect('/search_results');

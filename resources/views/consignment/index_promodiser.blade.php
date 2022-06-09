@@ -46,15 +46,17 @@
           </div>
         </div>
         <div class="col-6 p-1">
-          <div class="info-box bg-gradient-secondary m-0">
-            <div class="info-box-content p-1">
-              <span class="info-box-text" style="font-size: 8pt;">Stock Adjustments</span>
-              <span class="info-box-number">0</span>
-              <div class="progress">
-                <div class="progress-bar"></div>
+          <a href="/promodiser/delivery_report/incoming" style="color: inherit !important">
+            <div class="info-box bg-gradient-secondary m-0">
+              <div class="info-box-content p-1">
+                <span class="info-box-text" style="font-size: 8pt;">Incoming Deliveries</span>
+                <span class="info-box-number">{{ $incoming_deliveries_count }}</span>
+                <div class="progress">
+                  <div class="progress-bar"></div>
+                </div>
               </div>
             </div>
-          </div>
+          </a>
         </div>
       </div>
       <div class="row p-0 m-0">

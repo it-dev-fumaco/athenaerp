@@ -414,10 +414,28 @@ class ConsignmentController extends Controller
         }
     }
 
-    public function promodiserDeliveryReport(){
+    public function promodiserDeliveryReport($type){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
-        $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->paginate(10);
+        $received_ste_arr = [];
+        if($type == 'incoming'){ // get ste's of received items
+            $received_ste_arr = DB::table('tabStock Entry Detail')->where('consignment_status', 'Received')->select('parent')->distinct('parent')->get();
+            $received_ste_arr = collect($received_ste_arr)->map(function ($q){
+                return $q->parent;
+            });
+        }
+
+        $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
+        $beginning_inventory_start_date = Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d');
+
+        $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')
+            ->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)
+            ->whereDate('delivery_date', '>=', $beginning_inventory_start_date)
+            ->when($type == 'incoming', function ($q) use ($received_ste_arr){ // do not include ste's of received items
+                return $q->whereNotIn('name', $received_ste_arr);
+            })
+            ->orderBy('creation', 'desc')->paginate(10);
+
         $reference_ste = collect($delivery_report->items())->map(function ($q){
             return $q->name;
         });
@@ -456,11 +474,20 @@ class ConsignmentController extends Controller
                 return $q['delivery_status'] ? 1 : 0; // return 1 if status is Received
             })->toArray();
 
+            $delivery_date = Carbon::parse($ste->delivery_date);
+            $now = Carbon::now();
+
+            if($ste->item_status == 'Issued' && $now > $delivery_date){
+                $status = 'Delivered';
+            }else{
+                $status = 'Pending';
+            }
+
             $ste_arr[] = [
                 'name' => $ste->name,
                 'from' => $ste->from_warehouse,
                 'to_consignment' => $ste->to_warehouse,
-                'status' => $ste->item_status,
+                'status' => $status,
                 'items' => $items_arr,
                 'creation' => $ste->creation,
                 'delivery_date' => $ste->delivery_date,
@@ -468,7 +495,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr'));
+        return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr', 'type'));
     }
 
     public function promodiserReceiveDelivery($id){
