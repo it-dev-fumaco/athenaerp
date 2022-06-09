@@ -377,6 +377,110 @@ class ConsignmentController extends Controller
         }
     }
 
+    public function promodiserDeliveryReport(){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
+        $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)->paginate(10);
+        $reference_ste = collect($delivery_report->items())->map(function ($q){
+            return $q->name;
+        });
+        
+        $ste_items = DB::table('tabStock Entry Detail')->whereIn('parent', $reference_ste)->get();
+
+        $item_codes = collect($ste_items)->map(function ($q){
+            return $q->item_code;
+        });
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        $ste_items = collect($ste_items)->groupBy('parent');
+
+        $ste_arr = [];
+        foreach($delivery_report as $ste){
+            if(!isset($ste_items[$ste->name])){ // remove ste's without ste detail
+                continue;
+            }
+
+            $items_arr = [];
+            foreach($ste_items[$ste->name] as $item){
+                $items_arr[] = [
+                    'item_code' => $item->item_code,
+                    'description' => $item->description,
+                    'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
+                    'delivered_qty' => $item->transfer_qty,
+                    'stock_uom' => $item->stock_uom,
+                    'delivery_status' => $item->consignment_status
+                ];
+            }
+
+            $status_check = collect($items_arr)->map(function($q){
+                return $q['delivery_status'] ? 1 : 0; // return 1 if status is Received
+            })->toArray();
+
+            $ste_arr[] = [
+                'name' => $ste->name,
+                'from' => $ste->from_warehouse,
+                'to_consignment' => $ste->to_warehouse,
+                'status' => $ste->item_status,
+                'items' => $items_arr,
+                'creation' => $ste->creation,
+                'posting_date' => $ste->posting_date,
+                'delivery_date' => $ste->delivery_date,
+                'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+            ];
+        }
+
+        return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr'));
+    }
+
+    public function promodiserReceiveDelivery($id){
+        DB::beginTransaction();
+        try {
+            $branch = DB::table('tabStock Entry')->where('name', $id)->pluck('to_warehouse')->first();
+
+            $ste_items = DB::table('tabStock Entry Detail')->where('parent', $id)->get();
+            
+            $item_codes = collect($ste_items)->map(function ($q){
+                return $q->item_code;
+            });
+
+            $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
+            $bin_items = collect($bin)->groupBy('item_code');
+
+            foreach($ste_items as $item){
+                if($item->consignment_status == 'Received'){ // skip already received items
+                    continue;
+                }
+
+                if(!isset($bin_items[$item->item_code])){ // skip if item does not exist in bin
+                    continue;
+                }
+
+                $consigned_qty = $bin_items[$item->item_code][0]->consigned_qty;
+
+                DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'consigned_qty' => $consigned_qty + $item->transfer_qty
+                ]);
+
+                DB::table('tabStock Entry Detail')->where('name', $item->name)->update([
+                    'consignment_status' => 'Received',
+                    'consignment_date_received' => Carbon::now()->toDateTimeString(),
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Items received');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'An error occured. Please try again later');
+        }
+    }
+
     public function beginningInventoryList(Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->get();
