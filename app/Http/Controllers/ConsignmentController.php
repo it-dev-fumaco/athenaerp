@@ -70,10 +70,257 @@ class ConsignmentController extends Controller
             return response()->json(['status' => 0, 'message' => 'No beginning inventory entry found on <br>'. Carbon::parse($request->date)->format('F d, Y')]);
         }
 
+        if (Auth::user()->is_roving_promodiser) {
+            return response()->json(['status' => 2, 'message' => '/view_inventory_audit_form/' . $request->branch_warehouse . '/' . $request->date]);
+        }
+
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        if ($sales_report_deadline) {
+            $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+
+            $calendarMonth = Carbon::parse($request->date)->format('m');
+            $calendarYear = Carbon::parse($request->date)->format('Y');
+
+            $first_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_1 .'/'. $calendarYear)->format('Y-m-d');
+            $second_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_2 .'/'. $calendarYear)->format('Y-m-d');
+
+            $cutoff_dates = [$first_cutoff, $second_cutoff];
+
+            if (in_array($request->date, $cutoff_dates)) {
+                return response()->json(['status' => 2, 'message' => '/view_inventory_audit_form/' . $request->branch_warehouse . '/' . $request->date]);
+            }   
+        }
+
         return response()->json(['status' => 1, 'message' => 'Beginning inventory found.']);
     }
 
+    public function viewInventoryAuditForm($branch, $transaction_date) {
+        if (!Auth::user()->is_roving_promodiser) {
+            $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+            if ($sales_report_deadline) {
+                $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+                $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+
+                $calendarMonth = Carbon::parse($transaction_date)->format('m');
+                $calendarYear = Carbon::parse($transaction_date)->format('Y');
+
+                $first_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_1 .'/'. $calendarYear)->format('Y-m-d');
+                $second_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_2 .'/'. $calendarYear)->format('Y-m-d');
+
+                $cutoff_dates = [$first_cutoff, $second_cutoff];
+
+                if (!in_array($transaction_date, $cutoff_dates)) {
+                    return redirect('/view_product_sold_form/' . $branch . '/' . $transaction_date);
+                }
+            }
+        }
+
+        $transactionDate = Carbon::parse($transaction_date);
+
+        $start_date = Carbon::parse($transaction_date)->subMonth();
+        $end_date = Carbon::parse($transaction_date)->addMonth();
+
+        $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+
+        $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+
+        $date_of_transaction = $transactionDate->format('Y-m-d');
+        
+        $cutoff_period = [];
+        foreach ($period as $date) {
+            $date1 = $date->day($cutoff_1);
+            if ($date1 >= $start_date && $date1 <= $end_date) {
+                $cutoff_period[] = $date->format('Y-m-d');
+            }
+            $date2 = $date->day($cutoff_2);
+            if ($date2 >= $start_date && $date2 <= $end_date) {
+                $cutoff_period[] = $date->format('Y-m-d');
+            }
+        }
+
+        $cutoff_period[] = $date_of_transaction;
+        // sort array with given user-defined function
+        usort($cutoff_period, function ($time1, $time2) {
+            return strtotime($time1) - strtotime($time2);
+        });
+
+        $date_of_transaction_index = array_search($date_of_transaction, $cutoff_period);
+        // set duration from and duration to
+        $duration_from = Carbon::parse($cutoff_period[$date_of_transaction_index - 1])->format('F d, Y');
+        $duration_to = Carbon::parse($cutoff_period[$date_of_transaction_index + 1])->format('F d, Y');
+        
+        $duration = $duration_from . ' - ' . $duration_to;
+
+        $items = DB::table('tabConsignment Beginning Inventory as cb')
+            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+            ->join('tabItem as i', 'i.name', 'cbi.item_code')
+            ->where('cb.status', 'Approved')
+            ->where('i.disabled', 0)->where('i.is_stock_item', 1)
+            ->whereDate('cb.transaction_date', '<=', Carbon::parse($transaction_date))
+            ->where('cb.branch_warehouse', $branch)->select('i.item_code', 'i.description')
+            ->orderBy('i.description', 'asc')->get();
+
+        $item_codes = collect($items)->pluck('item_code');
+
+        $consigned_stocks = DB::table('tabBin')->whereIn('item_code', $item_codes)->where('warehouse', $branch)->pluck('consigned_qty', 'item_code')->toArray();
+
+        $start = Carbon::parse($cutoff_period[$date_of_transaction_index - 1])->format('Y-m-d');
+        $end = Carbon::parse($cutoff_period[$date_of_transaction_index + 1])->format('Y-m-d');
+
+        $item_total_sold = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+            ->whereBetween('transaction_date', [$start, $end])->selectRaw('SUM(qty) as sold_qty, item_code')
+            ->groupBy('item_code')->pluck('sold_qty', 'item_code')->toArray();
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+        $item_images = collect($item_images)->groupBy('parent')->toArray();
+
+        return view('consignment.inventory_audit_form', compact('branch', 'transaction_date', 'items', 'item_images', 'item_total_sold', 'consigned_stocks', 'duration'));
+    }
+
+    public function submitInventoryAuditForm(Request $request) {
+        $data = $request->all();
+        DB::beginTransaction();
+        try {
+            $cutoff_date = $this->getCutoffDate($data['transaction_date']);
+            
+            $currentDateTime = Carbon::now();
+            $result = [];
+            $no_of_items_updated = 0;
+
+            $status = 'On Time';
+            if ($currentDateTime->gt($cutoff_date)) {
+                $status = 'Late';
+            }
+
+            $cutoff_date = Carbon::parse($cutoff_date)->format('Y-m-d');
+
+            $consigned_stocks = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
+                ->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code')->toArray();
+
+            $item_prices = DB::table('tabConsignment Beginning Inventory as cb')
+                ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+                ->where('cb.status', 'Approved')
+                ->whereIn('cbi.item_code', array_keys($data['item']))
+                ->where('cb.branch_warehouse', $data['branch_warehouse'])
+                ->select('cb.transaction_date', 'cbi.item_code', 'cbi.price')
+                ->orderBy('cb.transaction_date', 'desc')->get();
+
+            $item_prices = collect($item_prices)->groupBy('item_code')->toArray();
+
+            foreach ($data['item'] as $item_code => $row) {
+                $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
+                $existing = DB::table('tabConsignment Product Sold')
+                    ->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])
+                    ->where('transaction_date', $data['transaction_date'])->first();
+
+                if ($existing) {
+                    $no_of_items_updated++;
+                    $consigned_qty = $consigned_qty + $existing->qty;
+                    $sold_qty = $consigned_qty - (float)$row['qty'];
+
+                    if ($consigned_qty < (float)$row['qty']) {
+                        return redirect()->back()
+                            ->with(['old_data' => $data])
+                            ->with('error', 'Audit qty is greater than actual qty for <b>' . $item_code . '</b>.<br>Please request for stock adjustment.');
+                    }
+
+                    DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
+                        ->update(['consigned_qty' => $sold_qty]);
+
+                    // for update
+                    $values = [
+                        'modified' => $currentDateTime->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'qty' => $sold_qty,
+                    ];
+
+                    DB::table('tabConsignment Product Sold')->where('name', $existing->name)->update($values);
+                } else {
+                    // for insert
+                    $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
+                    $sold_qty = $consigned_qty - (float)$row['qty'];
+
+                    if ($consigned_qty < (float)$row['qty']) {
+                        return redirect()->back()
+                            ->with(['old_data' => $data])
+                            ->with('error', 'Audit qty is greater than actual qty for <b>' . $item_code . '</b>.<br>Please request for stock adjustment.');
+                    }
+
+                    DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
+                        ->update(['consigned_qty' => $sold_qty]);
+
+                    $no_of_items_updated++;
+                    $result[] = [
+                        'name' => uniqid(),
+                        'creation' => $currentDateTime->toDateTimeString(),
+                        'modified' => $currentDateTime->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'transaction_date' => $data['transaction_date'],
+                        'branch_warehouse' => $data['branch_warehouse'],
+                        'item_code' => $item_code,
+                        'description' => $row['description'],
+                        'qty' => $sold_qty,
+                        'promodiser' => Auth::user()->full_name,
+                        'price' => (float)$price,
+                        'status' => $status,
+                        'amount' => ((float)$price * (float)$sold_qty),
+                        'cutoff_date' => $cutoff_date
+                    ];
+                }
+            }
+
+            if (count($result) > 0) {
+                DB::table('tabConsignment Product Sold')->insert($result);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with([
+                'success' => 'Record successfully updated',
+                'no_of_items_updated' => $no_of_items_updated,
+                'branch' => $data['branch_warehouse'],
+                'transaction_date' => $data['transaction_date']
+            ]);
+        } catch (Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
+        }
+    }
+
     public function viewProductSoldForm($branch, $transaction_date) {
+        if (Auth::user()->is_roving_promodiser) {
+            return redirect('/view_inventory_audit_form/' . $branch . '/' . $transaction_date);
+        } else {
+            $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+            if ($sales_report_deadline) {
+                $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+                $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+
+                $calendarMonth = Carbon::parse($transaction_date)->format('m');
+                $calendarYear = Carbon::parse($transaction_date)->format('Y');
+
+                $first_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_1 .'/'. $calendarYear)->format('Y-m-d');
+                $second_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_2 .'/'. $calendarYear)->format('Y-m-d');
+
+                $cutoff_dates = [$first_cutoff, $second_cutoff];
+
+                if (in_array($transaction_date, $cutoff_dates)) {
+                    return redirect('/view_inventory_audit_form/' . $branch . '/' . $transaction_date);
+                }
+            }
+        }
+
         $items = DB::table('tabConsignment Beginning Inventory as cb')
             ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
             ->join('tabItem as i', 'i.name', 'cbi.item_code')
@@ -96,47 +343,50 @@ class ConsignmentController extends Controller
         return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks'));
     }
 
+    public function getCutoffDate($transaction_date) {
+        $transactionDate = Carbon::parse($transaction_date);
+
+        $start_date = Carbon::parse($transaction_date)->subMonth();
+        $end_date = Carbon::parse($transaction_date)->addMonth();
+
+        $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+
+        $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+
+        $transaction_date = $transactionDate->format('d-m-Y');
+        
+        $cutoff_period = [];
+        foreach ($period as $date) {
+            $date1 = $date->day($cutoff_1);
+            if ($date1 >= $start_date && $date1 <= $end_date) {
+                $cutoff_period[] = $date->format('d-m-Y');
+            }
+            $date2 = $date->day($cutoff_2);
+            if ($date2 >= $start_date && $date2 <= $end_date) {
+                $cutoff_period[] = $date->format('d-m-Y');
+            }
+        }
+
+        $cutoff_period[] = $transaction_date;
+        // sort array with given user-defined function
+        usort($cutoff_period, function ($time1, $time2) {
+            return strtotime($time1) - strtotime($time2);
+        });
+
+        $transaction_date_index = array_search($transaction_date, $cutoff_period);
+        // set cutoff date
+        return Carbon::parse($cutoff_period[$transaction_date_index + 1])->endOfDay();
+    }
+
     public function submitProductSoldForm(Request $request) {
         $data = $request->all();
 
         DB::beginTransaction();
         try {
-
-            $transactionDate = Carbon::parse($data['transaction_date']);
-
-            $start_date = Carbon::parse($data['transaction_date'])->subMonth();
-            $end_date = Carbon::parse($data['transaction_date'])->addMonth();
-
-            $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
-
-            $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
-
-            $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-            $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
-
-            $transaction_date = $transactionDate->format('d-m-Y');
-            
-            $cutoff_period = [];
-            foreach ($period as $date) {
-                $date1 = $date->day($cutoff_1);
-                if ($date1 >= $start_date && $date1 <= $end_date) {
-                    $cutoff_period[] = $date->format('d-m-Y');
-                }
-                $date2 = $date->day($cutoff_2);
-                if ($date2 >= $start_date && $date2 <= $end_date) {
-                    $cutoff_period[] = $date->format('d-m-Y');
-                }
-            }
-
-            $cutoff_period[] = $transaction_date;
-            // sort array with given user-defined function
-            usort($cutoff_period, function ($time1, $time2) {
-                return strtotime($time1) - strtotime($time2);
-            });
-
-            $transaction_date_index = array_search($transaction_date, $cutoff_period);
-            // set cutoff date
-            $cutoff_date = Carbon::parse($cutoff_period[$transaction_date_index + 1])->format('Y-m-d');
+            $cutoff_date = $this->getCutoffDate($data['transaction_date']);
             
             $currentDateTime = Carbon::now();
             $result = [];
@@ -146,6 +396,8 @@ class ConsignmentController extends Controller
             if ($currentDateTime->gt($cutoff_date)) {
                 $status = 'Late';
             }
+
+            $cutoff_date = Carbon::parse($cutoff_date)->format('Y-m-d');
 
             $item_prices = DB::table('tabConsignment Beginning Inventory as cb')
                 ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
@@ -167,6 +419,12 @@ class ConsignmentController extends Controller
                     ->where('transaction_date', $data['transaction_date'])->first();
                 if ($existing) {
                     $consigned_qty = $consigned_qty + $existing->qty;
+
+                    if ($consigned_qty < (float)$row['qty']) {
+                        return redirect()->back()
+                            ->with(['old_data' => $data])
+                            ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
+                    }
 
                     DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
                         ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
@@ -232,13 +490,6 @@ class ConsignmentController extends Controller
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);
-
-            return redirect('/product_sold_success')->with([
-                'success' => 'Record successfully updated',
-                'no_of_items_updated' => $no_of_items_updated,
-                'branch' => $data['branch_warehouse'],
-                'transaction_date' => $data['transaction_date']
-            ]);
         } catch (Exception $e) {
             DB::rollback();
 
@@ -265,7 +516,7 @@ class ConsignmentController extends Controller
             if (in_array('late', $status)) {
                 $color = '#dc3545';
             }
-            // $color = $
+            
             $data[] = [
                 'title' => '',
                 'start' => $row->transaction_date,

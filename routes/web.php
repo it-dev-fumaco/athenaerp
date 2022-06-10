@@ -138,9 +138,11 @@ Route::group(['middleware' => 'auth'], function(){
     // Promodisers
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
     Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
+    Route::get('/view_inventory_audit_form/{branch}/{transaction_date}', 'ConsignmentController@viewInventoryAuditForm');
     Route::post('/submit_product_sold_form', 'ConsignmentController@submitProductSoldForm');
+    Route::post('/submit_inventory_audit_form', 'ConsignmentController@submitInventoryAuditForm');
+    
     Route::get('/calendar_data/{branch}', 'ConsignmentController@calendarData');
-    Route::get('/product_sold_success', 'ConsignmentController@productSoldSuccess');
     Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');
     Route::get('/beginning_inventory_items/{id}', 'ConsignmentController@beginningInvItemsList');
     Route::get('/beginning_inventory/{inv?}', 'ConsignmentController@beginningInventory');

@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'Products Sold Form',
+    'namePage' => 'Inventory Audit Form',
     'activePage' => 'dashboard',
 ])
 
@@ -24,9 +24,9 @@
                                 {!! session()->get('error') !!}
                             </div>
                             @endif
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">Product Sold Entry</h6>
-                            <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
-                            <form action="/submit_product_sold_form" method="POST" autocomplete="off">
+                            <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">Inventory Audit Form</h6>
+                            <h5 class="text-center mt-1 font-weight-bolder font-responsive">{{ $duration }}</h5>
+                            <form action="/submit_inventory_audit_form" method="POST" autocomplete="off">
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
                                 <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
@@ -35,8 +35,8 @@
                                 </div>
                                 <table class="table table-bordered" style="font-size: 8pt;" id="items-table">
                                     <thead>
-                                        <th class="text-center p-1" style="width: 55%;">ITEM DESCRIPTION</th>
-                                        <th class="text-center p-1" style="width: 45%;">QTY SOLD</th>
+                                        <th class="text-center p-1" style="width: 60%;">ITEM DESCRIPTION</th>
+                                        <th class="text-center p-1" style="width: 40%;">AUDIT QTY</th>
                                     </thead>
                                     <tbody>
                                         @forelse ($items as $row)
@@ -44,45 +44,30 @@
                                             $id = $row->item_code;
                                             $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
                                             $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-                                            $qty = array_key_exists($row->item_code, $existing_record) ? ($existing_record[$row->item_code] * 1) : 0;
+                                            $sold_qty = array_key_exists($row->item_code, $item_total_sold) ? ($item_total_sold[$row->item_code] * 1) : 0;
                                             $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
 
+                                            $qty = 0;
                                             if(session()->has('error')) {
                                                 $data = session()->get('old_data');
                                                 $qty = $data['item'][$row->item_code]['qty'];
                                             }
                                         @endphp
                                         <tr>
-                                            <td class="text-justify p-1 align-middle" colspan="2">
-                                                <div class="d-flex flex-row justify-content-center align-items-center">
-                                                    <div class="p-1 col-2 text-center">
+                                            <td class="text-justify p-1 align-middle">
+                                                <div class="d-flex flex-row justify-content-start align-items-center">
+                                                    <div class="p-1 text-left">
                                                         <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
                                                         <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-thumbna1il" alt="User Image" width="40" height="40">
-                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-thumbna1il" alt="User Image" width="40" height="40">
-                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" alt="User Image" width="40" height="40">
-                                                        </picture>
-                                                    </a>
+                                                            <picture>
+                                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                            </picture>
+                                                        </a>
                                                     </div>
-                                                    <div class="p-1 col-5 m-0">
+                                                    <div class="p-1 m-0">
                                                         <span class="font-weight-bold">{{ $row->item_code }}</span>
-                                                    </div>
-                                                    <div class="p-1 col-5">
-                                                        <div class="input-group p-1 justify-content-center">
-                                                            <div class="input-group-prepend p-0">
-                                                                <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
-                                                            </div>
-                                                            <div class="custom-a p-0">
-                                                                <input type="number" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $consigned_qty }}">
-                                                            </div>
-                                                            <div class="input-group-append p-0">
-                                                                <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-center">
-                                                            <small>Available: {{ $consigned_qty }}</small>
-                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="d-flex flex-row">
@@ -126,6 +111,34 @@
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-justify p-0 align-middle">
+                                                <div class="d-flex flex-row justify-content-center align-items-center">
+                                                    <div class="p-1">
+                                                        <div class="input-group p-1 justify-content-center">
+                                                            <div class="input-group-prepend p-0">
+                                                                <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
+                                                            </div>
+                                                            <div class="custom-a p-0">
+                                                                <input type="number" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;">
+                                                            </div>
+                                                            <div class="input-group-append p-0">
+                                                                <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex flex-row justify-content-center align-items-center text-uppercase">
+                                                    <div class="p-1 col-6 text-center">
+                                                        <span class="d-block font-weight-bold">Actual</span>
+                                                        <span class="d-block">{{ $consigned_qty }}</span>
+                                                    </div>
+
+                                                    <div class="p-1 col-6 text-center">
+                                                        <span class="d-block font-weight-bold">Sold</span>
+                                                        <span class="d-block">{{ $sold_qty }}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -179,18 +192,6 @@
                         <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to Calendar</a>
                     </div>
                 </div>
-                <div class="d-flex flex-row justify-content-between">
-                    <div class="p-2">
-                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
-                            <i class="fas fa-arrow-left"></i> {{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('F d, Y') }}
-                        </a>
-                    </div>
-                    <div class="p-2">
-                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
-                            {{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('F d, Y') }} <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
                 @endif
             </div>
         </div>
@@ -225,16 +226,12 @@
             e.preventDefault();
             // Get the field name
             var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-            // get max value
-            var max = fieldName.data('max');
             // Get its current value
             var currentVal = parseInt(fieldName.val());
             // If is not undefined
             if (!isNaN(currentVal)) {
                 // Increment
-                if (currentVal < max) {
-                    fieldName.val(currentVal + 1);
-                }
+                fieldName.val(currentVal + 1);
             } else {
                 // Otherwise put a 0 there
                 fieldName.val(0);
@@ -288,6 +285,7 @@
 
             $(this).parent().prev().toggle();
             $(this).prev().toggle();
+
             return false;
         });
     });
