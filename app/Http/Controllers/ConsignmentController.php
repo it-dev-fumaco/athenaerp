@@ -229,7 +229,7 @@ class ConsignmentController extends Controller
                     }
 
                     DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                        ->update(['consigned_qty' => $sold_qty]);
+                        ->update(['consigned_qty' => (float)$row['qty']]);
 
                     // for update
                     $values = [
@@ -251,7 +251,7 @@ class ConsignmentController extends Controller
                     }
 
                     DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                        ->update(['consigned_qty' => $sold_qty]);
+                        ->update(['consigned_qty' => (float)$row['qty']]);
 
                     $no_of_items_updated++;
                     $result[] = [
