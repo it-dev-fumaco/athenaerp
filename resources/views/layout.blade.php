@@ -539,14 +539,14 @@
 							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
 								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
-								<a class="dropdown-item" href="/beginning_inventory_list">Stock Transfer</a>
-								<a class="dropdown-item" href="/beginning_inventory_list">Stock Adjustment</a>
+								<a class="dropdown-item" href="#">Stock Transfer</a>
+								<a class="dropdown-item" href="#">Stock Adjustment</a>
 							</div>
 						</div>
 						<div class="btn-group" role="group" style="width: 33%;">
 							<button id="btnGroupDrop2" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Report</button>
 							<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop2">
-								<a class="dropdown-item" href="/promodiser/delivery_report">Sales Report</a>
+								<a class="dropdown-item" href="#">Sales Report</a>
 								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
 							</div>
 						</div>

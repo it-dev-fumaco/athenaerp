@@ -605,6 +605,59 @@ class ConsignmentController extends Controller
         return view('consignment.beginning_inventory', compact('assigned_consignment_store',  'inv', 'branch', 'inv_record'));
     }
 
+    public function getItems(Request $request, $branch){
+        $bin_items = DB::table('tabBin')->where('warehouse', $branch)->pluck('item_code');
+        $search_str = explode(' ', $request->q);
+
+        $items = DB::table('tabItem')->whereNotIn('item_code', $bin_items)
+            ->where('disabled', 0)->where('has_variants', 0)->where('is_stock_item', 1)
+            ->when($request->q, function ($query) use ($search_str, $request) {
+                return $query->where(function($q) use ($search_str, $request) {
+                    foreach ($search_str as $str) {
+                        $q->where('description', 'LIKE', "%".$str."%");
+                    }
+
+                    $q->orWhere('name', 'LIKE', "%".$request->q."%");
+                });
+            })
+            ->limit(4)->get();
+
+        $item_codes = collect($items)->map(function ($q){
+            return $q->item_code;
+        });
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        $items_arr = [];
+        foreach($items as $item){
+            $image = '/icon/no_img.png';
+            if(isset($item_image[$item->item_code]) || $item->item_image_path){
+                $image = isset($item_image[$item->item_code]) ? '/img/'.$item_image[$item->item_code][0]->image_path : '/img/'.$item->item_image_path;
+            }
+
+            $image_webp = '/icon/no_img.webp';
+            if(isset($item_image[$item->item_code]) || $item->item_image_path){
+                $image_webp = isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : $item->item_image_path;
+                $image_webp = '/img/'.(explode('.', $image_webp)[0]).'.webp';
+            }
+
+            $items_arr[] = [
+                'id' => $item->item_code,
+                'text' => $item->item_code.' - '.strip_tags($item->description),
+                'description' => strip_tags($item->description),
+                'classification' => $item->item_classification,
+                'image' => asset('storage'.$image),
+                'image_webp' => asset('storage'.$image_webp),
+                'alt' => str_slug(explode('.', $image)[0], '-')
+            ];
+        }
+
+        return response()->json([
+            'items' => $items_arr
+        ]);
+    }
+
     public function beginningInvItems(Request $request, $action, $branch){
         if($request->ajax()){
             $inv_record = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->where('status', 'For Approval')->first();
@@ -688,7 +741,7 @@ class ConsignmentController extends Controller
                 $values = [
                     'docstatus' => 0,
                     'name' => $inv_id,
-                    'idx' => 1,
+                    'idx' => 0,
                     'status' => 'For Approval',
                     'branch_warehouse' => $branch,
                     'creation' => $now,
@@ -714,7 +767,7 @@ class ConsignmentController extends Controller
                         'owner' => Auth::user()->full_name,
                         'docstatus' => 0,
                         'parent' => $inv_id,
-                        'idx' => 1,
+                        'idx' => $i + 1,
                         'item_code' => $item_code,
                         'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
                         'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
