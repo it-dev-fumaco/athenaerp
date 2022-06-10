@@ -316,6 +316,22 @@ class ConsignmentController extends Controller
                 'borderColor' => '#2874a6',
                 'allDay' => false,
             ];
+
+            $data[] = [
+                'title' => 'Inventory Audit',
+                'start' => $duration_from,
+                'backgroundColor' => '#d35400',
+                'borderColor' => '#d35400',
+                'allDay' => false,
+            ];
+
+            $data[] = [
+                'title' => 'Inventory Audit',
+                'start' => $duration_to,
+                'backgroundColor' => '#d35400',
+                'borderColor' => '#d35400',
+                'allDay' => false,
+            ];
         }
     
         return $data;

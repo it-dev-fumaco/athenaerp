@@ -20,14 +20,10 @@
 							@endif
 							<div class="d-block font-responsive text-center	mt-2" id="report-deadline-display"></div>
 							<div id="calendar"></div>
-							<div class="d-flex flex-row mt-3 justify-content-between">
+							<div class="d-flex flex-row mt-3 justify-content-start">
 								<div class="p-1 col-4">
 									<i class="fas fa-square text-success" style="font-size: 13pt;"></i> 
 									<span style="font-size: 9pt;">Submitted</span>
-								</div>
-								<div class="p-1 col-4">
-									<i class="fas fa-square text-warning" style="font-size: 13pt;"></i>
-									<span style="font-size: 9pt;">Pending</span>
 								</div>
 								<div class="p-1 col-4">
 									<i class="fas fa-square text-danger" style="font-size: 13pt;"></i>
@@ -57,10 +53,6 @@
 		background-color: rgba(23, 32, 42, 0.15);
 		background-color: var(--fc-today-bg-color, rgba(23, 32, 42, 0.15));
 		cursor: disabled;
-	}
-	.fc .fc-daygrid-day.fc-day-past {
-		background-color: rgb(255, 193, 7, 0.8);
-		opacity: 0.8;
 	}
 	.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
 		font-weight: bold;
@@ -132,10 +124,12 @@
 					url: "/validate_beginning_inventory",
 					data: {branch_warehouse: $('#branch-name').text(), date: (info.dateStr)},
 					success: function (response) {
-						if (!response.status) {
+						if (response.status == 0) {
 							$('#modal-sm-message').html(response.message);
 							$('#modal-sm').modal('show');
 							return false;
+						} else if(response.status == 2) {
+							window.location.href = response.message;
 						} else {
 							window.location.href='/view_product_sold_form/' + $('#branch-name').text() + '/' + info.dateStr;
 						}
