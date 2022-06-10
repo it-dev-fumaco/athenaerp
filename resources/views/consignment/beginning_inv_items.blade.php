@@ -89,7 +89,7 @@
     </div>
     <table class="table table-bordered text-left" id="items-table"> 
         <thead>
-            <th class="font-responsive text-center p-1 align-middle" style="width: 42%">Item Code</th>
+            <th class="font-responsive text-center p-1 align-middle" style="width: 38%">Item Code</th>
             <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
             <th class="font-responsive text-center p-1 align-middle">Price</th>
         </thead>
@@ -135,7 +135,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-1 font-responsive" style="width: 15px !important; color: red; cursor: pointer"><i class="fa fa-remove remove-item" data-id="{{ $item['item_code'] }}"></i></div>
+                            <div class="p-1 col-1 text-center h-100 font-responsive remove-item" style="width: 15px !important; color: red; cursor: pointer" data-id="{{ $item['item_code'] }}"><i class="fa fa-remove"></i></div>
                         </div>
                         <div class="p-1 item-description" style="font-size: 9.5pt !important;">
                             {!! strip_tags($item['item_description']) !!}
