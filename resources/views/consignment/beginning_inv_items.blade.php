@@ -195,7 +195,7 @@
     <div class="col-12 text-right">
         <span style="font-size: 15px;">Total items: {{ count($items) }}</span>
     </div>
-    <button type="submit" id="submit-btn" class="btn btn-primary font-responsive mx-auto">Submit</button>
+    <button type="submit" id="submit-btn" class="btn btn-primary font-responsive mx-auto" disabled>Submit</button>
 
     <div class="d-none">
         {{-- values to save --}}
@@ -230,6 +230,15 @@
                 $('#submit-btn').prop('disabled', false);
             }
         });
+        
+        item_count_check();
+        function item_count_check(){
+            if(parseInt($('#item-count').val()) > 0){
+                $('#submit-btn').prop('disabled', false);
+            }else{
+                $('#submit-btn').prop('disabled', true);
+            }
+        }
 
         // $('.remove-item').click(function(){
         $('table#items-table').on('click', '.remove-item', function(){
@@ -239,11 +248,12 @@
             $('#'+item_code+'-id').val('');
             $('#item-count').val(parseInt($('#item-count').val()) - 1);
 
-            if(parseInt($('#item-count').val()) <= 0){
-                $('#submit-btn').prop('disabled', true);
-            }else{
-                $('#submit-btn').prop('disabled', false);
-            }
+            // if(parseInt($('#item-count').val()) <= 0){
+            //     $('#submit-btn').prop('disabled', true);
+            // }else{
+            //     $('#submit-btn').prop('disabled', false);
+            // }
+            item_count_check();
         });
 
         // $('.stock').on('keyup', function(){
@@ -422,6 +432,7 @@
             $('#add-item-success').removeClass('d-none');
             $('#add-item-success').fadeOut(3000, 'linear', 'complete');
 
+            item_count_check();
         });
 
         function add_item(table){
