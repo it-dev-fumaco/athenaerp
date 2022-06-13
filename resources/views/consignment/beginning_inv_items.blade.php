@@ -97,14 +97,15 @@
             @forelse ($items as $item)
                 <tr id="{{ $item['item_code'] }}">
                     @php
-                        $img = isset($item_images[$item['item_code']]) ? "/img/" . $item_images[$item['item_code']][0]->image_path : "/icon/no_img.png";
-                        $img_webp = isset($item_images[$item['item_code']]) ? "/img/" . explode('.',$item_images[$item['item_code']][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+                        $img = array_key_exists($item['item_code'], $item_images) ? "/img/" . $item_images[$item['item_code']][0]->image_path : "/icon/no_img.png";
+                        $img_webp = array_key_exists($item['item_code'], $item_images) ? "/img/" . explode('.',$item_images[$item['item_code']][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+                        $img_count = array_key_exists($item['item_code'], $item_images) ? count($item_images[$item['item_code']]) : 0;
                     @endphp 
                     <td class="text-justify p-1 align-middle" colspan="3">
                         <input type="text" name="item_code[]" id="{{ $item['item_code'] }}-id" class="d-none" value="{{ $item['item_code'] }}" />
                         <div class="d-flex flex-row justify-content-center align-items-center">
                             <div class="p-1 col-2 text-center">
-                                <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
+                                <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
                                     <picture>
                                         <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
                                         <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
@@ -140,12 +141,11 @@
                         <div class="p-1 item-description" style="font-size: 9.5pt !important;">
                             {!! strip_tags($item['item_description']) !!}
                         </div>
-                                      
-                        <div class="modal fade" id="{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal fade" id="mobile-{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5>{{ $item['item_code'] }}</h5>
+                                        <h5 class="modal-title">{{ $item['item_code'] }}</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
@@ -157,13 +157,14 @@
                                                 <div class="carousel-inner">
                                                     <div class="carousel-item active">
                                                         <picture>
-                                                            <source id="{{ $item['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                            <source id="{{ $item['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                            <img class="d-block w-100" id="{{ $item['item_code'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+                                                            <source id="mobile-{{ $item['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                            <source id="mobile-{{ $item['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                            <img class="d-block w-100" id="mobile-{{ $item['item_code'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
                                                         </picture>
                                                     </div>
-                                                    <span class='d-none' id="{{ $item['item_code'] }}-image-data">0</span>
+                                                    <span class='d-none5' id="mobile-{{ $item['item_code'] }}-image-data">0</span>
                                                 </div>
+                                                @if ($img_count > 1)
                                                 <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
                                                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                                     <span class="sr-only">Previous</span>
@@ -172,6 +173,7 @@
                                                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
                                                     <span class="sr-only">Next</span>
                                                 </a>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>

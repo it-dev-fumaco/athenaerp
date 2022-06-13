@@ -47,6 +47,8 @@
                                             $qty = array_key_exists($row->item_code, $existing_record) ? ($existing_record[$row->item_code] * 1) : 0;
                                             $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
 
+                                            $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
+
                                             if(session()->has('error')) {
                                                 $data = session()->get('old_data');
                                                 $qty = $data['item'][$row->item_code]['qty'];
@@ -57,7 +59,7 @@
                                                 <div class="d-flex flex-row justify-content-center align-items-center">
                                                     <div class="p-1 col-2 text-center">
                                                         <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
-                                                        <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
+                                                        <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
                                                         <picture>
                                                             <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-thumbna1il" alt="User Image" width="40" height="40">
                                                             <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-thumbna1il" alt="User Image" width="40" height="40">
@@ -91,11 +93,11 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="modal fade" id="{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
                                                         <div class="modal-content">
                                                             <div class="modal-header">
-                                                                <h5>{{ $row->item_code }}</h5>
+                                                                <h5 class="modal-title">{{ $row->item_code }}</h5>
                                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                 <span aria-hidden="true">&times;</span>
                                                             </button>
@@ -107,13 +109,14 @@
                                                                         <div class="carousel-inner">
                                                                             <div class="carousel-item active">
                                                                                 <picture>
-                                                                                    <source id="{{ $row->item_code }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <source id="{{ $row->item_code }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <img class="d-block w-100" id="{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+                                                                                    <source id="mobile-{{ $row->item_code }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                    <source id="mobile-{{ $row->item_code }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                    <img class="d-block w-100" id="mobile-{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
                                                                                 </picture>
                                                                             </div>
-                                                                            <span class='d-none' id="{{ $row->item_code }}-image-data">0</span>
+                                                                            <span class='d-none5' id="mobile-{{ $row->item_code }}-image-data">0</span>
                                                                         </div>
+                                                                        @if ($img_count > 1)
                                                                         <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">
                                                                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                                                             <span class="sr-only">Previous</span>
@@ -122,6 +125,7 @@
                                                                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
                                                                             <span class="sr-only">Next</span>
                                                                         </a>
+                                                                        @endif
                                                                     </div>
                                                                 </div>
                                                             </div>

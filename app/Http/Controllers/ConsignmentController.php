@@ -497,10 +497,6 @@ class ConsignmentController extends Controller
         }
     }
 
-    public function productSoldSuccess() {
-        return view('consignment.success_page');
-    }
-
     public function calendarData($branch, Request $request) {
         $start = $request->start;
         $end = $request->end;
@@ -973,7 +969,7 @@ class ConsignmentController extends Controller
             });
 
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-            $item_images = collect($item_images)->groupBy('parent');
+            $item_images = collect($item_images)->groupBy('parent')->toArray();
 
             return view('consignment.beginning_inv_items', compact('items', 'branch', 'item_images', 'inv_name'));
         }
