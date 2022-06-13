@@ -1080,4 +1080,150 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
+
+    public function damagedItemsList(){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $damaged_items = DB::table('tabConsignment Damaged Item')
+            ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($assigned_consignment_store){
+                $q->whereIn('branch_warehouse', $assigned_consignment_store);
+            })->orderBy('creation', 'desc')->get();
+        
+        $item_codes = collect($damaged_items)->map(function ($q){
+            return $q->item_code;
+        });
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        $uoms = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'stock_uom')->get();
+        $uom = collect($uoms)->groupBy('item_code');
+
+        $items_arr = [];
+        foreach($damaged_items as $item){
+            $items_arr[] = [
+                'item_code' => $item->item_code,
+                'description' => $item->description,
+                'damaged_qty' => $item->qty * 1,
+                'uom' => isset($uom[$item->item_code]) ? $uom[$item->item_code][0]->stock_uom : null,
+                'store' => $item->branch_warehouse,
+                'damage_description' => $item->damage_description,
+                'promodiser' => $item->promodiser,
+                'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : '/icon/no_img.png',
+                'webp' => isset($item_image[$item->item_code]) ? explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : '/icon/no_img.webp',
+                'creation' => Carbon::parse($item->creation)->format('F d, Y')
+            ];
+        }
+
+        return view('consignment.damaged_items_list', compact('items_arr'));
+    }
+
+    public function promodiserDamageForm(){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        return view('consignment.promodiser_damage_report_form', compact('assigned_consignment_store'));
+    }
+
+    public function submitDamagedItem(Request $request){
+        DB::beginTransaction();
+        try {
+            $consigned_qty = DB::table('tabBin')->where('item_code', $request->item_code)->where('warehouse', $request->branch)->pluck('consigned_qty')->first();
+
+            if(!$consigned_qty || $consigned_qty <= 0){
+                return redirect()->back()->with('error', $request->item_code.' has not been delivered to this branch yet or beginning inventory has not been approved yet.');
+            }
+            
+            if($request->qty > $consigned_qty){
+                return redirect()->back()->with('error', 'Damaged qty is more than the delivered qty.');
+            }
+
+            $update_values = [
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'consigned_qty' => $consigned_qty - $request->qty
+            ];
+
+            $insert_values = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 1,
+                'transaction_date' => $request->transaction_date,
+                'branch_warehouse' => $request->branch,
+                'item_code' => $request->item_code,
+                'description' => $request->description,
+                'qty' => $request->qty,
+                'damage_description' => $request->damage_description,
+                'promodiser' => Auth::user()->full_name
+            ];
+
+            DB::table('tabBin')->where('item_code', $request->item_code)->where('warehouse', $request->branch)->update($update_values);
+            DB::table('tabConsignment Damaged Item')->insert($insert_values);
+            DB::commit();
+            return redirect()->back()->with('success', 'Damage report submitted.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+    }
+
+    public function getReceivedItems(Request $request, $branch){
+        $search_str = explode(' ', $request->q);
+
+        $items = DB::table('tabBin as bin')
+            ->join('tabItem as item', 'item.item_code', 'bin.item_code')
+            ->when($request->q, function ($query) use ($request, $search_str){
+                return $query->where(function($q) use ($search_str, $request) {
+                    foreach ($search_str as $str) {
+                        $q->where('item.description', 'LIKE', "%".$str."%");
+                    }
+
+                    $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
+                });
+            })
+            ->where('bin.warehouse', $branch)->where('bin.consigned_qty', '>', 0)->get();
+
+        $item_codes = collect($items)->map(function ($q) {
+            return $q->item_code;
+        });
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        $default_images = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'item_image_path as image_path')->get(); // in case there are no saved images in Item Images
+        $default_image = collect($default_images)->groupBy('item_code');
+
+        $inventory_arr = DB::table('tabConsignment Beginning Inventory as inv')
+            ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'inv.name')
+            ->where('inv.branch_warehouse', $branch)->where('inv.status', 'Approved')->where('item.status', 'Approved')->whereIn('item.item_code', $item_codes)
+            ->select('item.item_code', 'item.price', 'inv.transaction_date')->get();
+
+        $inventory = collect($inventory_arr)->groupBy('item_code');
+
+        $items_arr = [];
+        foreach($items as $item){
+            if(isset($item_image[$item->item_code]) && $item_image[$item->item_code][0]->image_path){
+                $img = $item_image[$item->item_code][0]->image_path;
+                $webp = explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp';
+            }else if(isset($default_image[$item->item_code]) && $default_image[$item->item_code][0]->image_path){
+                $img = $default_image[$item->item_code][0]->image_path;
+                $webp = explode('.', $default_image[$item->item_code][0]->image_path)[0].'.webp';
+            }else{
+                $img = '/icon/no_img.png';
+                $webp = '/icon/no_img.webp';
+            }
+
+            $items_arr[] = [
+                'id' => $item->item_code,
+                'text' => $item->item_code.' - '.strip_tags($item->description),
+                'description' => strip_tags($item->description),
+                'max' => $item->consigned_qty ? $item->consigned_qty : 0,
+                'price' => isset($inventory[$item->item_code]) ? '₱ '.number_format($inventory[$item->item_code][0]->price, 2) : '₱ 0.00',
+                'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
+                'img' => asset('storage/'.$img),
+                'webp' => asset('storage/'.$webp),
+                'alt' => str_slug(explode('.', $img)[0], '-')
+            ];
+        }
+
+        return response()->json($items_arr);
+    }
 }

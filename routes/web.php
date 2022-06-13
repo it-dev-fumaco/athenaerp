@@ -154,6 +154,9 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/pending_submission_sales_report', 'ConsignmentController@pendingSubmissionSalesReport');
     Route::get('/sales_report_deadline', 'ConsignmentController@salesReportDeadline');
     Route::get('/validate_beginning_inventory', 'ConsignmentController@checkBeginningInventory'); 
+    Route::get('/promodiser/damage_report/form', 'ConsignmentController@promodiserDamageForm'); 
+    Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem'); 
+    Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
 
-    Route::get('/testing', 'MainController@testing');
+    Route::get('damage_report/list', 'ConsignmentController@damagedItemsList'); 
 });

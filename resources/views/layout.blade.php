@@ -481,7 +481,7 @@
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
 											<a href="#" class="dropdown-item w-100">
 												<center>
-													<i class="fas fa-user"></i> <span class="d-xl-inline-block">{{ Auth::user()->full_name }}</span>
+													<i class="fas fa-user"></i> <span class="d-xl-inline-block">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 												</center>
 											</a>
 											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
@@ -541,6 +541,7 @@
 								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
 								<a class="dropdown-item" href="#">Stock Transfer</a>
 								<a class="dropdown-item" href="#">Stock Adjustment</a>
+								<a class="dropdown-item" href="/damage_report/list">Damaged Items</a>
 							</div>
 						</div>
 						<div class="btn-group" role="group" style="width: 33%;">
@@ -548,6 +549,7 @@
 							<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop2">
 								<a class="dropdown-item" href="#">Sales Report</a>
 								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
+								<a class="dropdown-item" href="/promodiser/damage_report/form">Damage Report</a>
 							</div>
 						</div>
 					</div>
