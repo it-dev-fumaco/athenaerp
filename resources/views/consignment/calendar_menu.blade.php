@@ -19,6 +19,7 @@
 							<div class="alert alert-warning font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-0"><i class="fas fa-exclamation-circle"></i> Sales report submission is due tomorrow</div>
 							@endif
 							<div class="alert alert-info font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-0"><i class="fas fa-info-circle"></i> Select a date for report entry</div>
+							<div class="alert alert-danger font-responsive text-center pr-1 pl-1 pb-2 pt-2 mt-1 d-none" id="no-report-alert"></div>
 							<div class="d-block font-responsive text-center	mt-2" id="report-deadline-display"></div>
 							<div id="calendar"></div>
 							<div class="d-flex flex-row mt-3 justify-content-start">
@@ -146,6 +147,7 @@
 			var prevMonth = prevDate.getMonth() + 1;
 			var prevYear = prevDate.getFullYear();
 			displayDeadline(prevMonth, prevYear);
+			displayLateSubmissionAlert(prevDate.toISOString());
 		});
 
 		$(document).on('click', '.fc-next-button', function(e){
@@ -153,6 +155,7 @@
 			var nextMonth = nextDate.getMonth() + 1;
 			var nextYear = nextDate.getFullYear();
 			displayDeadline(nextMonth, nextYear);
+			displayLateSubmissionAlert(nextDate.toISOString());
 		});
 
 		var currentCalendarDate = calendar.getDate();
@@ -167,6 +170,22 @@
 				data: {month, year},
 				success: function (response) {
 					$('#report-deadline-display').text(response);
+				}
+			});
+		}
+
+		displayLateSubmissionAlert(currentCalendarDate.toISOString());
+		function displayLateSubmissionAlert(date) {
+			$('#no-report-alert').addClass('d-none').empty();
+			$.ajax({
+				type: "GET",
+				url: "/calendar_no_report_submitted/" + $('#branch-name').text() + "/" + date,
+				success: function (response) {
+					if (response) {
+						$('#no-report-alert').removeClass('d-none').html(response);
+					} else {
+						$('#no-report-alert').addClass('d-none').empty();
+					}
 				}
 			});
 		}

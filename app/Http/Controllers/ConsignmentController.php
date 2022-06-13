@@ -852,6 +852,68 @@ class ConsignmentController extends Controller
         return view('consignment.beginning_inv_items_list', compact('inventory', 'branch'));
     }
 
+    public function displayLateSubmissionAlert($branch, $date) {
+        $date_today = Carbon::now();
+        $beginning_inv = DB::table('tabConsignment Beginning Inventory')
+            ->where('branch_warehouse', $branch)->whereDate('transaction_date', '<=', $date_today)
+            ->where('status', 'Approved')->orderBy('transaction_date' , 'asc')->first();
+
+        if ($date_today->gte(Carbon::parse($date))) {
+            if ($beginning_inv) {
+                $start_date = Carbon::parse($beginning_inv->transaction_date)->subMonth();
+                $end_date = Carbon::parse($date);
+    
+                $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+    
+                $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+    
+                $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+                $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+    
+                $date_today = Carbon::now()->format('Y-m-d');
+                
+                $cutoff_period = [];
+                foreach ($period as $date) {
+                    $date1 = $date->day($cutoff_1);
+                    if ($date1 >= $start_date && $date1 <= $end_date) {
+                        $cutoff_period[] = $date->format('Y-m-d');
+                    }
+                    $date2 = $date->day($cutoff_2);
+                    if ($date2 >= $start_date && $date2 <= $end_date) {
+                        $cutoff_period[] = $date->format('Y-m-d');
+                    }
+                }
+    
+                if ($cutoff_period) {
+                    $existing_records = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+                        ->where('cutoff_date', $cutoff_period)->orderBy('cutoff_date', 'asc')->distinct()->pluck('cutoff_date')->toArray();
+                    
+                    $no_records = [];
+                    foreach ($cutoff_period as $key => $value) {
+                        if (!in_array($value, $existing_records)) {
+                            $no_records[] = $value;
+                        }
+                    }
+    
+                    $cutoff_period[] = $date_today;
+                    // sort array with given user-defined function
+                    usort($cutoff_period, function ($time1, $time2) {
+                        return strtotime($time1) - strtotime($time2);
+                    });
+                    
+                    if (count($no_records) > 0) {
+                        $period_from = array_key_exists(count($no_records)-2, $no_records) ? $no_records[count($no_records)-2] : null;
+                        $period_to = array_key_exists(count($no_records)-1, $no_records) ? $no_records[count($no_records)-1] : null;
+    
+                        return '<i class="fas fa-exclamation-circle"></i> You have no submitted report(s) for the period of <b>' . Carbon::parse($period_from)->format('F d, Y') .' - ' . Carbon::parse($period_to)->format('F d, Y') . '</b>';
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function beginningInventory($inv = null){
         $inv_record = [];
         if($inv){

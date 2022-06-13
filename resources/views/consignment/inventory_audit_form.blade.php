@@ -254,7 +254,7 @@
             // Get its current value
             var currentVal = parseInt(fieldName.val());
              // get consigned qty
-             var origConsigned = parseInt($(this).parents('tr').find('.orig-item-consigned-qty').eq(0).text());
+            var origConsigned = parseInt($(this).parents('tr').find('.orig-item-consigned-qty').eq(0).text());
             var consignedField = $(this).parents('tr').find('.item-consigned-qty').eq(0);
             // get sold qty
             var origSold = parseInt($(this).parents('tr').find('.orig-item-sold-qty').eq(0).text());

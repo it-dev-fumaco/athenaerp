@@ -157,6 +157,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/promodiser/damage_report/form', 'ConsignmentController@promodiserDamageForm'); 
     Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem'); 
     Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
-
     Route::get('damage_report/list', 'ConsignmentController@damagedItemsList'); 
+    Route::get('/calendar_no_report_submitted/{branch}/{date}', 'ConsignmentController@displayLateSubmissionAlert'); 
 });
