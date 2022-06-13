@@ -121,9 +121,9 @@
                                                                             <div class="container-fluid">
                                                                                 <div class="row">
                                                                                     <div class="col-8 text-left font-responsive">
-                                                                                        <b>Branch:</b> {{ $inv['branch'] }}<br/>
-                                                                                        <b>Transaction Date:</b> {{ $inv['transaction_date'] }} <br>
-                                                                                        <b>Promidiser:</b> {{ $inv['owner'] }}
+                                                                                    <h4>{{ $inv['branch'] }}</h4>
+                                                                                    Inventory Date:<b>{{ $inv['transaction_date'] }} </b><br>
+                                                                                    Submitted By:<b>{{ $inv['owner'] }}</b>
                                                                                     </div>
                                                                                     @if ($inv['status'] == 'For Approval')
                                                                                     <div class="col-4 w-100">
@@ -180,7 +180,7 @@
                                                                                                 {!! '<b>'.$item['item_code'].'</b> - '.strip_tags($item['item_description'] )!!}
                                                                                         </td>
                                                                                         <td class="text-center" style="font-size: 10pt">{!! '<b>'.$item['opening_stock'].'</b> '.$item['uom'] !!}</td>
-                                                                                        <td class="text-center" style="font-size: 10pt">₱ {{ number_format($item['price'], 2) }}</td>
+                                                                                        <td class="text-center" style="font-size: 10pt"><input type="text" value="₱{{ number_format($item['price'], 2) }}" style="text-align: center; width: 80px;" /></td>
                                                                                     </tr>
                                                                                 @empty
                                                                                     <tr>
@@ -222,9 +222,9 @@
                                                                                 <div class="container-fluid">
                                                                                     <div class="row">
                                                                                         <div class="col-12 col-lg-8 text-left font-responsive">
-                                                                                            <b>Branch:</b> {{ $inv['branch'] }}<br/>
-                                                                                            <b>Transaction Date:</b> {{ $inv['transaction_date'] }} <br>
-                                                                                            <b>Promidiser:</b> {{ $inv['owner'] }}
+                                                                                        <h4>{{ $inv['branch'] }}</h4>
+                                                                                        Inventory Date:<b>{{ $inv['transaction_date'] }} </b><br>
+                                                                                        Submitted By:<b>{{ $inv['owner'] }}</b>
                                                                                         </div>
                                                                                         @if ($inv['status'] == 'For Approval')
                                                                                             <div class="col-12 col-lg-4 w-100">
@@ -539,7 +539,7 @@
                                                                                 <b>{!! $item['opening_stock'] !!}</b> <br>
                                                                                 <small>{{ $item['uom'] }}</small>
                                                                             </td>
-                                                                            <td class="text-center" style="font-size: 10pt">₱ {{ number_format($item['price'], 2) }}</td>
+                                                                            <td class="text-center" style="font-size: 10pt"><input type ="text" style="text-align: center; width: 200px;" name="price" value="₱ {{ number_format($item['price'], 2) }}"></td>
                                                                         </tr>
                                                                         <tr>
                                                                             <td class='text-justify' colspan=4>
