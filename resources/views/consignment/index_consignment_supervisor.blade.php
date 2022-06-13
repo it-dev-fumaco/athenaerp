@@ -40,15 +40,17 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3 p-1">
-                    <div class="info-box bg-gradient-secondary m-0">
-                        <div class="info-box-content p-1">
-                            <span class="info-box-text font-responsive">Stock Adjustments</span>
-                            <span class="info-box-number font-responsive">0</span>
-                            <div class="progress">
-                                <div class="progress-bar"></div>
+                    <a href="/beginning_inv_list" style="color: inherit">
+                        <div class="info-box bg-gradient-secondary m-0">
+                            <div class="info-box-content p-1">
+                                <span class="info-box-text font-responsive">Stock Adjustments</span>
+                                <span class="info-box-number font-responsive">0</span>
+                                <div class="progress">
+                                    <div class="progress-bar"></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
             
