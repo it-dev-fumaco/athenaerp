@@ -33,10 +33,12 @@
                                 <div class="form-group m-2">
                                     <input type="text" class="form-control" placeholder="Search Items" id="search-filter">
                                 </div>
-                                <table class="table table-bordered" style="font-size: 8pt;" id="items-table">
+                                <table class="table" style="font-size: 8pt;" id="items-table">
                                     <thead>
-                                        <th class="text-center p-1" style="width: 60%;">ITEM DESCRIPTION</th>
+                                        <th class="text-center p-1" style="width: 30%;">ITEM CODE</th>
                                         <th class="text-center p-1" style="width: 40%;">AUDIT QTY</th>
+                                        <th class="text-center p-1" style="width: 15%;">ACTUAL</th>
+                                        <th class="text-center p-1" style="width: 15%;">SOLD</th>
                                     </thead>
                                     <tbody>
                                         @forelse ($items as $row)
@@ -55,8 +57,8 @@
                                                 $qty = $data['item'][$row->item_code]['qty'];
                                             }
                                         @endphp
-                                        <tr>
-                                            <td class="text-justify p-1 align-middle">
+                                        <tr style="border-bottom: 0 !important;">
+                                            <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-1 text-left">
                                                         <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
@@ -72,12 +74,6 @@
                                                         <span class="font-weight-bold">{{ $row->item_code }}</span>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex flex-row">
-                                                    <div class="p-1 text-justify">
-                                                        <div class="item-description">{!! strip_tags($row->description) !!}</div>
-                                                    </div>
-                                                </div>
-
                                                 <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
                                                         <div class="modal-content">
@@ -117,7 +113,7 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="text-justify p-0 align-middle">
+                                            <td class="text-justify p-0 align-middle" style="border-bottom: 0 !important;">
                                                 <div class="d-flex flex-row justify-content-center align-items-center">
                                                     <div class="p-1">
                                                         <div class="input-group p-1 justify-content-center">
@@ -133,19 +129,19 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex flex-row justify-content-center align-items-center text-uppercase">
-                                                    <div class="p-1 col-6 text-center">
-                                                        <span class="d-block font-weight-bold">Actual</span>
-                                                        <span class="d-block">{{ $consigned_qty }}</span>
-                                                    </div>
-
-                                                    <div class="p-1 col-6 text-center">
-                                                        <span class="d-block font-weight-bold">Sold</span>
-                                                        <span class="d-block">{{ $sold_qty }}</span>
-                                                    </div>
-                                                </div>
                                             </td>
-                                        </tr> 
+                                            <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                                <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
+                                                <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
+                                            </td>
+                                            <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                                <span class="d-block item-sold-qty">{{ $sold_qty }}</span>
+                                                <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4" style="border-top: 0 !important;"><div class="item-description">{!! strip_tags($row->description) !!}</div></td>
+                                        </tr>
                                         @empty
                                         <tr>
                                             <td class="text-center font-weight-bold" colspan="2">No item(s) found.</td>
@@ -231,6 +227,12 @@
             var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
             // Get its current value
             var currentVal = parseInt(fieldName.val());
+            // get consigned qty
+            var origConsigned = parseInt($(this).parents('tr').find('.orig-item-consigned-qty').eq(0).text());
+            var consignedField = $(this).parents('tr').find('.item-consigned-qty').eq(0);
+            // get sold qty
+            var origSold = parseInt($(this).parents('tr').find('.orig-item-sold-qty').eq(0).text());
+            var soldField = $(this).parents('tr').find('.item-sold-qty').eq(0);
             // If is not undefined
             if (!isNaN(currentVal)) {
                 // Increment
@@ -239,6 +241,9 @@
                 // Otherwise put a 0 there
                 fieldName.val(0);
             }
+            var new_sold_qty = 0;
+            new_sold_qty = origSold + (origConsigned - fieldName.val());
+            soldField.text(new_sold_qty);
         });
         // This button will decrement the value till 0
         $(".qtyminus").click(function(e) {
@@ -248,6 +253,12 @@
             var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
             // Get its current value
             var currentVal = parseInt(fieldName.val());
+             // get consigned qty
+             var origConsigned = parseInt($(this).parents('tr').find('.orig-item-consigned-qty').eq(0).text());
+            var consignedField = $(this).parents('tr').find('.item-consigned-qty').eq(0);
+            // get sold qty
+            var origSold = parseInt($(this).parents('tr').find('.orig-item-sold-qty').eq(0).text());
+            var soldField = $(this).parents('tr').find('.item-sold-qty').eq(0);
             // If it isn't undefined or its greater than 0
             if (!isNaN(currentVal) && currentVal > 0) {
                 // Decrement one
@@ -256,6 +267,10 @@
                 // Otherwise put a 0 there
                 fieldName.val(0);
             }
+            var new_sold_qty = 0;
+
+            new_sold_qty = (origSold + origConsigned) - (origConsigned- parseInt(fieldName.val()));
+            soldField.text(new_sold_qty);
         });
 
         $("#search-filter").on("keyup", function() {
