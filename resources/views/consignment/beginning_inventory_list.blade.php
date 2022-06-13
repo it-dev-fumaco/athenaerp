@@ -107,9 +107,9 @@
                                                             <div class="container-fluid">
                                                                 <div class="row">
                                                                     <div class="col-8 text-left font-responsive">
-                                                                        <b>Branch:</b> {{ $inv['branch'] }}<br/>
-                                                                        <b>Transaction Date:</b> {{ $inv['transaction_date'] }} <br>
-                                                                        <b>Promidiser:</b> {{ $inv['owner'] }}
+                                                                         <h4>{{ $inv['branch'] }}</h4>
+                                                                        Inventory Date:<b>{{ $inv['transaction_date'] }} </b><br>
+                                                                        Submitted By:<b>{{ $inv['owner'] }}</b>
                                                                     </div>
                                                                     @if ($inv['status'] == 'For Approval')
                                                                     <div class="col-4 w-100">
@@ -166,7 +166,7 @@
                                                                                 {!! '<b>'.$item['item_code'].'</b> - '.strip_tags($item['item_description'] )!!}
                                                                         </td>
                                                                         <td class="text-center" style="font-size: 10pt">{!! '<b>'.$item['opening_stock'].'</b> '.$item['uom'] !!}</td>
-                                                                        <td class="text-center" style="font-size: 10pt">₱ {{ number_format($item['price'], 2) }}</td>
+                                                                        <td class="text-center" style="font-size: 10pt"> <input type ="text" style="text-align: center; width: 200px;" name="price" value="₱ {{ number_format($item['price'], 2) }}"></td>
                                                                     </tr>
                                                                 @empty
                                                                     <tr>
