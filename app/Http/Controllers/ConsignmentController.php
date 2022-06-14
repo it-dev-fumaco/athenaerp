@@ -1123,10 +1123,10 @@ class ConsignmentController extends Controller
                         'item_code' => $item_code,
                         'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
                         'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                        'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9]/", "", $opening_stock[$item_code]) : 0,
+                        'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
                         'stocks_displayed' => 0,
                         'status' => 'For Approval',
-                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9]/", "", $price[$item_code]) : 0
+                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0
                     ];
 
                     $item_count = $item_count + 1;
@@ -1152,8 +1152,8 @@ class ConsignmentController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
                         'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                        'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9]/", "", $opening_stock[$item_code]) : 0,
-                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9]/", "", $price[$item_code]) : 0,
+                        'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
+                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
                     ];
 
                     $item_count = $item_count + 1;
