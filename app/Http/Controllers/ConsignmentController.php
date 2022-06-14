@@ -1054,11 +1054,9 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $opening_stock = $request->opening_stock;
-            $opening_stock = array_filter($opening_stock);
 
             $price = $request->price;
             $price = preg_replace("/[^0-9 .]/", "", $price);
-            $price = array_filter($price);
 
             $item_codes = $request->item_code;
             $item_codes = collect(array_filter($item_codes))->unique(); // remove null values
@@ -1068,9 +1066,9 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('error', 'Please select an item to save');
             }
 
-            if(max($opening_stock) <= 0 || max($price) <= 0 || !$opening_stock || !$price) { // If all values of opening stocks or prices are 0 or if opening stocks or prices are null
+            if(max($opening_stock) <= 0 || max($price) <= 0 || !array_filter($opening_stock) || !array_filter($price)) { // If all values of opening stocks or prices are 0 or if opening stocks or prices are null
                 $null_value = null;
-                if(max($opening_stock) <= 0 || !$opening_stock){
+                if(max($opening_stock) <= 0 || !array_filter($opening_stock)){
                     $null_value = 'Opening Stock';
                 }else{
                     $null_value = 'Price';
