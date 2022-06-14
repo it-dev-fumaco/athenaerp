@@ -20,7 +20,7 @@
                                     <th class="font-responsive text-center p-2">Details</th>
                                     <th class="font-responsive text-center p-2" style="width: 65%;">Branch Warehouse</th>
                                 </thead>
-                                @foreach ($beginning_inventory as $store)
+                                @forelse ($beginning_inventory as $store)
                                     @php
                                         $badge = 'secondary';
                                         if($store->status == 'Approved'){
@@ -39,7 +39,11 @@
                                             <a href="/beginning_inventory{{ ($store->status == 'For Approval' ? '/' : '_items/').$store->name }}">{{ $store->branch_warehouse }}</a>
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan=2 class="text-center">No result(s)</td>
+                                    </tr>
+                                @endforelse
                             </table>
                         </div>
                     </div>

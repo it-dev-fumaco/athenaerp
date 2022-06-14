@@ -203,7 +203,7 @@
                                                     <tr class="d-lg-none">
                                                         <td colspan=2 class="text-center">
                                                             <div class="d-block d-lg-none">
-                                                                <table class="table text-left">
+                                                                {{-- <table class="table text-left">
                                                                     <tr>
                                                                         <th class="p-0" style="width: 40%">Transaction Date: </th>
                                                                         <td class="p-0">{{ $inv['transaction_date'] }}</td>
@@ -216,7 +216,7 @@
                                                                         <th class="p-0" style="width: 40%">Submitted by: </th>
                                                                         <td class="p-0">{{ $inv['owner'] }}</td>
                                                                     </tr>
-                                                                </table>
+                                                                </table> --}}
                                                                 <a href="#" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal2">
                                                                     View Items
                                                                 </a>

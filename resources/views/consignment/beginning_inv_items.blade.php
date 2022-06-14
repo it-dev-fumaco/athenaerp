@@ -247,12 +247,8 @@
             $('#'+item_code).addClass('d-none');
             $('#'+item_code+'-id').val('');
             $('#item-count').val(parseInt($('#item-count').val()) - 1);
+            $('#'+item_code+'-price').prop('required', false);
 
-            // if(parseInt($('#item-count').val()) <= 0){
-            //     $('#submit-btn').prop('disabled', true);
-            // }else{
-            //     $('#submit-btn').prop('disabled', false);
-            // }
             item_count_check();
         });
 
@@ -298,7 +294,7 @@
                 fieldName.val(0);
             }
 
-            if(parseInt($(this).val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt($(this).val()) > 0 && $('#'+item_code+'-price').val() == ''){
+            if(parseInt(fieldName.val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt(fieldName.val()) > 0 && $('#'+item_code+'-price').val() == ''){
                 $('#'+item_code+'-price').prop('required', true);
                 $('#'+item_code+'-price').css('border', '1px solid red');
             }else{
@@ -326,7 +322,7 @@
                 fieldName.val(0);
             }
 
-            if(parseInt($(this).val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt($(this).val()) > 0 && $('#'+item_code+'-price').val() == ''){
+            if(parseInt(fieldNmae.val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt(fieldNmae.val()) > 0 && $('#'+item_code+'-price').val() == ''){
                 $('#'+item_code+'-price').prop('required', true);
                 $('#'+item_code+'-price').css('border', '1px solid red');
             }else{
@@ -480,7 +476,7 @@
                                 '</div>' +
                             '</div>' +
                         '</div>' +
-                        '<div class="p-1 font-responsive" style="width: 15px !important; color: red; cursor: pointer"><i class="fa fa-remove remove-item" data-id="' + item_code + '"></i></div>' +
+                        '<div class="p-1 font-responsive remove-item" style="width: 15px !important; color: red; cursor: pointer" data-id="' + item_code + '"><i class="fa fa-remove"></i></div>' +
                     '</div>' +
                     '<div class="p-1 item-description" style="font-size: 9.5pt !important;">' +
                         description
@@ -522,7 +518,7 @@
                 fieldName.val(0);
             }
 
-            if(parseInt($(this).val()) > 0 && parseInt($('#new-item-price').val()) <= 0 || parseInt($(this).val()) > 0 && $('#new-item-price').val() == ''){
+            if(parseInt(fieldName.val()) > 0 && parseInt($('#new-item-price').val()) <= 0 || parseInt(fieldName.val()) > 0 && $('#new-item-price').val() == ''){
                 $('#new-item-price').prop('required', true);
                 $('#new-item-price').css('border', '1px solid red');
             }else{
@@ -549,7 +545,7 @@
                 fieldName.val(0);
             }
 
-            if(parseInt($(this).val()) > 0 && parseInt($('#new-item-price').val()) <= 0 || parseInt($(this).val()) > 0 && $('#new-item-price').val() == ''){
+            if(parseInt(fieldName.val()) > 0 && parseInt($('#new-item-price').val()) <= 0 || parseInt(fieldName.val()) > 0 && $('#new-item-price').val() == ''){
                 $('#new-item-price').prop('required', true);
                 $('#new-item-price').css('border', '1px solid red');
             }else{

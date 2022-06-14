@@ -858,7 +858,16 @@ class ConsignmentController extends Controller
         $branch = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('branch_warehouse')->first();
         $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
 
-        return view('consignment.beginning_inv_items_list', compact('inventory', 'branch'));
+        $transaction_date = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('transaction_date')->first();
+
+        $item_codes = collect($inventory)->map(function ($q){
+            return $q->item_code;
+        });
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        return view('consignment.beginning_inv_items_list', compact('inventory', 'item_image', 'branch', 'transaction_date'));
     }
 
     public function displayLateSubmissionAlert(Request $request, $branch) {
@@ -1045,13 +1054,29 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $opening_stock = $request->opening_stock;
+            $opening_stock = array_filter($opening_stock);
+
             $price = $request->price;
+            $price = preg_replace("/[^0-9 .]/", "", $price);
+            $price = array_filter($price);
+
             $item_codes = $request->item_code;
             $item_codes = collect(array_filter($item_codes))->unique(); // remove null values
             $branch = $request->branch;
 
-            if(max($opening_stock) <= 0 || max($price) <= 0){ // If all values of opening stocks or prices are 0
-                return redirect()->back()->with('error', 'Please input values to '.(max($opening_stock) <= 0 ? 'Opening Stock' : 'Price'));
+            if(!$item_codes){
+                return redirect()->back()->with('error', 'Please select an item to save');
+            }
+
+            if(max($opening_stock) <= 0 || max($price) <= 0 || !$opening_stock || !$price) { // If all values of opening stocks or prices are 0 or if opening stocks or prices are null
+                $null_value = null;
+                if(max($opening_stock) <= 0 || !$opening_stock){
+                    $null_value = 'Opening Stock';
+                }else{
+                    $null_value = 'Price';
+                }
+
+                return redirect()->back()->with('error', 'Please input values to '.$null_value);
             }
 
             $now = Carbon::now()->toDateTimeString();
