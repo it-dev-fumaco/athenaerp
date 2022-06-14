@@ -147,7 +147,7 @@
 			var prevMonth = prevDate.getMonth() + 1;
 			var prevYear = prevDate.getFullYear();
 			displayDeadline(prevMonth, prevYear);
-			displayLateSubmissionAlert(prevDate.toISOString());
+			displayLateSubmissionAlert(prevMonth, prevYear);
 		});
 
 		$(document).on('click', '.fc-next-button', function(e){
@@ -155,7 +155,7 @@
 			var nextMonth = nextDate.getMonth() + 1;
 			var nextYear = nextDate.getFullYear();
 			displayDeadline(nextMonth, nextYear);
-			displayLateSubmissionAlert(nextDate.toISOString());
+			displayLateSubmissionAlert(nextMonth, nextYear);
 		});
 
 		var currentCalendarDate = calendar.getDate();
@@ -174,12 +174,13 @@
 			});
 		}
 
-		displayLateSubmissionAlert(currentCalendarDate.toISOString());
-		function displayLateSubmissionAlert(date) {
+		displayLateSubmissionAlert(currentCalendarMonth, currentCalendarYear);
+		function displayLateSubmissionAlert(month, year) {
 			$('#no-report-alert').addClass('d-none').empty();
 			$.ajax({
 				type: "GET",
-				url: "/calendar_no_report_submitted/" + $('#branch-name').text() + "/" + date,
+				url: "/calendar_no_report_submitted/" + $('#branch-name').text(),
+				data: {month, year},
 				success: function (response) {
 					if (response) {
 						$('#no-report-alert').removeClass('d-none').html(response);

@@ -861,16 +861,19 @@ class ConsignmentController extends Controller
         return view('consignment.beginning_inv_items_list', compact('inventory', 'branch'));
     }
 
-    public function displayLateSubmissionAlert($branch, $date) {
+    public function displayLateSubmissionAlert(Request $request, $branch) {
+        $requested_date = Carbon::createFromFormat('m/d/Y', $request->month .'/01/'. $request->year);
+        $transaction_date = Carbon::parse('last day of '.$requested_date->format('F').' ' . $requested_date->format('Y'));
+
         $date_today = Carbon::now();
         $beginning_inv = DB::table('tabConsignment Beginning Inventory')
             ->where('branch_warehouse', $branch)->whereDate('transaction_date', '<=', $date_today)
             ->where('status', 'Approved')->orderBy('transaction_date' , 'asc')->first();
 
-        if ($date_today->gte(Carbon::parse($date))) {
+        if ($date_today->gte(Carbon::parse($transaction_date))) {
             if ($beginning_inv) {
-                $start_date = Carbon::parse($beginning_inv->transaction_date)->subMonth();
-                $end_date = Carbon::parse($date);
+                $start_date = Carbon::parse($transaction_date)->subMonth();
+                $end_date = Carbon::parse($transaction_date);
     
                 $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
     
@@ -879,8 +882,6 @@ class ConsignmentController extends Controller
                 $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
                 $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
     
-                $date_today = Carbon::now()->format('Y-m-d');
-                
                 $cutoff_period = [];
                 foreach ($period as $date) {
                     $date1 = $date->day($cutoff_1);
@@ -892,10 +893,10 @@ class ConsignmentController extends Controller
                         $cutoff_period[] = $date->format('Y-m-d');
                     }
                 }
-    
+
                 if ($cutoff_period) {
                     $existing_records = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
-                        ->where('cutoff_date', $cutoff_period)->orderBy('cutoff_date', 'asc')->distinct()->pluck('cutoff_date')->toArray();
+                        ->whereIn('cutoff_date', $cutoff_period)->orderBy('cutoff_date', 'asc')->distinct()->pluck('cutoff_date')->toArray();
                     
                     $no_records = [];
                     foreach ($cutoff_period as $key => $value) {
@@ -903,18 +904,12 @@ class ConsignmentController extends Controller
                             $no_records[] = $value;
                         }
                     }
-    
-                    $cutoff_period[] = $date_today;
-                    // sort array with given user-defined function
-                    usort($cutoff_period, function ($time1, $time2) {
-                        return strtotime($time1) - strtotime($time2);
-                    });
-                    
+
                     if (count($no_records) > 0) {
-                        $period_from = array_key_exists(count($no_records)-2, $no_records) ? $no_records[count($no_records)-2] : null;
+                        $period_from = array_key_exists(0, $cutoff_period) ? $cutoff_period[0] : null;
                         $period_to = array_key_exists(count($no_records)-1, $no_records) ? $no_records[count($no_records)-1] : null;
     
-                        return '<i class="fas fa-exclamation-circle"></i> You have no submitted report(s) for the period of <b>' . Carbon::parse($period_from)->format('F d, Y') .' - ' . Carbon::parse($period_to)->format('F d, Y') . '</b>';
+                        return '<i class="fas fa-exclamation-circle"></i> You have no submitted report(s) for the period of <b>' . Carbon::parse($period_from)->addDay()->format('F d, Y') .' - ' . Carbon::parse($period_to)->format('F d, Y') . '</b>';
                     }
                 }
             }
