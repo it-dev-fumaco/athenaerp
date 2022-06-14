@@ -605,7 +605,9 @@ class ConsignmentController extends Controller
             ->when($request->store, function ($q) use ($request){
                 return $q->where('branch_warehouse', $request->store);
             })
-            ->where('status', $status)
+            ->when($status != 'All', function ($q) use ($status){
+                return $q->where('status', $status);
+            })
             ->orderBy('creation', 'desc')
             ->paginate(10);
 
@@ -691,7 +693,7 @@ class ConsignmentController extends Controller
                     ]);
 
                     if(isset($prices[$item->item_code])){ // in case there is an update in price
-                        $update_values['price'] = preg_replace("/[^0-9]/", "", $prices[$item->item_code][0] * 1);
+                        $update_values['price'] = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code][0]) * 1;
                     }
     
                     // update each item, allows checking if item for this branch is approved/cancelled
