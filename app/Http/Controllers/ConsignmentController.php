@@ -662,6 +662,7 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $branch = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('branch_warehouse')->first();
+            $prices = $request->price;
 
             if(!$branch){
                 return redirect()->back()->with('error', 'Inventory record not found.');
@@ -688,6 +689,10 @@ class ConsignmentController extends Controller
                         'modified' => $now,
                         'modified_by' => Auth::user()->wh_user
                     ]);
+
+                    if(isset($prices[$item->item_code])){ // in case there is an update in price
+                        $update_values['price'] = preg_replace("/[^0-9]/", "", $prices[$item->item_code][0] * 1);
+                    }
     
                     // update each item, allows checking if item for this branch is approved/cancelled
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item->item_code)->update($update_values);
@@ -696,7 +701,11 @@ class ConsignmentController extends Controller
                 // update item status' to cancelled
                 DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
             }
-            
+
+            if(isset($update_values['price'])){ // remove price in updates array, parent table of beginning inventory does not have price
+                unset($update_values['price']);
+            }
+
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
 
             DB::commit();
