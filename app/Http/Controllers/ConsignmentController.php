@@ -1165,6 +1165,8 @@ class ConsignmentController extends Controller
                     'creation' => $now,
                     'transaction_date' => $now,
                     'owner' => Auth::user()->full_name,
+                    'modified' => $now,
+                    'modified_by' => Auth::user()->full_name
                 ];
                 
                 DB::table('tabConsignment Beginning Inventory')->insert($values);
@@ -1192,7 +1194,12 @@ class ConsignmentController extends Controller
                         'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
                         'stocks_displayed' => 0,
                         'status' => 'For Approval',
-                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0
+                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
+                        'modified' => $now,
+                        'modified_by' => Auth::user()->full_name,
+                        'parentfield' => 'items',
+                        'parenttype' => 'Consignment Beginning Inventory' 
+
                     ];
 
                     $item_count = $item_count + 1;
