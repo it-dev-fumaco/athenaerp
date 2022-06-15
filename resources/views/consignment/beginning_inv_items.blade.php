@@ -132,7 +132,7 @@
                             <div class="p-1 col">
                                 <div class="input-group p-1">
                                     <div class="p-0">
-                                        <input type="text" class="form-control form-control-sm qty validate price" id="{{ $item['item_code'] }}-price" data-item-code="{{ $item['item_code'] }}" placeholder="{{ $item['price'] }}" value="" name="price[{{ $item['item_code'] }}]" style="text-align: center;">
+                                        <input type="text" class="form-control form-control-sm qty validate price" id="{{ $item['item_code'] }}-price" data-item-code="{{ $item['item_code'] }}" placeholder="{{ $item['price'] }}" value="{{ $inv_name ? $item['price'] : null }}" name="price[{{ $item['item_code'] }}]" style="text-align: center;">
                                     </div>
                                 </div>
                             </div>
@@ -422,6 +422,9 @@
 
             $('#new-item-stock').val(0);
             $('#new-item-price').val('');
+
+            $('#new-item-stock').prop('required', false);
+            $('#new-item-price').prop('required', false);
 
             $('#add-item-btn').addClass('d-none');
             $('#item-to-add').addClass('d-none');

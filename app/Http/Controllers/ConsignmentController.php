@@ -1056,9 +1056,15 @@ class ConsignmentController extends Controller
 
     public function getItems(Request $request, $branch){
         $bin_items = DB::table('tabBin')->where('warehouse', $branch)->pluck('item_code');
+
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereIn('status', ['Approved', 'For Approval'])->pluck('name');
+        $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $beginning_inventory)->whereIn('status', ['Approved', 'For Approval'])->pluck('item_code');
+
+        $excluded_items = collect($bin_items)->merge($inventory_items)->unique(); // exclude items already in bin and approved and for approval items
+
         $search_str = explode(' ', $request->q);
 
-        $items = DB::table('tabItem')->whereNotIn('item_code', $bin_items)
+        $items = DB::table('tabItem')->whereNotIn('item_code', $excluded_items)
             ->where('disabled', 0)->where('has_variants', 0)->where('is_stock_item', 1)
             ->when($request->q, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
@@ -1432,7 +1438,8 @@ class ConsignmentController extends Controller
                 'id' => $item->item_code,
                 'text' => $item->item_code.' - '.strip_tags($item->description),
                 'description' => strip_tags($item->description),
-                'max' => $item->consigned_qty ? $item->consigned_qty : 0,
+                'max' => $item->consigned_qty ? $item->consigned_qty * 1 : 0,
+                'uom' => $item->stock_uom,
                 'price' => isset($inventory[$item->item_code]) ? '₱ '.number_format($inventory[$item->item_code][0]->price, 2) : '₱ 0.00',
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
                 'img' => asset('storage/'.$img),
