@@ -10,55 +10,99 @@
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
-                            <span class="font-weight-bold d-block font-responsive">{{ $branch }}</span>
+                        <div class="card-header">
+                            <span class="font-weight-bold d-block font-responsive text-center">{{ $branch }}</span>
                         </div>
                         <div class="card-header text-center font-weight-bold p-1">
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase">Beginning Inventory</h6>
+                            <div class="d-flex flex-row align-items-center">
+                                <div class="p-0 col-3">
+                                    <a href="/beginning_inventory_list" class="btn btn-secondary m-0" style="width: 70px;"><i class="fas fa-arrow-left"></i></a>
+                                </div>
+                                <div class="p-1 col-6">
+                                    <h6 class="font-responsive font-weight-bold text-center m-0 text-uppercase d-block">Beginning Inventory</h6>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="p-1" style="font-size: 10pt">
-                                <span><b>Transaction Date:</b> {{ Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</span> <br>
-                                <span><b>Total items:</b> {{ count($inventory) }}</span>
+                                <span class="d-block">Transaction Date: <b>{{ Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</b></span>
+                                <span class="d-block">Total item(s): <b>{{ count($inventory) }}</b></span>
                             </div>
-                            <table class="table table-bordered">
-                                <tr>
-                                    <th class="font-responsive text-center p-2" style="width: 50%">Item Description</th>
-                                    <th class="font-responsive text-center">Opening Stock</th>
-                                    <th class="font-responsive text-center">Price</th>
-                                </tr>
-                                @forelse ($inventory as $inv)
+                            <table class="table" style="font-size: 8pt;">
+                                <thead class="border-top">
+                                    <th class="text-uppercase text-center p-1 align-middle">Item Description</th>
+                                    <th class="text-uppercase text-center p-1 align-middle">Opening Stock</th>
+                                    <th class="text-uppercase text-center p-1 align-middle">Price</th>
+                                </thead>
+                                <tbody>
+                                    @forelse ($inventory as $inv)
                                     @php
                                         $img = isset($item_image[$inv->item_code]) ? "/img/" . $item_image[$inv->item_code][0]->image_path : "/icon/no_img.png";
                                         $img_webp = isset($item_image[$inv->item_code]) ? "/img/" . explode('.',$item_image[$inv->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+
+                                        $img_count = array_key_exists($inv->item_code, $item_image) ? count($item_image[$inv->item_code]) : 0;
                                     @endphp 
-                                    <tr>
-                                        <td class="text-center font-responsive p-1">
-                                            <div class="row">
-                                                <div class="col-4">
-                                                    <picture>
-                                                        <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                        <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                        <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                    </picture>
+                                    <tr style="border-bottom: 0 !important;">
+                                        <td class="text-center p-1">
+                                            <div class="d-flex flex-row justify-content-start align-items-center">
+                                                <div class="p-1 text-left">
+                                                    <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $inv->item_code }}" data-title="{{ $inv->item_code }}">
+                                                        <picture>
+                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                        </picture>
+                                                    </a>
                                                 </div>
-                                                <div class="col-6 font-weight-bold" style="display: flex; justify-content: center; align-items: center;">
-                                                    {{ $inv->item_code }}
+                                                <div class="p-1 m-0">
+                                                    <span class="font-weight-bold">{{ $inv->item_code }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="modal fade" id="mobile-{{ $inv->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">{{ $inv->item_code }}</h5>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div id="image-container" class="container-fluid">
+                                                                <div id="carouselExampleControls" class="carousel slide" data-interval="false">
+                                                                    <div class="carousel-inner">
+                                                                        <div class="carousel-item active">
+                                                                            <picture>
+                                                                                <source id="mobile-{{ $inv->item_code }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                <source id="mobile-{{ $inv->item_code }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                <img class="d-block w-100" id="mobile-{{ $inv->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+                                                                            </picture>
+                                                                        </div>
+                                                                        <span class='d-none5' id="mobile-{{ $inv->item_code }}-image-data">0</span>
+                                                                    </div>
+                                                                    @if ($img_count > 1)
+                                                                    <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $inv->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                                        <span class="sr-only">Previous</span>
+                                                                    </a>
+                                                                    <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $inv->item_code }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                                        <span class="sr-only">Next</span>
+                                                                    </a>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="text-center font-responsive">
-                                            {{ $inv->opening_stock * 1 }}
-                                        </td>
-                                        <td class="text-center font-responsive">
-                                            ₱ {{ number_format($inv->price * 1, 2) }}
-                                        </td>
+                                        <td class="text-center p-1 align-middle font-weight-bold">{{ number_format($inv->opening_stock) }}</td>
+                                        <td class="text-center p-1 align-middle font-weight-bold">₱ {{ number_format($inv->price * 1, 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td colspan=3 class="text-justify p-2" style="font-size: 9.5pt;">
-                                            <span class="item-description">
-                                                {{ strip_tags($inv->item_description) }}
-                                            </span>
+                                        <td colspan="3" class="text-justify pt-0 pb-1 pl-2 pr-1 align-middle" style="border-top: 0 !important;">
+                                            <span class="item-description">{{ strip_tags($inv->item_description) }}</span>
                                         </td>
                                     </tr>
                                 @empty
@@ -68,6 +112,8 @@
                                         </td>
                                     </tr>
                                 @endforelse
+                                </tbody>
+                              
                             </table>
                         </div>
                     </div>
@@ -80,10 +126,6 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;
-        }
         .morectnt span {
             display: none;
         }

@@ -17,7 +17,7 @@
                         <div class="card-body p-0">
                             <table class="table table-striped">
                                 <thead class="text-uppercase">
-                                    <th class="font-responsive text-center p-2">Details</th>
+                                    <th class="font-responsive text-center p-2">Date</th>
                                     <th class="font-responsive text-center p-2" style="width: 65%;">Branch Warehouse</th>
                                 </thead>
                                 @forelse ($beginning_inventory as $store)
@@ -31,7 +31,6 @@
                                     @endphp
                                     <tr>
                                         <td class="font-responsive text-center p-2 align-middle">
-                                            <span class="d-block font-weight-bold">{{ $store->name }}</span>
                                             <small class="d-block">{{ Carbon\Carbon::parse($store->transaction_date)->format('F d, Y') }}</small>
                                             <span class="badge badge-{{ $badge }}">{{ $store->status }}</span>
                                         </td>
@@ -41,7 +40,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan=2 class="text-center">No result(s)</td>
+                                        <td colspan="2" class="text-center">No record(s) found</td>
                                     </tr>
                                 @endforelse
                             </table>
