@@ -559,6 +559,10 @@ class ConsignmentController extends Controller
             ->whereBetween('transaction_date', [$start, $end])
             ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))->groupBy('transaction_date')->get();
 
+        $beginning_inventories = DB::table('tabConsignment Beginning Inventory')
+            ->where('branch_warehouse', $branch)->where('status', 'Approved')
+            ->distinct()->pluck('transaction_date');
+
         $data = [];
         foreach ($query as $row) {
             $status = explode(',', strtolower($row->status));
@@ -606,32 +610,42 @@ class ConsignmentController extends Controller
             $data[] = [
                 'title' => 'Cutoff',
                 'start' => $duration_from,
-                'backgroundColor' => '#2874a6',
-                'borderColor' => '#2874a6',
+                'backgroundColor' => '#a93226',
+                'borderColor' => '#a93226',
                 'allDay' => false,
             ];
     
             $data[] = [
                 'title' => 'Cutoff',
                 'start' => $duration_to,
-                'backgroundColor' => '#2874a6',
-                'borderColor' => '#2874a6',
+                'backgroundColor' => '#a93226',
+                'borderColor' => '#a93226',
                 'allDay' => false,
             ];
 
             $data[] = [
                 'title' => 'Inventory Audit',
                 'start' => $duration_from,
-                'backgroundColor' => '#d35400',
-                'borderColor' => '#d35400',
+                'backgroundColor' => '#34495e',
+                'borderColor' => '#34495e',
                 'allDay' => false,
             ];
 
             $data[] = [
                 'title' => 'Inventory Audit',
                 'start' => $duration_to,
-                'backgroundColor' => '#d35400',
-                'borderColor' => '#d35400',
+                'backgroundColor' => '#34495e',
+                'borderColor' => '#34495e',
+                'allDay' => false,
+            ];
+        }
+
+        foreach($beginning_inventories as $transaction_date) {
+            $data[] = [
+                'title' => 'Beginning Inventory',
+                'start' => $transaction_date,
+                'backgroundColor' => '#2874a6',
+                'borderColor' => '#2874a6',
                 'allDay' => false,
             ];
         }
