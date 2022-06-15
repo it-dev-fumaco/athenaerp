@@ -46,8 +46,8 @@
             <tbody>
             @forelse ($items as $item)
                 @php
-                    $img = array_key_exists($item->item_code, $item_images) ? "/img/" . $item_images[$item->item_code][0]->image_path : "/icon/no_img.png";
-                    $img_webp = array_key_exists($item->item_code, $item_images) ? "/img/" . explode('.',$item_images[$item->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+                    $img = isset($item_images[$item->item_code]) ? "/img/" . $item_images[$item->item_code][0]->image_path : "/icon/no_img.png";
+                    $img_webp = isset($item_images[$item->item_code]) ? "/img/" . explode('.',$item_images[$item->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
                 @endphp
                 <tr>
                     <td class="text-center p-1 col-1 align-middle">
