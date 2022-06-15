@@ -118,8 +118,9 @@
                                     <div class="col-3">
                                         <input type="text" name="date" id="date-filter" class="form-control" value="" />
                                     </div>
-                                    <div class="col-1">
-                                        <button class="btn btn-primary w-100"><i class="fas fa-search"></i></button>
+                                    <div class="col-1 p-0">
+                                        <button class="btn btn-primary d-inline-block float-left m-0"><i class="fas fa-search"></i></button>
+                                        <a href="/" class="btn btn-secondary d-inline-block float-left ml-1"><i class="fas fa-undo"></i></a>
                                     </div>
                                 </div>
                             </form>

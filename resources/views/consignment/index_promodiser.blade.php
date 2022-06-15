@@ -35,15 +35,17 @@
           </div>
         </div>
         <div class="col-6 p-1">
-          <div class="info-box bg-gradient-warning m-0">
-            <div class="info-box-content p-1">
-              <span class="info-box-text" style="font-size: 8pt;">Damaged Item Report</span>
-              <span class="info-box-number">0</span>
-              <div class="progress">
-                <div class="progress-bar"></div>
+          <a href="/damage_report/list">
+            <div class="info-box bg-gradient-warning m-0">
+              <div class="info-box-content p-1">
+                <span class="info-box-text" style="font-size: 8pt;">Damaged Item Report</span>
+                <span class="info-box-number">0</span>
+                <div class="progress">
+                  <div class="progress-bar"></div>
+                </div>
               </div>
             </div>
-          </div>
+          </a>
         </div>
         <div class="col-6 p-1">
           <a href="/promodiser/delivery_report/incoming" style="color: inherit !important">

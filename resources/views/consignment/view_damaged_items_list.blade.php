@@ -11,7 +11,7 @@
                 <div class="col-md-12">
                    
                     <div style="margin-bottom: -43px;">
-                        <a href="/" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+                        <a href="/" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i> </a>
 
                     </div>
                     <h3 class="text-center font-weight-bold m-2 text-uppercase">Damaged Item List</h3>
@@ -43,8 +43,8 @@
                                     <th class="text-center" style="width: 10%;">Date</th>
                                     <th class="text-center" style="width: 35%;">Item Description</th>
                                     <th class="text-center" style="width: 10%;">Qty</th>
-                                    <th class="text-center" style="width: 25%;">Store</th>
-                                    <th class="text-center" style="width: 15%;">Created by</th>
+                                    <th class="text-center" style="width: 20%;">Store</th>
+                                    <th class="text-center" style="width: 20%;">Damage Description</th>
                                     <th class="text-center" style="width: 5%;">-</th>
                                 </thead>
                                 @forelse ($items_arr as $i => $item)
@@ -61,7 +61,9 @@
                                                 </div>
                                                 <div class="p-1">
                                                     <span class="d-block font-weight-bold">{{ $item['item_code'] }}</span>
-                                                    <small class="d-block item-description">{!! strip_tags($item['description']) !!}</small> 
+                                                    <small class="d-block item-description">{!! strip_tags($item['description']) !!}</small>
+
+                                                    <small class="d-block mt-2">Created by: <b>{{ $item['promodiser'] }}</b></small>
                                                 </div>
                                             </div>
                                         </td>
@@ -70,54 +72,9 @@
                                             <small>{{ $item['uom'] }}</small>
                                         </td>
                                         <td class="p-1 text-center align-middle">{{ $item['store'] }}</td>
-                                        <td class="p-1 text-center align-middle">{{ $item['promodiser'] }}</td>
+                                        <td class="p-1 text-center align-middle">{{ $item['damage_description'] }}</td>
                                         <td class="p-1 text-center align-middle">
-                                            <a href="#" class="btn btn-info btn-sm" data-toggle="modal" data-target="#dmg-{{ $i }}-Modal">
-                                                <i class="fas fa-search"></i>
-                                            </a>
-                                              
-                                            <!-- Modal(large) -->
-                                            <div class="modal fade" id="dmg-{{ $i }}-Modal" tabindex="-1" role="dialog">
-                                                <div class="modal-dialog modal-lg" role="document">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header bg-navy text-white">
-                                                            <h5 class="modal-title">{{ $item['item_code'] }} - Damage Report</h5>
-                                                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <div class="row mt-1 mb-3">
-                                                                <div class="col-md-3">
-                                                                    <picture>
-                                                                        <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
-                                                                        <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                        <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="100%">
-                                                                    </picture>
-                                                                </div>
-                                                                <div class="col-md-9 text-justify">
-                                                                    <span class="d-block font-weight-bold">{{ $item['item_code'] }}</span>
-                                                                    <span class="d-block">{!! strip_tags($item['description']) !!}</span>
-                                                                    <div class="d-flex flex-row align-items-center">
-                                                                        <div class="p-1 col-6">
-                                                                            <span class="d-block font-weight-bold mt-2">Damaged Qty</span>
-                                                                            <span class="d-block">{{ $item['damaged_qty'] }} <small>{{ $item['uom'] }}</small></span>
-                                                                            <span class="d-block font-weight-bold mt-2">Damage Description</span>
-                                                                            <span class="d-block">{{ $item['damage_description'] }}</span>
-                                                                        </div>
-                                                                        <div class="p-1 col-6">
-                                                                            <span class="d-block font-weight-bold mt-2">Transaction Date</span>
-                                                                            <span class="d-block">{{ $item['creation'] }}</span>
-                                                                            <span class="d-block font-weight-bold mt-2">Created by</span>
-                                                                            <span class="d-block">{{ $item['promodiser'] }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <a href="#" class="btn btn-primary btn-sm"><i class="fas fa-retweet"></i></a>
                                         </td>
                                     </tr>
                                     @empty
@@ -128,7 +85,6 @@
                             </table>
                             <div class="float-left m-2">Total: <b>{{ $damaged_items->total() }}</b></div>
                             <div class="float-right m-2" id="beginning-inventory-list-pagination">{{ $damaged_items->links('pagination::bootstrap-4') }}</div>
-                            
                         </div>
                     </div>
                 </div>
