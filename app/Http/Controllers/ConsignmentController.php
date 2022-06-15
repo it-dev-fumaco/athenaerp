@@ -181,6 +181,61 @@ class ConsignmentController extends Controller
         return view('consignment.inventory_audit_form', compact('branch', 'transaction_date', 'items', 'item_images', 'item_total_sold', 'consigned_stocks', 'duration'));
     }
 
+    public function listBeginningInventory(Request $request) {
+        if ($request->ajax()) {
+            $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
+            $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
+    
+            $status = $request->status;
+            
+            $beginning_inventory_list = DB::table('tabConsignment Beginning Inventory')
+                ->when($request->search, function ($q) use ($request){
+                    return $q->where('name', 'LIKE', '%'.$request->search.'%')
+                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
+                })
+                ->when($request->date, function ($q) use ($from_date, $to_date){
+                    return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
+                })
+                ->when($request->store, function ($q) use ($request){
+                    return $q->where('branch_warehouse', $request->store);
+                })
+                ->when($status, function ($q) use ($status){
+                    return $q->where('status', $status);
+                })
+                ->orderBy('creation', 'desc')
+                ->paginate(10);
+    
+            return view('consignment.tbl_beginning_inventory_list', compact('beginning_inventory_list'));
+        }
+    }
+
+    public function beginningInventoryDetail($id, Request $request) {
+        if ($request->ajax()) {
+            $detail = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
+
+            if ($detail) {
+                $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+
+                $item_codes = collect($items)->map(function ($q){
+                    return $q->item_code;
+                });
+
+                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
+                $item_images = collect($item_images)->groupBy('parent');
+            }
+
+            return view('consignment.beginning_inventory_detail', compact('detail', 'items', 'item_images'));
+        }
+    }
+
+    public function consignmentStores(Request $request) {
+        if ($request->ajax()) {
+            return DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+                ->where('is_group', 0)->where('disabled', 0)->where('name','LIKE', '%'.$request->q.'%')
+                ->select('name as id', 'warehouse_name as text')->orderBy('warehouse_name', 'asc')->get();
+        }
+    }
+
     public function submitInventoryAuditForm(Request $request) {
         $data = $request->all();
         DB::beginTransaction();
@@ -711,9 +766,18 @@ class ConsignmentController extends Controller
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
 
             DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json(['status' => 1, 'message' => 'Beginning Inventory for '.$branch.' was '.$request->status.'.']);
+            }
+
             return redirect()->back()->with('success', 'Beginning Inventory for '.$branch.' was '.$request->status.'.');
         } catch (Exception $e) {
             DB::rollback();
+            if ($request->ajax()) {
+                return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again later.']);
+            }
+
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }

@@ -187,7 +187,20 @@ class MainController extends Controller
 
             $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
-            return view('consignment.index_consignment_supervisor', compact('duration', 'sales_report_submission_percentage'));
+            $consignment_branches = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+                ->orderBy('warehouse_name', 'asc')->select('warehouse_name', 'name', 'is_group', 'disabled')->get()->toArray();
+
+            $active_consignment_branches = collect($consignment_branches)->where('is_group', 0)->where('disabled', 0);
+
+            $promodisers = DB::table('tabWarehouse Users')->where('user_group', 'Promodiser')->count();
+
+            $consignment_branches_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+                ->where('status', 'Approved')->whereIn('branch_warehouse', array_column($consignment_branches, 'name'))
+                ->distinct('branch_warehouse')->count();
+
+            $beginning_inv_percentage = number_format(($consignment_branches_with_beginning_inventory / count($consignment_branches)) * 100, 2);
+
+            return view('consignment.index_consignment_supervisor', compact('duration', 'sales_report_submission_percentage', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory'));
         }
 
         return view('index');
