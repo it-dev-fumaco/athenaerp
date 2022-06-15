@@ -1,8 +1,7 @@
 <table class="table table-bordered table-striped" style="font-size: 10pt;">
     <thead>
-        <th class="font-responsive text-center">ID</th>
+        <th class="font-responsive text-center">Date</th>
         <th class="font-responsive text-center">Branch</th>
-        <th class="font-responsive text-center">Transaction Date</th>
         <th class="font-responsive text-center">Submitted by</th>
         <th class="font-responsive text-center">Status</th>
         <th class="font-responsive text-center">Action</th>
@@ -19,9 +18,8 @@
         }
     @endphp
     <tr>
-        <td class="font-responsive text-center">{{ $row->name }}</td>
-        <td class="font-responsive text-center">{{ $row->branch_warehouse }}</td>
         <td class="font-responsive text-center">{{ \Carbon\Carbon::parse($row->transaction_date)->format('F d, Y') }}</td>
+        <td class="font-responsive text-center">{{ $row->branch_warehouse }}</td>
         <td class="font-responsive text-center">{{ $row->owner }}</td>
         <td class="font-responsive text-center">
             <span class="badge badge-{{ $status }}">{{ $row->status }}</span>
