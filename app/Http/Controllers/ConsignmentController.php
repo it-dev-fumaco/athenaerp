@@ -747,19 +747,51 @@ class ConsignmentController extends Controller
                 'modified' => $now
             ];
 
+
             if($request->status == 'Approved'){
                 $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+
+                $item_codes = collect($items)->map(function ($q){
+                    return $q->item_code;
+                });
+
+                $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
+                $bin_items = collect($bin)->groupBy('item_code');
 
                 foreach($items as $item){
                     if($item->status != 'For Approval'){ // Skip the approved/cancelled items
                         continue;
                     }
     
-                    DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $branch)->update([
-                        'consigned_qty' => $item->opening_stock,
-                        'modified' => $now,
-                        'modified_by' => Auth::user()->wh_user
-                    ]);
+                    if(isset($bin_items[$item->item_code])){
+                        DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $branch)->update([
+                            'consigned_qty' => $item->opening_stock,
+                            'modified' => $now,
+                            'modified_by' => Auth::user()->wh_user
+                        ]);
+                    }else{
+                        $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
+                        $latest_bin_exploded = explode("/", $latest_bin);
+                        $bin_id = (($latest_bin) ? $latest_bin_exploded[1] : 0) + 1;
+                        $bin_id = str_pad($bin_id, 7, '0', STR_PAD_LEFT);
+                        $bin_id = 'BIN/'.$bin_id;
+
+                        DB::table('tabBin')->insert([
+                            'name' => $bin_id,
+                            'creation' => $now,
+                            'modified' => $now,
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
+                            'docstatus' => 0,
+                            'idx' => 0, 
+                            'warehouse' => $branch,
+                            'item_code' => $item->item_code,
+                            'stock_uom' => $item->stock_uom,
+                            'valuation_rate' => isset($prices[$item->item_code]) ? preg_replace("/[^0-9 .]/", "", $prices[$item->item_code][0]) * 1 : 0,
+                            'consigned_qty' => $item->opening_stock
+                        ]);
+                    }
+                    
 
                     if(isset($prices[$item->item_code])){ // in case there is an update in price
                         $update_values['price'] = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code][0]) * 1;
@@ -780,7 +812,6 @@ class ConsignmentController extends Controller
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
 
             DB::commit();
-
             if ($request->ajax()) {
                 return response()->json(['status' => 1, 'message' => 'Beginning Inventory for '.$branch.' was '.$request->status.'.']);
             }
