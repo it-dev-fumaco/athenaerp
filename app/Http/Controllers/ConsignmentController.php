@@ -221,7 +221,7 @@ class ConsignmentController extends Controller
                 });
 
                 $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
-                $item_images = collect($item_images)->groupBy('parent');
+                $item_images = collect($item_images)->groupBy('parent')->toArray();
             }
 
             return view('consignment.beginning_inventory_detail', compact('detail', 'items', 'item_images'));

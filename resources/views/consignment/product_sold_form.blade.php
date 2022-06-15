@@ -114,7 +114,7 @@
                                                                                     <img class="d-block w-100" id="mobile-{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
                                                                                 </picture>
                                                                             </div>
-                                                                            <span class='d-none5' id="mobile-{{ $row->item_code }}-image-data">0</span>
+                                                                            <span class='d-none' id="mobile-{{ $row->item_code }}-image-data">0</span>
                                                                         </div>
                                                                         @if ($img_count > 1)
                                                                         <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">

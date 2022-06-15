@@ -193,15 +193,16 @@
     </table>
     
     <div class="col-12 text-right">
-        <span style="font-size: 15px;">Total items: {{ count($items) }}</span>
+        <span class="d-block" style="font-size: 15px;">Total items: <b>{{ count($items) }}</b></span>
+        <div class="m-2">
+            <button type="submit" class="btn btn-primary btn-block" id="submit-btn"><i class="fas fa-check"></i> SUBMIT</button>
+        </div>
     </div>
-    <button type="submit" id="submit-btn" class="btn btn-primary font-responsive mx-auto" disabled>Submit</button>
 
     <div class="d-none">
         {{-- values to save --}}
         <input type="text" name="branch" value="{{ $branch }}">
         <input type="text" name="inv_name" value="{{ $inv_name }}">
-
         {{-- used as a reference --}}
         <input type="text" id="item-count" value="{{ count($items) }}">
     </div>
