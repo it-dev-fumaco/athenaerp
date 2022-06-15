@@ -183,7 +183,7 @@
                     </td>
                 </tr>
             @empty
-                <tr>
+                <tr id="placeholder">
                     <td class="text-center font-responsive" colspan="3">
                         No item(s) available.
                     </td>
@@ -485,6 +485,7 @@
             '</tr>';
 
 			$(table).prepend(row);
+            $('#placeholder').addClass('d-none')
 		}
 
         // separate controls for 'Add Item' modal 
