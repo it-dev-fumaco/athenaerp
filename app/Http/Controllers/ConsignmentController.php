@@ -1243,30 +1243,36 @@ class ConsignmentController extends Controller
         }
     }
 
-    public function damagedItemsList(){
-        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+    public function damagedItemsList(Request $request){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')
+            ->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
         $damaged_items = DB::table('tabConsignment Damaged Item')
+            ->when($request->search, function ($q) use ($request){
+                $q->where('item_code', 'like', '%' . $request->search .'%')
+                    ->orWhere('description', 'like', '%' . $request->search .'%');
+            })
+            ->when($request->store, function ($q) use ($request){
+                $q->where('branch_warehouse', $request->store);
+            })
             ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($assigned_consignment_store){
                 $q->whereIn('branch_warehouse', $assigned_consignment_store);
-            })->orderBy('creation', 'desc')->get();
+            })->orderBy('creation', 'desc')->paginate(20);
         
-        $item_codes = collect($damaged_items)->map(function ($q){
+        $item_codes = collect($damaged_items->items())->map(function ($q){
             return $q->item_code;
         });
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
         $item_image = collect($item_images)->groupBy('parent');
 
-        $uoms = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'stock_uom')->get();
-        $uom = collect($uoms)->groupBy('item_code');
-
         $items_arr = [];
         foreach($damaged_items as $item){
             $items_arr[] = [
                 'item_code' => $item->item_code,
                 'description' => $item->description,
-                'damaged_qty' => $item->qty * 1,
-                'uom' => isset($uom[$item->item_code]) ? $uom[$item->item_code][0]->stock_uom : null,
+                'damaged_qty' => ($item->qty * 1),
+                'uom' => $item->stock_uom,
                 'store' => $item->branch_warehouse,
                 'damage_description' => $item->damage_description,
                 'promodiser' => $item->promodiser,
@@ -1274,6 +1280,10 @@ class ConsignmentController extends Controller
                 'webp' => isset($item_image[$item->item_code]) ? explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : '/icon/no_img.webp',
                 'creation' => Carbon::parse($item->creation)->format('F d, Y')
             ];
+        }
+
+        if (Auth::user()->user_group == 'Consignment Supervisor') {
+            return view('consignment.view_damaged_items_list', compact('items_arr', 'damaged_items'));
         }
 
         return view('consignment.damaged_items_list', compact('items_arr'));

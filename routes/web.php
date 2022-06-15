@@ -152,7 +152,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/save_beginning_inventory', 'ConsignmentController@saveBeginningInventory');
     Route::get('/promodiser/delivery_report/{type}', 'ConsignmentController@promodiserDeliveryReport');
     Route::get('/promodiser/receive/{id}', 'ConsignmentController@promodiserReceiveDelivery');
-    Route::get('/pending_submission_sales_report', 'ConsignmentController@pendingSubmissionSalesReport');
+    // Route::get('/pending_submission_sales_report', 'ConsignmentController@pendingSubmissionSalesReport');
     Route::get('/sales_report_deadline', 'ConsignmentController@salesReportDeadline');
     Route::get('/validate_beginning_inventory', 'ConsignmentController@checkBeginningInventory'); 
     Route::get('/promodiser/damage_report/form', 'ConsignmentController@promodiserDamageForm'); 

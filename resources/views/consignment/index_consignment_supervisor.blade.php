@@ -29,15 +29,17 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3 p-1">
-                    <div class="info-box bg-gradient-warning m-0">
-                        <div class="info-box-content p-1">
-                            <span class="info-box-text font-responsive">Damaged Item Report</span>
-                            <span class="info-box-number font-responsive">0</span>
-                            <div class="progress">
-                                <div class="progress-bar"></div>
+                    <a href="/damage_report/list">
+                        <div class="info-box bg-gradient-warning m-0">
+                            <div class="info-box-content p-1">
+                                <span class="info-box-text font-responsive">Damaged Item Report</span>
+                                <span class="info-box-number font-responsive">{{ number_format($total_damaged_item_reported) }}</span>
+                                <div class="progress">
+                                    <div class="progress-bar"></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3 p-1">
                     <a href="/beginning_inv_list" style="color: inherit">
@@ -98,14 +100,8 @@
                                         <input type="text" name="search" class="form-control" placeholder="Search" />
                                     </div>
                                     <div class="col-3">
-                                        @php
-                                            $statuses = ['For Approval', 'Approved', 'Cancelled'];
-                                        @endphp
                                         <select class="form-control" name="store" id="consignment-store-select">
                                             <option value="">Select Store</option>
-                                            @foreach ($statuses as $status)
-                                            <option value="{{ $status }}">{{ $status }}</option>
-                                            @endforeach
                                         </select>
                                     </div>
                                     <div class="col-2">
@@ -240,7 +236,6 @@
 @endsection
 
 @section('script')
-<script src="{{ asset('/updated/plugins/jquery-knob/jquery.knob.min.js') }}"></script>
 <script>
     function makesvg(percentage, inner_text=""){
         var abs_percentage = Math.abs(percentage).toString();
