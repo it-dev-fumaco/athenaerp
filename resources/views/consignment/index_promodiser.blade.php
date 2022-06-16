@@ -16,30 +16,30 @@
           @endif
             <div class="info-box bg-gradient-primary m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 8pt;">Sales Report Submission</span>
-                <span class="info-box-number">{{ $sales_report_submission_percentage }}%</span>
+                <span class="info-box-text" style="font-size: 8pt;">Product Sold</span>
+                <span class="info-box-number">{{ number_format($total_item_sold) }}</span>
                 <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
               </div>
             </div>
           </a>
         </div>
         <div class="col-6 p-1">
-          <div class="info-box bg-gradient-info m-0">
-            <div class="info-box-content p-1">
-              <span class="info-box-text" style="font-size: 8pt;">Stock Transfer Request</span>
-              <span class="info-box-number">0</span>
-              <div class="progress">
-                <div class="progress-bar"></div>
+          <a href="/inventory_audit">
+            <div class="info-box bg-gradient-info m-0">
+              <div class="info-box-content p-1">
+                <span class="info-box-text" style="font-size: 8pt;">Inventory Audit</span>
+                <span class="info-box-number">{{ number_format($total_pending_inventory_audit) }}</span>
+                <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
               </div>
             </div>
-          </div>
+          </a>
         </div>
         <div class="col-6 p-1">
-          <a href="/damage_report/list">
+          <a href="/stock_transfer/list">
             <div class="info-box bg-gradient-warning m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 8pt;">Damaged Item Report</span>
-                <span class="info-box-number">0</span>
+                <span class="info-box-text" style="font-size: 8pt;">Stock Transfer</span>
+                <span class="info-box-number">{{ number_format($total_stock_transfer) }}</span>
                 <div class="progress">
                   <div class="progress-bar"></div>
                 </div>
@@ -48,11 +48,11 @@
           </a>
         </div>
         <div class="col-6 p-1">
-          <a href="/promodiser/delivery_report/incoming" style="color: inherit !important">
+          <a href="#">
             <div class="info-box bg-gradient-secondary m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 8pt;">Incoming Deliveries</span>
-                <span class="info-box-number">{{ $incoming_deliveries_count }}</span>
+                <span class="info-box-text" style="font-size: 8pt;">Stock Adjustment</span>
+                <span class="info-box-number">0</span>
                 <div class="progress">
                   <div class="progress-bar"></div>
                 </div>

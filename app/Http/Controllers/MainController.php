@@ -76,26 +76,12 @@ class MainController extends Controller
                 $duration_from = $cutoff_period[$date_now_index - 1];
                 $duration_to = $cutoff_period[$date_now_index + 1];
 
-                $duration_period = CarbonPeriod::create($duration_from, '1 day' , $duration_to);
-                $no_of_sundays = 0;
-                foreach ($duration_period as $date) {
-                    if (strtolower(Carbon::parse($date)->format('l')) == 'sunday') {
-                        $no_of_sundays++;
-                    }
-                }
-                // get variables for sales report percentage completion
-                $duration_in_days = Carbon::parse($duration_to)->diffInDays(Carbon::parse($duration_from));
-                // get duration in days except sundays
-                $duration_in_days = $duration_in_days - $no_of_sundays;
-                $no_of_submitted_report = DB::table('tabConsignment Product Sold')
-                    ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
-                    ->whereIn('branch_warehouse', $assigned_consignment_store)
-                    ->distinct()->pluck('transaction_date');
-
-                $sales_report_submission_percentage = count($no_of_submitted_report) > 0 ? (count($no_of_submitted_report) / $duration_in_days) * 100 : 0;
-                $sales_report_submission_percentage = round($sales_report_submission_percentage);
-
                 $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
+
+                $total_item_sold = DB::table('tabConsignment Product Sold')->where('type', 'Product Sold Entry')
+                    ->whereIn('branch_warehouse', $assigned_consignment_store)->where('qty', '>', 0)
+                    ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
+                    ->count();
 
                 $inv_summary = DB::table('tabBin as b')
                     ->join('tabItem as i', 'i.name', 'b.item_code')
@@ -115,15 +101,83 @@ class MainController extends Controller
                     ];
                 }
 
-                // Incoming deliveries
-                $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->get();
-                $reference_ste = collect($delivery_report)->map(function ($q){
-                    return $q->name;
-                });
+                // get total pending inventory audit
+                $stores_with_beginning_inventory = DB::table('tabAssigned Consignment Warehouse as w')
+                    ->join('tabConsignment Beginning Inventory as c', 'c.branch_warehouse', 'w.warehouse')
+                    ->where('c.status', 'Approved')->where('w.parent', Auth::user()->frappe_userid)
+                    ->orderBy('w.warehouse', 'asc')->orderBy('c.transaction_date', 'asc')
+                    ->select('w.warehouse', 'c.transaction_date')->get();
+        
+                $beginning_inventory_per_warehouse = collect($stores_with_beginning_inventory)->groupBy('warehouse')->toArray();
+        
+                $inventory_audit_per_warehouse_query = DB::table('tabConsignment Product Sold')
+                    ->where('type', 'Inventory Audit')->whereIn('branch_warehouse', array_keys($beginning_inventory_per_warehouse))
+                    ->select('cutoff_period_from', 'cutoff_period_to', 'branch_warehouse')
+                    ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->get();
+                    
+                $inventory_audit_per_warehouse = collect($inventory_audit_per_warehouse_query)->groupBy('branch_warehouse')->toArray();
+        
+                $end_date = Carbon::now()->endOfDay();
+        
+                $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+            
+                $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+                $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+        
+                $total_pending_inventory_audit = 0;
+                foreach ($beginning_inventory_per_warehouse as $warehouse => $row) {
+                    $beginning_inventory_date = array_key_exists($warehouse, $beginning_inventory_per_warehouse) ? $beginning_inventory_per_warehouse[$warehouse][0]->transaction_date : null;
+        
+                    $store_inventory_audit = array_key_exists($warehouse, $inventory_audit_per_warehouse) ? $inventory_audit_per_warehouse[$warehouse] : [];
+        
+                    // get array of cutoff deadline starting from beginning inventory date
+                    $start_date = Carbon::parse($beginning_inventory_date)->startOfDay();
+                    
+                    $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+            
+                    $cutoff_period = [Carbon::parse($start_date)->format('Y-m-d')];
+                    foreach ($period as $date) {
+                        $date1 = $date->day($cutoff_1);
+                        if ($date1 >= $start_date && $date1 <= $end_date) {
+                            $cutoff_period[] = $date->format('Y-m-d');
+                        }
+                        $date2 = $date->day($cutoff_2);
+                        if ($date2 >= $start_date && $date2 <= $end_date) {
+                            $cutoff_period[] = $date->format('Y-m-d');
+                        }
+                    }
+        
+                    // sort array with given user-defined function
+                    usort($cutoff_period, function ($time1, $time2) {
+                        return strtotime($time1) - strtotime($time2);
+                    });
+        
+                    // get cutoff periods with pending submission of inventory audit
+                    $temp_existing_cutoff_period = [];
+                    foreach($cutoff_period as $n => $cutoff) {
+                        $f = array_key_exists($n, $cutoff_period) ? Carbon::parse($cutoff_period[$n])->addDay()->format('Y-m-d') : null;
+                        $t = array_key_exists($n + 1, $cutoff_period) ? $cutoff_period[$n + 1] : null;
+                        $co = array_filter([$f, $t]);
+        
+                        if (count($co) > 1) {
+                            if (!in_array($cutoff, $temp_existing_cutoff_period)) {
+                                if (count($store_inventory_audit) > 0) {
+                                    if (!in_array($t, array_column($store_inventory_audit, 'cutoff_period_to'))) {
+                                        $total_pending_inventory_audit++;
+                                    }
+                                }
+                            
+                                array_push($temp_existing_cutoff_period, $cutoff);
+                            }
+                        }
+                    }
+                }
 
-                $incoming_deliveries_count = DB::table('tabStock Entry Detail')->whereIn('parent', $reference_ste)->count();
-
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'sales_report_submission_percentage', 'inventory_summary', 'incoming_deliveries_count'));
+                // get total stock transfer
+                $total_stock_transfer = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
+                    ->where('purpose', 'Material Transfer')->where('name', 'like', 'stec%')->count();
+        
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer'));
             }
 
             return redirect('/search_results');
