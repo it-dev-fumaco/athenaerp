@@ -16,7 +16,7 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <h5 class="text-center mt-1 font-weight-bold">Request Stock Transfer</h5>
+                            <h6 class="text-center mt-1 font-weight-bold">Stock Transfer Request</h6>
                         </div>
                         <div class="card-header text-center font-weight-bold">
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
@@ -24,7 +24,7 @@
                         <div class="card-body p-1">
                             <form action="/stock_transfer/submit" method="post">
                                 @csrf
-                                <div class="row p-1" style="font-size: 10pt">
+                                <div class="row p-1" style="font-size: 9pt">
                                     @php
                                         $purpose = [
                                             ['title' => 'Store Transfer', 'value' => 'Consignment'],
@@ -35,7 +35,7 @@
                                         <label for="transfer_as">Purpose</label>
                                     </div>
                                     <div class="col-10 pt-1">
-                                        <select name="transfer_as" id='transfer-as' class="form-control" required style="font-size: 10pt">
+                                        <select name="transfer_as" id='transfer-as' class="form-control" required style="font-size: 9pt">
                                             <option value="" disabled selected>Select Purpose</option>
                                             @foreach ($purpose as $p)
                                                 <option value="{{ $p['value'] }}">{{ $p['title'] }}</option>
@@ -43,12 +43,12 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="row p-1" style="font-size: 10pt">
+                                <div class="row p-1" style="font-size: 9pt">
                                     <div class="col-2 pt-1">
                                         <label for="source_warehouse">From</label>
                                     </div>
                                     <div class="col-10">
-                                        <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 10pt">
+                                        <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
                                             <option value="" disabled selected>Select Source Warehouse</option>
                                             @foreach ($assigned_consignment_stores as $store)
                                                 <option value="{{ $store }}">{{ $store }}</option>
@@ -56,14 +56,14 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="row p-1 mt-2" id="target" style="font-size: 10pt; display: none">
+                                <div class="row p-1 mt-2" id="target" style="font-size: 9pt; display: none">
                                     <div class="col-2 pt-1">
                                         <label for="target_warehouse">To</label>
                                     </div>
                                     <div class="col-10">
                                         <input type="text" name="default_warehouse" id="wh-for-return" class="form-control" value="Fumaco - Plant 2" readonly style="font-size: 10pt">
                                         <div id="target-warehouse-container">
-                                            <select name="target_warehouse" id="target-warehouse" class="form-control" disabled style="font-size: 10pt"></select>
+                                            <select name="target_warehouse" id="target-warehouse" class="form-control" disabled style="font-size: 9pt"></select>
                                         </div>
                                     </div>
                                 </div>
@@ -71,7 +71,7 @@
                                     <div class="container-fluid">
                                         <div class="row">
                                             <div class="col-8">
-                                                <select id="received-items" class="form-control" style="font-size: 10pt;"></select>
+                                                <select id="received-items" class="form-control" style="font-size: 9pt;"></select>
                                             </div>
                                             <div class="col-4">
                                                 <button type="button" class="btn btn-primary w-100" id="add-item" style="font-size: 10pt" disabled><i class="fa fa-plus"></i> Add item</button>
@@ -80,7 +80,7 @@
                                     </div>
                                     
                                     <div class="container-fluid mt-2">
-                                        <table class="table table-bordered" id='items-table' style="font-size: 10pt">
+                                        <table class="table table-bordered" id='items-table' style="font-size: 9pt">
                                             <thead>
                                                 <tr>
                                                     <th class="text-center" style="width: 40%">Item</th>

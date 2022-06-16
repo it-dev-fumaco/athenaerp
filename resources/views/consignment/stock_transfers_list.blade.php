@@ -21,12 +21,12 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <h5 class="text-center mt-1 font-weight-bold">Stock Transfers List</h5>
+                            <h7 class="text-center mt-1 font-weight-bold">Stock Transfers List</h7>
                         </div>
-                        <div class="card-header text-center font-weight-bold">
-                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
-                            <br><br>
-                            <a href="/stock_transfer/form" class="btn btn-xs btn-outline-primary float-right">Request Stock Transfer</a>
+                        <div class="card-header text-center ">
+                            <span class="font-responsive text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
+                           
+                            <a href="/stock_transfer/form" class="btn btn-xs btn-outline-primary float-right">Create Stock Transfer</a>
                         </div>
                         <div class="container-fluid">
                             <span class="float-right p-2" style="font-size: 10pt;"><b>Total: </b>{{ count($ste_arr) }}</span>

@@ -16,7 +16,7 @@
           @endif
             <div class="info-box bg-gradient-primary m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 8pt;">Product Sold</span>
+                <span class="info-box-text" style="font-size: 9pt;">Product Sold</span>
                 <span class="info-box-number">{{ number_format($total_item_sold) }}</span>
                 <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
               </div>
@@ -27,7 +27,7 @@
           <a href="/inventory_audit">
             <div class="info-box bg-gradient-info m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 8pt;">Inventory Audit</span>
+                <span class="info-box-text" style="font-size: 9pt;">Inventory Audit</span>
                 <span class="info-box-number">{{ number_format($total_pending_inventory_audit) }}</span>
                 <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
               </div>
@@ -38,7 +38,7 @@
           <a href="/stock_transfer/list">
             <div class="info-box bg-gradient-warning m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 8pt;">Stock Transfer</span>
+                <span class="info-box-text" style="font-size: 9pt;">Stock Transfer</span>
                 <span class="info-box-number">{{ number_format($total_stock_transfer) }}</span>
                 <div class="progress">
                   <div class="progress-bar"></div>
@@ -51,7 +51,7 @@
           <a href="#">
             <div class="info-box bg-gradient-secondary m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 8pt;">Stock Adjustment</span>
+                <span class="info-box-text" style="font-size: 9pt;">Stock Adjustment</span>
                 <span class="info-box-number">0</span>
                 <div class="progress">
                   <div class="progress-bar"></div>
@@ -68,7 +68,7 @@
             <div class="card-body p-0">
               <table class="table table-bordered" style="font-size: 8pt;">
                 <thead class="text-uppercase">
-                  <th class="text-center p-1 align-middle" style="width: 64%;">Branch</th>
+                  <th class="text-center p-1 align-middle" style="width: 64%;">Store</th>
                   <th class="text-center p-1 align-middle" style="width: 18%;">Items on Hand</th>
                   <th class="text-center p-1 align-middle" style="width: 18%;">Total Qty</th>
                 </thead>
@@ -123,14 +123,14 @@
 <div class="modal fade" id="select-branch-modal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-      <div class="modal-header pt-2 pb-2">
-        <h5 class="modal-title">Select Branch</h5>
+      <div class="modal-header pt-2 pb-2 bg-navy">
+        <h5 class="modal-title">Select Store</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body p-0">
-        <table class="table" style="font-size: 9pt;">
+        <table class="table" style="font-size: 10pt;">
           <tbody>
             @forelse ($assigned_consignment_store as $branch)
             <tr>
