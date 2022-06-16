@@ -144,7 +144,7 @@
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td class="text-center font-weight-bold" colspan="2">No item(s) found.</td>
+                                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
                                         </tr> 
                                         @endforelse
                                     </tbody>
@@ -188,7 +188,7 @@
                 </div>
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">
-                        <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to Calendar</a>
+                        <a href="/inventory_audit" class="btn btn-secondary font-responsive"><i class="fas fa-list"></i> Return to List</a>
                     </div>
                 </div>
                 @endif

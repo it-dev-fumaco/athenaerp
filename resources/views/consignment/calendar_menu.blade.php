@@ -126,12 +126,10 @@
 					url: "/validate_beginning_inventory",
 					data: {branch_warehouse: $('#branch-name').text(), date: (info.dateStr)},
 					success: function (response) {
-						if (response.status == 0) {
+						if (!response.status) {
 							$('#modal-sm-message').html(response.message);
 							$('#modal-sm').modal('show');
 							return false;
-						} else if(response.status == 2) {
-							window.location.href = response.message;
 						} else {
 							window.location.href='/view_product_sold_form/' + $('#branch-name').text() + '/' + info.dateStr;
 						}
