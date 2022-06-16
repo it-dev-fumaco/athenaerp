@@ -539,7 +539,7 @@
 							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
 								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
-								<a class="dropdown-item" href="#">Stock Transfer</a>
+								<a class="dropdown-item" href="/stock_transfer/form">Stock Transfer</a>
 								<a class="dropdown-item" href="#">Stock Adjustment</a>
 								<a class="dropdown-item" href="/damage_report/list">Damaged Items</a>
 							</div>
@@ -550,6 +550,7 @@
 								<a class="dropdown-item" href="#">Sales Report</a>
 								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
 								<a class="dropdown-item" href="/promodiser/damage_report/form">Damage Report</a>
+								<a class="dropdown-item" href="/stock_transfer/list">Stock Transfers Report</a>
 							</div>
 						</div>
 					</div>

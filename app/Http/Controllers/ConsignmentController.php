@@ -1450,4 +1450,326 @@ class ConsignmentController extends Controller
 
         return response()->json($items_arr);
     }
+
+    public function stockTransferSubmit(Request $request){
+        DB::beginTransaction();
+        try {
+            $now = Carbon::now();
+
+            $item_codes = collect($request->item_code)->unique();
+            $transfer_qty = $request->item;
+
+            $target_warehouse = $request->transfer_as == 'Consignment' ? $request->target_warehouse : 'Quarantine Warehouse P2 - FI';
+
+            if(!$item_codes || !$transfer_qty){
+                return redirect()->back()->with('error', 'Please select an item to return');
+            }
+
+            $min = collect($transfer_qty)->min();
+            if($min['transfer_qty'] <= 0){ // if there are 0 return qty
+                return redirect()->back()->with('error', 'Return Qty cannot be less than or equal to 0');
+            }
+
+            $bin = DB::table('tabBin as bin')->join('tabItem as item', 'item.item_code', 'bin.item_code')
+                ->whereIn('bin.warehouse', [$request->source_warehouse, $target_warehouse])->whereIn('bin.item_code', $item_codes)
+                ->select('item.item_code', 'item.description', 'item.item_name', 'bin.warehouse', 'item.stock_uom', 'bin.actual_qty', 'bin.consigned_qty')->get();
+            
+            $items = [];
+            foreach($bin as $b){
+                $items[$b->warehouse][$b->item_code] = [
+                    'description' => $b->description,
+                    'item_name' => $b->item_name,
+                    'uom' => $b->stock_uom,
+                    'actual_qty' => $b->actual_qty,
+                    'consigned_qty' => $b->consigned_qty
+                ];
+            }
+
+            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('status', 'Approved')->where('branch_warehouse', $request->source_warehouse)->pluck('name');
+            $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $beginning_inventory)->whereIn('item_code', $item_codes)->where('status', 'Approved')->select('item_code', 'price')->get();
+
+            $inventory_prices = [];
+            foreach($inventory_items as $item){
+                $inventory_prices[$item->item_code] = [
+                    'price' => $item->price,
+                    'amount' => isset($transfer_qty[$item->item_code]) ? preg_replace("/[^0-9 .]/", "", $transfer_qty[$item->item_code]['transfer_qty']) * $item->price : $item->price
+                ];
+            }
+
+            $latest_ste = DB::table('tabStock Entry')->where('name', 'like', '%stec%')->max('name');
+            $latest_ste_exploded = explode("-", $latest_ste);
+            $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
+            $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
+            $new_id = 'STEC-'.$new_id;
+
+            $stock_entry_data = [
+                'name' => $new_id,
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->full_name,
+                'owner' => Auth::user()->full_name,
+                'docstatus' => 0,
+                'idx' => 0,
+                'use_multi_level_bom' => 0,
+                'naming_series' => 'STEC-',
+                'posting_time' => $now->format('H:i:s'),
+                'to_warehouse' => $target_warehouse,
+                'title' => 'Material Transfer',
+                'from_warehouse' => $request->source_warehouse,
+                'set_posting_time' => 0,
+                'from_bom' => 0,
+                'value_difference' => 0,
+                'company' => 'FUMACO Inc.',
+                'total_outgoing_value' => collect($inventory_prices)->sum('amount'),
+                'total_additional_costs' => 0,
+                'total_amount' => collect($inventory_prices)->sum('amount'),
+                'total_incoming_value' => 0,
+                'posting_date' => $now->format('Y-m-d'),
+                'purpose' => 'Material Transfer',
+                'stock_entry_type' => 'Material Transfer',
+                'item_status' => 'Issued',
+                'transfer_as' => $request->transfer_as,
+                'qty_repack' => 0
+            ];
+
+            DB::table('tabStock Entry')->insert($stock_entry_data);
+
+            foreach($item_codes as $i => $item_code){
+                if(!isset($transfer_qty[$item_code])){
+                    return redirect()->back()->with('error', 'Please enter transfer qty for '. $item_code);
+                }
+
+                if(isset($items[$request->source_warehouse][$item_code])){
+                    if($transfer_qty[$item_code]['transfer_qty'] > $items[$request->source_warehouse][$item_code]['consigned_qty']){
+                        return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
+                    }
+                }
+
+                $stock_entry_detail = [
+                    'name' =>  uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->full_name,
+                    'owner' => Auth::user()->full_name,
+                    'docstatus' => 0,
+                    'parent' => $new_id,
+                    'parentfield' => 'items',
+                    'parenttype' => 'Stock Entry',
+                    'idx' => $i + 1,
+                    't_warehouse' => $target_warehouse,
+                    'transfer_qty' => $transfer_qty[$item_code]['transfer_qty'],
+                    'expense_account' => 'Cost of Goods Sold - FI',
+                    'cost_center' => 'Main - FI',
+                    'actual_qty' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['actual_qty'] : 0,
+                    's_warehouse' => $request->source_warehouse,
+                    'item_name' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['item_name'] : null,
+                    'additional_cost' => 0,
+                    'stock_uom' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['uom'] : null,
+                    'basic_amount' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['amount'] : 0,
+                    'sample_quantity' => 0,
+                    'uom' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['uom'] : null,
+                    'basic_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
+                    'description' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['description'] : null,
+                    'conversion_factor' => 1,
+                    'item_code' => $item_code,
+                    'retain_sample' => 0,
+                    'qty' => $transfer_qty[$item_code]['transfer_qty'],
+                    'allow_zero_valuation_rate' => 0,
+                    'amount' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['amount'] : 0,
+                    'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
+                    'target_warehouse_location' => $target_warehouse,
+                    'source_warehouse_location' => $request->source_warehouse,
+                    'status' => 'Issued',
+                    'return_reference' => $new_id
+                ];
+
+                DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
+
+                // source warehouse
+                if(isset($items[$request->source_warehouse][$item_code])){
+                    DB::table('tabBin')->where('warehouse', $request->source_warehouse)->where('item_code', $item_code)->update([
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->full_name,
+                        'consigned_qty' => $items[$request->source_warehouse][$item_code]['consigned_qty'] - $transfer_qty[$item_code]['transfer_qty']
+                    ]);
+                }
+
+                // target warehouse
+                if(isset($items[$request->target_warehouse][$item_code])){
+                    DB::table('tabBin')->where('warehouse', $request->target_warehouse)->where('item_code', $item_code)->update([
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->full_name,
+                        'consigned_qty' => $items[$request->target_warehouse][$item_code]['consigned_qty'] + $transfer_qty[$item_code]['transfer_qty']
+                    ]);
+                }else{
+                    $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
+                    $latest_bin_exploded = explode("/", $latest_bin);
+                    $bin_id = (($latest_bin) ? $latest_bin_exploded[1] : 0) + 1;
+                    $bin_id = str_pad($bin_id, 7, '0', STR_PAD_LEFT);
+                    $bin_id = 'BIN/'.$bin_id;
+
+                    DB::table('tabBin')->insert([
+                        'name' => $bin_id,
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->full_name,
+                        'owner' => Auth::user()->full_name,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'warehouse' => $request->target_warehouse,
+                        'item_code' => $item_code,
+                        'stock_uom' => isset($items[$request->target_warehouse][$item_code]) ? $items[$request->target_warehouse][$item_code]['uom'] : null,
+                        'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
+                        'consigned_qty' => $transfer_qty[$item_code]['transfer_qty']
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('stock_transfers')->with('success', 'Stock transfer request has been submitted.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+    }
+
+    public function stockTransferForm(){
+        $all_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->select('parent', 'warehouse')->get();
+        
+        $consignment_stores = collect($all_consignment_stores)->map(function($q){
+            return $q->warehouse;
+        });
+
+        $assigned_consignment_stores = collect($all_consignment_stores)->map(function($q){
+            if($q->parent == Auth::user()->frappe_userid){
+                return $q->warehouse;
+            }
+        })->filter();
+
+        return view('consignment.stock_transfer_form', compact('assigned_consignment_stores', 'consignment_stores'));
+    }
+
+    public function stockTransferCancel($id){
+        DB::beginTransaction();
+        try {
+            $stock_entry = DB::table('tabStock Entry')->where('name', $id)->first();
+
+            $source_warehouse = $stock_entry->from_warehouse;
+            $target_warehouse = $stock_entry->to_warehouse;
+
+            $stock_entry_detail = DB::table('tabStock Entry Detail')->where('parent', $stock_entry->name)->get();
+            
+            $item_codes = collect($stock_entry_detail)->map(function ($q){
+                return $q->item_code;
+            });
+
+            $now = Carbon::now();
+            
+            $bin = DB::table('tabBin')->whereIn('warehouse', [$source_warehouse, $target_warehouse])->whereIn('item_code', $item_codes)->get();
+
+            $bin_arr = [];
+            foreach($bin as $b){
+                $bin_arr[$b->warehouse][$b->item_code] = [
+                    'consigned_qty' => $b->consigned_qty
+                ];
+            }
+
+            foreach($stock_entry_detail as $items){
+                if(!isset($bin_arr[$items->s_warehouse][$items->item_code]) || !isset($bin_arr[$items->t_warehouse][$items->item_code])){
+                    return redirect()->back()->with('error', 'Items not found.');
+                }
+
+                // target warehouse
+                $target_warehouse_qty = $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty;
+                $target_warehouse_qty = $target_warehouse_qty > 0 ? $target_warehouse_qty : 0;
+
+                DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->full_name,
+                    'consigned_qty' => $target_warehouse_qty
+                ]);
+
+                // source warehouse
+                DB::table('tabBin')->where('warehouse', $items->s_warehouse)->where('item_code', $items->item_code)->update([
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->full_name,
+                    'consigned_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty
+                ]);
+            }
+
+            DB::table('tabStock Entry')->where('name', $id)->delete();
+            DB::table('tabStock Entry Detail')->where('parent', $id)->delete();
+
+            DB::commit();
+            return redirect()->route('stock_transfers')->with('success', 'Stock transfer has been cancelled.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+    }
+
+    public function stockTransferList(){
+        $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
+        $stock_transfers = DB::table('tabStock Entry')
+            ->whereIn('from_warehouse', $consignment_stores)
+            ->whereIn('transfer_as', ['For Return', 'Consignment'])->where('purpose', 'Material Transfer')
+            ->where('name', 'like', '%stec%')
+            ->orderBy('creation', 'desc')->paginate(10);
+
+        $src_warehouses = collect($stock_transfers->items())->map(function ($q){
+            return $q->from_warehouse;
+        });
+
+        $reference_ste = collect($stock_transfers->items())->map(function ($q){
+            return $q->name;
+        });
+
+        $stock_transfer_items = DB::table('tabStock Entry Detail')->whereIn('parent', $reference_ste)->get();
+        $stock_transfer_item = collect($stock_transfer_items)->groupBy('parent');
+        
+        $item_codes = collect($stock_transfer_items)->map(function ($q){
+            return $q->item_code;
+        });
+
+        $bin = DB::table('tabBin')->whereIn('warehouse', $src_warehouses)->whereIn('item_code', $item_codes)->get();
+        $bin_arr = [];
+        foreach($bin as $b){
+            $bin_arr[$b->warehouse][$b->item_code] = [
+                'consigned_qty' => $b->consigned_qty
+            ];
+        }
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        $ste_arr = [];
+        foreach($stock_transfers as $ste){
+            $items_arr = [];
+            if(isset($stock_transfer_item[$ste->name])){
+                foreach($stock_transfer_item[$ste->name] as $item){
+                    $items_arr[] = [
+                        'item_code' => $item->item_code,
+                        'description' => $item->description,
+                        'consigned_qty' => isset($bin_arr[$ste->from_warehouse][$item->item_code]) ? $bin_arr[$ste->from_warehouse][$item->item_code]['consigned_qty'] : 0,
+                        'transfer_qty' => $item->transfer_qty,
+                        'uom' => $item->stock_uom,
+                        'image' => isset($item_image[$item->item_code]) ? "/img/" . $item_image[$item->item_code][0]->image_path : "/icon/no_img.png",
+                        'webp' => isset($item_image[$item->item_code]) ? "/img/" . explode('.', $item_image[$item->item_code][0]->image_path)[0] : "/icon/no_img.webp"
+                    ];
+                }
+            }
+
+            $ste_arr[] = [
+                'name' => $ste->name,
+                'from_warehouse' => $ste->from_warehouse,
+                'to_warehouse' => $ste->to_warehouse,
+                'status' => $ste->item_status,
+                'items' => $items_arr,
+                'docstatus' => $ste->docstatus
+            ];
+        }
+
+        return view('consignment.stock_transfers_list', compact('ste_arr'));
+    }
 }
