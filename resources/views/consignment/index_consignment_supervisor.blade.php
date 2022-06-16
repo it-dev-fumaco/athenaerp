@@ -29,11 +29,11 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3 p-1">
-                    <a href="/damage_report/list">
+                    <a href="/stocks_report/list">
                         <div class="info-box bg-gradient-warning m-0">
                             <div class="info-box-content p-1">
-                                <span class="info-box-text font-responsive">Damaged Item Report</span>
-                                <span class="info-box-number font-responsive">{{ number_format($total_damaged_item_reported) }}</span>
+                                <span class="info-box-text font-responsive">Stock Transfers</span>
+                                <span class="info-box-number font-responsive">{{ number_format($total_stock_transfers) }}</span>
                                 <div class="progress">
                                     <div class="progress-bar"></div>
                                 </div>

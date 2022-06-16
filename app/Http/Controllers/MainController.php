@@ -255,8 +255,9 @@ class MainController extends Controller
             $beginning_inv_percentage = number_format(($consignment_branches_with_beginning_inventory / count($consignment_branches)) * 100, 2);
 
             $total_damaged_item_reported = DB::table('tabConsignment Damaged Item')->count();
+            $total_stock_transfers = DB::table('tabStock Entry')->where('name', 'like', '%stec%')->count();
 
-            return view('consignment.index_consignment_supervisor', compact('duration', 'sales_report_submission_percentage', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_damaged_item_reported'));
+            return view('consignment.index_consignment_supervisor', compact('duration', 'sales_report_submission_percentage', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_damaged_item_reported', 'total_stock_transfers'));
         }
 
         return view('index');

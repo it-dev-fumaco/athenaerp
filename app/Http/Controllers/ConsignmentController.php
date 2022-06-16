@@ -1230,7 +1230,7 @@ class ConsignmentController extends Controller
                         'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
                     ];
 
-                    $item_count = $item_count + 1;
+                    $item_count = $item_count + 1; 
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $item_code)->update($values);
                 }
             }
@@ -1244,7 +1244,7 @@ class ConsignmentController extends Controller
         }
     }
 
-    public function damagedItemsList(Request $request){
+    public function stockTransferReport(Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')
             ->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
@@ -1258,11 +1258,44 @@ class ConsignmentController extends Controller
             })
             ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($assigned_consignment_store){
                 $q->whereIn('branch_warehouse', $assigned_consignment_store);
-            })->orderBy('creation', 'desc')->paginate(20);
+            })->orderBy('creation', 'desc')->paginate(20, ['*'], 'damaged_items');
         
         $item_codes = collect($damaged_items->items())->map(function ($q){
             return $q->item_code;
         });
+
+        $ste_item_codes = [];
+        if (Auth::user()->user_group == 'Consignment Supervisor') { // for supervisor stock transfers list
+            $stock_entry = DB::table('tabStock Entry')
+                ->when($request->tab1_q, function ($q) use ($request){
+                    return $q->where('name', 'like', '%'.$request->tab1_q.'%');
+                })
+                ->when($request->source_warehouse, function ($q) use ($request){
+                    return $q->where('from_warehouse', $request->source_warehouse);
+                })
+                ->when($request->target_warehouse, function ($q) use ($request){
+                    return $q->where('to_warehouse', $request->target_warehouse);
+                })
+                ->when($request->tab1_status && $request->tab1_status != 'All', function ($q) use ($request){
+                    return $q->where('docstatus', $request->tab1_status);
+                })
+                ->where('naming_series', 'STEC-')
+                ->orderBy('docstatus', 'asc')
+                ->paginate(20, ['*'], 'stock_transfers');
+
+            $reference = collect($stock_entry->items())->map(function ($q){
+                return $q->name;
+            });
+
+            $stock_entry_detail = DB::table('tabStock Entry Detail')->whereIn('parent', $reference)->get();
+            $ste_items = collect($stock_entry_detail)->groupBy('parent');
+
+            $ste_item_codes = collect($stock_entry_detail)->map(function ($q){
+                return $q->item_code;
+            });
+
+            $item_codes = collect($item_codes)->merge($ste_item_codes);
+        }
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
         $item_image = collect($item_images)->groupBy('parent');
@@ -1284,7 +1317,48 @@ class ConsignmentController extends Controller
         }
 
         if (Auth::user()->user_group == 'Consignment Supervisor') {
-            return view('consignment.view_damaged_items_list', compact('items_arr', 'damaged_items'));
+            $source_warehouses = collect($stock_entry->items())->map(function ($q){
+                return $q->from_warehouse;
+            })->unique();
+
+            $bin = DB::table('tabBin')->whereIn('warehouse', $source_warehouses)->whereIn('item_code', $ste_item_codes)->get();
+            $bin_arr = [];
+            foreach($bin as $b){
+                $bin_arr[$b->warehouse][$b->item_code] = [
+                    'consigned_qty' => $b->consigned_qty
+                ];
+            }
+
+            $ste_arr = [];
+            foreach($stock_entry as $ste){
+                $items = [];
+                if(isset($ste_items[$ste->name])){
+                    foreach($ste_items[$ste->name] as $item){
+                        $items[] = [
+                            'item_code' => $item->item_code,
+                            'description' => $item->description,
+                            'transfer_qty' => $item->transfer_qty,
+                            'uom' => $item->stock_uom,
+                            'consigned_qty' => isset($bin_arr[$ste->from_warehouse][$item->item_code]) ? $bin_arr[$ste->from_warehouse][$item->item_code]['consigned_qty'] : 0,
+                            'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : '/icon/no_img.png',
+                            'webp' => isset($item_image[$item->item_code]) ? explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : '/icon/no_img.webp',
+                        ];
+                    }
+                }
+
+                $ste_arr[] = [
+                    'name' => $ste->name,
+                    'creation' => Carbon::parse($ste->creation)->format('F d, Y'),
+                    'source_warehouse' => $ste->from_warehouse,
+                    'target_warehouse' => $ste->to_warehouse,
+                    'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
+                    'transfer_as' => $ste->transfer_as,
+                    'submitted_by' => $ste->owner,
+                    'items' => $items
+                ];
+            }
+
+            return view('consignment.view_damaged_items_list', compact('items_arr', 'damaged_items', 'ste_arr', 'stock_entry'));
         }
 
         return view('consignment.damaged_items_list', compact('items_arr'));
