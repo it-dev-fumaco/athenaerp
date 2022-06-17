@@ -170,14 +170,18 @@
                                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                                     <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                     <span class="d-block responsive-description" style="font-size: 11pt;">Standard Selling Price</span>
+                                                    @if ($is_tax_included_in_rate)
                                                     <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
+                                                    @endif
                                                     @endif
 
                                                     @if (in_array($user_group, ['Manager', 'Director']))
                                                         @if ($default_price > 0)
                                                         <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                         <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                                                        @if ($is_tax_included_in_rate)
                                                         <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
+                                                        @endif
                                                         @endif
                                                         @if ($minimum_selling_price > 0)
                                                         <span class="d-block font-weight-bold mt-3" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
@@ -331,14 +335,18 @@
                                             @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                             <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                             <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                                            @if ($is_tax_included_in_rate)
                                             <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
+                                            @endif
                                             @endif
 
                                             @if (in_array($user_group, ['Manager', 'Director']))
                                                 @if ($default_price > 0)
                                                 <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                 <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
+                                                @if ($is_tax_included_in_rate)
                                                 <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
+                                                @endif
                                                 @endif
                                                 @if ($minimum_selling_price > 0)
                                                     <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
