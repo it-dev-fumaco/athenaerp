@@ -251,6 +251,7 @@
                         $(this).css('border', '1px solid red');
                     }else if(stock_value > 0){ // push in array if user puts value in stocks
                         item_codes.push(item_code);
+                        $(this).css('border', '1px solid #CED4DA');
                     }else{
                         $(this).css('border', '1px solid #CED4DA');
                     }
@@ -276,7 +277,7 @@
                     }
                 }else{
                     val = 0
-                    $(this).css('border', '1px solid red');
+                    $('#'+item+'-price').css('border', '1px solid red');
                 }
                 
                 inputs.push(val);
