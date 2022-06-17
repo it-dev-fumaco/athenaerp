@@ -195,7 +195,12 @@
     <div class="col-12 text-right">
         <span class="d-block" style="font-size: 15px;">Total items: <b>{{ count($items) }}</b></span>
         <div class="m-2">
-            <button type="submit" class="btn btn-primary btn-block" id="submit-btn"><i class="fas fa-check"></i> SUBMIT</button>
+            @if ($inv_name)
+                <button type="submit" class="btn btn-danger btn-block" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
+            @else
+                <button type="submit" class="btn btn-primary btn-block" id="submit-btn"><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
+            @endif
+            <input type="checkbox" class='d-none' name="cancel" id="cancel-check" {{ $inv_name ? 'checked' : null }}>
         </div>
     </div>
 
@@ -221,27 +226,51 @@
 <script>
     $(document).ready(function(){
         var branch = '{{ $branch }}';
+        var existing_record = '{{ $inv_name ? 1 : 0 }}';
 
         $(document).on('keyup', '.validate', function(){
-            if(parseInt($(this).val()) < 0){
-                $(this).css('border', '1px solid red');
-                $('#submit-btn').prop('disabled', true);
-            }else{
-                $(this).css('border', '1px solid #CED4DA');
-                $('#submit-btn').prop('disabled', false);
+            if(existing_record == 1){
+                enable_submit();
             }
+
+            validate_submit();
         });
-        
-        item_count_check();
-        function item_count_check(){
-            if(parseInt($('#item-count').val()) > 0){
+
+        validate_submit();
+        function validate_submit(){
+            var inputs = new Array();
+            $('.validate').each(function(){
+                var val = 0;
+                if($(this).val() > 0 && $.isNumeric($(this).val())){
+                    val = 1;
+                    $(this).css('border', '1px solid #CED4DA');
+                }else{
+                    val = 0;
+                    $(this).css('border', '1px solid red');
+                }
+
+                inputs.push(val);
+            });
+
+            var min = 0;
+            if(inputs.length > 0){
+                var min = Math.min.apply(Math, inputs);
+            }
+            
+            if(parseInt($('#item-count').val()) > 0 && min == 1){
                 $('#submit-btn').prop('disabled', false);
             }else{
                 $('#submit-btn').prop('disabled', true);
             }
         }
 
-        // $('.remove-item').click(function(){
+        function enable_submit(){
+            $('#cancel-check').prop('checked',  false);
+            $('#submit-btn').text('UPDATE');
+            $('#submit-btn').removeClass('btn-danger').addClass('btn-info');
+            $('#submit-logo').removeClass('fa-remove').addClass('fa-check');
+        }
+
         $('table#items-table').on('click', '.remove-item', function(){
             var item_code = $(this).data('id');
 
@@ -249,11 +278,16 @@
             $('#'+item_code+'-id').val('');
             $('#item-count').val(parseInt($('#item-count').val()) - 1);
             $('#'+item_code+'-price').prop('required', false);
+            $('#'+item_code+'-price').removeClass('validate');
+            $('#'+item_code+'-stock').removeClass('validate');
 
-            item_count_check();
+            validate_submit();
+
+            if(existing_record == 1){
+                enable_submit();
+            }
         });
 
-        // $('.stock').on('keyup', function(){
         $('table#items-table').on('keyup', '.stock', function(e){
             var item_code = $(this).data('item-code');
             if(parseInt($(this).val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt($(this).val()) > 0 && $('#'+item_code+'-price').val() == ''){
@@ -263,9 +297,12 @@
                 $('#'+item_code+'-price').prop('required', false);
                 $('#'+item_code+'-price').css('border', '1px solid #CED4DA');
             }
+
+            if(existing_record == 1){
+                enable_submit();
+            }
         });
 
-        // $('.price').on('keyup', function(){
         $('table#items-table').on('keyup', '.price', function(e){
             var item_code = $(this).data('item-code');
             if(parseInt($(this).val()) <= 0 && parseInt($('#'+item_code+'-stock').val()) > 0 || parseInt($(this).val()) == '' && $('#'+item_code+'-stock').val() > 0){
@@ -275,9 +312,12 @@
                 $(this).prop('required', false);
                 $(this).css('border', '1px solid #CED4DA');
             }
+
+            if(existing_record == 1){
+                enable_submit();
+            }
         });
 
-        // $('.qtyplus').click(function(e){
         $('table#items-table').on('click', '.qtyplus', function(e){
             // Stop acting like a button
             e.preventDefault();
@@ -302,10 +342,13 @@
                 $('#'+item_code+'-price').prop('required', false);
                 $('#'+item_code+'-price').css('border', '1px solid #CED4DA');
             }
+
+            if(existing_record == 1){
+                enable_submit();
+            }
         });
 
         // This button will decrement the value till 0
-        // $('.qtyminus').click(function(e){
         $('table#items-table').on('click', '.qtyminus', function(e){
             // Stop acting like a button
             e.preventDefault();
@@ -329,6 +372,10 @@
             }else{
                 $('#'+item_code+'-price').prop('required', false);
                 $('#'+item_code+'-price').css('border', '1px solid #CED4DA');
+            }
+
+            if(existing_record == 1){
+                enable_submit();
             }
         });
 
@@ -432,7 +479,7 @@
             $('#add-item-success').removeClass('d-none');
             $('#add-item-success').fadeOut(3000, 'linear', 'complete');
 
-            item_count_check();
+            validate_submit();
         });
 
         function add_item(table){
@@ -489,7 +536,11 @@
             '</tr>';
 
 			$(table).prepend(row);
-            $('#placeholder').addClass('d-none')
+            $('#placeholder').addClass('d-none');
+            
+            if(existing_record == 1){
+                enable_submit();
+            }
 		}
 
         // separate controls for 'Add Item' modal 

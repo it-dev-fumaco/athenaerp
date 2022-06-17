@@ -19,7 +19,9 @@
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory Entry</span>
                         </div>
                         <div class="card-header text-center font-weight-bold">
-                            <h5 class="text-center mt-1 font-weight-bold">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h5>
+                            <h5 class="text-center mt-1 font-weight-bold">
+                                {{ \Carbon\Carbon::now()->format('F d, Y') }} <span class="badge badge-success float-right {{ $inv_record ? null : 'd-none' }}">{{ $inv_record ? $inv_record->status : null }}</span>
+                            </h5>
                         </div>
                         <div class="card-body p-1">
                             @if (!$inv_record)
@@ -78,9 +80,12 @@
 
             get_inv_record(selected_branch);
             function get_inv_record(branch){
+                var inv_record = '{{ collect($inv_record) }}';
+                var link = inv_record ? 'update/' + branch + '/{{ $inv }}' : '/new/' + branch;
+
                 $.ajax({
                     type: 'GET',
-                    url: '/beginning_inv_items/{{ $inv_record ? "update" : "new" }}/' + branch,
+                    url: '/beginning_inv_items/' + link,
                     success: function(response){
                         $('#beginning-inventory').html(response);
                     }

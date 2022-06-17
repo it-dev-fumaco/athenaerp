@@ -910,7 +910,7 @@ class ConsignmentController extends Controller
 
     public function beginningInventoryList(Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->get();
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->get();
 
         return view('consignment.beginning_inv_list', compact('beginning_inventory'));
     }
@@ -1063,15 +1063,13 @@ class ConsignmentController extends Controller
         ]);
     }
 
-    public function beginningInvItems(Request $request, $action, $branch){
+    public function beginningInvItems(Request $request, $action, $branch, $id = null){
         if($request->ajax()){
-            $inv_record = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->where('status', 'For Approval')->first();
-
             $items = [];
             $inv_name = null;
             if($action == 'update'){ // If 'For Approval' beginning inventory record exists for this branch
-                $inv_name = $inv_record->name; 
-                $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $inv_name)->select('item_code', 'item_description', 'stock_uom', 'opening_stock', 'stocks_displayed', 'price')->get();
+                $inv_name = $id;
+                $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->select('item_code', 'item_description', 'stock_uom', 'opening_stock', 'stocks_displayed', 'price')->get();
 
                 foreach($inventory as $inv){
                     $items[] = [
@@ -1121,6 +1119,7 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $opening_stock = $request->opening_stock;
+            $opening_stock = preg_replace("/[^0-9 .]/", "", $opening_stock);
 
             $price = $request->price;
             $price = preg_replace("/[^0-9 .]/", "", $price);
@@ -1200,17 +1199,31 @@ class ConsignmentController extends Controller
                         'modified_by' => Auth::user()->full_name,
                         'parentfield' => 'items',
                         'parenttype' => 'Consignment Beginning Inventory' 
-
                     ];
 
                     $item_count = $item_count + 1;
                     DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
                 }
+
+                session()->flash('success', 'Beginning Inventory is For Approval');
+            }else if(isset($request->cancel)){ // delete cancelled beginning inventory record
+                DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->delete();
+                DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->delete();
+
+                session()->flash('success', 'Beginning Inventory is Cancelled');
+                session()->flash('cancelled', 'Cancelled');
             }else{
                 DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->update([
                     'modified' => $now,
                     'modified_by' => Auth::user()->wh_user
                 ]);
+                
+                $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->pluck('item_code')->toArray();
+                $removed_items = array_diff($inventory_items, $item_codes->toArray());
+
+                foreach($removed_items as $remove){ // delete removed items
+                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $remove)->delete();
+                }
 
                 foreach($item_codes as $i => $item_code){
                     if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
@@ -1220,22 +1233,47 @@ class ConsignmentController extends Controller
                     if(isset($opening_stock[$item_code]) && $opening_stock[$item_code] < 0 || isset($price[$item_code]) && $price[$item_code] < 0){
                         return redirect()->back()->with('error', 'Cannot enter value below 0');
                     }
-                    
-                    $values = [
-                        'modified' => $now,
-                        'modified_by' => Auth::user()->wh_user,
-                        'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
-                        'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                        'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
-                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
-                    ];
 
+                    if(in_array($item_code, $inventory_items)){
+                        $values = [
+                            'modified' => $now,
+                            'modified_by' => Auth::user()->wh_user,
+                            'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
+                            'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
+                            'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
+                            'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
+                        ];
+
+                        DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $item_code)->update($values);
+                    }else{
+                        $idx = count($inventory_items) + ($i + 1);
+                        $row_values = [
+                            'name' => uniqid(),
+                            'creation' => $now,
+                            'owner' => Auth::user()->full_name,
+                            'docstatus' => 0,
+                            'parent' => $request->inv_name,
+                            'idx' => $idx,
+                            'item_code' => $item_code,
+                            'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
+                            'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
+                            'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
+                            'stocks_displayed' => 0,
+                            'status' => 'For Approval',
+                            'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
+                            'modified' => $now,
+                            'modified_by' => Auth::user()->full_name,
+                            'parentfield' => 'items',
+                            'parenttype' => 'Consignment Beginning Inventory' 
+                        ];
+    
+                        DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
+                    }
                     $item_count = $item_count + 1; 
-                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $item_code)->update($values);
                 }
+                session()->flash('success', 'Beginning Inventory is Updated');
             }
 
-            session()->flash('success', 'Inventory Record Saved');
             DB::commit();
             return view('consignment.beginning_inv_success', compact('item_count', 'branch'));
         } catch (Exception $e) {
