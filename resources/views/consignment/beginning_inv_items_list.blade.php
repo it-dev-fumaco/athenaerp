@@ -28,7 +28,10 @@
                                 <span class="d-block">Transaction Date: <b>{{ Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</b></span>
                                 <span class="d-block">Total item(s): <b>{{ count($inventory) }}</b></span>
                             </div>
-                            <table class="table" style="font-size: 8pt;">
+                            <div class="col-12">
+                                <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
+                            </div>
+                            <table class="table" id="items-table" style="font-size: 8pt;">
                                 <thead class="border-top">
                                     <th class="text-uppercase text-center p-1 align-middle">Item Description</th>
                                     <th class="text-uppercase text-center p-1 align-middle">Opening Stock</th>
@@ -44,6 +47,7 @@
                                     @endphp 
                                     <tr style="border-bottom: 0 !important;">
                                         <td class="text-center p-1">
+                                            <span class="d-none">{{ strip_tags($inv->item_description) }}</span>
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-1 text-left">
                                                     <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $inv->item_code }}" data-title="{{ $inv->item_code }}">
@@ -102,6 +106,7 @@
                                     </tr>
                                     <tr>
                                         <td colspan="3" class="text-justify pt-0 pb-1 pl-2 pr-1 align-middle" style="border-top: 0 !important;">
+                                            <span class="d-none">{{ $inv->item_code }}</span><!-- for search -->
                                             <span class="item-description">{{ strip_tags($inv->item_description) }}</span>
                                         </td>
                                     </tr>
@@ -158,6 +163,13 @@
             $(this).parent().prev().toggle();
             $(this).prev().toggle();
             return false;
+        });
+
+        $("#item-search").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $("#items-table tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
         });
     </script>
 @endsection

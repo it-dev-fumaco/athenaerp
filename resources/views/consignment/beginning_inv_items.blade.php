@@ -132,7 +132,7 @@
                             <div class="p-1 col">
                                 <div class="input-group p-1">
                                     <div class="p-0">
-                                        <input type="text" class="form-control form-control-sm qty validate price" id="{{ $item['item_code'] }}-price" data-item-code="{{ $item['item_code'] }}" placeholder="{{ $item['price'] }}" value="{{ $inv_name ? $item['price'] : null }}" name="price[{{ $item['item_code'] }}]" style="text-align: center;">
+                                        <input type="text" class="form-control form-control-sm qty validate price" id="{{ $item['item_code'] }}-price" data-item-code="{{ $item['item_code'] }}" placeholder="{{ $item['price'] }}" value="{{ $inv_name ? $item['price'] : 0 }}" name="price[{{ $item['item_code'] }}]" style="text-align: center;">
                                     </div>
                                 </div>
                             </div>
@@ -228,7 +228,7 @@
         var branch = '{{ $branch }}';
         var existing_record = '{{ $inv_name ? 1 : 0 }}';
 
-        $(document).on('keyup', '.validate', function(){
+        $(document).on('keyup', '.validate', function(){            
             if(existing_record == 1){
                 enable_submit();
             }
@@ -239,25 +239,55 @@
         validate_submit();
         function validate_submit(){
             var inputs = new Array();
-            $('.validate').each(function(){
+            var item_codes = new Array();
+            
+            $('.validate.stock').each(function(){ // check stocks
+                var item_code = $(this).data('item-code');
+                var stock_value = parseInt($(this).val());
                 var val = 0;
-                if($(this).val() > 0 && $.isNumeric($(this).val())){
-                    val = 1;
-                    $(this).css('border', '1px solid #CED4DA');
+
+                if($.isNumeric($(this).val())){
+                    if(stock_value < 0){ // if negative
+                        $(this).css('border', '1px solid red');
+                    }else if(stock_value > 0){ // push in array if user puts value in stocks
+                        item_codes.push(item_code);
+                    }else{
+                        $(this).css('border', '1px solid #CED4DA');
+                    }
+                }else if($(this).val() == ''){
+                    $(this).css('border', '1px solid red');
                 }else{
-                    val = 0;
                     $(this).css('border', '1px solid red');
                 }
+            });
 
+            $.each(item_codes, function (e, item){ // validate stocks and price
+                var val = 0;
+                if($.isNumeric($('#'+item+'-price').val())){
+                    var stock = parseInt($('#'+item+'-stock').val());
+                    var price = parseInt($('#'+item+'-price').val());
+                    if(stock > 0 && price <= 0){ // if item has stock qty and the price is 0
+                        val = 0;
+                        $('#'+item+'-price').css('border', '1px solid red');
+                    }else{
+                        val = 1;
+                        $('#'+item+'-price').css('border', '1px solid #CED4DA');
+                        $('#'+item+'-stock').css('border', '1px solid #CED4DA');
+                    }
+                }else{
+                    val = 0
+                    $(this).css('border', '1px solid red');
+                }
+                
                 inputs.push(val);
             });
 
-            var min = 0;
+            var allow_inputs = 0;
             if(inputs.length > 0){
-                var min = Math.min.apply(Math, inputs);
+                allow_inputs = Math.min.apply(Math, inputs);
             }
-            
-            if(parseInt($('#item-count').val()) > 0 && min == 1){
+
+            if(parseInt($('#item-count').val()) > 0 && allow_inputs == 1){
                 $('#submit-btn').prop('disabled', false);
             }else{
                 $('#submit-btn').prop('disabled', true);
@@ -281,41 +311,25 @@
             $('#'+item_code+'-price').removeClass('validate');
             $('#'+item_code+'-stock').removeClass('validate');
 
+
+            if(existing_record == 1){
+                enable_submit();
+            }
             validate_submit();
-
-            if(existing_record == 1){
-                enable_submit();
-            }
         });
-
         $('table#items-table').on('keyup', '.stock', function(e){
-            var item_code = $(this).data('item-code');
-            if(parseInt($(this).val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt($(this).val()) > 0 && $('#'+item_code+'-price').val() == ''){
-                $('#'+item_code+'-price').prop('required', true);
-                $('#'+item_code+'-price').css('border', '1px solid red');
-            }else{
-                $('#'+item_code+'-price').prop('required', false);
-                $('#'+item_code+'-price').css('border', '1px solid #CED4DA');
-            }
-
             if(existing_record == 1){
                 enable_submit();
             }
+            validate_submit();
         });
 
         $('table#items-table').on('keyup', '.price', function(e){
-            var item_code = $(this).data('item-code');
-            if(parseInt($(this).val()) <= 0 && parseInt($('#'+item_code+'-stock').val()) > 0 || parseInt($(this).val()) == '' && $('#'+item_code+'-stock').val() > 0){
-                $(this).prop('required', true);
-                $(this).css('border', '1px solid red');
-            }else{
-                $(this).prop('required', false);
-                $(this).css('border', '1px solid #CED4DA');
-            }
 
             if(existing_record == 1){
                 enable_submit();
             }
+            validate_submit();
         });
 
         $('table#items-table').on('click', '.qtyplus', function(e){
@@ -335,17 +349,10 @@
                 fieldName.val(0);
             }
 
-            if(parseInt(fieldName.val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt(fieldName.val()) > 0 && $('#'+item_code+'-price').val() == ''){
-                $('#'+item_code+'-price').prop('required', true);
-                $('#'+item_code+'-price').css('border', '1px solid red');
-            }else{
-                $('#'+item_code+'-price').prop('required', false);
-                $('#'+item_code+'-price').css('border', '1px solid #CED4DA');
-            }
-
             if(existing_record == 1){
                 enable_submit();
             }
+            validate_submit();
         });
 
         // This button will decrement the value till 0
@@ -366,17 +373,10 @@
                 fieldName.val(0);
             }
 
-            if(parseInt(fieldNmae.val()) > 0 && parseInt($('#'+item_code+'-price').val()) <= 0 || parseInt(fieldNmae.val()) > 0 && $('#'+item_code+'-price').val() == ''){
-                $('#'+item_code+'-price').prop('required', true);
-                $('#'+item_code+'-price').css('border', '1px solid red');
-            }else{
-                $('#'+item_code+'-price').prop('required', false);
-                $('#'+item_code+'-price').css('border', '1px solid #CED4DA');
-            }
-
             if(existing_record == 1){
                 enable_submit();
             }
+            validate_submit();
         });
 
         $("#item-search").on("keyup", function() {
@@ -541,20 +541,17 @@
             if(existing_record == 1){
                 enable_submit();
             }
+            validate_submit();
 		}
 
         // separate controls for 'Add Item' modal 
         // to prevent events from firing multiple times e.g., Clicking '+' on stocks adds 2 instead of 1
         $('table#new-item-table').on('keyup', '.new-item-validate', function(){
-            if(parseInt($(this).val()) < 0){
-                $(this).css('border', '1px solid red');
-                $('#submit-btn').prop('disabled', true);
-                $('#add-item-btn').prop('disabled', true);
-            }else{
-                $(this).css('border', '1px solid #CED4DA');
-                $('#submit-btn').prop('disabled', false);
-                $('#add-item-btn').prop('disabled', false);
+            if(existing_record == 1){
+                enable_submit();
             }
+
+            validate_submit();
         });
 
         $('.new-item-qtyplus').click(function(e){
@@ -574,13 +571,11 @@
                 fieldName.val(0);
             }
 
-            if(parseInt(fieldName.val()) > 0 && parseInt($('#new-item-price').val()) <= 0 || parseInt(fieldName.val()) > 0 && $('#new-item-price').val() == ''){
-                $('#new-item-price').prop('required', true);
-                $('#new-item-price').css('border', '1px solid red');
-            }else{
-                $('#new-item-price').prop('required', false);
-                $('#new-item-price').css('border', '1px solid #CED4DA');
+            if(existing_record == 1){
+                enable_submit();
             }
+
+            validate_submit();
         });
 
         // This button will decrement the value till 0
@@ -601,13 +596,11 @@
                 fieldName.val(0);
             }
 
-            if(parseInt(fieldName.val()) > 0 && parseInt($('#new-item-price').val()) <= 0 || parseInt(fieldName.val()) > 0 && $('#new-item-price').val() == ''){
-                $('#new-item-price').prop('required', true);
-                $('#new-item-price').css('border', '1px solid red');
-            }else{
-                $('#new-item-price').prop('required', false);
-                $('#new-item-price').css('border', '1px solid #CED4DA');
+            if(existing_record == 1){
+                enable_submit();
             }
+
+            validate_submit();
         });
     });
 </script>

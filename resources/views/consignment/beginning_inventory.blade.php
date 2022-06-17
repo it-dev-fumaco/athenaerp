@@ -80,8 +80,8 @@
 
             get_inv_record(selected_branch);
             function get_inv_record(branch){
-                var inv_record = '{{ collect($inv_record) }}';
-                var link = inv_record ? 'update/' + branch + '/{{ $inv }}' : '/new/' + branch;
+                var inv_record = '{{ $inv_record ? $inv_record->name : null }}';
+                var link = inv_record ? 'update/' + branch + '/{{ $inv }}' : 'new/' + branch;
 
                 $.ajax({
                     type: 'GET',
