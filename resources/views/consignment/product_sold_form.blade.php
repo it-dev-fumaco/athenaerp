@@ -169,7 +169,7 @@
                 <p class="text-success text-center mb-0" style="font-size: 5rem; margin-top: -40px;">
                     <i class="fas fa-check-circle"></i>
                 </p>
-                <p class="text-center text-uppercase mt-0 font-weight-bold">{{ session()->get('success') }}</p>
+                <p class="text-center text-uppercase mt-0 font-weight-bold">Product Sold is Saved</p>
                 <div class="text-center mb-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('no_of_items_updated') }}</span>
                     <small class="d-block">No. of updated Items</small>
