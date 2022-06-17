@@ -478,7 +478,6 @@ class ConsignmentController extends Controller
                         'amount' => ((float)$price * (float)$row['qty']),
                         'cutoff_period_from' => $period_from,
                         'cutoff_period_to' => $period_to,
-                        'type' => 'Product Sold Entry'
                     ];
                 }
             }
@@ -506,8 +505,9 @@ class ConsignmentController extends Controller
         $start = $request->start;
         $end = $request->end;
         $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
-            ->whereBetween('transaction_date', [$start, $end])->where('type', 'Product Sold Entry')
-            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))->groupBy('transaction_date')->get();
+            ->whereBetween('transaction_date', [$start, $end])
+            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))
+            ->groupBy('transaction_date')->get();
 
         $beginning_inventories = DB::table('tabConsignment Beginning Inventory')
             ->where('branch_warehouse', $branch)->where('status', 'Approved')
@@ -1848,8 +1848,8 @@ class ConsignmentController extends Controller
 
         $beginning_inventory_per_warehouse = collect($stores_with_beginning_inventory)->groupBy('warehouse')->toArray();
 
-        $inventory_audit_per_warehouse_query = DB::table('tabConsignment Product Sold')
-            ->where('type', 'Inventory Audit')->whereIn('branch_warehouse', array_keys($beginning_inventory_per_warehouse))
+        $inventory_audit_per_warehouse_query = DB::table('tabConsignment Inventory Audit')
+            ->whereIn('branch_warehouse', array_keys($beginning_inventory_per_warehouse))
             ->select('cutoff_period_from', 'cutoff_period_to', 'branch_warehouse')
             ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->get();
             
