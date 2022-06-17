@@ -2018,4 +2018,46 @@ class ConsignmentController extends Controller
         return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'item_images'));
     }
 
+    public function submitStockAdjustment(Request $request, $id){
+        DB::beginTransaction();
+        try {
+            $item_codes = array_keys($request->item);
+            $stocks = $request->item;
+
+            $now = Carbon::now()->toDateTimeString();
+
+            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
+            if(!$beginning_inventory){
+                return redirect()->back()->with('error', 'Record not found or has been deleted.');
+            }
+
+            foreach($item_codes as $item_code){
+                if(isset($stocks[$item_code])){
+                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update([
+                        'modified' => $now,
+                        'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
+                        'opening_stock' => $stocks[$item_code]['qty']
+                    ]);
+
+                    DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update([
+                        'modified' => $now,
+                        'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
+                        'consigned_qty' => $stocks[$item_code]['qty']
+                    ]);
+                }
+            }
+
+            DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update([
+                'modified' => $now,
+                'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Warehouse Stocks Adjusted.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+    }
+
 }
