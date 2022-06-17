@@ -94,7 +94,7 @@
                                             </div>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                            <span class="d-block">{{ number_format($row->audit_qty) }}</span>
+                                            <span class="d-block">{{ number_format($row->qty) }}</span>
                                         </td>
                                     </tr>
                                     <tr>

@@ -1968,18 +1968,33 @@ class ConsignmentController extends Controller
     public function getSubmittedInvAudit(Request $request) {
         $store = $request->store;
         $year = $request->year;
-        $list = DB::table('tabConsignment Product Sold')
-            ->where('type', 'Inventory Audit')
+
+        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? true : false;
+        if ($is_promodiser) {
+            $list = DB::table('tabConsignment Inventory Audit')
+                ->when($store, function ($q) use ($store){
+                    return $q->where('branch_warehouse', $store);
+                })
+                ->when($year, function ($q) use ($year){
+                    return $q->whereYear('cutoff_period_from', $year);
+                })
+                ->select('cutoff_period_from', 'cutoff_period_to', 'branch_warehouse')
+                ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->get();
+
+            return view('consignment.tbl_submitted_inventory_audit', compact('list', 'store'));
+        }
+
+        $list = DB::table('tabConsignment Inventory Audit')
             ->when($store, function ($q) use ($store){
                 return $q->where('branch_warehouse', $store);
             })
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('cutoff_period_from', $year);
             })
-            ->select('cutoff_period_from', 'cutoff_period_to', 'branch_warehouse')
-            ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->get();
+            ->selectRaw('SUM(qty) as total_qty, COUNT(item_code) as total_item, SUM(amount) as total_value, cutoff_period_from, cutoff_period_to, branch_warehouse')
+            ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->paginate(10);
 
-        return view('consignment.tbl_submitted_inventory_audit', compact('list', 'store'));
+        return view('consignment.supervisor.tbl_inventory_audit_history', compact('list', 'store'));
     }
 
     public function viewInventoryAuditItems($store, $from, $to) {
