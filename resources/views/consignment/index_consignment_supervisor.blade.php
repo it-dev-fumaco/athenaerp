@@ -12,21 +12,21 @@
                     <div class="info-box bg-gradient-primary m-0">
                         <div class="info-box-content p-1">
                             <span class="info-box-text font-responsive m-0">Sales Report</span>
-                            <span class="info-box-number font-responsive m-0">{{ $sales_report_submission_percentage }}%</span>
+                            <span class="info-box-number font-responsive m-0">{{ number_format($total_item_sold) }}</span>
                             <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3 p-1">
-                    <div class="info-box bg-gradient-info m-0">
-                        <div class="info-box-content p-1">
-                            <span class="info-box-text font-responsive">Inventory Audit</span>
-                            <span class="info-box-number font-responsive">0</span>
-                            <div class="progress">
-                                <div class="progress-bar"></div>
+                    <a href="/inventory_audit">
+                        <div class="info-box bg-gradient-info m-0">
+                            <div class="info-box-content p-1">
+                                <span class="info-box-text font-responsive m-0">Inventory Audit</span>
+                                <span class="info-box-number font-responsive m-0">{{ number_format($total_pending_inventory_audit) }}</span>
+                                <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3 p-1">
                     <a href="/stocks_report/list">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Auth;
@@ -203,7 +204,7 @@ class ConsignmentController extends Controller
             $period_to = $cutoff_date[1];
             
             $currentDateTime = Carbon::now();
-            $result = [];
+            $result = $result_2 = [];
             $no_of_items_updated = 0;
 
             $status = 'On Time';
@@ -229,7 +230,7 @@ class ConsignmentController extends Controller
 
             foreach ($data['item'] as $item_code => $row) {
                 $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
-                $existing = DB::table('tabConsignment Product Sold')
+                $existing = DB::table('tabConsignment Inventory Audit')
                     ->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])
                     ->where('transaction_date', $data['transaction_date'])->first();
 
@@ -255,6 +256,15 @@ class ConsignmentController extends Controller
                     ];
 
                     DB::table('tabConsignment Product Sold')->where('name', $existing->name)->update($values);
+
+                    // for update
+                    $values = [
+                        'modified' => $currentDateTime->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'qty' => (float)$row['qty'],
+                    ];
+
+                    DB::table('tabConsignment Inventory Audit')->where('name', $existing->name)->update($values);
                 } else {
                     // for insert
                     $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
@@ -292,14 +302,42 @@ class ConsignmentController extends Controller
                         'amount' => ((float)$price * (float)$sold_qty),
                         'cutoff_period_from' => $period_from,
                         'cutoff_period_to' => $period_to,
-                        'type' => 'Inventory Audit',
-                        'audit_qty' => (float)$row['qty']
+                        'available_stock_on_transaction' => $consigned_qty
+                    ];
+
+                    $result_2[] = [
+                        'name' => uniqid(),
+                        'creation' => $currentDateTime->toDateTimeString(),
+                        'modified' => $currentDateTime->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'transaction_date' => $data['transaction_date'],
+                        'branch_warehouse' => $data['branch_warehouse'],
+                        'item_code' => $item_code,
+                        'description' => $row['description'],
+                        'qty' => (float)$row['qty'],
+                        'promodiser' => Auth::user()->full_name,
+                        'price' => (float)$price,
+                        'status' => $status,
+                        'amount' => ((float)$price * (float)$sold_qty),
+                        'cutoff_period_from' => $period_from,
+                        'cutoff_period_to' => $period_to,
+                        'available_stock_on_transaction' => $consigned_qty
                     ];
                 }
             }
 
             if (count($result) > 0) {
                 DB::table('tabConsignment Product Sold')->insert($result);
+            }
+
+            if (count($result_2) > 0) {
+                DB::table('tabConsignment Inventory Audit')->insert($result_2);
             }
 
             DB::commit();
@@ -478,6 +516,7 @@ class ConsignmentController extends Controller
                         'amount' => ((float)$price * (float)$row['qty']),
                         'cutoff_period_from' => $period_from,
                         'cutoff_period_to' => $period_to,
+                        'available_stock_on_transaction' => $consigned_qty
                     ];
                 }
             }
@@ -966,7 +1005,7 @@ class ConsignmentController extends Controller
 
                 if ($cutoff_period) {
                     $existing_records = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
-                        ->whereIn('cutoff_date', $cutoff_period)->orderBy('cutoff_date', 'asc')->distinct()->pluck('cutoff_date')->toArray();
+                        ->whereIn('cutoff_period_to', $cutoff_period)->orderBy('cutoff_period_to', 'asc')->distinct()->pluck('cutoff_period_to')->toArray();
                     
                     $no_records = [];
                     foreach ($cutoff_period as $key => $value) {

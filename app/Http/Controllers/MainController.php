@@ -78,7 +78,7 @@ class MainController extends Controller
 
                 $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
-                $total_item_sold = DB::table('tabConsignment Product Sold')->where('type', 'Product Sold Entry')
+                $total_item_sold = DB::table('tabConsignment Product Sold')
                     ->whereIn('branch_warehouse', $assigned_consignment_store)->where('qty', '>', 0)
                     ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
                     ->count();
@@ -110,8 +110,8 @@ class MainController extends Controller
         
                 $beginning_inventory_per_warehouse = collect($stores_with_beginning_inventory)->groupBy('warehouse')->toArray();
         
-                $inventory_audit_per_warehouse_query = DB::table('tabConsignment Product Sold')
-                    ->where('type', 'Inventory Audit')->whereIn('branch_warehouse', array_keys($beginning_inventory_per_warehouse))
+                $inventory_audit_per_warehouse_query = DB::table('tabConsignment Inventory Audit')
+                    ->whereIn('branch_warehouse', array_keys($beginning_inventory_per_warehouse))
                     ->select('cutoff_period_from', 'cutoff_period_to', 'branch_warehouse')
                     ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->get();
                     
@@ -221,24 +221,6 @@ class MainController extends Controller
             $duration_from = $cutoff_period[$date_now_index - 1];
             $duration_to = $cutoff_period[$date_now_index + 1];
 
-            $duration_period = CarbonPeriod::create($duration_from, '1 day' , $duration_to);
-            $no_of_sundays = 0;
-            foreach ($duration_period as $date) {
-                if (strtolower(Carbon::parse($date)->format('l')) == 'sunday') {
-                    $no_of_sundays++;
-                }
-            }
-            // get variables for sales report percentage completion
-            $duration_in_days = Carbon::parse($duration_to)->diffInDays(Carbon::parse($duration_from));
-            // get duration in days except sundays
-            $duration_in_days = $duration_in_days - $no_of_sundays;
-            $no_of_submitted_report = DB::table('tabConsignment Product Sold')
-                ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
-                ->distinct()->pluck('transaction_date');
-
-            $sales_report_submission_percentage = count($no_of_submitted_report) > 0 ? (count($no_of_submitted_report) / $duration_in_days) * 100 : 0;
-            $sales_report_submission_percentage = round($sales_report_submission_percentage);
-
             $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
             $consignment_branches = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
@@ -258,8 +240,8 @@ class MainController extends Controller
             $total_stock_transfers = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
                 ->where('purpose', 'Material Transfer')->where('name', 'like', 'stec%')->count();
 
-            $total_item_sold = DB::table('tabConsignment Product Sold')->where('type', 'Product Sold Entry')
-                ->where('qty', '>', 0)->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
+            $total_item_sold = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)
+                ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
                 ->count();
 
             // get total pending inventory audit
@@ -269,8 +251,8 @@ class MainController extends Controller
     
             $beginning_inventory_per_warehouse = collect($stores_with_beginning_inventory)->groupBy('warehouse')->toArray();
     
-            $inventory_audit_per_warehouse_query = DB::table('tabConsignment Product Sold')
-                ->where('type', 'Inventory Audit')->whereIn('branch_warehouse', array_keys($beginning_inventory_per_warehouse))
+            $inventory_audit_per_warehouse_query = DB::table('tabConsignment Inventory Audit')
+                ->whereIn('branch_warehouse', array_keys($beginning_inventory_per_warehouse))
                 ->select('cutoff_period_from', 'cutoff_period_to', 'branch_warehouse')
                 ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->get();
                 
