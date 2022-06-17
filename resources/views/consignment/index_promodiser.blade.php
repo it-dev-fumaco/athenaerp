@@ -48,7 +48,7 @@
           </a>
         </div>
         <div class="col-6 p-1">
-          <a href="#">
+          <a href="/beginning_inv_list">
             <div class="info-box bg-gradient-secondary m-0">
               <div class="info-box-content p-1">
                 <span class="info-box-text" style="font-size: 9pt;">Stock Adjustment</span>

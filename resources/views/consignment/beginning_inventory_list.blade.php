@@ -150,7 +150,7 @@
                                                                                     Inventory Date:<b>{{ $inv['transaction_date'] }} </b><br>
                                                                                     Submitted By:<b>{{ $inv['owner'] }}</b>
                                                                                     </div>
-                                                                                    @if ($inv['status'] == 'For Approval')
+                                                                                    @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
                                                                                         <div class="col-4 w-100">
                                                                                             @php
                                                                                                 $status_selection = [
@@ -203,7 +203,7 @@
                                                                                         </td>
                                                                                         <td class="text-center" style="font-size: 10pt">{!! '<b>'.$item['opening_stock'].'</b> '.$item['uom'] !!}</td>
                                                                                         <td class="text-center" style="font-size: 10pt">
-                                                                                            @if ($inv['status'] == 'For Approval')
+                                                                                            @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
                                                                                                 ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 4) }}" style="text-align: center; width: 120px;" required/>
                                                                                             @else
                                                                                                 ₱ {{ number_format($item['price'], 4) }}
@@ -243,7 +243,7 @@
                                                                                     Inventory Date:<b>{{ $inv['transaction_date'] }} </b><br>
                                                                                     Submitted By:<b>{{ $inv['owner'] }}</b>
                                                                                     </div>
-                                                                                    @if ($inv['status'] == 'For Approval')
+                                                                                    @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
                                                                                         <div class="col-12 col-lg-4 w-100">
                                                                                             @php
                                                                                                 $status_selection = [
@@ -302,7 +302,7 @@
                                                                                             <small>{{ $item['uom'] }}</small>
                                                                                         </td>
                                                                                         <td class="text-center" style="font-size: 10pt; width: 30%; white-space: nowrap">
-                                                                                            @if ($inv['status'] == 'For Approval')
+                                                                                            @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
                                                                                                 ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 4) }}" style="text-align: center; width: 60px" required/>
                                                                                             @else
                                                                                                 ₱ {{ number_format($item['price'], 4) }}
