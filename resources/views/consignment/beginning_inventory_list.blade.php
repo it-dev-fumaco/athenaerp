@@ -26,14 +26,17 @@
                         <div class="card-body p-0">
                             <div class="container-fluid p-0">
                                 <!-- Nav tabs -->
-                                <ul class="nav nav-tabs m-0" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-toggle="tab" href="#beginning_inventory" style="font-size: 10pt">Beginning Inventory</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-toggle="tab" href="#stock_adjustments" style="font-size: 10pt">Stock Adjustments</a>
-                                    </li>
-                                </ul>
+                                
+                                @if (Auth::user()->user_group == 'Consignment Supervisor')
+                                    <ul class="nav nav-tabs m-0" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" data-toggle="tab" href="#beginning_inventory" style="font-size: 10pt">Beginning Inventory</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href="#stock_adjustments" style="font-size: 10pt">Stock Adjustments</a>
+                                        </li>
+                                    </ul>
+                                @endif
                               
                                 <!-- Tab panes -->
                                 <div class="tab-content">
@@ -91,7 +94,7 @@
 
                                         <table class="table table-bordered" style="font-size: 10pt;">
                                             <tr>
-                                                <th class="font-responsive text-center first-row">ID</th>
+                                                <th class="font-responsive text-center first-row">Date</th>
                                                 <th class="font-responsive text-center">Branch</th>
                                                 <th class="font-responsive text-center d-none d-lg-table-cell">Submitted by</th>
                                                 <th class="font-responsive text-center d-none d-lg-table-cell">Submitted at</th>
@@ -112,18 +115,120 @@
                                                 @endphp
                                                 <tr>
                                                     <td class="font-responsive text-center">
-                                                        {{ $inv['name'] }}
+                                                        <span style="white-space: nowrap">{{ $inv['transaction_date'] }}</span>
                                                         <div class="d-block d-lg-none">
                                                             <span class="badge badge-{{ $status }}">{{ $inv['status'] }}</span>
+                                                            <br> <br>
+                                                            <a href="#" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal2">
+                                                                View Items
+                                                            </a>
+                
+                                                            <!-- Modal(mobile) -->
+                                                            <div class="modal fade" id="{{ $inv['name'] }}-Modal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                <div class="modal-dialog" role="document">
+                                                                    <div class="modal-content">
+                                                                        <form action="/approve_beginning_inv/{{ $inv['name'] }}" method="post">
+                                                                            @csrf
+                                                                            <div class="modal-header" style="background-color: #001F3F; color: #fff;">
+                                                                                <div class="container-fluid">
+                                                                                    <div class="row">
+                                                                                        <div class="col-12 col-lg-8 text-left font-responsive">
+                                                                                        <h4>{{ $inv['branch'] }}</h4>
+                                                                                        Inventory Date:<b>{{ $inv['transaction_date'] }} </b><br>
+                                                                                        Submitted By:<b>{{ $inv['owner'] }}</b>
+                                                                                        </div>
+                                                                                        @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
+                                                                                            <div class="col-12 col-lg-4 w-100">
+                                                                                                @php
+                                                                                                    $status_selection = [
+                                                                                                        ['title' => 'Approve', 'value' => 'Approved'],
+                                                                                                        ['title' => 'Cancel', 'value' => 'Cancelled']
+                                                                                                    ];
+                                                                                                @endphp
+                                                                                                <div class="input-group pt-2">
+                                                                                                    <select class="custom-select font-responsive" name="status" id="inputGroupSelect04" required>
+                                                                                                        <option value="" selected disabled>Select a status</option>
+                                                                                                        @foreach ($status_selection as $status)
+                                                                                                            <option value="{{ $status['value'] }}">{{ $status['title'] }}</option>                                                                                
+                                                                                                        @endforeach
+                                                                                                    </select>
+                                                                                                    <div class="input-group-append">
+                                                                                                        <button class="btn btn-outline-secondary" type="submit" style="color: #fff">Submit</button>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        @endif
+                                                                                    </div>
+                                                                                </div>
+                                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                                    <span aria-hidden="true" style="color: #fff">&times;</span>
+                                                                                </button>
+                                                                            </div>
+                                                                            <div class="modal-body">
+                                                                                <table class="table table-bordered" id='mob-table'>
+                                                                                    <tr>
+                                                                                        <th class="text-center" style="width: 40%; font-size: 10pt">Item</th>
+                                                                                        <th class="text-center p-0" style="width: 30%; font-size: 10pt">Opening Stock</th>
+                                                                                        <th class="text-center" style="width: 30%; font-size: 10pt">Price</th>
+                                                                                    </tr>
+                                                                                    @forelse ($inv['items'] as $item)
+                                                                                        @php
+                                                                                            $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
+                                                                                            $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
+                                                                                        @endphp
+                                                                                        <tr>
+                                                                                            <td class="text-center p-0" style="font-size: 10pt; width: 40%;">
+                                                                                                <div class="row">
+                                                                                                    <div class="col-6 mt-2">
+                                                                                                        <picture>
+                                                                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp">
+                                                                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
+                                                                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" width="100%">
+                                                                                                        </picture>
+                                                                                                    </div>
+                                                                                                    <div class="col-5" style="display: flex; justify-content: center; align-items: center;">
+                                                                                                        <b>{!! $item['item_code'] !!}</b>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </td>
+                                                                                            <td class="text-center" style="font-size: 10pt; width: 30%;">
+                                                                                                <b>{!! $item['opening_stock'] !!}</b> <br>
+                                                                                                <small>{{ $item['uom'] }}</small>
+                                                                                            </td>
+                                                                                            <td class="text-center" style="font-size: 10pt; width: 30%; white-space: nowrap">
+                                                                                                @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
+                                                                                                    ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 4) }}" style="text-align: center; width: 60px" required/>
+                                                                                                @else
+                                                                                                    ₱ {{ number_format($item['price'], 4) }}
+                                                                                                @endif
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                        <tr>
+                                                                                            <td class='text-justify' colspan=4>
+                                                                                                <div class="item-description-modal">
+                                                                                                    {{ strip_tags($item['item_description']) }}
+                                                                                                </div>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    @empty
+                                                                                        <tr>
+                                                                                            <td class="text-center" colspan=4>No Item(s)</td>
+                                                                                        </tr>
+                                                                                    @endforelse
+                                                                                </table>
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <!-- Modal(mobile) -->
                                                         </div>
                                                     </td>
                                                     <td class="font-responsive text-center">
                                                         {{ $inv['branch'] }}
                                                         <div class="row d-block text-left d-lg-none">
                                                             <br>
-                                                            <div class="col-12"><b>Transaction Date:</b>&nbsp;{{ $inv['transaction_date'] }}</div>
-                                                            <div class="col-12"><b>Submitted at:</b>&nbsp;{{ $inv['creation'] }}</div>
-                                                            <div class="col-12"><b>Submitted by:</b>&nbsp;{{ $inv['owner'] }}</div>
+                                                            <div class="col-12"><b>By:</b>&nbsp;{{ $inv['owner'] }}</div>
                                                         </div>
                                                     </td>
                                                     <td class="font-responsive text-center d-none d-lg-table-cell">{{ $inv['owner'] }}</td>
@@ -223,113 +328,6 @@
                                                         </div>
                                                     </td>
                                                 </tr>
-                                                <tr class="d-lg-none">
-                                                    <td colspan=2 class="text-center">
-                                                        <a href="#" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal2">
-                                                            View Items
-                                                        </a>
-            
-                                                        <!-- Modal(mobile) -->
-                                                        <div class="modal fade" id="{{ $inv['name'] }}-Modal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                            <div class="modal-dialog" role="document">
-                                                                <div class="modal-content">
-                                                                    <form action="/approve_beginning_inv/{{ $inv['name'] }}" method="post">
-                                                                        @csrf
-                                                                        <div class="modal-header" style="background-color: #001F3F; color: #fff;">
-                                                                            <div class="container-fluid">
-                                                                                <div class="row">
-                                                                                    <div class="col-12 col-lg-8 text-left font-responsive">
-                                                                                    <h4>{{ $inv['branch'] }}</h4>
-                                                                                    Inventory Date:<b>{{ $inv['transaction_date'] }} </b><br>
-                                                                                    Submitted By:<b>{{ $inv['owner'] }}</b>
-                                                                                    </div>
-                                                                                    @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
-                                                                                        <div class="col-12 col-lg-4 w-100">
-                                                                                            @php
-                                                                                                $status_selection = [
-                                                                                                    ['title' => 'Approve', 'value' => 'Approved'],
-                                                                                                    ['title' => 'Cancel', 'value' => 'Cancelled']
-                                                                                                ];
-                                                                                            @endphp
-                                                                                            <div class="input-group pt-2">
-                                                                                                <select class="custom-select font-responsive" name="status" id="inputGroupSelect04" required>
-                                                                                                    <option value="" selected disabled>Select a status</option>
-                                                                                                    @foreach ($status_selection as $status)
-                                                                                                        <option value="{{ $status['value'] }}">{{ $status['title'] }}</option>                                                                                
-                                                                                                    @endforeach
-                                                                                                </select>
-                                                                                                <div class="input-group-append">
-                                                                                                    <button class="btn btn-outline-secondary" type="submit" style="color: #fff">Submit</button>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    @endif
-                                                                                </div>
-                                                                            </div>
-                                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                                <span aria-hidden="true" style="color: #fff">&times;</span>
-                                                                            </button>
-                                                                        </div>
-                                                                        <div class="modal-body">
-                                                                            <table class="table table-bordered" id='mob-table'>
-                                                                                <tr>
-                                                                                    <th class="text-center" style="width: 40%; font-size: 10pt">Item</th>
-                                                                                    <th class="text-center p-0" style="width: 30%; font-size: 10pt">Opening Stock</th>
-                                                                                    <th class="text-center" style="width: 30%; font-size: 10pt">Price</th>
-                                                                                </tr>
-                                                                                @forelse ($inv['items'] as $item)
-                                                                                    @php
-                                                                                        $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
-                                                                                        $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
-                                                                                    @endphp
-                                                                                    <tr>
-                                                                                        <td class="text-center p-0" style="font-size: 10pt; width: 40%;">
-                                                                                            <div class="row">
-                                                                                                <div class="col-6 mt-2">
-                                                                                                    <picture>
-                                                                                                        <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp">
-                                                                                                        <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
-                                                                                                        <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" width="100%">
-                                                                                                    </picture>
-                                                                                                </div>
-                                                                                                <div class="col-5" style="display: flex; justify-content: center; align-items: center;">
-                                                                                                    <b>{!! $item['item_code'] !!}</b>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </td>
-                                                                                        <td class="text-center" style="font-size: 10pt; width: 30%;">
-                                                                                            <b>{!! $item['opening_stock'] !!}</b> <br>
-                                                                                            <small>{{ $item['uom'] }}</small>
-                                                                                        </td>
-                                                                                        <td class="text-center" style="font-size: 10pt; width: 30%; white-space: nowrap">
-                                                                                            @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
-                                                                                                ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 4) }}" style="text-align: center; width: 60px" required/>
-                                                                                            @else
-                                                                                                ₱ {{ number_format($item['price'], 4) }}
-                                                                                            @endif
-                                                                                        </td>
-                                                                                    </tr>
-                                                                                    <tr>
-                                                                                        <td class='text-justify' colspan=4>
-                                                                                            <div class="item-description-modal">
-                                                                                                {{ strip_tags($item['item_description']) }}
-                                                                                            </div>
-                                                                                        </td>
-                                                                                    </tr>
-                                                                                @empty
-                                                                                    <tr>
-                                                                                        <td class="text-center" colspan=4>No Item(s)</td>
-                                                                                    </tr>
-                                                                                @endforelse
-                                                                            </table>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <!-- Modal(mobile) -->
-                                                    </td>
-                                                </tr>
                                             @empty
                                                 <tr>
                                                     <td class="font-responsive text-center" colspan=7>
@@ -344,11 +342,13 @@
                                     </div>
                                     <!-- Beginning Inventory -->
 
-                                    <!-- Stock Adjustments -->
-                                    <div class="container-fluid tab-pane" id="stock_adjustments" style="padding: 8px 0 0 0;">
-                                        Stock Adjustments
-                                    </div>
-                                    <!-- Stock Adjustments -->
+                                    @if (Auth::user()->user_group == 'Consignment Supervisor')
+                                        <!-- Stock Adjustments -->
+                                        <div class="container-fluid tab-pane" id="stock_adjustments" style="padding: 8px 0 0 0;">
+                                            Stock Adjustments
+                                        </div>
+                                        <!-- Stock Adjustments -->
+                                    @endif
                                 </form>
                             </div>
                         </div>

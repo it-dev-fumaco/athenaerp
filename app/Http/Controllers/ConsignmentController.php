@@ -646,7 +646,10 @@ class ConsignmentController extends Controller
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
         $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
 
-        $status = $request->status ? $request->status : 'For Approval';
+        $status = $request->status ? $request->status : 'All';
+        if(Auth::user()->user_group == 'Consignment Supervisor'){
+            $status = $request->status ? $request->status : 'For Approval';
+        }
 
         $consignment_stores = DB::table('tabAssigned Consignment Warehouse')
             ->when(Auth::user()->frappe_userid, function ($q){
