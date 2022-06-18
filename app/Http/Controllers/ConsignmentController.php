@@ -1397,20 +1397,20 @@ class ConsignmentController extends Controller
     public function submitDamagedItem(Request $request){
         DB::beginTransaction();
         try {
-            $consigned_qty = DB::table('tabBin')->where('item_code', $request->item_code)->where('warehouse', $request->branch)->pluck('consigned_qty')->first();
+            $item = DB::table('tabBin')->where('item_code', $request->item_code)->where('warehouse', $request->branch)->select('consigned_qty', 'stock_uom')->first();
 
-            if(!$consigned_qty || $consigned_qty <= 0){
+            if(!$item || $item->consigned_qty <= 0){
                 return redirect()->back()->with('error', $request->item_code.' has not been delivered to this branch yet or beginning inventory has not been approved yet.');
             }
             
-            if($request->qty > $consigned_qty){
+            if($request->qty > $item->consigned_qty){
                 return redirect()->back()->with('error', 'Damaged qty is more than the delivered qty.');
             }
 
             $update_values = [
                 'modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'consigned_qty' => $consigned_qty - $request->qty
+                'consigned_qty' => $item->consigned_qty - $request->qty
             ];
 
             $insert_values = [
@@ -1423,8 +1423,11 @@ class ConsignmentController extends Controller
                 'item_code' => $request->item_code,
                 'description' => $request->description,
                 'qty' => $request->qty,
+                'stock_uom' => $item->stock_uom,
                 'damage_description' => $request->damage_description,
-                'promodiser' => Auth::user()->full_name
+                'promodiser' => Auth::user()->full_name,
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->full_name
             ];
 
             DB::table('tabBin')->where('item_code', $request->item_code)->where('warehouse', $request->branch)->update($update_values);
@@ -1435,6 +1438,36 @@ class ConsignmentController extends Controller
             DB::rollback();
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
+    }
+
+    public function damagedItems(){
+        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $damaged_items = DB::table('tabConsignment Damaged Item')->whereIn('branch_warehouse', $assigned_consignment_store)->get();
+
+        $item_codes = collect($damaged_items)->map(function ($q){
+            return $q->item_code;
+        });
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        $damaged_arr = [];
+        foreach($damaged_items as $item){
+            $damaged_arr[] = [
+                'item_code' => $item->item_code,
+                'item_description' => $item->description,
+                'damaged_qty' => $item->qty,
+                'uom' => $item->stock_uom,
+                'damage_description' => $item->damage_description,
+                'promodiser' => $item->promodiser,
+                'creation' => $item->creation,
+                'store' => $item->branch_warehouse,
+                'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : 'icon/no_img.png',
+                'webp' => isset($item_image[$item->item_code]) ? explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : 'icon/no_img.webp'
+            ];
+        }
+
+        return view('consignment.promodiser_damaged_list', compact('damaged_arr', 'damaged_items'));
     }
 
     public function getReceivedItems(Request $request, $branch){

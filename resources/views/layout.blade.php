@@ -541,7 +541,7 @@
 								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
 								<a class="dropdown-item" href="/stock_transfer/form">Stock Transfer</a>
 								<a class="dropdown-item" href="/beginning_inv_list">Stock Adjustment</a>
-								<a class="dropdown-item" href="/damage_report/list">Damaged Items</a>
+								<a class="dropdown-item" href="/promodiser/damage_report/form">Damaged Items</a>
 							</div>
 						</div>
 						<div class="btn-group" role="group" style="width: 33%;">
@@ -549,7 +549,7 @@
 							<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop2">
 								<a class="dropdown-item" href="#">Sales Report</a>
 								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
-								<a class="dropdown-item" href="/promodiser/damage_report/form">Damage Report</a>
+								<a class="dropdown-item" href="/damage_report/list">Damage Report</a>
 								<a class="dropdown-item" href="/stock_transfer/list">Stock Transfers Report</a>
 							</div>
 						</div>
