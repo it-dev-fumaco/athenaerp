@@ -144,7 +144,7 @@
                                                                                 Submitted By:<b>{{ $inv['owner'] }}</b>
                                                                                 </div>
                                                                                 @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
-                                                                                    <div class="col-4 w-100">
+                                                                                    <div class="col-12 col-xl-4 w-100">
                                                                                         @php
                                                                                             $status_selection = [
                                                                                                 ['title' => 'Approve', 'value' => 'Approved'],
@@ -231,7 +231,7 @@
                                                                     </div>
                                                                     {{-- Update button for approved records --}}
                                                                     @if ($inv['status'] == 'Approved')
-                                                                        <div class="modal-footer" id="pc-{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
+                                                                        <div class="modal-footer" id="{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
                                                                             <button type="submit" class="btn btn-info w-100">Update</button>
                                                                         </div>
                                                                     @endif
