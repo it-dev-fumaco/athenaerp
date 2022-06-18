@@ -2029,20 +2029,60 @@ class ConsignmentController extends Controller
             ->whereBetween('transaction_date', [$from, $to])->selectRaw('SUM(qty) as sold_qty, SUM(amount) as total_value, item_code')
             ->groupBy('item_code')->get();
 
-        $total_sold_qty = collect($product_sold_query)->sum('sold_qty');
-        $total_amount = collect($product_sold_query)->sum('total_value');
-
         $product_sold = collect($product_sold_query)->groupBy('item_code')->toArray();
         
         $duration = Carbon::parse($from)->format('F d, Y') . ' - ' . Carbon::parse($to)->format('F d, Y');
 
         $item_codes = collect($list)->pluck('item_code');
 
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
+            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+            ->where('cb.status', 'Approved')->whereIn('cbi.item_code', $item_codes)->where('cb.branch_warehouse', $store)
+            ->whereDate('cb.transaction_date', '<=', Carbon::parse($to))
+            ->select('cbi.item_code', 'cb.transaction_date', 'opening_stock')
+            ->orderBy('cb.transaction_date', 'desc')->get();
+
+        $beginning_inventory = collect($beginning_inventory)->groupBy('item_code')->toArray();
+
+        $inv_audit = DB::table('tabConsignment Inventory Audit')
+            ->where('branch_warehouse', $store)->where('transaction_date', '<', $from)
+            ->select('item_code', 'qty', 'transaction_date')
+            ->orderBy('transaction_date', 'asc')->get();
+
+        $inv_audit = collect($inv_audit)->groupBy('item_code')->toArray();
+
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_images = collect($item_images)->groupBy('parent')->toArray();
 
+        $result = [];
+        foreach ($list as $row) {
+            $id = $row->item_code;
+            $img = array_key_exists($id, $item_images) ? "/img/" . $item_images[$id][0]->image_path : "/icon/no_img.png";
+            $img_webp = array_key_exists($id, $item_images) ? "/img/" . explode('.',$item_images[$id][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+            $img_count = array_key_exists($id, $item_images) ? count($item_images[$id]) : 0;
+            $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
+            $opening_qty = array_key_exists($id, $inv_audit) ? $inv_audit[$id][0]->qty : 0;
+
+            if (array_key_exists($id, $inv_audit)) {
+                $opening_qty = $inv_audit[$id][0]->qty;
+            } else {
+                $opening_qty = array_key_exists($id, $beginning_inventory) ? $beginning_inventory[$id][0]->opening_stock : 0;
+            }
+            
+            $result[] = [
+                'item_code' => $id,
+                'description' => $row->description,
+                'img' => $img,
+                'img_webp' => $img_webp,
+                'img_count' => $img_count,
+                'opening_qty' => number_format($opening_qty),
+                'sold_qty' => number_format($total_sold),
+                'audit_qty' => number_format($row->qty)
+            ];
+        }
+
         if($is_promodiser) {
-            return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'item_images', 'product_sold', 'total_sold_qty', 'total_amount'));
+            return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result'));
         }
 
         return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'item_images'));

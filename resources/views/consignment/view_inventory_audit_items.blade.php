@@ -23,56 +23,36 @@
                                 </div>
                             </div>
                             <h5 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
-                            <div class="d-flex flex-row align-items-center">
-                                <div class="p-0 col-6">
-                                    <span class="d-inline-block font-responsive">Total Sold Qty:</span>
-                                    <span class="d-inline-block font-responsive font-weight-bold">{{ number_format($total_sold_qty) }}</span>
-                                </div>
-                                <div class="p-1 col-6">
-                                    <span class="d-inline-block font-responsive">Total Amount:</span>
-                                    <span class="d-inline-block font-responsive font-weight-bold">{{ '₱ ' . number_format($total_amount, 2) }}</span>
-                                </div>
-                            </div>
                             <table class="table" style="font-size: 8pt;">
                                 <thead class="border-top">
-                                    <th class="text-center align-middle p-1" style="width: 40%;">ITEM CODE</th>
-                                    <th class="text-center align-middle p-1" style="width: 20%;">AUDIT QTY</th>
+                                    <th class="text-center align-middle p-1" style="width: 33%;">ITEM CODE</th>
+                                    <th class="text-center align-middle p-1" style="width: 26%;">OPENING QTY</th>
                                     <th class="text-center align-middle p-1" style="width: 20%;">SOLD</th>
-                                    <th class="text-center align-middle p-1" style="width: 20%;">AMOUNT</th>
+                                    <th class="text-center align-middle p-1" style="width: 21%;">AUDIT QTY</th>
                                 </thead>
                                 <tbody>
-                                    @forelse ($list as $row)
-                                    @php
-                                        $id = $row->item_code;
-                                        $img = array_key_exists($id, $item_images) ? "/img/" . $item_images[$id][0]->image_path : "/icon/no_img.png";
-                                        $img_webp = array_key_exists($id, $item_images) ? "/img/" . explode('.',$item_images[$id][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-
-                                        $img_count = array_key_exists($id, $item_images) ? count($item_images[$id]) : 0;
-
-                                        $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
-                                        $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
-                                    @endphp
+                                    @forelse ($result as $row)
                                     <tr style="border-bottom: 0 !important;">
                                         <td class="text-justify p-1 align-middle" style="border-bottom: 0 !important;">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-0 text-left">
-                                                    <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $id }}" data-title="{{ $id }}">
+                                                    <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
                                                         <picture>
-                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
+                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
+                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
                                                         </picture>
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">
-                                                    <span class="font-weight-bold">{{ $id }}</span>
+                                                    <span class="font-weight-bold">{{ $row['item_code'] }}</span>
                                                 </div>
                                             </div>
-                                            <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                            <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog" role="document">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">{{ $row->item_code }}</h5>
+                                                            <h5 class="modal-title">{{ $row['item_code'] }}</h5>
                                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                             <span aria-hidden="true">&times;</span>
                                                         </button>
@@ -84,19 +64,19 @@
                                                                     <div class="carousel-inner">
                                                                         <div class="carousel-item active">
                                                                             <picture>
-                                                                                <source id="mobile-{{ $row->item_code }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                <source id="mobile-{{ $row->item_code }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                <img class="d-block w-100" id="mobile-{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+                                                                                <source id="mobile-{{ $row['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$row['img_webp'] }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                <source id="mobile-{{ $row['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$row['img'] }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                <img class="d-block w-100" id="mobile-{{ $row['item_code'] }}-image" src="{{ asset('storage/').$row['img'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}">
                                                                             </picture>
                                                                         </div>
-                                                                        <span class='d-none5' id="mobile-{{ $row->item_code }}-image-data">0</span>
+                                                                        <span class='d-none5' id="mobile-{{ $row['item_code'] }}-image-data">0</span>
                                                                     </div>
-                                                                    @if ($img_count > 1)
-                                                                    <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                    @if ($row['img_count'] > 1)
+                                                                    <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
                                                                         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                                                         <span class="sr-only">Previous</span>
                                                                     </a>
-                                                                    <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row->item_code }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                    <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
                                                                         <span class="carousel-control-next-icon" aria-hidden="true"></span>
                                                                         <span class="sr-only">Next</span>
                                                                     </a>
@@ -109,17 +89,17 @@
                                             </div>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                            <span class="d-block">{{ number_format($row->qty) }}</span>
+                                            <span class="d-block">{{ $row['opening_qty'] }}</span>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                            <span class="d-block">{{ number_format($total_sold) }}</span>
+                                            <span class="d-block">{{ $row['sold_qty'] }}</span>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                            <span class="d-block">{{ '₱ ' . number_format($total_value, 2) }}</span>
+                                            <span class="d-block">{{ $row['audit_qty'] }}</span>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colspan="4" style="border-top: 0 !important;" class="pt-0 pb-2 pl-2 prl-2"><div class="item-description">{!! strip_tags($row->description) !!}</div></td>
+                                        <td colspan="4" style="border-top: 0 !important;" class="pt-0 pb-2 pl-2 prl-2"><div class="item-description">{!! strip_tags($row['description']) !!}</div></td>
                                     </tr>
                                     @empty
                                     <tr>
