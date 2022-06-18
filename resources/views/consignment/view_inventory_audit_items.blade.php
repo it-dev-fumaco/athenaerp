@@ -23,10 +23,22 @@
                                 </div>
                             </div>
                             <h5 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
-                            <table class="table" style="font-size: 8pt;" id="items-table">
+                            <div class="d-flex flex-row align-items-center">
+                                <div class="p-0 col-6">
+                                    <span class="d-inline-block font-responsive">Total Sold Qty:</span>
+                                    <span class="d-inline-block font-responsive font-weight-bold">{{ number_format($total_sold_qty) }}</span>
+                                </div>
+                                <div class="p-1 col-6">
+                                    <span class="d-inline-block font-responsive">Total Amount:</span>
+                                    <span class="d-inline-block font-responsive font-weight-bold">{{ '₱ ' . number_format($total_amount, 2) }}</span>
+                                </div>
+                            </div>
+                            <table class="table" style="font-size: 8pt;">
                                 <thead class="border-top">
-                                    <th class="text-center p-1" style="width: 60%;">ITEM CODE</th>
-                                    <th class="text-center p-1" style="width: 40%;">AUDIT QTY</th>
+                                    <th class="text-center align-middle p-1" style="width: 40%;">ITEM CODE</th>
+                                    <th class="text-center align-middle p-1" style="width: 20%;">AUDIT QTY</th>
+                                    <th class="text-center align-middle p-1" style="width: 20%;">SOLD</th>
+                                    <th class="text-center align-middle p-1" style="width: 20%;">AMOUNT</th>
                                 </thead>
                                 <tbody>
                                     @forelse ($list as $row)
@@ -36,9 +48,12 @@
                                         $img_webp = array_key_exists($id, $item_images) ? "/img/" . explode('.',$item_images[$id][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 
                                         $img_count = array_key_exists($id, $item_images) ? count($item_images[$id]) : 0;
+
+                                        $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
+                                        $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
                                     @endphp
                                     <tr style="border-bottom: 0 !important;">
-                                        <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
+                                        <td class="text-justify p-1 align-middle" style="border-bottom: 0 !important;">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-0 text-left">
                                                     <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $id }}" data-title="{{ $id }}">
@@ -95,6 +110,12 @@
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
                                             <span class="d-block">{{ number_format($row->qty) }}</span>
+                                        </td>
+                                        <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                            <span class="d-block">{{ number_format($total_sold) }}</span>
+                                        </td>
+                                        <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                            <span class="d-block">{{ '₱ ' . number_format($total_value, 2) }}</span>
                                         </td>
                                     </tr>
                                     <tr>

@@ -46,6 +46,7 @@
                                 <div class="d-flex flex-row align-items-center mt-2">
                                     <div class="p-0 col-8">
                                         <select class="form-control form-control-sm inventory-audit-history-filter" name="store">
+                                            <option value="">Select Store</option>
                                             @foreach ($assigned_consignment_stores as $assigned_store)
                                             <option value="{{ $assigned_store }}">{{ $assigned_store }}</option>
                                             @endforeach
@@ -87,16 +88,24 @@
         });
 
         loadSubmittedInventoryAudit();
-        function loadSubmittedInventoryAudit() {
+        function loadSubmittedInventoryAudit(page) {
 			$.ajax({
 				type: "GET",
-				url: "/submitted_inventory_audit",
+				url: "/submitted_inventory_audit?page=" + page,
                 data: $('#inventory-audit-history-form').serialize(),
 				success: function (response) {
                     $('#submitted-inventory-audit-el').html(response);
 				}
 			});
 		}
+
+        $(document).on('click', '#submitted-inventory-audit-list-pagination a', function(event){
+            event.preventDefault();
+            var page = $(this).attr('href').split('page=')[1];
+            loadSubmittedInventoryAudit(page);
+        });
+
+        
     });
 </script>
 @endsection
