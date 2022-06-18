@@ -164,7 +164,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem'); 
     Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
     Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport'); 
-    Route::get('/calendar_no_report_submitted/{branch}', 'ConsignmentController@displayLateSubmissionAlert');
 
     Route::get('/inventory_audit', 'ConsignmentController@viewInventoryAuditList');
     Route::get('/consignment_stores', 'ConsignmentController@consignmentStores');
