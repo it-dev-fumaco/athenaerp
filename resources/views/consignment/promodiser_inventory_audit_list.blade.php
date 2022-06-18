@@ -14,61 +14,56 @@
                             <span id="branch-name" class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Audit List</span>
                         </div>
                         <div class="card-body p-1">
-                            <ul class="nav nav-pills">
-                                <li class="nav-item">
-                                    <a class="nav-link active font-responsive" id="pending-tab" data-toggle="pill" href="#pending-content" role="tab" href="#">Pending for Submission</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link font-responsive" id="inventory-audit-history-tab" data-toggle="pill" href="#inventory-audit-history-content" role="tab" href="#">Inventory Audit History</a>
-                                </li>
-                            </ul>
-
-                            <div class="tab-content">
-                                <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
-                                    <div class="p-2">
-                                        <span class="text-center m-2 d-block font-responsive text-uppercase">Pending for Submission</span>
-                                        @forelse ($pending_cutoff_inv_audit as $store => $row)
-                                        @if(count($row) > 0)
-                                        <span class="d-block m-2 font-weight-bold font-responsive text-left">{{ $store }}</span>
-                                        @foreach ($row as $pcia)
-                                        <div class="d-flex flex-row border-top justify-content-between align-items-center">
-                                            <div class="p-1 font-responsive ml-2">{{ $pcia['start'] . ' - ' . $pcia['end'] }}</div>
-                                            <div class="p-1 font-responsive">
-                                                <a href="/view_inventory_audit_form/{{ $store }}/{{ $pcia['cutoff_date'] }}" class="btn btn-primary btn-sm" style="width: 70px;"><i class="fas fa-plus"></i></a>
-                                            </div>
-                                          </div>
-                                        @endforeach
+                            <div class="p-2">
+                                <span class="text-center m-2 d-block font-responsive text-uppercase">Pending for Submission</span>
+                                @forelse ($pending as $store => $row)
+                                @if(count($row) > 0)
+                                <span class="d-block m-2 font-weight-bold font-responsive text-left">{{ $store }}</span>
+                                @foreach ($row as $pcia)
+                                <div class="d-flex flex-row border-top justify-content-between align-items-center">
+                                    <div class="p-1 font-responsive ml-2">
+                                        @if (!$pcia['beginning_inventory_date'])
+                                        <span class="d-block text-uppercase text-muted">- Create beginning inventory -</span>
+                                        @else
+                                        <span class="d-block {{ $pcia['is_late'] ? 'text-danger' : '' }}">{{ $pcia['duration'] }} </span>
                                         @endif
-                                        @empty
-                                        <div class="d-block text-center font-responsive m-0 text-uppercase text-muted border-top border-bottom pb-2 pt-2">No record(s) found</div>
-                                        @endforelse
+                                    </div>
+                                    <div class="p-1 font-responsive">
+                                        @if (!$pcia['beginning_inventory_date'])
+                                        <a href="/beginning_inventory" class="btn btn-primary btn-sm" style="width: 70px;"><i class="fas fa-plus"></i></a>
+                                        @else
+                                        <a href="/view_inventory_audit_form/{{ $store }}/{{ $pcia['today'] }}" class="btn btn-primary btn-sm" style="width: 70px;"><i class="fas fa-plus"></i></a>
+                                        @endif
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="inventory-audit-history-content" role="tabpanel" aria-labelledby="inventory-audit-history-tab">
-                                    <form id="inventory-audit-history-form" method="GET">
-                                        <div class="d-flex flex-row align-items-center mt-2">
-                                            <div class="p-0 col-8">
-                                                <select class="form-control form-control-sm inventory-audit-history-filter" name="store">
-                                                    @foreach ($assigned_consignment_stores as $assigned_store)
-                                                    <option value="{{ $assigned_store }}">{{ $assigned_store }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="p-1 col-3">
-                                                <select class="form-control form-control-sm inventory-audit-history-filter" name="year">
-                                                    @foreach ($select_year as $year)
-                                                    <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="p-0 col-1">
-                                                <a href="#" class="btn btn-sm btn-secondary inventory-audit-history-refresh"><i class="fas fa-sync"></i></a>
-                                            </div>
-                                        </div>
-                                    </form>
-                                    <div id="submitted-inventory-audit-el" class="p-2"></div>
-                                </div>
+                                @endforeach
+                                @endif
+                                @empty
+                                <div class="d-block text-center font-responsive m-0 text-uppercase text-muted border-top border-bottom pb-2 pt-2">No record(s) found</div>
+                                @endforelse
                             </div>
+                            <form id="inventory-audit-history-form" method="GET">
+                                <div class="d-flex flex-row align-items-center mt-2">
+                                    <div class="p-0 col-8">
+                                        <select class="form-control form-control-sm inventory-audit-history-filter" name="store">
+                                            @foreach ($assigned_consignment_stores as $assigned_store)
+                                            <option value="{{ $assigned_store }}">{{ $assigned_store }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="p-1 col-3">
+                                        <select class="form-control form-control-sm inventory-audit-history-filter" name="year">
+                                            @foreach ($select_year as $year)
+                                            <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="p-0 col-1">
+                                        <a href="#" class="btn btn-sm btn-secondary inventory-audit-history-refresh"><i class="fas fa-sync"></i></a>
+                                    </div>
+                                </div>
+                            </form>
+                            <div id="submitted-inventory-audit-el" class="p-2"></div>
                         </div>
                     </div>
                 </div>

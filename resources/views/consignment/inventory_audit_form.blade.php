@@ -30,6 +30,8 @@
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
                                 <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
+                                <input type="hidden" name="audit_date_from" value="{{ $inventory_audit_from }}">
+                                <input type="hidden" name="audit_date_to" value="{{ $transaction_date }}">
                                 <div class="form-group m-2">
                                     <input type="text" class="form-control" placeholder="Search Items" id="search-filter">
                                 </div>
