@@ -30,8 +30,8 @@
                             </span>
                         </div>
                         <div class="card-body p-1">
-                            <span class="float-right mr-3" style="font-size: 10pt">Total items: {{ count($ste_arr) }}</span>
-                            <table class="table table-bordered" style='font-size: 10pt;'>
+                            <span class="float-right mr-3" style="font-size: 10pt">Total items: {{ $delivery_report->total() }}</span>
+                            <table class="table table-striped" style='font-size: 10pt;'>
                                 <tr>
                                     <th class="text-center" style='width: 30%'>Name</th>
                                     <th class="text-center">Store</th>

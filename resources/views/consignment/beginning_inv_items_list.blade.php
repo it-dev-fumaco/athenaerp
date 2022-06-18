@@ -31,7 +31,7 @@
                             <div class="col-12">
                                 <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
                             </div>
-                            <table class="table" id="items-table" style="font-size: 8pt;">
+                            <table class="table table-striped" id="items-table" style="font-size: 8pt;">
                                 <thead class="border-top">
                                     <th class="text-uppercase text-center p-1 align-middle">Item Description</th>
                                     <th class="text-uppercase text-center p-1 align-middle">Opening Stock</th>

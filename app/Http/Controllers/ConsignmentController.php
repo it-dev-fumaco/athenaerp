@@ -1852,7 +1852,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        return view('consignment.stock_transfers_list', compact('ste_arr'));
+        return view('consignment.stock_transfers_list', compact('stock_transfers', 'ste_arr'));
     }
 
     public function viewInventoryAuditList(Request $request) {

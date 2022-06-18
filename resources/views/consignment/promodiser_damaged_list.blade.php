@@ -17,7 +17,7 @@
                                 <div class="col-12">
                                     <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
                                 </div>
-                               <table class="table" id="items-table" style="font-size: 10pt">
+                               <table class="table table-striped" id="items-table" style="font-size: 10pt">
                                     <tr>
                                         <th class="text-center" style="width: 80%">Item</th>
                                         <th class="text-center" style="width: 20%">Qty</th>

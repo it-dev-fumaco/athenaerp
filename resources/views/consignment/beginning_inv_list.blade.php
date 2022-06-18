@@ -46,7 +46,9 @@
                             </table>
                             <div class="mt-3 ml-3 clearfix pagination" style="display: block;">
                                 <div class="offset-8 col-md-4">
-                                    {{ $beginning_inventory->links() }}
+                                    <div class="float-right">
+                                        {{ $beginning_inventory->links() }}
+                                    </div>
                                 </div>
                             </div>
                         </div>

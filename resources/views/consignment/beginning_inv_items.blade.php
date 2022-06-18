@@ -22,7 +22,7 @@
                         <div class="modal-body">
                             <select id="item-selection" class="form-control"></select>
                             <div class="row mt-3 d-none" id="item-to-add">
-                                <table class="table table-bordered" id="new-item-table">
+                                <table class="table table-striped" id="new-item-table">
                                     <thead>
                                         <th class="font-responsive text-center p-1 align-middle" style="width: 42%">Item Code</th>
                                         <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
@@ -87,7 +87,7 @@
 
         </div>
     </div>
-    <table class="table table-bordered text-left" id="items-table"> 
+    <table class="table table-striped text-left" id="items-table"> 
         <thead>
             <th class="font-responsive text-center p-1 align-middle" style="width: 38%">Item Code</th>
             <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>

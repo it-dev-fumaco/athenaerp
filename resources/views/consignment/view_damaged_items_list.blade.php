@@ -75,7 +75,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <table class="table table-bordered" style="font-size: 10pt;">
+                                <table class="table table-striped" style="font-size: 10pt;">
                                     <tr>
                                         <th class="text-center" id='first-row'>Date</th>
                                         <th class="text-center" id='second-row'>
@@ -305,9 +305,9 @@
                                     </div>
                                 </div>
                                 <div class="card-body p-2">
-                                    <table class="table table-bordered table-striped" style="font-size: 10pt;">
+                                    <table class="table table-striped" style="font-size: 10pt;">
                                         <thead>
-                                            <th class="text-center" style="width: 10%;">Date</th>
+                                            <th class="text-center d-none d-xl-table-cell" style="width: 10%;">Date</th>
                                             <th class="text-center" style="width: 35%;">Item Description</th>
                                             <th class="text-center d-none d-xl-table-cell" style="width: 10%;">Qty</th>
                                             <th class="text-center d-none d-xl-table-cell" style="width: 20%;">Store</th>
@@ -316,7 +316,7 @@
                                         </thead>
                                         @forelse ($items_arr as $i => $item)
                                             <tr>
-                                                <td class="p-1 text-center align-middle">{{ $item['creation'] }}</td>
+                                                <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['creation'] }}</td>
                                                 <td class="p-1 text-justify align-middle">
                                                     <div class="d-flex flex-row align-items-center">
                                                         <div class="p-1">
@@ -336,7 +336,8 @@
                                                     <div class="d-block d-xl-none" style="font-size: 9pt;">
                                                         <b>Damaged Qty: </b>{{ $item['damaged_qty'] }}&nbsp;<small>{{ $item['uom'] }}</small> <br>
                                                         <b>Store: </b> {{ $item['store'] }} <br>
-                                                        <b>Damage Description: </b> {{ $item['damage_description'] }}
+                                                        <b>Damage Description: </b> {{ $item['damage_description'] }} <br>
+                                                        <b>Date: </b> {{ $item['creation'] }}
                                                     </div>
                                                 </td>
                                                 <td class="p-1 text-center align-middle d-none d-xl-table-cell">

@@ -1,4 +1,4 @@
-<table class="table table-bordered table-striped" style="font-size: 10pt;">
+<table class="table table-striped" style="font-size: 10pt;">
     <thead>
         <th class="font-responsive text-center">Date</th>
         <th class="font-responsive text-center">Branch</th>

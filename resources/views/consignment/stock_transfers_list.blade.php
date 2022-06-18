@@ -21,7 +21,7 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <h7 class="text-center mt-1 font-weight-bold">Stock Transfers List</h7>
+                            <h6 class="text-center mt-1 font-weight-bold">Stock Transfers List</h6>
                         </div>
                         <div class="card-header text-center ">
                             <span class="font-responsive text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
@@ -29,10 +29,10 @@
                             <a href="/stock_transfer/form" class="btn btn-xs btn-outline-primary float-right">Create Stock Transfer</a>
                         </div>
                         <div class="container-fluid">
-                            <span class="float-right p-2" style="font-size: 10pt;"><b>Total: </b>{{ count($ste_arr) }}</span>
+                            <span class="float-right p-2" style="font-size: 10pt;"><b>Total: </b>{{ $stock_transfers->total() }}</span>
                         </div>
                         <div class="card-body p-1">
-                            <table class="table table-bordered" style="font-size: 10pt">
+                            <table class="table table-striped" style="font-size: 10pt">
                                 <tr>
                                     <th class="text-center">Name</th>
                                     <th class="text-center">
@@ -265,6 +265,11 @@
                                     </tr>
                                 @endforeach
                             </table>
+                            <div class="mt-3 ml-3 clearfix pagination" style="display: block;">
+                                <div class="offset-8 col-md-4">
+                                    {{ $stock_transfers->links() }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

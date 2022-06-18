@@ -80,7 +80,7 @@
                                     </div>
                                     
                                     <div class="container-fluid mt-2">
-                                        <table class="table table-bordered" id='items-table' style="font-size: 9pt">
+                                        <table class="table table-striped" id='items-table' style="font-size: 9pt">
                                             <thead>
                                                 <tr>
                                                     <th class="text-center" style="width: 40%">Item</th>

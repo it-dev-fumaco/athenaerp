@@ -72,19 +72,21 @@
                     </div>
                 </div>
                 <div class="p-2 col-4">
-                    <div class="skills_section text-center mb-1 p-0">
-                        <div class="skills-area m-0">
-                            <div class="single-skill w-100 m-2">
-                                <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
-                                    <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
+                    <a href="/beginning_inv_list" style="color: inherit">
+                        <div class="skills_section text-center mb-1 p-0">
+                            <div class="skills-area m-0">
+                                <div class="single-skill w-100 m-2">
+                                    <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
+                                        <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="text-center">
-                        <small class="d-block text-muted">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</small>
-                        <span class="d-block">Beginning Inventory Completion</span>
-                    </div>
+                        <div class="text-center">
+                            <small class="d-block text-muted">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</small>
+                            <span class="d-block">Beginning Inventory Completion</span>
+                        </div>
+                    </a>
                 </div>
             </div>
             <div class="row mt-1">
