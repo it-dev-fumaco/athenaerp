@@ -2066,13 +2066,13 @@ class ConsignmentController extends Controller
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update([
                         'modified' => $now,
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
-                        'opening_stock' => $stocks[$item_code]['qty']
+                        'opening_stock' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
                     ]);
 
                     DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update([
                         'modified' => $now,
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
-                        'consigned_qty' => $stocks[$item_code]['qty']
+                        'consigned_qty' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
                     ]);
                 }
             }
