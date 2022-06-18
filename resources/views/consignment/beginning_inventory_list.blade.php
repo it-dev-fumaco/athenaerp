@@ -213,13 +213,15 @@
                                                                                     </td>
                                                                                     @if ($inv['status'] == 'Approved')
                                                                                         <td class="text-center">
-                                                                                            <span class="btn btn-primary btn-xs"><i class="fa fa-edit edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"></i></span>
+                                                                                            <span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"><i class="fa fa-edit"></i></span>
                                                                                         </td>
                                                                                     @endif
                                                                                 </tr>
                                                                                 <tr class="d-xl-none">
                                                                                     <td colspan=5 class="text-justify p-2">
-                                                                                        {{ strip_tags($item['item_description']) }}
+                                                                                        <div class="w-100 item-description">
+                                                                                            {{ strip_tags($item['item_description']) }}
+                                                                                        </div>
                                                                                     </td>
                                                                                 </tr>
                                                                             @empty
@@ -253,6 +255,7 @@
                                         {{ $beginning_inventory->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -345,7 +348,7 @@
                 $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
             });
 
-            var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
+            var showTotalChar = 150, showChar = "Show more", hideChar = "Show less";
             $('.item-description').each(function() {
                 var content = $(this).text();
                 if (content.length > showTotalChar) {

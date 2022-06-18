@@ -77,7 +77,7 @@
                                 </div>
                                 <table class="table table-striped" style="font-size: 10pt;">
                                     <tr>
-                                        <th class="text-center" id='first-row'>Date</th>
+                                        <th class="text-center d-none d-xl-table-cell" id='first-row'>Date</th>
                                         <th class="text-center" id='second-row'>
                                             <span class="d-block d-xl-none">Details</span>
                                             <span class="d-none d-xl-block">Name</span>
@@ -87,7 +87,7 @@
                                         <th class="text-center d-none d-xl-table-cell" style="width: 20%">To</th>
                                         <th class="text-center d-none d-xl-table-cell" style="width: 10%">Submitted by</th>
                                         <th class="text-center d-none d-xl-table-cell" style="width: 10%">Status</th>
-                                        <th class="text-center d-none d-xl-table-cell" style="width: 10%">Action</th>
+                                        <th class="text-center" style="width: 10%">Action</th>
                                     </tr>
                                     @foreach ($ste_arr as $ste)
                                         @php
@@ -98,81 +98,8 @@
                                             }
                                         @endphp
                                         <tr>
-                                            <td class="text-center">
+                                            <td class="text-center d-none d-xl-table-cell">
                                                 {{ $ste['creation'] }}
-
-                                                <div class="d-block d-xl-none">
-                                                    <span class="badge badge-{{ $badge }}">{{ $ste['status'] }}</span>
-                                                    <br> <br>
-                                                    <a href='#' data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal2" style="font-size: 10pt;">
-                                                        View Items
-                                                    </a>
-                                                      
-                                                    <!-- Modal(mobile) -->
-                                                    <div class="modal fade" id="{{ $ste['name'] }}-Modal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog" role="document">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header" style="background-color: #001F3F; color: #fff">
-                                                                    <div class="row text-left">
-                                                                        <div class="col-12">
-                                                                            <h5 id="exampleModalLabel"><b>{{ $ste['name'] }}</b></h5>
-                                                                        </div>
-                                                                        <div class="col-12" style="font-size: 8pt;">
-                                                                            <span class="font-italic"><b>Source: </b> {{ $ste['source_warehouse'] }}</span>
-                                                                        </div>
-                                                                        <div class="col-12" style="font-size: 8pt;">
-                                                                            <span class="font-italic"><b>Target: </b> {{ $ste['target_warehouse'] }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                    <span aria-hidden="true" style="color: #fff">&times;</span>
-                                                                    </button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <table class="table table-bordered">
-                                                                        <tr>
-                                                                            <th class="text-center" width="50%">Item</th>
-                                                                            <th class="text-center">Stock Qty</th>
-                                                                            <th class="text-center">Qty to Transfer</th>
-                                                                        </tr>
-                                                                        @foreach ($ste['items'] as $item)
-                                                                            <tr>
-                                                                                <td class="text-center p-0">
-                                                                                    <div class="row">
-                                                                                        <div class="col-4">
-                                                                                            <picture>
-                                                                                                <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
-                                                                                                <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg">
-                                                                                                <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" class="w-100">
-                                                                                            </picture>
-                                                                                        </div>
-                                                                                        <div class="col-5" style="display: flex; justify-content: center; align-items: center;">
-                                                                                            <b>{{ $item['item_code'] }}</b>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td class="text-center">
-                                                                                    <b>{{ $item['consigned_qty'] * 1 }}</b><br/><small>{{ $item['uom'] }}</small>
-                                                                                </td>
-                                                                                <td class="text-center">
-                                                                                    <b>{{ $item['transfer_qty'] * 1 }}</b><br/><small>{{ $item['uom'] }}</small>
-                                                                                    </td>
-                                                                            </tr>
-                                                                            <tr class="p-2">
-                                                                                <td colspan=3 class="text-justify">
-                                                                                    <div class="item-description">
-                                                                                        {{ strip_tags($item['description']) }}
-                                                                                    </div>
-                                                                                </td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                    </table>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Modal(mobile) -->
-                                                </div>
                                             </td>
                                             <td class="text-center">
                                                 {{ $ste['name'] }}
@@ -180,7 +107,8 @@
                                                 <div class="d-block d-xl-none text-left">
                                                     <b>From: </b> {{ $ste['source_warehouse'] }} <br>
                                                     <b>To: </b> {{ $ste['target_warehouse'] }} <br>
-                                                    <b>Purpose: </b> {{ $ste['transfer_as'] }}
+                                                    <b>Purpose: </b> {{ $ste['transfer_as'] }} <br>
+                                                    <b>Date: </b> {{ $ste['creation'] }}
                                                 </div>
                                             </td>
                                             <td class="text-center d-none d-xl-table-cell">{{ $ste['transfer_as'] }}</td>
@@ -190,11 +118,11 @@
                                             <td class="text-center d-none d-xl-table-cell">
                                                 <span class="badge badge-{{ $badge }}">{{ $ste['status'] }}</span>
                                             </td>
-                                            <td class="text-center d-none d-xl-table-cell">
-                                                <a class="btn btn-outline-primary" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal" style="font-size: 10pt;">
+                                            <td class="text-center">
+                                                <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal" style="font-size: 10pt;">
                                                     View Items
                                                 </a>
-                                                  
+                                                <span class="badge badge-{{ $badge }} d-xl-none">{{ $ste['status'] }}</span>
                                                   <!-- Modal -->
                                                 <div class="modal fade" id="{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
@@ -361,7 +289,6 @@
                                 </div>
                             </div>
                             <!-- Damaged Items -->
-
                         </div>
                     </div>
                 </div>
@@ -384,8 +311,8 @@
         width: 10%;
     }
     @media (max-width: 575.98px) {
-        #first-row{
-            width: 5%;
+        #second-row{
+            width: 30%;
         }
         .select2-container--default .select2-selection--single{
             padding: 5px !important;
@@ -393,8 +320,8 @@
         }
     }
   	@media (max-width: 767.98px) {
-        #first-row{
-            width: 5%;
+        #second-row{
+            width: 30%;
         }
         .select2-container--default .select2-selection--single{
             padding: 5px !important;
@@ -402,23 +329,14 @@
         }
     }
 	@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
-        #first-row{
-            width: 5%;
+        #second-row{
+            width: 30%;
         }
         .select2-container--default .select2-selection--single{
             padding: 5px !important;
             font-size: 10pt !important;
         }
 	}
-    /* @media only screen and (min-device-width : 768px) and (orientation : landscape) {
-        #first-row{
-            width: 5%;
-        }
-        .select2-container--default .select2-selection--single{
-            padding: 5px !important;
-            font-size: 10pt !important;
-        }
-	} */
 </style>
 @endsection
 
@@ -450,7 +368,6 @@
         return false;
     });
 
-    
     $('#consignment-store-select').select2({
         placeholder: "Select Store",
         ajax: {
