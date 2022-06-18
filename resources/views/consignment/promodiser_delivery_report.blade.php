@@ -44,7 +44,9 @@
                                         </td>
                                         <td>
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a>
-                                            <span class="badge badge-{{ $ste['delivery_status'] == 0 ? 'primary' : 'success' }}">{{ $ste['delivery_status'] == 0 ? 'To Receive' : 'Received' }}</span>
+                                            @if ($ste['status'] == 'Delivered')
+                                                <span class="badge badge-{{ $ste['delivery_status'] == 0 ? 'primary' : 'success' }}">{{ $ste['delivery_status'] == 0 ? 'To Receive' : 'Received' }}</span>
+                                            @endif
                                             <br>
                                             <span><b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</span>
 
@@ -100,12 +102,8 @@
                                                                                 <div class="col-3 text-center" style="display: flex; justify-content: center; align-items: center;">
                                                                                     <span style="white-space: nowrap">₱ {{ number_format($item['price'] * 1, 2) }}</span>
                                                                                 </div>
-                                                                                <div id="{{ $id }}-description" class="col-12 ste-description pt-2 text-justify" style="height: 50px; overflow: hidden;">
+                                                                                <div class="col-12 item-description ste-description pt-2 text-justify">
                                                                                     {{ strip_tags($item['description']) }}
-                                                                                </div>
-                                                                                <div class="col-12 text-center pt-2">
-                                                                                    <button class="btn btn-xs btn-outline-primary show-more" id="{{ $id }}-show-more" data-id="{{ $id }}">Show More</button>
-                                                                                    <button class="btn btn-xs btn-outline-primary d-none show-less" id="{{ $id }}-show-less" data-id="{{ $id }}">Show Less</button>
                                                                                 </div>
                                                                             </div>
                                                                         </td>
@@ -113,7 +111,7 @@
                                                                 @endforeach
                                                             </table>
                                                         </div>
-                                                        @if ($ste['delivery_status'] == 0)
+                                                        @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
                                                             <div class="modal-footer">
                                                                 <a href="/promodiser/receive/{{ $ste['name'] }}" class="btn btn-success">Receive</a>
                                                             </div>
@@ -155,22 +153,39 @@
             table-layout: fixed;
             width: 100%;   
         }
+        .morectnt span {
+            display: none;
+        }
     </style>
 @endsection
 
 @section('script')
     <script>
         $(document).ready(function(){
-            $('.show-more').click(function(){
-                $('#'+ $(this).data('id')+ '-description').css('height', 'auto');
-                $(this).addClass('d-none');
-                $('#'+$(this).data('id')+ '-show-less').removeClass('d-none');
+            var showTotalChar = 150, showChar = "Show more", hideChar = "Show less";
+            $('.item-description').each(function() {
+                var content = $(this).text();
+                if (content.length > showTotalChar) {
+                    var con = content.substr(0, showTotalChar);
+                    var hcon = content.substr(showTotalChar, content.length - showTotalChar);
+                    var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="show-more">' + showChar + '</a></span>';
+                    $(this).html(txt);
+                }
             });
 
-            $('.show-less').click(function(){
-                $('#'+ $(this).data('id')+ '-description').css('height', '50px');
-                $(this).addClass('d-none');
-                $('#'+$(this).data('id')+ '-show-more').removeClass('d-none');
+            $(".show-more").click(function(e) {
+                e.preventDefault();
+                if ($(this).hasClass("sample")) {
+                    $(this).removeClass("sample");
+                    $(this).text(showChar);
+                } else {
+                    $(this).addClass("sample");
+                    $(this).text(hideChar);
+                }
+
+                $(this).parent().prev().toggle();
+                $(this).prev().toggle();
+                return false;
             });
         });
     </script>

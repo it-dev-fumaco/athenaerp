@@ -146,6 +146,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/stock_transfer/submit', 'ConsignmentController@stockTransferSubmit');
     Route::get('/stock_transfer/list', 'ConsignmentController@stockTransferList')->name('stock_transfers');
     Route::get('/stock_transfer/cancel/{id}', 'ConsignmentController@stockTransferCancel');
+    Route::post('/stock_adjust/submit/{id}', 'ConsignmentController@submitStockAdjustment');
     
     Route::get('/calendar_data/{branch}', 'ConsignmentController@calendarData');
     Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');

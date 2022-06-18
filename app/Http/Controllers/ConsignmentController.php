@@ -836,9 +836,9 @@ class ConsignmentController extends Controller
         $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
         $beginning_inventory_start_date = Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d');
 
-        $delivery_report = DB::table('tabStock Entry')->where('transfer_as', 'Consignment')
+        $delivery_report = DB::table('tabStock Entry')
             ->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)
-            ->whereDate('delivery_date', '>=', $beginning_inventory_start_date)
+            ->whereDate('delivery_date', '>=', $beginning_inventory_start_date)->orWhere('naming_series', 'STEC-')->where('transfer_as', 'Consignment')
             ->when($type == 'incoming', function ($q) use ($received_ste_arr){ // do not include ste's of received items
                 return $q->whereNotIn('name', $received_ste_arr);
             })
@@ -920,22 +920,43 @@ class ConsignmentController extends Controller
             $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
             $bin_items = collect($bin)->groupBy('item_code');
 
+            $now = Carbon::now();
+
             foreach($ste_items as $item){
                 if($item->consignment_status == 'Received'){ // skip already received items
                     continue;
                 }
 
-                if(!isset($bin_items[$item->item_code])){ // skip if item does not exist in bin
-                    continue;
+                if(isset($bin_items[$item->item_code])){
+                    $consigned_qty = $bin_items[$item->item_code][0]->consigned_qty;
+
+                    DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'consigned_qty' => $consigned_qty + $item->transfer_qty
+                    ]);
+                }else{
+                    $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
+                    $latest_bin_exploded = explode("/", $latest_bin);
+                    $bin_id = (($latest_bin) ? $latest_bin_exploded[1] : 0) + 1;
+                    $bin_id = str_pad($bin_id, 7, '0', STR_PAD_LEFT);
+                    $bin_id = 'BIN/'.$bin_id;
+
+                    DB::table('tabBin')->insert([
+                        'name' => $bin_id,
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->full_name,
+                        'owner' => Auth::user()->full_name,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'warehouse' => $branch,
+                        'item_code' => $item->item_code,
+                        'stock_uom' => $item->stock_uom,
+                        'valuation_rate' => $item->basic_rate,
+                        'consigned_qty' => $item->transfer_qty
+                    ]);
                 }
-
-                $consigned_qty = $bin_items[$item->item_code][0]->consigned_qty;
-
-                DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'consigned_qty' => $consigned_qty + $item->transfer_qty
-                ]);
 
                 DB::table('tabStock Entry Detail')->where('name', $item->name)->update([
                     'consignment_status' => 'Received',
