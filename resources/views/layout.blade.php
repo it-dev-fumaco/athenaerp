@@ -540,7 +540,7 @@
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
 								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
 								<a class="dropdown-item" href="/stock_transfer/form">Stock Transfer</a>
-								<a class="dropdown-item" href="#">Stock Adjustment</a>
+								<a class="dropdown-item" href="/beginning_inv_list">Stock Adjustment</a>
 								<a class="dropdown-item" href="/damage_report/list">Damaged Items</a>
 							</div>
 						</div>
