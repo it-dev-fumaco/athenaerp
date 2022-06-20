@@ -11,6 +11,16 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
                         <div class="card-header">
+                            @if(session()->has('success'))
+                                <div class="alert alert-success alert-dismissible fade show" role="alert" style="font-size: 10pt;">
+                                    {{ session()->get('success') }}
+                                </div>
+                            @endif
+                            @if(session()->has('error'))
+                                <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert" style="font-size: 10pt;">
+                                    {{ session()->get('error') }}
+                                </div>
+                            @endif
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory</span>
                             <a href="/beginning_inventory" class="btn btn-xs btn-outline-primary float-right m-0 p-1"><i class="fas fa-plus"></i> Create</a>
                         </div>

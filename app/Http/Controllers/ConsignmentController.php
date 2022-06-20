@@ -937,10 +937,13 @@ class ConsignmentController extends Controller
     }
 
     public function beginningInvItemsList($id){
-        $branch = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('branch_warehouse')->first();
-        $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
 
-        $transaction_date = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('transaction_date')->first();
+        if(!$beginning_inventory){
+            return redirect()->back()->with('error', 'Inventory Record Not Found.');
+        }
+        
+        $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
 
         $item_codes = collect($inventory)->map(function ($q){
             return $q->item_code;
@@ -949,7 +952,7 @@ class ConsignmentController extends Controller
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
         $item_image = collect($item_images)->groupBy('parent');
 
-        return view('consignment.beginning_inv_items_list', compact('inventory', 'item_image', 'branch', 'transaction_date'));
+        return view('consignment.beginning_inv_items_list', compact('inventory', 'item_image', 'beginning_inventory'));
     }
 
     public function beginningInventory($inv = null){
@@ -958,7 +961,7 @@ class ConsignmentController extends Controller
             $inv_record = DB::table('tabConsignment Beginning Inventory')->where('name', $inv)->where('status', 'For Approval')->first();
 
             if(!$inv_record){
-                Abort(404);
+                return redirect()->back()->with('error', 'Inventory Record Not Found.');
             }
         }
 
