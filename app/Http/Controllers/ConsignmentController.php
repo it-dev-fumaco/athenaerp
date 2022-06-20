@@ -787,8 +787,13 @@ class ConsignmentController extends Controller
         $beginning_inventory_start_date = Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d');
 
         $delivery_report = DB::table('tabStock Entry')
-            ->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)
-            ->whereDate('delivery_date', '>=', $beginning_inventory_start_date)->orWhere('naming_series', 'STEC-')->where('transfer_as', 'Consignment')
+            // delivered items from the start of beginning inventory
+            ->whereDate('delivery_date', '>=', $beginning_inventory_start_date)->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)
+            ->when($type == 'incoming', function ($q) use ($received_ste_arr){ // do not include ste's of received items
+                return $q->whereNotIn('name', $received_ste_arr);
+            })
+            // list of items from stock transfers
+            ->orWhere('naming_series', 'STEC-')->where('transfer_as', 'Consignment')->where('purpose', 'Material Transfer')->whereIn('item_status', ['For Checking', 'Issued'])->whereIn('to_warehouse', $assigned_consignment_store)
             ->when($type == 'incoming', function ($q) use ($received_ste_arr){ // do not include ste's of received items
                 return $q->whereNotIn('name', $received_ste_arr);
             })
