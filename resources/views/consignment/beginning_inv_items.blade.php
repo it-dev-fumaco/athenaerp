@@ -2,7 +2,7 @@
     @csrf
     <div class="row">
         <div class="col-8">
-            <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
+            <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" autocomplete="off" placeholder="Search" style="font-size: 9pt"/>
         </div>
         <div class="col-4" style="display: flex; justify-content: center; align-items: center;">
             <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#add-item-Modal" style="font-size: 9pt;">
