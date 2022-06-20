@@ -417,6 +417,12 @@ class ConsignmentController extends Controller
                             ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                     }
 
+                    if ((float)$row['qty'] < 0) {
+                        return redirect()->back()
+                            ->with(['old_data' => $data])
+                            ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
+                    }
+
                     DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
                         ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
 
@@ -433,6 +439,12 @@ class ConsignmentController extends Controller
                 } else {
                     // for insert
                     $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
+
+                    if ((float)$row['qty'] < 0) {
+                        return redirect()->back()
+                            ->with(['old_data' => $data])
+                            ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
+                    }
 
                     if ($consigned_qty < (float)$row['qty']) {
                         return redirect()->back()
@@ -1886,7 +1898,7 @@ class ConsignmentController extends Controller
             }
     
             $cutoff_date = $this->getCutoffDate($end->endOfDay());
-            $period_from = $cutoff_date[0];
+            $period_from = $cutoff_date[0]->addDay();
             $period_to = $cutoff_date[1];    
     
             $pending_arr = [];
@@ -1993,7 +2005,7 @@ class ConsignmentController extends Controller
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('audit_date_from', $year);
             })
-            ->selectRaw('SUM(qty) as total_qty, COUNT(item_code) as total_item, SUM(amount) as total_value, audit_date_from, audit_date_to, branch_warehouse')
+            ->selectRaw('COUNT(item_code) as total_item, audit_date_from, audit_date_to, branch_warehouse')
             ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from')->paginate(10);
 
         return view('consignment.supervisor.tbl_inventory_audit_history', compact('list', 'store'));
@@ -2147,7 +2159,7 @@ class ConsignmentController extends Controller
         }
 
         $cutoff_date = $this->getCutoffDate($end->endOfDay());
-        $period_from = $cutoff_date[0];
+        $period_from = $cutoff_date[0]->addDay();
         $period_to = $cutoff_date[1];
 
         $pending = [];
