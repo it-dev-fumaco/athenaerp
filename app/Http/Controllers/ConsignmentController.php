@@ -1846,10 +1846,7 @@ class ConsignmentController extends Controller
                 ->distinct()->pluck('warehouse');
 
             $stores_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory as w')
-                ->where('status', 'Approved')
-                ->when($is_promodiser, function ($q) use ($assigned_consignment_stores) {
-                    return $q ->whereIn('branch_warehouse', $assigned_consignment_stores);
-                })
+                ->where('status', 'Approved')->whereIn('branch_warehouse', $assigned_consignment_stores)
                 ->orderBy('branch_warehouse', 'asc')
                 ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
                 ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
@@ -1867,6 +1864,21 @@ class ConsignmentController extends Controller
         
             $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
             $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+
+            $first_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_1 .'/'. $end->format('Y'))->endOfDay();
+            $second_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_2 .'/'. $end->format('Y'))->endOfDay();
+    
+            if ($first_cutoff->gt($end)) {
+                $end = $first_cutoff;
+            }
+    
+            if ($second_cutoff->gt($end)) {
+                $end = $second_cutoff;
+            }
+    
+            $cutoff_date = $this->getCutoffDate($end->endOfDay());
+            $period_from = $cutoff_date[0];
+            $period_to = $cutoff_date[1];    
     
             $pending_arr = [];
             foreach ($assigned_consignment_stores as $store) {
@@ -1887,7 +1899,7 @@ class ConsignmentController extends Controller
                 $start = $start->startOfDay();
     
                 $is_late = 0;
-                $period = CarbonPeriod::create($start, '1 month' , $end);
+                $period = CarbonPeriod::create($start, '28 days' , $end);
                 foreach ($period as $date) {
                     $date1 = $date->day($cutoff_1);
                     if ($date1 >= $start && $date1 <= $end) {
@@ -1899,9 +1911,11 @@ class ConsignmentController extends Controller
                     }
                 }
     
+                $check = Carbon::parse($start)->between($period_from, $period_to);
+
                 $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($end)->format('F d, Y');
                 if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                    if ($is_late > 0) {
+                    if (!$check) {
                         $pending_arr[] = [
                             'store' => $store,
                             'beginning_inventory_date' => $beginning_inventory_transaction_date,
@@ -1914,7 +1928,7 @@ class ConsignmentController extends Controller
                  }
     
                  if(!$beginning_inventory_transaction_date) {
-                    if ($is_late > 0) {
+                    if (!$check) {
                         $pending_arr[] = [
                             'store' => $store,
                             'beginning_inventory_date' => $beginning_inventory_transaction_date,
@@ -2099,7 +2113,7 @@ class ConsignmentController extends Controller
             ->orderBy('branch_warehouse', 'asc')->groupBy('branch_warehouse')
             ->pluck('transaction_date', 'branch_warehouse')->toArray();
 
-         $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+        $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
             ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
             ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
             ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
@@ -2111,6 +2125,21 @@ class ConsignmentController extends Controller
     
         $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
         $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+
+        $first_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_1 .'/'. $end->format('Y'))->endOfDay();
+        $second_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_2 .'/'. $end->format('Y'))->endOfDay();
+
+        if ($first_cutoff->gt($end)) {
+            $end = $first_cutoff;
+        }
+
+        if ($second_cutoff->gt($end)) {
+            $end = $second_cutoff;
+        }
+
+        $cutoff_date = $this->getCutoffDate($end->endOfDay());
+        $period_from = $cutoff_date[0];
+        $period_to = $cutoff_date[1];
 
         $pending = [];
         foreach (array_keys($stores_with_beginning_inventory) as $store) {
@@ -2133,7 +2162,7 @@ class ConsignmentController extends Controller
             $start = $start->startOfDay();
 
             $is_late = 0;
-            $period = CarbonPeriod::create($start, '1 month' , $end);
+            $period = CarbonPeriod::create($start, '28 days' , $end);
             foreach ($period as $date) {
                 $date1 = $date->day($cutoff_1);
                 if ($date1 >= $start && $date1 <= $end) {
@@ -2144,10 +2173,12 @@ class ConsignmentController extends Controller
                     $is_late++;
                 }
             }
-
+   
+            $check = Carbon::parse($start)->between($period_from, $period_to);
+    
             $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($end)->format('F d, Y');
             if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                if ($is_late > 0) {
+                if (!$check) {
                     $pending[] = [
                         'store' => $store,
                         'beginning_inventory_date' => $beginning_inventory_transaction_date,
@@ -2160,17 +2191,17 @@ class ConsignmentController extends Controller
              }
 
              if(!$beginning_inventory_transaction_date) {
-                if ($is_late > 0) {
+                 if (!$check) {
                     $pending[] = [
                         'store' => $store,
                         'beginning_inventory_date' => $beginning_inventory_transaction_date,
                         'last_inventory_audit_date' => $last_inventory_audit_date,
                         'duration' => $duration,
                         'is_late' => $is_late,
-                        'promodisers' => $promodisers
+                        'check' => $promodisers
                     ];
                 }
-            }        
+            }
         }
 
         return view('consignment.supervisor.tbl_pending_submission_inventory_audit', compact('pending'));
