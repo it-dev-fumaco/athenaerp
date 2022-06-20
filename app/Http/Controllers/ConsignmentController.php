@@ -1913,7 +1913,7 @@ class ConsignmentController extends Controller
     
                 $check = Carbon::parse($start)->between($period_from, $period_to);
 
-                $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($end)->format('F d, Y');
+                $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
                 if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                     if (!$check) {
                         $pending_arr[] = [
@@ -1922,7 +1922,7 @@ class ConsignmentController extends Controller
                             'last_inventory_audit_date' => $last_inventory_audit_date,
                             'duration' => $duration,
                             'is_late' => $is_late,
-                            'today' => Carbon::parse($end)->format('Y-m-d'),
+                            'today' => Carbon::now()->format('Y-m-d'),
                         ];
                     }
                  }
@@ -1935,7 +1935,7 @@ class ConsignmentController extends Controller
                             'last_inventory_audit_date' => $last_inventory_audit_date,
                             'duration' => $duration,
                             'is_late' => $is_late,
-                            'today' => Carbon::parse($end)->format('Y-m-d'),
+                            'today' => Carbon::now()->format('Y-m-d'),
                         ];
                     }
                 }        
@@ -2176,7 +2176,7 @@ class ConsignmentController extends Controller
    
             $check = Carbon::parse($start)->between($period_from, $period_to);
     
-            $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($end)->format('F d, Y');
+            $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
             if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                 if (!$check) {
                     $pending[] = [
@@ -2198,7 +2198,7 @@ class ConsignmentController extends Controller
                         'last_inventory_audit_date' => $last_inventory_audit_date,
                         'duration' => $duration,
                         'is_late' => $is_late,
-                        'check' => $promodisers
+                        'promodisers' => $promodisers
                     ];
                 }
             }
