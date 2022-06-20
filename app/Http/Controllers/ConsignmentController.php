@@ -1777,7 +1777,7 @@ class ConsignmentController extends Controller
         }
 
         $stock_transfers = DB::table('tabStock Entry')
-            ->when(Auth::user()->user_group == 'Promodiser', function ($q){
+            ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($consignment_stores){
                 return $q->whereIn('from_warehouse', $consignment_stores);
             })
             ->whereIn('transfer_as', ['For Return', 'Consignment'])->where('purpose', 'Material Transfer')
