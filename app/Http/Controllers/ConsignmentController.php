@@ -1781,7 +1781,7 @@ class ConsignmentController extends Controller
                 return $q->whereIn('from_warehouse', $consignment_stores);
             })
             ->whereIn('transfer_as', ['For Return', 'Consignment'])->where('purpose', 'Material Transfer')
-            ->where('name', 'like', '%stec%')
+            ->where('naming_series', 'STEC-')
             ->orderBy('creation', 'desc')->paginate(10);
 
         $src_warehouses = collect($stock_transfers->items())->map(function ($q){
