@@ -26,42 +26,26 @@
 
                             <div class="tab-content">
                                 <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
-                                    <div class="p-2">
-                                        <h5 class="text-center m-2 d-block font-responsive text-uppercase">Pending for Submission</h5>
-                                        <table class="table table-bordered table-striped">
-                                            <thead>
-                                                <th class="text-center font-responsive align-middle p-2">Store</th>
-                                                <th class="text-center font-responsive align-middle p-2">Promodiser</th>
-                                                <th class="text-center font-responsive align-middle p-2">Period</th>
-                                                <th class="text-center font-responsive align-middle p-2">Action</th>
-                                            </thead>
-                                            <tbody>
-                                                @forelse ($pending_cutoff_inv_audit_arr as $row)
-                                                <tr>
-                                                    <td class="text-left font-responsive align-middle p-2">{{ $row['store'] }}</td>
-                                                    <td class="text-center font-responsive align-middle p-2">{{ $row['promodiser'] }}</td>
-                                                    <td class="text-center font-responsive align-middle p-2">{{ $row['start'] . ' - ' . $row['end'] }}</td>
-                                                    <td class="text-center font-responsive align-middle p-2">
-                                                        <a href="/view_inventory_audit_form/{{ $row['store'] }}/{{ $row['cutoff_date'] }}" class="btn btn-primary btn-sm" style="width: 70px;"><i class="fas fa-plus"></i></a>
-                                                    </td>
-                                                </tr>
-                                                @empty
-                                                <tr>
-                                                    <td colspan="4" class="text-center font-responsive text-uppercase text-muted p-2">No record(s) found</td>
-                                                </tr>
-                                                @endforelse
-                                            </tbody>
-                                        </table>
-                                        <div class="float-left m-2">Total: <b>{{ $pending_cutoff_inv_audit_arr->total() }}</b></div>
-                                        <div class="float-right m-2">{{ $pending_cutoff_inv_audit_arr->links('pagination::bootstrap-4') }}</div>
-                                    </div>
+                                    <form action="#" id="pending-inventory-audit-filter-form">
+                                        <div class="row p-1 mt-1 mb-1">
+                                            <div class="col-6">
+                                                <select class="form-control" name="store" id="consignment-store-select">
+                                                    <option value="">Select Store</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-2 p-0">
+                                                <a href="/" class="btn btn-secondary d-inline-block float-left ml-1"><i class="fas fa-undo"></i></a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <div id="beginning-inventory-list-el"></div>
                                 </div>
                                 <div class="tab-pane fade" id="inventory-audit-history-content" role="tabpanel" aria-labelledby="inventory-audit-history-tab">
                                     <form id="inventory-audit-history-form" method="GET">
                                         <div class="d-flex flex-row align-items-center mt-2">
                                             <div class="p-1 col-6">
-                                                <select class="form-control inventory-audit-history-filter" name="store" id="consignment-store-select">
-                                                   
+                                                <select class="form-control inventory-audit-history-filter" name="store" id="consignment-store-select-history">
+                                                    <option value="">Select Store</option>
                                                 </select>
                                             </div>
                                             <div class="p-1 col-2">
@@ -72,7 +56,7 @@
                                                 </select>
                                             </div>
                                             <div class="p-1 col-2">
-                                                <a href="#" class="btn btn-secondary inventory-audit-history-refresh"><i class="fas fa-sync"></i></a>
+                                                <a href="#" class="btn btn-secondary inventory-audit-history-refresh"><i class="fas fa-undo"></i></a>
                                             </div>
                                         </div>
                                     </form>
@@ -101,6 +85,18 @@
             loadSubmittedInventoryAudit();
         });
 
+        get_pending_inventory_audit();
+        function get_pending_inventory_audit(page) {
+            $.ajax({
+                type: "GET",
+                url: "/pending_submission_inventory_audit?page=" + page,
+                data: $('#pending-inventory-audit-filter-form').serialize(),
+                success: function (data) {
+                    $('#beginning-inventory-list-el').html(data);
+                }
+            });
+        }
+
         loadSubmittedInventoryAudit();
         function loadSubmittedInventoryAudit(page) {
 			$.ajax({
@@ -114,6 +110,27 @@
 		}
 
         $('#consignment-store-select').select2({
+            placeholder: "Select Store",
+            ajax: {
+                url: '/consignment_stores',
+                method: 'GET',
+                dataType: 'json',
+                data: function (data) {
+                    return {
+                        q: data.term // search term
+                    };
+                },
+                processResults: function (response) {
+                    return {
+                        results: response
+                    };
+                },
+                cache: true
+            }
+        });
+
+        
+        $('#consignment-store-select-history').select2({
             placeholder: "Select Store",
             ajax: {
                 url: '/consignment_stores',

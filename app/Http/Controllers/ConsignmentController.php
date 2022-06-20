@@ -116,34 +116,6 @@ class ConsignmentController extends Controller
         return view('consignment.inventory_audit_form', compact('branch', 'transaction_date', 'items', 'item_images', 'item_total_sold', 'consigned_stocks', 'duration', 'inventory_audit_from', 'inventory_audit_to'));
     }
 
-    public function listBeginningInventory(Request $request) {
-        if ($request->ajax()) {
-            $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
-            $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
-    
-            $status = $request->status;
-            
-            $beginning_inventory_list = DB::table('tabConsignment Beginning Inventory')
-                ->when($request->search, function ($q) use ($request){
-                    return $q->where('name', 'LIKE', '%'.$request->search.'%')
-                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
-                })
-                ->when($request->date, function ($q) use ($from_date, $to_date){
-                    return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
-                })
-                ->when($request->store, function ($q) use ($request){
-                    return $q->where('branch_warehouse', $request->store);
-                })
-                ->when($status, function ($q) use ($status){
-                    return $q->where('status', $status);
-                })
-                ->orderBy('creation', 'desc')
-                ->paginate(10);
-    
-            return view('consignment.tbl_beginning_inventory_list', compact('beginning_inventory_list'));
-        }
-    }
-
     public function beginningInventoryDetail($id, Request $request) {
         if ($request->ajax()) {
             $detail = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
@@ -1856,125 +1828,106 @@ class ConsignmentController extends Controller
     }
 
     public function viewInventoryAuditList(Request $request) {
+        $select_year = [];
+        for ($i = 2022; $i <= date('Y') ; $i++) { 
+            $select_year[] = $i;
+        }
+        
         $assigned_consignment_stores = [];
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? true : false;
         if ($is_promodiser) {
             $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')
                 ->where('parent', Auth::user()->frappe_userid)->orderBy('warehouse', 'asc')
                 ->distinct()->pluck('warehouse');
+
+            $stores_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory as w')
+                ->where('status', 'Approved')
+                ->when($is_promodiser, function ($q) use ($assigned_consignment_stores) {
+                    return $q ->whereIn('branch_warehouse', $assigned_consignment_stores);
+                })
+                ->orderBy('branch_warehouse', 'asc')
+                ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
+                ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
+                ->toArray();
+    
+            $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+                ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
+                ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
+                ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
+                ->toArray();
+    
+            $end = Carbon::now()->endOfDay();
+    
+            $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        
+            $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+            $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+    
+            $pending_arr = [];
+            foreach ($assigned_consignment_stores as $store) {
+                $beginning_inventory_transaction_date = array_key_exists($store, $stores_with_beginning_inventory) ? $stores_with_beginning_inventory[$store] : null;
+                $last_inventory_audit_date = array_key_exists($store, $inventory_audit_per_warehouse) ? $inventory_audit_per_warehouse[$store] : null;
+    
+                $duration = null;
+                if ($beginning_inventory_transaction_date) {
+                    $start = Carbon::parse($beginning_inventory_transaction_date);
+                }
+    
+                if ($last_inventory_audit_date) {
+                    $start = Carbon::parse($last_inventory_audit_date);
+                }
+    
+                $last_audit_date = $start;
+    
+                $start = $start->startOfDay();
+    
+                $is_late = 0;
+                $period = CarbonPeriod::create($start, '1 month' , $end);
+                foreach ($period as $date) {
+                    $date1 = $date->day($cutoff_1);
+                    if ($date1 >= $start && $date1 <= $end) {
+                        $is_late++;
+                    }
+                    $date2 = $date->day($cutoff_2);
+                    if ($date2 >= $start && $date2 <= $end) {
+                        $is_late++;
+                    }
+                }
+    
+                $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($end)->format('F d, Y');
+                if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
+                    if ($is_late > 0) {
+                        $pending_arr[] = [
+                            'store' => $store,
+                            'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                            'last_inventory_audit_date' => $last_inventory_audit_date,
+                            'duration' => $duration,
+                            'is_late' => $is_late,
+                            'today' => Carbon::parse($end)->format('Y-m-d'),
+                        ];
+                    }
+                 }
+    
+                 if(!$beginning_inventory_transaction_date) {
+                    if ($is_late > 0) {
+                        $pending_arr[] = [
+                            'store' => $store,
+                            'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                            'last_inventory_audit_date' => $last_inventory_audit_date,
+                            'duration' => $duration,
+                            'is_late' => $is_late,
+                            'today' => Carbon::parse($end)->format('Y-m-d'),
+                        ];
+                    }
+                }        
+            }
+    
+            $pending = collect($pending_arr)->groupBy('store');
+
+            return view('consignment.promodiser_inventory_audit_list', compact('pending', 'assigned_consignment_stores', 'select_year'));
         } 
 
-        $promodisers = [];
-        if (!$is_promodiser) {
-            $promodisers = DB::table('tabWarehouse Users as wu')
-                ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
-                ->where('user_group', 'Promodiser')->selectRaw('GROUP_CONCAT(DISTINCT wu.full_name ORDER BY wu.full_name ASC SEPARATOR ",") as full_name, acw.warehouse')
-                ->groupBy('acw.warehouse')->pluck('full_name', 'warehouse')->toArray();
-        }
-
-        $stores_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory as w')
-            ->where('status', 'Approved')
-            ->when($is_promodiser, function ($q) use ($assigned_consignment_stores) {
-                return $q ->whereIn('branch_warehouse', $assigned_consignment_stores);
-            })
-            ->orderBy('branch_warehouse', 'asc')
-            ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
-            ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
-            ->toArray();
-
-         $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
-            ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
-            ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
-            ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
-            ->toArray();
-
-        $end = Carbon::now()->endOfDay();
-
-        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
-    
-        $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
-
-        $pending = [];
-        foreach ($assigned_consignment_stores as $store) {
-            $beginning_inventory_transaction_date = array_key_exists($store, $stores_with_beginning_inventory) ? $stores_with_beginning_inventory[$store] : null;
-            $last_inventory_audit_date = array_key_exists($store, $inventory_audit_per_warehouse) ? $inventory_audit_per_warehouse[$store] : null;
-
-            $duration = null;
-            if ($beginning_inventory_transaction_date) {
-                $start = Carbon::parse($beginning_inventory_transaction_date);
-            }
-
-            if ($last_inventory_audit_date) {
-                $start = Carbon::parse($last_inventory_audit_date);
-            }
-
-            $last_audit_date = $start;
-
-            $start = $start->startOfDay();
-
-            $is_late = 0;
-            $period = CarbonPeriod::create($start, '1 month' , $end);
-            foreach ($period as $date) {
-                $date1 = $date->day($cutoff_1);
-                if ($date1 >= $start && $date1 <= $end) {
-                    $is_late++;
-                }
-                $date2 = $date->day($cutoff_2);
-                if ($date2 >= $start && $date2 <= $end) {
-                    $is_late++;
-                }
-            }
-
-            $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($end)->format('F d, Y');
-            if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                $pending[] = [
-                    'store' => $store,
-                    'beginning_inventory_date' => $beginning_inventory_transaction_date,
-                    'last_inventory_audit_date' => $last_inventory_audit_date,
-                    'duration' => $duration,
-                    'is_late' => $is_late,
-                    'today' => Carbon::parse($end)->format('Y-m-d'),
-                ];
-             }
-
-             if(!$beginning_inventory_transaction_date) {
-                $pending[] = [
-                    'store' => $store,
-                    'beginning_inventory_date' => $beginning_inventory_transaction_date,
-                    'last_inventory_audit_date' => $last_inventory_audit_date,
-                    'duration' => $duration,
-                    'is_late' => $is_late,
-                    'today' => Carbon::parse($end)->format('Y-m-d'),
-                ];
-            }        
-        }
-
-        $pending = collect($pending)->groupBy('store');
-
-        $select_year = [];
-        for ($i = 2022; $i <= date('Y') ; $i++) { 
-            $select_year[] = $i;
-        }
-
-        if ($is_promodiser) {
-            return view('consignment.promodiser_inventory_audit_list', compact('pending', 'assigned_consignment_stores', 'select_year'));
-        }
-
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        // Create a new Laravel collection from the array data3
-        $itemCollection = collect($pending_cutoff_inv_audit_arr);
-        // Define how many items we want to be visible in each page
-        $perPage = 10;
-        // Slice the collection to get the items to display in current page
-        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
-        // Create our paginator and pass it to the view
-        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
-        // set url path for generted links
-        $paginatedItems->setPath($request->url());
-        $pending_cutoff_inv_audit_arr = $paginatedItems;
-    
-        return view('consignment.supervisor.view_inventory_audit', compact('pending_cutoff_inv_audit_arr', 'assigned_consignment_stores', 'select_year'));
+        return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year'));
     }
 
     public function getSubmittedInvAudit(Request $request) {
@@ -2010,10 +1963,10 @@ class ConsignmentController extends Controller
                 return $q->where('branch_warehouse', $store);
             })
             ->when($year, function ($q) use ($year){
-                return $q->whereYear('cutoff_period_from', $year);
+                return $q->whereYear('audit_date_from', $year);
             })
-            ->selectRaw('SUM(qty) as total_qty, COUNT(item_code) as total_item, SUM(amount) as total_value, cutoff_period_from, cutoff_period_to, branch_warehouse')
-            ->groupBy('branch_warehouse', 'cutoff_period_to', 'cutoff_period_from')->paginate(10);
+            ->selectRaw('SUM(qty) as total_qty, COUNT(item_code) as total_item, SUM(amount) as total_value, audit_date_from, audit_date_to, branch_warehouse')
+            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from')->paginate(10);
 
         return view('consignment.supervisor.tbl_inventory_audit_history', compact('list', 'store'));
     }
@@ -2085,7 +2038,7 @@ class ConsignmentController extends Controller
             return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result'));
         }
 
-        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'item_images'));
+        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result'));
     }
 
     public function submitStockAdjustment(Request $request, $id){
@@ -2130,4 +2083,91 @@ class ConsignmentController extends Controller
         }
     }
 
+    public function getPendingSubmissionInventoryAudit(Request $request) {
+        $promodisers_query = DB::table('tabWarehouse Users as wu')
+            ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+            ->where('user_group', 'Promodiser')->selectRaw('GROUP_CONCAT(DISTINCT wu.full_name ORDER BY wu.full_name ASC SEPARATOR ",") as full_name, acw.warehouse')
+            ->groupBy('acw.warehouse')->pluck('full_name', 'warehouse')->toArray();
+
+        $stores_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory as w')
+            ->where('status', 'Approved')->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
+            ->orderBy('branch_warehouse', 'asc')->groupBy('branch_warehouse')
+            ->pluck('transaction_date', 'branch_warehouse')->toArray();
+
+         $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+            ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
+            ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
+            ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
+            ->toArray();
+
+        $end = Carbon::now()->endOfDay();
+
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+    
+        $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+
+        $pending = [];
+        foreach (array_keys($stores_with_beginning_inventory) as $store) {
+            $beginning_inventory_transaction_date = array_key_exists($store, $stores_with_beginning_inventory) ? $stores_with_beginning_inventory[$store] : null;
+            $last_inventory_audit_date = array_key_exists($store, $inventory_audit_per_warehouse) ? $inventory_audit_per_warehouse[$store] : null;
+
+            $promodisers = array_key_exists($store, $promodisers_query) ? $promodisers_query[$store] : null;
+
+            $duration = null;
+            if ($beginning_inventory_transaction_date) {
+                $start = Carbon::parse($beginning_inventory_transaction_date);
+            }
+
+            if ($last_inventory_audit_date) {
+                $start = Carbon::parse($last_inventory_audit_date);
+            }
+
+            $last_audit_date = $start;
+
+            $start = $start->startOfDay();
+
+            $is_late = 0;
+            $period = CarbonPeriod::create($start, '1 month' , $end);
+            foreach ($period as $date) {
+                $date1 = $date->day($cutoff_1);
+                if ($date1 >= $start && $date1 <= $end) {
+                    $is_late++;
+                }
+                $date2 = $date->day($cutoff_2);
+                if ($date2 >= $start && $date2 <= $end) {
+                    $is_late++;
+                }
+            }
+
+            $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($end)->format('F d, Y');
+            if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
+                if ($is_late > 0) {
+                    $pending[] = [
+                        'store' => $store,
+                        'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                        'last_inventory_audit_date' => $last_inventory_audit_date,
+                        'duration' => $duration,
+                        'is_late' => $is_late,
+                        'promodisers' => $promodisers
+                    ];
+                }
+             }
+
+             if(!$beginning_inventory_transaction_date) {
+                if ($is_late > 0) {
+                    $pending[] = [
+                        'store' => $store,
+                        'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                        'last_inventory_audit_date' => $last_inventory_audit_date,
+                        'duration' => $duration,
+                        'is_late' => $is_late,
+                        'promodisers' => $promodisers
+                    ];
+                }
+            }        
+        }
+
+        return view('consignment.supervisor.tbl_pending_submission_inventory_audit', compact('pending'));
+    }
 }

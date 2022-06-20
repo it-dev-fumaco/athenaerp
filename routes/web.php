@@ -134,7 +134,6 @@ Route::group(['middleware' => 'auth'], function(){
     // Consignment Supervisor
     Route::get('/beginning_inv_list', 'ConsignmentController@beginningInventoryApproval');
     Route::post('/approve_beginning_inv/{id}', 'ConsignmentController@approveBeginningInventory');
-    Route::get('/get_beginning_inventory_list', 'ConsignmentController@listBeginningInventory');
     Route::get('/beginning_inventory_detail/{id}', 'ConsignmentController@beginningInventoryDetail');
     // Promodisers
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
@@ -157,7 +156,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/save_beginning_inventory', 'ConsignmentController@saveBeginningInventory');
     Route::get('/promodiser/delivery_report/{type}', 'ConsignmentController@promodiserDeliveryReport');
     Route::get('/promodiser/receive/{id}', 'ConsignmentController@promodiserReceiveDelivery');
-    // Route::get('/pending_submission_sales_report', 'ConsignmentController@pendingSubmissionSalesReport');
     Route::get('/sales_report_deadline', 'ConsignmentController@salesReportDeadline');
     Route::get('/validate_beginning_inventory', 'ConsignmentController@checkBeginningInventory'); 
     Route::get('/promodiser/damage_report/form', 'ConsignmentController@promodiserDamageForm'); 
@@ -170,4 +168,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/consignment_stores', 'ConsignmentController@consignmentStores');
     Route::get('/submitted_inventory_audit', 'ConsignmentController@getSubmittedInvAudit');
     Route::get('/view_inventory_audit_items/{branch}/{from}/{to}', 'ConsignmentController@viewInventoryAuditItems');
+    Route::get('/pending_submission_inventory_audit', 'ConsignmentController@getPendingSubmissionInventoryAudit');
 });

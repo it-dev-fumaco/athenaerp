@@ -91,37 +91,19 @@
             </div>
             <div class="row mt-1">
                 <div class="col-md-12">
-                    <div class="card card-info card-outline">
+                    <div class="card card-warning card-outline">
                         <div class="card-header p-2">
-                            <h6 class="font-weight-bold text-center text-uppercase m-0">Beginning Inventory List</h6>
+                            <h6 class="font-weight-bold text-center text-uppercase m-0">Pending for Submission of Inventory Audit</h6>
                         </div>
                         <div class="card-body p-2">
-                            <form action="#" id="beginning-inventory-search-filter-form">
+                            <form action="#" id="pending-inventory-audit-filter-form">
                                 <div class="row p-1 mt-1 mb-1">
-                                    <div class="col-3">
-                                        <input type="text" name="search" class="form-control" placeholder="Search" />
-                                    </div>
-                                    <div class="col-3">
+                                    <div class="col-6">
                                         <select class="form-control" name="store" id="consignment-store-select">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
-                                    <div class="col-2">
-                                        @php
-                                            $statuses = ['For Approval', 'Approved', 'Cancelled'];
-                                        @endphp
-                                        <select class="form-control" name="status">
-                                            <option value="">Select Status</option>
-                                            @foreach ($statuses as $status)
-                                            <option value="{{ $status }}">{{ $status }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-3">
-                                        <input type="text" name="date" id="date-filter" class="form-control" value="" />
-                                    </div>
-                                    <div class="col-1 p-0">
-                                        <button class="btn btn-primary d-inline-block float-left m-0"><i class="fas fa-search"></i></button>
+                                    <div class="col-2 p-0">
                                         <a href="/" class="btn btn-secondary d-inline-block float-left ml-1"><i class="fas fa-undo"></i></a>
                                     </div>
                                 </div>
@@ -282,49 +264,19 @@
     $(function () {
         $('.circlechart').circlechart();
 
-        $(document).on('submit', '#beginning-inventory-search-filter-form', function(e) {
+        $(document).on('submit', '#pending-inventory-audit-filter-form', function(e) {
             e.preventDefault();
-            get_beginning_inventory_list();
+            get_pending_inventory_audit();
         });
 
-        get_beginning_inventory_list();
-        function get_beginning_inventory_list(page) {
+        get_pending_inventory_audit();
+        function get_pending_inventory_audit(page) {
             $.ajax({
                 type: "GET",
-                url: "/get_beginning_inventory_list?page=" + page,
-                data: $('#beginning-inventory-search-filter-form').serialize(),
+                url: "/pending_submission_inventory_audit?page=" + page,
+                data: $('#pending-inventory-audit-filter-form').serialize(),
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
-                }
-            });
-        }
-
-        var from_date = '{{ Carbon\Carbon::now()->subDays(7)->format("Y-M-d")  }}'
-        var to_date = '{{ Carbon\Carbon::now()->format("Y-M-d")  }}'
-        $('#date-filter').daterangepicker({
-            opens: 'left',
-            startDate: from_date,
-            endDate: to_date,
-            locale: {
-                format: 'YYYY-MMM-DD',
-                separator: " to "
-            },
-        });
-
-        $(document).on('click', '.view-beginning-inventory-details-btn', function(e) {
-            e.preventDefault();
-
-            get_beginning_inventory_detail($(this).data('id'));
-
-            $('#beginning-inventory-detail-modal').modal('show');
-        });
-
-        function get_beginning_inventory_detail(id) {
-            $.ajax({
-                type: "GET",
-                url: "/beginning_inventory_detail/" + id,
-                success: function (data) {
-                    $('#beginning-inventory-detail-el').html(data);
                 }
             });
         }
@@ -332,7 +284,7 @@
         $(document).on('click', '#beginning-inventory-list-pagination a', function(event){
             event.preventDefault();
             var page = $(this).attr('href').split('page=')[1];
-            get_beginning_inventory_list(page);
+            get_pending_inventory_audit(page);
         });
 
         $('#consignment-store-select').select2({
@@ -354,39 +306,6 @@
                 cache: true
             }
         });
-
-        $(document).on('submit', '#beginning-inventory-approval-form', function(e) {
-            e.preventDefault();
-            $.ajax({
-                type: "POST",
-                url: $(this).attr('action'),
-                data: $(this).serialize(),
-                success: function (response) {
-                    if (response.status) {
-                        showNotification("success", response.message, "fa fa-check");
-                        get_beginning_inventory_list();
-                        $('#beginning-inventory-detail-modal').modal('hide');
-                    } else {
-                        showNotification("danger", response.message, "fa fa-info");
-                    }
-                }
-            });
-        });
-
-        function showNotification(color, message, icon){
-            $.notify({
-                icon: icon,
-                message: message
-            },{
-                type: color,
-                timer: 500,
-                z_index: 1060,
-                placement: {
-                from: 'top',
-                align: 'center'
-                }
-            });
-        }
     });
 </script>
 @endsection
