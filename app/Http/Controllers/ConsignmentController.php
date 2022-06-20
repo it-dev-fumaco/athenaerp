@@ -2227,4 +2227,73 @@ class ConsignmentController extends Controller
 
         return view('consignment.supervisor.tbl_pending_submission_inventory_audit', compact('pending'));
     }
+
+    public function viewSalesReport() {
+        $select_year = [];
+        for ($i = 2022; $i <= date('Y') ; $i++) { 
+            $select_year[] = $i;
+        }
+
+        return view('consignment.supervisor.view_product_sold_list', compact('select_year'));
+    }
+
+    public function productSoldList(Request $request) {
+        $store = $request->store;
+        $year = $request->year;
+
+        $list = DB::table('tabConsignment Product Sold')
+            ->when($store, function ($q) use ($store){
+                return $q->where('branch_warehouse', $store);
+            })
+            ->when($year, function ($q) use ($year){
+                return $q->whereYear('cutoff_period_from', $year);
+            })
+            ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, SUM(qty) as total_sold, SUM(amount) as total_amount, COUNT(DISTINCT item_code) as total_item, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodisers')
+            ->orderBy('transaction_date', 'desc')->groupBy('branch_warehouse', 'cutoff_period_from', 'cutoff_period_to')
+            ->paginate(20);
+
+        return view('consignment.supervisor.tbl_product_sold_history', compact('list'));
+    }
+
+    public function viewProductSoldItems($store, $from, $to) {
+        $list = DB::table('tabConsignment Product Sold')
+            ->where('branch_warehouse', $store)
+            ->where('cutoff_period_from', $from)
+            ->where('cutoff_period_to', $to)
+            ->selectRaw('item_code, description, SUM(qty) as qty, SUM(amount) as amount')
+            ->orderBy('description', 'asc')->groupBy('item_code', 'description')->get();
+
+        $promodisers = DB::table('tabConsignment Product Sold')
+            ->where('branch_warehouse', $store)->where('cutoff_period_from', $from)
+            ->where('cutoff_period_to', $to)->distinct()->pluck('promodiser')->toArray();
+            
+        $promodisers = implode(', ', $promodisers);
+           
+        $duration = Carbon::parse($from)->format('F d, Y') . ' - ' . Carbon::parse($to)->format('F d, Y');
+
+        $item_codes = collect($list)->pluck('item_code');
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+        $item_images = collect($item_images)->groupBy('parent')->toArray();
+
+        $result = [];
+        foreach ($list as $row) {
+            $id = $row->item_code;
+            $img = array_key_exists($id, $item_images) ? "/img/" . $item_images[$id][0]->image_path : "/icon/no_img.png";
+            $img_webp = array_key_exists($id, $item_images) ? "/img/" . explode('.',$item_images[$id][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+            $img_count = array_key_exists($id, $item_images) ? count($item_images[$id]) : 0;
+            
+            $result[] = [
+                'item_code' => $id,
+                'description' => $row->description,
+                'img' => $img,
+                'img_webp' => $img_webp,
+                'img_count' => $img_count,
+                'qty' => $row->qty,
+                'amount' => $row->amount
+            ];
+        }
+
+        return view('consignment.supervisor.view_product_sold_items', compact('result', 'store', 'duration', 'list', 'promodisers'));
+    }
 }

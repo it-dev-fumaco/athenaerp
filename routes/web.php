@@ -169,4 +169,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/submitted_inventory_audit', 'ConsignmentController@getSubmittedInvAudit');
     Route::get('/view_inventory_audit_items/{branch}/{from}/{to}', 'ConsignmentController@viewInventoryAuditItems');
     Route::get('/pending_submission_inventory_audit', 'ConsignmentController@getPendingSubmissionInventoryAudit');
+
+    Route::get('/get_product_sold_list', 'ConsignmentController@productSoldList');
+    Route::get('/view_sales_report', 'ConsignmentController@viewSalesReport');
+    Route::get('/view_product_sold_items/{store}/{from}/{to}', 'ConsignmentController@viewProductSoldItems');
 });
