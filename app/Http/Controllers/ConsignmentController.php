@@ -1771,10 +1771,15 @@ class ConsignmentController extends Controller
     }
 
     public function stockTransferList(){
-        $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $consignment_stores = [];
+        if(Auth::user()->user_group == 'Promodiser'){
+            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        }
 
         $stock_transfers = DB::table('tabStock Entry')
-            ->whereIn('from_warehouse', $consignment_stores)
+            ->when(Auth::user()->user_group == 'Promodiser', function ($q){
+                return $q->whereIn('from_warehouse', $consignment_stores);
+            })
             ->whereIn('transfer_as', ['For Return', 'Consignment'])->where('purpose', 'Material Transfer')
             ->where('name', 'like', '%stec%')
             ->orderBy('creation', 'desc')->paginate(10);
