@@ -174,9 +174,9 @@
                                                                     <div class="modal-body">
                                                                         <table class="table table-striped">
                                                                             <tr>
-                                                                                <th class="text-center" style="width: 60%; font-size: 10pt" colspan=2>Item</th>
-                                                                                <th class="text-center" style="width: 15%; font-size: 10pt">Opening Stock</th>
-                                                                                <th class="text-center" style="width: 15%; font-size: 10pt">Price</th>
+                                                                                <th class="text-center" style="width: 65%; font-size: 10pt">Item</th>
+                                                                                <th class="text-center" style="width: 12%; font-size: 10pt">Opening Stock</th>
+                                                                                <th class="text-center" style="width: 12%; font-size: 10pt">Price</th>
                                                                                 @if ($inv['status'] == 'Approved')
                                                                                     <th class="text-center">-</th>
                                                                                 @endif
@@ -187,15 +187,19 @@
                                                                                     $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
                                                                                 @endphp
                                                                                 <tr>
-                                                                                    <td class="text-center col-1 p-0">
-                                                                                        <picture>
-                                                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp">
-                                                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
-                                                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" width="100%">
-                                                                                        </picture>
-                                                                                    </td>
-                                                                                    <td class="text-justify" style="font-size: 10pt">
-                                                                                        <b>{!! ''.$item['item_code'] !!}</b><span class="d-none d-xl-inline"> - {{ strip_tags($item['item_description']) }}</span>
+                                                                                    <td class="text-center p-0" style="font-size: 10pt">
+                                                                                        <div class="row p-0">
+                                                                                            <div class="col-6 col-xl-2">
+                                                                                                <picture>
+                                                                                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp">
+                                                                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
+                                                                                                    <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" width="100%">
+                                                                                                </picture>
+                                                                                            </div>
+                                                                                            <div class="col-6 col-xl-10 item-code-container">
+                                                                                                <b >{!! ''.$item['item_code'] !!}</b><span class="d-none d-xl-inline"> - {{ strip_tags($item['item_description']) }}</span>
+                                                                                            </div>
+                                                                                        </div>
                                                                                     </td>
                                                                                     <td class="text-center" style="font-size: 10pt;">
                                                                                         <b id="{{ $inv['name'].'-'.$item['item_code'] }}-qty">{!! $item['opening_stock'] !!}<br></b>
@@ -218,7 +222,7 @@
                                                                                     @endif
                                                                                 </tr>
                                                                                 <tr class="d-xl-none">
-                                                                                    <td colspan=5 class="text-justify p-2">
+                                                                                    <td colspan=4 class="text-justify p-2">
                                                                                         <div class="w-100 item-description">
                                                                                             {{ strip_tags($item['item_description']) }}
                                                                                         </div>
@@ -276,12 +280,21 @@
         .filters-font{
             font-size: 13px !important;
         }
+        .item-code-container{
+            text-align: justify;
+            padding: 10px;
+        }
         @media (max-width: 575.98px) {
             .last-row{
                 width: 35%;
             }
             .filters-font{
                 font-size: 9pt;
+            }
+            .item-code-container{
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
             }
         }
         @media (max-width: 767.98px) {
@@ -291,6 +304,11 @@
             .filters-font{
                 font-size: 9pt;
             }
+            .item-code-container{
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+            }
         }
         @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
             .last-row{
@@ -299,13 +317,10 @@
             .filters-font{
                 font-size: 9pt;
             }
-        }
-        @media only screen and (min-device-width : 768px) and (orientation : landscape) {
-            .last-row{
-                width: 35%;
-            }
-            .filters-font{
-                font-size: 9pt;
+            .item-code-container{
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
             }
         }
     </style>

@@ -1825,6 +1825,7 @@ class ConsignmentController extends Controller
                 'to_warehouse' => $ste->to_warehouse,
                 'status' => $ste->item_status,
                 'items' => $items_arr,
+                'owner' => $ste->owner,
                 'docstatus' => $ste->docstatus
             ];
         }
