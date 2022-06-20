@@ -140,10 +140,13 @@ class MainController extends Controller
                 }
 
                 // get total stock transfer
-                $total_stock_transfer = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
-                    ->where('purpose', 'Material Transfer')->where('name', 'like', 'stec%')->count();
+                $total_stock_transfer = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])->whereIn('from_warehouse', $assigned_consignment_store)
+                    ->where('purpose', 'Material Transfer')->where('naming_series', 'STEC-')->count();
+
+                // get total stock adjustments
+                $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->count();
         
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments'));
             }
 
             return redirect('/search_results');
@@ -204,7 +207,10 @@ class MainController extends Controller
 
             // get total stock transfer
             $total_stock_transfers = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
-                ->where('purpose', 'Material Transfer')->where('name', 'like', 'stec%')->count();
+                ->where('purpose', 'Material Transfer')->where('naming_series', 'STEC-')->count();
+
+            // get total stock adjustments
+            $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->count();
 
             $total_item_sold = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)
                 ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
@@ -248,7 +254,7 @@ class MainController extends Controller
                 }   
             }
 
-            return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit'));
+            return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments'));
         }
 
         return view('index');
