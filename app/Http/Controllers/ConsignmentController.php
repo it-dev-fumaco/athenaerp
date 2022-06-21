@@ -1654,7 +1654,10 @@ class ConsignmentController extends Controller
                     'target_warehouse_location' => $target_warehouse,
                     'source_warehouse_location' => $request->source_warehouse,
                     'status' => 'Issued',
-                    'return_reference' => $new_id
+                    'return_reference' => $new_id,
+                    'session_user' => Auth::user()->full_name,
+                    'issued_qty' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['actual_qty'] : 0,
+                    'date_modified' => $now->toDateTimeString()
                 ];
 
                 DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
