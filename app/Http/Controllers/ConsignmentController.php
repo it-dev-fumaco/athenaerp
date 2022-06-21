@@ -1917,58 +1917,60 @@ class ConsignmentController extends Controller
                 if ($last_inventory_audit_date) {
                     $start = Carbon::parse($last_inventory_audit_date);
                 }
-    
-                $last_audit_date = $start;
-    
-                $start = $start->startOfDay();
-    
-                $is_late = 0;
-                $period = CarbonPeriod::create($start, '28 days' , $end);
-                foreach ($period as $date) {
-                    $date1 = $date->day($cutoff_1);
-                    if ($date1 >= $start && $date1 <= $end) {
-                        $is_late++;
-                    }
-                    $date2 = $date->day($cutoff_2);
-                    if ($date2 >= $start && $date2 <= $end) {
-                        $is_late++;
-                    }
-                }
-    
-                $check = Carbon::parse($start)->between($period_from, $period_to);
 
-                $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
-                if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                    if (!$check) {
-                        $pending_arr[] = [
-                            'store' => $store,
-                            'beginning_inventory_date' => $beginning_inventory_transaction_date,
-                            'last_inventory_audit_date' => $last_inventory_audit_date,
-                            'duration' => $duration,
-                            'is_late' => $is_late,
-                            'today' => Carbon::now()->format('Y-m-d'),
-                        ];
-                    }
-                 }
+                if ($start) {
+                    $last_audit_date = $start;
     
-                 if(!$beginning_inventory_transaction_date) {
-                    if (!$check) {
-                        $pending_arr[] = [
-                            'store' => $store,
-                            'beginning_inventory_date' => $beginning_inventory_transaction_date,
-                            'last_inventory_audit_date' => $last_inventory_audit_date,
-                            'duration' => $duration,
-                            'is_late' => $is_late,
-                            'today' => Carbon::now()->format('Y-m-d'),
-                        ];
+                    $start = $start->startOfDay();
+        
+                    $is_late = 0;
+                    $period = CarbonPeriod::create($start, '28 days' , $end);
+                    foreach ($period as $date) {
+                        $date1 = $date->day($cutoff_1);
+                        if ($date1 >= $start && $date1 <= $end) {
+                            $is_late++;
+                        }
+                        $date2 = $date->day($cutoff_2);
+                        if ($date2 >= $start && $date2 <= $end) {
+                            $is_late++;
+                        }
                     }
-                }        
+        
+                    $check = Carbon::parse($start)->between($period_from, $period_to);
+    
+                    $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
+                    if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
+                        if (!$check) {
+                            $pending_arr[] = [
+                                'store' => $store,
+                                'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                                'last_inventory_audit_date' => $last_inventory_audit_date,
+                                'duration' => $duration,
+                                'is_late' => $is_late,
+                                'today' => Carbon::now()->format('Y-m-d'),
+                            ];
+                        }
+                     }
+        
+                     if(!$beginning_inventory_transaction_date) {
+                        if (!$check) {
+                            $pending_arr[] = [
+                                'store' => $store,
+                                'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                                'last_inventory_audit_date' => $last_inventory_audit_date,
+                                'duration' => $duration,
+                                'is_late' => $is_late,
+                                'today' => Carbon::now()->format('Y-m-d'),
+                            ];
+                        }
+                    }     
+                }
             }
     
             $pending = collect($pending_arr)->groupBy('store');
 
             return view('consignment.promodiser_inventory_audit_list', compact('pending', 'assigned_consignment_stores', 'select_year'));
-        } 
+        }
 
         return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year'));
     }
