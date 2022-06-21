@@ -9,9 +9,9 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div style="margin-bottom: -43px;">
-                        <a href="/view_sales_report" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i> </a>
-                    </div>
+                    {{-- <div style="margin-bottom: -43px;"> --}}
+                        <a href="/view_sales_report" class="btn" style="width: 80px; position: absolute; top: 5px; left: 0; background-color: rgba(0,0,0,.5); color: #fff"><i class="fas fa-arrow-left"></i> </a>
+                    {{-- </div> --}}
                     <h3 class="text-center font-weight-bold m-2 text-uppercase">Sales Report Item(s)</h3>
                     <div class="card card-secondary card-outline">
                         <div class="card-header text-center">
@@ -19,10 +19,10 @@
                         </div>
                         <div class="card-body p-1">
                             <h5 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
-                            <p class="m-1">Promodiser(s): <span class="font-weight-bold">{{ $promodisers }}</span></p>
-                            <p class="m-1">Total Qty Sold: <span class="font-weight-bold">{{ collect($result)->sum('qty') }}</span></p>
-                            <p class="m-1">Total Amount: <span class="font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('amount'), 2) }}</span></p>
-                            <table class="table table-bordered table-striped" id="items-table">
+                            <p class="m-1 font-details">Promodiser(s): <span class="font-weight-bold">{{ $promodisers }}</span></p>
+                            <p class="m-1 font-details">Total Qty Sold: <span class="font-weight-bold">{{ collect($result)->sum('qty') }}</span></p>
+                            <p class="m-1 font-details">Total Amount: <span class="font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('amount'), 2) }}</span></p>
+                            <table class="table" id="items-table" style="font-size: 10pt;">
                                 <thead class="border-top">
                                     <th class="text-center font-responsive p-2 align-middle">Item Code</th>
                                     <th class="text-center font-responsive p-2 align-middle">Qty Sold</th>
@@ -36,18 +36,17 @@
                                                 <div class="p-1 text-left">
                                                     <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
                                                         <picture>
-                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="70" height="70">
-                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="70" height="70">
-                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="70" height="70">
+                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp">
+                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg">
+                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" class="row-img">
                                                         </picture>
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">
                                                     <span class="d-block font-weight-bold">{{ $row['item_code'] }}</span>
-                                                    <small class="item-description">{!! strip_tags($row['description']) !!}</small>
+                                                    <small class="item-description d-none d-xl-block">{!! strip_tags($row['description']) !!}</small>
                                                 </div>
                                             </div>
-                                           
 
                                             <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog" role="document">
@@ -96,6 +95,11 @@
                                             <span class="d-block">{{ '₱ ' . number_format($row['amount'], 2) }}</span>
                                         </td>
                                     </tr>
+                                    <tr class="d-xl-none">
+                                        <td colspan=3 class="p-2 text-justify">
+                                            <small class="item-description">{!! strip_tags($row['description']) !!}</small>
+                                        </td>
+                                    </tr>
                                     @empty
                                     <tr>
                                         <td class="text-center font-weight-bold text-uppercase text-muted" colspan="2">No item(s) found</td>
@@ -118,6 +122,37 @@
     .morectnt span {
         display: none;
     }
+    .row-img{
+        width: 70px;
+        height: 70px;
+    }
+    @media (max-width: 575.98px) {
+        .row-img{
+            width: 50px;
+            height: 50px;
+        }
+        .font-details{
+            font-size: 10pt;
+        }
+    }
+  	@media (max-width: 767.98px) {
+        .row-img{
+            width: 50px;
+            height: 50px;
+        }
+        .font-details{
+            font-size: 10pt;
+        }
+    }
+	@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+        .row-img{
+            width: 50px;
+            height: 50px;
+        }
+        .font-details{
+            font-size: 10pt;
+        }
+	}
 </style>
 @endsection
 

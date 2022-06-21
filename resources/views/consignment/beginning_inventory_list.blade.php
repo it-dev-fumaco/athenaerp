@@ -9,6 +9,8 @@
         <div class="container-fluid">
             <div class="row pt-3">
                 <div class="col-md-12 p-0">
+                    <a href="/" class="btn" style="width: 80px; position: absolute; top: 5px; left: 0; background-color: rgba(0,0,0,.5); color: #fff"><i class="fas fa-arrow-left"></i> </a>
+                    <h3 class="text-center font-weight-bold m-2 text-uppercase">Stock Adjustments</h3>
                     <div class="card card-secondary card-outline">
                         <div class="card-header text-center font-weight-bold">
                             @if(session()->has('success'))
@@ -21,7 +23,6 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase">Stock Adjustments</h6>
                         </div>
                         <div class="card-body p-0">
                             <div class="container-fluid p-0">
@@ -30,7 +31,7 @@
                                         <div id="accordion">
                                             <div class="card" style='border: none !important; box-shadow: none !important'>
                                                 <div class="card-header p-0" id="headingOne">
-                                                    <h5 class="mb-0">
+                                                    <h5 class="mb-0 border border-secondary">
                                                     <button type="button" class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne" style="font-size: 10pt;">
                                                         <i class="fa fa-filter"></i> Filters
                                                     </button>
