@@ -1909,7 +1909,7 @@ class ConsignmentController extends Controller
                 $beginning_inventory_transaction_date = array_key_exists($store, $stores_with_beginning_inventory) ? $stores_with_beginning_inventory[$store] : null;
                 $last_inventory_audit_date = array_key_exists($store, $inventory_audit_per_warehouse) ? $inventory_audit_per_warehouse[$store] : null;
     
-                $duration = null;
+                $duration = $start = null;
                 if ($beginning_inventory_transaction_date) {
                     $start = Carbon::parse($beginning_inventory_transaction_date);
                 }
