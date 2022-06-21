@@ -1656,7 +1656,7 @@ class ConsignmentController extends Controller
                     'status' => 'Issued',
                     'return_reference' => $new_id,
                     'session_user' => Auth::user()->full_name,
-                    'issued_qty' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['actual_qty'] : 0,
+                    'issued_qty' => $transfer_qty[$item_code]['transfer_qty'],
                     'date_modified' => $now->toDateTimeString()
                 ];
 
