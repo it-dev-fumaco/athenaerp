@@ -1646,6 +1646,7 @@ class ConsignmentController extends Controller
                     'description' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['description'] : null,
                     'conversion_factor' => 1,
                     'item_code' => $item_code,
+                    'validate_item_code' => $item_code,
                     'retain_sample' => 0,
                     'qty' => $transfer_qty[$item_code]['transfer_qty'],
                     'allow_zero_valuation_rate' => 0,
