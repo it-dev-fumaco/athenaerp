@@ -93,7 +93,7 @@
                                             <span class="d-block">{{ number_format($row['qty']) }}</span>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
-                                            <span class="d-block">{{ '₱ ' . number_format($row['qty'], 2) }}</span>
+                                            <span class="d-block">{{ '₱ ' . number_format($row['amount'], 2) }}</span>
                                         </td>
                                     </tr>
                                     @empty
