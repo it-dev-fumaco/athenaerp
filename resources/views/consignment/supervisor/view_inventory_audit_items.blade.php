@@ -9,19 +9,25 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div style="margin-bottom: -43px;">
-                        <a href="/inventory_audit" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i> </a>
+                    <div class="row">
+                        <div class="col-2">
+                            <div style="margin-bottom: -43px;">
+                                <a href="/inventory_audit" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-10 col-lg-8 p-0">
+                            <h4 class="text-center font-weight-bold m-2 text-uppercase">Inventory Audit Item(s)</h4>
+                        </div>
                     </div>
-                    <h3 class="text-center font-weight-bold m-2 text-uppercase">Inventory Audit Item(s)</h3>
                     <div class="card card-secondary card-outline">
                         <div class="card-header text-center">
                             <span class="font-weight-bolder d-block font-responsive">{{ $store }}</span>
                         </div>
                         <div class="card-body p-1">
                             <h5 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
-                            <table class="table table-bordered table-striped" id="items-table">
+                            <table class="table" id="items-table">
                                 <thead class="border-top">
-                                    <th class="text-center font-responsive p-2 align-middle">Item Code</th>
+                                    <th class="text-center font-responsive p-2 align-middle first">Item Code</th>
                                     <th class="text-center font-responsive p-2 align-middle">Opening Stock</th>
                                     <th class="text-center font-responsive p-2 align-middle">Sold Qty</th>
                                     <th class="text-center font-responsive p-2 align-middle">Audit Qty</th>
@@ -34,18 +40,17 @@
                                                 <div class="p-1 text-left">
                                                     <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
                                                         <picture>
-                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="70" height="70">
-                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="70" height="70">
-                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="70" height="70">
+                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp">
+                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg">
+                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" class="row-img">
                                                         </picture>
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">
                                                     <span class="d-block font-weight-bold">{{ $row['item_code'] }}</span>
-                                                    <small class="item-description">{!! strip_tags($row['description']) !!}</small>
+                                                    <small class="item-description d-none d-xl-block">{!! strip_tags($row['description']) !!}</small>
                                                 </div>
                                             </div>
-                                           
 
                                             <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog" role="document">
@@ -97,6 +102,11 @@
                                             <span class="d-block">{{ $row['audit_qty'] }}</span>
                                         </td>
                                     </tr>
+                                    <tr class="d-xl-none">
+                                        <td class="p-2 text-justify" colspan=4>
+                                            <span class="item-description">{!! strip_tags($row['description']) !!}</span>
+                                        </td>
+                                    </tr>
                                     @empty
                                     <tr>
                                         <td class="text-center font-weight-bold text-uppercase text-muted" colspan="2">No item(s) found</td>
@@ -116,9 +126,57 @@
 </div>
 
 <style>
+    table {
+        table-layout: fixed;
+        width: 100%;   
+    }
     .morectnt span {
         display: none;
     }
+    .row-img{
+        width: 70px;
+        height: 70px;
+    }
+    .first{
+        width: 70%;
+    }
+    @media (max-width: 575.98px) {
+        #items-table{
+            font-size: 10pt;
+        }
+        .first{
+            width: 35%;
+        }
+        .row-img{
+            width: 50px;
+            height: 50px;
+        }
+    }
+    @media (max-width: 767.98px) {
+        #items-table{
+            font-size: 10pt;
+        }
+        .first{
+            width: 35%;
+        }
+        .row-img{
+            width: 50px;
+            height: 50px;
+        }
+    }
+    @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+        #items-table{
+            font-size: 10pt;
+        }
+        .first{
+            width: 35%;
+        }
+        .row-img{
+            width: 50px;
+            height: 50px;
+        }
+    }
+
 </style>
 @endsection
 

@@ -9,12 +9,16 @@
         <div class="container-fluid p-0">
             <div class="row mt-1">
                 <div class="col-md-9 mx-auto">
-                   
-                    <div style="margin-bottom: -43px;">
-                        <a href="/" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i> </a>
+                    <div class="row">
+                        <div class="col-3">
+                            <div style="margin-bottom: -43px;">
+                                <a href="/" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-7 col-lg-6 p-0">
+                            <h4 class="text-center font-weight-bold m-2 text-uppercase">Stock Transfers</h4>
+                        </div>
                     </div>
-
-                    <h3 class="text-center font-weight-bold m-2 text-uppercase">Stock Transfers</h3>
                     <div class="card card-info card-outline">
                         <!-- Nav tabs -->
                         <ul class="nav nav-tabs m-0" role="tablist">

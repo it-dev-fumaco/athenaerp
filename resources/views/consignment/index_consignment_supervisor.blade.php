@@ -100,7 +100,7 @@
                         <div class="card-body p-2">
                             <form action="#" id="pending-inventory-audit-filter-form">
                                 <div class="row p-1 mt-1 mb-1">
-                                    <div class="col-6">
+                                    <div class="col-10 col-xl-6">
                                         <select class="form-control" name="store" id="consignment-store-select">
                                             <option value="">Select Store</option>
                                         </select>
@@ -215,8 +215,8 @@
             width: 50%;
         }
         .circle-chart {
-            width: 130px;
-            height: 130px;
+            width: 110px;
+            height: 110px;
         }
     }
 </style>
