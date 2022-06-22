@@ -2032,14 +2032,18 @@ class ConsignmentController extends Controller
                                 'today' => Carbon::now()->format('Y-m-d'),
                             ];
                         }
-                     }
-        
-                                'is_late' => $is_late,
-                                'today' => Carbon::now()->format('Y-m-d'),
-                            ];
-                        }
-                    }     
+                    }
                 }
+
+                if(!$beginning_inventory_transaction_date) {
+                    $pending_arr[] = [
+                        'store' => $store,
+                        'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                        'last_inventory_audit_date' => null,
+                        'duration' => $duration,
+                        'is_late' => 0,
+                    ];
+                }  
             }
     
             $pending = collect($pending_arr)->groupBy('store');
