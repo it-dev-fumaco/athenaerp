@@ -10,7 +10,7 @@
       <div class="container">
          <div class="row pt-1">
             <div class="col-md-12 p-0 m-0">
-               <div class="card card-secondary card-outline">
+               <div class="card card-lightblue">
                   <div class="card-header text-center">
                      <span id="branch-name" class="font-weight-bold d-block font-responsive">{{ $branch }}</span>
                   </div>
