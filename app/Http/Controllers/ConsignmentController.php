@@ -1537,15 +1537,17 @@ class ConsignmentController extends Controller
                 });
             })
             ->where('bin.warehouse', $branch)->where('bin.consigned_qty', '>', 0)->get();
-
+        
         $item_codes = collect($items)->map(function ($q) {
             return $q->item_code;
         });
 
+        $items = collect($items)->groupBy('item_code');
+
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
         $item_image = collect($item_images)->groupBy('parent');
 
-        $default_images = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'item_image_path as image_path')->get(); // in case there are no saved images in Item Images
+        $default_images = DB::table('tabItem')->whereIn('item_code', $item_codes)->whereNotNull('item_image_path')->select('item_code', 'item_image_path as image_path')->get(); // in case there are no saved images in Item Images
         $default_image = collect($default_images)->groupBy('item_code');
 
         $inventory_arr = DB::table('tabConsignment Beginning Inventory as inv')
@@ -1556,28 +1558,42 @@ class ConsignmentController extends Controller
         $inventory = collect($inventory_arr)->groupBy('item_code');
 
         $items_arr = [];
-        foreach($items as $item){
-            if(isset($item_image[$item->item_code]) && $item_image[$item->item_code][0]->image_path){
-                $img = $item_image[$item->item_code][0]->image_path;
-                $webp = explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp';
-            }else if(isset($default_image[$item->item_code]) && $default_image[$item->item_code][0]->image_path){
-                $img = $default_image[$item->item_code][0]->image_path;
-                $webp = explode('.', $default_image[$item->item_code][0]->image_path)[0].'.webp';
-            }else{
-                $img = '/icon/no_img.png';
-                $webp = '/icon/no_img.webp';
+        foreach($inventory_arr as $item){
+            $orig_exists = 0;
+            $webp_exists = 0;
+
+            $img = '/icon/no_img.png';
+            $webp = '/icon/no_img.webp';
+
+            $img_path = null;
+            $webp_path = null;
+
+            if(isset($item_image[$item->item_code]) || isset($default_image[$item->item_code])){
+                $img_path = isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : $default_image[$item->item_code][0]->image_path;
+                $webp_path = isset($item_image[$item->item_code]) ? explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : explode('.', $default_image[$item->item_code][0]->image_path)[0].'.webp';
+
+                $orig_exists = Storage::disk('public')->exists('/img/'.$img_path) ? 1 : 0;
+                $webp_exists = Storage::disk('public')->exists('/img/'.$webp_path) ? 1 : 0;
+
+                $img = $orig_exists == 1 ? '/img/'.$img_path : null;
+                $webp = $webp_exists == 1 ? '/img/'.$webp_path : null;
+
+                if($orig_exists == 0 && $webp_exists == 0){
+                    $img = '/icon/no_img.png';
+                    $webp = '/icon/no_img.webp';
+                }
             }
 
             $items_arr[] = [
                 'id' => $item->item_code,
-                'text' => $item->item_code.' - '.strip_tags($item->description),
-                'description' => strip_tags($item->description),
-                'max' => $item->consigned_qty ? $item->consigned_qty * 1 : 0,
-                'uom' => $item->stock_uom,
+                'text' => $item->item_code.' - '.(isset($items[$item->item_code]) ? strip_tags($items[$item->item_code][0]->description) : null),
+                'description' =>  isset($items[$item->item_code]) ? strip_tags($items[$item->item_code][0]->description) : null,
+                'max' => isset($items[$item->item_code]) ? $items[$item->item_code][0]->consigned_qty * 1 : null,
+                'uom' => isset($items[$item->item_code]) ? $items[$item->item_code][0]->stock_uom : null,
                 'price' => isset($inventory[$item->item_code]) ? '₱ '.number_format($inventory[$item->item_code][0]->price, 2) : '₱ 0.00',
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
-                'img' => asset('storage/'.$img),
-                'webp' => asset('storage/'.$webp),
+                'img' => asset('storage'.$img),
+                'webp' => asset('storage'.$webp),
                 'alt' => str_slug(explode('.', $img)[0], '-')
             ];
         }
@@ -1590,7 +1606,7 @@ class ConsignmentController extends Controller
         try {
             $now = Carbon::now();
 
-            $item_codes = collect($request->item_code)->unique();
+            $item_codes = array_filter(collect($request->item_code)->unique()->toArray());
             $transfer_qty = $request->item;
 
             $target_warehouse = $request->transfer_as == 'Consignment' ? $request->target_warehouse : 'Quarantine Warehouse P2 - FI';
@@ -1657,13 +1673,16 @@ class ConsignmentController extends Controller
                 'total_outgoing_value' => collect($inventory_prices)->sum('amount'),
                 'total_additional_costs' => 0,
                 'total_amount' => collect($inventory_prices)->sum('amount'),
-                'total_incoming_value' => 0,
+                'total_incoming_value' => collect($inventory_prices)->sum('amount'),
                 'posting_date' => $now->format('Y-m-d'),
                 'purpose' => 'Material Transfer',
                 'stock_entry_type' => 'Material Transfer',
                 'item_status' => 'Issued',
                 'transfer_as' => $request->transfer_as,
-                'qty_repack' => 0
+                'qty_repack' => 0,
+                'customer_1' => $target_warehouse,
+                'delivery_date' => $now->format('Y-m-d'),
+                'remarks' => 'Generated in AthenaERP'
             ];
 
             DB::table('tabStock Entry')->insert($stock_entry_data);
@@ -1700,9 +1719,11 @@ class ConsignmentController extends Controller
                     'additional_cost' => 0,
                     'stock_uom' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['uom'] : null,
                     'basic_amount' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['amount'] : 0,
+                    'custom_basic_amount' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['amount'] : 0,
                     'sample_quantity' => 0,
                     'uom' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['uom'] : null,
                     'basic_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
+                    'custom_basic_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
                     'description' => isset($items[$request->source_warehouse][$item_code]) ? $items[$request->source_warehouse][$item_code]['description'] : null,
                     'conversion_factor' => 1,
                     'item_code' => $item_code,
@@ -1718,7 +1739,8 @@ class ConsignmentController extends Controller
                     'return_reference' => $new_id,
                     'session_user' => Auth::user()->full_name,
                     'issued_qty' => $transfer_qty[$item_code]['transfer_qty'],
-                    'date_modified' => $now->toDateTimeString()
+                    'date_modified' => $now->toDateTimeString(),
+                    'remarks' => 'Generated in AthenaERP'
                 ];
 
                 DB::table('tabStock Entry Detail')->insert($stock_entry_detail);

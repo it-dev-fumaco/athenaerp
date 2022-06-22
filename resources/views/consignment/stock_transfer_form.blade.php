@@ -80,7 +80,7 @@
                                     </div>
                                     
                                     <div class="container-fluid mt-2">
-                                        <table class="table table-striped" id='items-table' style="font-size: 9pt">
+                                        <table class="table" id='items-table' style="font-size: 9pt">
                                             <thead>
                                                 <tr>
                                                     <th class="text-center" style="width: 40%">Item</th>
@@ -355,6 +355,7 @@
                 $('#' + item_code).val('');
                 $('.row-' + item_code).addClass('d-none');
                 $('#qty-' + item_code).removeClass('to-return');
+                $('#qty-' + item_code).attr('name', '');
                 validate_submit();
             });
 
