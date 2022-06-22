@@ -12,12 +12,12 @@
                     <div class="card card-secondary card-outline">
                         <div class="card-header text-center">
                             @if(session()->has('success'))
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <div class="alert alert-success fade show font-responsive" role="alert">
                                     {{ session()->get('success') }}
                                 </div>
                             @endif
                             @if(session()->has('error'))
-                                <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
+                                <div class="alert alert-danger fade show font-responsive" role="alert">
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
@@ -66,6 +66,7 @@
                                                             </button>
                                                         </div>
                                                         <div class="modal-body">
+                                                            <div class="alert alert-info font-responsive text-center p-3 mb-2"><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</div>
                                                             <table class="table table-bordered">
                                                                 <tr>
                                                                     <th class="text-center" style="width: 50%">Item</th>
