@@ -9,8 +9,8 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
+                    <div class="card card-lightblue">
+                        <div class="card-header text-center p-2">
                             <span id="branch-name" class="font-weight-bolder d-block" style="font-size: 11pt;">{{ $branch }}</span>
                         </div>
                         <div class="card-body p-1">
@@ -31,7 +31,7 @@
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
                                 <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
                                 <div class="form-group m-2">
-                                    <input type="text" class="form-control" placeholder="Search Items" id="search-filter">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Search Items" id="search-filter">
                                 </div>
                                 <table class="table table-bordered" style="font-size: 8pt;" id="items-table">
                                     <thead>
@@ -94,7 +94,7 @@
                                                 </div>
 
                                                 <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog" role="document">
+                                                    <div class="modal-dialog modal-dialog-centered" role="document">
                                                         <div class="modal-content">
                                                             <div class="modal-header">
                                                                 <h5 class="modal-title">{{ $row->item_code }}</h5>

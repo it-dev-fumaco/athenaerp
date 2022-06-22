@@ -9,20 +9,20 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
-                            <span class="font-weight-bolder d-block font-responsive">{{ $store }}</span>
-                        </div>
-                        <div class="card-body p-1">
+                    <div class="card card-lightblue">
+                        <div class="card-header text-center p-1">
                             <div class="d-flex flex-row align-items-center">
-                                <div class="p-0 col-3">
-                                    <a href="/inventory_audit" class="btn btn-secondary m-0" style="width: 70px;"><i class="fas fa-arrow-left"></i></a>
+                                <div class="p-0 col-2 text-left">
+                                    <a href="/inventory_audit" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
                                 </div>
-                                <div class="p-1 col-6">
-                                    <h6 class="font-responsive font-weight-bold text-center m-0 text-uppercase d-block">Inventory Audit Item(s)</h6>
+                                <div class="p-1 col-8">
+                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Inventory Audit Item(s)</span>
                                 </div>
                             </div>
-                            <h5 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
+                        </div>
+                        <div class="card-body p-1">
+                            <h5 class="font-responsive font-weight-bold text-center m-1 text-uppercase d-block">{{ $store }}</h5>
+                            <h6 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
                             <table class="table" style="font-size: 8pt;">
                                 <thead class="border-top">
                                     <th class="text-center align-middle p-1" style="width: 33%;">ITEM CODE</th>
@@ -49,7 +49,7 @@
                                                 </div>
                                             </div>
                                             <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                <div class="modal-dialog" role="document">
+                                                <div class="modal-dialog modal-dialog-centered" role="document">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
                                                             <h5 class="modal-title">{{ $row['item_code'] }}</h5>
@@ -109,7 +109,7 @@
                                 </tbody>
                             </table>
                             <div class="m-2">
-                                Total: <b>{{ count($list) }}</b>
+                                <span class="d-block font-responsive">Total: <b>{{ count($list) }}</b></span>
                             </div>
                         </div>
                     </div>
