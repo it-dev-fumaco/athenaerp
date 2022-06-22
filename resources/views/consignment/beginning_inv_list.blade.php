@@ -9,8 +9,8 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header">
+                    <div class="card card-lightblue">
+                        <div class="card-header p-2">
                             @if(session()->has('success'))
                                 <div class="alert alert-success alert-dismissible fade show" role="alert" style="font-size: 10pt;">
                                     {{ session()->get('success') }}
@@ -21,8 +21,14 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory</span>
-                            <a href="/beginning_inventory" class="btn btn-xs btn-outline-primary float-right m-0 p-1"><i class="fas fa-plus"></i> Create</a>
+                            <div class="d-flex flex-row align-items-center justify-content-between" style="font-size: 9pt;">
+                                <div class="p-0">
+                                    <span class="font-responsive font-weight-bold text-uppercase m-0 p-0">Beginning Inventory</span>
+                                </div>
+                                <div class="p-0">
+                                    <a href="/beginning_inventory" class="btn btn-sm btn-primary m-0"><i class="fas fa-plus"></i> Create</a>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <table class="table table-striped">

@@ -9,37 +9,37 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header">
-                            <span class="font-weight-bold d-block font-responsive text-center">{{ $beginning_inventory->branch_warehouse }}</span>
-                        </div>
-                        <div class="card-header text-center font-weight-bold p-1">
+                    <div class="card card-lightblue">
+                        <div class="card-header text-center p-1">
                             <div class="d-flex flex-row align-items-center">
-                                <div class="p-0 col-3">
-                                    <a href="/beginning_inventory_list" class="btn btn-secondary m-0" style="width: 70px;"><i class="fas fa-arrow-left"></i></a>
+                                <div class="p-0 col-2 text-left">
+                                    <a href="/beginning_inventory_list" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
                                 </div>
-                                <div class="p-1 col-6">
-                                    <h6 class="font-responsive font-weight-bold text-center m-0 text-uppercase d-inline">Beginning Inventory</h6>
-                                </div>
-                                <div class="col-3 text-left">
-                                    @php
-                                        $badge = null;
-                                        if($beginning_inventory->status == 'Approved'){
-                                            $badge = 'success';
-                                        }else if($beginning_inventory->status == 'Cancelled'){
-                                            $badge = 'secondary';
-                                        }else{
-                                            $badge = 'primary';
-                                        }
-                                    @endphp
-                                    <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
+                                <div class="p-1 col-8">
+                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Beginning Inventory Item(s)</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="p-1" style="font-size: 10pt">
-                                <span class="d-block">Transaction Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y') }}</b></span>
-                                <span class="d-block">Total item(s): <b>{{ count($inventory) }}</b></span>
+                        <div class="card-body p-0 text-center">
+                            <span class="font-weight-bold d-block font-responsive text-center mt-2">{{ $beginning_inventory->branch_warehouse }}</span>
+                            @php
+                            $badge = null;
+                            if($beginning_inventory->status == 'Approved'){
+                                $badge = 'success';
+                            }else if($beginning_inventory->status == 'Cancelled'){
+                                $badge = 'secondary';
+                            }else{
+                                $badge = 'primary';
+                            }
+                        @endphp
+                        <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
+                            <div class="d-flex flex-row mt-2" style="font-size: 10pt;">
+                                <div class="p-0 col-6">
+                                    <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y') }}</b></span>
+                                </div>
+                                <div class="p-0 col-6">
+                                    <span class="d-block">Total item(s): <b>{{ count($inventory) }}</b></span>
+                                </div>
                             </div>
                             <div class="col-12">
                                 <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>

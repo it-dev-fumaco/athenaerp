@@ -9,8 +9,8 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
+                    <div class="card card-lightblue">
+                        <div class="card-header text-center p-2">
                             @if(session()->has('error'))
                                 <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
                                     {{ session()->get('error') }}
@@ -18,23 +18,21 @@
                             @endif
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory Entry</span>
                         </div>
-                        <div class="card-header text-center font-weight-bold">
-                            <h5 class="text-center mt-1 font-weight-bold">
+                        <div class="card-body p-1">
+                            <h5 class="text-center mt-2 font-weight-bolder">
                                 {{ \Carbon\Carbon::now()->format('F d, Y') }} <span class="badge badge-success float-right {{ $inv_record ? null : 'd-none' }}">{{ $inv_record ? $inv_record->status : null }}</span>
                             </h5>
-                        </div>
-                        <div class="card-body p-1">
                             @if (!$inv_record)
-                                <div class="row">
-                                    <div class="col-12 col-md-4 mx-auto">
-                                        <select name="branch" id="selected-branch" class="form-control">
-                                            <option value="" disabled selected>SELECT A STORE</option>
-                                            @foreach ($assigned_consignment_store as $store)
-                                                <option value="{{ $store }}">{{ $store }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <select name="branch" id="selected-branch" class="form-control form-control-sm">
+                                        <option value="" disabled selected>SELECT A STORE</option>
+                                        @foreach ($assigned_consignment_store as $store)
+                                            <option value="{{ $store }}">{{ $store }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
+                            </div>
                             @endif
                             <div id="beginning-inventory"></div>
                         </div>
