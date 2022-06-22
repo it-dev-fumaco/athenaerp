@@ -9,24 +9,31 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    {{-- <div style="margin-bottom: -43px;"> --}}
-                        <a href="/view_sales_report" class="btn" style="width: 80px; position: absolute; top: 5px; left: 0; background-color: rgba(0,0,0,.5); color: #fff"><i class="fas fa-arrow-left"></i> </a>
-                    {{-- </div> --}}
+                    <a href="/view_sales_report" class="btn" style="width: 80px; position: absolute; top: 5px; left: 0; background-color: rgba(0,0,0,.5); color: #fff"><i class="fas fa-arrow-left"></i> </a>
                     <h3 class="text-center font-weight-bold m-2 text-uppercase">Sales Report Item(s)</h3>
                     <div class="card card-secondary card-outline">
                         <div class="card-header text-center">
                             <span class="font-weight-bolder d-block font-responsive">{{ $store }}</span>
                         </div>
-                        <div class="card-body p-1">
+                        <div class="card-body p-3">
                             <h5 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
-                            <p class="m-1 font-details">Promodiser(s): <span class="font-weight-bold">{{ $promodisers }}</span></p>
-                            <p class="m-1 font-details">Total Qty Sold: <span class="font-weight-bold">{{ collect($result)->sum('qty') }}</span></p>
-                            <p class="m-1 font-details">Total Amount: <span class="font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('amount'), 2) }}</span></p>
-                            <table class="table" id="items-table" style="font-size: 10pt;">
+
+                            <div class="d-flex flex-row align-items-end">
+                                <div class="p-0 col-4 text-left">
+                                    <p class="m-1 font-details">Promodiser(s): <span class="font-weight-bold">{{ $promodisers }}</span></p>
+                                </div>
+                                <div class="p-1 col-4 text-center">
+                                    <p class="m-1 font-details">Total Qty Sold: <span class="font-weight-bold">{{ collect($result)->sum('qty') }}</span></p>
+                                </div>
+                                <div class="p-1 col-4 text-right">
+                                    <p class="m-1 font-details">Total Amount: <span class="font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('amount'), 2) }}</span></p>
+                                </div>
+                            </div>
+                            <table class="table table-bordered table-striped" id="items-table" style="font-size: 10pt;">
                                 <thead class="border-top">
-                                    <th class="text-center font-responsive p-2 align-middle">Item Code</th>
-                                    <th class="text-center font-responsive p-2 align-middle">Qty Sold</th>
-                                    <th class="text-center font-responsive p-2 align-middle">Amount</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 70%;">Item Description</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Qty Sold</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Amount</th>
                                 </thead>
                                 <tbody>
                                     @forelse ($result as $row)
@@ -95,14 +102,9 @@
                                             <span class="d-block">{{ '₱ ' . number_format($row['amount'], 2) }}</span>
                                         </td>
                                     </tr>
-                                    <tr class="d-xl-none">
-                                        <td colspan=3 class="p-2 text-justify">
-                                            <small class="item-description">{!! strip_tags($row['description']) !!}</small>
-                                        </td>
-                                    </tr>
                                     @empty
                                     <tr>
-                                        <td class="text-center font-weight-bold text-uppercase text-muted" colspan="2">No item(s) found</td>
+                                        <td class="text-center font-weight-bold text-uppercase text-muted" colspan="3">No item(s) found</td>
                                     </tr> 
                                     @endforelse
                                 </tbody>
@@ -159,7 +161,7 @@
 @section('script')
 <script>
     $(function () {
-        var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
+        var showTotalChar = 200, showChar = "Show more", hideChar = "Show less";
         $('.item-description').each(function() {
             var content = $(this).text();
             if (content.length > showTotalChar) {

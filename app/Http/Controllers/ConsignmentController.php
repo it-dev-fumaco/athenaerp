@@ -2034,13 +2034,6 @@ class ConsignmentController extends Controller
                         }
                      }
         
-                     if(!$beginning_inventory_transaction_date) {
-                        if (!$check) {
-                            $pending_arr[] = [
-                                'store' => $store,
-                                'beginning_inventory_date' => $beginning_inventory_transaction_date,
-                                'last_inventory_audit_date' => $last_inventory_audit_date,
-                                'duration' => $duration,
                                 'is_late' => $is_late,
                                 'today' => Carbon::now()->format('Y-m-d'),
                             ];
@@ -2382,18 +2375,20 @@ class ConsignmentController extends Controller
 
         $result = [];
         foreach ($list as $row) {
+            $id = $row->item_code;
+
             $orig_exists = 0;
             $webp_exists = 0;
 
             $img = '/icon/no_img.png';
             $webp = '/icon/no_img.webp';
 
-            if(isset($item_image[$row->item_code])){
-                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$row->item_code][0]->image_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$row->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+            if(isset($item_image[$id])){
+                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$id][0]->image_path) ? 1 : 0;
+                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp') ? 1 : 0;
 
-                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$row->item_code][0]->image_path)[0].'.webp' : null;
-                $img = $orig_exists == 1 ? '/img/'.$item_image[$row->item_code][0]->image_path : null;
+                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp' : null;
+                $img = $orig_exists == 1 ? '/img/'.$item_image[$id][0]->image_path : null;
 
                 if($orig_exists == 0 && $webp_exists == 0){
                     $img = '/icon/no_img.png';
@@ -2401,9 +2396,6 @@ class ConsignmentController extends Controller
                 }
             }
 
-            $id = $row->item_code;
-            // $img = array_key_exists($id, $item_images) ? "/img/" . $item_images[$id][0]->image_path : "/icon/no_img.png";
-            // $img_webp = array_key_exists($id, $item_images) ? "/img/" . explode('.',$item_images[$id][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
             $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
             
             $result[] = [
