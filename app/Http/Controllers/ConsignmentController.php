@@ -2113,10 +2113,23 @@ class ConsignmentController extends Controller
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('audit_date_from', $year);
             })
-            ->selectRaw('COUNT(item_code) as total_item, audit_date_from, audit_date_to, branch_warehouse')
+            ->selectRaw('audit_date_from, audit_date_to, branch_warehouse')
             ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from')->paginate(10);
 
-        return view('consignment.supervisor.tbl_inventory_audit_history', compact('list', 'store'));
+        $result = [];
+        foreach ($list as $row) {
+            $total_sales = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
+                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
+
+            $result[] = [
+                'audit_date_from' => $row->audit_date_from,
+                'audit_date_to' => $row->audit_date_to,
+                'branch_warehouse' => $row->branch_warehouse,
+                'total_sales' => $total_sales
+            ];
+        }
+
+        return view('consignment.supervisor.tbl_inventory_audit_history', compact('list', 'result'));
     }
 
     public function viewInventoryAuditItems($store, $from, $to) {
@@ -2179,6 +2192,7 @@ class ConsignmentController extends Controller
             $id = $row->item_code;
             $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
             $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
+            $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
             $opening_qty = array_key_exists($id, $inv_audit) ? $inv_audit[$id][0]->qty : 0;
 
             if (array_key_exists($id, $inv_audit)) {
@@ -2193,8 +2207,9 @@ class ConsignmentController extends Controller
                 'img' => $img,
                 'img_webp' => $webp,
                 'img_count' => $img_count,
+                'total_value' => $total_value,
                 'opening_qty' => number_format($opening_qty),
-                'sold_qty' => number_format($total_sold),
+                'sold_qty' => $total_sold,
                 'audit_qty' => number_format($row->qty)
             ];
         }
@@ -2203,7 +2218,13 @@ class ConsignmentController extends Controller
             return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result'));
         }
 
-        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result'));
+        $promodisers = DB::table('tabConsignment Inventory Audit')
+            ->where('branch_warehouse', $store)->where('audit_date_from', $from)
+            ->where('audit_date_to', $to)->distinct()->pluck('promodiser')->toArray();
+            
+        $promodisers = implode(', ', $promodisers);
+
+        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'promodisers'));
     }
 
     public function submitStockAdjustment(Request $request, $id){

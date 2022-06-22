@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'Inventory Audit Item(s)',
+    'namePage' => 'Sales Report Item(s)',
     'activePage' => 'dashboard',
 ])
 
@@ -34,10 +34,10 @@
                                     <p class="m-1 font-details">Total Qty Sold: <span class="font-weight-bold">{{ collect($result)->sum('qty') }}</span></p>
                                 </div>
                                 <div class="p-1 col-4 text-right">
-                                    <p class="m-1 font-details">Total Amount: <span class="font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('amount'), 2) }}</span></p>
+                                    <p class="m-1 font-details">Total Sales: <span class="font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('amount'), 2) }}</span></p>
                                 </div>
                             </div>
-                            <table class="table table-bordered table-striped" id="items-table" style="font-size: 10pt;">
+                            <table class="table table-bordered table-striped" style="font-size: 10pt;">
                                 <thead class="border-top">
                                     <th class="text-center font-responsive p-2 align-middle" style="width: 70%;">Item Description</th>
                                     <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Qty Sold</th>

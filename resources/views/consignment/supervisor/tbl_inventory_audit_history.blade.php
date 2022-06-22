@@ -2,21 +2,21 @@
     <thead>
         <th class="text-center font-responsive align-middle p-2">Store</th>
         <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Period</th>
-        <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Total Item(s)</th>
+        <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Total Sales</th>
         <th class="text-center font-responsive align-middle p-2">Action</th>
     </thead>
     <tbody>
-        @forelse($list as $row)
+        @forelse($result as $row)
         <tr>
             <td class="text-left font-responsive align-middle p-2">
-                <span class="d-lg-none">{{ \Carbon\Carbon::parse($row->audit_date_from)->format('F d, Y') }} - {{ \Carbon\Carbon::parse($row->audit_date_to)->format('F d, Y') }}</span> <br>
-                {{ $row->branch_warehouse }} <br>
-                <span class="d-lg-none"><b>Total Item(s): </b>{{ number_format($row->total_item) }}</span>
+                <span class="d-lg-none">{{ \Carbon\Carbon::parse($row['audit_date_from'])->format('F d, Y') }} - {{ \Carbon\Carbon::parse($row['audit_date_to'])->format('F d, Y') }}</span>
+                <span class="d-block">{{ $row['branch_warehouse'] }}</span>
+                <span class="d-lg-none"><b>Total Sales: </b>{{ '₱ ' . number_format($row['total_sales'], 2) }}</span>
             </td>
-            <td class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">{{ \Carbon\Carbon::parse($row->audit_date_from)->format('F d, Y') }} - {{ \Carbon\Carbon::parse($row->audit_date_to)->format('F d, Y') }}</td>
-            <td class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">{{ number_format($row->total_item) }}</td>
+            <td class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">{{ \Carbon\Carbon::parse($row['audit_date_from'])->format('F d, Y') }} - {{ \Carbon\Carbon::parse($row['audit_date_to'])->format('F d, Y') }}</td>
+            <td class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">{{ '₱ ' . number_format($row['total_sales'], 2) }}</td>
             <td class="text-center font-responsive align-middle p-2">
-                <a href="/view_inventory_audit_items/{{ $row->branch_warehouse }}/{{ $row->audit_date_from }}/{{ $row->audit_date_to }}" class="btn btn-info btn-sm" style="width: 70px;"><i class="fas fa-search"></i></a>
+                <a href="/view_inventory_audit_items/{{ $row['branch_warehouse'] }}/{{ $row['audit_date_from'] }}/{{ $row['audit_date_to'] }}" class="btn btn-info btn-sm" style="width: 70px;"><i class="fas fa-search"></i></a>
             </td>
         </tr>
         @empty

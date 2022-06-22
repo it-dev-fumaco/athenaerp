@@ -23,14 +23,25 @@
                         <div class="card-header text-center">
                             <span class="font-weight-bolder d-block font-responsive">{{ $store }}</span>
                         </div>
-                        <div class="card-body p-1">
+                        <div class="card-body p-3">
                             <h5 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h5>
-                            <table class="table" id="items-table">
+                            <div class="d-flex flex-row align-items-end">
+                                <div class="p-0 col-4 text-left">
+                                    <p class="m-1 font-details">Promodiser(s): <span class="font-weight-bold">{{ $promodisers }}</span></p>
+                                </div>
+                                <div class="p-1 col-4 text-center">
+                                    <p class="m-1 font-details">Total Qty Sold: <span class="font-weight-bold">{{ collect($result)->sum('sold_qty') }}</span></p>
+                                </div>
+                                <div class="p-1 col-4 text-right">
+                                    <p class="m-1 font-details">Total Sales: <span class="font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('total_value'), 2) }}</span></p>
+                                </div>
+                            </div>
+                            <table class="table table-bordered table-striped" style="font-size: 10pt;">
                                 <thead class="border-top">
-                                    <th class="text-center font-responsive p-2 align-middle first">Item Code</th>
-                                    <th class="text-center font-responsive p-2 align-middle">Opening Stock</th>
-                                    <th class="text-center font-responsive p-2 align-middle">Sold Qty</th>
-                                    <th class="text-center font-responsive p-2 align-middle">Audit Qty</th>
+                                    <th class="text-center font-responsive p-2 align-middle first" style="width: 55%;">Item Code</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Opening Stock</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Sold Qty</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Audit Qty</th>
                                 </thead>
                                 <tbody>
                                     @forelse ($result as $row)
@@ -96,7 +107,7 @@
                                             <span class="d-block">{{ $row['opening_qty'] }}</span>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
-                                            <span class="d-block">{{ $row['sold_qty'] }}</span>
+                                            <span class="d-block">{{ number_format($row['sold_qty']) }}</span>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
                                             <span class="d-block">{{ $row['audit_qty'] }}</span>
