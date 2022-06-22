@@ -1929,7 +1929,9 @@ class ConsignmentController extends Controller
                 'status' => $ste->item_status,
                 'items' => $items_arr,
                 'owner' => $ste->owner,
-                'docstatus' => $ste->docstatus
+                'docstatus' => $ste->docstatus,
+                'transfer_type' => $ste->transfer_as,
+                'date' => $ste->creation
             ];
         }
 

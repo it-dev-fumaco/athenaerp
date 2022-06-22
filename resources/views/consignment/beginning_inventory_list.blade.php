@@ -31,7 +31,7 @@
                                         <div id="accordion">
                                             <div class="card" style='border: none !important; box-shadow: none !important'>
                                                 <div class="card-header p-0" id="headingOne">
-                                                    <h5 class="mb-0 border border-secondary">
+                                                    <h5 class="mb-0">
                                                     <button type="button" class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne" style="font-size: 10pt;">
                                                         <i class="fa fa-filter"></i> Filters
                                                     </button>

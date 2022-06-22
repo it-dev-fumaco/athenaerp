@@ -26,15 +26,16 @@
                         <div class="card-header text-center ">
                             <span class="font-responsive text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
                            
-                            <a href="/stock_transfer/form" class="btn btn-xs btn-outline-primary float-right">Create Stock Transfer</a>
+                            <a href="/stock_transfer/form" class="btn btn-xs btn-outline-primary float-right"><i class="fa fa-plus"></i> Create</a>
                         </div>
                         <div class="container-fluid">
                             <span class="float-right p-2" style="font-size: 10pt;"><b>Total: </b>{{ $stock_transfers->total() }}</span>
                         </div>
                         <div class="card-body p-1">
-                            <table class="table table-striped" style="font-size: 10pt">
+                            <table class="table" style="font-size: 10pt">
                                 <tr>
-                                    <th class="text-center d-none d-lg-table-cell">Name</th>
+                                    <th class="text-center d-none d-lg-table-cell">Date</th>
+                                    <th class="text-center d-none d-lg-table-cell">Transaction Type</th>
                                     <th class="text-center mobile-first-row">
                                         <span class="d-none d-lg-inline">From Warehouse</span>
                                         <span class="d-inline d-lg-none">Details</span>
@@ -56,17 +57,17 @@
                                     @endphp
                                     <tr>
                                         <td class="text-center d-none d-lg-table-cell">
-                                            {{ $ste['name'] }}
+                                            {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}
+                                        </td>
+                                        <td class="text-center d-none d-lg-table-cell">
+                                            {{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}
                                         </td>
                                         <td>
                                             <div class="d-none d-lg-inline text-center">
                                                 {{ $ste['from_warehouse'] }}
                                             </div>
                                             <div class="d-inline d-lg-none text-left">
-                                                {{ $ste['name'] }} <br>
-                                                <b>From: </b>{{ $ste['from_warehouse'] }} <br>
-                                                <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
-                                                <b>By: </b>{{ $ste['owner'] }}
+                                                {{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
                                             </div>
                                         </td>
                                         <td class="d-none d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
@@ -78,7 +79,7 @@
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">
                                                 View items
                                             </a>
-                                            <span class="badge badge-{{ $badge }} d-xl-none">{{ $status }}</span>
+
                                             <!-- Modal -->
                                             <div class="modal fade" id="{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog" role="document">
@@ -86,7 +87,7 @@
                                                         <div class="modal-header" style="background-color: #001F3F; color: #fff">
                                                             <div class="row text-left">
                                                                 <div class="col-12">
-                                                                    <h5 id="exampleModalLabel"><b>{{ $ste['name'] }}</b></h5>
+                                                                    <h5 id="exampleModalLabel"><b>{{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}</b>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></h5>
                                                                 </div>
                                                                 <div class="col-12" style="font-size: 9.5pt;">
                                                                     <span class="font-italic"><b>Source: </b> {{ $ste['from_warehouse'] }}</span>
@@ -109,8 +110,8 @@
                                                                 @foreach ($ste['items'] as $item)
                                                                     <tr>
                                                                         <td class="text-center p-0">
-                                                                            <div class="row">
-                                                                                <div class="col-4">
+                                                                            <div class="row p-2">
+                                                                                <div class="col-6 col-lg-4">
                                                                                     <picture>
                                                                                         <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
                                                                                         <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg">
@@ -140,7 +141,7 @@
                                                             </table>
                                                         </div>
                                                         <div class="modal-footer {{ $ste['docstatus'] == 1 ? 'd-none' : null }}">
-                                                            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">
+                                                            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">
                                                                 Cancel
                                                             </button>
                                                               
@@ -149,16 +150,16 @@
                                                                 <div class="modal-dialog" role="document">
                                                                     <div class="modal-content">
                                                                         <div class="modal-header" style="background-color: #001F3F; color: #fff">
-                                                                            <span class="modal-title" id="exampleModalLabel">{{ $ste['name'] }}</span>
-                                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                            <span class="modal-title" id="exampleModalLabel">{{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
+                                                                            <button type="button" class="close" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
                                                                                 <span aria-hidden="true" style="color: #fff;">&times;</span>
                                                                             </button>
                                                                         </div>
                                                                         <div class="modal-body">
-                                                                            <h5>Cancel {{ $ste['name'] }}?</h5>
+                                                                            <h5>Cancel {{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}?</h5>
                                                                         </div>
                                                                         <div class="modal-footer">
-                                                                            <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-danger">Cancel</a>
+                                                                            <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary">Confirm</a>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -168,6 +169,13 @@
                                                 </div>
                                             </div>
                                             <!-- Modal -->
+                                        </td>
+                                    </tr>
+                                    <tr class="d-lg-none">
+                                        <td colspan=7 class="p-2">
+                                            <b>From: </b>{{ $ste['from_warehouse'] }} <br>
+                                            <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
+                                            {{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}
                                         </td>
                                     </tr>
                                 @endforeach
