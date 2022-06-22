@@ -101,7 +101,7 @@
                             <form action="#" id="pending-inventory-audit-filter-form">
                                 <div class="row p-1 mt-1 mb-1">
                                     <div class="col-10 col-xl-6">
-                                        <select class="form-control" name="store" id="consignment-store-select">
+                                        <select class="form-control pending-inventory-audit-filter" name="store" id="consignment-store-select">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
@@ -266,7 +266,7 @@
     $(function () {
         $('.circlechart').circlechart();
 
-        $(document).on('submit', '#pending-inventory-audit-filter-form', function(e) {
+        $(document).on('change', '.pending-inventory-audit-filter', function(e) {
             e.preventDefault();
             get_pending_inventory_audit();
         });

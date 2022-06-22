@@ -2226,6 +2226,8 @@ class ConsignmentController extends Controller
     }
 
     public function getPendingSubmissionInventoryAudit(Request $request) {
+        $store = $request->store;
+
         $promodisers_query = DB::table('tabWarehouse Users as wu')
             ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
             ->where('user_group', 'Promodiser')->selectRaw('GROUP_CONCAT(DISTINCT wu.full_name ORDER BY wu.full_name ASC SEPARATOR ",") as full_name, acw.warehouse')
@@ -2233,6 +2235,9 @@ class ConsignmentController extends Controller
 
         $stores_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory as w')
             ->where('status', 'Approved')->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
+            ->when($store, function ($q) use ($store){
+                return $q->where('branch_warehouse', $store);
+            })
             ->orderBy('branch_warehouse', 'asc')->groupBy('branch_warehouse')
             ->pluck('transaction_date', 'branch_warehouse')->toArray();
 

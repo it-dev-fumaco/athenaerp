@@ -1,4 +1,4 @@
-<table class="table table-striped">
+<table class="table table-striped table-bordered">
     <thead>
         <th class="text-center text-uppercase font-responsive p-2">
             <span class="d-none d-lg-block">Period</span>
