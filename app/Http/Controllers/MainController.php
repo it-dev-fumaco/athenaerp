@@ -277,7 +277,7 @@ class MainController extends Controller
 
             $total_item_sold = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)
                 ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
-                ->count();
+                ->groupBy('branch_warehouse')->count();
 
             $total_pending_inventory_audit = 0;
             // get total pending inventory audit

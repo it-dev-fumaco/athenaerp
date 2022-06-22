@@ -2042,6 +2042,7 @@ class ConsignmentController extends Controller
                         'last_inventory_audit_date' => null,
                         'duration' => $duration,
                         'is_late' => 0,
+                        'today' => Carbon::now()->format('Y-m-d'),
                     ];
                 }  
             }

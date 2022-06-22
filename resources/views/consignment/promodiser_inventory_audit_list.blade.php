@@ -9,13 +9,14 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
-                            <span id="branch-name" class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Audit List</span>
+                    <div class="card card-lightblue">
+                        @if (count($pending) > 0)
+                        <div class="card-header text-center p-2">
+                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Audit List</span>
                         </div>
                         <div class="card-body p-1">
                             <div class="p-2">
-                                <span class="text-center m-2 d-block font-responsive text-uppercase">Pending for Submission</span>
+                                <span class="text-center mt-1 mb-2 d-block font-responsive text-uppercase">Pending for Submission</span>
                                 @forelse ($pending as $store => $row)
                                 @if(count($row) > 0)
                                 <span class="d-block m-2 font-weight-bold font-responsive text-left">{{ $store }}</span>
@@ -42,6 +43,12 @@
                                 <div class="d-block text-center font-responsive m-0 text-uppercase text-muted border-top border-bottom pb-2 pt-2">No record(s) found</div>
                                 @endforelse
                             </div>
+                        </div>
+                        @endif
+                        <div class="card-header text-center p-2 bg-lightblue border-0 rounded-0">
+                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Audit History</span>
+                        </div>
+                        <div class="card-body p-1">
                             <form id="inventory-audit-history-form" method="GET">
                                 <div class="d-flex flex-row align-items-center mt-2">
                                     <div class="p-0 col-8">
