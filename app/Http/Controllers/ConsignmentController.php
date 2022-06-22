@@ -117,25 +117,6 @@ class ConsignmentController extends Controller
         return view('consignment.inventory_audit_form', compact('branch', 'transaction_date', 'items', 'item_images', 'item_total_sold', 'consigned_stocks', 'duration', 'inventory_audit_from', 'inventory_audit_to'));
     }
 
-    public function beginningInventoryDetail($id, Request $request) {
-        if ($request->ajax()) {
-            $detail = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
-
-            if ($detail) {
-                $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
-
-                $item_codes = collect($items)->map(function ($q){
-                    return $q->item_code;
-                });
-
-                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
-                $item_images = collect($item_images)->groupBy('parent')->toArray();
-            }
-
-            return view('consignment.beginning_inventory_detail', compact('detail', 'items', 'item_images'));
-        }
-    }
-
     public function consignmentStores(Request $request) {
         if ($request->ajax()) {
             return DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
@@ -1686,6 +1667,26 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabStock Entry')->insert($stock_entry_data);
+      
+            $logs = [
+                'name' => uniqid(),
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => $request->transfer_as . ' request from ' . $request->source_warehouse . ' to ' . $target_warehouse. ' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => $now->toDateTimeString(),
+                'reference_doctype' => 'Stock Entry',
+                'reference_name' => $new_id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
 
             foreach($item_codes as $i => $item_code){
                 if(!isset($transfer_qty[$item_code])){
