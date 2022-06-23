@@ -86,7 +86,7 @@
                                                 <tr>
                                                     <th class="text-center" style="width: 40%">Item</th>
                                                     <th class="text-center" style="width: 25%">Stocks</th>
-                                                    <th class="text-center">Qty to Transfer</th>
+                                                    <th class="text-center" id="transfer-text">Qty to Transfer</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -153,6 +153,7 @@
                     }
 
                     $('#src-warehouse').prop('required', true);
+                    $('#transfer-text').text('Qty to Transfer');
                 }else if($(this).val() == 'For Return'){ // For Return
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
@@ -163,6 +164,7 @@
                     $('#target-warehouse-container').addClass('d-none');
 
                     $('#src-warehouse').prop('required', true);
+                    $('#transfer-text').text('Qty to Transfer');
 
                     $('#items-to-return').slideDown();
                 }else{ // sales returns
@@ -173,6 +175,7 @@
                     $('#target-warehouse').attr("disabled", false);
 
                     $('#src-warehouse').prop('required', false);
+                    $('#transfer-text').text('Qty Returned');
 
                     if($('#source').is(':visible')){
                         $('#source').slideUp();
