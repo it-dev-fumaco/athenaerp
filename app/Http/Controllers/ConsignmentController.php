@@ -1414,47 +1414,68 @@ class ConsignmentController extends Controller
 
     public function promodiserDamageForm(){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-        return view('consignment.promodiser_damage_report_form', compact('assigned_consignment_store'));
+
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cbi')
+            ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
+            ->whereIn('cbi.branch_warehouse', $assigned_consignment_store)->where('cbi.status', 'Approved')
+            ->select('cbi.branch_warehouse', 'cbi.name', 'cbi.transaction_date')->get();
+        $beginning_inventory = collect($beginning_inventory)->groupBy('branch_warehouse');
+
+        return view('consignment.promodiser_damage_report_form', compact('assigned_consignment_store', 'beginning_inventory'));
     }
 
     public function submitDamagedItem(Request $request){
         DB::beginTransaction();
         try {
-            $item = DB::table('tabBin')->where('item_code', $request->item_code)->where('warehouse', $request->branch)->select('consigned_qty', 'stock_uom')->first();
+            $item_codes = $request->item_code;
+            $damaged_qty = preg_replace("/[^0-9]/", "", $request->damaged_qty);
+            $reason = $request->reason;
 
-            if(!$item || $item->consigned_qty <= 0){
-                return redirect()->back()->with('error', $request->item_code.' has not been delivered to this branch yet or beginning inventory has not been approved yet.');
-            }
-            
-            if($request->qty > $item->consigned_qty){
-                return redirect()->back()->with('error', 'Damaged qty is more than the delivered qty.');
+            if(collect($damaged_qty)->min() <= 0){
+                return redirect()->back()->with('error', 'Damaged items qty cannot be less than or equal to zero.');
             }
 
-            $update_values = [
-                'modified' => Carbon::now()->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user,
-                'consigned_qty' => $item->consigned_qty - $request->qty
-            ];
+            $items = DB::table('tabBin as bin')
+                ->join('tabItem as item', 'item.item_code', 'bin.item_code')
+                ->whereIn('bin.item_code', $item_codes)->where('bin.warehouse', $request->branch)
+                ->select('bin.item_code', 'item.description', 'bin.consigned_qty', 'bin.stock_uom')->get();
+            $items = collect($items)->groupBy('item_code');
 
-            $insert_values = [
-                'name' => uniqid(),
-                'creation' => Carbon::now()->toDateTimeString(),
-                'owner' => Auth::user()->wh_user,
-                'docstatus' => 1,
-                'transaction_date' => $request->transaction_date,
-                'branch_warehouse' => $request->branch,
-                'item_code' => $request->item_code,
-                'description' => $request->description,
-                'qty' => $request->qty,
-                'stock_uom' => $item->stock_uom,
-                'damage_description' => $request->damage_description,
-                'promodiser' => Auth::user()->full_name,
-                'modified' => Carbon::now()->toDateTimeString(),
-                'modified_by' => Auth::user()->full_name
-            ];
+            $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cbi')
+                ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
+                ->where('cbi.branch_warehouse', $request->branch)->whereIn('item.item_code', $item_codes)->where('cbi.status', 'Approved')
+                ->select('item.item_code', 'cbi.name', 'cbi.transaction_date')->get();
+            $beginning_inventory = collect($beginning_inventory)->groupBy('item_code');
 
-            DB::table('tabBin')->where('item_code', $request->item_code)->where('warehouse', $request->branch)->update($update_values);
-            DB::table('tabConsignment Damaged Item')->insert($insert_values);
+            foreach($item_codes as $item_code){
+                if(!isset($items[$item_code]) || !isset($beginning_inventory[$item_code])){
+                    return redirect()->back()->with('error', $item_code.' has not been delivered to '.$request->branch.' yet or beginning inventory has not been approved yet.');
+                }else{
+                    if($items[$item_code][0]->consigned_qty < $damaged_qty[$item_code]){
+                        return redirect()->back()->with('error', 'Damaged qty for '.$item_code.' is more than the delivered qty.');
+                    }
+                }
+
+                $insert_values = [
+                    'name' => uniqid(),
+                    'creation' => Carbon::now()->toDateTimeString(),
+                    'owner' => Auth::user()->full_name,
+                    'docstatus' => 1,
+                    'transaction_date' => $beginning_inventory[$item_code][0]->transaction_date,
+                    'branch_warehouse' => $request->branch,
+                    'item_code' => $item_code,
+                    'description' => isset($items[$item_code]) ? $items[$item_code][0]->description : null,
+                    'qty' => isset($damaged_qty[$item_code]) ? $damaged_qty[$item_code] : 0,
+                    'stock_uom' => isset($items[$item_code]) ? $items[$item_code][0]->stock_uom : null,
+                    'damage_description' => isset($reason[$item_code]) ? $reason[$item_code] : 0,
+                    'promodiser' => Auth::user()->full_name,
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->full_name
+                ];
+
+                DB::table('tabConsignment Damaged Item')->insert($insert_values);
+            }
+
             DB::commit();
             return redirect()->back()->with('success', 'Damage report submitted.');
         } catch (Exception $e) {

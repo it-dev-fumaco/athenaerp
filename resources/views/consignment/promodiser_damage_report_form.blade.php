@@ -27,70 +27,118 @@
                             <div class="card-body p-0">
                                 <form action="/promodiser/damage_report/submit" method="post">
                                     @csrf
-                                    <div class="d-none">
-                                        <input type="text" id="item-code" name="item_code" value="">
-                                        <input type="text" id="description" name="description" value="">
-                                        <input type="text" id="transaction_date" name="transaction_date" value="">
-                                    </div>
                                     <div class="container">
-                                        <label for="branch" style="font-size: 10pt;">Select a Branch</label>
-                                        <select name="branch" id="branch" class="form-control">
-                                            <option value="" disabled selected>Select a Branch</option>
-                                            @foreach ($assigned_consignment_store as $store)
-                                                <option value="{{ $store }}">{{ $store }}</option>
-                                            @endforeach
-                                        </select>
-                                        <br>
-                                        <div class="w-100 d-none" id="select-an-item">
-                                            <label for="selected-item" style="font-size: 10pt;">Select Damaged Item</label>
-                                            <select id="item-selection" class="form-control" placeholder="Select an item"></select>
-                                        </div>
-                                        <div class="w-100 d-none" id="items-container">
-                                            <div class="d-flex flex-row justify-content-center align-items-center mt-3">
-                                                <div class="p-1 col-2 text-center">
-                                                    <a href="" id="link" data-toggle="lightbox" data-gallery="" data-title="">
-                                                        <picture>
-                                                            <source srcset="" id="webp-src" type="image/webp">
-                                                            <source srcset="" id="img-src" type="image/jpeg">
-                                                            <img src="" alt="" id="img-display" class="img-thumbnail" alt="User Image" width="40" height="40">
-                                                        </picture>
-                                                    </a>
-                                                </div>
-                                                <div class="p-1 col m-0">
-                                                    <span class="font-weight-bold" id="item-code-display" style="font-size: 10pt" ></span>
-                                                </div>
-                                                <div class="p-1 col-5">
-                                                    <div class="input-group p-1 justify-content-center">
-                                                        <div class="input-group-prepend p-0">
-                                                            <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
-                                                        </div>
-                                                        <div class="custom-a p-0">
-                                                            <input type="number" class="form-control form-control-sm qty" id="qty" value="0" name="qty" style="text-align: center; width: 80px;" data-max="">
-                                                        </div>
-                                                        <div class="input-group-append p-0">
-                                                            <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="p-1 col">
-                                                    <div class="input-group p-1">
-                                                        <div class="p-0">
-                                                            <span id="price" style="font-size: 10pt"></span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                        <div class="row pt-2 pb-2">
+                                            <div class="col-8">
+                                                <select name="branch" id="branch" class="form-control">
+                                                    <option value="" disabled selected>Select a Branch</option>
+                                                    @foreach ($assigned_consignment_store as $store)
+                                                        <option value="{{ $store }}" {{ !isset($beginning_inventory[$store]) ? 'disabled' : null }}>{{ $store }}</option>
+                                                    @endforeach 
+                                                </select>
                                             </div>
-                                            <div class="d-flex flex-row">
-                                                <div class="p-1 text-justify">
-                                                    <div class="item-description" id="description-display" style="font-size: 9.5pt"></div>
-                                                </div>
-                                            </div>
+                                            <div class="col-4">
+                                                <button type="button" class="btn btn-outline-primary p-2" data-toggle="modal" id='add-modal-btn' data-target="#add-Modal" style='font-size: 10pt;' disabled>
+                                                    <i class="fa fa-plus"></i> Add Item
+                                                </button>
 
-                                            <label for="damage_description" style="font-size: 10pt;">Damage</label>
-                                            <textarea name="damage_description" cols="30" rows="3" class="form-control" placeholder="Describe the damage..." style="font-size: 10pt;" required></textarea>
-                                            <br>
-                                            <button type="submit" class="btn btn-primary float-right" id="submit-btn" disabled>Submit</button>
-                                        </div> 
+                                                <!-- add item modal -->
+                                                <div class="modal fade" id="add-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="exampleModalLabel">Select an Item</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <select id="item-selection" class="form-control"></select>
+
+                                                                <table class="table table-striped d-none" id="item-selection-table">
+                                                                    <thead>
+                                                                        <th class="font-responsive text-center p-1 align-middle" style="width: 42%">Item Code</th>
+                                                                        <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
+                                                                        <th class="font-responsive text-center p-1 align-middle">Price</th>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td class="text-justify p-1 align-middle" colspan="3">
+                                                                                <div class="d-flex flex-row justify-content-center align-items-center">
+                                                                                    <div class="p-1 col-2 text-center">
+                                                                                        <div class="d-none">
+                                                                                            <span id="webp-display"></span>
+                                                                                            <span id="img-display"></span>
+                                                                                            <span id="alt-display"></span>
+                                                                                            <span id="max-display"></span>
+                                                                                        </div>
+                                                                                        <picture>
+                                                                                            <source srcset="" id="new-src-img-webp" type="image/webp">
+                                                                                            <source srcset="" id="new-src-img" type="image/jpeg">
+                                                                                            <img src="" alt="" id="new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
+                                                                                        </picture>
+                                                                                    </div>
+                                                                                    <div class="p-1 col m-0">
+                                                                                        <span class="font-weight-bold font-responsive"><span id="item-code-display"></span></span>
+                                                                                    </div>
+                                                                                    <div class="p-0 col-4">
+                                                                                        <div class="input-group p-1">
+                                                                                            <div class="input-group-prepend p-0">
+                                                                                                <button class="btn btn-outline-danger btn-xs new-item-qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
+                                                                                            </div>
+                                                                                            <div class="custom-a p-0">
+                                                                                                <input type="text" class="form-control form-control-sm qty new-item-validate new-item-stock" id="new-item-stock" value="0" style="text-align: center; width: 47px">
+                                                                                            </div>
+                                                                                            <div class="input-group-append p-0">
+                                                                                                <button class="btn btn-outline-success btn-xs new-item-qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="col-3 text-center">
+                                                                                        <span id="selected-item-price" style='font-size: 10pt;'></span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="p-1" id="description-display" style="font-size: 9.5pt !important;"></div>
+                                                                                <div class="p-1" style="font-size: 9.5pt !important;">
+                                                                                    <textarea id="reason-display" class="form-control" placeholder='Describe the damage...' rows=5></textarea>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-primary" id='add-item' disabled>Confirm</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- add item modal -->
+
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <table class="table table-striped" id="selected-items-table">
+                                                <thead>
+                                                    <th class="font-responsive text-center p-1 align-middle" style="width: 42%">Item Code</th>
+                                                    <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
+                                                    <th class="font-responsive text-center p-1 align-middle">Price</th>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td colspan=3 class="text-center" id='placeholder'>
+                                                            Please select item(s)
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <div class="col-12 text-right">
+                                                <div class="m-2">
+                                                    <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="number" value='0' id="item-counter" class='d-none'/>
                                     </div>
                                 </form>
                             </div>
@@ -111,6 +159,9 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
+        .morectnt span {
+            display: none;
+        }
     </style>
 @endsection
 
@@ -119,28 +170,20 @@
         $(document).ready(function (){
             $('#branch').change(function (){
                 get_items($(this).val());
-                $('#select-an-item').removeClass('d-none');
-                $('#items-container').addClass('d-none');
-                $('#qty').val(0);
-            });
 
-            $('#qty').keyup(function () {
-                qty_checker();
-            });
+                $('.item-codes').each(function (){
+                    remove_items($(this).val());
+                });
 
-            function qty_checker(){
-                if(parseInt($('#qty').val()) > 0 && parseInt($('#qty').val()) <= parseInt($('#qty').data('max')) ){
-                    $('#submit-btn').prop('disabled', false);
-                    $('#qty').css('border', '1px solid #CED4DA');
-                }else{
-                    $('#submit-btn').prop('disabled', true);
-                    $('#qty').css('border', '1px solid red');
-                }
-            }
+                $('#add-modal-btn').prop('disabled', false);
+
+                validate_submit();
+            });
 
             function get_items(branch){
 				$('#item-selection').select2({
                     placeholder: 'Select an item',
+                    allowClear: true,
                     ajax: {
                         url: '/beginning_inv/get_received_items/' + branch,
                         method: 'GET',
@@ -160,30 +203,81 @@
                 });
             }
 
-            $(document).on('select2:select', '#item-selection', function(e){
-                $('#item-code-display').text(e.params.data.id); // item code
-                $('#description-display').text(e.params.data.description); // description
-                $('#img-src').attr('src', e.params.data.img); // image
+            $('#add-item').click(function (){
+                add_item('#selected-items-table');
+                truncate_description();
+                close_modal('#add-Modal');
 
-                $('#link').attr('href', e.params.data.img); // link
-                $('#link').data('gallery', e.params.data.id); // link
-                $('#link').data('title', e.params.data.id); // link
+                $('#item-code-display').text('');
+                $('#description-display').text('');
+                $('#img-display').text('');
+                $('#webp-display').text('');
+                $('#alt-display').text('');
+                $('#max-display').text('');
+                $('#reason-display').val('');
 
-                $('#webp-src').attr('src', e.params.data.webp); // webp
-                $('#img-display').attr('src', e.params.data.img); // image
-                $('#price').text(e.params.data.price); // price
-                $('#qty').data('max', e.params.data.max); // webp
+                $('#new-item-stock').val('');
+                $('#selected-item-price').text('');
+                $("#item-selection").empty().trigger('change');
 
-                // hidden values
-                $('#item-code').val(e.params.data.id);
-                $('#description').val(e.params.data.description);
-                $('#transaction_date').val(e.params.data.transaction_date);
-                
-                $('#items-container').removeClass('d-none');
-                $('#qty').val(0);
+                $('#item-selection-table').addClass('d-none');
+                validate_submit();
             });
 
-            $('.qtyplus').click(function(e){
+            $(document).on('select2:select', '#item-selection', function(e){
+                // Display
+                $('#item-code-display').text(e.params.data.id); // item code
+                $('#description-display').text(e.params.data.description); // description
+                $('#selected-item-price').text(e.params.data.price); // description
+                $('#new-img').attr('src', e.params.data.img); // image
+
+                $('#new-src-img-webp').attr('src', e.params.data.webp); // webp
+                $('#new-src-img').attr('src', e.params.data.img); // image
+                $('#new-item-stock').data('max', e.params.data.max); // max
+
+                // hidden values
+                $('#webp-display').text(e.params.data.webp);
+                $('#img-display').text(e.params.data.img);
+                $('#alt-display').text(e.params.data.alt);
+                $('#max-display').text(e.params.data.max);
+                
+                $('#new-item-stock').val(0);
+
+                $('#item-selection-table').removeClass('d-none');
+                $('#add-item').prop('disabled', false);
+                truncate_description();
+            });
+            var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
+
+            truncate_description();
+            function truncate_description(){
+                $('.item-description').each(function() {
+                    var content = $(this).text();
+                    if (content.length > showTotalChar) {
+                        var con = content.substr(0, showTotalChar);
+                        var hcon = content.substr(showTotalChar, content.length - showTotalChar);
+                        var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="show-more">' + showChar + '</a></span>';
+                        $(this).html(txt);
+                    }
+                });
+            }
+
+            $('table#selected-items-table').on('click', '.show-more', function (e){
+                e.preventDefault();
+                if ($(this).hasClass("sample")) {
+                    $(this).removeClass("sample");
+                    $(this).text(showChar);
+                } else {
+                    $(this).addClass("sample");
+                    $(this).text(hideChar);
+                }
+
+                $(this).parent().prev().toggle();
+                $(this).prev().toggle();
+                return false;
+            });
+
+            $('table#selected-items-table').on('click', '.qtyplus', function(e){
                 // Stop acting like a button
                 e.preventDefault();
                 // Get the field name
@@ -202,10 +296,11 @@
                     // Otherwise put a 0 there
                     fieldName.val(0);
                 }
-                qty_checker();
+                validate_submit();
             });
+
             // This button will decrement the value till 0
-            $(".qtyminus").click(function(e) {
+            $('table#selected-items-table').on('click', '.qtyminus', function(e){
                 // Stop acting like a button
                 e.preventDefault();
                 // Get the field name
@@ -220,8 +315,178 @@
                     // Otherwise put a 0 there
                     fieldName.val(0);
                 }
-                qty_checker();
+                validate_submit();
             });
+
+            $('table#item-selection-table').on('click', '.new-item-qtyplus', function(e){
+                // Stop acting like a button
+                e.preventDefault();
+                // Get the field name
+                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+                // get max value
+                var max = fieldName.data('max');
+                // Get its current value
+                var currentVal = parseInt(fieldName.val());
+                // If is not undefined
+                if (!isNaN(currentVal)) {
+                    // Increment
+                    if (currentVal < max) {
+                        fieldName.val(currentVal + 1);
+                    }
+                } else {
+                    // Otherwise put a 0 there
+                    fieldName.val(0);
+                }
+            });
+
+            // This button will decrement the value till 0
+            $('table#item-selection-table').on('click', '.new-item-qtyminus', function(e){
+                // Stop acting like a button
+                e.preventDefault();
+                // Get the field name
+                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+                // Get its current value
+                var currentVal = parseInt(fieldName.val());
+                // If it isn't undefined or its greater than 0
+                if (!isNaN(currentVal) && currentVal > 0) {
+                    // Decrement one
+                    fieldName.val(currentVal - 1);
+                } else {
+                    // Otherwise put a 0 there
+                    fieldName.val(0);
+                }
+            });
+
+            $('table#selected-items-table').on('click', '.remove-item', function(e){
+                var item_code = $(this).data('id');
+                remove_items(item_code);
+                validate_submit();
+            });
+
+            $('table#selected-items-table').on('keyup', '.reason', function (e){
+                validate_submit();
+            });
+
+            $('table#selected-items-table').on('keyup', '.dmg-qty', function (e){
+                validate_submit();
+            });
+
+
+            function remove_items(item_code){
+                $('#' + item_code).val('');
+                $('#' + item_code).attr('name', '');
+                $('#reason-' + item_code).val('');
+                $('#reason-' + item_code).attr('name', '');
+                $('#reason-' + item_code).prop('required', false);
+                $('#reason-' + item_code).removeClass('reason');
+                $('#row-' + item_code).addClass('d-none');
+                $('#' + item_code + '-stock').removeClass('validate');
+                $('#' + item_code + '-stock').attr('name', '');
+                $('#' + item_code + '-stock').val('');
+                $('#' + item_code + '-stock').prop('required', false);
+
+                $('#item-counter').val(parseInt($('#item-counter').val()) - 1);
+            }
+
+            function add_item(table){
+                var item_code = $('#item-code-display').text();
+                var description = $('#description-display').text();
+                var image = $('#img-display').text();
+                var webp = $('#webp-display').text();
+                var alt = $('#alt-display').text();
+                var max = $('#max-display').text();
+                var reason = $('#reason-display').val();
+
+                var stock = $('#new-item-stock').val();
+                var price = $('#selected-item-price').text();
+
+                var row = '<tr id="row-' + item_code + '">' +
+                    '<td class="text-justify p-1 align-middle" colspan="3">' +
+                        '<input type="text" name="item_code[]" id="' + item_code + '" class="d-none item-codes" value="' + item_code + '" />' +
+                        '<div class="d-flex flex-row justify-content-center align-items-center">' +
+                            '<div class="p-1 col-2 text-center">' +
+                                '<picture>' +
+                                    '<source srcset="' + webp + '" type="image/webp" class="img-thumbna1il" alt="User Image" width="40" height="40">' +
+                                    '<source srcset="' + image + '" type="image/jpeg" class="img-thumbna1il" alt="User Image" width="40" height="40">' +
+                                    '<img src="' + image + '" alt="' + alt + '" class="img-thumbna1il" alt="User Image" width="40" height="40">' +
+                                '</picture>' +
+                            '</div>' +
+                            '<div class="p-1 col m-0">' +
+                                '<span class="font-weight-bold font-responsive">' + item_code + '</span>' +
+                            '</div>' +
+                            '<div class="p-0 col-4 offset-1">' +
+                                '<div class="input-group p-1">' +
+                                    '<div class="input-group-prepend p-0 ml-2">' +
+                                        '<button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
+                                    '</div>' +
+                                    '<div class="custom-a p-0">' +
+                                        '<input type="text" class="form-control form-control-sm qty validate dmg-qty" id="' + item_code + '-stock" value="' + stock + '" data-item-code="' + item_code + '" data-max="' + max + '" name="damaged_qty[' + item_code + ']" style="text-align: center; width: 47px" required>' +
+                                    '</div>' +
+                                    '<div class="input-group-append p-0">' +
+                                        '<button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="p-1 col-2 text-right">' +
+                                '<span id="selected-item-price" style="font-size: 10pt;">' + price + '</span>' +
+                            '</div>' +
+                            '<div class="p-1 col font-responsive remove-item" style="width: 15px !important; color: red; cursor: pointer" data-id="' + item_code + '"><i class="fa fa-remove"></i></div>' +
+                        '</div>' +
+                        '<div class="p-1 item-description" style="font-size: 9.5pt !important;">' +
+                            description + 
+                        '</div>' +
+                        '<div class="p-1" style="font-size: 9.5pt !important;">' +
+                            '<textarea name="reason[' + item_code +']" class="form-control reason" id="reason-' + item_code + '" placeholder="Describe the damage..." rows="5" required>' + reason + '</textarea>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
+
+                $(table).prepend(row);
+
+                truncate_description();
+                $('#item-counter').val(parseInt($('#item-counter').val()) + 1);
+
+                validate_submit();
+            }
+
+            function validate_submit(){
+                // check item count
+                var item_count_check = 0;
+                if($('#item-counter').val() > 0){
+                    item_count_check = 1;
+                    $('#placeholder').addClass('d-none');
+                }else{
+                    $('#placeholder').removeClass('d-none');
+                }
+
+                // check if damage reasons for all items are filled up
+                var reason_arr = new Array();
+                $('.reason').each(function(){
+                    reason_arr.push($(this).val() != '' ? 1 : 0);
+                });
+                var reason_check = Math.min.apply(Math, reason_arr);
+                // var reason_check = 1;
+
+                // check if all qty inputs are numbers and more than 0
+                var qty_arr = new Array();
+                $('.validate.dmg-qty').each(function(){
+                    if($.isNumeric($(this).val()) && parseInt($(this).val()) > 0){
+                        qty_arr.push(1);
+                        $(this).css('border', '1px solid #CED4DA');
+                    }else{
+                        qty_arr.push(0);
+                        $(this).css('border', '1px solid red');
+                    }
+                });
+                var qty_check = Math.min.apply(Math, qty_arr);
+
+                // validate if form is ready to submit
+                if(item_count_check == 1 && reason_check == 1 && qty_check == 1){
+                    $('#submit-btn').prop('disabled', false);
+                }else{
+                    $('#submit-btn').prop('disabled', true);
+                }
+            }
         });
     </script>
 @endsection
