@@ -66,7 +66,9 @@
                                                             </button>
                                                         </div>
                                                         <div class="modal-body">
-                                                            <div class="alert alert-info font-responsive text-center p-3 mb-2"><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</div>
+                                                            <div class="callout callout-info text-center">
+                                                                <small><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</small>
+                                                            </div>
                                                             <table class="table table-bordered">
                                                                 <tr>
                                                                     <th class="text-center" style="width: 50%">Item</th>

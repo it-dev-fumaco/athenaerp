@@ -130,7 +130,7 @@
                               <form></form>
                               <h5 class="text-center font-responsive font-weight-bold m-0">{{ $ste['to_consignment'] }}</h5>
                               <small class="d-block text-center mb-2">Delivery Date: {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</small>
-                              <div class="alert alert-info font-responsive text-center p-2 mb-2">
+                              <div class="callout callout-info text-center">
                                 <small><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</small>
                               </div>
                               <table class="table" style="font-size: 9pt;">
