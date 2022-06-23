@@ -35,7 +35,7 @@
           </a>
         </div>
         <div class="col-6 p-1">
-          <a href="/stock_transfer/list">
+          <a href="/stock_transfer/list/Material Transfer">
             <div class="info-box bg-gradient-warning m-0">
               <div class="info-box-content p-1">
                 <span class="info-box-text" style="font-size: 9pt;">Stock Transfer</span>

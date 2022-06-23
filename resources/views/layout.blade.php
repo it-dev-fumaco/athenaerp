@@ -550,7 +550,8 @@
 								<a class="dropdown-item" href="#">Sales Report</a>
 								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
 								<a class="dropdown-item" href="/damage_report/list">Damage Report</a>
-								<a class="dropdown-item" href="/stock_transfer/list">Stock Transfers Report</a>
+								<a class="dropdown-item" href="/stock_transfer/list/Material Transfer">Stock Transfers Report</a>
+								<a class="dropdown-item" href="/stock_transfer/list/Material Receipt">Sales Returns Report</a>
 							</div>
 						</div>
 					</div>

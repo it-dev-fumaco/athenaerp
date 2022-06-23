@@ -28,10 +28,11 @@
                                     @php
                                         $purpose = [
                                             ['title' => 'Store Transfer', 'value' => 'Consignment'],
-                                            ['title' => 'For Return', 'value' => 'For Return']
+                                            ['title' => 'For Return', 'value' => 'For Return'],
+                                            ['title' => 'Sales Return', 'value' => 'Sales Return']
                                         ];
                                     @endphp
-                                    <div class="col-2 pt-1">
+                                    <div class="col-2 pt-2">
                                         <label for="transfer_as">Purpose</label>
                                     </div>
                                     <div class="col-10 pt-1">
@@ -43,8 +44,8 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="row p-1" style="font-size: 9pt">
-                                    <div class="col-2 pt-1">
+                                <div class="row p-1" id="source" style="font-size: 9pt">
+                                    <div class="col-2 pt-2">
                                         <label for="source_warehouse">From</label>
                                     </div>
                                     <div class="col-10">
@@ -57,7 +58,7 @@
                                     </div>
                                 </div>
                                 <div class="row p-1 mt-2" id="target" style="font-size: 9pt; display: none">
-                                    <div class="col-2 pt-1">
+                                    <div class="col-2 pt-2">
                                         <label for="target_warehouse">To</label>
                                     </div>
                                     <div class="col-10">
@@ -138,22 +139,51 @@
         $(document).ready(function (){
             $('#transfer-as').change(function (){
                 $('#target').slideDown();
-                if($(this).val() == 'Consignment'){
+                var src = $('#src-warehouse').val();
+                if($(this).val() == 'Consignment'){ // Stock Transfers
+                    if($('#source').is(':hidden')){
+                        $('#source').slideDown();
+                    }
                     $('#wh-for-return').addClass('d-none');
 
                     $('#target-warehouse-container').removeClass('d-none');
                     $('#target-warehouse').prop('required', true);
-                }else{ // For Return
+                    if($('#src-warehouse').val() == ''){
+                        $('#target-warehouse').attr("disabled", true);
+                    }
+
+                    $('#src-warehouse').prop('required', true);
+                }else if($(this).val() == 'For Return'){ // For Return
+                    if($('#source').is(':hidden')){
+                        $('#source').slideDown();
+                    }
                     $('#wh-for-return').removeClass('d-none');
 
                     $('#target-warehouse').prop('required', false);
                     $('#target-warehouse-container').addClass('d-none');
 
+                    $('#src-warehouse').prop('required', true);
+
                     $('#items-to-return').slideDown();
+                }else{ // sales returns
+                    $('#wh-for-return').addClass('d-none');
+
+                    $('#target-warehouse-container').removeClass('d-none');
+                    $('#target-warehouse').prop('required', true);
+                    $('#target-warehouse').attr("disabled", false);
+
+                    $('#src-warehouse').prop('required', false);
+
+                    if($('#source').is(':visible')){
+                        $('#source').slideUp();
+                    }
+
+                    src = null;
                 }
 
                 $("#target-warehouse").empty().trigger('change');
                 $("#received-items").empty().trigger('change');
+                get_received_items(src);
                 reset_placeholders();
             });
 
@@ -163,16 +193,14 @@
 
                 $('#target-warehouse').attr("disabled", false);
 
-                $('.to-return').each(function (){
-                    var item_code = $(this).data('item-code');
-
-                    $('#' + item_code).val('');
-                    $('.row-' + item_code).addClass('d-none');
-                    $('#qty-' + item_code).removeClass('to-return');
-                });
-
                 $('#placeholder').removeClass('d-none');
                 $("#received-items").empty().trigger('change');
+
+                $('.items-list').each(function() {
+                    var item_code = $(this).val();
+                    remove_items(item_code);
+                });
+                
                 reset_placeholders();
                 validate_submit();
             });
@@ -186,7 +214,8 @@
                     dataType: 'json',
                     data: function (data) {
                         return {
-                            q: data.term // search term
+                            q: data.term, // search term
+                            assigned_to_me: $('#transfer-as').val() == 'Sales Return' ? 1 : 0
                         };
                     },
                     processResults: function (response) {
@@ -200,6 +229,19 @@
 
             $(document).on('select2:select', '#target-warehouse', function(e){
                 $('#items-to-return').slideDown();
+                if($('#transfer-as').val() == 'Sales Return'){
+                    var warehouse = e.params.data.text;
+                    get_received_items(warehouse);
+                    
+                    $('.items-list').each(function() {
+                        var item_code = $(this).val();
+                        remove_items(item_code);
+                    });
+                    validate_submit();
+                    reset_placeholders();
+
+                    $('#placeholder').removeClass('d-none');
+                }
             });
 
             function get_received_items(branch){
@@ -258,6 +300,13 @@
                 }else{
                     $('#submit-btn').prop('disabled', true);
                 }
+            }
+
+            function remove_items(item_code){
+                $('#' + item_code).val('');
+                $('.row-' + item_code).addClass('d-none');
+                $('#qty-' + item_code).removeClass('to-return');
+                $('#qty-' + item_code).attr('name', '');
             }
 
             function reset_placeholders(){
@@ -352,10 +401,7 @@
                 e.preventDefault();
                 var item_code = $(this).data('item-code');
 
-                $('#' + item_code).val('');
-                $('.row-' + item_code).addClass('d-none');
-                $('#qty-' + item_code).removeClass('to-return');
-                $('#qty-' + item_code).attr('name', '');
+                remove_items(item_code);
                 validate_submit();
             });
 

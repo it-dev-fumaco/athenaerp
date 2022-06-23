@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'Stock Transfers List',
+    'namePage' => $purpose == 'Material Transfer' ? 'Stock Transfers List' : 'Sales Returns List',
     'activePage' => 'beginning_inventory',
 ])
 
@@ -21,7 +21,9 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <h6 class="text-center mt-1 font-weight-bold">Stock Transfers List</h6>
+                            <h6 class="text-center mt-1 font-weight-bold">
+                                {{ $purpose == 'Material Transfer' ? 'Stock Transfers List' : 'Sales Returns List'}}
+                            </h6>
                         </div>
                         <div class="card-header text-center ">
                             <span class="font-responsive text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
@@ -36,11 +38,18 @@
                                 <tr>
                                     <th class="text-center d-none d-lg-table-cell">Date</th>
                                     <th class="text-center d-none d-lg-table-cell">Transaction Type</th>
-                                    <th class="text-center mobile-first-row">
-                                        <span class="d-none d-lg-inline">From Warehouse</span>
-                                        <span class="d-inline d-lg-none">Details</span>
-                                    </th>
-                                    <th class="text-center d-none d-lg-table-cell">To Warehouse</th>
+                                    @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
+                                        <th class="text-center mobile-first-row">
+                                            <span class="d-none d-lg-inline">From Warehouse</span>
+                                            <span class="d-inline d-lg-none">Details</span>
+                                        </th>
+                                        <th class="text-center d-none d-lg-table-cell">To Warehouse</th>
+                                    @else {{-- Sales Returns --}}
+                                        <th class="text-center mobile-first-row">
+                                            <span class="d-none d-lg-inline">Warehouse</span>
+                                            <span class="d-inline d-lg-none">Details</span>
+                                        </th>
+                                    @endif
                                     <th class="text-center d-none d-lg-table-cell">Submitted By</th>
                                     <th class="text-center d-none d-lg-table-cell">Status</th>
                                     <th class="text-center">Action</th>
@@ -60,17 +69,28 @@
                                             {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}
                                         </td>
                                         <td class="text-center d-none d-lg-table-cell">
-                                            {{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}
+                                            {{ $ste['transfer_type'] }}
                                         </td>
-                                        <td>
-                                            <div class="d-none d-lg-inline text-center">
-                                                {{ $ste['from_warehouse'] }}
-                                            </div>
-                                            <div class="d-inline d-lg-none text-left">
-                                                {{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="d-none d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
+                                        @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
+                                            <td>
+                                                <div class="d-none d-lg-inline text-center">
+                                                    {{ $ste['from_warehouse'] }}
+                                                </div>
+                                                <div class="d-inline d-lg-none text-left">
+                                                    {{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="d-none d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
+                                        @else {{-- Sales Returns --}}
+                                            <td>
+                                                <div class="d-none d-lg-inline text-center">
+                                                    {{ $ste['to_warehouse'] }}
+                                                </div>
+                                                <div class="d-inline d-lg-none text-left">
+                                                    {{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
+                                                </div>
+                                            </td>
+                                        @endif
                                         <td class="text-center d-none d-lg-table-cell">{{ $ste['owner'] }}</td>
                                         <td class="text-center d-none d-lg-table-cell">
                                             <span class="badge badge-{{ $badge }}">{{ $status }}</span>
@@ -87,14 +107,20 @@
                                                         <div class="modal-header" style="background-color: #001F3F; color: #fff">
                                                             <div class="row text-left">
                                                                 <div class="col-12">
-                                                                    <h5 id="exampleModalLabel"><b>{{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}</b>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></h5>
+                                                                    <h5 id="exampleModalLabel"><b>{{ $ste['transfer_type'] }}</b>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></h5>
                                                                 </div>
-                                                                <div class="col-12" style="font-size: 9.5pt;">
-                                                                    <span class="font-italic"><b>Source: </b> {{ $ste['from_warehouse'] }}</span>
-                                                                </div>
-                                                                <div class="col-12" style="font-size: 9.5pt;">
-                                                                    <span class="font-italic"><b>Target: </b> {{ $ste['to_warehouse'] }}</span>
-                                                                </div>
+                                                                @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
+                                                                    <div class="col-12" style="font-size: 9.5pt;">
+                                                                        <span class="font-italic"><b>Source: </b> {{ $ste['from_warehouse'] }}</span>
+                                                                    </div>
+                                                                    <div class="col-12" style="font-size: 9.5pt;">
+                                                                        <span class="font-italic"><b>Target: </b> {{ $ste['to_warehouse'] }}</span>
+                                                                    </div>
+                                                                @else {{-- Sales Returns --}}
+                                                                    <div class="col-12" style="font-size: 9.5pt;">
+                                                                        <span class="font-italic">{{ $ste['to_warehouse'] }}</span>
+                                                                    </div>
+                                                                @endif
                                                             </div>
                                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                             <span aria-hidden="true" style="color: #fff">&times;</span>
@@ -104,8 +130,12 @@
                                                             <table class="table table-bordered" style="font-size: 10pt;">
                                                                 <tr>
                                                                     <th class="text-center" width="50%">Item</th>
-                                                                    <th class="text-center">Stock Qty</th>
-                                                                    <th class="text-center">Qty to Transfer</th>
+                                                                    @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
+                                                                        <th class="text-center">Stock Qty</th>
+                                                                        <th class="text-center">Qty to Transfer</th>
+                                                                    @else {{-- Sales Returns --}}
+                                                                        <th class="text-center">Return Qty</th>
+                                                                    @endif
                                                                 </tr>
                                                                 @foreach ($ste['items'] as $item)
                                                                     <tr>
@@ -123,12 +153,14 @@
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td class="text-center">
-                                                                            <b>{{ $item['consigned_qty'] * 1 }}</b><br/><small>{{ $item['uom'] }}</small>
-                                                                        </td>
+                                                                        @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
+                                                                            <td class="text-center">
+                                                                                <b>{{ $item['consigned_qty'] * 1 }}</b><br/><small>{{ $item['uom'] }}</small>
+                                                                            </td>
+                                                                        @endif
                                                                         <td class="text-center">
                                                                             <b>{{ $item['transfer_qty'] * 1 }}</b><br/><small>{{ $item['uom'] }}</small>
-                                                                            </td>
+                                                                        </td>
                                                                     </tr>
                                                                     <tr class="p-2">
                                                                         <td colspan=3 class="text-justify">
@@ -150,13 +182,13 @@
                                                                 <div class="modal-dialog" role="document">
                                                                     <div class="modal-content">
                                                                         <div class="modal-header" style="background-color: #001F3F; color: #fff">
-                                                                            <span class="modal-title" id="exampleModalLabel">{{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
+                                                                            <span class="modal-title" id="exampleModalLabel">{{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
                                                                             <button type="button" class="close" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
                                                                                 <span aria-hidden="true" style="color: #fff;">&times;</span>
                                                                             </button>
                                                                         </div>
                                                                         <div class="modal-body">
-                                                                            <h5>Cancel {{ $ste['transfer_type'] == 'Consignment' ? 'Store Transfer' : 'Return to Plant' }}?</h5>
+                                                                            <h5>Cancel {{ $ste['transfer_type'] }}?</h5>
                                                                         </div>
                                                                         <div class="modal-footer">
                                                                             <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary">Confirm</a>
@@ -173,8 +205,12 @@
                                     </tr>
                                     <tr class="d-lg-none">
                                         <td colspan=7 class="p-2">
-                                            <b>From: </b>{{ $ste['from_warehouse'] }} <br>
-                                            <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
+                                            @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
+                                                <b>From: </b>{{ $ste['from_warehouse'] }} <br>
+                                                <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
+                                            @else {{-- Sales Returns --}}
+                                                <b>{{ $ste['to_warehouse'] }}</b> <br>
+                                            @endif
                                             {{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}
                                         </td>
                                     </tr>
