@@ -1978,7 +1978,8 @@ class ConsignmentController extends Controller
                         'transfer_qty' => $item->transfer_qty,
                         'uom' => $item->stock_uom,
                         'image' => $img,
-                        'webp' => $webp
+                        'webp' => $webp,
+                        'img_count' => array_key_exists($item->item_code, $item_image) ? count($item_image[$item->item_code]) : 0
                     ];
                 }
             }
