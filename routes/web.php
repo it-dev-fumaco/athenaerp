@@ -172,4 +172,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_product_sold_list', 'ConsignmentController@productSoldList');
     Route::get('/view_sales_report', 'ConsignmentController@viewSalesReport');
     Route::get('/view_product_sold_items/{store}/{from}/{to}', 'ConsignmentController@viewProductSoldItems');
+
+    Route::get('/get_activity_logs', 'ConsignmentController@activityLogs');
 });

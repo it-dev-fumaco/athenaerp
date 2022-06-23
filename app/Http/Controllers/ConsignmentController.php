@@ -2537,4 +2537,12 @@ class ConsignmentController extends Controller
 
         return view('consignment.supervisor.view_product_sold_items', compact('result', 'store', 'duration', 'list', 'promodisers'));
     }
+
+    public function activityLogs(Request $request) {
+        $logs = DB::table('tabActivity Log')->where('content', 'Consignment Activity Log')
+            ->select('creation', 'subject', 'reference_name', 'full_name')
+            ->orderBy('creation', 'desc')->paginate(20);
+
+        return view('consignment.supervisor.tbl_activity_logs', compact('logs'));
+    }
 }
