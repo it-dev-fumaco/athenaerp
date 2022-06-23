@@ -16,9 +16,9 @@
                   </div>
 						<div class="card-body p-2">
 							@if ($due_alert)
-							<div class="alert alert-warning font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-0"><i class="fas fa-exclamation-circle"></i> Sales report submission is due tomorrow</div>
+							<div class="callout callout-warning font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2"><i class="fas fa-exclamation-circle"></i> Sales report submission is due tomorrow</div>
 							@endif
-							<div class="alert alert-info font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-0"><i class="fas fa-info-circle"></i> Select a date for report entry</div>
+							<div class="callout callout-info font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2"><i class="fas fa-info-circle"></i> Select a date for report entry</div>
 							<div class="d-block font-responsive text-center	mt-2" id="report-deadline-display"></div>
 							<div id="calendar"></div>
 							<div class="d-flex flex-row mt-3 justify-content-start">
