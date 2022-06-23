@@ -208,8 +208,88 @@ class MainController extends Controller
 
                 // get total stock adjustments
                 $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->count();
-        
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments'));
+
+                // get incoming / to receive items
+                $type = 'incoming';
+                $received_ste_arr = [];
+                if($type == 'incoming'){ // get ste's of received items
+                    $received_ste_arr = DB::table('tabStock Entry Detail')->where('consignment_status', 'Received')->select('parent')->distinct('parent')->get();
+                    $received_ste_arr = collect($received_ste_arr)->map(function ($q){
+                        return $q->parent;
+                    });
+                }
+
+                $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
+
+                $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : null;
+
+                $delivery_report_query = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                    ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ // do not include ste's of received items
+                        return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+                    })
+                    ->where('ste.transfer_as', 'Consignment')
+                    ->where('ste.purpose', 'Material Transfer')
+                    ->whereIn('ste.item_status', ['For Checking', 'Issued'])
+                    ->whereIn('ste.to_warehouse', $assigned_consignment_store)
+                    ->where('ste.name', 'like', 'stec%')
+                    ->whereIn('ste.item_status', ['For Checking', 'Issued'])
+                    ->where('sted.consignment_status', '!=', 'Received')
+                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'ste.to_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status')
+                    ->orderBy('ste.creation', 'desc')->get();
+
+                $delivery_report = collect($delivery_report_query)->groupBy('name');
+
+                $item_codes = collect($delivery_report_query)->map(function ($q){
+                    return $q->item_code;
+                });
+
+                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+                $item_image = collect($item_images)->groupBy('parent');
+
+                $now = Carbon::now();
+
+                $ste_arr = [];
+                foreach($delivery_report as $ste => $row){
+                    $items_arr = [];
+                    foreach($row as $item){
+                        $items_arr[] = [
+                            'item_code' => $item->item_code,
+                            'description' => $item->description,
+                            'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
+                            'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
+                            'delivered_qty' => $item->transfer_qty,
+                            'stock_uom' => $item->stock_uom,
+                            'price' => $item->basic_rate,
+                            'delivery_status' => $item->consignment_status
+                        ];
+                    }
+
+                    $status_check = collect($items_arr)->map(function($q){
+                        return $q['delivery_status'] ? 1 : 0; // return 1 if status is Received
+                    })->toArray();
+
+                    $delivery_date = Carbon::parse($row[0]->delivery_date);
+                  
+                    if($row[0]->item_status == 'Issued' && $now > $delivery_date){
+                        $status = 'Delivered';
+                    }else{
+                        $status = 'Pending';
+                    }
+
+                    $ste_arr[] = [
+                        'name' => $row[0]->name,
+                        'from' => $row[0]->from_warehouse,
+                        'to_consignment' => $row[0]->to_warehouse,
+                        'status' => $status,
+                        'items' => $items_arr,
+                        'creation' => $row[0]->creation,
+                        'delivery_date' => $row[0]->delivery_date,
+                        'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+                    ];
+                }
+
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr'));
             }
 
             return redirect('/search_results');
