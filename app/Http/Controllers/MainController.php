@@ -232,7 +232,6 @@ class MainController extends Controller
                     ->where('ste.purpose', 'Material Transfer')
                     ->whereIn('ste.item_status', ['For Checking', 'Issued'])
                     ->whereIn('ste.to_warehouse', $assigned_consignment_store)
-                    ->where('ste.name', 'like', 'stec%')
                     ->whereIn('ste.item_status', ['For Checking', 'Issued'])
                     ->where('sted.consignment_status', '!=', 'Received')
                     ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'ste.to_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status')
