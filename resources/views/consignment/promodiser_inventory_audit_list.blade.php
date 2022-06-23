@@ -31,9 +31,9 @@
                                     </div>
                                     <div class="p-1 font-responsive">
                                         @if (!$pcia['beginning_inventory_date'])
-                                        <a href="/beginning_inventory" class="btn btn-primary btn-sm" style="width: 70px;"><i class="fas fa-plus"></i></a>
+                                        <a href="/beginning_inventory" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create</a>
                                         @else
-                                        <a href="/view_inventory_audit_form/{{ $store }}/{{ $pcia['today'] }}" class="btn btn-primary btn-sm" style="width: 70px;"><i class="fas fa-plus"></i></a>
+                                        <a href="/view_inventory_audit_form/{{ $store }}/{{ $pcia['today'] }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create</a>
                                         @endif
                                     </div>
                                 </div>

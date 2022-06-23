@@ -649,6 +649,7 @@ class ConsignmentController extends Controller
                         'parent' => $item->parent,
                         'inv_name' => $inv->name,
                         'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
+                        'img_count' => array_key_exists($item->item_code, $item_image) ? count($item_image[$item->item_code]) : 0,
                         'item_code' => $item->item_code,
                         'item_description' => $item->item_description,
                         'uom' => $item->stock_uom,
@@ -667,6 +668,10 @@ class ConsignmentController extends Controller
                 'transaction_date' => Carbon::parse($inv->transaction_date)->format('F d, Y'),
                 'items' => $items_arr
             ];
+        }
+
+        if(Auth::user()->user_group == 'Consignment Supervisor'){
+            return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
         }
 
         return view('consignment.beginning_inventory_list', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));

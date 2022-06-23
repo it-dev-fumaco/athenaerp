@@ -99,7 +99,7 @@
       <div class="row p-0 m-0">
         <div class="col-md-12 p-1">
           <div class="card card-warning card-outline mt-2 mb-2">
-            <div class="card-header text-center font-weight-bold p-1 font-responsive">Incoming Item(s) to Receive</div>
+            <div class="card-header text-center font-weight-bold p-1 font-responsive">To Receive Item(s)</div>
             <div class="card-body p-0">
               <table class="table" style='font-size: 10pt;'>
                 <thead>
