@@ -15,26 +15,25 @@
                         </div>
                         <div class="card-body p-1">
                             <div class="d-flex flex-row align-items-center justify-content-between">
-                                <div class="p-0 col-8 text-center">
+                                <div class="p-0 col-8 mx-auto text-center">
                                     <span class="font-responsive text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
                                 </div>
-                                <div class="p-1 col-4 text-right">
-                                    <a href="/stock_transfer/form" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> Create</a>
-                                </div>
+                                @if (Auth::user()->user_group == 'Promodiser')
+                                    <div class="p-1 col-4 text-right">
+                                        <a href="/stock_transfer/form" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> Create</a>
+                                    </div>    
+                                @endif
                             </div>
                             @if(session()->has('success'))
-                            <div class="alert alert-success alert-dismissible fade show font-responsive" role="alert">
-                                {{ session()->get('success') }}
-                            </div>
+                                <div class="alert alert-success alert-dismissible fade show font-responsive" role="alert">
+                                    {{ session()->get('success') }}
+                                </div>
                             @endif
                             @if(session()->has('error'))
-                            <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
-                                {{ session()->get('error') }}
-                            </div>
+                                <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
+                                    {{ session()->get('error') }}
+                                </div>
                             @endif
-
-                     
-
                         <div class="container-fluid">
                             <span class="float-right p-2" style="font-size: 10pt;"><b>Total: </b>{{ $stock_transfers->total() }}</span>
                         </div>
@@ -67,7 +66,7 @@
                                         $status = 'Approved';
                                     }else{
                                         $badge = 'primary';
-                                        $status = 'For Approval';
+                                        $status = Auth::user()->user_group == 'Promodiser' ? 'For Approval' : 'To Submit in ERP';
                                     }
                                 @endphp
                                 <tr>
