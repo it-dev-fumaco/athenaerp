@@ -1747,7 +1747,7 @@ class ConsignmentController extends Controller
                 'transfer_as' => $request->transfer_as == 'Sales Return' ? null : $request->transfer_as,
                 'receive_as' => $request->transfer_as == 'Sales Return' ? $request->transfer_as : null,
                 'qty_repack' => 0,
-                'customer_1' => $target_warehouse,
+                // 'customer_1' => $target_warehouse,
                 'delivery_date' => $now->format('Y-m-d'),
                 'remarks' => 'Generated in AthenaERP'
             ];
