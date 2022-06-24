@@ -1986,18 +1986,23 @@ class ConsignmentController extends Controller
             $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         }
 
+        $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
+
+        $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
+
         $stock_transfers = DB::table('tabStock Entry')
             ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($consignment_stores, $purpose){
                 return $q->whereIn(($purpose == 'Material Transfer' ? 'from_warehouse' : 'to_warehouse'), $consignment_stores);
             })
             ->where('purpose', $purpose)
             ->when($purpose == 'Material Transfer', function ($q){
-                return $q->whereIn('transfer_as', ['For Return', 'Consignment']);
+                return $q->whereIn('transfer_as', ['For Return', 'Sales Return', 'Store Transfer']);
             })
             ->when($purpose == 'Material Receipt', function ($q){
                 return $q->where('receive_as', 'Sales Return');
             })
-            ->where('naming_series', 'STEC-')
+            ->whereDate('delivery_date', '>=', $beginning_inventory_start_date)
+            ->where('docstatus', '<', 2)
             ->orderBy('creation', 'desc')->paginate(10);
 
         $src_warehouses = collect($stock_transfers->items())->map(function ($q){
@@ -2065,7 +2070,7 @@ class ConsignmentController extends Controller
 
             $transfer_type = null;
             if($ste->purpose == 'Material Transfer'){
-                $transfer_type = $ste->transfer_as == 'Consignment' ? 'Store Transfer' : 'For Return';
+                $transfer_type = $ste->transfer_as == 'Store Transfer' ? 'Store Transfer' : 'For Return';
             }else{
                 $transfer_type = 'Sales Return';
             }
