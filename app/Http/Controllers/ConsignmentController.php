@@ -2358,26 +2358,52 @@ class ConsignmentController extends Controller
             $item_codes = array_keys($request->item);
             $stocks = $request->item;
 
-            $now = Carbon::now()->toDateTimeString();
+            $now = Carbon::now();
 
             $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
             if(!$beginning_inventory){
                 return redirect()->back()->with('error', 'Record not found or has been deleted.');
             }
 
+            $bin = DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->whereIn('item_code', $item_codes)->select('name', 'item_code', 'consigned_qty')->get();
+            $bin = collect($bin)->groupBy('item_code');
+
             foreach($item_codes as $item_code){
                 if(isset($stocks[$item_code])){
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update([
-                        'modified' => $now,
+                        'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
                         'opening_stock' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
                     ]);
 
                     DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update([
-                        'modified' => $now,
+                        'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
                         'consigned_qty' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
                     ]);
+
+                    $previous_stock = isset($bin[$item_code]) ? $bin[$item_code][0]->consigned_qty : 0;
+                    $previous_stock = number_format($previous_stock);
+
+                    $logs = [
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'subject' => 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' consigned qty from '.$previous_stock.' to '.preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']).' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                        'content' => 'Consignment Activity Log',
+                        'communication_date' => $now->toDateTimeString(),
+                        'reference_doctype' => 'Stock Adjustment',
+                        'reference_name' => isset($bin[$item_code]) ? $bin[$item_code][0]->name : null,
+                        'reference_owner' => Auth::user()->wh_user,
+                        'user' => Auth::user()->wh_user,
+                        'full_name' => Auth::user()->full_name,
+                    ];
+        
+                    DB::table('tabActivity Log')->insert($logs);
                 }
             }
 
