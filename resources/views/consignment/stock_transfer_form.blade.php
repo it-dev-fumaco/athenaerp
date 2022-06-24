@@ -67,11 +67,80 @@
                                 <div class="row p-1 mt-2" id="items-to-return" style="display: none">
                                     <div class="container-fluid">
                                         <div class="row">
-                                            <div class="col-8">
-                                                <select id="received-items" class="form-control" style="font-size: 9pt;"></select>
+                                            <div class="col-7">
+                                                <input type="text" class="form-control form-control-sm" id="item-search" name="search" autocomplete="off" placeholder="Search"/>
                                             </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-primary w-100" id="add-item" style="font-size: 10pt" disabled><i class="fa fa-plus"></i> Add item</button>
+                                            <div class="col-5">
+                                                <button type="button" class="btn btn-primary w-100" id="open-item-modal" style="font-size: 10pt;" data-toggle="modal" data-target="#add-item-Modal" disabled><i class="fa fa-plus"></i> Add item</button>
+
+                                                <div class="modal fade" id="add-item-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header bg-navy">
+                                                                <h5 class="modal-title" id="exampleModalLabel">Add an Item</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true" style="color: #fff">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <select id="received-items" class="form-control" style="font-size: 9pt;"></select>
+                                                                <br><br>
+                                                                <div class="container-fluid d-none" id="items-container">
+                                                                    <table class="table" id='items-selection-table' style="font-size: 10pt;">
+                                                                        <tr>
+                                                                            <th class="text-center" style="width: 40%">Item</th>
+                                                                            <th class="text-center" style="width: 25%">Stocks</th>
+                                                                            <th class="text-center transfer-text">Qty to Transfer</th>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3">
+                                                                                <div class="row">
+                                                                                    <div class="p-0 col-2 text-center">
+                                                                                        <picture>
+                                                                                            <source srcset="" id='webp-src-display' type="image/webp">
+                                                                                            <source srcset="" id='img-src-display' type="image/jpeg">
+                                                                                            <img src="" alt="" id='img-src' class="img-thumbnailm" alt="User Image" width="40" height="40">
+                                                                                        </picture>
+                                                                                        <div class="d-none">
+                                                                                            <span id="img-text"></span>
+                                                                                            <span id="webp-text"></span>
+                                                                                            <span id="alt-text"></span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="p-1 col-3 m-0" style="display: flex; justify-content: center; align-items: center;">
+                                                                                        <span id='item-code-text' class="font-weight-bold"></span>
+                                                                                    </div>
+                                                                                    <div class="col-3" style="display: flex; justify-content: center; align-items: center; height: 44px">
+                                                                                        <b><span id="stocks-text"></span></b>&nbsp;<small><span id="uom-text"></span></small>
+                                                                                    </div>
+                                                                                    <div class="col p-0">
+                                                                                        <div class="input-group p-1 ml-3">
+                                                                                            <div class="input-group-prepend p-0">
+                                                                                                <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
+                                                                                            </div>
+                                                                                            <div class="custom-a p-0">
+                                                                                                <input type="text" class="form-control form-control-sm qty" value="0" id="qty-input" data-max="0" style="text-align: center; width: 40px">
+                                                                                            </div>
+                                                                                            <div class="input-group-append p-0">
+                                                                                                <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="col-12 text-justify">
+                                                                                        <span id="description-text"></span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" id="add-item" class="btn btn-primary w-100" disabled>Add item</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -82,7 +151,7 @@
                                                 <tr>
                                                     <th class="text-center" style="width: 40%">Item</th>
                                                     <th class="text-center" style="width: 25%">Stocks</th>
-                                                    <th class="text-center" id="transfer-text">Qty to Transfer</th>
+                                                    <th class="text-center transfer-text">Qty to Transfer</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -94,19 +163,10 @@
                                     </div>
 
                                     <div class="container-fluid mt-2 text-center">
-                                        <button type="submit" id="submit-btn" class="btn btn-primary d-none">Submit</button>
+                                        <button type="submit" id="submit-btn" class="btn btn-primary w-100 d-none">Submit</button>
                                     </div>
 
-                                    <div class="d-none"><!-- hidden values, acts as placeholder -->
-                                        <span id="item-code"></span>
-                                        <span id="description"></span>
-                                        <span id="img"></span>
-                                        <span id="webp"></span>
-                                        <span id="alt"></span>
-                                        <span id="stocks"></span>
-                                        <span id="uom"></span>
-                                        <span id="counter">0</span>
-                                    </div>
+                                    <span id="counter" class='d-none'>0</span>
                                 </div>
                             </form>
                         </div>
@@ -136,7 +196,7 @@
             $('#transfer-as').change(function (){
                 $('#target').slideDown();
                 var src = $('#src-warehouse').val();
-                if($(this).val() == 'Store Transfer'){ // Stock Transfers
+                if($(this).val() == 'Store Transfer'){
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
                     }
@@ -149,8 +209,8 @@
                     }
 
                     $('#src-warehouse').prop('required', true);
-                    $('#transfer-text').text('Qty to Transfer');
-                }else if($(this).val() == 'For Return'){ // For Return
+                    $('.transfer-text').text('Qty to Transfer');
+                }else if($(this).val() == 'For Return'){
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
                     }
@@ -160,7 +220,7 @@
                     $('#target-warehouse-container').addClass('d-none');
 
                     $('#src-warehouse').prop('required', true);
-                    $('#transfer-text').text('Qty to Transfer');
+                    $('.transfer-text').text('Qty to Transfer');
 
                     $('#items-to-return').slideDown();
                 }else{ // sales returns
@@ -171,7 +231,7 @@
                     $('#target-warehouse').attr("disabled", false);
 
                     $('#src-warehouse').prop('required', false);
-                    $('#transfer-text').text('Qty Returned');
+                    $('.transfer-text').text('Qty Returned');
 
                     if($('#source').is(':visible')){
                         $('#source').slideUp();
@@ -182,6 +242,15 @@
 
                 $("#target-warehouse").empty().trigger('change');
                 $("#received-items").empty().trigger('change');
+
+                $('.items-list').each(function() {
+                    var item_code = $(this).val();
+                    remove_items(item_code);
+                });
+
+                $('#submit-btn').addClass('d-none');
+                $('#placeholder').removeClass('d-none');
+
                 get_received_items(src);
                 reset_placeholders();
             });
@@ -200,6 +269,7 @@
                     remove_items(item_code);
                 });
                 
+                $('#open-item-modal').prop('disabled', false);
                 reset_placeholders();
                 validate_submit();
             });
@@ -240,6 +310,7 @@
                     reset_placeholders();
 
                     $('#placeholder').removeClass('d-none');
+                    $('#open-item-modal').prop('disabled', false);
                 }
             });
 
@@ -265,36 +336,28 @@
                     }
                 });
             }
-            
+
             validate_submit();
             function validate_submit(){
                 var inputs = new Array();
                 var max_check = new Array();
 
-                $('.to-return').each(function (){
+                $('.validate.qty.to-return').each(function (){
                     var max = $(this).data('max');
                     var val = $(this).val();
 
-                    if(val <= max){
+                    if($.isNumeric(val) && parseInt(val) > 0 && parseInt(val) <= parseInt(max)){
                         $(this).css('border', '1px solid #CED4DA');
+                        inputs.push(1);
                     }else{
                         $(this).css('border', '1px solid red');
+                        inputs.push(0);
                     }
-
-                    inputs.push(val);
-                    max_check.push((max >= val ? 1 : 0));
                 });
 
-                var stocks_checker = Math.min.apply(Math, max_check);
+                var stocks_check = inputs.length > 0 ? Math.min.apply(Math, inputs) : 0;
 
-                var min = Math.min.apply(Math, inputs);
-                if(min > 0){
-                    $('#counter').text(inputs.length);
-                }else{
-                    $('#counter').text(0);
-                }
-
-                if(parseInt($('#counter').text()) > 0 && inputs.length > 0 && stocks_checker == 1){
+                if(parseInt($('#counter').text()) > 0 && stocks_check == 1){
                     $('#submit-btn').prop('disabled', false);
                 }else{
                     $('#submit-btn').prop('disabled', true);
@@ -302,47 +365,105 @@
             }
 
             function remove_items(item_code){
-                $('#' + item_code).val('');
-                $('.row-' + item_code).addClass('d-none');
-                $('#qty-' + item_code).removeClass('to-return');
-                $('#qty-' + item_code).attr('name', '');
+                $('.row-' + item_code).remove();
+                var val = parseInt($('#counter').text()) - 1;
+                val = val > 0 ? val : 0;
+                $('#counter').text(val);
             }
 
             function reset_placeholders(){
-                $('#item-code').text('');
-                $('#description').text('');
-                $('#img').text('');
-                $('#webp').text('');
-                $('#alt').text('');
-                $('#stocks').text('');
-                $('#uom').text('');
-
-                $('#add-item').prop('disabled', true);
+                $('#qty-input').val(0);
+                $('#img-text').text(null);
+                $('#alt-text').text(null);
+                $('#uom-text').text(null);
+                $('#webp-text').text(null);
+                $('#stocks-text').text(null);
+                $('#qty-input').data('max', 0);
+                $('#img-src').attr('src', null);
+                $('#item-code-text').text(null);
+                $('#description-text').text(null);
+                $('#img-src-display').attr('src', null);
+                $('#webp-src-display').attr('src', null);
             }
             
             $(document).on('select2:select', '#received-items', function(e){
-                $('#item-code').text(e.params.data.id);
-                $('#description').text(e.params.data.description);
-                $('#img').text(e.params.data.img);
-                $('#webp').text(e.params.data.webp);
-                $('#alt').text(e.params.data.alt);
-                $('#stocks').text(e.params.data.max);
-                $('#uom').text(e.params.data.uom);
+                $('#img-text').text(e.params.data.img);
+                $('#alt-text').text(e.params.data.alt);
+                $('#uom-text').text(e.params.data.uom);
+                $('#webp-text').text(e.params.data.webp);
+                $('#stocks-text').text(e.params.data.max);
+                $('#item-code-text').text(e.params.data.id);
+                $('#img-src').attr('src', e.params.data.img);
+                $('#qty-input').data('max', e.params.data.max);
+                $('#img-src-display').attr('src', e.params.data.img);
+                $('#webp-src-display').attr('src', e.params.data.webp);
+                $('#description-text').text(e.params.data.description);
                 
                 $('#add-item').prop('disabled', false);
+                $('#items-container').removeClass('d-none');
+            });
+
+            // Modal Add/Subtract Controls
+            $('table#items-selection-table').on('click', '.qtyplus', function(e){
+                // Stop acting like a button
+                e.preventDefault();
+                // Get the field name
+                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+                var max = fieldName.data('max');
+                // Get its current value
+                var currentVal = parseInt(fieldName.val());
+                // If is not undefined
+                if (!isNaN(currentVal)) {
+                    // Increment
+                    if (currentVal < max) {
+                        fieldName.val(currentVal + 1);
+                    }
+                } else {
+                    // Otherwise put a 0 there
+                    fieldName.val(0);
+                }
+
+            });
+
+            $('table#items-selection-table').on('click', '.qtyminus', function(e){
+                // Stop acting like a button
+                e.preventDefault();
+                // Get the field name
+                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+                // Get its current value
+                var currentVal = parseInt(fieldName.val());
+                // If it isn't undefined or its greater than 0
+                if (!isNaN(currentVal) && currentVal > 0) {
+                    // Decrement one
+                    fieldName.val(currentVal - 1);
+                } else {
+                    // Otherwise put a 0 there
+                    fieldName.val(0);
+                }
+
+            });
+            // Modal Add/Subtract Controls
+
+            $("#item-search").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#items-table tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
             });
 
             $('#add-item').click(function (){
-                var item_code = $('#item-code').text();
-                var description = $('#description').text();
-                var img = $('#img').text();
-                var webp = $('#webp').text();
-                var alt = $('#alt').text();
-                var stocks = $('#stocks').text();
-                var uom = $('#uom').text();
+                var img = $('#img-text').text();
+                var alt = $('#alt-text').text();
+                var qty = $('#qty-input').val();
+                var uom = $('#uom-text').text();
+                var webp = $('#webp-text').text();
+                var stocks = $('#stocks-text').text();
+                var item_code = $('#item-code-text').text();
+                var description = $('#description-text').text();
 
                 var row = '<tr class="row-' + item_code + '">' +
                     '<td colspan=3 class="text-center p-0">' +
+                        '<div class="d-none">' + description + '</div>' + // reference for search
                         '<div class="row">' +
                             '<input name="item_code[]" class="items-list d-none" value="' + item_code + '" id="' + item_code + '" />' +
                             '<div class="p-1 col-2 text-center">' +
@@ -364,7 +485,7 @@
                                         '<button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
                                     '</div>' +
                                     '<div class="custom-a p-0">' +
-                                        '<input type="text" class="form-control form-control-sm qty validate to-return" id="qty-' + item_code + '" value="0" data-item-code="' + item_code + '" name="item[' + item_code + '][transfer_qty]" data-max="' + stocks + '" style="text-align: center; width: 40px">' +
+                                        '<input type="text" class="form-control form-control-sm validate qty to-return" id="qty-' + item_code + '" value="' + qty + '" data-item-code="' + item_code + '" name="item[' + item_code + '][transfer_qty]" data-max="' + stocks + '" style="text-align: center; width: 40px">' +
                                     '</div>' +
                                     '<div class="input-group-append p-0">' +
                                         '<button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>' +
@@ -379,16 +500,22 @@
                 '</tr>' +
                 '<tr class="row-' + item_code + '">' +
                     '<td colspan=3 class="text-justify p-2" style="font-size: 10pt;">' +
+                        '<div class="d-none">' + item_code + '</div>' + // reference for search
                         '<div class="item-description">' + description + '</div>' +
                     '</td>' +
                 '</tr>';
 
-                $('#items-table tbody').prepend(row);
+                $('#counter').text(parseInt($('#counter').text()) + 1);
+                $("#received-items").empty().trigger('change');
+                $('#items-container').addClass('d-none');
                 $('#submit-btn').removeClass('d-none');
+                $('#add-item').prop('disabled', true);
+                $('#items-table tbody').prepend(row);
                 $('#placeholder').addClass('d-none');
 
-                $("#received-items").empty().trigger('change');
+                close_modal('add-item-Modal');
                 reset_placeholders();
+                validate_submit();
                 cut_text();
             });
 
@@ -458,22 +585,22 @@
                         $(this).html(txt);
                     }
                 });
-
-                $(".show-more").click(function(e) {
-                    e.preventDefault();
-                    if ($(this).hasClass("sample")) {
-                        $(this).removeClass("sample");
-                        $(this).text(showChar);
-                    } else {
-                        $(this).addClass("sample");
-                        $(this).text(hideChar);
-                    }
-
-                    $(this).parent().prev().toggle();
-                    $(this).prev().toggle();
-                    return false;
-                });
             }
+
+            $(".show-more").click(function(e) {
+                e.preventDefault();
+                if ($(this).hasClass("sample")) {
+                    $(this).removeClass("sample");
+                    $(this).text(showChar);
+                } else {
+                    $(this).addClass("sample");
+                    $(this).text(hideChar);
+                }
+
+                $(this).parent().prev().toggle();
+                $(this).prev().toggle();
+                return false;
+            });
         });
     </script>
 @endsection
