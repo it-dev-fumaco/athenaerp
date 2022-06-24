@@ -14,7 +14,14 @@
                 <div class="modal-dialog modal-xl" role="document">
                     <div class="modal-content">
                         <div class="modal-header" style="background-color: #001F3F; color: #fff;">
-                            <h5 class="modal-title" id="exampleModalLabel">Add an item</h5>
+                            <div class="row text-left">
+                                <div class="col-12">
+                                    <h6>Beginning Inventory Entry</h6>
+                                </div>
+                                <div class="col-12">
+                                    <h5>Add an item</h5>
+                                </div>
+                            </div>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #fff;">
                             <span aria-hidden="true">&times;</span>
                             </button>
@@ -79,7 +86,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" id="add-item-btn" class="btn btn-primary d-none">Add item</button>
+                            <button type="button" id="add-item-btn" class="btn btn-primary w-100 d-none">Add item</button>
                         </div>
                     </div>
                 </div>
