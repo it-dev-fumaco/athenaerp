@@ -2068,13 +2068,6 @@ class ConsignmentController extends Controller
                 }
             }
 
-            $transfer_type = null;
-            if($ste->purpose == 'Material Transfer'){
-                $transfer_type = $ste->transfer_as == 'Store Transfer' ? 'Store Transfer' : 'For Return';
-            }else{
-                $transfer_type = 'Sales Return';
-            }
-
             $ste_arr[] = [
                 'name' => $ste->name,
                 'from_warehouse' => $ste->from_warehouse,
@@ -2083,7 +2076,7 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'owner' => $ste->owner,
                 'docstatus' => $ste->docstatus,
-                'transfer_type' => $transfer_type,
+                'transfer_type' => $ste->transfer_as,
                 'date' => $ste->creation
             ];
         }
