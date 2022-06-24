@@ -35,7 +35,7 @@
                                         <select name="transfer_as" id='transfer-as' class="form-control" required style="font-size: 9pt">
                                             <option value="" disabled selected>Select Purpose</option>
                                             @foreach ($purpose as $p)
-                                                <option value="{{ $p['value'] }}">{{ $p['title'] }}</option>
+                                                <option value="{{ $p }}">{{ $p }}</option>
                                             @endforeach
                                         </select>
                                     </div>
