@@ -136,7 +136,7 @@
             $('#transfer-as').change(function (){
                 $('#target').slideDown();
                 var src = $('#src-warehouse').val();
-                if($(this).val() == 'Store Tranfer'){ // Stock Transfers
+                if($(this).val() == 'Store Transfer'){ // Stock Transfers
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
                     }
