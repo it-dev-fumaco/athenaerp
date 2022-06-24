@@ -159,7 +159,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/validate_beginning_inventory', 'ConsignmentController@checkBeginningInventory'); 
     Route::get('/promodiser/damage_report/form', 'ConsignmentController@promodiserDamageForm'); 
     Route::get('/damage_report/list', 'ConsignmentController@damagedItems'); 
-    Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem'); 
+    Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem');
+    Route::get('/damaged/return/{id}', 'ConsignmentController@returnDamagedItem');
     Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
     Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport'); 
 
