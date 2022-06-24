@@ -210,33 +210,25 @@ class MainController extends Controller
                 $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->count();
 
                 // get incoming / to receive items
-                $type = 'incoming';
-                $received_ste_arr = [];
-                if($type == 'incoming'){ // get ste's of received items
-                    $received_ste_arr = DB::table('tabStock Entry Detail')->where('consignment_status', 'Received')->select('parent')->distinct('parent')->get();
-                    $received_ste_arr = collect($received_ste_arr)->map(function ($q){
-                        return $q->parent;
-                    });
-                }
-
                 $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
 
-                $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : null;
+                $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
 
                 $delivery_report_query = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
                     ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ // do not include ste's of received items
                         return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
                     })
-                    ->where('ste.transfer_as', 'Consignment')
+                    ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
                     ->where('ste.purpose', 'Material Transfer')
+                    ->where('ste.docstatus', '<', 2)
                     ->whereIn('ste.item_status', ['For Checking', 'Issued'])
                     ->whereIn('sted.t_warehouse', $assigned_consignment_store)
                     ->where(function($q) {
                         $q->whereNull('sted.consignment_status')
                         ->orWhere('sted.consignment_status', '!=', 'Received');
                     })
-                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'ste.to_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status')
+                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
                     ->orderBy('ste.creation', 'desc')->get();
 
                 $delivery_report = collect($delivery_report_query)->groupBy('name');
@@ -278,16 +270,31 @@ class MainController extends Controller
                         $status = 'Pending';
                     }
 
-                    $ste_arr[] = [
-                        'name' => $row[0]->name,
-                        'from' => $row[0]->from_warehouse,
-                        'to_consignment' => $row[0]->to_warehouse,
-                        'status' => $status,
-                        'items' => $items_arr,
-                        'creation' => $row[0]->creation,
-                        'delivery_date' => $row[0]->delivery_date,
-                        'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
-                    ];
+                    if ($row[0]->transfer_as == 'Consignment' && $row[0]->docstatus == 1) {
+                        $ste_arr[] = [
+                            'name' => $row[0]->name,
+                            'from' => $row[0]->from_warehouse,
+                            'to_consignment' => $row[0]->t_warehouse,
+                            'status' => $status,
+                            'items' => $items_arr,
+                            'creation' => $row[0]->creation,
+                            'delivery_date' => $row[0]->delivery_date,
+                            'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+                        ];
+                    }
+
+                    if ($row[0]->transfer_as == 'Store Transfer' && $row[0]->docstatus == 0) {
+                        $ste_arr[] = [
+                            'name' => $row[0]->name,
+                            'from' => $row[0]->from_warehouse,
+                            'to_consignment' => $row[0]->t_warehouse,
+                            'status' => $status,
+                            'items' => $items_arr,
+                            'creation' => $row[0]->creation,
+                            'delivery_date' => $row[0]->delivery_date,
+                            'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+                        ];
+                    }
                 }
 
                 return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr'));

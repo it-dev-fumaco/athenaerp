@@ -45,7 +45,7 @@
                                         <td>
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a>
                                             @if ($ste['status'] == 'Delivered')
-                                                <span class="badge badge-{{ $ste['delivery_status'] == 0 ? 'primary' : 'success' }}">{{ $ste['delivery_status'] == 0 ? 'To Receive' : 'Received' }}</span>
+                                                <span class="badge badge-{{ $ste['delivery_status'] == 0 ? 'warning' : 'success' }}">{{ $ste['delivery_status'] == 0 ? 'To Receive' : 'Received' }}</span>
                                             @endif
                                             <br>
                                             <span><b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</span>
