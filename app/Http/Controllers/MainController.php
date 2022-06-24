@@ -690,11 +690,12 @@ class MainController extends Controller
                 ->whereIn('item_code', $item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
 
             $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
-                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation', 'is_tax_included_in_rate'])->pluck('value', 'field')->toArray();
         }
 
         $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
         $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+        $is_tax_included_in_rate = array_key_exists('is_tax_included_in_rate', $price_settings) ? $price_settings['is_tax_included_in_rate'] : 0;
 
         $item_list = [];
         foreach ($items as $row) {
@@ -785,8 +786,11 @@ class MainController extends Controller
             }
 
             $minimum_selling_price = $item_rate * $minimum_price_computation;
-
             $default_price = $item_rate * $standard_price_computation;
+            if ($is_tax_included_in_rate) {
+                $default_price = ($item_rate * $standard_price_computation) * 1.12;
+            }
+
             $website_price = array_key_exists($row->item_code, $website_prices) ? $website_prices[$row->item_code] : 0;
 
             $default_price = ($website_price > 0) ? $website_price : $default_price;
@@ -2571,6 +2575,7 @@ class MainController extends Controller
         $avgPurchaseRate = '₱ 0.00';
         $last_purchase_rate = 0;
         $manual_rate = 0;
+        $is_tax_included_in_rate = 0;
         if (in_array($user_department, $allowed_department) || in_array($user_group, ['Manager', 'Director'])) {
             $avgPurchaseRate = $this->avgPurchaseRate($item_code);
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
@@ -2595,22 +2600,26 @@ class MainController extends Controller
             }
 
             $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
-                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation', 'is_tax_included_in_rate'])->pluck('value', 'field')->toArray();
 
             $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
             $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+            $is_tax_included_in_rate = array_key_exists('is_tax_included_in_rate', $price_settings) ? $price_settings['is_tax_included_in_rate'] : 0;
 
             $last_purchase_rate = $item_rate;
 
-         
             if ($item_rate <= 0) {
                 $manual_rate = 1;
                 $item_rate = $item_details->custom_item_cost;
             }
 
             $minimum_selling_price = $item_rate * $minimum_price_computation;
-
             $default_price = $item_rate * $standard_price_computation;
+
+            if($is_tax_included_in_rate) {
+                $default_price = ($item_rate * $standard_price_computation) * 1.12;
+            }
+
             $website_price = DB::table('tabItem Price')
                 ->where('price_list', 'Website Price List')->where('selling', 1)
                 ->where('item_code', $item_code)->orderBy('modified', 'desc')
@@ -2860,7 +2869,11 @@ class MainController extends Controller
                     }
                 }
 
-                $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variant_rate * $standard_price_computation;
+                if($is_tax_included_in_rate) {
+                    $variants_default_price = ($variant_rate * $standard_price_computation) * 1.12;
+                }
+
+                $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variants_default_price;
                 $variants_price_arr[$variant] = $variants_default_price;
                 $variants_cost_arr[$variant] = $variant_rate;
                 $variants_min_price_arr[$variant] = $variant_rate * $minimum_price_computation;
@@ -2883,7 +2896,7 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input'));
+        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -5410,15 +5423,19 @@ class MainController extends Controller
         }
 
         $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
-            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation', 'is_tax_included_in_rate'])->pluck('value', 'field')->toArray();
 
         $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
         $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+        $is_tax_included_in_rate = array_key_exists('is_tax_included_in_rate', $price_settings) ? $price_settings['is_tax_included_in_rate'] : 0;
 
         $price = $request->price;
 
         $standard_price = $price * $standard_price_computation;
         $min_price = $price * $minimum_price_computation;
+        if ($is_tax_included_in_rate) {
+            $standard_price = ($price * $standard_price_computation) * 1.12;
+        }
 
         $item_cost = '₱ ' . number_format($price, 2, '.', ',');
         $standard_price = '₱ ' . number_format($standard_price, 2, '.', ',');
@@ -5534,10 +5551,11 @@ class MainController extends Controller
             ->whereIn('item_code', $item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
 
         $price_settings = DB::table('tabSingles')->where('doctype', 'Price Settings')
-            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation'])->pluck('value', 'field')->toArray();
+            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation', 'is_tax_included_in_rate'])->pluck('value', 'field')->toArray();
 
         $minimum_price_computation = array_key_exists('minimum_price_computation', $price_settings) ? $price_settings['minimum_price_computation'] : 0;
         $standard_price_computation = array_key_exists('standard_price_computation', $price_settings) ? $price_settings['standard_price_computation'] : 0;
+        $is_tax_included_in_rate = array_key_exists('is_tax_included_in_rate', $price_settings) ? $price_settings['is_tax_included_in_rate'] : 0;
             
         foreach($item_variants as $row){
             $rate = 0;
@@ -5555,9 +5573,14 @@ class MainController extends Controller
                 $rate = $row->custom_item_cost ? $row->custom_item_cost : 0;
             }
 
-            $standard_price = array_key_exists($row->name, $website_prices) ? $website_prices[$row->name] : ($rate * $standard_price_computation);
+            $d_rate = ($rate * $standard_price_computation);
             $min_price = ($rate * $minimum_price_computation);
+            if ($is_tax_included_in_rate) {
+                $d_rate = ($rate * $standard_price_computation) * 1.12;
+            }
 
+            $standard_price = array_key_exists($row->name, $website_prices) ? $website_prices[$row->name] : $d_rate;
+            
             $prices[$row->name] = [
                 'rate' => $rate,
                 'standard' => $standard_price,

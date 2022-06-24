@@ -77,7 +77,7 @@
             <td class="text-center d-none d-sm-table-cell">{{ $row['remarks'] }}</td>
             @if($user_group == 'Inventory Manager')
                 <td class="text-center d-none d-sm-table-cell">
-                    <button type="button" id="cancel-btn" class="btn btn-danger btn-sm cancel-transaction" data-toggle="modal" data-target="#cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
+                    <button type="button" id="cancel-btn" class="btn btn-secondary btn-sm cancel-transaction" data-toggle="modal" data-target="#cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
                         Cancel
                     </button>
                     <div class="modal fade cancel-modal" id="cancel-transaction-modal-{{ $row['reference_parent'] }}" tabindex="999" aria-labelledby="cancel-transaction" aria-hidden="true">

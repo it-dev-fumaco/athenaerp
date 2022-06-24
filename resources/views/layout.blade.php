@@ -1185,11 +1185,11 @@
 			let brand = getParam.get('brand');
 
 			if(whName === ''){
-				whPlaceholder = "Select Warehouse";
+				whPlaceholder = "Warehouse";
 			}else if(whName != null){
 				whPlaceholder = whName;
 			}else{
-				whPlaceholder = "Select Warehouse";
+				whPlaceholder = "Warehouse";
 			}
 
 			if(grp === ''){
@@ -1209,11 +1209,11 @@
 			}
 
 			if(brand === ''){
-				brandPlaceholder = "Select Brand";
+				brandPlaceholder = "Brand";
 			}else if(brand != null){
 				brandPlaceholder = brand;
 			}else{
-				brandPlaceholder = "Select Brand";
+				brandPlaceholder = "Brand";
 			}
 
 			// Search Results Warehouse Filter
@@ -2163,6 +2163,11 @@
 				}
 			});
 		}
+
+		function close_modal(modal){
+			$('#'+modal).modal('hide');
+		}
+		
 	</script>
 </body>
 </html>
