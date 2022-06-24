@@ -26,11 +26,7 @@
                                 @csrf
                                 <div class="row p-1" style="font-size: 9pt">
                                     @php
-                                        $purpose = [
-                                            ['title' => 'Store Transfer', 'value' => 'Consignment'],
-                                            ['title' => 'For Return', 'value' => 'For Return'],
-                                            ['title' => 'Sales Return', 'value' => 'Sales Return']
-                                        ];
+                                        $purpose = ['Store Transfer', 'For Return', 'Sales Return'];
                                     @endphp
                                     <div class="col-2 pt-2">
                                         <label for="transfer_as">Purpose</label>
@@ -140,7 +136,7 @@
             $('#transfer-as').change(function (){
                 $('#target').slideDown();
                 var src = $('#src-warehouse').val();
-                if($(this).val() == 'Consignment'){ // Stock Transfers
+                if($(this).val() == 'Store Tranfer'){ // Stock Transfers
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
                     }
