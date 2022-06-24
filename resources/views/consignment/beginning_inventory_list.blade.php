@@ -78,7 +78,9 @@
 							<table class="table" style="font-size: 9pt;">
 								<thead>
 									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Date</th>
-									<th class="p-1 text-center align-middle" style="width: 50%;">Store</th>
+									<th class="p-1 text-center align-middle mobile-first">Store</th>
+									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Total items</th>
+									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Amount</th>
 									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Submitted by</th>
 									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Status</th>
 									<th class="p-1 text-center align-middle last-row">Action</th>
@@ -104,7 +106,13 @@
 										<td class="p-2 text-left align-middle text-xl-center">
 											<span class="d-block">{{ $inv['branch'] }}</span>
 											<small>By: {{ $inv['owner'] }} - {{ $inv['transaction_date'] }}</small>
+											<div class="row p-0 d-lg-none">
+												<div class="col-4"><b>Qty: </b>{{ number_format($inv['qty']) }}</div>
+												<div class="col-8"><b>Amount: </b>₱ {{ number_format($inv['amount'], 2) }}</div>
+											</div>
 										</td>
+										<td class="p-2 text-center align-middle d-none d-lg-table-cell">{{ number_format($inv['qty']) }}</td>
+										<td class="p-2 text-center align-middle d-none d-lg-table-cell">₱ {{ number_format($inv['amount'], 2) }}</td>
 										<td class="p-2 text-center align-middle d-none d-lg-table-cell">{{ $inv['owner'] }}</td>
 										<td class="p-2 text-center align-middle d-none d-lg-table-cell">
 											<span class="badge badge-{{ $badge }}">{{ $inv['status'] }}</span>
@@ -282,8 +290,11 @@
             display: none;
         }
         .last-row{
-            width: 20% !important;
+            width: 15% !important;
         }
+		.mobile-first{
+			width: 35% !important;
+		}
         .filters-font{
             font-size: 13px !important;
         }
@@ -292,8 +303,11 @@
             padding: 10px;
         }
         @media (max-width: 575.98px) {
+			.mobile-first{
+				width: 50% !important;
+			}
             .last-row{
-                width: 35%;
+                width: 20%;
             }
             .filters-font{
                 font-size: 9pt;
@@ -305,8 +319,11 @@
             }
         }
         @media (max-width: 767.98px) {
+			.mobile-first{
+				width: 50% !important;
+			}
             .last-row{
-                width: 35%;
+                width: 20%;
             }
             .filters-font{
                 font-size: 9pt;
@@ -318,8 +335,11 @@
             }
         }
         @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+			.mobile-first{
+				width: 50% !important;
+			}
             .last-row{
-                width: 35%;
+                width: 20%;
             }
             .filters-font{
                 font-size: 9pt;
