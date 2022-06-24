@@ -222,7 +222,7 @@
                             </div>
                             @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
                             <div class="text-center m-3">
-                              <a href="/promodiser/receive/{{ $ste['name'] }}" class="btn btn-primary">Receive</a>
+                              <a href="/promodiser/receive/{{ $ste['name'] }}" class="btn btn-primary w-100">Receive</a>
                             </div>
                             @endif
                           </div>

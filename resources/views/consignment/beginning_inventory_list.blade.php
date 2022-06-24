@@ -119,7 +119,14 @@
 														<form action="{{ $modal_form }}" method="post">
 															@csrf
 															<div class="modal-header bg-navy">
-																<h6 class="modal-title font-responsive">{{ $inv['branch'] }}</h6>
+																<div class="row text-left">
+																	<div class="col-12">
+																		<h5>Beginning Inventory</h5>
+																	</div>
+																	<div class="col-12">
+																		<h6 class="font-responsive">{{ $inv['branch'] }}</h6>
+																	</div>
+																</div>
 																<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
 																	<span aria-hidden="true">&times;</span>
 																</button>
