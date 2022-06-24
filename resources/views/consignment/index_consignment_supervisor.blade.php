@@ -68,10 +68,12 @@
                     </div>
                 </div>
                 <div class="p-2 col-4">
+                    <a href="/view_promodisers" style="color: inherit;">
                     <div class="text-center">
                         <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 3rem;">{{ ($promodisers) }}</p>
                         <span class="d-block">Promodiser(s)</span>
                     </div>
+                </a>
                 </div>
                 <div class="p-2 col-4">
                     <a href="/beginning_inv_list" style="color: inherit">

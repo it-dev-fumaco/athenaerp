@@ -2545,4 +2545,34 @@ class ConsignmentController extends Controller
 
         return view('consignment.supervisor.tbl_activity_logs', compact('logs'));
     }
+
+    public function viewPromodisersList() {
+        if (Auth::user()->user_group != 'Consignment Supervisor') {
+            return redirect('/');
+        }
+
+        $query = DB::table('tabWarehouse Users as wu')
+            ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+            ->where('wu.user_group', 'Promodiser')
+            ->select('wu.wh_user', 'wu.last_login', 'wu.full_name', 'acw.warehouse')
+            ->orderBy('wu.wh_user', 'asc')->get();
+
+        $list = collect($query)->groupBy('wh_user')->toArray();
+
+        $total_promodisers = count(array_keys($list));
+
+        $result = [];
+        foreach($list as $prmodiser => $row) {
+            $result[] = [
+                'promodiser_name' => $row[0]->full_name,
+                'stores' => array_column($row, 'warehouse'),
+                'last_login' => $row[0]->last_login,
+            ];
+        }
+
+        $stores_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+            ->where('status', 'Approved')->select('branch_warehouse', DB::raw('MIN(transaction_date) as transaction_date'))->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')->toArray();
+
+        return view('consignment.supervisor.view_promodisers_list', compact('result', 'total_promodisers', 'stores_with_beginning_inventory'));
+    }
 }

@@ -174,4 +174,5 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/view_product_sold_items/{store}/{from}/{to}', 'ConsignmentController@viewProductSoldItems');
 
     Route::get('/get_activity_logs', 'ConsignmentController@activityLogs');
+    Route::get('/view_promodisers', 'ConsignmentController@viewPromodisersList');
 });
