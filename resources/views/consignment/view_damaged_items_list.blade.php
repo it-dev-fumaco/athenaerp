@@ -20,22 +20,22 @@
                         </div>
                     </div>
                     <div class="card card-info card-outline">
-                        <!-- Nav tabs -->
-                        <ul class="nav nav-tabs m-0" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" data-toggle="tab" href="#stock_transfers" style="font-size: 10pt">Stock Transfers</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" data-toggle="tab" href="#damaged_items" style="font-size: 10pt">Damaged Items</a>
-                            </li>
-                        </ul>
-                      
-                        <!-- Tab panes -->
+                        <div class="card-body p-2">
+                            <ul class="nav nav-pills m-0" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active font-responsive" data-toggle="tab" href="#stock_transfers">Stock Transfers</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link font-responsive" data-toggle="tab" href="#damaged_items">Damaged Items</a>
+                                </li>
+                            </ul>
+
+                             <!-- Tab panes -->
                         <div class="tab-content">
                             <!-- Stock Transfers -->
                             <div id="stock_transfers" class="container-fluid tab-pane active" style="padding: 8px 0 0 0;">
                                 <div id="accordion" class="p-0 m-0" style="border: none !important">
-                                    <div class="card p-0 m-0" style="border: none !important">
+                                    <div class="p-0 m-0" style="border: none !important">
                                         <div class="card-header p-2 d-block d-xl-none" id="headingOne">
                                             <button class="btn btn-link p-0" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne" style="font-size: 10pt">
                                                 <i class="fa fa-filter"></i>&nbsp;Filters
@@ -79,21 +79,22 @@
                                         </div>
                                     </div>
                                 </div>
-                                <table class="table table-striped" style="font-size: 10pt;">
-                                    <tr>
-                                        <th class="text-center d-none d-xl-table-cell" id='first-row'>Date</th>
-                                        <th class="text-center" id='second-row'>
+                                <table class="table table-striped table-bordered" style="font-size: 10pt;">
+                                    <thead>
+                                        <th class="text-center p-2 align-middle text-uppercase d-none d-xl-table-cell" id='first-row'>Date</th>
+                                        <th class="text-center p-2 align-middle text-uppercase" id='second-row'>
                                             <span class="d-block d-xl-none">Details</span>
                                             <span class="d-none d-xl-block">Name</span>
                                         </th>
-                                        <th class="text-center d-none d-xl-table-cell" style="width: 10%">Purpose</th>
-                                        <th class="text-center d-none d-xl-table-cell" style="width: 20%">From</th>
-                                        <th class="text-center d-none d-xl-table-cell" style="width: 20%">To</th>
-                                        <th class="text-center d-none d-xl-table-cell" style="width: 10%">Submitted by</th>
-                                        <th class="text-center d-none d-xl-table-cell" style="width: 10%">Status</th>
-                                        <th class="text-center" style="width: 10%">Action</th>
-                                    </tr>
-                                    @foreach ($ste_arr as $ste)
+                                        <th class="text-center p-2 align-middle text-uppercase d-none d-xl-table-cell" style="width: 10%">Purpose</th>
+                                        <th class="text-center p-2 align-middle text-uppercase d-none d-xl-table-cell" style="width: 20%">From</th>
+                                        <th class="text-center p-2 align-middle text-uppercase d-none d-xl-table-cell" style="width: 20%">To</th>
+                                        <th class="text-center p-2 align-middle text-uppercase d-none d-xl-table-cell" style="width: 10%">Created by</th>
+                                        <th class="text-center p-2 align-middle text-uppercase d-none d-xl-table-cell" style="width: 10%">Status</th>
+                                        <th class="text-center p-2 align-middle text-uppercase" style="width: 10%">Action</th>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($ste_arr as $ste)
                                         @php
                                             if($ste['status'] == 'Approved'){
                                                 $badge = 'success';
@@ -102,12 +103,9 @@
                                             }
                                         @endphp
                                         <tr>
-                                            <td class="text-center d-none d-xl-table-cell">
-                                                {{ $ste['creation'] }}
-                                            </td>
-                                            <td class="text-center">
+                                            <td class="text-center p-1 align-middle d-none d-xl-table-cell">{{ $ste['creation'] }}</td>
+                                            <td class="text-center p-1 align-middle">
                                                 {{ $ste['name'] }}
-
                                                 <div class="d-block d-xl-none text-left">
                                                     <b>From: </b> {{ $ste['source_warehouse'] }} <br>
                                                     <b>To: </b> {{ $ste['target_warehouse'] }} <br>
@@ -115,19 +113,19 @@
                                                     <b>Date: </b> {{ $ste['creation'] }}
                                                 </div>
                                             </td>
-                                            <td class="text-center d-none d-xl-table-cell">{{ $ste['transfer_as'] }}</td>
-                                            <td class="text-center d-none d-xl-table-cell">{{ $ste['source_warehouse'] }}</td>
-                                            <td class="text-center d-none d-xl-table-cell">{{ $ste['target_warehouse'] }}</td>
-                                            <td class="text-center d-none d-xl-table-cell">{{ $ste['submitted_by'] }}</td>
-                                            <td class="text-center d-none d-xl-table-cell">
+                                            <td class="text-center p-1 align-middle d-none d-xl-table-cell">{{ $ste['transfer_as'] }}</td>
+                                            <td class="text-center p-1 align-middle d-none d-xl-table-cell">{{ $ste['source_warehouse'] }}</td>
+                                            <td class="text-center p-1 align-middle d-none d-xl-table-cell">{{ $ste['target_warehouse'] }}</td>
+                                            <td class="text-center p-1 align-middle d-none d-xl-table-cell">{{ $ste['submitted_by'] }}</td>
+                                            <td class="text-center p-1 align-middle d-none d-xl-table-cell">
                                                 <span class="badge badge-{{ $badge }}">{{ $ste['status'] }}</span>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-center p-1 align-middle">
                                                 <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal" style="font-size: 10pt;">
                                                     View Items
                                                 </a>
                                                 <span class="badge badge-{{ $badge }} d-xl-none">{{ $ste['status'] }}</span>
-                                                  <!-- Modal -->
+                                                <!-- Modal -->
                                                 <div class="modal fade" id="{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
                                                         <div class="modal-content">
@@ -192,7 +190,12 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                        @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center font-responsive text-uppercase text-muted p-2">No record(s) found</td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
                                 </table>
                                 <div class="float-left m-2">Total: <b>{{ $stock_entry->total() }}</b></div>
                                 <div class="float-right m-2" id="beginning-inventory-list-pagination">{{ $stock_entry->links('pagination::bootstrap-4') }}</div>
@@ -202,49 +205,45 @@
                             <!-- Damaged Items -->
                             <div id="damaged_items" class="container-fluid tab-pane" style="padding: 8px 0 0 0;">
                                 <div id="accordion2" class="p-0 m-0" style="border: none !important">
-                                    <div class="card p-0 m-0" style="border: none !important">
-                                        <div class="card-header p-2 d-block d-xl-none" id="headingOne">
-                                            <button class="btn btn-link p-0" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo" style="font-size: 10pt">
-                                                <i class="fa fa-filter"></i>&nbsp;Filters
-                                            </button>
-                                        </div>
-                                    
-                                        <div id="collapseTwo" class="collapse" aria-labelledby="headingOne" data-parent="#accordion2">
-                                            <div class="card-body">
-                                                <form action="/stocks_report/list" method="GET">
-                                                    <div class="row p-1 mt-1 mb-1">
-                                                        <div class="col-12 col-xl-3">
-                                                            <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Search Item" style='font-size: 10pt'/>
-                                                        </div>
-                                                        <div class="col-12 mt-2 mt-xl-0 col-xl-3">
-                                                            @php
-                                                                $statuses = ['For Approval', 'Approved', 'Cancelled'];
-                                                            @endphp
-                                                            <select class="form-control" name="store" id="consignment-store-select">
-                                                                <option value="">Select Store</option>
-                                                                @foreach ($statuses as $status)
-                                                                <option value="{{ $status }}">{{ $status }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                        <div class="col-12 mt-2 mt-xl-0 col-xl-1">
-                                                            <button class="btn btn-primary w-100"><i class="fas fa-search"></i></button>
-                                                        </div>
-                                                    </div>
-                                                </form>
+                                    <div class="card-header p-2 d-block d-xl-none border" id="headingOne">
+                                        <button class="btn btn-link p-0" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo" style="font-size: 10pt">
+                                            <i class="fa fa-filter"></i>&nbsp;Filters
+                                        </button>
+                                    </div>
+                                
+                                    <div id="collapseTwo" class="collapse" aria-labelledby="headingOne" data-parent="#accordion2">
+                                        <form action="/stocks_report/list" method="GET">
+                                            <div class="row p-1 mt-1 mb-1">
+                                                <div class="col-12 col-xl-3">
+                                                    <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Search Item" style='font-size: 10pt'/>
+                                                </div>
+                                                <div class="col-12 mt-2 mt-xl-0 col-xl-3">
+                                                    @php
+                                                        $statuses = ['For Approval', 'Approved', 'Cancelled'];
+                                                    @endphp
+                                                    <select class="form-control" name="store" id="consignment-store-select">
+                                                        <option value="">Select Store</option>
+                                                        @foreach ($statuses as $status)
+                                                        <option value="{{ $status }}">{{ $status }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 mt-2 mt-xl-0 col-xl-1">
+                                                    <button class="btn btn-primary w-100"><i class="fas fa-search"></i></button>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </form>
                                     </div>
                                 </div>
                                 <div class="card-body p-2">
-                                    <table class="table table-striped" style="font-size: 10pt;">
+                                    <table class="table table-striped table-bordered" style="font-size: 10pt;">
                                         <thead>
-                                            <th class="text-center d-none d-xl-table-cell" style="width: 10%;">Date</th>
-                                            <th class="text-center" style="width: 35%;">Item Description</th>
-                                            <th class="text-center d-none d-xl-table-cell" style="width: 10%;">Qty</th>
-                                            <th class="text-center d-none d-xl-table-cell" style="width: 20%;">Store</th>
-                                            <th class="text-center d-none d-xl-table-cell" style="width: 20%;">Damage Description</th>
-                                            <th class="text-center d-none d-xl-table-cell" style="width: 5%;">-</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%;">Date</th>
+                                            <th class="text-center p-2 align-middle" style="width: 35%;">Item Description</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%;">Qty</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Store</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Damage Description</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 5%;">-</th>
                                         </thead>
                                         @forelse ($items_arr as $i => $item)
                                             <tr>
@@ -294,6 +293,11 @@
                             </div>
                             <!-- Damaged Items -->
                         </div>
+                        </div>
+                        <!-- Nav tabs -->
+                       
+                      
+                       
                     </div>
                 </div>
             </div>
