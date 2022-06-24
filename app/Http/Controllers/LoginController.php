@@ -39,6 +39,8 @@ class LoginController extends Controller
                     if ($user) {
                         // attempt to do the login
                         if(Auth::loginUsingId($user->frappe_userid)){
+                            DB::table('tabWarehouse Users')->where('name', $user->name)->update(['last_login' => Carbon::now()->toDateTimeString()]);
+
                             return redirect('/');
                         } 
                     } else {        

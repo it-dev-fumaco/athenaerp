@@ -21,6 +21,8 @@
 	<!-- iCheck for checkboxes and radio inputs -->
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
 	<link rel="stylesheet" type="text/css" href="{{ asset('css/daterangepicker.css') }}" />
+	<!-- fullCalendar -->
+	<link rel="stylesheet" href="{{ asset('/updated/plugins/fullcalendar/main.css') }}">
 	<!-- datepicker -->
 	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
 	<style>
@@ -448,6 +450,7 @@
 			width: 15%;
 		}
 	</style>
+	@yield('style')
 </head>
 <body class="hold-transition layout-top-nav">
 	<div id="loader-wrapper">
@@ -462,19 +465,25 @@
 					<div class="row w-100 p-0 m-0">
 						<div class="col-xl-9 col-lg-10 col-md-12">
 							<div class="row">
-								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-center">
+								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-md-center text-sm-left">
 									<a href="/" class="navbar-brand">
-										<span class="brand-text text-white" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
+										<span class="brand-text text-white d-sm-block d-md-none d-lg-none" style="font-size: 1.3rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
+										<span class="brand-text text-white d-none d-md-block d-lg-block" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 									</a>
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
 										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
 											<div class="btn-group icon-container mt-2" role="group">
-												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="40" height="40"><i class="fas fa-caret-down ml-2"></i>
+												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30"><i class="fas fa-caret-down ml-2 mt-1"></i>
 											</div>
 										</a>
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+											<a href="#" class="dropdown-item w-100">
+												<center>
+													<i class="fas fa-user"></i> <span class="d-xl-inline-block">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
+												</center>
+											</a>
 											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
 												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
 											</a>
@@ -521,7 +530,32 @@
 			</div>
 		</nav>
 		<div class="content-wrapper">
-			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list', 'import_from_ecommerce']))
+			@if (Auth::user() && Auth::user()->user_group == 'Promodiser')
+			<div class="row p-0 m-0 font-responsive">
+				<div class="col-md-12 p-2">
+					<div class="btn-group w-100" role="group" aria-label="Button group with nested dropdown">
+						<a href="/" class="btn btn-default" style="width: 33%;">Home</a>
+						<div class="btn-group" role="group" style="width: 33%;">
+							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
+							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
+								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
+								<a class="dropdown-item" href="/promodiser/damage_report/form">Damaged Items Entry</a>
+							</div>
+						</div>
+						<div class="btn-group" role="group" style="width: 33%;">
+							<button id="btnGroupDrop2" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Report</button>
+							<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop2">
+								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
+								<a class="dropdown-item" href="/damage_report/list">Damaged Item Report</a>
+								<a class="dropdown-item" href="/stock_transfer/list/Material Receipt">Sales Returns Report</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			@endif
+			
+			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list', 'import_from_ecommerce', 'beginning_inventory']))
 			<div class="row m-0 pb-0">
 				<div class="col-xl-5 p-3">
 					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
@@ -1045,7 +1079,7 @@
 	</div>
 
   <!-- Main Footer -->
-  <footer class="main-footer">
+  <footer class="main-footer font-responsive">
     <!-- To the right -->
     <div class="float-right d-none d-sm-inline">
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
@@ -1185,9 +1219,7 @@
 			// Search Results Warehouse Filter
 			$('#warehouse-filter').select2({
 				dropdownParent: $('#warehouse-filter-parent'),
-				// placeholder: whName.trim() != null ? whName : "Select Warehouse",
 				placeholder: whPlaceholder,
-
 				ajax: {
 					url: '/get_select_filters',
 					method: 'GET',
@@ -1208,34 +1240,10 @@
 
 			$(document).on('select2:select', '#warehouse-filter', function(e){
 				var data = e.params.data;
-
 				$('#wh-1').val(data.id);
 				$('#search-form').submit();
 			});
 
-			// Search Results Warehouse Filter
-
-			// allowed_parent_warehouses();
-			// function allowed_parent_warehouses(){
-			// 	$.ajax({
-			// 		type: 'GET',
-			// 		url: '/allowed_parent_warehouses',
-			// 		success: function(response){
-			// 			var r = '';
-			// 			$.each(response, function(i, d){
-			// 				console.log(d);
-			// 				r += '<div class="dropdown-divider"></div>' +
-			// 					'<a href="#" class="dropdown-item">' +
-			// 					'<i class="fas fa-warehouse mr-2"></i>' + d + '</a>'
-			// 			});
-
-			// 			$('#allowed-warehouse-div').html(r);
-			// 		}
-			// 	});
-			// }
-
-			// get_low_stock_level_items();
-			// get_reserved_items();
 			function get_low_stock_level_items(page) {
 				$.ajax({
 					type: "GET",
@@ -1295,81 +1303,14 @@
 
 			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
 				e.preventDefault();
-
 				var reservation_id = $(this).data('reservation-id');
-
 				$('#cancel-stock-reservation-modal .reservation-id').text(reservation_id);
 				$('#cancel-stock-reservation-modal input[name="stock_reservation_id"]').val(reservation_id);
-
 				$('#cancel-stock-reservation-modal').modal('show');
 			});
 
-			// $('#edit-reservation-form').submit(function(e){
-			// 	e.preventDefault();
-
-			// 	$.ajax({
-			// 		type: 'POST',
-			// 		url: $(this).attr('action'),
-			// 		data: $(this).serialize(),
-			// 		success: function(response){
-			// 			if (response.error) {
-			// 				showNotification("danger", response.modal_message, "fa fa-info");
-			// 			}else{
-			// 				view_item_details($('#selected-item-code').text());
-			// 				showNotification("success", response.modal_message, "fa fa-check");
-			// 				$('#edit-stock-reservation-modal').modal('hide');
-			// 			}
-			// 		},
-			// 		error: function(jqXHR, textStatus, errorThrown) {
-			// 		}
-			// 	});
-			// });
-
-			// $('#stock-reservation-form').submit(function(e){
-			// 	e.preventDefault();
-
-			// 	$.ajax({
-			// 		type: 'POST',
-			// 		url: $(this).attr('action'),
-			// 		data: $(this).serialize(),
-			// 		success: function(response){
-			// 			if (response.error) {
-			// 				showNotification("danger", response.modal_message, "fa fa-info");
-			// 			}else{
-			// 				view_item_details($('#selected-item-code').text());
-			// 				showNotification("success", response.modal_message, "fa fa-check");
-			// 				$('#add-stock-reservation-modal').modal('hide');
-			// 			}
-			// 		},
-			// 		error: function(jqXHR, textStatus, errorThrown) {
-			// 		}
-			// 	});
-			// });
-
-			// $('#cancel-reservation-form').submit(function(e){
-			// 	e.preventDefault();
-
-			// 	$.ajax({
-			// 		type: 'POST',
-			// 		url: $(this).attr('action'),
-			// 		data: $(this).serialize(),
-			// 		success: function(response){
-			// 			if (response.error) {
-			// 				showNotification("danger", response.modal_message, "fa fa-info");
-			// 			}else{
-			// 				get_stock_reservation($('#selected-item-code').text());
-			// 				showNotification("success", response.modal_message, "fa fa-check");
-			// 				$('#cancel-stock-reservation-modal').modal('hide');
-			// 			}
-			// 		},
-			// 		error: function(jqXHR, textStatus, errorThrown) {
-			// 		}
-			// 	});
-			// });
-
 			$('#add-stock-reservation-btn').click(function(e){
 				e.preventDefault();
-
 				$('#select-warehouse-c').val(null).trigger('change');
 				$('#select-sales-person-c').val(null).trigger('change');
 				$('#select-branch-warehouse-c').val(null).trigger('change');
@@ -1378,9 +1319,7 @@
 				$('#available-qty-c-text').text(0);
 				$('#warehouse-badge').removeClass('badge-success');
 				$('#warehouse-badge').addClass('badge-danger');
-
 				$("#date-valid-until-c").datepicker("update", new Date());
-
 				$.ajax({
 					type: "GET",
 					url: "/get_item_details/" + $('#selected-item-code').text() + "?json=true",
@@ -1391,7 +1330,6 @@
 						$('#description-c').val(data.description);
 						$('#stock-uom-c').val(data.stock_uom);
 						$('#stock-uom-c-text').text(data.stock_uom);
-						
 						$('#add-stock-reservation-modal').modal('show');
 					}
 				});
@@ -1638,7 +1576,6 @@
 
 			$(document).on('click', '.edit-stock-reservation-btn', function(e){
 				e.preventDefault();
-
 				$.ajax({
 					type: "GET",
 					url: "/get_stock_reservation_details/" + $(this).data('reservation-id'),
@@ -1649,26 +1586,22 @@
 						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
 						selected_warehouse.append(selected_warehouse_option).trigger('change');
 						selected_warehouse.select2({disabled:'readonly'});
-
 						if(data.consignment_warehouse) {
 							var selected_branch = $('#select-branch-warehouse-e');
 							var selected_branch_option = new Option(data.consignment_warehouse, data.consignment_warehouse, true, true);
 							selected_branch.append(selected_branch_option).trigger('change');
 							selected_branch.select2({disabled:'readonly'});
 						}
-
 						if(data.sales_person) {
 							var selected_sales_person = $('#select-sales-person-e');
 							var selected_sales_person_option = new Option(data.sales_person, data.sales_person, true, true);
 							selected_sales_person.append(selected_sales_person_option).trigger('change');
 						}
-
 						if(data.project) {
 							var selected_project = $('#select-project-e');
 							var selected_project_option = new Option(data.project, data.project, true, true);
 							selected_project.append(selected_project_option).trigger('change');
 						}
-
 						if(data.type == 'In-house') {
 							$('.for-in-house-type').removeClass('d-none');
 							$('.for-online-shop-type').addClass('d-none');
@@ -1682,7 +1615,6 @@
 							$('.for-online-shop-type').removeClass('d-none');
 							$('.for-consignment').addClass('d-none');
 						}
-
 						$.ajax({
 							type: 'GET',
 							url: '/get_available_qty/' + data.item_code + '/' + data.warehouse,
@@ -1693,13 +1625,11 @@
 								$('#available-qty-e').val(available_qty);
 							}
 						});
-
 						var now = new Date("{{ Carbon\Carbon::now()->format('Y-m-d') }}");
 						var date = new Date(data.valid_until);
 						var date_difference = date.getTime() - now.getTime();
 						var validity_in_days = date_difference > 0 ? date_difference / (1000 * 60 * 60 * 24) : 0;
 						validity_in_days = Math.floor(validity_in_days) > 0 ? Math.floor(validity_in_days) : 0;
-						
 						$('#stock-reservation-id-e').val(data.name);
 						$('#warehouse-e').val(data.warehouse);
 						$('#item-code-e').val(data.item_code);
@@ -1712,7 +1642,6 @@
 						$('#status-e').val(data.status);
 						$('#date-valid-until-e').val(data.valid_until);
 						$('#validity-e').val(validity_in_days);
-
 						$('#edit-stock-reservation-modal').modal('show');
 					}
 				});
@@ -1726,12 +1655,10 @@
 
 			$(document).on('click', '[data-toggle="mobile-lightbox"]', function(event) {
                 event.preventDefault();
-
 				var item_code = $(this).data('title');
 				$('#mobile-'+item_code+'-images-modal').modal('show');
 			});
 
-			
 			$.ajaxSetup({
 				headers: {
 				  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -1789,10 +1716,8 @@
 
 			$(document).on('click', '.view-item-details', function(e){
 				e.preventDefault();
-
 				var item_code = $(this).data('item-code');
 				var item_classification = $(this).data('item-classification');
-
 				$('#view-item-details-modal .modal-title').text(item_code + " [" + item_classification + "]");
 				$('#view-item-details-modal').modal('show');
 				view_item_details(item_code);
@@ -1800,8 +1725,6 @@
 
 			$(document).on('submit', '.cancel-modal form', function(e){
 				e.preventDefault();
-
-				// alert();
 				$.ajax({
 					type: 'POST',
 					url: $(this).attr('action'),
@@ -1810,34 +1733,28 @@
 						if (response.status) {
 							showNotification("success", response.message, "fa fa-check");
 							$('.cancel-modal').modal('hide');
-							// $('.cancel-modal').modal('hide');
 							get_athena_transactions(response.item_code);
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
 						}
 					},
-					error: function(jqXHR, textStatus, errorThrown) {
-					}
 				});
 			});
 
 			function get_athena_transactions(item_code, page){
 				if(item_code){
-var ath_src = $('#ath-src-warehouse-filter').val();
-				var ath_trg = $('#ath-to-warehouse-filter').val();
-				var ath_user = $('#warehouse-user-filter').val();
-				var ath_drange = $('#ath_dates').val();
-				// var ath_user = $('#warehouse-user-filter').val();
-				$.ajax({
-					type: 'GET',
-					url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
-					success: function(response){
-						// $('#athena-transactions-table').html(response);
-						$('#athena-transactions').html(response);
-					}
-				});
+					var ath_src = $('#ath-src-warehouse-filter').val();
+					var ath_trg = $('#ath-to-warehouse-filter').val();
+					var ath_user = $('#warehouse-user-filter').val();
+					var ath_drange = $('#ath_dates').val();
+					$.ajax({
+						type: 'GET',
+						url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
+						success: function(response){
+							$('#athena-transactions').html(response);
+						}
+					});
 				}
-				
 			}
 
 			$(document).on('click', '#low-level-stocks-pagination a', function(event){
@@ -1875,13 +1792,9 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 			
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
-
 				$('.img_upload').remove();
-				
 				var item_code = $(this).data('item-code');
-				
 				get_item_images(item_code);
-				
 				$('#upload-image-modal input[name="item_code"]').val(item_code);
 				$('#image-preview').attr('src', $(this).data('image'));
 				$('#upload-image-modal').modal('show');
@@ -1954,13 +1867,9 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 						$('#myModal').modal('show'); 
 						$('#myModalLabel').html('Message');
 						$('#desc').html(response.message);
-
 						view_item_details(item_code);
-
 						$('#upload-image-modal').modal('hide');
 					},
-					error: function(jqXHR, textStatus, errorThrown) {
-					}
 				});
 			});
 
@@ -1970,10 +1879,6 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				setTimeout(function() {
 					$('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
 				}, 0);
-			});
-			
-			$('#view-item-details-modal').on("hidden.bs.modal", function () {
-				// $('#item-tabs a[href="#tab_1"]').tab('show');
 			});
 
 			$(document).on('hidden.bs.modal', '.modal', function () {
@@ -1994,24 +1899,17 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				  }
 				});
 			}
-
 			// Transactions Warehouse Users Filter
-
-
 			// Athena Transactions Pagination
-			
 			$(document).on('click', '#athena-transactions-pagination a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
-				
 				var page = $(this).attr('href').split('page=')[1];//+ath_user_filter+ath_src_wh;
 				get_athena_transactions(item_code, page);
 			});
-
-	
 			
 			//Athena Warehouse Users
-				$('#warehouse-user-filter').select2({//athena warehouse users
+			$('#warehouse-user-filter').select2({//athena warehouse users
 				dropdownParent: $('#warehouse-user-filter-parent'),
 				placeholder: 'Warehouse User',
 				ajax: {
@@ -2030,14 +1928,13 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					},
 					cache: true
 				}
-				});
+			});
 
-				$(document).on('select2:select', '#warehouse-user-filter', function(e){
-					var item_code = $('#selected-item-code').text();
-					get_athena_transactions(item_code);
-				});
+			$(document).on('select2:select', '#warehouse-user-filter', function(e){
+				var item_code = $('#selected-item-code').text();
+				get_athena_transactions(item_code);
+			});
 			//Athena Warehouse Users
-
 			//Athena Source Warehouse
 			$('#ath-src-warehouse-filter').select2({
 				dropdownParent: $('#ath-src-warehouse-filter-parent'),
@@ -2065,7 +1962,6 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				get_athena_transactions(item_code);
 			});
 			//Athena Source Warehouse
-
 			//Athena Target Warehouse
 			$('#ath-to-warehouse-filter').select2({
 				dropdownParent: $('#ath-to-warehouse-filter-parent'),
@@ -2093,15 +1989,12 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 				get_athena_transactions(item_code);
 			});
 			//Athena Target Warehouse
-
 			//Athena Month
 			$('#ath_dates').on('change', function(e){ 
 				var item_code = $('#selected-item-code').text();
 				get_athena_transactions(item_code);
 			})
-			
 			//Athena Month
-
 			// ERP Warehouse Users
 			$('#erp-warehouse-user-filter').select2({//warehouse users
 				dropdownParent: $('#erp-warehouse-user-filter-parent'),
@@ -2110,15 +2003,15 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					url: '/get_select_filters',
 					method: 'GET',
 					dataType: 'json',
-							data: function (data) {
-					return {
-						q: data.term // search term
-					};
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
 					},
 					processResults: function (response) {
-					return {
-						results: response.warehouse_users
-					};
+						return {
+							results: response.warehouse_users
+						};
 					},
 					cache: true
 				}
@@ -2131,21 +2024,20 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 					url: '/get_select_filters',
 					method: 'GET',
 					dataType: 'json',
-							data: function (data) {
-					return {
-						q: data.term // search term
-					};
+					data: function (data) {
+						return {
+							q: data.term // search term
+						};
 					},
 					processResults: function (response) {
-					return {
-						results: response.warehouse
-					};
+						return {
+							results: response.warehouse
+						};
 					},
 					cache: true
 				}
 			});
 			// ERP Warehouse
-
 			// Brand filter
 			$('#brand-filter').select2({
 				dropdownParent: $('#brand-filter-parent'),
@@ -2170,13 +2062,10 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 
 			$(document).on('select2:select', '#brand-filter', function(e){
 				var data = e.params.data;
-
 				$('#brand-1').val(data.id);
 				$('#search-form').submit();
 			});
-
 			// Brand filter
-			
 			// Item class filter
 			$('#item-class-filter').select2({
 				dropdownParent: $('#item-class-filter-parent'),
@@ -2201,119 +2090,9 @@ var ath_src = $('#ath-src-warehouse-filter').val();
 
 			$(document).on('select2:select', '#item-class-filter', function(e){
 				var data = e.params.data;
-
 				$('#class-1').val(data.id);
 				$('#search-form').submit();
 			});
-			// Item class filter
-
-			// $('#athReset').click(function(){
-			// 	item_code = $('#selected-item-code').text();
-			// 	$('#ath-to-warehouse-filter').empty();
-			// 	$('#ath-src-warehouse-filter').empty();
-			// 	$('#warehouse-user-filter').empty();
-			// 	$(function() {
-			// 		$("#ath_dates").daterangepicker({
-			// 			ranges: {
-			// 				'Today': [moment(), moment()],
-			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
-			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-			// 			},
-			// 			locale: {
-			// 				format: 'YYYY-MMM-DD',
-			// 				separator: " to "
-			// 			},
-			// 			// startDate: moment().subtract(30, 'days'), endDate: moment(),
-			// 			startDate: '2018-01-01', endDate: moment(),
-
-			// 		});
-			// 	});
-			// 	$("#ath_dates").val('');
-			// 	$("#ath_dates").attr("placeholder","Select Date Range");
-			// 	get_athena_transactions(item_code);
-			// })
-
-			// $('#erpReset').click(function(){
-			// 	item_code = $('#selected-item-code').text();
-			// 	$('#erp-warehouse-filter').empty();
-			// 	$('#erp-warehouse-user-filter').empty();
-			// 	$(function() {
-			// 		$("#erp_dates").daterangepicker({
-			// 			ranges: {
-			// 				'Today': [moment(), moment()],
-			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
-			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-			// 			},
-			// 			locale: {
-			// 				format: 'YYYY-MMM-DD',
-			// 				separator: " to "
-			// 			},
-			// 			// startDate: moment().subtract(30, 'days'), endDate: moment(),
-			// 			startDate: '2018-01-01', endDate: moment(),
-
-			// 		});
-			// 	});
-			// 	$("#erp_dates").val('');
-			// 	$("#erp_dates").attr("placeholder","Select Date Range");
-			// 	get_stock_ledger(item_code);
-
-			// })
-
-			// $('#resetAll').click(function(){
-			// 	item_code = $('#selected-item-code').text();
-			// 	$('#ath-to-warehouse-filter').empty();
-			// 	$('#ath-src-warehouse-filter').empty();
-			// 	$('#warehouse-user-filter').empty();
-			// 	$('#erp-warehouse-filter').empty();
-			// 	$('#erp-warehouse-user-filter').empty();
-			// 	$(function() {
-			// 		$("#ath_dates").daterangepicker({
-			// 			ranges: {
-			// 				'Today': [moment(), moment()],
-			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
-			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-			// 			},
-			// 			locale: {
-			// 				format: 'YYYY-MMM-DD',
-			// 				separator: " to "
-			// 			},
-			// 			startDate: moment().subtract(30, 'days'), endDate: moment(),
-			// 		});
-			// 	});
-			// 	$(function() {
-			// 		$("#erp_dates").daterangepicker({
-			// 			ranges: {
-			// 				'Today': [moment(), moment()],
-			// 				'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-			// 				'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-			// 				'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-			// 				'This Month': [moment().startOf('month'), moment().endOf('month')],
-			// 				'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-			// 			},
-			// 			locale: {
-			// 				format: 'YYYY-MMM-DD',
-			// 				separator: " to "
-			// 			},
-			// 			startDate: moment().subtract(30, 'days'), endDate: moment(),
-			// 		});
-			// 	});
-			// 	$("#erp_dates").val('');
-			// 	$("#erp_dates").attr("placeholder","Select Date Range");
-			// 	$("#ath_dates").val('');
-			// 	$("#ath_dates").attr("placeholder","Select Date Range");
-			// 	get_stock_ledger(item_code);
-			// 	get_athena_transactions(item_code);
-			// });
-			// Transactions Warehouse Filter
 		});
 
 		function close_modal(modal){
