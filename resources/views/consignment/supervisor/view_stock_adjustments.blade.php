@@ -73,7 +73,7 @@
                                                         </select>
                                                     </div>
                                                     <div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
-                                                        <select name="store" class="form-control filters-font">
+                                                        <select name="store" class="form-control filters-font" id="consignment-store-select">
                                                             <option value="" disabled {{ !request('store') ? 'selected' : null }}>Select a store</option>
                                                             @foreach ($consignment_stores as $store)
                                                             <option value="{{ $store }}" {{ request('store') == $store ? 'selected' : null }}>{{ $store }}</option>
@@ -543,6 +543,26 @@
                 $('#headingOne').addClass('d-none');
                 $('#collapseOne').addClass('show');
 			}
+
+            $('#consignment-store-select').select2({
+            placeholder: "Select Store",
+            ajax: {
+                url: '/consignment_stores',
+                method: 'GET',
+                dataType: 'json',
+                data: function (data) {
+                    return {
+                        q: data.term // search term
+                    };
+                },
+                processResults: function (response) {
+                    return {
+                        results: response
+                    };
+                },
+                cache: true
+            }
+        });
         });
     </script>
 @endsection
