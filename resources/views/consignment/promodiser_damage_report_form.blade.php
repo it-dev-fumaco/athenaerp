@@ -9,8 +9,8 @@
             <div class="container">
                 <div class="row pt-1">
                     <div class="col-md-12 p-0 m-0">
-                        <div class="card card-secondary card-outline">
-                            <div class="card-header text-center" id="report">
+                        <div class="card card-lightblue">
+                            <div class="card-header text-center p-2" id="report">
                                 @if(session()->has('success'))
                                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                                         {{ session()->get('success') }}
@@ -21,16 +21,16 @@
                                         {{ session()->get('error') }}
                                     </div>
                                 @endif
-                                <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Damage Report</span>
-                                <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h5>
+                                <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Damaged Report Form</span>
                             </div>
                             <div class="card-body p-0">
+                                <h6 class="text-center mt-2 font-weight-bolder">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h6>
                                 <form action="/promodiser/damage_report/submit" method="post">
                                     @csrf
                                     <div class="container">
                                         <div class="row pt-2 pb-2">
                                             <div class="col-8">
-                                                <select name="branch" id="branch" class="form-control">
+                                                <select name="branch" id="branch" class="form-control form-control-sm">
                                                     <option value="" disabled selected>Select a Branch</option>
                                                     @foreach ($assigned_consignment_store as $store)
                                                         <option value="{{ $store }}" {{ !isset($beginning_inventory[$store]) ? 'disabled' : null }}>{{ $store }}</option>
@@ -38,7 +38,7 @@
                                                 </select>
                                             </div>
                                             <div class="col-4">
-                                                <button type="button" class="btn btn-outline-primary p-2" data-toggle="modal" id='add-modal-btn' data-target="#add-Modal" style='font-size: 10pt;' disabled>
+                                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" id='add-modal-btn' data-target="#add-Modal" disabled>
                                                     <i class="fa fa-plus"></i> Add Item
                                                 </button>
 
@@ -46,13 +46,14 @@
                                                 <div class="modal fade" id="add-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
                                                         <div class="modal-content">
-                                                            <div class="modal-header">
+                                                            <div class="modal-header bg-navy">
                                                                 <h5 class="modal-title" id="exampleModalLabel">Select an Item</h5>
                                                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                     <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
                                                             <div class="modal-body">
+                                                                <form></form>
                                                                 <select id="item-selection" class="form-control"></select>
 
                                                                 <table class="table table-striped d-none" id="item-selection-table">
@@ -118,9 +119,9 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <table class="table table-striped" id="selected-items-table">
+                                            <table class="table table-striped" id="selected-items-table" style="font-size: 9pt;">
                                                 <thead>
-                                                    <th class="font-responsive text-center p-1 align-middle" style="width: 42%">Item Code</th>
+                                                    <th class="font-responsive text-center p-1 align-middle">Item Code</th>
                                                     <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
                                                     <th class="font-responsive text-center p-1 align-middle">Price</th>
                                                 </thead>
