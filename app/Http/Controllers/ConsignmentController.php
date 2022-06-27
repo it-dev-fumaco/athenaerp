@@ -630,10 +630,14 @@ class ConsignmentController extends Controller
             return $q->name;
         });
 
+        $warehouses = collect($beginning_inventory->items())->map(function($q){
+            return $q->branch_warehouse;
+        });
+
         $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->get();
         $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
 
-        $product_sold_arr = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)
+        $product_sold_arr = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)->whereIn('branch_warehouse', $warehouses)
             ->select('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price', DB::raw('sum(qty) as qty'), DB::raw('sum(amount) as amount'))
             ->groupBy('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price')
             ->get();
@@ -660,6 +664,7 @@ class ConsignmentController extends Controller
         $inv_arr = [];
         foreach($beginning_inventory as $inv){
             $items_arr = [];
+            $included_items = [];
             if(isset($beginning_inventory_items[$inv->name])){
                 foreach($beginning_inventory_items[$inv->name] as $item){
                     $items_arr[] = [
@@ -674,11 +679,19 @@ class ConsignmentController extends Controller
                         'price' => $item->price * 1
                     ];
                 }
+
+                $included_items = collect($items_arr)->map(function ($q){
+                    return $q['item_code'];
+                })->toArray();
             }
 
             $sold_arr = [];
             if(isset($product_sold[$inv->branch_warehouse])){
                 foreach($product_sold[$inv->branch_warehouse] as $sold){
+                    if(!$items_arr || !in_array($sold->item_code, $included_items)){
+                        continue;
+                    }
+
                     $orig_exists = 0;
                     $webp_exists = 0;
 

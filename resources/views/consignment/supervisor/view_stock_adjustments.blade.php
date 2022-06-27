@@ -109,7 +109,7 @@
                                                 }else if($inv['status'] == 'Approved'){
                                                     $badge = 'success';
                                                 }else if($inv['status'] == 'Cancelled'){
-                                                    $badge = 'danger';
+                                                    $badge = 'secondary';
                                                 }
 
                                                 $modal_form = Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
@@ -295,8 +295,87 @@
                                                                     </div>
                                                                     {{-- Update button for approved records --}}
                                                                     @if ($inv['status'] == 'Approved')
-                                                                    <div class="modal-footer" id="{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
-                                                                        <button type="submit" class="btn btn-info w-100">Update</button>
+                                                                    <div class="modal-footer">
+                                                                        <div class="container-fluid" id="{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
+                                                                            <button type="submit" class="btn btn-info w-100">Update</button>
+                                                                        </div>
+                                                                        <div class="container-fluid">
+                                                                            <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $inv['name'] }}-Modal">
+                                                                                Cancel
+                                                                            </button>
+                                                                            
+                                                                            <!-- Modal -->
+                                                                            <div class="modal fade" id="cancel-{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                                <div class="modal-dialog" role="document">
+                                                                                    <div class="modal-content">
+                                                                                        <div class="modal-header bg-navy">
+                                                                                            <h6 id="exampleModalLabel">Cancel Beginning Inventory?</h6>
+                                                                                            <button type="button" class="close">
+                                                                                            <span aria-hidden="true" style="color: #fff" onclick="close_modal('#cancel-{{ $inv['name'] }}-Modal')">&times;</span>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                        <div class="modal-body">
+                                                                                            <div class="callout callout-danger text-justify">
+                                                                                                <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records of the following:
+                                                                                            </div>
+                                                                                            <div class="container-fluid" id="cancel-{{ $inv['name'] }}-container">
+                                                                                                <table class="table">
+                                                                                                    <tr>
+                                                                                                        <th class="text-center" style='width: 60%;'>Item</th>
+                                                                                                        <th class="text-center" style="width: 20%;">Qty</th>
+                                                                                                        <th class="text-center" style="width: 20%;">Amount</th>
+                                                                                                    </tr>
+                                                                                                    @forelse($inv['sold'] as $item)
+                                                                                                        <tr>
+                                                                                                            <td class="p-0" colspan=3>
+                                                                                                                <div class="p-0 row">
+                                                                                                                    <div class="col-6">
+                                                                                                                        <div class="row">
+                                                                                                                            <div class="col-4">
+                                                                                                                                <picture>
+                                                                                                                                    <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
+                                                                                                                                    <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
+                                                                                                                                    <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+                                                                                                                                </picture>
+                                                                                                                            </div>
+                                                                                                                            <div class="col-8" style="display: flex; justify-content: center; align-items: center;">
+                                                                                                                                <b>{{ $item['item_code'] }}</b>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                    <div class="col-3 pt-2">
+                                                                                                                        <b>{{ number_format($item['qty']) }}</b> <br>
+                                                                                                                        <small>{{ $item['uom'] }}</small>
+                                                                                                                    </div>
+                                                                                                                    <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
+                                                                                                                        ₱ {{ number_format($item['price'], 2) }}
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                                <div class="text-justify item-description">
+                                                                                                                    {{ $item['description'] }}
+                                                                                                                </div>
+                                                                                                                <div class="text-justify pt-1 pb-2">
+                                                                                                                    <b>Transaction Date:</b>&nbsp;{{ Carbon\Carbon::parse($item['date'])->format('F d, Y') }}
+                                                                                                                </div>
+                                                                                                            </td>
+                                                                                                        </tr>
+                                                                                                    @empty
+                                                                                                        <tr>
+                                                                                                            <td class='text-center' colspan=3>
+                                                                                                                No record(s) found.
+                                                                                                            </td>
+                                                                                                        </tr>
+                                                                                                    @endforelse
+                                                                                                </table>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div class="modal-footer">
+                                                                                            <a href="/cancel/approved_beginning_inv/{{ $inv['name'] }}" class="btn btn-primary w-100">Confirm</a>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                     @endif
                                                                 </form>
@@ -344,6 +423,9 @@
         .item-code-container{
             text-align: justify;
             padding: 10px;
+        }
+        .modal{
+            background-color: rgba(0,0,0,0.4);
         }
         @media (max-width: 575.98px) {
             .last-row{
