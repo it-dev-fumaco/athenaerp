@@ -243,7 +243,7 @@
 																				<div class="modal-header bg-navy">
 																					<h6 id="exampleModalLabel">Cancel Beginning Inventory?</h6>
 																					<button type="button" class="close">
-																					<span aria-hidden="true" style="color: #fff" onclick="close_modal('cancel-{{ $inv['name'] }}-Modal')">&times;</span>
+																					<span aria-hidden="true" style="color: #fff" onclick="close_modal('#cancel-{{ $inv['name'] }}-Modal')">&times;</span>
 																					</button>
 																				</div>
 																				<div class="modal-body">
@@ -257,7 +257,7 @@
 																								<th class="text-center" style="width: 20%;">Qty</th>
 																								<th class="text-center" style="width: 20%;">Amount</th>
 																							</tr>
-																							@foreach($inv['sold'] as $item)
+																							@forelse($inv['sold'] as $item)
 																								<tr>
 																									<td class="p-0" colspan=3>
 																										<div class="p-0 row">
@@ -291,7 +291,13 @@
 																										</div>
 																									</td>
 																								</tr>
-																							@endforeach
+																							@empty
+																								<tr>
+																									<td class='text-center' colspan=3>
+																										No record(s) found.
+																									</td>
+																								</tr>
+																							@endforelse
 																						</table>
 																					</div>
 																				</div>
