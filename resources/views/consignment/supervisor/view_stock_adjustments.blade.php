@@ -84,7 +84,7 @@
                                                         <input type="text" name="date" id="date-filter" class="form-control filters-font" value="" />
                                                     </div>
                                                     <div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
-                                                        <button type="submit" class="btn btn-primary filters-font"><i class="fas fa-search"></i> Search</button>
+                                                        <button type="submit" class="btn btn-primary filters-font btn-block"><i class="fas fa-search"></i> Search</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -276,9 +276,9 @@
                                                                                         @endif
                                                                                     </td>
                                                                                     @if ($inv['status'] == 'Approved')
-                                                                                        <td class="text-center p-1 align-middle">
-                                                                                            <span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"><i class="fa fa-edit"></i></span>
-                                                                                        </td>
+                                                                                    <td class="text-center p-1 align-middle">
+                                                                                        <span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"><i class="fa fa-edit"></i></span>
+                                                                                    </td>
                                                                                     @endif
                                                                                 </tr>
                                                                                 <tr class="d-xl-none">
