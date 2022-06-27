@@ -1377,6 +1377,7 @@ class ConsignmentController extends Controller
                 })
                 ->where('naming_series', 'STEC-')
                 ->orderBy('docstatus', 'asc')
+                ->orderBy('creation', 'desc')
                 ->paginate(20, ['*'], 'stock_transfers');
 
             $reference = collect($stock_entry->items())->map(function ($q){
@@ -2339,19 +2340,25 @@ class ConsignmentController extends Controller
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('audit_date_from', $year);
             })
-            ->selectRaw('audit_date_from, audit_date_to, branch_warehouse')
-            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from')->paginate(10);
+            ->selectRaw('audit_date_from, audit_date_to, branch_warehouse, transaction_date, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodiser')
+            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(10);
 
         $result = [];
         foreach ($list as $row) {
             $total_sales = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
                 ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
 
+            $total_qty_sold = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
+                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('qty');
+
             $result[] = [
+                'transaction_date' => $row->transaction_date,
                 'audit_date_from' => $row->audit_date_from,
                 'audit_date_to' => $row->audit_date_to,
                 'branch_warehouse' => $row->branch_warehouse,
-                'total_sales' => $total_sales
+                'total_sales' => $total_sales,
+                'total_qty_sold' => $total_qty_sold,
+                'promodiser' => $row->promodiser
             ];
         }
 
