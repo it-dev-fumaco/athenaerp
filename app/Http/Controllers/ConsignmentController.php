@@ -653,7 +653,7 @@ class ConsignmentController extends Controller
         $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->get();
         $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
 
-        $product_sold_arr = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)->whereIn('branch_warehouse', $warehouses)
+        $product_sold_arr = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)->whereIn('branch_warehouse', $warehouses)->where('status', '!=', 'Cancelled')
             ->select('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price', DB::raw('sum(qty) as qty'), DB::raw('sum(amount) as amount'))
             ->groupBy('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price')
             ->get();
