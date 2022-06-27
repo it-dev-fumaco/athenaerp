@@ -9,9 +9,16 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
-                            <span id="branch-name" class="font-weight-bolder d-block" style="font-size: 11pt;">{{ $branch }}</span>
+                    <div class="card card-lightblue">
+                        <div class="card-header text-center p-1">
+                            <div class="d-flex flex-row align-items-center">
+                                <div class="p-0 col-2 text-left">
+                                    <a href="/inventory_audit" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
+                                </div>
+                                <div class="p-1 col-8">
+                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Inventory Audit Form</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('success'))
@@ -24,7 +31,7 @@
                                 {!! session()->get('error') !!}
                             </div>
                             @endif
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">Inventory Audit Form</h6>
+                            <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">{{ $branch }}</h6>
                             <h5 class="text-center mt-1 font-weight-bolder font-responsive">{{ $duration }}</h5>
                             <form action="/submit_inventory_audit_form" method="POST" autocomplete="off">
                                 @csrf

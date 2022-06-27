@@ -10,8 +10,15 @@
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
-                        <div class="card-header text-center p-2">
-                            <span id="branch-name" class="font-weight-bolder d-block" style="font-size: 11pt;">{{ $branch }}</span>
+                        <div class="card-header text-center p-1">
+                            <div class="d-flex flex-row align-items-center">
+                                <div class="p-0 col-2 text-left">
+                                    <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
+                                </div>
+                                <div class="p-1 col-8">
+                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Product Sold Entry</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('success'))
@@ -24,7 +31,7 @@
                                 {!! session()->get('error') !!}
                             </div>
                             @endif
-                            <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">Product Sold Entry</h6>
+                            <span id="branch-name" class="font-weight-bolder d-block text-center" style="font-size: 11pt;">{{ $branch }}</span>
                             <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
                             <form action="/submit_product_sold_form" method="POST" autocomplete="off">
                                 @csrf
