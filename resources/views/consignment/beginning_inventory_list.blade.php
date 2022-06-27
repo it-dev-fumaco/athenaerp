@@ -28,32 +28,8 @@
 									<div class="card-body p-0">
 										<form action="/beginning_inv_list" method="get">
 											<div class="row p-2">
-												<div class="col-12 col-lg-2 col-xl-2 offset-xl-3">
+												<div class="col-12 col-lg-4 col-xl-4">
 													<input type="text" class="form-control filters-font" name="search" value="{{ request('search') ? request('search') : null }}" placeholder="Search"/>
-												</div>
-												<div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
-													@php
-														$statuses = ['For Approval', 'Approved', 'Cancelled'];
-													@endphp
-													<select name="status" class="form-control filters-font">
-														<option value="" disabled {{ Auth::user()->user_group == 'Promodiser' && !request('status') ? 'selected' : null }}>Select a status</option>
-														<option value="All" {{ request('status') ? ( request('status') == 'All' ? 'selected' : null) : null }}>Select All</option>
-														@foreach ($statuses as $status)
-														@php
-															$selected = null;
-															if(request('status')){
-																if(request('status') == $status){
-																	$selected = 'selected';
-																}
-															}else{
-																if(Auth::user()->user_group == 'Consignment Supervisor'){
-																	$selected = $status == 'For Approval' ? 'selected' : null;
-																}
-															}
-														@endphp
-														<option value="{{ $status }}" {{ $selected }}>{{ $status }}</option>
-														@endforeach
-													</select>
 												</div>
 												<div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
 													<select name="store" class="form-control filters-font">

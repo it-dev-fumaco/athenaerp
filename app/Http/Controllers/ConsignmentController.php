@@ -594,37 +594,53 @@ class ConsignmentController extends Controller
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
         $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
 
+        $consignment_stores = [];
         $status = $request->status ? $request->status : 'All';
         if(Auth::user()->user_group == 'Consignment Supervisor'){
             $status = $request->status ? $request->status : 'For Approval';
-        }
 
-        $consignment_stores = DB::table('tabAssigned Consignment Warehouse')
-            ->when(Auth::user()->frappe_userid, function ($q){
-                return $q->where('parent', Auth::user()->frappe_userid);
-            })
-            ->pluck('warehouse');
-        $consignment_stores = collect($consignment_stores)->unique();
-        
-        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
-            ->when($request->search, function ($q) use ($request){
-                return $q->where('name', 'LIKE', '%'.$request->search.'%')
-                    ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
-            })
-            ->when($request->date, function ($q) use ($from_date, $to_date){
-                return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
-            })
-            ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($consignment_stores){
-                return $q->whereIn('branch_warehouse', $consignment_stores);
-            })
-            ->when($request->store, function ($q) use ($request){
-                return $q->where('branch_warehouse', $request->store);
-            })
-            ->when($status != 'All', function ($q) use ($status){
-                return $q->where('status', $status);
-            })
-            ->orderBy('creation', 'desc')
-            ->paginate(10);
+            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+                ->when($request->search, function ($q) use ($request){
+                    return $q->where('name', 'LIKE', '%'.$request->search.'%')
+                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
+                })
+                ->when($request->date, function ($q) use ($from_date, $to_date){
+                    return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
+                })
+                ->when($request->store, function ($q) use ($request){
+                    return $q->where('branch_warehouse', $request->store);
+                })
+                ->when($status != 'All', function ($q) use ($status){
+                    return $q->where('status', $status);
+                })
+                ->orderBy('creation', 'desc')
+                ->paginate(10);
+        } else {
+            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')
+                ->when(Auth::user()->frappe_userid, function ($q){
+                    return $q->where('parent', Auth::user()->frappe_userid);
+                })
+                ->pluck('warehouse');
+            $consignment_stores = collect($consignment_stores)->unique();
+            
+            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+                ->when($request->search, function ($q) use ($request){
+                    return $q->where('name', 'LIKE', '%'.$request->search.'%')
+                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
+                })
+                ->when($request->date, function ($q) use ($from_date, $to_date){
+                    return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
+                })
+                ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($consignment_stores){
+                    return $q->whereIn('branch_warehouse', $consignment_stores);
+                })
+                ->when($request->store, function ($q) use ($request){
+                    return $q->where('branch_warehouse', $request->store);
+                })
+                ->where('status', '!=', 'For Approval')
+                ->orderBy('creation', 'desc')
+                ->paginate(10);
+        }
 
         $ids = collect($beginning_inventory->items())->map(function($q){
             return $q->name;
