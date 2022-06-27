@@ -633,12 +633,29 @@ class ConsignmentController extends Controller
         $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->get();
         $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
 
-        $item_codes = collect($beginning_inv_items)->map(function ($q){
+        $product_sold_arr = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)
+            ->select('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price', DB::raw('sum(qty) as qty'), DB::raw('sum(amount) as amount'))
+            ->groupBy('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price')
+            ->get();
+        $product_sold = collect($product_sold_arr)->groupBy('branch_warehouse');
+        
+        $sold_item_codes = collect($product_sold_arr)->map(function ($q){
             return $q->item_code;
         });
 
+        $item_codes = collect($beginning_inv_items)->map(function ($q){
+            return $q->item_code;
+        })->merge($sold_item_codes)->unique();
+
+        $warehouses = collect($beginning_inventory->items())->map(function ($q){
+            return $q->branch_warehouse;
+        })->unique();
+
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
         $item_image = collect($item_images)->groupBy('parent');
+
+        $uoms = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'stock_uom')->get();
+        $uom = collect($uoms)->groupBy('item_code');
 
         $inv_arr = [];
         foreach($beginning_inventory as $inv){
@@ -659,6 +676,42 @@ class ConsignmentController extends Controller
                 }
             }
 
+            $sold_arr = [];
+            if(isset($product_sold[$inv->branch_warehouse])){
+                foreach($product_sold[$inv->branch_warehouse] as $sold){
+                    $orig_exists = 0;
+                    $webp_exists = 0;
+
+                    $img = '/icon/no_img.png';
+                    $webp = '/icon/no_img.webp';
+
+                    if(isset($item_image[$sold->item_code])){
+                        $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$sold->item_code][0]->image_path) ? 1 : 0;
+                        $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$sold->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+
+                        $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$sold->item_code][0]->image_path)[0].'.webp' : null;
+                        $img = $orig_exists == 1 ? '/img/'.$item_image[$sold->item_code][0]->image_path : null;
+
+                        if($orig_exists == 0 && $webp_exists == 0){
+                            $img = '/icon/no_img.png';
+                            $webp = '/icon/no_img.webp';
+                        }
+                    }
+
+                    $sold_arr[] = [
+                        'date' => $sold->transaction_date,
+                        'item_code' => $sold->item_code,
+                        'description' => $sold->description,
+                        'image' => $img,
+                        'webp' => $webp,
+                        'uom' => isset($uom[$sold->item_code]) ? $uom[$sold->item_code][0]->stock_uom : null,
+                        'qty' => $sold->qty,
+                        'price' => $sold->price,
+                        'amount' => $sold->amount
+                    ];
+                }
+            }
+
             $inv_arr[] = [
                 'name' => $inv->name,
                 'branch' => $inv->branch_warehouse,
@@ -668,7 +721,8 @@ class ConsignmentController extends Controller
                 'transaction_date' => Carbon::parse($inv->transaction_date)->format('F d, Y'),
                 'items' => $items_arr,
                 'qty' => collect($items_arr)->sum('opening_stock'),
-                'amount' => collect($items_arr)->sum('price')
+                'amount' => collect($items_arr)->sum('price'),
+                'sold' => $sold_arr
             ];
         }
 
@@ -776,6 +830,53 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
+
+    public function cancelApprovedBeginningInventory($id){
+        DB::beginTransaction();
+        try {
+            $inventory = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
+
+            if(!$inventory){
+                return redirect()->back()->with('error', 'Beginning inventory record does not exist.');
+            }
+
+            if($inventory->status == 'Cancelled'){
+                return redirect()->back()->with('error', 'Beginning inventory record is already cancelled.');
+            }
+
+            $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+
+            // Update each item in Bin and Product Sold
+            foreach($items as $item){
+                DB::table('tabBin')->where('warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'consigned_qty' => 0
+                ]);
+
+                DB::table('tabConsignment Product Sold')->where('branch_warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'status' => 'Cancelled'
+                ]);
+            }
+
+            $update_values = [
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'status' => 'Cancelled'
+            ];
+
+            DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
+            DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Beginning Inventory for '.$inventory->branch_warehouse.' was cancelled.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+        }
 
     public function promodiserDeliveryReport($type){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');

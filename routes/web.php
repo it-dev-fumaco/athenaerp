@@ -152,6 +152,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/beginning_inventory/{inv?}', 'ConsignmentController@beginningInventory');
     Route::get('/beginning_inv_items/{action}/{branch}/{id?}', 'ConsignmentController@beginningInvItems');
     Route::get('/get_items/{branch}', 'ConsignmentController@getItems');
+    Route::get('/cancel/approved_beginning_inv/{id}', 'ConsignmentController@cancelApprovedBeginningInventory');
     Route::post('/save_beginning_inventory', 'ConsignmentController@saveBeginningInventory');
     Route::get('/promodiser/delivery_report/{type}', 'ConsignmentController@promodiserDeliveryReport');
     Route::get('/promodiser/receive/{id}', 'ConsignmentController@promodiserReceiveDelivery');
