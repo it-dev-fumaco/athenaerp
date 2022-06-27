@@ -2163,11 +2163,6 @@
 				}
 			});
 		}
-
-		function close_modal(modal){
-			$('#'+modal).modal('hide');
-		}
-		
 	</script>
 </body>
 </html>

@@ -594,55 +594,93 @@ class ConsignmentController extends Controller
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
         $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
 
+        $consignment_stores = [];
         $status = $request->status ? $request->status : 'All';
         if(Auth::user()->user_group == 'Consignment Supervisor'){
             $status = $request->status ? $request->status : 'For Approval';
-        }
 
-        $consignment_stores = DB::table('tabAssigned Consignment Warehouse')
-            ->when(Auth::user()->frappe_userid, function ($q){
-                return $q->where('parent', Auth::user()->frappe_userid);
-            })
-            ->pluck('warehouse');
-        $consignment_stores = collect($consignment_stores)->unique();
-        
-        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
-            ->when($request->search, function ($q) use ($request){
-                return $q->where('name', 'LIKE', '%'.$request->search.'%')
-                    ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
-            })
-            ->when($request->date, function ($q) use ($from_date, $to_date){
-                return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
-            })
-            ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($consignment_stores){
-                return $q->whereIn('branch_warehouse', $consignment_stores);
-            })
-            ->when($request->store, function ($q) use ($request){
-                return $q->where('branch_warehouse', $request->store);
-            })
-            ->when($status != 'All', function ($q) use ($status){
-                return $q->where('status', $status);
-            })
-            ->orderBy('creation', 'desc')
-            ->paginate(10);
+            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+                ->when($request->search, function ($q) use ($request){
+                    return $q->where('name', 'LIKE', '%'.$request->search.'%')
+                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
+                })
+                ->when($request->date, function ($q) use ($from_date, $to_date){
+                    return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
+                })
+                ->when($request->store, function ($q) use ($request){
+                    return $q->where('branch_warehouse', $request->store);
+                })
+                ->when($status != 'All', function ($q) use ($status){
+                    return $q->where('status', $status);
+                })
+                ->orderBy('creation', 'desc')
+                ->paginate(10);
+        } else {
+            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')
+                ->when(Auth::user()->frappe_userid, function ($q){
+                    return $q->where('parent', Auth::user()->frappe_userid);
+                })
+                ->pluck('warehouse');
+            $consignment_stores = collect($consignment_stores)->unique();
+            
+            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+                ->when($request->search, function ($q) use ($request){
+                    return $q->where('name', 'LIKE', '%'.$request->search.'%')
+                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
+                })
+                ->when($request->date, function ($q) use ($from_date, $to_date){
+                    return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
+                })
+                ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($consignment_stores){
+                    return $q->whereIn('branch_warehouse', $consignment_stores);
+                })
+                ->when($request->store, function ($q) use ($request){
+                    return $q->where('branch_warehouse', $request->store);
+                })
+                ->where('status', '!=', 'For Approval')
+                ->orderBy('creation', 'desc')
+                ->paginate(10);
+        }
 
         $ids = collect($beginning_inventory->items())->map(function($q){
             return $q->name;
         });
 
+        $warehouses = collect($beginning_inventory->items())->map(function($q){
+            return $q->branch_warehouse;
+        });
+
         $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->get();
         $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
 
-        $item_codes = collect($beginning_inv_items)->map(function ($q){
+        $product_sold_arr = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)->whereIn('branch_warehouse', $warehouses)->where('status', '!=', 'Cancelled')
+            ->select('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price', DB::raw('sum(qty) as qty'), DB::raw('sum(amount) as amount'))
+            ->groupBy('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price')
+            ->get();
+        $product_sold = collect($product_sold_arr)->groupBy('branch_warehouse');
+        
+        $sold_item_codes = collect($product_sold_arr)->map(function ($q){
             return $q->item_code;
         });
+
+        $item_codes = collect($beginning_inv_items)->map(function ($q){
+            return $q->item_code;
+        })->merge($sold_item_codes)->unique();
+
+        $warehouses = collect($beginning_inventory->items())->map(function ($q){
+            return $q->branch_warehouse;
+        })->unique();
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
         $item_image = collect($item_images)->groupBy('parent');
 
+        $uoms = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'stock_uom')->get();
+        $uom = collect($uoms)->groupBy('item_code');
+
         $inv_arr = [];
         foreach($beginning_inventory as $inv){
             $items_arr = [];
+            $included_items = [];
             if(isset($beginning_inventory_items[$inv->name])){
                 foreach($beginning_inventory_items[$inv->name] as $item){
                     $items_arr[] = [
@@ -657,6 +695,50 @@ class ConsignmentController extends Controller
                         'price' => $item->price * 1
                     ];
                 }
+
+                $included_items = collect($items_arr)->map(function ($q){
+                    return $q['item_code'];
+                })->toArray();
+            }
+
+            $sold_arr = [];
+            if(isset($product_sold[$inv->branch_warehouse])){
+                foreach($product_sold[$inv->branch_warehouse] as $sold){
+                    if(!$items_arr || !in_array($sold->item_code, $included_items)){
+                        continue;
+                    }
+
+                    $orig_exists = 0;
+                    $webp_exists = 0;
+
+                    $img = '/icon/no_img.png';
+                    $webp = '/icon/no_img.webp';
+
+                    if(isset($item_image[$sold->item_code])){
+                        $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$sold->item_code][0]->image_path) ? 1 : 0;
+                        $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$sold->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+
+                        $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$sold->item_code][0]->image_path)[0].'.webp' : null;
+                        $img = $orig_exists == 1 ? '/img/'.$item_image[$sold->item_code][0]->image_path : null;
+
+                        if($orig_exists == 0 && $webp_exists == 0){
+                            $img = '/icon/no_img.png';
+                            $webp = '/icon/no_img.webp';
+                        }
+                    }
+
+                    $sold_arr[] = [
+                        'date' => $sold->transaction_date,
+                        'item_code' => $sold->item_code,
+                        'description' => $sold->description,
+                        'image' => $img,
+                        'webp' => $webp,
+                        'uom' => isset($uom[$sold->item_code]) ? $uom[$sold->item_code][0]->stock_uom : null,
+                        'qty' => $sold->qty,
+                        'price' => $sold->price,
+                        'amount' => $sold->amount
+                    ];
+                }
             }
 
             $inv_arr[] = [
@@ -666,7 +748,10 @@ class ConsignmentController extends Controller
                 'creation' => Carbon::parse($inv->creation)->format('F d, Y'),
                 'status' => $inv->status,
                 'transaction_date' => Carbon::parse($inv->transaction_date)->format('F d, Y'),
-                'items' => $items_arr
+                'items' => $items_arr,
+                'qty' => collect($items_arr)->sum('opening_stock'),
+                'amount' => collect($items_arr)->sum('price'),
+                'sold' => $sold_arr
             ];
         }
 
@@ -774,6 +859,53 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
+
+    public function cancelApprovedBeginningInventory($id){
+        DB::beginTransaction();
+        try {
+            $inventory = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
+
+            if(!$inventory){
+                return redirect()->back()->with('error', 'Beginning inventory record does not exist.');
+            }
+
+            if($inventory->status == 'Cancelled'){
+                return redirect()->back()->with('error', 'Beginning inventory record is already cancelled.');
+            }
+
+            $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+
+            // Update each item in Bin and Product Sold
+            foreach($items as $item){
+                DB::table('tabBin')->where('warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'consigned_qty' => 0
+                ]);
+
+                DB::table('tabConsignment Product Sold')->where('branch_warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'status' => 'Cancelled'
+                ]);
+            }
+
+            $update_values = [
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'status' => 'Cancelled'
+            ];
+
+            DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
+            DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Beginning Inventory for '.$inventory->branch_warehouse.' was cancelled.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+        }
 
     public function promodiserDeliveryReport($type){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
@@ -1274,6 +1406,7 @@ class ConsignmentController extends Controller
                 })
                 ->where('naming_series', 'STEC-')
                 ->orderBy('docstatus', 'asc')
+                ->orderBy('creation', 'desc')
                 ->paginate(20, ['*'], 'stock_transfers');
 
             $reference = collect($stock_entry->items())->map(function ($q){
@@ -2068,13 +2201,6 @@ class ConsignmentController extends Controller
                 }
             }
 
-            $transfer_type = null;
-            if($ste->purpose == 'Material Transfer'){
-                $transfer_type = $ste->transfer_as == 'Store Transfer' ? 'Store Transfer' : 'For Return';
-            }else{
-                $transfer_type = 'Sales Return';
-            }
-
             $ste_arr[] = [
                 'name' => $ste->name,
                 'from_warehouse' => $ste->from_warehouse,
@@ -2083,7 +2209,7 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'owner' => $ste->owner,
                 'docstatus' => $ste->docstatus,
-                'transfer_type' => $transfer_type,
+                'transfer_type' => $ste->transfer_as,
                 'date' => $ste->creation
             ];
         }
@@ -2243,19 +2369,25 @@ class ConsignmentController extends Controller
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('audit_date_from', $year);
             })
-            ->selectRaw('audit_date_from, audit_date_to, branch_warehouse')
-            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from')->paginate(10);
+            ->selectRaw('audit_date_from, audit_date_to, branch_warehouse, transaction_date, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodiser')
+            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(10);
 
         $result = [];
         foreach ($list as $row) {
             $total_sales = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
                 ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
 
+            $total_qty_sold = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
+                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('qty');
+
             $result[] = [
+                'transaction_date' => $row->transaction_date,
                 'audit_date_from' => $row->audit_date_from,
                 'audit_date_to' => $row->audit_date_to,
                 'branch_warehouse' => $row->branch_warehouse,
-                'total_sales' => $total_sales
+                'total_sales' => $total_sales,
+                'total_qty_sold' => $total_qty_sold,
+                'promodiser' => $row->promodiser
             ];
         }
 
@@ -2363,26 +2495,52 @@ class ConsignmentController extends Controller
             $item_codes = array_keys($request->item);
             $stocks = $request->item;
 
-            $now = Carbon::now()->toDateTimeString();
+            $now = Carbon::now();
 
             $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
             if(!$beginning_inventory){
                 return redirect()->back()->with('error', 'Record not found or has been deleted.');
             }
 
+            $bin = DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->whereIn('item_code', $item_codes)->select('name', 'item_code', 'consigned_qty')->get();
+            $bin = collect($bin)->groupBy('item_code');
+
             foreach($item_codes as $item_code){
                 if(isset($stocks[$item_code])){
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update([
-                        'modified' => $now,
+                        'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
                         'opening_stock' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
                     ]);
 
                     DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update([
-                        'modified' => $now,
+                        'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
                         'consigned_qty' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
                     ]);
+
+                    $previous_stock = isset($bin[$item_code]) ? $bin[$item_code][0]->consigned_qty : 0;
+                    $previous_stock = number_format($previous_stock);
+
+                    $logs = [
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'subject' => 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' consigned qty from '.$previous_stock.' to '.preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']).' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                        'content' => 'Consignment Activity Log',
+                        'communication_date' => $now->toDateTimeString(),
+                        'reference_doctype' => 'Stock Adjustment',
+                        'reference_name' => isset($bin[$item_code]) ? $bin[$item_code][0]->name : null,
+                        'reference_owner' => Auth::user()->wh_user,
+                        'user' => Auth::user()->wh_user,
+                        'full_name' => Auth::user()->full_name,
+                    ];
+        
+                    DB::table('tabActivity Log')->insert($logs);
                 }
             }
 

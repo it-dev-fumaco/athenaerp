@@ -9,19 +9,15 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
+                    <div class="card card-lightblue">
+                        <div class="card-header text-center p-2">
                             @if(session()->has('success'))
-                                <div class="alert alert-success fade show font-responsive" role="alert">
-                                    {{ session()->get('success') }}
-                                </div>
+                            <div class="alert alert-success fade show font-responsive" role="alert">{{ session()->get('success') }}</div>
                             @endif
                             @if(session()->has('error'))
-                                <div class="alert alert-danger fade show font-responsive" role="alert">
-                                    {{ session()->get('error') }}
-                                </div>
+                            <div class="alert alert-danger fade show font-responsive" role="alert">{{ session()->get('error') }}</div>
                             @endif
-                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">
+                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">
                                 @if ($type == 'all')
                                     Delivery Report
                                 @else
@@ -30,116 +26,150 @@
                             </span>
                         </div>
                         <div class="card-body p-1">
-                            <span class="float-right mr-3" style="font-size: 10pt">Total items: {{ $delivery_report->total() }}</span>
-                            <table class="table table-striped" style='font-size: 10pt;'>
-                                <tr>
-                                    <th class="text-center" style='width: 30%'>Name</th>
-                                    <th class="text-center">Store</th>
-                                </tr>
-                                @forelse ($ste_arr as $ste)
+                            <table class="table" style='font-size: 10pt;'>
+                                <thead>
+                                    <th class="text-center p-1 align-middle">Store</th>
+                                </thead>
+                                <tbody>
+                                    @forelse ($ste_arr as $ste)
                                     <tr>
-                                        <td class="text-center">
-                                            {{ $ste['name'] }}
-                                            <span class="badge badge-{{ $ste['status'] == 'Pending' ? 'warning' : 'success' }}">{{ $ste['status'] }}</span>
-                                        </td>
-                                        <td>
+                                        <td class="text-left p-1 align-middle">
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a>
+                                            <small class="d-block"><b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</small>
+
+                                            <span class="badge badge-{{ $ste['status'] == 'Pending' ? 'warning' : 'success' }}">{{ $ste['status'] }}</span>
                                             @if ($ste['status'] == 'Delivered')
                                                 <span class="badge badge-{{ $ste['delivery_status'] == 0 ? 'warning' : 'success' }}">{{ $ste['delivery_status'] == 0 ? 'To Receive' : 'Received' }}</span>
                                             @endif
-                                            <br>
-                                            <span><b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</span>
-
+                                           
                                             <div class="modal fade" id="{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                <div class="modal-dialog" role="document">
+                                                <div class="modal-dialog modal-dialog-centered" role="document">
                                                     <div class="modal-content">
-                                                        <div class="modal-header" style="background-color: #001F3F; color: #fff">
-                                                            <div class="row w-100">
-                                                                <div class="col-12">
-                                                                    <span>Delivered Items</span> <br>
-                                                                    <span>{{ $ste['to_consignment'] }}</span><br>
-                                                                    <span>{{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</span>
-                                                                </div>
-                                                            </div>
-                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true" style="color: #fff">&times;</span>
+                                                        <div class="modal-header bg-navy">
+                                                            <h6 class="modal-title">Delivered Item(s)</h6>
+                                                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
                                                             </button>
                                                         </div>
                                                         <div class="modal-body">
+                                                            <form></form>
+                                                            <h5 class="text-center font-responsive font-weight-bold m-0">{{ $ste['to_consignment'] }}</h5>
+                                                            <small class="d-block text-center mb-2">Delivery Date: {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</small>
                                                             <div class="callout callout-info text-center">
                                                                 <small><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</small>
                                                             </div>
-                                                            <table class="table table-bordered">
-                                                                <tr>
-                                                                    <th class="text-center" style="width: 50%">Item</th>
-                                                                    <th class="text-center"><span style="white-space: nowrap">Delivered</span> Qty</th>
-                                                                    <th class="text-center">Price</th>
-                                                                </tr>
-                                                                @foreach ($ste['items'] as $item)
+                                                            <table class="table" style="font-size: 9pt;">
+                                                                <thead>
+                                                                    <th class="text-center p-1 align-middle" style="width: 40%">Item Code</th>
+                                                                    <th class="text-center p-1 align-middle" style="width: 30%">Delivered Qty</th>
+                                                                    <th class="text-center p-1 align-middle" style="width: 30%">Amount</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($ste['items'] as $item)
                                                                     @php
                                                                         $id = $ste['name'].'-'.$item['item_code'];
-
                                                                         $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
                                                                         $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
                                                                     @endphp
                                                                     <tr>
-                                                                        <td colspan=3>
-                                                                            <div class="row">
-                                                                                <div class="col-6">
-                                                                                    <div class="row">
-                                                                                        <div class="col-6">
-                                                                                            <picture>
-                                                                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp">
-                                                                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
-                                                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" width="100%">
-                                                                                            </picture>
+                                                                        <td class="text-left p-1 align-middle" style="border-bottom: 0 !important;">
+                                                                            <div class="d-flex flex-row justify-content-start align-items-center">
+                                                                                <div class="p-1 text-left">
+                                                                                    <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
+                                                                                        <picture>
+                                                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                                        </picture>
+                                                                                    </a>
+                                                                                </div>
+                                                                                <div class="p-1 m-0">
+                                                                                    <span class="font-weight-bold">{{ $item['item_code'] }}</span>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div class="modal fade" id="mobile-{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                                                                    <div class="modal-content">
+                                                                                        <div class="modal-header">
+                                                                                            <h5 class="modal-title">{{ $item['item_code'] }}</h5>
+                                                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                                                <span aria-hidden="true">&times;</span>
+                                                                                            </button>
                                                                                         </div>
-                                                                                        <div class="col-6" style="display: flex; justify-content: center; align-items: center;">
-                                                                                            <b>{{ $item['item_code'] }}</b>
+                                                                                        <div class="modal-body">
+                                                                                            <form></form>
+                                                                                            <div id="image-container" class="container-fluid">
+                                                                                                <div id="carouselExampleControls" class="carousel slide" data-interval="false">
+                                                                                                    <div class="carousel-inner">
+                                                                                                        <div class="carousel-item active">
+                                                                                                            <picture>
+                                                                                                                <source id="mobile-{{ $item['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                                                <source id="mobile-{{ $item['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                                                <img class="d-block w-100" id="mobile-{{ $item['item_code'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+                                                                                                            </picture>
+                                                                                                        </div>
+                                                                                                        <span class='d-none' id="mobile-{{ $item['item_code'] }}-image-data">0</span>
+                                                                                                    </div>
+                                                                                                    @if ($item['img_count'] > 1)
+                                                                                                    <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                                                                        <span class="sr-only">Previous</span>
+                                                                                                    </a>
+                                                                                                    <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $item['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                                                                        <span class="sr-only">Next</span>
+                                                                                                    </a>
+                                                                                                    @endif
+                                                                                                </div>
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                <div class="col-3 text-center" style="display: flex; justify-content: center; align-items: center;">
-                                                                                    <b>{{ $item['delivered_qty'] * 1 }}</b>&nbsp;<small>{{ $item['stock_uom'] }}</small>
-                                                                                </div>
-                                                                                <div class="col-3 text-center" style="display: flex; justify-content: center; align-items: center;">
-                                                                                    <span style="white-space: nowrap">₱ {{ number_format($item['price'] * 1, 2) }}</span>
-                                                                                </div>
-                                                                                <div class="col-12 item-description ste-description pt-2 text-justify">
-                                                                                    {{ strip_tags($item['description']) }}
-                                                                                </div>
                                                                             </div>
                                                                         </td>
+                                                                        <td class="text-center p-1 align-middle">
+                                                                            <span class="d-block font-weight-bold">{{ $item['delivered_qty'] * 1 }}</span>
+                                                                            <small>{{ $item['stock_uom'] }}</small>
+                                                                        </td>
+                                                                        <td class="text-center p-1 align-middle">
+                                                                        <span class="d-block font-weight-bold">₱ {{ number_format($item['price'] * 1, 2) }}</span>
+                                                                        </td>
                                                                     </tr>
-                                                                @endforeach
+                                                                    <tr>
+                                                                        <td colspan="3" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
+                                                                            <span class="item-description">{!! strip_tags($item['description']) !!}</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    @endforeach
+                                                                </tbody>
                                                             </table>
                                                         </div>
                                                         @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
-                                                            <div class="modal-footer">
-                                                                <a href="/promodiser/receive/{{ $ste['name'] }}" class="btn btn-primary w-100">Receive</a>
-                                                            </div>
+                                                        <div class="modal-footer">
+                                                            <a href="/promodiser/receive/{{ $ste['name'] }}" class="btn btn-primary w-100">Receive</a>
+                                                        </div>
                                                         @endif
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
                                     </tr>
-                                @empty
+                                    @empty
                                     <tr>
-                                        <td colspan=2 class="text-center">
+                                        <td colspan="2" class="text-center text-uppercase text-muted align-middle">
                                             @if ($type == 'all')
                                                 No delivery record(s)
                                             @else
                                                 No incoming deliveries
                                             @endif
                                         </td>
-                                    </tr> 
-                                @endforelse
+                                    </tr>
+                                    @endforelse
+                                </tbody>
                             </table>
-                            <div class="mt-3 ml-3 clearfix pagination" style="display: block;">
-                                <div class="col-md-4 float-right">
-                                    {{ $delivery_report->links() }}
-                                </div>
+                            <div class="mt-3 ml-3 clearfix pagination d-block">
+                                <div class="col-md-4 float-right">{{ $delivery_report->links() }}</div>
                             </div>
                         </div>
                     </div>
@@ -152,10 +182,6 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
         .morectnt span {
             display: none;
         }

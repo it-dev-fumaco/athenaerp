@@ -9,7 +9,7 @@
             <div class="container">
                 <div class="row pt-1">
                     <div class="col-md-12 p-0 m-0">
-                        <div class="card card-secondary card-outline">
+                        <div class="card card-lightblue">
                             @if(session()->has('success'))
                                 <div class="p-2">
                                     <div class="alert alert-success fade show font-responsive text-center" role="alert">
@@ -24,7 +24,7 @@
                                     </div>
                                 </div>
                             @endif
-                            <div class="card-header text-center">
+                            <div class="card-header text-center p-2">
                                 <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Damaged Items List</span>
                             </div>
                             <div class="card-body p-0">
@@ -32,87 +32,77 @@
                                     <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
                                 </div>
                                <table class="table" id="items-table" style="font-size: 9.5pt">
-                                    <tr>
-                                        <th class="text-center" style="width: 75%">Item</th>
-                                        <th class="text-center" style="width: 25%">Action</th>
-                                    </tr>
+                                    <thead class="border-top">
+                                        <th class="text-center p-1 align-middle" style="width: 75%">Item Code</th>
+                                        <th class="text-center p-1 align-middle" style="width: 25%">Action</th>
+                                    </thead>
                                     @forelse ($damaged_arr as $i => $item)
                                         <tr>
-                                            <td class="text-center p-2" style="width: 75%">
-                                                <div class="row">
-                                                    <div class="col-3">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
-                                                            <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg">
-                                                            <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" class="img-thumbnail" width="100%">
-                                                        </picture>
+                                            <td class="text-center p-1 align-middle" style="width: 75%">
+                                                <div class="d-none"><!-- For Search -->
+                                                    {{ $item['store'] }} <br>
+                                                    {{ $item['damage_description'] }} <br>
+                                                    {{ $item['promodiser'] }} <br>
+                                                    {{ Carbon\Carbon::parse($item['creation'])->format('F d, Y') }}
+                                                </div>
+                                                <div class="d-flex flex-row align-items-center">
+                                                    <div class="p-1 text-center">
+                                                        <a href="{{ asset('storage/') }}{{ $item['image'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
+                                                            <picture>
+                                                                <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp" width="40" height="40">
+                                                                <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg" width="40" height="40">
+                                                                <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+                                                            </picture>
+                                                        </a>
                                                     </div>
-                                                    <div class="col-9 text-left p-1">
-                                                        <b>{{ $item['item_code'] }}</b> <span class="badge badge-{{ $item['status'] == 'Returned' ? 'success' : 'primary' }}">{{ $item['status'] == 'Returned' ? $item['status'] : 'For Return' }}</span>
-                                                        <div class="col-12 text-justify p-0">
-                                                            {{ $item['store'] }} <br>
-                                                            <b>Reason: </b> {{ $item['damage_description'] }} <br>
-                                                            <b>Qty: </b> {{ number_format($item['damaged_qty']) }} <small style="white-space: nowrap">{{ $item['uom'] }}</small>
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-none"><!-- For Search -->
-                                                        {{ $item['store'] }} <br>
-                                                        {{ $item['damage_description'] }} <br>
-                                                        {{ $item['promodiser'] }} <br>
-                                                        {{ Carbon\Carbon::parse($item['creation'])->format('F d, Y') }}
+                                                    <div class="p-1 m-0">
+                                                        <span class="font-weight-bold">{{ $item['item_code'] }}</span>
+                                                        <span class="badge badge-{{ $item['status'] == 'Returned' ? 'success' : 'primary' }}">{{ $item['status'] == 'Returned' ? $item['status'] : 'For Return' }}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="text-center" style="width: 25%">
-                                                <a href='#' data-toggle="modal" data-target="#view-item-details-{{ $i }}-Modal">
-                                                    View
-                                                </a>
+                                            <td class="text-center p-1 align-middle" style="width: 25%">
+                                                <a href='#' data-toggle="modal" data-target="#view-item-details-{{ $i }}-Modal">View</a>
                                                   
                                                 <!-- Modal -->
                                                 <div class="modal fade" id="view-item-details-{{ $i }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog" role="document">
+                                                    <div class="modal-dialog modal-dialog-centered" role="document">
                                                         <div class="modal-content">
-                                                            <div class="modal-header" style="background-color: #001F3F; color: #fff;">
-                                                                <div class="row text-left">
-                                                                    <div class="col-12">
-                                                                        <h5>Damaged Items</h5>
-                                                                    </div>
-                                                                    <div class="col-12">
-                                                                        <h6 id="exampleModalLabel">{{ $item['store'] }} <span class="badge badge-{{ $item['status'] == 'Returned' ? 'success' : 'primary' }}">{{ $item['status'] == 'Returned' ? $item['status'] : 'For Return' }}</span></h6>
-                                                                    </div>
-                                                                    <div class="col-12">
-                                                                        <span class="font-italic">{{ $item['promodiser'].' - '.Carbon\Carbon::parse($item['creation'])->format('F d, Y') }}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true" style="color: #fff;">&times;</span>
+                                                            <div class="modal-header bg-navy">
+                                                                <h6 class="modal-title"><b>Damaged Items</b>&nbsp;<span class="badge badge-{{ $item['status'] == 'Returned' ? 'success' : 'primary' }}">{{ $item['status'] == 'Returned' ? $item['status'] : 'For Return' }}</span></h6>
+                                                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
                                                             <div class="modal-body">
-                                                                <div class="callout callout-info text-center">
+                                                                <h6 class="text-left m-0 p-0">{{ $item['store'] }}</h6>
+                                                                <small class="d-block text-left">{{ $item['promodiser'].' - '.Carbon\Carbon::parse($item['creation'])->format('F d, Y') }}</small>
+                                                                <div class="callout callout-info text-center mt-2">
                                                                     <small><i class="fas fa-info-circle"></i> Consignment Supervisor will notify that there are damaged/defective item in your store.</small>
                                                                 </div>
                                                                 <table class="table">
+                                                                    <thead>
+                                                                        <th class="p-1 align-middle text-center" style="width: 65% !important;">Item Code</th>
+                                                                        <th class="p-1 align-middle text-center">Qty</th>
+                                                                    </thead>
                                                                     <tr>
-                                                                        <th style="width: 65% !important">Item</th>
-                                                                        <th>Qty</th>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td class="p-0">
-                                                                            <div class="row">
-                                                                                <div class="col-4">
-                                                                                    <picture>
-                                                                                        <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
-                                                                                        <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg">
-                                                                                        <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" class="img-thumbnail" width="100%">
-                                                                                    </picture>
+                                                                        <td class="p-1 text-left align-middle">
+                                                                            <div class="d-flex flex-row align-items-center">
+                                                                                <div class="p-1 text-center">
+                                                                                    <a href="{{ asset('storage/') }}{{ $item['image'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
+                                                                                        <picture>
+                                                                                            <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp" width="40" height="40">
+                                                                                            <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg" width="40" height="40">
+                                                                                            <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+                                                                                        </picture>
+                                                                                    </a>
                                                                                 </div>
-                                                                                <div class="col-4" style="display: flex; justify-content: center; align-items: center;">
-                                                                                    <b>{{ $item['item_code'] }}</b>
+                                                                                <div class="p-1 m-0">
+                                                                                    <span class="font-weight-bold">{{ $item['item_code'] }}</span>
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td>
+                                                                        <td class="p-1 align-middle text-center">
                                                                             <div class="container" style="display: flex; justify-content: center; align-items: center;">
                                                                                 <div>
                                                                                     <b>{{ number_format($item['damaged_qty']) }}</b> <br>
@@ -122,13 +112,9 @@
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td colspan=2 class="text-justify p-0">
-                                                                            <div class="p-2 item-description container-fluid text-justify">
-                                                                                {{ strip_tags($item['item_description']) }} <br>
-                                                                            </div>
-                                                                            <div class='p-2'>
-                                                                                <b>Reason: </b> {{ $item['damage_description'] }} <br>
-                                                                            </div>
+                                                                        <td colspan="2" class="text-justify p-1 align-middle" style="border-top: 0 !important;">
+                                                                            <p>{!! strip_tags($item['item_description']) !!}</p>
+                                                                            <p class="mt-1"><b>Reason: </b> {{ $item['damage_description'] }}</p>
                                                                         </td>
                                                                     </tr>
                                                                 </table>
@@ -164,20 +150,19 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td colspan=2 class="p-0">
+                                            <td colspan="2" style="border-top: 0 !important;" class="pt-0 pb-2 pl-2 prl-2">
                                                 <div class="d-none"><!-- For Search -->
                                                     {{ $item['item_code'] }}
                                                 </div>
-                                                <div class="p-2 item-description container-fluid text-justify">
-                                                    {{ strip_tags($item['item_description']) }} <br>
-                                                </div>
+                                                <div class="item-description">{!! strip_tags($item['item_description']) !!}</div>
+                                                <span class="d-block mt-1 font-weight-bold">{{ $item['store'] }}</span>
+                                                <b>Reason: </b> {{ $item['damage_description'] }} <br>
+                                                <b>Qty: </b> {{ number_format($item['damaged_qty']) }} <small style="white-space: nowrap">{{ $item['uom'] }}</small>
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan=2 class='text-center'>
-                                                No damaged item(s) reported.
-                                            </td>
+                                            <td colspan="2" class="text-uppercase text-muted text-center p-1 align-middle">No damaged item(s) reported</td>
                                         </tr>
                                     @endforelse
                                </table>
@@ -213,7 +198,7 @@
 
 @section('script')
     <script>
-        var showTotalChar = 120, showChar = "Show more", hideChar = "Show less";
+        var showTotalChar = 85, showChar = "Show more", hideChar = "Show less";
         $('.item-description').each(function() {
             var content = $(this).text();
             if (content.length > showTotalChar) {

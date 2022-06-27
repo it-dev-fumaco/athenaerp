@@ -28,32 +28,8 @@
 									<div class="card-body p-0">
 										<form action="/beginning_inv_list" method="get">
 											<div class="row p-2">
-												<div class="col-12 col-lg-2 col-xl-2 offset-xl-3">
+												<div class="col-12 col-lg-4 col-xl-4">
 													<input type="text" class="form-control filters-font" name="search" value="{{ request('search') ? request('search') : null }}" placeholder="Search"/>
-												</div>
-												<div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
-													@php
-														$statuses = ['For Approval', 'Approved', 'Cancelled'];
-													@endphp
-													<select name="status" class="form-control filters-font">
-														<option value="" disabled {{ Auth::user()->user_group == 'Promodiser' && !request('status') ? 'selected' : null }}>Select a status</option>
-														<option value="All" {{ request('status') ? ( request('status') == 'All' ? 'selected' : null) : null }}>Select All</option>
-														@foreach ($statuses as $status)
-														@php
-															$selected = null;
-															if(request('status')){
-																if(request('status') == $status){
-																	$selected = 'selected';
-																}
-															}else{
-																if(Auth::user()->user_group == 'Consignment Supervisor'){
-																	$selected = $status == 'For Approval' ? 'selected' : null;
-																}
-															}
-														@endphp
-														<option value="{{ $status }}" {{ $selected }}>{{ $status }}</option>
-														@endforeach
-													</select>
 												</div>
 												<div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
 													<select name="store" class="form-control filters-font">
@@ -78,7 +54,9 @@
 							<table class="table" style="font-size: 9pt;">
 								<thead>
 									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Date</th>
-									<th class="p-1 text-center align-middle" style="width: 50%;">Store</th>
+									<th class="p-1 text-center align-middle mobile-first">Store</th>
+									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Total items</th>
+									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Amount</th>
 									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Submitted by</th>
 									<th class="p-1 text-center align-middle d-none d-lg-table-cell">Status</th>
 									<th class="p-1 text-center align-middle last-row">Action</th>
@@ -92,7 +70,7 @@
 										}else if($inv['status'] == 'Approved'){
 											$badge = 'success';
 										}else if($inv['status'] == 'Cancelled'){
-											$badge = 'danger';
+											$badge = 'secondary';
 										}
 
 										$modal_form = Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
@@ -104,7 +82,13 @@
 										<td class="p-2 text-left align-middle text-xl-center">
 											<span class="d-block">{{ $inv['branch'] }}</span>
 											<small>By: {{ $inv['owner'] }} - {{ $inv['transaction_date'] }}</small>
+											<div class="row p-0 d-lg-none">
+												<div class="col-4"><b>Qty: </b>{{ number_format($inv['qty']) }}</div>
+												<div class="col-8"><b>Amount: </b>₱ {{ number_format($inv['amount'], 2) }}</div>
+											</div>
 										</td>
+										<td class="p-2 text-center align-middle d-none d-lg-table-cell">{{ number_format($inv['qty']) }}</td>
+										<td class="p-2 text-center align-middle d-none d-lg-table-cell">₱ {{ number_format($inv['amount'], 2) }}</td>
 										<td class="p-2 text-center align-middle d-none d-lg-table-cell">{{ $inv['owner'] }}</td>
 										<td class="p-2 text-center align-middle d-none d-lg-table-cell">
 											<span class="badge badge-{{ $badge }}">{{ $inv['status'] }}</span>
@@ -230,7 +214,7 @@
 																		</tr>
 																		<tr class="d-xl-none">
 																			<td colspan="4" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-																				<div class="w-100 item-description">{!! strip_tags($item['item_description']) !!}</div>
+																				<div class="w-100 item-description">{{ strip_tags($item['item_description']) }}</div>
 																			</td>
 																		</tr>
 																		@empty
@@ -243,8 +227,87 @@
 															</div>
 															{{-- Update button for approved records --}}
 															@if ($inv['status'] == 'Approved')
-															<div class="modal-footer" id="{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
-																<button type="submit" class="btn btn-info w-100">Update</button>
+															<div class="modal-footer">
+																<div class="container-fluid" id="{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
+																	<button type="submit" class="btn btn-info w-100">Update</button>
+																</div>
+																<div class="container-fluid">
+																	<button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $inv['name'] }}-Modal">
+																		Cancel
+																	</button>
+																	  
+																	  <!-- Modal -->
+																	<div class="modal fade" id="cancel-{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+																		<div class="modal-dialog" role="document">
+																			<div class="modal-content">
+																				<div class="modal-header bg-navy">
+																					<h6 id="exampleModalLabel">Cancel Beginning Inventory?</h6>
+																					<button type="button" class="close">
+																					<span aria-hidden="true" style="color: #fff" onclick="close_modal('#cancel-{{ $inv['name'] }}-Modal')">&times;</span>
+																					</button>
+																				</div>
+																				<div class="modal-body">
+																					@if ($inv['sold'])
+																						<div class="callout callout-danger text-justify">
+																							<i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records of the following:
+																						</div>
+																						<div class="container-fluid" id="cancel-{{ $inv['name'] }}-container">
+																							<table class="table">
+																								<tr>
+																									<th class="text-center" style='width: 60%;'>Item</th>
+																									<th class="text-center" style="width: 20%;">Qty</th>
+																									<th class="text-center" style="width: 20%;">Amount</th>
+																								</tr>
+																								@foreach($inv['sold'] as $item)
+																									<tr>
+																										<td class="p-0" colspan=3>
+																											<div class="p-0 row">
+																												<div class="col-6">
+																													<div class="row">
+																														<div class="col-4">
+																															<picture>
+																																<source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
+																																<source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
+																																<img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+																															</picture>
+																														</div>
+																														<div class="col-8" style="display: flex; justify-content: center; align-items: center;">
+																															<b>{{ $item['item_code'] }}</b>
+																														</div>
+																													</div>
+																												</div>
+																												<div class="col-3 pt-2">
+																													<b>{{ number_format($item['qty']) }}</b> <br>
+																													<small>{{ $item['uom'] }}</small>
+																												</div>
+																												<div class="col-3" style="display: flex; justify-content: center; align-items: center;">
+																													₱ {{ number_format($item['price'], 2) }}
+																												</div>
+																											</div>
+																											<div class="text-justify item-description">
+																												{{ $item['description'] }}
+																											</div>
+																											<div class="text-justify pt-1 pb-2">
+																												<b>Transaction Date:</b>&nbsp;{{ Carbon\Carbon::parse($item['date'])->format('F d, Y') }}
+																											</div>
+																										</td>
+																									</tr>
+																								@endforeach
+																							</table>
+																						</div>
+																					@else
+																						<div class="callout callout-danger text-justify">
+																							<i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records.
+																						</div>
+																					@endif
+																				</div>
+																				<div class="modal-footer">
+																					<a href="/cancel/approved_beginning_inv/{{ $inv['name'] }}" class="btn btn-primary w-100">Confirm</a>
+																				</div>
+																			</div>
+																		</div>
+																	</div>
+																</div>
 															</div>
 															@endif
 														</form>
@@ -282,8 +345,11 @@
             display: none;
         }
         .last-row{
-            width: 20% !important;
+            width: 15% !important;
         }
+		.mobile-first{
+			width: 35% !important;
+		}
         .filters-font{
             font-size: 13px !important;
         }
@@ -291,9 +357,15 @@
             text-align: justify;
             padding: 10px;
         }
+		.modal{
+			background-color: rgba(0,0,0,0.4);
+		}
         @media (max-width: 575.98px) {
+			.mobile-first{
+				width: 50% !important;
+			}
             .last-row{
-                width: 35%;
+                width: 20%;
             }
             .filters-font{
                 font-size: 9pt;
@@ -305,8 +377,11 @@
             }
         }
         @media (max-width: 767.98px) {
+			.mobile-first{
+				width: 50% !important;
+			}
             .last-row{
-                width: 35%;
+                width: 20%;
             }
             .filters-font{
                 font-size: 9pt;
@@ -318,8 +393,11 @@
             }
         }
         @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+			.mobile-first{
+				width: 50% !important;
+			}
             .last-row{
-                width: 35%;
+                width: 20%;
             }
             .filters-font{
                 font-size: 9pt;
@@ -370,7 +448,7 @@
                 $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
             });
 
-            var showTotalChar = 150, showChar = "Show more", hideChar = "Show less";
+            var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
             $('.item-description').each(function() {
                 var content = $(this).text();
                 if (content.length > showTotalChar) {
