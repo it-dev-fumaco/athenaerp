@@ -421,6 +421,8 @@
         });
 
         $('#item-selection').select2({
+            templateResult: formatState,
+            templateSelection: formatState,
             placeholder: 'Select an Item',
 
             ajax: {
@@ -440,6 +442,28 @@
                 cache: true
             }
         });
+
+        function formatState (opt) {
+            console.log(opt);
+            if (!opt.id) {
+                return opt.text.toUpperCase();
+            }
+
+            var optimage = opt.image_webp;
+
+            if(optimage.indexOf('/icon/no_img') != -1){
+                optimage = opt.image;
+            }
+
+            if(!optimage){
+                return opt.text.toUpperCase();
+            } else {                    
+                var $opt = $(
+                '<span><img src="' + optimage + '" width="40px" /> ' + opt.text.toUpperCase() + '</span>'
+                );
+                return $opt;
+            }
+        };
 
         $(document).on('select2:select', '#item-selection', function(e){
             $('#new-item-code').text(e.params.data.id); // item code

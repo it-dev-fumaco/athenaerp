@@ -4,9 +4,9 @@
 ])
 
 @section('content')
-<div class="content">
+<div class="content" style='min-height: 90vh'>
 	<div class="content-header p-0">
-        <div class="container">
+        <div class="col-12 mx-auto">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
                     <div class="row">
@@ -20,27 +20,46 @@
                         </div>
                     </div>
                     <div class="card card-secondary card-outline">
-                        <div class="card-body p-2">
-                            <form id="product-sold-form" method="GET">
-                                <div class="d-flex flex-row align-items-center mt-2">
-                                    <div class="p-1 col-6">
-                                        <select class="form-control product-sold-filter" name="store" id="consignment-store-select">
-                                            <option value="">Select Store</option>
-                                        </select>
+                        <!-- Nav tabs -->
+					<ul class="nav nav-tabs" role="tablist">
+						<li class="nav-item">
+							<a class="nav-link active" data-toggle="tab" href="#list">List</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" data-toggle="tab" href="#report">Report</a>
+						</li>
+					</ul>
+				  
+					<!-- Tab panes -->
+					<div class="tab-content"> 
+						<div id="list" class="container-fluid tab-pane active" style="padding: 8px 0 0 0;">
+                            <div class="card-body p-2 col-8 mx-auto">
+                                <form id="product-sold-form" method="GET">
+                                    <div class="d-flex flex-row align-items-center mt-2">
+                                        <div class="p-1 col-6">
+                                            <select class="form-control product-sold-filter" name="store" id="consignment-store-select">
+                                                <option value="">Select Store</option>
+                                            </select>
+                                        </div>
+                                        <div class="p-1 col-4 col-xl-2">
+                                            <select class="form-control product-sold-filter" name="year">
+                                                @foreach ($select_year as $year)
+                                                    <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="p-1 col-2">
+                                            <a href="/view_sales_report" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
+                                        </div>
                                     </div>
-                                    <div class="p-1 col-4 col-xl-2">
-                                        <select class="form-control product-sold-filter" name="year">
-                                            @foreach ($select_year as $year)
-                                            <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="p-1 col-2">
-                                        <a href="/view_sales_report" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
-                                    </div>
-                                </div>
-                            </form>
-                            <div id="list-el" class="p-2"></div>
+                                </form>
+                                <div id="list-el" class="p-2"></div>
+                            </div>
+                        </div>
+						<div id="report" class="container-fluid tab-pane" style="padding: 8px 0 0 0;">
+                            <div class="row">
+                                <div id="report-container" class="container-fluid p-3"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -66,6 +85,21 @@
                 data: $('#product-sold-form').serialize(),
                 success: function (data) {
                     $('#list-el').html(data);
+                }
+            });
+        }
+
+        $('#test').click(function(){
+            loadSalesReport();
+        });
+
+        loadSalesReport();
+        function loadSalesReport() {
+            $.ajax({
+                type: "GET",
+                url: "/sales_report",
+                success: function (data) {
+                    $('#report-container').html(data);
                 }
             });
         }
