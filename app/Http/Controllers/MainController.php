@@ -343,8 +343,12 @@ class MainController extends Controller
 
             $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
-            $consignment_branches = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
-                ->orderBy('warehouse_name', 'asc')->select('warehouse_name', 'name', 'is_group', 'disabled')->get()->toArray();
+            $consignment_branches = DB::table('tabWarehouse Users as wu')
+                ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+                ->join('tabWarehouse as w', 'w.name', 'acw.warehouse')
+                ->where('wu.user_group', 'Promodiser')
+                ->select('w.warehouse_name', 'w.name', 'w.is_group', 'w.disabled')
+                ->orderBy('w.warehouse_name', 'asc')->get()->toArray();
 
             $active_consignment_branches = collect($consignment_branches)->where('is_group', 0)->where('disabled', 0);
 
@@ -352,7 +356,7 @@ class MainController extends Controller
 
             $consignment_branches_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
                 ->where('status', 'Approved')->whereIn('branch_warehouse', array_column($consignment_branches, 'name'))
-                ->distinct('branch_warehouse')->count();
+                ->distinct('branch_warehouse')->pluck('branch_warehouse')->count();
 
             $beginning_inv_percentage = number_format(($consignment_branches_with_beginning_inventory / count($consignment_branches)) * 100, 2);
 
