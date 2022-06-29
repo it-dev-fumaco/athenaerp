@@ -41,7 +41,7 @@
                             <table class="table" style="font-size: 10pt;">
                                 <thead class="border-top">
                                     <th class="text-center p-1 d-none d-lg-table-cell">Date</th>
-                                    <th class="text-center p-1 d-none d-lg-table-cell">theadansaction Type</th>
+                                    <th class="text-center p-1 d-none d-lg-table-cell">Transaction Type</th>
                                     @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                     <th class="text-center p-1 mobile-first-row">
                                         <span class="d-none d-lg-inline">From Warehouse</span>
