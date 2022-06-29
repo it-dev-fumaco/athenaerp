@@ -475,7 +475,10 @@ class MainController extends Controller
                 ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
+            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse')->toArray();
+
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+            $allow_warehouse = array_merge($allow_warehouse, $consignment_stores);
         }
 
         $item_codes_based_on_warehouse_assigned = [];
@@ -508,7 +511,7 @@ class MainController extends Controller
             ->when($check_qty == 1, function($q) use ($allow_warehouse){
                 if(Auth::user()->user_group == 'Promodiser'){
                     $allowed_warehouses = collect($allow_warehouse)->implode('","');
-                    return $q->where(DB::raw('(SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
+                    return $q->where(DB::raw('(SELECT SUM(consigned_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
                 }else{
                     return $q->where(DB::raw('(SELECT COUNT(`tabItem`.name) FROM `tabBin` JOIN tabWarehouse ON tabWarehouse.name = `tabBin`.warehouse WHERE `tabBin`.item_code = `tabItem`.name and `tabWarehouse`.stock_warehouse = 1)'), '>', 0);
                 }
@@ -623,7 +626,7 @@ class MainController extends Controller
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
             ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
-            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'tabBin.consigned_qty', 'stock_uom', 'parent_warehouse')
             ->get();
 
         $item_warehouses = array_column($item_inventory->toArray(), 'warehouse');
@@ -748,17 +751,24 @@ class MainController extends Controller
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $value->actual_qty,
                         'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
-                        'stock_uom' => $value->stock_uom,
+                        'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
                     ];
                 }else{
+                    $available_qty = 0;
+                    if(Auth::user()->user_group == 'Promodiser'){
+                        $available_qty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
+                    }else{
+                        $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
+                    }
+
                     $site_warehouses[] = [
                         'warehouse' => $value->warehouse,
                         'location' => $value->location,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $value->actual_qty,
-                        'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
-                        'stock_uom' => $value->stock_uom,
+                        'available_qty' => $available_qty,//($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                        'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
                     ];
                 }
