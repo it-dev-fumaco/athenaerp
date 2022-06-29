@@ -1,3 +1,4 @@
+<div class="container-fluid" style="overflow: auto">
 <table class="table table-bordered w-100" id="report-table" style="font-size: 10pt;">
     <tr>
         <th class="text-center font-responsive align-middle p-1" rowspan=2 colspan=2 style="width: 20%;">Promodiser</th>
@@ -72,7 +73,7 @@
         </td>
     </tr>
 </table>
-
+</div>
 <style>
     #report-table th{
         color: #fff;
