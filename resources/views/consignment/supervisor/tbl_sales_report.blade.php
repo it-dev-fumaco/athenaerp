@@ -3,6 +3,7 @@
     <tr>
         <th class="text-center font-responsive align-middle p-1" rowspan=2 colspan=2 style="width: 20%;">Promodiser</th>
         <th class="text-center font-responsive align-middle p-1" rowspan=2 style="width: 5%;">Opening Stock</th>
+        <th class="text-center font-responsive align-middle p-1" rowspan=2 style="width: 5%;">Opening Value</th>
         <th class="text-center font-responsive align-middle p-1" colspan={{ count($cutoff_periods) }}>Cut Off Period(s)</th>
         <th class="text-center font-responsive align-middle p-1" rowspan=2 style="width: 8%;">Total</th>
     </tr>
@@ -13,25 +14,34 @@
     </tr>
     @foreach ($report_arr as $report)
         <tr>
-            <td class="text-left font-responsive align-middle p-1 pl-4" colspan={{ count($cutoff_periods) + 4 }}>
+            <td class="text-left font-responsive align-middle p-1 pl-4" colspan={{ count($cutoff_periods) + 5 }}>
                 <span style="color: #001F3F">{{ $report['user'] }}</span>
             </td>
         </tr>
         @foreach ($report['assigned_warehouses'] as $warehouse)
             @php
                 $opening_stock = isset($opening_stocks_arr[$report['user']][$warehouse->warehouse]['qty']) ? $opening_stocks_arr[$report['user']][$warehouse->warehouse]['qty'] : 0;
-                $total_per_warehouse = isset($product_sold[$report['user']][$warehouse->warehouse]) ? collect($product_sold[$report['user']][$warehouse->warehouse])->sum('amount') : 0;
+                $total_amount_sold_per_warehouse = isset($product_sold[$report['user']][$warehouse->warehouse]) ? collect($product_sold[$report['user']][$warehouse->warehouse])->sum('amount') : 0;
+                $total_value_per_warehouse = isset($total_amount_arr[$report['user']][$warehouse->warehouse]) ? collect($total_amount_arr[$report['user']][$warehouse->warehouse])->sum('amount') : 0;
             @endphp
             <tr>
                 <td>&nbsp;</td>
                 <td class="text-left font-responsive align-middle p-1">{{ $warehouse->warehouse }}</td>
                 <td class="text-center font-responsive align-middle p-1">
                     @if ($opening_stock > 0)
-                        <span>{{ number_format($opening_stock) }}</span>
+                        <span style="white-space: nowrap">{{ number_format($opening_stock) }}</span>
                     @else
                         <span class="text-muted">-</span>
                     @endif
                     <span class="opening-stocks d-none">{{ $opening_stock * 1 }}</span>
+                </td>
+                <td class="text-center font-responsive align-middle p-1">
+                    @if ($total_value_per_warehouse > 0)
+                        <span style="white-space: nowrap">₱ {{ number_format($total_value_per_warehouse) }}</span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
+                    <span class="opening-values d-none">{{ $total_value_per_warehouse }}</span>
                 </td>
                 @foreach ($cutoff_periods as $period)
                     @php
@@ -39,7 +49,7 @@
                     @endphp
                     <td class="text-center font-responsive align-middle p-1">
                         @if ($amount > 0)
-                            <span>₱ {{ number_format($amount) }}</span>
+                            <span style="white-space: nowrap">₱ {{ number_format($amount) }}</span>
                         @else
                             <span class="text-muted">-</span>
                         @endif
@@ -47,12 +57,12 @@
                     </td>
                 @endforeach
                 <td class="text-center font-responsive align-middle p-1">
-                    @if ($total_per_warehouse > 0)
-                        <span>₱ {{ number_format($total_per_warehouse) }}</span>
+                    @if ($total_amount_sold_per_warehouse > 0)
+                        <span style="white-space: nowrap">₱ {{ number_format($total_amount_sold_per_warehouse) }}</span>
                     @else
                         <span class="text-muted">-</span>
                     @endif
-                    <span class="total-per-warehouse d-none">{{ $total_per_warehouse }}</span>
+                    <span class="total-per-warehouse d-none">{{ $total_amount_sold_per_warehouse }}</span>
                 </td>
             </tr>
         @endforeach
@@ -61,15 +71,18 @@
         <td class="text-center font-responsive font-weight-bold align-middle p-1">Total: </td>
         <td>&nbsp;</td>
         <td class="text-center font-responsive align-middle p-1">
-            <span id="total-opening-stocks"></span>
+            <span id="total-opening-stocks" style="white-space: nowrap"></span>
+        </td>
+        <td class="text-center font-responsive align-middle p-1">
+            <span id="total-opening-values" style="white-space: nowrap"></span>
         </td>
         @foreach ($cutoff_periods as $period)
             <td class="text-center font-responsive align-middle p-1">
-                <span id="total-of-cutoff-{{ $period }}"></span>
+                <span id="total-of-cutoff-{{ $period }}" style="white-space: nowrap"></span>
             </td>
         @endforeach
         <td class="text-center font-responsive align-middle p-1">
-            <span id="total-of-all-warehouse"></span>
+            <span id="total-of-all-warehouse" style="white-space: nowrap"></span>
         </td>
     </tr>
 </table>
@@ -85,6 +98,7 @@
     $(document).ready(function (){
         var total_product_sold = 0;
         var total_opening_stocks = 0;
+        var total_opening_values = 0;
 
         get_total_per_cutoff();
         function get_total_per_cutoff(){
@@ -147,6 +161,26 @@
             }
 
             $('#total-opening-stocks').text(stock_total);
+        }
+
+        get_total_opening_values();
+        function get_total_opening_values(){
+            $('.opening-values').each(function(){
+                total_opening_values += parseInt($(this).text());
+            });
+
+            const formatted = total_opening_values.toLocaleString('en-US', {maximumFractionDigits: 2});
+            
+            var values_total = null;
+            if(total_opening_values > 0){
+                values_total = '₱ ' + formatted;
+                $('#total-opening-values').removeClass('text-muted');
+            }else{
+                values_total = '-';
+                $('#total-opening-values').addClass('text-muted');
+            }
+
+            $('#total-opening-values').text(values_total);
         }
     });
 </script>

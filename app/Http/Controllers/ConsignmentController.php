@@ -641,7 +641,23 @@ class ConsignmentController extends Controller
             ->select('cbi.owner', 'cbi.branch_warehouse', DB::raw('sum(item.opening_stock) as qty'))
             ->groupBy('cbi.owner', 'cbi.branch_warehouse')
             ->get();
-    
+
+        $total_amount = DB::table('tabConsignment Beginning Inventory as cbi')
+            ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
+            ->where('cbi.status', 'Approved')->whereIn('cbi.owner', $included_promodisers_full_name)->whereIn('cbi.branch_warehouse', $warehouses)
+            ->select('cbi.owner', 'cbi.branch_warehouse', 'item.item_code', DB::raw('sum(item.opening_stock) as qty'), DB::raw('sum(item.price) as price'))
+            ->groupBy('cbi.owner', 'cbi.branch_warehouse', 'item.item_code')
+            ->get();
+
+        $total_amount_arr = [];
+        foreach($total_amount as $value){
+            $total_amount_arr[$value->owner][$value->branch_warehouse][$value->item_code] = [
+                'qty' => $value->qty,
+                'price' => $value->price,
+                'amount' => $value->qty * $value->price
+            ];
+        }
+
         $opening_stocks_arr = [];
         foreach($opening_stocks as $stock){
             $opening_stocks_arr[$stock->owner][$stock->branch_warehouse] = [
@@ -657,7 +673,7 @@ class ConsignmentController extends Controller
             ];
         }
     
-        return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff'));
+        return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff', 'total_amount_arr'));
     }
 
     public function beginningInventoryApproval(Request $request){
