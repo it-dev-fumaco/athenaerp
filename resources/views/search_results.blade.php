@@ -86,7 +86,7 @@
 													<div class="modal-content">
 														<div class="modal-body">
 															<div class="text-right pb-2">
-																<i class="fa fa-close" onclick="close_modal('mobile-filters-modal')" style="cursor: pointer"></i>
+																<i class="fa fa-close" onclick="close_modal('#mobile-filters-modal')" style="cursor: pointer"></i>
 															</div>
 															<div class="tree container"><!-- Item Group -->
 																<ul style="padding-left: 0 !important">
@@ -117,7 +117,7 @@
 											</div><!-- modal -->
 										</div>
 										<div class="col-4 text-right">
-											<p class="font-weight-bold m-1 font-responsive d-inline">TOTAL: <span class="badge badge-info font-responsive" style="font-size: 13pt !important;">{{ number_format($total_items) }}</span></p>
+											<p class="font-weight-bold m-1 font-responsive d-inline total">TOTAL: <span class="badge badge-info font-responsive total">{{ number_format($total_items) }}</span></p>
 										</div>
 									</div>
 									
@@ -128,18 +128,18 @@
 													<div class="col-12 col-md-1 col-xl-2 mx-auto general-filter-label text-left text-md-right" style="font-size: 10pt; white-space: nowrap">
 														<label class="font-responsive">Search For:</label>
 													</div>
-													<div class="col-12 col-md-2 col-xl-2 mx-auto">
+													<div class="col-12 col-md-2 col-xl-2 mx-auto pb-2 pb-xl-0">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="item-class-filter-parent" style="font-size: 10pt;">
 															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-{{ $promodiser_restriction ? 2 : 3 }} col-xl-2 mx-auto">
+													<div class="col-12 col-md-{{ $promodiser_restriction ? 2 : 3 }} col-xl-2 mx-auto pb-2 pb-xl-0">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="warehouse-filter-parent" style="font-size: 10pt;">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
 													<div class="col-12 col-md-{{ $promodiser_restriction ? 2 : 3 }} col-xl-2 mx-auto">
-														<div class="form-group text-left m-0 w-100 mx-auto" id="brand-filter-parent" style="font-size: 10pt;">
+														<div class="form-group text-left m-0 w-100 mx-auto pb-2 pb-xl-0" id="brand-filter-parent" style="font-size: 10pt;">
 															<select name="brand" id="brand-filter" class="form-control"></select>
 														</div>
 													</div>
@@ -365,14 +365,14 @@
 																		<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																	</div>
 																@endif
-																<div class="col-md-12"><!-- View Consignment Warehouse -->
-																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																<div class="col-md-12"><!-- View Consignment Warehouse (Desktop View) -->
+																	@if(Auth::user() && Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
 																	<div class="text-center">
 																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
 																	</div>
 						
 																	<div class="modal fade" id="vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-																		<div class="modal-dialog" role="document">
+																		<div class="modal-dialog modal-xl" role="document">
 																			<div class="modal-content">
 																				<div class="modal-header">
 																					<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
@@ -386,6 +386,7 @@
 																						<tr>
 																							<th class="consignment-th text-center">Warehouse</th>
 																							<th class="consignment-th text-center">Available Qty</th>
+																							<th class="consignment-th text-center">In Store</th>
 																						</tr>
 																						@forelse($row['consignment_warehouses'] as $con)
 																						<tr>
@@ -397,6 +398,9 @@
 																							</td>
 																							<td class="text-center">
 																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																							</td>
+																							<td class="text-center">
+																								<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
 																							</td>
 																						</tr>
 																						@empty
@@ -544,27 +548,28 @@
 																		</div>
 																	@endif
 																	
-																	<div class="container-fluid mb-2"><!-- View Consignment Warehouse -->
-																		@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																	<div class="container-fluid mb-2"><!-- View Consignment Warehouse(Tablet View) -->
+																		@if(Auth::user() && Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
 																		<div class="text-center">
 																			<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#tablet-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
 																		</div>
 							
 																		<div class="modal fade" id="tablet-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-																			<div class="modal-dialog" role="document">
+																			<div class="modal-dialog modal-xl" role="document">
 																				<div class="modal-content">
 																					<div class="modal-header">
-																						<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																						<h5 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h5>
 																						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 																					</div>
 																					<form></form>
 																					<div class="modal-body">
-																						<table class="table table-hover m-0">
+																						<table class="table table-hover m-0" style='font-size: 10pt;'>
 																							<col style="width: 70%;">
 																							<col style="width: 30%;">
 																							<tr>
 																								<th class="consignment-th text-center">Warehouse</th>
 																								<th class="consignment-th text-center">Available Qty</th>
+																								<th class="consignment-th text-center">In Store</th>
 																							</tr>
 																							@forelse($row['consignment_warehouses'] as $con)
 																							<tr>
@@ -576,6 +581,9 @@
 																								</td>
 																								<td class="text-center">
 																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																								</td>
+																								<td class="text-center">
+																									<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
 																								</td>
 																							</tr>
 																							@empty
@@ -644,14 +652,14 @@
 																	<p class="text-center pt-2 font-responsive">No Available Stock on All Warehouses</p>
 																@endif
 																
-																<div class="container-fluid"><!-- View Consignment Warehouse -->
-																	@if(Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
+																<div class="container-fluid"><!-- View Consignment Warehouse(Mobile View) -->
+																	@if(Auth::user() && Auth::user()->user_group != 'Promodiser' and count($row['consignment_warehouses']) > 0)
 																	<div class="text-center">
 																		<a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#mobile-vcw{{ $row['name'] }}" style="font-size: 11px;">View Consignment Warehouse</a>
 																	</div>
 						
 																	<div class="modal fade" id="mobile-vcw{{ $row['name'] }}" tabindex="-1" role="dialog">
-																		<div class="modal-dialog" role="document">
+																		<div class="modal-dialog modal-xl" role="document">
 																			<div class="modal-content">
 																				<div class="modal-header">
 																					<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
@@ -665,6 +673,7 @@
 																						<tr>
 																							<th class="consignment-th text-center">Warehouse</th>
 																							<th class="consignment-th text-center">Available Qty</th>
+																							<th class="consignment-th text-center">In Store</th>
 																						</tr>
 																						@forelse($row['consignment_warehouses'] as $con)
 																						<tr>
@@ -676,6 +685,9 @@
 																							</td>
 																							<td class="text-center">
 																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+																							</td>
+																							<td class="text-center">
+																								<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
 																							</td>
 																						</tr>
 																						@empty
@@ -946,8 +958,12 @@
 		font-size: 9pt;
 	}
 
+	.total{
+		font-size: 13pt;
+	}
+
 	@media (max-width: 575.98px) {
-        .font-responsive, .responsive-item-code, .stock-ledger-table-font{
+        .font-responsive, .responsive-item-code, .stock-ledger-table-font, .total{
 			font-size: 10pt !important;
 		}
 		.item-class, .item-name{
@@ -993,7 +1009,7 @@
 		}
     }
   	@media (max-width: 767.98px) {
-        .font-responsive, .responsive-description, .stock-ledger-table-font{
+        .font-responsive, .responsive-description, .stock-ledger-table-font, .total{
 			font-size: 10pt !important;
 		}
 		.search-img, .search-thumbnail{
@@ -1036,6 +1052,9 @@
 		}
     }
 	@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (orientation : portrait) {
+		.total{
+			font-size: 10pt !important;
+		}
 		.modal.left .modal-dialog{
 			width: 240px;
 		}
@@ -1053,6 +1072,9 @@
 		}
 	}
 	@media only screen and (min-device-width : 768px) and (orientation : landscape) {
+		.total{
+			font-size: 10pt !important;
+		}
 		.filter-font{
 			font-size: 8pt;
 		}
