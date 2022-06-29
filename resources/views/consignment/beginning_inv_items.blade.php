@@ -5,7 +5,7 @@
             <input type="text" class="form-control form-control-sm mt-2 mb-2 ml-0 mr-0" id="item-search" name="search" autocomplete="off" placeholder="Search"/>
         </div>
         <div class="col-4" style="display: flex; justify-content: center; align-items: center;">
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#add-item-Modal">
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#add-item-Modal" style="font-size: 10pt;">
                 <i class="fa fa-plus"></i> Add Items
             </button>
               
@@ -311,14 +311,9 @@
 
         $('table#items-table').on('click', '.remove-item', function(){
             var item_code = $(this).data('id');
+            $('#'+item_code).remove();
 
-            $('#'+item_code).addClass('d-none');
-            $('#'+item_code+'-id').val('');
             $('#item-count').val(parseInt($('#item-count').val()) - 1);
-            $('#'+item_code+'-price').prop('required', false);
-            $('#'+item_code+'-price').removeClass('validate');
-            $('#'+item_code+'-stock').removeClass('validate');
-
 
             if(existing_record == 1){
                 enable_submit();
@@ -421,6 +416,8 @@
         });
 
         $('#item-selection').select2({
+            templateResult: formatState,
+            // templateSelection: formatState,
             placeholder: 'Select an Item',
 
             ajax: {
@@ -441,6 +438,25 @@
             }
         });
 
+        function formatState (opt) {
+            if (!opt.id) {
+                return opt.text;
+            }
+
+            var optimage = opt.image_webp;
+            if(optimage.indexOf('/icon/no_img') != -1){
+                optimage = opt.image;
+            }
+
+            if(!optimage){
+                return opt.text;
+            } else {
+                var $opt = $(
+                '<span><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>'
+                );
+                return $opt;
+            }
+        };
 
         $(document).on('select2:select', '#item-selection', function(e){
             $('#new-item-code').text(e.params.data.id); // item code

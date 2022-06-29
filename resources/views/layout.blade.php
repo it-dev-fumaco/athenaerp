@@ -423,13 +423,16 @@
 		}
 		.select2{
 			width: 100% !important;
+			outline: none !important;
 		}
 		.select2-selection__rendered {
 			line-height: 31px !important;
+			outline: none !important;
 		}
 		.select2-container .select2-selection--single {
 			height: 37px !important;
 			padding-top: 1.5%;
+			outline: none !important;
 		}
 		.select2-selection__arrow {
 			height: 36px !important;
@@ -448,6 +451,10 @@
 		}
 		.tbl-athena-logs-tbl-user{
 			width: 15%;
+		}
+
+		textarea:focus, input:focus, select:focus{
+			outline: none;
 		}
 	</style>
 	@yield('style')

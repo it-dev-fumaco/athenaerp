@@ -183,6 +183,8 @@
 
             function get_items(branch){
 				$('#item-selection').select2({
+                    templateResult: formatState,
+                    // templateSelection: formatState,
                     placeholder: 'Select an item',
                     allowClear: true,
                     ajax: {
@@ -203,6 +205,26 @@
                     }
                 });
             }
+
+            function formatState (opt) {
+                if (!opt.id) {
+                    return opt.text;
+                }
+
+                var optimage = opt.webp;
+                if(optimage.indexOf('/icon/no_img') != -1){
+                    optimage = opt.img;
+                }
+
+                if(!optimage){
+                    return opt.text;
+                } else {
+                    var $opt = $(
+                    '<span><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>'
+                    );
+                    return $opt;
+                }
+            };
 
             $('#add-item').click(function (){
                 add_item('#selected-items-table');
@@ -417,7 +439,7 @@
                             '</div>' +
                             '<div class="p-0 col-4 offset-1">' +
                                 '<div class="input-group p-1">' +
-                                    '<div class="input-group-prepend p-0 ml-2">' +
+                                    '<div class="input-group-prepend p-0">' +
                                         '<button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
                                     '</div>' +
                                     '<div class="custom-a p-0">' +
