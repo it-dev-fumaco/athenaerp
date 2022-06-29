@@ -25,7 +25,11 @@
                 <td>&nbsp;</td>
                 <td class="text-left font-responsive align-middle p-1">{{ $warehouse->warehouse }}</td>
                 <td class="text-center font-responsive align-middle p-1">
-                    <span class="{{ $opening_stock <= 0 ? 'text-muted' : null  }}">{{ number_format($opening_stock) }}</span>
+                    @if ($opening_stock > 0)
+                        <span>{{ number_format($opening_stock) }}</span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
                     <span class="opening-stocks d-none">{{ $opening_stock * 1 }}</span>
                 </td>
                 @foreach ($cutoff_periods as $period)
@@ -33,12 +37,20 @@
                         $amount = isset($product_sold[$report['user']][$warehouse->warehouse][$period]['amount']) ? $product_sold[$report['user']][$warehouse->warehouse][$period]['amount'] : 0;
                     @endphp
                     <td class="text-center font-responsive align-middle p-1">
-                        <span class="{{ $amount <= 0 ? 'text-muted' : null  }}">₱ {{ number_format($amount) }}</span>
+                        @if ($amount > 0)
+                            <span>₱ {{ number_format($amount) }}</span>
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
                         <span class="cutoff {{ $period }} d-none" data-period='{{ $period }}'>{{ $amount }}</span>
                     </td>
                 @endforeach
                 <td class="text-center font-responsive align-middle p-1">
-                    <span class="{{ $total_per_warehouse <= 0 ? 'text-muted' : null  }}">₱ {{ number_format($total_per_warehouse) }}</span>
+                    @if ($total_per_warehouse > 0)
+                        <span>₱ {{ number_format($total_per_warehouse) }}</span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
                     <span class="total-per-warehouse d-none">{{ $total_per_warehouse }}</span>
                 </td>
             </tr>
@@ -80,8 +92,18 @@
                 var val = 0;
                 $('.cutoff.'+period).each(function(){
                     val += parseInt($(this).text());
-                    const cutoff = val.toLocaleString('en-US', {maximumFractionDigits: 2})
-                    $('#total-of-cutoff-'+period).text('₱ ' + cutoff);
+                    const cutoff = val.toLocaleString('en-US', {maximumFractionDigits: 2});
+                    
+                    var cutoff_total = null;
+                    if(val > 0){
+                        cutoff_total = '₱ ' + cutoff;
+                        $('#total-of-cutoff-'+period).removeClass('text-muted');
+                    }else{
+                        cutoff_total = '-';
+                        $('#total-of-cutoff-'+period).addClass('text-muted');
+                    }
+
+                    $('#total-of-cutoff-'+period).text(cutoff_total);
                 });
             });
         }
@@ -92,8 +114,18 @@
                 total_product_sold += parseInt($(this).text());
             });
             
-            const formatted = total_product_sold.toLocaleString('en-US', {maximumFractionDigits: 2})
-            $('#total-of-all-warehouse').text('₱ ' + formatted);
+            const formatted = total_product_sold.toLocaleString('en-US', {maximumFractionDigits: 2});
+
+            var sold_total = null;
+            if(total_product_sold > 0){
+                sold_total = '₱ ' + formatted;
+                $('#total-of-all-warehouse').removeClass('text-muted');
+            }else{
+                sold_total = '-';
+                $('#total-of-all-warehouse').addClass('text-muted');
+            }
+
+            $('#total-of-all-warehouse').text(sold_total);
         }
         
         get_total_opening_stocks();
@@ -102,8 +134,18 @@
                 total_opening_stocks += parseInt($(this).text());
             });
 
-            const formatted = total_opening_stocks.toLocaleString('en-US', {maximumFractionDigits: 2})
-            $('#total-opening-stocks').text(formatted);
+            const formatted = total_opening_stocks.toLocaleString('en-US', {maximumFractionDigits: 2});
+            
+            var stock_total = null;
+            if(total_opening_stocks > 0){
+                stock_total = formatted;
+                $('#total-opening-stocks').removeClass('text-muted');
+            }else{
+                stock_total = '-';
+                $('#total-opening-stocks').addClass('text-muted');
+            }
+
+            $('#total-opening-stocks').text(stock_total);
         }
     });
 </script>

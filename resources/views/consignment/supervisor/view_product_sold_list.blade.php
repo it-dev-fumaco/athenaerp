@@ -33,7 +33,7 @@
 					<!-- Tab panes -->
 					<div class="tab-content"> 
 						<div id="list" class="container-fluid tab-pane active" style="padding: 8px 0 0 0;">
-                            <div class="card-body p-2 col-8 mx-auto">
+                            <div class="card-body p-2 col-12 col-xl-8 mx-auto">
                                 <form id="product-sold-form" method="GET">
                                     <div class="d-flex flex-row align-items-center mt-2">
                                         <div class="p-1 col-6">
