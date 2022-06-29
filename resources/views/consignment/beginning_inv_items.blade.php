@@ -200,7 +200,7 @@
     </table>
     
     <div class="col-12 text-right">
-        <span class="d-block" style="font-size: 15px;">Total items: <b>{{ count($items) }}</b></span>
+        <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
         <div class="m-2">
             @if ($inv_name)
                 <button type="submit" class="btn btn-danger btn-block" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
@@ -215,8 +215,6 @@
         {{-- values to save --}}
         <input type="text" name="branch" value="{{ $branch }}">
         <input type="text" name="inv_name" value="{{ $inv_name }}">
-        {{-- used as a reference --}}
-        <input type="text" id="item-count" value="{{ count($items) }}">
     </div>
 
     <div class="w-100 text-center d-none p-2" id="add-item-success" style="position: absolute; top: 0; left: 0">
@@ -295,7 +293,7 @@
                 allow_inputs = Math.min.apply(Math, inputs);
             }
 
-            if(parseInt($('#item-count').val()) > 0 && allow_inputs == 1){
+            if(parseInt($('#item-count').text()) > 0 && allow_inputs == 1){
                 $('#submit-btn').prop('disabled', false);
             }else{
                 $('#submit-btn').prop('disabled', true);
@@ -313,7 +311,7 @@
             var item_code = $(this).data('id');
             $('#'+item_code).remove();
 
-            $('#item-count').val(parseInt($('#item-count').val()) - 1);
+            $('#item-count').text(parseInt($('#item-count').text()) - 1);
 
             if(existing_record == 1){
                 enable_submit();
@@ -478,7 +476,7 @@
             add_item('#items-table tbody');
             $('#add-item-Modal').modal('hide')
 
-            $('#item-count').val(parseInt($('#item-count').val()) + 1);
+            $('#item-count').text(parseInt($('#item-count').text()) + 1);
 
             // Reset values
             $('#new-item-code').text('');
