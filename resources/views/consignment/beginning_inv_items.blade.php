@@ -5,7 +5,7 @@
             <input type="text" class="form-control form-control-sm mt-2 mb-2 ml-0 mr-0" id="item-search" name="search" autocomplete="off" placeholder="Search"/>
         </div>
         <div class="col-4" style="display: flex; justify-content: center; align-items: center;">
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#add-item-Modal">
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#add-item-Modal" style="font-size: 10pt;">
                 <i class="fa fa-plus"></i> Add Items
             </button>
               
@@ -200,7 +200,7 @@
     </table>
     
     <div class="col-12 text-right">
-        <span class="d-block" style="font-size: 15px;">Total items: <b>{{ count($items) }}</b></span>
+        <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
         <div class="m-2">
             @if ($inv_name)
                 <button type="submit" class="btn btn-danger btn-block" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
@@ -215,8 +215,6 @@
         {{-- values to save --}}
         <input type="text" name="branch" value="{{ $branch }}">
         <input type="text" name="inv_name" value="{{ $inv_name }}">
-        {{-- used as a reference --}}
-        <input type="text" id="item-count" value="{{ count($items) }}">
     </div>
 
     <div class="w-100 text-center d-none p-2" id="add-item-success" style="position: absolute; top: 0; left: 0">
@@ -295,7 +293,7 @@
                 allow_inputs = Math.min.apply(Math, inputs);
             }
 
-            if(parseInt($('#item-count').val()) > 0 && allow_inputs == 1){
+            if(parseInt($('#item-count').text()) > 0 && allow_inputs == 1){
                 $('#submit-btn').prop('disabled', false);
             }else{
                 $('#submit-btn').prop('disabled', true);
@@ -311,14 +309,9 @@
 
         $('table#items-table').on('click', '.remove-item', function(){
             var item_code = $(this).data('id');
+            $('#'+item_code).remove();
 
-            $('#'+item_code).addClass('d-none');
-            $('#'+item_code+'-id').val('');
-            $('#item-count').val(parseInt($('#item-count').val()) - 1);
-            $('#'+item_code+'-price').prop('required', false);
-            $('#'+item_code+'-price').removeClass('validate');
-            $('#'+item_code+'-stock').removeClass('validate');
-
+            $('#item-count').text(parseInt($('#item-count').text()) - 1);
 
             if(existing_record == 1){
                 enable_submit();
@@ -421,6 +414,8 @@
         });
 
         $('#item-selection').select2({
+            templateResult: formatState,
+            // templateSelection: formatState,
             placeholder: 'Select an Item',
 
             ajax: {
@@ -440,6 +435,26 @@
                 cache: true
             }
         });
+
+        function formatState (opt) {
+            if (!opt.id) {
+                return opt.text;
+            }
+
+            var optimage = opt.image_webp;
+            if(optimage.indexOf('/icon/no_img') != -1){
+                optimage = opt.image;
+            }
+
+            if(!optimage){
+                return opt.text;
+            } else {
+                var $opt = $(
+                '<span><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>'
+                );
+                return $opt;
+            }
+        };
 
         $(document).on('select2:select', '#item-selection', function(e){
             $('#new-item-code').text(e.params.data.id); // item code
@@ -461,7 +476,7 @@
             add_item('#items-table tbody');
             $('#add-item-Modal').modal('hide')
 
-            $('#item-count').val(parseInt($('#item-count').val()) + 1);
+            $('#item-count').text(parseInt($('#item-count').text()) + 1);
 
             // Reset values
             $('#new-item-code').text('');

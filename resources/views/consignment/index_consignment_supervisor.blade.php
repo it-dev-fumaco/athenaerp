@@ -6,8 +6,8 @@
 @section('content')
 <div class="content">
 	<div class="content-header p-0">
-        <div class="container p-0">
-            <div class="row p-0 m-0">
+        <div class="col-12 col-xl-10 mx-auto p-0">
+            <div class="row p-0 mr-0 ml-0 mb-0 mt-2">
                 <div class="col-6 col-md-3 p-1">
                     <a href="/view_sales_report">
                         <div class="info-box bg-gradient-primary m-0">
@@ -57,82 +57,126 @@
                     </a>
                 </div>
             </div>
-            <div class="d-flex flex-row  align-items-center">
-                <div class="p-2 col-4">
-                    <div class="text-center">
-                        <p class="text-center m-0 font-responsive">
-                            <span class="d-inline-block font-weight-bolder" style="font-size: 3rem;">{{ count($active_consignment_branches) }}</span>
-                            <span class="d-inline-block text-muted" style="font-size: 1rem;">/ {{ count($consignment_branches) }}</span>
-                        </p>
-                        <span class="d-block">Active Store</span>
-                    </div>
-                </div>
-                <div class="p-2 col-4">
-                    <a href="/view_promodisers" style="color: inherit;">
-                    <div class="text-center">
-                        <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 3rem;">{{ ($promodisers) }}</p>
-                        <span class="d-block">Promodiser(s)</span>
-                    </div>
-                </a>
-                </div>
-                <div class="p-2 col-4">
-                    <a href="/beginning_inv_list" style="color: inherit">
-                        <div class="skills_section text-center mb-1 p-0">
-                            <div class="skills-area m-0">
-                                <div class="single-skill w-100 m-2">
-                                    <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
-                                        <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <div class="card card-secondary card-outline">
+                        <div class="card-header p-2">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex flex-row align-items-center">
+                                        <div class="p-0 col-6">
+                                            <ul class="nav nav-pills custom-navpill">
+                                                <li class="nav-item col-4 p-0">
+                                                    <a class="nav-link active font-responsive text-center rounded-0" style="height: 80px; padding-top: 25px;" data-toggle="pill" href="#pending-content" role="tab" href="#">Sales Report</a>
+                                                </li>
+                                                <li class="nav-item col-4 p-0">
+                                                    <a class="nav-link font-responsive text-center rounded-0" style="height: 80px; padding-top: 25px;" data-toggle="pill" href="#audit-report-content" role="tab" href="#">Audit Report</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="p-0 col-2">
+                                            <div class="text-center">
+                                                <p class="text-center m-0 font-responsive">
+                                                    <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
+                                                    <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
+                                                </p>
+                                                <span class="d-block" style="font-size: 9pt;">Active Store</span>
+                                            </div>
+                                        </div>
+                                        <div class="p-0 col-2">
+                                            <a href="/view_promodisers" style="color: inherit;">
+                                            <div class="text-center">
+                                                <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 1.2rem;">{{ ($promodisers) }}</p>
+                                                <span class="d-block" style="font-size: 9pt;">Promodiser(s)</span>
+                                            </div>
+                                        </a>
+                                        </div>
+                                        <div class="p-0 col-2">
+                                            <a href="/beginning_inv_list" style="color: inherit">
+                                                <div class="row">
+                                                    <div class="col-4 d-none d-xl-block">
+                                                        <div class="skills_section text-center mb-1 p-0">
+                                                            <div class="skills-area m-0">
+                                                                <div class="single-skill w-100 m-2">
+                                                                    <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
+                                                                        <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-8" style="display: flex; justify-content: center; align-items: center;">
+                                                        <div class="text-center">
+                                                            <span class="d-block text-muted" style="font-size: 1.2rem;">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</span>
+                                                            <span class="d-block" style="font-size: 9pt;">Beginning Inventory Completion</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-content custom-tabcontent">
+                                        <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
+                                            <div id="beginning-inventory-list-el" class="p-2"></div>
+                                        </div>
+                                        <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
+                                            <form method="GET" id="search-audit-form">
+                                                <div class="row m-0 p-2">
+                                                    <div class="col-3">
+                                                        <select name="store" class="form-control" id="consignment-audit-select" required>
+                                                            <option value="">Select Store</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-3">
+                                                        <select name="cutoff" class="form-control" required>
+                                                            <option value="">Select Cutoff Date</option>
+                                                            @foreach ($cutoff_filters as $cf)
+                                                            <option value="{{ $cf['id'] }}">{{ $cf['cutoff_start'] . ' - ' . $cf['cutoff_end'] }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-3">
+                                                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                            <div class="row m-0 p-2">
+                                                <div class="col-md-6" id="deliveries-content">
+        
+                                                </div>
+                                                <div class="col-md-6 bg-white m-0 p-0" id="returns-content">
+                                                   
+                                                </div>
+                                                <div class="col-md-12 bg-white m-0 p-0">
+                                                    <div id="sales-content">
+                                                        <h5 class="text-center text-uppercase mt-2 p-2 border-bottom font-weight-bolder">Sales</h5>
+                                                        <h6 class="text-center text-uppercase text-muted">Please select Store and Cutoff Period</h6>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-center">
-                            <small class="d-block text-muted">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</small>
-                            <span class="d-block">Beginning Inventory Completion</span>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            <div class="row mt-1">
-                <div class="col-md-12">
-                    <div class="card card-warning card-outline">
-                        <div class="card-header p-2">
-                            <h6 class="font-weight-bold text-center text-uppercase m-0">Pending for Submission of Inventory Audit</h6>
-                        </div>
-                        <div class="card-body p-2">
-                            <form action="#" id="pending-inventory-audit-filter-form">
-                                <div class="row p-1 mt-1 mb-1">
-                                    <div class="col-10 col-xl-6">
-                                        <select class="form-control pending-inventory-audit-filter" name="store" id="consignment-store-select">
-                                            <option value="">Select Store</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-2 p-0">
-                                        <a href="/" class="btn btn-secondary d-inline-block float-left ml-1"><i class="fas fa-undo"></i></a>
-                                    </div>
-                                </div>
-                            </form>
-                            <div id="beginning-inventory-list-el"></div>
-                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="beginning-inventory-detail-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
-        <div class="modal-content">
-            <div id="beginning-inventory-detail-el"></div>
         </div>
     </div>
 </div>
 
 <style>
+    .custom-navpill .nav-item .active{
+        background-color:rgba(58, 112, 170, 0.905);
+    }
+    .custom-tabcontent .tab-pane.active{
+        background-color:rgba(58, 112, 170, 0.905);
+    }
     .circle-chart {
-        width: 150px;
-        height: 110px;
+        width: 100px;
+        height: 60px;
     }
     .circle-chart__circle {
         stroke: #00acc1;
@@ -216,10 +260,6 @@
         .single-skill {
             width: 50%;
         }
-        .circle-chart {
-            width: 110px;
-            height: 110px;
-        }
     }
 </style>
 @endsection
@@ -268,30 +308,18 @@
     $(function () {
         $('.circlechart').circlechart();
 
-        $(document).on('change', '.pending-inventory-audit-filter', function(e) {
-            e.preventDefault();
-            get_pending_inventory_audit();
-        });
-
-        get_pending_inventory_audit();
-        function get_pending_inventory_audit(page) {
+        loadSalesReport();
+        function loadSalesReport() {
             $.ajax({
                 type: "GET",
-                url: "/pending_submission_inventory_audit?page=" + page,
-                data: $('#pending-inventory-audit-filter-form').serialize(),
+                url: "/sales_report",
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
                 }
             });
         }
 
-        $(document).on('click', '#beginning-inventory-list-pagination a', function(event){
-            event.preventDefault();
-            var page = $(this).attr('href').split('page=')[1];
-            get_pending_inventory_audit(page);
-        });
-
-        $('#consignment-store-select').select2({
+        $('#consignment-audit-select').select2({
             placeholder: "Select Store",
             ajax: {
                 url: '/consignment_stores',
@@ -310,6 +338,51 @@
                 cache: true
             }
         });
+
+        $(document).on('submit', '#search-audit-form', function(e) {
+            e.preventDefault();
+
+            loadData();
+        });
+
+        function loadData() {
+            loadDeliveries();
+            loadReturns();
+            loadSales();
+        }
+
+        function loadDeliveries() {
+			$.ajax({
+				type: "GET",
+				url: "/get_audit_deliveries",
+				data: $('#search-audit-form').serialize(),
+				success: function (response) {
+					$('#deliveries-content').html(response);
+				}
+			});
+		}
+
+        function loadReturns() {
+			$.ajax({
+				type: "GET",
+				url: "/get_audit_returns",
+				data: $('#search-audit-form').serialize(),
+				success: function (response) {
+					$('#returns-content').html(response);
+				}
+			});
+		}
+
+        function loadSales() {
+			$.ajax({
+				type: "GET",
+				url: "/get_audit_sales",
+				data: $('#search-audit-form').serialize(),
+				success: function (response) {
+					$('#sales-content').html(response);
+				}
+			});
+		}
     });
 </script>
 @endsection

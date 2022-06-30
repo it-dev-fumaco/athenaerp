@@ -76,9 +76,8 @@
                                             <th class="text-center p-2 align-middle d-none d-xl-table-cell" id='first-row'>Date</th>
                                             <th class="text-center p-2 align-middle" id='second-row'>
                                                 <span class="d-block d-xl-none">Details</span>
-                                                <span class="d-none d-xl-block">Name</span>
+                                                <span class="d-none d-xl-block">Purpose</span>
                                             </th>
-                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%">Purpose</th>
                                             <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%">From</th>
                                             <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%">To</th>
                                             <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%">Created by</th>
@@ -97,7 +96,7 @@
                                             <tr>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['creation'] }}</td>
                                                 <td class="text-center p-2 align-middle">
-                                                    <span class="d-block text-left text-lg-center text-xl-center font-weight-bold"> {{ $ste['name'] }}</span>
+                                                    <span class="d-block text-left text-lg-center text-xl-center font-weight-bold"> {{ $ste['transfer_as'] }}</span>
                                                     <div class="d-block d-xl-none text-left">
                                                         <b>From: </b> {{ $ste['source_warehouse'] }} <br>
                                                         <b>To: </b> {{ $ste['target_warehouse'] }} <br>
@@ -105,7 +104,6 @@
                                                         {{ $ste['submitted_by'] }} - {{ $ste['creation'] }}
                                                     </div>
                                                 </td>
-                                                <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['transfer_as'] }}</td>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['source_warehouse'] }}</td>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['target_warehouse'] }}</td>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['submitted_by'] }}</td>
@@ -120,7 +118,7 @@
                                                         <div class="modal-dialog modal-xl" role="document">
                                                             <div class="modal-content">
                                                                 <div class="modal-header bg-navy">
-                                                                    <h6 class="modal-title">{{ $ste['name'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $ste['status'] }}</span></h6>
+                                                                    <h6 class="modal-title">{{ $ste['transfer_as'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $ste['status'] }}</span></h6>
                                                                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                                         <span aria-hidden="true">&times;</span>
                                                                     </button>
@@ -133,8 +131,6 @@
                                                                                 <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['source_warehouse'] }}</dd>
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Target:</dt>
                                                                                 <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['target_warehouse'] }}</dd>
-                                                                                <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Transfer As:</dt>
-                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['transfer_as'] }}</dd>
                                                                             </dl>
                                                                         </div>
                                                                         <div class="pt-0 pr-2 pl-2 pb-0 col-6 text-left m-0">

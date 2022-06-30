@@ -590,6 +590,92 @@ class ConsignmentController extends Controller
         return $data;
     }
 
+    public function salesReport(){
+        $sales_report = DB::table('tabConsignment Product Sold')->get();
+    
+        $warehouses_with_approved_inventory = DB::table('tabConsignment Beginning Inventory')->where('status', 'Approved')->pluck('branch_warehouse')->unique();
+    
+        $product_sold_arr = DB::table('tabConsignment Product Sold')->whereYear('transaction_date', Carbon::now()->format('Y'))
+            ->where('status', '!=', 'Cancelled')->whereIn('branch_warehouse', $warehouses_with_approved_inventory)
+            ->select('cutoff_period_from', 'branch_warehouse', 'promodiser', DB::raw('sum(qty) as qty'), DB::raw('sum(amount) as amount'))
+            ->groupBy('cutoff_period_from', 'branch_warehouse', 'promodiser')
+            ->get();
+    
+        $cutoff_periods = collect($product_sold_arr)->map(function ($q){
+            return $q->cutoff_period_from;
+        })->unique();
+    
+        $warehouses = collect($product_sold_arr)->map(function ($q){
+            return $q->branch_warehouse;
+        })->unique();
+    
+        $product_sold = [];
+        $product_sold_total_per_cutoff = [];
+        foreach($product_sold_arr as $i => $sold){
+            $product_sold[$sold->promodiser][$sold->branch_warehouse][$sold->cutoff_period_from] = [
+                'qty' => $sold->qty,
+                'amount' => $sold->amount
+            ];
+    
+            $product_sold_total_per_cutoff[$sold->cutoff_period_from][$i] = [
+                'qty' => $sold->qty,
+                'amount' => $sold->amount
+            ];
+        }
+    
+        $included_promodisers = DB::table('tabAssigned Consignment Warehouse')->pluck('parent');
+        $included_promodisers = collect($included_promodisers)->unique();
+    
+        $promodisers = DB::table('tabWarehouse Users')->where('user_group', 'Promodiser')->whereIn('frappe_userid', $included_promodisers)->get();
+    
+        $included_promodisers_full_name = collect($promodisers)->map(function($q){
+            return $q->full_name;
+        });
+        
+        $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->get();
+        $assigned_consignment_stores = collect($assigned_consignment_stores)->groupBy('parent');
+    
+        $opening_stocks = DB::table('tabConsignment Beginning Inventory as cbi')
+            ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
+            ->where('cbi.status', 'Approved')->whereIn('cbi.owner', $included_promodisers_full_name)->whereIn('cbi.branch_warehouse', $warehouses)
+            ->select('cbi.owner', 'cbi.branch_warehouse', DB::raw('sum(item.opening_stock) as qty'))
+            ->groupBy('cbi.owner', 'cbi.branch_warehouse')
+            ->get();
+
+        $total_amount = DB::table('tabConsignment Beginning Inventory as cbi')
+            ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
+            ->where('cbi.status', 'Approved')->whereIn('cbi.owner', $included_promodisers_full_name)->whereIn('cbi.branch_warehouse', $warehouses)
+            ->select('cbi.owner', 'cbi.branch_warehouse', 'item.item_code', DB::raw('sum(item.opening_stock) as qty'), DB::raw('sum(item.price) as price'))
+            ->groupBy('cbi.owner', 'cbi.branch_warehouse', 'item.item_code')
+            ->get();
+
+        $total_amount_arr = [];
+        foreach($total_amount as $value){
+            $total_amount_arr[$value->owner][$value->branch_warehouse][$value->item_code] = [
+                'qty' => $value->qty,
+                'price' => $value->price,
+                'amount' => $value->qty * $value->price
+            ];
+        }
+
+        $opening_stocks_arr = [];
+        foreach($opening_stocks as $stock){
+            $opening_stocks_arr[$stock->owner][$stock->branch_warehouse] = [
+                'qty' => $stock->qty
+            ];
+        }
+    
+        $report_arr = [];
+        foreach($promodisers as $user){
+            $report_arr[] = [
+                'user' => $user->full_name,
+                'assigned_warehouses' => isset($assigned_consignment_stores[$user->frappe_userid]) ? $assigned_consignment_stores[$user->frappe_userid] : []
+            ];
+        }
+    
+        return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff', 'total_amount_arr'));
+    }
+
     public function beginningInventoryApproval(Request $request){
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
         $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
@@ -2262,7 +2348,7 @@ class ConsignmentController extends Controller
             }
     
             $cutoff_date = $this->getCutoffDate($end->endOfDay());
-            $period_from = $cutoff_date[0]->addDay();
+            $period_from = $cutoff_date[0];
             $period_to = $cutoff_date[1];    
     
             $pending_arr = [];
@@ -2598,7 +2684,7 @@ class ConsignmentController extends Controller
         }
 
         $cutoff_date = $this->getCutoffDate($end->endOfDay());
-        $period_from = $cutoff_date[0]->addDay();
+        $period_from = $cutoff_date[0];
         $period_to = $cutoff_date[1];
 
         $pending = [];
@@ -2790,5 +2876,142 @@ class ConsignmentController extends Controller
             ->where('status', 'Approved')->select('branch_warehouse', DB::raw('MIN(transaction_date) as transaction_date'))->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')->toArray();
 
         return view('consignment.supervisor.view_promodisers_list', compact('result', 'total_promodisers', 'stores_with_beginning_inventory'));
+    }
+
+    public function getAuditDeliveries(Request $request) {
+        $store = $request->store;
+        $cutoff = $request->cutoff;
+        $cutoff_start = $cutoff_end = null;
+        if ($cutoff) {
+            $cutoff = explode('/', $request->cutoff);
+            $cutoff_start = $cutoff[0];
+            $cutoff_end = $cutoff[1];
+        }
+
+        $list = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
+            ->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)
+            ->whereBetween('ste.delivery_date', [$cutoff_start, $cutoff_end])
+            ->where('sted.t_warehouse', $store)
+            ->select('ste.name', 'ste.delivery_date', 'sted.s_warehouse', 'sted.t_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.basic_amount', 'ste.owner')->orderBy('ste.creation', 'desc')->get();
+
+        return view('consignment.supervisor.tbl_audit_deliveries', compact('list'));
+    }
+
+    public function getAuditReturns(Request $request) {
+        $store = $request->store;
+        $cutoff = $request->cutoff;
+        $cutoff_start = $cutoff_end = null;
+        if ($cutoff) {
+            $cutoff = explode('/', $request->cutoff);
+            $cutoff_start = $cutoff[0];
+            $cutoff_end = $cutoff[1];
+        }
+
+        $list = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereBetween('ste.delivery_date', [$cutoff_start, $cutoff_end])
+            ->where('sted.t_warehouse', $store)
+            ->where(function($q) {
+                $q->whereIn('ste.transfer_as', ['For Return', 'Store Transfer'])
+                    ->orWhereIn('ste.receive_as', ['Sales Return']);
+            })
+            ->whereIn('ste.purpose', ['Material Transfer', 'Material Receipt'])
+            ->where('ste.docstatus', 1)
+            ->select('ste.name', 'ste.delivery_date', 'sted.s_warehouse', 'sted.t_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.basic_amount', 'ste.owner')
+            ->orderBy('ste.creation', 'desc')->get();
+
+        return view('consignment.supervisor.tbl_audit_returns', compact('list'));
+    }
+
+    public function getAuditSales(Request $request) {
+        $store = $request->store;
+        $cutoff = $request->cutoff;
+        $cutoff_start = $cutoff_end = null;
+        if ($cutoff) {
+            $cutoff = explode('/', $request->cutoff);
+            $cutoff_start = $cutoff[0];
+            $cutoff_end = $cutoff[1];
+        }
+
+        $query = DB::table('tabConsignment Product Sold')
+            ->where('branch_warehouse', $store)
+            ->whereBetween('transaction_date', [$cutoff_start, $cutoff_end])
+            ->where('status', '!=', 'Cancelled')
+            ->select('item_code', 'description', 'qty', 'price', 'amount', 'transaction_date', 'promodiser', 'available_stock_on_transaction')
+            ->orderBy('description', 'asc')->orderBy('transaction_date', 'desc')->get();
+
+        $ending_inventory = collect($query)->groupBy('item_code')->toArray();
+
+        $promodisers = collect($query)->pluck('promodiser')->unique()->toArray();
+
+        $item_codes = collect($query)->pluck('item_code');
+
+        $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
+            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+            ->where('cb.status', 'Approved')->whereIn('cbi.item_code', $item_codes)
+            ->where('cb.branch_warehouse', $store)
+            ->whereDate('cb.transaction_date', '<=', Carbon::parse($cutoff_end))
+            ->select('cbi.item_code', 'cb.transaction_date', 'opening_stock')
+            ->orderBy('cb.transaction_date', 'desc')->get();
+
+        $beginning_inventory = collect($beginning_inventory)->groupBy('item_code')->toArray();
+
+        $inv_audit = DB::table('tabConsignment Inventory Audit')
+            ->where('branch_warehouse', $store)->where('transaction_date', '<', $cutoff_start)
+            ->select('item_code', 'qty', 'transaction_date')
+            ->orderBy('transaction_date', 'asc')->get();
+
+        $inv_audit = collect($inv_audit)->groupBy('item_code')->toArray();
+
+        $transaction_dates = collect($query)->pluck('transaction_date')->unique()->toArray();
+        // sort array with given user-defined function
+        usort($transaction_dates, function ($time1, $time2) {
+            return strtotime($time1) - strtotime($time2);
+        });
+
+        $sales_query = $query->groupBy('item_code');
+
+        $sales = [];
+        $total_sales = $total_items = $total_qty_sold = 0;
+        foreach ($sales_query as $item_code => $row) {
+            $per_day = [];
+            $amount = 0;
+            foreach ($row as $r) {
+                $per_day[$r->transaction_date] = $r->qty;
+                $total_qty_sold += $r->qty;
+                $amount += $r->amount;
+            }
+
+            $total_sales += $amount;
+            $total_items++;
+
+            if (array_key_exists($item_code, $inv_audit)) {
+                $opening_qty = $inv_audit[$item_code][0]->qty;
+            } else {
+                $opening_qty = array_key_exists($item_code, $beginning_inventory) ? $beginning_inventory[$item_code][0]->opening_stock : 0;
+            }
+
+            $ending_qty = array_key_exists($item_code, $ending_inventory) ? $ending_inventory[$item_code][0]->available_stock_on_transaction - $ending_inventory[$item_code][0]->qty : 0;
+           
+            $sales[$item_code] = [
+                'description' => $row[0]->description,
+                'price' => $row[0]->price,
+                'per_day' => $per_day,
+                'amount' => $amount,
+                'opening_qty' => $opening_qty,
+                'ending_qty' => $ending_qty
+            ];
+        }
+
+        $summary = [
+            'total_items' => number_format($total_items),
+            'total_qty_sold' => number_format($total_qty_sold),
+            'total_sales' => '₱ ' . number_format($total_sales, 2),
+            'promodisers' => implode(', ', $promodisers)
+        ];
+
+        return view('consignment.supervisor.tbl_audit_sales', compact('sales', 'transaction_dates', 'summary'));
     }
 }

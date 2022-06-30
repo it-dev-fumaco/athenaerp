@@ -111,7 +111,9 @@
                                                                                         <span id='item-code-text' class="font-weight-bold"></span>
                                                                                     </div>
                                                                                     <div class="col-3" style="display: flex; justify-content: center; align-items: center; height: 44px">
-                                                                                        <b><span id="stocks-text"></span></b>&nbsp;<small><span id="uom-text"></span></small>
+                                                                                        <div class="text-center">
+                                                                                            <b><span id="stocks-text"></span></b><br><small><span id="uom-text"></span></small>
+                                                                                        </div>
                                                                                     </div>
                                                                                     <div class="col p-0">
                                                                                         <div class="input-group p-1 ml-3">
@@ -316,6 +318,8 @@
 
             function get_received_items(branch){
                 $('#received-items').select2({
+                    templateResult: formatState,
+                    // templateSelection: formatState,
                     placeholder: 'Select an Item',
                     allowClear: true,
                     ajax: {
@@ -336,6 +340,27 @@
                     }
                 });
             }
+            
+            function formatState (opt) {
+                if (!opt.id) {
+                    return opt.text;
+                }
+
+                var optimage = opt.webp;
+
+                if(optimage.indexOf('/icon/no_img') != -1){
+                    optimage = opt.img;
+                }
+
+                if(!optimage){
+                    return opt.text;
+                } else {                    
+                    var $opt = $(
+                    '<span><img src="' + optimage + '" width="50px" /> ' + opt.text + '</span>'
+                    );
+                    return $opt;
+                }
+            };
 
             validate_submit();
             function validate_submit(){
@@ -513,7 +538,7 @@
                 $('#items-table tbody').prepend(row);
                 $('#placeholder').addClass('d-none');
 
-                close_modal('add-item-Modal');
+                close_modal('#add-item-Modal');
                 reset_placeholders();
                 validate_submit();
                 cut_text();
