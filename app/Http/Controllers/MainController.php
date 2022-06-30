@@ -358,7 +358,11 @@ class MainController extends Controller
                 ->where('status', 'Approved')->whereIn('branch_warehouse', array_column($consignment_branches, 'name'))
                 ->distinct('branch_warehouse')->pluck('branch_warehouse')->count();
 
-            $beginning_inv_percentage = number_format(($consignment_branches_with_beginning_inventory / count($consignment_branches)) * 100, 2);
+            if (count($consignment_branches) > 0) {
+                $beginning_inv_percentage = number_format(($consignment_branches_with_beginning_inventory / count($consignment_branches)) * 100, 2);
+            } else {
+                $beginning_inv_percentage = 0;
+            }
 
             // get total stock transfer
             $total_stock_transfers = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
