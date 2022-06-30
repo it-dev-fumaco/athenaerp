@@ -1490,6 +1490,9 @@ class ConsignmentController extends Controller
                 ->when($request->tab1_status && $request->tab1_status != 'All', function ($q) use ($request){
                     return $q->where('docstatus', $request->tab1_status);
                 })
+                ->when($request->tab1_purpose, function ($q) use ($request){
+                    return $q->where('transfer_as', $request->tab1_purpose);
+                })
                 ->where('naming_series', 'STEC-')
                 ->orderBy('docstatus', 'asc')
                 ->orderBy('creation', 'desc')

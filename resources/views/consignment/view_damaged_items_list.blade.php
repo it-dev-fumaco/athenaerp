@@ -43,10 +43,21 @@
                                                     <div class="col-12 col-xl-2 col-lg-2">
                                                         <input type="text" name="tab1_q" class="form-control" placeholder='Search' style='font-size: 10pt;'/>
                                                     </div>
-                                                    <div class="col-12 mt-2 mt-lg-0 col-xl-3 col-lg-3">
+                                                    <div class="col-12 mt-2 mt-lg-0 col-xl-2 col-lg-2">
+                                                        <select name="tab1_purpose" id='status' class="form-control" style="font-size: 10pt;">
+                                                            @php
+                                                                $purposes = ['Store Transfer', 'Consignment', 'For Return', 'Sales Return'];
+                                                            @endphp 
+                                                            <option value="" selected>Select Purpose</option>
+                                                            @foreach ($purposes as $purpose)
+                                                            <option value="{{ $purpose }}">{{ $purpose }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 mt-2 mt-lg-0 col-xl-2 col-lg-2">
                                                         <select name="source_warehouse" id="source-warehouse" class="form-control" style="font-size: 10pt;"></select>
                                                     </div>
-                                                    <div class="col-12 mt-2 mt-lg-0 col-xl-3 col-lg-3">
+                                                    <div class="col-12 mt-2 mt-lg-0 col-xl-2 col-lg-2">
                                                         <select name="target_warehouse" id="target-warehouse" class="form-control" style="font-size: 10pt;"></select>
                                                     </div>
                                                     <div class="col-12 mt-2 mt-lg-0 col-xl-2 col-lg-2">
