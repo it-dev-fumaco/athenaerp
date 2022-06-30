@@ -178,13 +178,15 @@
 
                 $('#add-modal-btn').prop('disabled', false);
 
+                items_array = [];
+
                 validate_submit();
             });
 
+            var items_array = new Array();
             function get_items(branch){
 				$('#item-selection').select2({
                     templateResult: formatState,
-                    // templateSelection: formatState,
                     placeholder: 'Select an item',
                     allowClear: true,
                     ajax: {
@@ -193,7 +195,8 @@
                         dataType: 'json',
                         data: function (data) {
                             return {
-                                q: data.term // search term
+                                q: data.term, // search term
+                                excluded_items: items_array
                             };
                         },
                         processResults: function (response) {
@@ -396,17 +399,11 @@
 
 
             function remove_items(item_code){
-                $('#' + item_code).val('');
-                $('#' + item_code).attr('name', '');
-                $('#reason-' + item_code).val('');
-                $('#reason-' + item_code).attr('name', '');
-                $('#reason-' + item_code).prop('required', false);
-                $('#reason-' + item_code).removeClass('reason');
-                $('#row-' + item_code).addClass('d-none');
-                $('#' + item_code + '-stock').removeClass('validate');
-                $('#' + item_code + '-stock').attr('name', '');
-                $('#' + item_code + '-stock').val('');
-                $('#' + item_code + '-stock').prop('required', false);
+                $('#row-' + item_code).remove();
+
+                items_array = jQuery.grep(items_array, function(value) {
+                    return value != item_code;
+                });
 
                 $('#item-counter').val(parseInt($('#item-counter').val()) - 1);
             }
@@ -465,6 +462,10 @@
                 '</tr>';
 
                 $(table).prepend(row);
+
+                if(jQuery.inArray(item_code, items_array) === -1){
+                    items_array.push(item_code);
+                }
 
                 truncate_description();
                 $('#item-counter').val(parseInt($('#item-counter').val()) + 1);

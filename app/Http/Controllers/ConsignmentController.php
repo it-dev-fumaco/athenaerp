@@ -1178,12 +1178,14 @@ class ConsignmentController extends Controller
     }
 
     public function getItems(Request $request, $branch){
+        $items_already_added_in_table = $request->excluded_items ? $request->excluded_items : [];
         $bin_items = DB::table('tabBin')->where('warehouse', $branch)->pluck('item_code');
 
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereIn('status', ['Approved', 'For Approval'])->pluck('name');
         $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $beginning_inventory)->whereIn('status', ['Approved', 'For Approval'])->pluck('item_code');
 
         $excluded_items = collect($bin_items)->merge($inventory_items)->unique(); // exclude items already in bin and approved and for approval items
+        $excluded_items = collect($excluded_items)->merge($items_already_added_in_table)->unique(); // exclude items already added in items table
 
         $search_str = explode(' ', $request->q);
 
@@ -1810,6 +1812,7 @@ class ConsignmentController extends Controller
 
     public function getReceivedItems(Request $request, $branch){
         $search_str = explode(' ', $request->q);
+        $excluded_item_codes = $request->excluded_items ? $request->excluded_items : []; // exclude items already added in the items table
 
         $items = DB::table('tabBin as bin')
             ->join('tabItem as item', 'item.item_code', 'bin.item_code')
@@ -1839,6 +1842,9 @@ class ConsignmentController extends Controller
         $inventory_arr = DB::table('tabConsignment Beginning Inventory as inv')
             ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'inv.name')
             ->where('inv.branch_warehouse', $branch)->where('inv.status', 'Approved')->where('item.status', 'Approved')->whereIn('item.item_code', $item_codes)
+            ->when($excluded_item_codes, function ($q) use ($excluded_item_codes){
+                return $q->whereNotIn('item.item_code', $excluded_item_codes);
+            })
             ->select('item.item_code', 'item.price', 'inv.transaction_date')->get();
 
         $inventory = collect($inventory_arr)->groupBy('item_code');
