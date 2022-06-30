@@ -396,6 +396,7 @@ class ConsignmentController extends Controller
                     ->where('transaction_date', $data['transaction_date'])->first();
                 if ($existing) {
                     $consigned_qty = $consigned_qty + $existing->qty;
+                    $amount = $existing->price * $row['qty'];
 
                     if ($consigned_qty < (float)$row['qty']) {
                         return redirect()->back()
@@ -417,6 +418,7 @@ class ConsignmentController extends Controller
                         'modified' => $currentDateTime->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'qty' => $row['qty'],
+                        'amount' => $amount
                     ];
 
                     $no_of_items_updated++;
