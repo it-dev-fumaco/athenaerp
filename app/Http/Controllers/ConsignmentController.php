@@ -441,31 +441,33 @@ class ConsignmentController extends Controller
                     DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
                         ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
                     
-                    $no_of_items_updated++;
-                    $result[] = [
-                        'name' => uniqid(),
-                        'creation' => $currentDateTime->toDateTimeString(),
-                        'modified' => $currentDateTime->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
-                        'idx' => 0,
-                        'transaction_date' => $data['transaction_date'],
-                        'branch_warehouse' => $data['branch_warehouse'],
-                        'item_code' => $item_code,
-                        'description' => $row['description'],
-                        'qty' => $row['qty'],
-                        'promodiser' => Auth::user()->full_name,
-                        'price' => (float)$price,
-                        'status' => $status,
-                        'amount' => ((float)$price * (float)$row['qty']),
-                        'cutoff_period_from' => $period_from,
-                        'cutoff_period_to' => $period_to,
-                        'available_stock_on_transaction' => $consigned_qty
-                    ];
+                    if ($row['qty'] > 0) {
+                        $no_of_items_updated++;
+                        $result[] = [
+                            'name' => uniqid(),
+                            'creation' => $currentDateTime->toDateTimeString(),
+                            'modified' => $currentDateTime->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
+                            'docstatus' => 0,
+                            'parent' => null,
+                            'parentfield' => null,
+                            'parenttype' => null,
+                            'idx' => 0,
+                            'transaction_date' => $data['transaction_date'],
+                            'branch_warehouse' => $data['branch_warehouse'],
+                            'item_code' => $item_code,
+                            'description' => $row['description'],
+                            'qty' => $row['qty'],
+                            'promodiser' => Auth::user()->full_name,
+                            'price' => (float)$price,
+                            'status' => $status,
+                            'amount' => ((float)$price * (float)$row['qty']),
+                            'cutoff_period_from' => $period_from,
+                            'cutoff_period_to' => $period_to,
+                            'available_stock_on_transaction' => $consigned_qty
+                        ];
+                    }
                 }
             }
 
@@ -991,7 +993,7 @@ class ConsignmentController extends Controller
             DB::rollback();
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
-        }
+    }
 
     public function promodiserDeliveryReport($type){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
