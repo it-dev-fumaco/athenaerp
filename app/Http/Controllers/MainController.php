@@ -422,7 +422,49 @@ class MainController extends Controller
                 }
             }
 
-            return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments'));
+            $start_date = Carbon::parse('2022-01-25')->startOfDay()->format('Y-m-d');
+            $end_date = Carbon::now();
+    
+            $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
+    
+            $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+    
+            $cutoff_filters = [];
+            if ($sales_report_deadline) {
+                $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+                $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+                
+                $cutoff_period = [];
+                foreach ($period as $date) {
+                    $from = $to = null;
+                    $date1 = $date->day($cutoff_1);
+                    if ($date1 >= $start_date && $date1 <= $end_date) {
+                        $cutoff_period[] = $date->format('Y-m-d');
+                    }
+                    $date2 = $date->day($cutoff_2);
+                    if ($date2 >= $start_date && $date2 <= $end_date) {
+                        $cutoff_period[] = $date->format('Y-m-d');
+                    }
+                }
+        
+                $cutoff_period[] = $end_date->format('Y-m-d');;
+                // sort array with given user-defined function
+                usort($cutoff_period, function ($time1, $time2) {
+                    return strtotime($time1) - strtotime($time2);
+                });
+        
+                foreach ($cutoff_period as $n => $cutoff_date) {
+                    if (array_key_exists($n + 1, $cutoff_period)) {
+                        $cutoff_filters[] = [
+                            'id' => $cutoff_period[$n] .'/'. $cutoff_period[$n + 1],
+                            'cutoff_start' => Carbon::parse($cutoff_period[$n])->format('M. d, Y'),
+                            'cutoff_end' => Carbon::parse($cutoff_period[$n + 1])->format('M. d, Y'),
+                        ];
+                    }
+                }
+            }
+
+            return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters'));
         }
 
         return view('index');

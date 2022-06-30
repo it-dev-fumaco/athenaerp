@@ -178,4 +178,7 @@ Route::group(['middleware' => 'auth'], function(){
 
     Route::get('/get_activity_logs', 'ConsignmentController@activityLogs');
     Route::get('/view_promodisers', 'ConsignmentController@viewPromodisersList');
+    Route::get('/get_audit_deliveries', 'ConsignmentController@getAuditDeliveries');
+    Route::get('/get_audit_returns', 'ConsignmentController@getAuditReturns');
+    Route::get('/get_audit_sales', 'ConsignmentController@getAuditSales');
 });
