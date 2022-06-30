@@ -59,7 +59,7 @@
                                                                 <table class="table table-striped d-none" id="item-selection-table">
                                                                     <thead>
                                                                         <th class="font-responsive text-center p-1 align-middle" style="width: 42%">Item Code</th>
-                                                                        <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
+                                                                        <th class="font-responsive text-center p-1 align-middle">Damaged Qty</th>
                                                                         <th class="font-responsive text-center p-1 align-middle">Price</th>
                                                                     </thead>
                                                                     <tbody>
@@ -122,7 +122,7 @@
                                             <table class="table table-striped" id="selected-items-table" style="font-size: 9pt;">
                                                 <thead>
                                                     <th class="font-responsive text-center p-1 align-middle">Item Code</th>
-                                                    <th class="font-responsive text-center p-1 align-middle">Opening Stock</th>
+                                                    <th class="font-responsive text-center p-1 align-middle">Damaged Qty</th>
                                                     <th class="font-responsive text-center p-1 align-middle">Price</th>
                                                 </thead>
                                                 <tbody>
@@ -451,7 +451,7 @@
                                 '</div>' +
                             '</div>' +
                             '<div class="p-1 col-2 text-right">' +
-                                '<span id="selected-item-price" style="font-size: 10pt;">' + price + '</span>' +
+                                '<span id="selected-item-price" style="font-size: 10pt; white-space: nowrap;">' + price + '</span>' +
                             '</div>' +
                             '<div class="p-1 col font-responsive remove-item" style="width: 15px !important; color: red; cursor: pointer" data-id="' + item_code + '"><i class="fa fa-remove"></i></div>' +
                         '</div>' +
