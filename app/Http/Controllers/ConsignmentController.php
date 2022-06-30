@@ -2061,7 +2061,7 @@ class ConsignmentController extends Controller
                 DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
 
                 // source warehouse
-                if($request->transfer_as != 'Sales Return' && isset($items[$reference_warehouse][$item_code])){
+                if($request->transfer_as == 'For Return' && isset($items[$reference_warehouse][$item_code])){
                     DB::table('tabBin')->where('warehouse', $reference_warehouse)->where('item_code', $item_code)->update([
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->full_name,
@@ -2070,33 +2070,35 @@ class ConsignmentController extends Controller
                 }
 
                 // target warehouse
-                if(isset($items[$target_warehouse][$item_code])){
-                    DB::table('tabBin')->where('warehouse', $target_warehouse)->where('item_code', $item_code)->update([
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
-                        'consigned_qty' => $items[$target_warehouse][$item_code]['consigned_qty'] + $transfer_qty[$item_code]['transfer_qty']
-                    ]);
-                }else{
-                    $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
-                    $latest_bin_exploded = explode("/", $latest_bin);
-                    $bin_id = (($latest_bin) ? $latest_bin_exploded[1] : 0) + 1;
-                    $bin_id = str_pad($bin_id, 7, '0', STR_PAD_LEFT);
-                    $bin_id = 'BIN/'.$bin_id;
-
-                    DB::table('tabBin')->insert([
-                        'name' => $bin_id,
-                        'creation' => $now->toDateTimeString(),
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
-                        'owner' => Auth::user()->full_name,
-                        'docstatus' => 0,
-                        'idx' => 0,
-                        'warehouse' => $target_warehouse,
-                        'item_code' => $item_code,
-                        'stock_uom' => isset($items[$target_warehouse][$item_code]) ? $items[$target_warehouse][$item_code]['uom'] : null,
-                        'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
-                        'consigned_qty' => $transfer_qty[$item_code]['transfer_qty']
-                    ]);
+                if($request->transfer_as != 'Store Transfer'){
+                    if(isset($items[$target_warehouse][$item_code])){
+                        DB::table('tabBin')->where('warehouse', $target_warehouse)->where('item_code', $item_code)->update([
+                            'modified' => $now->toDateTimeString(),
+                            'modified_by' => Auth::user()->full_name,
+                            'consigned_qty' => $items[$target_warehouse][$item_code]['consigned_qty'] + $transfer_qty[$item_code]['transfer_qty']
+                        ]);
+                    }else{
+                        $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
+                        $latest_bin_exploded = explode("/", $latest_bin);
+                        $bin_id = (($latest_bin) ? $latest_bin_exploded[1] : 0) + 1;
+                        $bin_id = str_pad($bin_id, 7, '0', STR_PAD_LEFT);
+                        $bin_id = 'BIN/'.$bin_id;
+    
+                        DB::table('tabBin')->insert([
+                            'name' => $bin_id,
+                            'creation' => $now->toDateTimeString(),
+                            'modified' => $now->toDateTimeString(),
+                            'modified_by' => Auth::user()->full_name,
+                            'owner' => Auth::user()->full_name,
+                            'docstatus' => 0,
+                            'idx' => 0,
+                            'warehouse' => $target_warehouse,
+                            'item_code' => $item_code,
+                            'stock_uom' => isset($items[$target_warehouse][$item_code]) ? $items[$target_warehouse][$item_code]['uom'] : null,
+                            'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
+                            'consigned_qty' => $transfer_qty[$item_code]['transfer_qty']
+                        ]);
+                    }
                 }
             }
 
