@@ -308,8 +308,8 @@ class ConsignmentController extends Controller
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_images = collect($item_images)->groupBy('parent')->toArray();
 
-        $existing_record = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')->where('csr.branch_warehouse', $branch)
-            ->where('csr.transaction_date', $transaction_date)->pluck('csri.qty', 'csri.item_code')->toArray();
+        $existing_record = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+            ->where('transaction_date', $transaction_date)->pluck('qty', 'item_code')->toArray();
 
         return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks'));
     }
@@ -585,7 +585,7 @@ class ConsignmentController extends Controller
     public function calendarData($branch, Request $request) {
         $start = $request->start;
         $end = $request->end;
-        $query = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $branch)
+        $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
             ->whereBetween('transaction_date', [$start, $end])
             ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))
             ->groupBy('transaction_date')->get();
