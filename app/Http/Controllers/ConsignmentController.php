@@ -107,11 +107,9 @@ class ConsignmentController extends Controller
 
         $consigned_stocks = DB::table('tabBin')->whereIn('item_code', $item_codes)->where('warehouse', $branch)->pluck('consigned_qty', 'item_code')->toArray();
 
-        $item_total_sold = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.branch_warehouse', $branch)
-            ->whereBetween('csr.transaction_date', [$start, $end])->selectRaw('SUM(csri.qty) as sold_qty, csri.item_code')
-            ->groupBy('csri.item_code')->pluck('sold_qty', 'csri.item_code')->toArray();
+        $item_total_sold = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+            ->whereBetween('transaction_date', [$start, $end])->selectRaw('SUM(qty) as sold_qty, item_code')
+            ->groupBy('item_code')->pluck('sold_qty', 'item_code')->toArray();
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_images = collect($item_images)->groupBy('parent')->toArray();
@@ -394,7 +392,7 @@ class ConsignmentController extends Controller
                 ->where('branch_warehouse', $data['branch_warehouse'])->where('cutoff_period_from', $period_from)
                 ->where('cutoff_period_to', $period_to)->first();
 
-            $grand_total = $total_qty_sold = $total_items = 0;
+            $grand_total = 0;
             if (!$existing_record) {
                 $latest_id = DB::table('tabConsignment Sales Report')->max('name');
                 $latest_id_exploded = explode("-", $latest_id);
@@ -445,8 +443,6 @@ class ConsignmentController extends Controller
                         $no_of_items_updated++;
                         $amount = ((float)$price * (float)$row['qty']);
                         $grand_total += $amount;
-                        $total_qty_sold += $row['qty'];
-                        $total_items++;
                         $child_data[] = [
                             'name' => uniqid(),
                             'creation' => $currentDateTime->toDateTimeString(),
@@ -469,8 +465,6 @@ class ConsignmentController extends Controller
                 }
 
                 $parent_data['grand_total'] = $grand_total;
-                $parent_data['total_qty_sold'] = $total_qty_sold;
-                $parent_data['total_items'] = $total_items;
 
                 if (count($child_data) > 0) {
                     DB::table('tabConsignment Sales Report Item')->insert($child_data);
@@ -569,9 +563,7 @@ class ConsignmentController extends Controller
                 DB::table('tabConsignment Sales Report')->where('name', $existing_record->name)->update([
                     'modified' => $currentDateTime->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
-                    'grand_total' => $grand_total,
-                    'total_qty_sold' => $total_qty_sold,
-                    'total_items' => $total_items,
+                    'grand_total' => $grand_total
                 ]);
             }
    
@@ -841,13 +833,10 @@ class ConsignmentController extends Controller
         $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->get();
         $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
 
-        $product_sold_arr = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csri.qty', '>', 0)->whereIn('csr.branch_warehouse', $warehouses)->where('csr.status', '!=', 'Cancelled')
-            ->select('csr.transaction_date', 'csr.branch_warehouse', 'csri.item_code', 'csri.description', 'csri.price', DB::raw('sum(csri.qty) as qty'), 'csr.grand_total as amount')
-            ->groupBy('csr.transaction_date', 'csr.branch_warehouse', 'csri.item_code', 'csri.description', 'csri.price')
+        $product_sold_arr = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)->whereIn('branch_warehouse', $warehouses)->where('status', '!=', 'Cancelled')
+            ->select('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price', DB::raw('sum(qty) as qty'), DB::raw('sum(amount) as amount'))
+            ->groupBy('transaction_date', 'branch_warehouse', 'item_code', 'description', 'price')
             ->get();
-
         $product_sold = collect($product_sold_arr)->groupBy('branch_warehouse');
         
         $sold_item_codes = collect($product_sold_arr)->map(function ($q){
@@ -2576,13 +2565,11 @@ class ConsignmentController extends Controller
 
         $result = [];
         foreach ($list as $row) {
-            $total_sales = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $row->branch_warehouse)
-                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('grand_total');
+            $total_sales = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
+                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
 
-            $total_qty_sold = DB::table('tabConsignment Sales Report as csr')
-                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-                ->where('csr.branch_warehouse', $row->branch_warehouse)
-                ->whereBetween('csr.transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('csri.qty');
+            $total_qty_sold = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
+                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('qty');
 
             $result[] = [
                 'transaction_date' => $row->transaction_date,
@@ -2605,11 +2592,9 @@ class ConsignmentController extends Controller
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->get();
 
-        $product_sold_query = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.branch_warehouse', $store)
-            ->whereBetween('csr.transaction_date', [$from, $to])->selectRaw('SUM(csri.qty) as sold_qty, SUM(csri.amount) as total_value, csri.item_code')
-            ->groupBy('csri.item_code')->get();
+        $product_sold_query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $store)
+            ->whereBetween('transaction_date', [$from, $to])->selectRaw('SUM(qty) as sold_qty, SUM(amount) as total_value, item_code')
+            ->groupBy('item_code')->get();
 
         $product_sold = collect($product_sold_query)->groupBy('item_code')->toArray();
         
@@ -2886,14 +2871,14 @@ class ConsignmentController extends Controller
         $store = $request->store;
         $year = $request->year;
 
-        $list = DB::table('tabConsignment Sales Report')
+        $list = DB::table('tabConsignment Product Sold')
             ->when($store, function ($q) use ($store){
                 return $q->where('branch_warehouse', $store);
             })
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('cutoff_period_from', $year);
             })
-            ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, SUM(total_qty_sold) as total_sold, SUM(grand_total) as total_amount, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodisers')
+            ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, SUM(qty) as total_sold, SUM(amount) as total_amount, COUNT(DISTINCT item_code) as total_item, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodisers')
             ->orderBy('transaction_date', 'desc')->groupBy('branch_warehouse', 'cutoff_period_from', 'cutoff_period_to')
             ->paginate(20);
 
@@ -2901,15 +2886,14 @@ class ConsignmentController extends Controller
     }
 
     public function viewProductSoldItems($store, $from, $to) {
-        $list = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.branch_warehouse', $store)
-            ->where('csr.cutoff_period_from', $from)
-            ->where('csr.cutoff_period_to', $to)
-            ->selectRaw('csri.item_code, csri.description, SUM(csri.qty) as qty, SUM(csri.amount) as amount')
-            ->orderBy('csri.description', 'asc')->groupBy('csri.item_code', 'csri.description')->get();
+        $list = DB::table('tabConsignment Product Sold')
+            ->where('branch_warehouse', $store)
+            ->where('cutoff_period_from', $from)
+            ->where('cutoff_period_to', $to)
+            ->selectRaw('item_code, description, SUM(qty) as qty, SUM(amount) as amount')
+            ->orderBy('description', 'asc')->groupBy('item_code', 'description')->get();
 
-        $promodisers = DB::table('tabConsignment Sales Report')
+        $promodisers = DB::table('tabConsignment Product Sold')
             ->where('branch_warehouse', $store)->where('cutoff_period_from', $from)
             ->where('cutoff_period_to', $to)->distinct()->pluck('promodiser')->toArray();
             
@@ -3056,13 +3040,12 @@ class ConsignmentController extends Controller
             $cutoff_end = $cutoff[1];
         }
 
-        $query = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.branch_warehouse', $store)
-            ->whereBetween('csr.transaction_date', [$cutoff_start, $cutoff_end])
-            ->where('csr.status', '!=', 'Cancelled')
-            ->select('csri.item_code', 'csri.description', 'csri.qty', 'csri.price', 'csri.amount', 'csr.transaction_date', 'csr.promodiser', 'csri.available_stock_on_transaction')
-            ->orderBy('csri.description', 'asc')->orderBy('csr.transaction_date', 'desc')->get();
+        $query = DB::table('tabConsignment Product Sold')
+            ->where('branch_warehouse', $store)
+            ->whereBetween('transaction_date', [$cutoff_start, $cutoff_end])
+            ->where('status', '!=', 'Cancelled')
+            ->select('item_code', 'description', 'qty', 'price', 'amount', 'transaction_date', 'promodiser', 'available_stock_on_transaction')
+            ->orderBy('description', 'asc')->orderBy('transaction_date', 'desc')->get();
 
         $ending_inventory = collect($query)->groupBy('item_code')->toArray();
 
