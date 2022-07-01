@@ -1067,7 +1067,7 @@ class ConsignmentController extends Controller
         return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr', 'type'));
     }
 
-    public function promodiserReceiveDelivery($id){
+    public function promodiserReceiveDelivery(Request $request, $id){
         DB::beginTransaction();
         try {
             $branch = DB::table('tabStock Entry')->where('name', $id)->pluck('to_warehouse')->first();
@@ -1082,13 +1082,31 @@ class ConsignmentController extends Controller
             $bin_items = collect($bin)->groupBy('item_code');
 
             $now = Carbon::now();
+            $prices = $request->price ? $request->price : [];
 
             foreach($ste_items as $item){
-                if($item->consignment_status == 'Received'){ // skip already received items
-                    continue;
+                $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
+
+                $ste_details_update = [
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'basic_rate' => $basic_rate,
+                    'custom_basic_rate' => $basic_rate,
+                    'basic_amount' => $basic_rate * $item->transfer_qty,
+                    'custom_basic_amount' => $basic_rate * $item->transfer_qty
+                ];
+
+                if($item->consignment_status != 'Received'){
+                    $ste_details_update['consignment_status'] = 'Received';
+                    $ste_details_update['consignment_date_received'] = Carbon::now()->toDateTimeString();
                 }
 
+                DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
                 if(isset($bin_items[$item->item_code])){
+                    if($item->consignment_status == 'Received'){
+                        continue;
+                    }
+
                     $consigned_qty = $bin_items[$item->item_code][0]->consigned_qty;
 
                     DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
@@ -1114,17 +1132,10 @@ class ConsignmentController extends Controller
                         'warehouse' => $branch,
                         'item_code' => $item->item_code,
                         'stock_uom' => $item->stock_uom,
-                        'valuation_rate' => $item->basic_rate,
+                        'valuation_rate' => $basic_rate,
                         'consigned_qty' => $item->transfer_qty
                     ]);
                 }
-
-                DB::table('tabStock Entry Detail')->where('name', $item->name)->update([
-                    'consignment_status' => 'Received',
-                    'consignment_date_received' => Carbon::now()->toDateTimeString(),
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                ]);
             }
 
             DB::commit();
