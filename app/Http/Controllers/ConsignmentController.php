@@ -1085,7 +1085,13 @@ class ConsignmentController extends Controller
             $prices = $request->price ? $request->price : [];
 
             foreach($ste_items as $item){
-                $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
+                $basic_rate = $item->basic_rate;
+                if(isset($prices[$item->item_code])){
+                    $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
+                    if(!$prices[$item->item_code]){
+                        return redirect()->back()->with('error', 'Please enter a price for all items.');
+                    }
+                }
 
                 $ste_details_update = [
                     'modified' => Carbon::now()->toDateTimeString(),
