@@ -135,7 +135,7 @@
                                                                         </td>
                                                                         <td class="text-center p-1 align-middle">
                                                                             <input type="text" name="item_codes[]" class="d-none" value="{{ $item['item_code'] }}"/>
-                                                                            <input type="number" value='{{ $item['price'] > 0 ? number_format($item['price'] * 1) : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
+                                                                            <input type="text" value='{{ number_format($item['price']) }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
@@ -212,9 +212,10 @@
 
             $('.price').keyup(function(){
                 var item_code = $(this).data('item-code');
-                if($.isNumeric($(this).val()) && $(this).val() > 0){
+                var price = $(this).val().replace(/,/g, '');
+                if($.isNumeric($(this).val()) && price > 0 || $(this).val().indexOf(',') > -1 && price > 0){
                     var qty = parseInt($('#'+item_code+'-qty').text());
-                    var total_amount = $(this).val() * qty;
+                    var total_amount = price * qty;
 
                     const amount = total_amount.toLocaleString('en-US', {maximumFractionDigits: 2});
                     $('#'+item_code+'-amount').text(amount);
