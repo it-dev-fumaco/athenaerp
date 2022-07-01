@@ -255,6 +255,8 @@
 
                 get_received_items(src);
                 reset_placeholders();
+
+                items_array = [];
             });
 
             $('#src-warehouse').change(function(){
@@ -272,8 +274,11 @@
                 });
                 
                 $('#open-item-modal').prop('disabled', false);
+
                 reset_placeholders();
                 validate_submit();
+
+                items_array = [];
             });
 
             $('#target-warehouse').select2({
@@ -308,6 +313,8 @@
                         var item_code = $(this).val();
                         remove_items(item_code);
                     });
+                    items_array = [];
+
                     validate_submit();
                     reset_placeholders();
 
@@ -328,7 +335,8 @@
                         dataType: 'json',
                         data: function (data) {
                             return {
-                                q: data.term // search term
+                                q: data.term, // search term
+                                excluded_items: items_array
                             };
                         },
                         processResults: function (response) {
@@ -392,6 +400,11 @@
             function remove_items(item_code){
                 $('.row-' + item_code).remove();
                 var val = parseInt($('#counter').text()) - 1;
+
+                items_array = jQuery.grep(items_array, function(value) {
+                    return value != item_code;
+                });
+
                 val = val > 0 ? val : 0;
                 $('#counter').text(val);
             }
@@ -476,6 +489,7 @@
                 });
             });
 
+            var items_array = new Array();
             $('#add-item').click(function (){
                 var img = $('#img-text').text();
                 var alt = $('#alt-text').text();
@@ -529,6 +543,10 @@
                         '<div class="item-description">' + description + '</div>' +
                     '</td>' +
                 '</tr>';
+
+                if(jQuery.inArray(item_code, items_array) === -1){
+                    items_array.push(item_code);
+                }
 
                 $('#counter').text(parseInt($('#counter').text()) + 1);
                 $("#received-items").empty().trigger('change');
