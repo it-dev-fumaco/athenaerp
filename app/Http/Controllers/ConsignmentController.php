@@ -365,7 +365,6 @@ class ConsignmentController extends Controller
             $period_to = $cutoff_date[1];
             
             $currentDateTime = Carbon::now();
-            $result = [];
             $no_of_items_updated = 0;
 
             $status = 'On Time';
@@ -389,90 +388,185 @@ class ConsignmentController extends Controller
             $consigned_stocks = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
                 ->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code')->toArray();
 
-            foreach ($data['item'] as $item_code => $row) {
-                $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
-                $existing = DB::table('tabConsignment Product Sold')
-                    ->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])
-                    ->where('transaction_date', $data['transaction_date'])->first();
-                if ($existing) {
-                    $consigned_qty = $consigned_qty + $existing->qty;
+            $existing_record = DB::table('tabConsignment Sales Report')->where('transaction_date', $data['transaction_date'])
+                ->where('branch_warehouse', $data['branch_warehouse'])->where('cutoff_period_from', $period_from)
+                ->where('cutoff_period_to', $period_to)->first();
 
-                    if ($consigned_qty < (float)$row['qty']) {
-                        return redirect()->back()
-                            ->with(['old_data' => $data])
-                            ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
+            $grand_total = 0;
+            if (!$existing_record) {
+                $latest_id = DB::table('tabConsignment Sales Report')->max('name');
+                $latest_id_exploded = explode("-", $latest_id);
+                $new_id = (($latest_id) ? $latest_id_exploded[1] : 0) + 1;
+                $new_id = str_pad($new_id, 7, '0', STR_PAD_LEFT);
+                $new_id = 'CSR-'.$new_id;
+    
+                $parent_data = [
+                    'name' => $new_id,
+                    'creation' => $currentDateTime->toDateTimeString(),
+                    'modified' => $currentDateTime->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'parent' => null,
+                    'parentfield' => null,
+                    'parenttype' => null,
+                    'idx' => 0,
+                    'transaction_date' => $data['transaction_date'],
+                    'branch_warehouse' => $data['branch_warehouse'],
+                    'grand_total' => null,
+                    'promodiser' => Auth::user()->full_name,
+                    'status' => $status,
+                    'cutoff_period_from' => $period_from,
+                    'cutoff_period_to' => $period_to,
+                ];
+
+                $child_data = [];
+                foreach ($data['item'] as $item_code => $row) {
+                    if ($row['qty'] > 0) {
+                        $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
+                        $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
+                        if ((float)$row['qty'] < 0) {
+                            return redirect()->back()
+                                ->with(['old_data' => $data])
+                                ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
+                        }
+    
+                        if ($consigned_qty < (float)$row['qty']) {
+                            return redirect()->back()
+                                ->with(['old_data' => $data])
+                                ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
+                        }
+    
+                        DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
+                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+                        
+                        $no_of_items_updated++;
+                        $amount = ((float)$price * (float)$row['qty']);
+                        $grand_total += $amount;
+                        $child_data[] = [
+                            'name' => uniqid(),
+                            'creation' => $currentDateTime->toDateTimeString(),
+                            'modified' => $currentDateTime->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
+                            'docstatus' => 0,
+                            'parent' => $new_id,
+                            'parentfield' => 'items',
+                            'parenttype' => 'Consignment Sales Report',
+                            'idx' => $no_of_items_updated,
+                            'item_code' => $item_code,
+                            'description' => $row['description'],
+                            'qty' => $row['qty'],
+                            'price' => (float)$price,
+                            'amount' => $amount,
+                            'available_stock_on_transaction' => $consigned_qty
+                        ];
                     }
+                }
 
-                    if ((float)$row['qty'] < 0) {
-                        return redirect()->back()
-                            ->with(['old_data' => $data])
-                            ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
-                    }
+                $parent_data['grand_total'] = $grand_total;
 
-                    DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                        ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
-
-                    // for update
-                    $values = [
-                        'modified' => $currentDateTime->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'qty' => $row['qty'],
-                    ];
-
-                    $no_of_items_updated++;
-
-                    DB::table('tabConsignment Product Sold')->where('name', $existing->name)->update($values);
-                } else {
-                    // for insert
-                    $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
-
-                    if ((float)$row['qty'] < 0) {
-                        return redirect()->back()
-                            ->with(['old_data' => $data])
-                            ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
-                    }
-
-                    if ($consigned_qty < (float)$row['qty']) {
-                        return redirect()->back()
-                            ->with(['old_data' => $data])
-                            ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
-                    }
-
-                    DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                        ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
-                    
-                    $no_of_items_updated++;
-                    $result[] = [
-                        'name' => uniqid(),
-                        'creation' => $currentDateTime->toDateTimeString(),
-                        'modified' => $currentDateTime->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
-                        'idx' => 0,
-                        'transaction_date' => $data['transaction_date'],
-                        'branch_warehouse' => $data['branch_warehouse'],
-                        'item_code' => $item_code,
-                        'description' => $row['description'],
-                        'qty' => $row['qty'],
-                        'promodiser' => Auth::user()->full_name,
-                        'price' => (float)$price,
-                        'status' => $status,
-                        'amount' => ((float)$price * (float)$row['qty']),
-                        'cutoff_period_from' => $period_from,
-                        'cutoff_period_to' => $period_to,
-                        'available_stock_on_transaction' => $consigned_qty
-                    ];
+                if (count($child_data) > 0) {
+                    DB::table('tabConsignment Sales Report Item')->insert($child_data);
+                    DB::table('tabConsignment Sales Report')->insert($parent_data);
                 }
             }
 
-            if (count($result) > 0) {
-                DB::table('tabConsignment Product Sold')->insert($result);
-            }
+            if ($existing_record) {
+                $child_data = [];
+                foreach ($data['item'] as $item_code => $row) {
+                    $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
+                    $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
 
+                    $amount = ((float)$price * (float)$row['qty']);
+
+                    $existing = DB::table('tabConsignment Sales Report Item')
+                        ->where('item_code', $item_code)->where('parent', $existing_record->name)->first();
+                        
+                    if ($existing) {
+                        $consigned_qty = $consigned_qty + $existing->qty;
+
+                        if ($consigned_qty < (float)$row['qty']) {
+                            return redirect()->back()
+                                ->with(['old_data' => $data])
+                                ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
+                        }
+
+                        if ((float)$row['qty'] < 0) {
+                            return redirect()->back()
+                                ->with(['old_data' => $data])
+                                ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
+                        }
+
+                        DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
+                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+
+                        // for update
+                        $values = [
+                            'modified' => $currentDateTime->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'qty' => $row['qty'],
+                            'amount' => $amount
+                        ];
+
+                        $no_of_items_updated++;
+                        $grand_total += $amount;
+
+                        DB::table('tabConsignment Sales Report Item')->where('name', $existing->name)->update($values);
+                    } else {
+                        // for insert
+                        if ($row['qty'] > 0) {
+                            if ((float)$row['qty'] < 0) {
+                                return redirect()->back()
+                                    ->with(['old_data' => $data])
+                                    ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
+                            }
+    
+                            if ($consigned_qty < (float)$row['qty']) {
+                                return redirect()->back()
+                                    ->with(['old_data' => $data])
+                                    ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
+                            }
+    
+                            DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
+                                ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+                            
+                            $no_of_items_updated++;
+                            $grand_total += $amount;
+    
+                            $child_data[] = [
+                                'name' => uniqid(),
+                                'creation' => $currentDateTime->toDateTimeString(),
+                                'modified' => $currentDateTime->toDateTimeString(),
+                                'modified_by' => Auth::user()->wh_user,
+                                'owner' => Auth::user()->wh_user,
+                                'docstatus' => 0,
+                                'parent' => $existing_record->name,
+                                'parentfield' => 'items',
+                                'parenttype' => 'Consignment Sales Report',
+                                'idx' => $no_of_items_updated,
+                                'item_code' => $item_code,
+                                'description' => $row['description'],
+                                'qty' => $row['qty'],
+                                'price' => (float)$price,
+                                'amount' => $amount,
+                                'available_stock_on_transaction' => $consigned_qty
+                            ];
+                        }
+                    }
+                }
+
+                if (count($child_data) > 0) {
+                    DB::table('tabConsignment Sales Report Item')->insert($child_data);
+                }
+
+                DB::table('tabConsignment Sales Report')->where('name', $existing_record->name)->update([
+                    'modified' => $currentDateTime->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'grand_total' => $grand_total
+                ]);
+            }
+   
             DB::commit();
 
             return redirect()->back()->with([
