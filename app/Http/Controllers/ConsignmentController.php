@@ -170,7 +170,7 @@ class ConsignmentController extends Controller
 
                 if ($existing) {
                     $no_of_items_updated++;
-                    $consigned_qty = $consigned_qty + $existing->qty;
+                    // $consigned_qty = $consigned_qty;// + $existing->qty;
                     $sold_qty = $consigned_qty - (float)$row['qty'];
 
                     if ($consigned_qty < (float)$row['qty']) {
@@ -182,15 +182,44 @@ class ConsignmentController extends Controller
                     DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
                         ->update(['consigned_qty' => (float)$row['qty']]);
 
+                    $checker = DB::table('tabConsignment Product Sold')->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])->where('transaction_date', $data['transaction_date'])->first();
+
                     // for update
-                    $values = [
-                        'modified' => $currentDateTime->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'qty' => $sold_qty,
-                    ];
-
-                    DB::table('tabConsignment Product Sold')->where('name', $existing->name)->update($values);
-
+                    if($checker){
+                        $values = [
+                            'modified' => $currentDateTime->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'qty' => $sold_qty + $checker->qty,
+                        ];
+    
+                        DB::table('tabConsignment Product Sold')->where('name', $checker->name)->update($values);
+                    }else{
+                        $result[] = [
+                            'name' => uniqid(),
+                            'creation' => $currentDateTime->toDateTimeString(),
+                            'modified' => $currentDateTime->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
+                            'docstatus' => 0,
+                            'parent' => null,
+                            'parentfield' => null,
+                            'parenttype' => null,
+                            'idx' => 0,
+                            'transaction_date' => $data['transaction_date'],
+                            'branch_warehouse' => $data['branch_warehouse'],
+                            'item_code' => $item_code,
+                            'description' => $row['description'],
+                            'qty' => $sold_qty,
+                            'promodiser' => Auth::user()->full_name,
+                            'price' => (float)$price,
+                            'status' => $status,
+                            'amount' => ((float)$price * (float)$sold_qty),
+                            'cutoff_period_from' => $period_from,
+                            'cutoff_period_to' => $period_to,
+                            'available_stock_on_transaction' => $consigned_qty
+                        ];
+                    }
+                    
                     // for update
                     $values = [
                         'modified' => $currentDateTime->toDateTimeString(),
@@ -214,31 +243,7 @@ class ConsignmentController extends Controller
                         ->update(['consigned_qty' => (float)$row['qty']]);
 
                     $no_of_items_updated++;
-                    $result[] = [
-                        'name' => uniqid(),
-                        'creation' => $currentDateTime->toDateTimeString(),
-                        'modified' => $currentDateTime->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
-                        'idx' => 0,
-                        'transaction_date' => $data['transaction_date'],
-                        'branch_warehouse' => $data['branch_warehouse'],
-                        'item_code' => $item_code,
-                        'description' => $row['description'],
-                        'qty' => $sold_qty,
-                        'promodiser' => Auth::user()->full_name,
-                        'price' => (float)$price,
-                        'status' => $status,
-                        'amount' => ((float)$price * (float)$sold_qty),
-                        'cutoff_period_from' => $period_from,
-                        'cutoff_period_to' => $period_to,
-                        'available_stock_on_transaction' => $consigned_qty
-                    ];
-
+       
                     $result_2[] = [
                         'name' => uniqid(),
                         'creation' => $currentDateTime->toDateTimeString(),
@@ -265,6 +270,43 @@ class ConsignmentController extends Controller
                         'audit_date_from' => $data['audit_date_from'],
                         'audit_date_to' => $data['audit_date_to'],
                     ];
+                    
+                    $checker = DB::table('tabConsignment Product Sold')->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])->where('transaction_date', $data['transaction_date'])->first();
+
+                    if($checker){
+                        $values = [
+                            'modified' => $currentDateTime->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'qty' => $sold_qty + $checker->qty,
+                        ];
+    
+                        DB::table('tabConsignment Product Sold')->where('name', $checker->name)->update($values);
+                    }else{
+                        $result[] = [
+                            'name' => uniqid(),
+                            'creation' => $currentDateTime->toDateTimeString(),
+                            'modified' => $currentDateTime->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
+                            'docstatus' => 0,
+                            'parent' => null,
+                            'parentfield' => null,
+                            'parenttype' => null,
+                            'idx' => 0,
+                            'transaction_date' => $data['transaction_date'],
+                            'branch_warehouse' => $data['branch_warehouse'],
+                            'item_code' => $item_code,
+                            'description' => $row['description'],
+                            'qty' => $sold_qty,
+                            'promodiser' => Auth::user()->full_name,
+                            'price' => (float)$price,
+                            'status' => $status,
+                            'amount' => ((float)$price * (float)$sold_qty),
+                            'cutoff_period_from' => $period_from,
+                            'cutoff_period_to' => $period_to,
+                            'available_stock_on_transaction' => $consigned_qty
+                        ];
+                    }
                 }
             }
 
@@ -272,6 +314,7 @@ class ConsignmentController extends Controller
                 DB::table('tabConsignment Product Sold')->insert($result);
             }
 
+            // return $result;
             if (count($result_2) > 0) {
                 DB::table('tabConsignment Inventory Audit')->insert($result_2);
             }
