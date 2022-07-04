@@ -39,7 +39,7 @@
                                         <td class="text-left p-1 align-middle">
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a>
                                             <small class="d-block"><b>{{ $ste['name'] }}</b> | <b>Delivery Date:</b> {{ $delivery_date }}</small>
-                                            @if ($ste['status'] == 'Delivered')
+                                            @if ($ste['delivery_status'] == 1)
                                                 <small class="d-block"><b>Date Received:</b> {{ Carbon\Carbon::parse($ste['date_received'])->format('M d, Y - h:i a') }}</small>
                                             @endif
                                             <span class="badge badge-{{ $ste['status'] == 'Pending' ? 'warning' : 'success' }}">{{ $ste['status'] }}</span>
@@ -60,6 +60,9 @@
                                                         <div class="modal-body">
                                                             <h5 class="text-center font-responsive font-weight-bold m-0">{{ $ste['to_consignment'] }}</h5>
                                                             <small class="d-block text-center mb-2">{{ $ste['name'] }} | Delivery Date: {{ $delivery_date }}</small>
+                                                            @if ($ste['delivery_status'] == 1)
+                                                                <small class="d-block"><b>Date Received:</b> {{ Carbon\Carbon::parse($ste['date_received'])->format('M d, Y - h:i a') }}</small>
+                                                            @endif
                                                             <div class="callout callout-info text-center">
                                                                 <small><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</small>
                                                             </div>
@@ -140,7 +143,7 @@
                                                                         </td>
                                                                         <td class="text-center p-1 align-middle">
                                                                             <input type="text" name="item_codes[]" class="d-none" value="{{ $item['item_code'] }}"/>
-                                                                            <input type="text" value='{{ number_format($item['price']) }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
+                                                                            <input type="text" value='{{ $item['price'] > 0 ? number_format($item['price']) : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
