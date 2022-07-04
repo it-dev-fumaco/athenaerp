@@ -2670,7 +2670,7 @@ class ConsignmentController extends Controller
             return view('consignment.tbl_submitted_inventory_audit', compact('list', 'query'));
         }
 
-        $list = DB::table('tabConsignment Inventory Audit 0')
+        $list = DB::table('tabConsignment Inventory Audit Report')
             ->when($store, function ($q) use ($store){
                 return $q->where('branch_warehouse', $store);
             })
@@ -2887,7 +2887,7 @@ class ConsignmentController extends Controller
             ->orderBy('branch_warehouse', 'asc')->groupBy('branch_warehouse')
             ->pluck('transaction_date', 'branch_warehouse')->toArray();
 
-        $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit 0')
+        $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit Report')
             ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
             ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
             ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
@@ -3001,9 +3001,8 @@ class ConsignmentController extends Controller
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('cutoff_period_from', $year);
             })
-            ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, SUM(total_qty_sold) as total_sold, SUM(grand_total) as total_amount, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodisers')
-            ->orderBy('transaction_date', 'desc')->groupBy('branch_warehouse', 'cutoff_period_from', 'cutoff_period_to')
-            ->paginate(20);
+            ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, total_qty_sold as total_sold, grand_total as total_amount, promodiser as promodisers')
+            ->orderBy('transaction_date', 'desc')->paginate(20);
 
         return view('consignment.supervisor.tbl_product_sold_history', compact('list'));
     }
@@ -3188,10 +3187,11 @@ class ConsignmentController extends Controller
 
         $beginning_inventory = collect($beginning_inventory)->groupBy('item_code')->toArray();
 
-        $inv_audit = DB::table('tabConsignment Inventory Audit 0')
-            ->where('branch_warehouse', $store)->where('transaction_date', '<', $cutoff_start)
-            ->select('item_code', 'qty', 'transaction_date')
-            ->orderBy('transaction_date', 'asc')->get();
+        $inv_audit = DB::table('tabConsignment Inventory Audit Report as iar')
+            ->join('tabConsignment Inventory Audit Report Item as iari', 'iar.name', 'iari.parent')
+            ->where('iar.branch_warehouse', $store)->where('iar.transaction_date', '<', $cutoff_start)
+            ->select('iari.item_code', 'iari.qty', 'iar.transaction_date')
+            ->orderBy('iar.transaction_date', 'asc')->get();
 
         $inv_audit = collect($inv_audit)->groupBy('item_code')->toArray();
 

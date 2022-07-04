@@ -77,7 +77,7 @@
                                         <div class="p-0 col-2">
                                             <div class="text-center">
                                                 <p class="text-center m-0 font-responsive">
-                                                    <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
+                                                    <span class="d-inline-block font-weight-bolder" style="font-size: 1.5rem;">{{ count($active_consignment_branches) }}</span>
                                                     <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
                                                 </p>
                                                 <span class="d-block" style="font-size: 9pt;">Active Store</span>
@@ -86,7 +86,7 @@
                                         <div class="p-0 col-2">
                                             <a href="/view_promodisers" style="color: inherit;">
                                             <div class="text-center">
-                                                <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 1.2rem;">{{ ($promodisers) }}</p>
+                                                <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 1.5rem;">{{ ($promodisers) }}</p>
                                                 <span class="d-block" style="font-size: 9pt;">Promodiser(s)</span>
                                             </div>
                                         </a>

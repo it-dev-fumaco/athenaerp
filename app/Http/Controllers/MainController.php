@@ -372,9 +372,10 @@ class MainController extends Controller
             // get total stock adjustments
             $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->count();
 
-            $total_item_sold = DB::table('tabConsignment Sales Report')
-                ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
-                ->groupBy('branch_warehouse')->count();
+            $total_item_sold = DB::table('tabConsignment Sales Report as csr')
+                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->where('csri.qty', '>', 0)->whereBetween('csr.transaction_date', [Carbon::parse($duration_from)->addDay()->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
+                ->count();
 
             $total_pending_inventory_audit = 0;
             // get total pending inventory audit
@@ -383,7 +384,7 @@ class MainController extends Controller
                 ->orderBy('branch_warehouse', 'asc')->groupBy('branch_warehouse')
                 ->pluck('transaction_date', 'branch_warehouse')->toArray();
 
-            $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+            $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit Report')
                 ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
                 ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
                 ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
