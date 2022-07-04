@@ -39,7 +39,9 @@
                                         <td class="text-left p-1 align-middle">
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a>
                                             <small class="d-block"><b>{{ $ste['name'] }}</b> | <b>Delivery Date:</b> {{ $delivery_date }}</small>
-
+                                            @if ($ste['status'] == 'Delivered')
+                                                <small class="d-block"><b>Date Received:</b> {{ Carbon\Carbon::parse($ste['date_received'])->format('M d, Y - h:i a') }}</small>
+                                            @endif
                                             <span class="badge badge-{{ $ste['status'] == 'Pending' ? 'warning' : 'success' }}">{{ $ste['status'] }}</span>
                                             @if ($ste['status'] == 'Delivered')
                                                 <span class="badge badge-{{ $ste['delivery_status'] == 0 ? 'warning' : 'success' }}">{{ $ste['delivery_status'] == 0 ? 'To Receive' : 'Received' }}</span>
