@@ -32,10 +32,13 @@
                                 </thead>
                                 <tbody>
                                     @forelse ($ste_arr as $ste)
+                                    @php
+                                        $delivery_date = Carbon\Carbon::parse($ste['delivery_date'])->format('M d, Y').' - '.Carbon\Carbon::parse($ste['posting_time'])->format('h:i a');
+                                    @endphp
                                     <tr>
                                         <td class="text-left p-1 align-middle">
                                             <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a>
-                                            <small class="d-block"><b>{{ $ste['name'] }}</b> | <b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</small>
+                                            <small class="d-block"><b>{{ $ste['name'] }}</b> | <b>Delivery Date:</b> {{ $delivery_date }}</small>
 
                                             <span class="badge badge-{{ $ste['status'] == 'Pending' ? 'warning' : 'success' }}">{{ $ste['status'] }}</span>
                                             @if ($ste['status'] == 'Delivered')
@@ -54,7 +57,7 @@
                                                         </div>
                                                         <div class="modal-body">
                                                             <h5 class="text-center font-responsive font-weight-bold m-0">{{ $ste['to_consignment'] }}</h5>
-                                                            <small class="d-block text-center mb-2">{{ $ste['name'] }} | Delivery Date: {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</small>
+                                                            <small class="d-block text-center mb-2">{{ $ste['name'] }} | Delivery Date: {{ $delivery_date }}</small>
                                                             <div class="callout callout-info text-center">
                                                                 <small><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</small>
                                                             </div>

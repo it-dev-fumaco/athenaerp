@@ -33,11 +33,11 @@
                             }
                         @endphp
                         <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
-                            <div class="d-flex flex-row mt-2" style="font-size: 10pt;">
-                                <div class="p-0 col-6">
-                                    <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y') }}</b></span>
+                            <div class="d-flex flex-row mt-2" style="font-size: 9pt;">
+                                <div class="p-0 col-7">
+                                    <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y - h:i a') }}</b></span>
                                 </div>
-                                <div class="p-0 col-6">
+                                <div class="p-0 col-5">
                                     <span class="d-block">Total item(s): <b>{{ count($inventory) }}</b></span>
                                 </div>
                             </div>

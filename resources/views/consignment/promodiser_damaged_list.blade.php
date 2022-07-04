@@ -43,7 +43,7 @@
                                                     {{ $item['store'] }} <br>
                                                     {{ $item['damage_description'] }} <br>
                                                     {{ $item['promodiser'] }} <br>
-                                                    {{ Carbon\Carbon::parse($item['creation'])->format('F d, Y') }}
+                                                    {{ Carbon\Carbon::parse($item['creation'])->format('M d, Y - h:i a') }}
                                                 </div>
                                                 <div class="d-flex flex-row align-items-center">
                                                     <div class="p-1 text-center">
@@ -76,7 +76,7 @@
                                                             </div>
                                                             <div class="modal-body">
                                                                 <h6 class="text-left m-0 p-0">{{ $item['store'] }}</h6>
-                                                                <small class="d-block text-left">{{ $item['promodiser'].' - '.Carbon\Carbon::parse($item['creation'])->format('F d, Y') }}</small>
+                                                                <small class="d-block text-left">{{ $item['promodiser'].' - '.Carbon\Carbon::parse($item['creation'])->format('M d, Y - h:i a') }}</small>
                                                                 <div class="callout callout-info text-center mt-2">
                                                                     <small><i class="fas fa-info-circle"></i> Consignment Supervisor will notify that there are damaged/defective item in your store.</small>
                                                                 </div>

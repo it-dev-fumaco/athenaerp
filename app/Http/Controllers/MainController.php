@@ -228,7 +228,7 @@ class MainController extends Controller
                         $q->whereNull('sted.consignment_status')
                         ->orWhere('sted.consignment_status', '!=', 'Received');
                     })
-                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
+                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
                     ->orderBy('ste.creation', 'desc')->get();
 
                 $delivery_report = collect($delivery_report_query)->groupBy('name');
@@ -279,7 +279,8 @@ class MainController extends Controller
                             'items' => $items_arr,
                             'creation' => $row[0]->creation,
                             'delivery_date' => $row[0]->delivery_date,
-                            'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+                            'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
+                            'posting_time' => $row[0]->posting_time
                         ];
                     }
 
@@ -292,7 +293,8 @@ class MainController extends Controller
                             'items' => $items_arr,
                             'creation' => $row[0]->creation,
                             'delivery_date' => $row[0]->delivery_date,
-                            'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+                            'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
+                            'posting_time' => $row[0]->posting_time
                         ];
                     }
                 }

@@ -878,9 +878,9 @@ class ConsignmentController extends Controller
                 'name' => $inv->name,
                 'branch' => $inv->branch_warehouse,
                 'owner' => $inv->owner,
-                'creation' => Carbon::parse($inv->creation)->format('F d, Y'),
+                'creation' => Carbon::parse($inv->creation)->format('M d, Y - h:i a'),
                 'status' => $inv->status,
-                'transaction_date' => Carbon::parse($inv->transaction_date)->format('F d, Y'),
+                'transaction_date' => Carbon::parse($inv->transaction_date)->format('M d, Y - h:i a'),
                 'items' => $items_arr,
                 'qty' => collect($items_arr)->sum('opening_stock'),
                 'amount' => collect($items_arr)->sum('price'),
@@ -1057,7 +1057,7 @@ class ConsignmentController extends Controller
             ->where('ste.docstatus', '<', 2)
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->whereIn('sted.t_warehouse', $assigned_consignment_store)
-            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
+            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
             ->orderBy('ste.creation', 'desc')->paginate(10);
 
         $delivery_report_q = collect($delivery_report->items())->groupBy('name');
@@ -1107,7 +1107,8 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'creation' => $row[0]->creation,
                 'delivery_date' => $row[0]->delivery_date,
-                'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+                'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
+                'posting_time' => $row[0]->posting_time
             ];
         }
 
