@@ -886,7 +886,7 @@ class ConsignmentController extends Controller
                 'transaction_date' => Carbon::parse($inv->transaction_date)->format('M d, Y - h:i a'),
                 'items' => $items_arr,
                 'qty' => collect($items_arr)->sum('opening_stock'),
-                'amount' => collect($items_arr)->sum('price'),
+                'amount' => collect($items_arr)->sum('amount'),
                 'sold' => $sold_arr
             ];
         }
