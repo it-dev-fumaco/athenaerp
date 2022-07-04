@@ -672,8 +672,9 @@ class ConsignmentController extends Controller
     
         $included_promodisers = DB::table('tabAssigned Consignment Warehouse')->pluck('parent');
         $included_promodisers = collect($included_promodisers)->unique();
-    
-        $promodisers = DB::table('tabWarehouse Users')->where('user_group', 'Promodiser')->whereIn('frappe_userid', $included_promodisers)->get();
+
+        $promodisers = DB::table('tabWarehouse Users')->where('user_group', 'Promodiser')
+            ->whereIn('frappe_userid', $included_promodisers)->get();
     
         $included_promodisers_full_name = collect($promodisers)->map(function($q){
             return $q->full_name;
@@ -682,16 +683,17 @@ class ConsignmentController extends Controller
         $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->get();
         $assigned_consignment_stores = collect($assigned_consignment_stores)->groupBy('parent');
     
-        $opening_stocks = DB::table('tabConsignment Beginning Inventory as cbi')
+       $opening_stocks = DB::table('tabConsignment Beginning Inventory as cbi')
             ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
-            ->where('cbi.status', 'Approved')->whereIn('cbi.owner', $included_promodisers_full_name)->whereIn('cbi.branch_warehouse', $warehouses)
+            ->where('cbi.status', 'Approved')
+            ->whereIn('cbi.owner', $included_promodisers_full_name)
             ->select('cbi.owner', 'cbi.branch_warehouse', DB::raw('sum(item.opening_stock) as qty'))
             ->groupBy('cbi.owner', 'cbi.branch_warehouse')
             ->get();
 
         $total_amount = DB::table('tabConsignment Beginning Inventory as cbi')
             ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
-            ->where('cbi.status', 'Approved')->whereIn('cbi.owner', $included_promodisers_full_name)->whereIn('cbi.branch_warehouse', $warehouses)
+            ->where('cbi.status', 'Approved')->whereIn('cbi.owner', $included_promodisers_full_name)
             ->select('cbi.owner', 'cbi.branch_warehouse', 'item.item_code', DB::raw('sum(item.opening_stock) as qty'), DB::raw('sum(item.price) as price'))
             ->groupBy('cbi.owner', 'cbi.branch_warehouse', 'item.item_code')
             ->get();
@@ -711,7 +713,7 @@ class ConsignmentController extends Controller
                 'qty' => $stock->qty
             ];
         }
-    
+
         $report_arr = [];
         foreach($promodisers as $user){
             $report_arr[] = [
@@ -824,8 +826,9 @@ class ConsignmentController extends Controller
                         'item_code' => $item->item_code,
                         'item_description' => $item->item_description,
                         'uom' => $item->stock_uom,
-                        'opening_stock' => $item->opening_stock * 1,
-                        'price' => $item->price * 1
+                        'opening_stock' => ($item->opening_stock * 1),
+                        'price' => ($item->price * 1),
+                        'amount' => ($item->price * 1) * ($item->opening_stock * 1),
                     ];
                 }
 
