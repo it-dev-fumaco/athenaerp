@@ -120,9 +120,10 @@ class MainController extends Controller
 
                 $duration = Carbon::parse($duration_from)->addDay()->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
-                $total_item_sold = DB::table('tabConsignment Product Sold')
-                    ->whereIn('branch_warehouse', $assigned_consignment_store)->where('qty', '>', 0)
-                    ->whereBetween('transaction_date', [Carbon::parse($duration_from)->addDay()->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
+                $total_item_sold = DB::table('tabConsignment Sales Report as csr')
+                    ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                    ->whereIn('csr.branch_warehouse', $assigned_consignment_store)->where('csri.qty', '>', 0)
+                    ->whereBetween('csr.transaction_date', [Carbon::parse($duration_from)->addDay()->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
                     ->count();
 
                 $inv_summary = DB::table('tabBin as b')
@@ -152,7 +153,7 @@ class MainController extends Controller
                     ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
                     ->toArray();
 
-                $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+                $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit Report')
                     ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
                     ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
                     ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
@@ -371,7 +372,7 @@ class MainController extends Controller
             // get total stock adjustments
             $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->count();
 
-            $total_item_sold = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)
+            $total_item_sold = DB::table('tabConsignment Sales Report')
                 ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
                 ->groupBy('branch_warehouse')->count();
 
@@ -5417,9 +5418,10 @@ class MainController extends Controller
 
     public function consignmentSalesReport($warehouse, Request $request) {
         $year = $request->year ? $request->year : Carbon::now()->format('Y');
-        $query = DB::table('tabConsignment Product Sold')
+
+        $query = DB::table('tabConsignment Sales Report')
             ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
-            ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(amount) as grand_total')
+            ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(grand_total) as grand_total')
             ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();
         
         $result = [];
