@@ -47,7 +47,7 @@
                                     @endphp
                                     <tr>
                                         <td class="font-responsive text-center p-2 align-middle">
-                                            <small class="d-block">{{ Carbon\Carbon::parse($store->transaction_date)->format('F d, Y') }}</small>
+                                            <small class="d-block">{{ Carbon\Carbon::parse($store->transaction_date)->format('M d, Y - h:i a') }}</small>
                                             <span class="badge badge-{{ $badge }}">{{ $store->status }}</span>
                                         </td>
                                         <td class="font-responsive p-2 align-middle">

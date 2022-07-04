@@ -70,7 +70,7 @@
                                     }
                                 @endphp
                                 <tr>
-                                    <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}</td>
+                                    <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</td>
                                     <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['transfer_type'] }}</span></td>
                                     @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                     <td class="p-1">
@@ -115,7 +115,7 @@
                                                         @else {{-- Sales Returns --}}
                                                         <span class="d-block text-left">{{ $ste['to_warehouse'] }}</span>
                                                         @endif
-                                                        <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}</small>
+                                                        <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
                                                        
                                                         <table class="table" style="font-size: 9pt;">
                                                             <thead>
@@ -240,16 +240,14 @@
                                         @else {{-- Sales Returns --}}
                                             <b>{{ $ste['to_warehouse'] }}</b> <br>
                                         @endif
-                                        <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}</small>
+                                        <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
                                     </td>
                                 </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="2"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
-                                    </tr>
-                                        
-                                    @endforelse
-
+                                @empty
+                                <tr>
+                                    <td colspan="2"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
+                                </tr>
+                                @endforelse
                                 </tbody>
                             </table>
                             <div class="mt-3 ml-3 clearfix pagination d-block">

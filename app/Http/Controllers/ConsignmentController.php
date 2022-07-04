@@ -878,9 +878,9 @@ class ConsignmentController extends Controller
                 'name' => $inv->name,
                 'branch' => $inv->branch_warehouse,
                 'owner' => $inv->owner,
-                'creation' => Carbon::parse($inv->creation)->format('F d, Y'),
+                'creation' => Carbon::parse($inv->creation)->format('M d, Y - h:i a'),
                 'status' => $inv->status,
-                'transaction_date' => Carbon::parse($inv->transaction_date)->format('F d, Y'),
+                'transaction_date' => Carbon::parse($inv->transaction_date)->format('M d, Y - h:i a'),
                 'items' => $items_arr,
                 'qty' => collect($items_arr)->sum('opening_stock'),
                 'amount' => collect($items_arr)->sum('price'),
@@ -1057,7 +1057,7 @@ class ConsignmentController extends Controller
             ->where('ste.docstatus', '<', 2)
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->whereIn('sted.t_warehouse', $assigned_consignment_store)
-            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
+            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received')
             ->orderBy('ste.creation', 'desc')->paginate(10);
 
         $delivery_report_q = collect($delivery_report->items())->groupBy('name');
@@ -1083,7 +1083,8 @@ class ConsignmentController extends Controller
                     'delivered_qty' => $item->transfer_qty,
                     'stock_uom' => $item->stock_uom,
                     'price' => $item->basic_rate,
-                    'delivery_status' => $item->consignment_status
+                    'delivery_status' => $item->consignment_status,
+                    'date_received' => $item->consignment_date_received
                 ];
             }
 
@@ -1099,6 +1100,8 @@ class ConsignmentController extends Controller
                 $status = 'Pending';
             }
 
+            $delivery_status = min($status_check) == 0 ? 0 : 1;
+
             $ste_arr[] = [
                 'name' => $row[0]->name,
                 'from' => $row[0]->from_warehouse,
@@ -1107,7 +1110,9 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'creation' => $row[0]->creation,
                 'delivery_date' => $row[0]->delivery_date,
-                'delivery_status' => min($status_check) == 0 ? 0 : 1 // check if there are still items to receive
+                'delivery_status' => $delivery_status, // check if there are still items to receive
+                'posting_time' => $row[0]->posting_time,
+                'date_received' => $delivery_status  == 1 ? collect($items_arr)->min('date_received') : null
             ];
         }
 
@@ -1117,27 +1122,65 @@ class ConsignmentController extends Controller
     public function promodiserReceiveDelivery(Request $request, $id){
         DB::beginTransaction();
         try {
-            $branch = DB::table('tabStock Entry')->where('name', $id)->pluck('to_warehouse')->first();
-
+            $wh = DB::table('tabStock Entry')->where('name', $id)->select('from_warehouse', 'to_warehouse', 'naming_series')->first();
+            if(!$wh){
+                return redirect()->back()->with('error', $id.' not found.');
+            }
+            
             $ste_items = DB::table('tabStock Entry Detail')->where('parent', $id)->get();
+
+            $source_warehouses = collect($ste_items)->map(function($q){
+                return $q->s_warehouse;
+            })->unique();
+
+            $target_warehouses = collect($ste_items)->map(function($q){
+                return $q->t_warehouse;
+            })->unique();
+
+            $wh_warehouses = [$wh->from_warehouse, $wh->to_warehouse];
+            $reference_warehouses = collect($source_warehouses)->merge($target_warehouses);
+            $reference_warehouses = collect($reference_warehouses)->merge($wh_warehouses)->unique()->toArray();
             
             $item_codes = collect($ste_items)->map(function ($q){
                 return $q->item_code;
             });
 
-            $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
-            $bin_items = collect($bin)->groupBy('item_code');
+            $bin = DB::table('tabBin')->whereIn('warehouse', array_filter($reference_warehouses))->whereIn('item_code', $item_codes)->get();
+            $bin_items = [];
+            foreach($bin as $b){
+                $bin_items[$b->warehouse][$b->item_code] = [
+                    'consigned_qty' => $b->consigned_qty
+                ];
+            }
 
             $now = Carbon::now();
             $prices = $request->price ? $request->price : [];
 
             foreach($ste_items as $item){
                 $basic_rate = $item->basic_rate;
-                if(isset($prices[$item->item_code])){
-                    $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
-                    if(!$prices[$item->item_code]){
-                        return redirect()->back()->with('error', 'Please enter a price for all items.');
+                $branch =  $wh->to_warehouse;
+                $src_branch = $wh->from_warehouse;
+
+                if(!isset($prices[$item->item_code])){
+                    return redirect()->back()->with('error', 'Please enter price for all items.');
+                }
+                
+                $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
+
+                // Source Warehouse
+                if($wh->naming_series == 'STEC-'){
+                    $src_consigned = isset($bin_items[$src_branch][$item->item_code]) ? $bin_items[$src_branch][$item->item_code]['consigned_qty'] : 0;
+                    if($src_consigned < $item->transfer_qty){
+                        return redirect()->back()->with('error', 'Not enough qty for '.$item->item_code.'. Qty needed is '.$item->transfer_qty.', available qty is '.$src_consigned.'.');
                     }
+
+                    DB::table('tabBin')->where('warehouse', $src_branch)->where('item_code', $item->item_code)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'consigned_qty' => $src_consigned - $item->transfer_qty
+                    ]);
+                }else{ // If generated from ERP
+                    $branch = $item->t_warehouse;
                 }
 
                 $ste_details_update = [
@@ -1155,12 +1198,14 @@ class ConsignmentController extends Controller
                 }
 
                 DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
-                if(isset($bin_items[$item->item_code])){
+
+                // Target Warehouse
+                if(isset($bin_items[$branch][$item->item_code])){
                     if($item->consignment_status == 'Received'){
                         continue;
                     }
 
-                    $consigned_qty = $bin_items[$item->item_code][0]->consigned_qty;
+                    $consigned_qty = $bin_items[$branch][$item->item_code]['consigned_qty'];
 
                     DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
                         'modified' => Carbon::now()->toDateTimeString(),
@@ -1612,7 +1657,7 @@ class ConsignmentController extends Controller
                 'promodiser' => $item->promodiser,
                 'image' => $img,
                 'webp' => $webp,
-                'creation' => Carbon::parse($item->creation)->format('F d, Y'),
+                'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i a'),
                 'test' => $orig_exists,
                 'test2' => $webp_exists
             ];
@@ -1669,7 +1714,7 @@ class ConsignmentController extends Controller
 
                 $ste_arr[] = [
                     'name' => $ste->name,
-                    'creation' => Carbon::parse($ste->creation)->format('F d, Y'),
+                    'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i a'),
                     'source_warehouse' => $ste->from_warehouse,
                     'target_warehouse' => $ste->to_warehouse,
                     'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
