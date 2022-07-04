@@ -1123,6 +1123,10 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $wh = DB::table('tabStock Entry')->where('name', $id)->select('from_warehouse', 'to_warehouse', 'naming_series')->first();
+            if(!$wh){
+                return redirect()->back()->with('error', $id.' not found.');
+            }
+            
             $ste_items = DB::table('tabStock Entry Detail')->where('parent', $id)->get();
 
             $source_warehouses = collect($ste_items)->map(function($q){
