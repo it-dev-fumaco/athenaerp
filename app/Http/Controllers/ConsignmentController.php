@@ -1117,27 +1117,61 @@ class ConsignmentController extends Controller
     public function promodiserReceiveDelivery(Request $request, $id){
         DB::beginTransaction();
         try {
-            $branch = DB::table('tabStock Entry')->where('name', $id)->pluck('to_warehouse')->first();
-
+            $wh = DB::table('tabStock Entry')->where('name', $id)->select('from_warehouse', 'to_warehouse', 'naming_series')->first();
             $ste_items = DB::table('tabStock Entry Detail')->where('parent', $id)->get();
+
+            $source_warehouses = collect($ste_items)->map(function($q){
+                return $q->s_warehouse;
+            })->unique();
+
+            $target_warehouses = collect($ste_items)->map(function($q){
+                return $q->t_warehouse;
+            })->unique();
+
+            $wh_warehouses = [$wh->from_warehouse, $wh->to_warehouse];
+            $reference_warehouses = collect($source_warehouses)->merge($target_warehouses);
+            $reference_warehouses = collect($reference_warehouses)->merge($wh_warehouses)->unique()->toArray();
             
             $item_codes = collect($ste_items)->map(function ($q){
                 return $q->item_code;
             });
 
-            $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
-            $bin_items = collect($bin)->groupBy('item_code');
+            $bin = DB::table('tabBin')->whereIn('warehouse', array_filter($reference_warehouses))->whereIn('item_code', $item_codes)->get();
+            $bin_items = [];
+            foreach($bin as $b){
+                $bin_items[$b->warehouse][$b->item_code] = [
+                    'consigned_qty' => $b->consigned_qty
+                ];
+            }
 
             $now = Carbon::now();
             $prices = $request->price ? $request->price : [];
 
             foreach($ste_items as $item){
                 $basic_rate = $item->basic_rate;
-                if(isset($prices[$item->item_code])){
-                    $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
-                    if(!$prices[$item->item_code]){
-                        return redirect()->back()->with('error', 'Please enter a price for all items.');
+                $branch =  $wh->to_warehouse;
+                $src_branch = $wh->from_warehouse;
+
+                if(!isset($prices[$item->item_code])){
+                    return redirect()->back()->with('error', 'Please enter price for all items.');
+                }
+                
+                $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
+
+                // Source Warehouse
+                if($wh->naming_series == 'STEC-'){
+                    $src_consigned = isset($bin_items[$src_branch][$item->item_code]) ? $bin_items[$src_branch][$item->item_code]['consigned_qty'] : 0;
+                    if($src_consigned < $item->transfer_qty){
+                        return redirect()->back()->with('error', 'Not enough qty for '.$item->item_code.'. Qty needed is '.$item->transfer_qty.', available qty is '.$src_consigned.'.');
                     }
+
+                    DB::table('tabBin')->where('warehouse', $src_branch)->where('item_code', $item->item_code)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'consigned_qty' => $src_consigned - $item->transfer_qty
+                    ]);
+                }else{ // If generated from ERP
+                    $branch = $item->t_warehouse;
                 }
 
                 $ste_details_update = [
@@ -1155,12 +1189,14 @@ class ConsignmentController extends Controller
                 }
 
                 DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
-                if(isset($bin_items[$item->item_code])){
+
+                // Target Warehouse
+                if(isset($bin_items[$branch][$item->item_code])){
                     if($item->consignment_status == 'Received'){
                         continue;
                     }
 
-                    $consigned_qty = $bin_items[$item->item_code][0]->consigned_qty;
+                    $consigned_qty = $bin_items[$branch][$item->item_code]['consigned_qty'];
 
                     DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
                         'modified' => Carbon::now()->toDateTimeString(),
