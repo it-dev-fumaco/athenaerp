@@ -1150,6 +1150,11 @@ class ConsignmentController extends Controller
                 unset($update_values['price']);
             }
 
+            if($request->status == 'Approved'){
+                $update_values['approved_by'] = Auth::user()->full_name;
+                $update_values['date_approved'] = $now;
+            }
+
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
 
             DB::commit();
@@ -1564,9 +1569,10 @@ class ConsignmentController extends Controller
                     'modified_by' => Auth::user()->full_name
                 ];
                 
-                DB::table('tabConsignment Beginning Inventory')->insert($values);
+              
 
                 $row_values = [];
+                $grand_total = 0;
                 foreach($item_codes as $i => $item_code){
                     if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
                         continue;
@@ -1575,8 +1581,11 @@ class ConsignmentController extends Controller
                     if(isset($opening_stock[$item_code]) && $opening_stock[$item_code] < 0 || isset($price[$item_code]) && $price[$item_code] < 0){
                         return redirect()->back()->with('error', 'Cannot enter value below 0');
                     }
+
+                    $item_price = isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0;
+                    $qty = isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0;
     
-                    $row_values = [
+                    $row_values[] = [
                         'name' => uniqid(),
                         'creation' => $now,
                         'owner' => Auth::user()->full_name,
@@ -1586,17 +1595,26 @@ class ConsignmentController extends Controller
                         'item_code' => $item_code,
                         'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
                         'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                        'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
+                        'opening_stock' => $qty,
                         'stocks_displayed' => 0,
                         'status' => 'For Approval',
-                        'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
+                        'price' => $item_price,
+                        'amount' => $item_price * $qty,
                         'modified' => $now,
                         'modified_by' => Auth::user()->full_name,
                         'parentfield' => 'items',
                         'parenttype' => 'Consignment Beginning Inventory' 
                     ];
 
+                    $grand_total += ($item_price * $qty);
+
                     $item_count = $item_count + 1;
+                }
+
+                $values['grand_total'] = $grand_total;
+
+                if (count($row_values) > 0) {
+                    DB::table('tabConsignment Beginning Inventory')->insert($values);    
                     DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
                 }
 
@@ -1608,10 +1626,7 @@ class ConsignmentController extends Controller
                 session()->flash('success', 'Beginning Inventory is Cancelled');
                 session()->flash('cancelled', 'Cancelled');
             }else{
-                DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->update([
-                    'modified' => $now,
-                    'modified_by' => Auth::user()->wh_user
-                ]);
+              
                 
                 $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->pluck('item_code')->toArray();
                 $removed_items = array_diff($inventory_items, $item_codes->toArray());
@@ -1620,6 +1635,8 @@ class ConsignmentController extends Controller
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $remove)->delete();
                 }
 
+                $grand_total = 0;
+                $row_values = [];
                 foreach($item_codes as $i => $item_code){
                     if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
                         continue;
@@ -1630,19 +1647,26 @@ class ConsignmentController extends Controller
                     }
 
                     if(in_array($item_code, $inventory_items)){
+                        $item_price = isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0;
+                        $qty = isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0;
                         $values = [
                             'modified' => $now,
                             'modified_by' => Auth::user()->wh_user,
                             'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
                             'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                            'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
-                            'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
+                            'opening_stock' => $qty,
+                            'price' => $item_price,
+                            'amount' => $item_price * $qty
                         ];
+
+                        $grand_total += ($item_price * $qty);
 
                         DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $item_code)->update($values);
                     }else{
                         $idx = count($inventory_items) + ($i + 1);
-                        $row_values = [
+                        $item_price = isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0;
+                        $qty = isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0;
+                        $row_values[] = [
                             'name' => uniqid(),
                             'creation' => $now,
                             'owner' => Auth::user()->full_name,
@@ -1652,19 +1676,28 @@ class ConsignmentController extends Controller
                             'item_code' => $item_code,
                             'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
                             'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                            'opening_stock' => isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0,
+                            'opening_stock' => $qty,
                             'stocks_displayed' => 0,
                             'status' => 'For Approval',
-                            'price' => isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0,
+                            'price' => $item_price,
+                            'amount' => $item_price * $qty,
                             'modified' => $now,
                             'modified_by' => Auth::user()->full_name,
                             'parentfield' => 'items',
                             'parenttype' => 'Consignment Beginning Inventory' 
                         ];
+
+                        $grand_total += ($item_price * $qty);
     
                         DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
                     }
                     $item_count = $item_count + 1; 
+
+                    DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->update([
+                        'modified' => $now,
+                        'modified_by' => Auth::user()->wh_user,
+                        'grand_total' => $grand_total
+                    ]);
                 }
                 session()->flash('success', 'Beginning Inventory is Updated');
             }
