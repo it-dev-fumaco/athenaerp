@@ -1649,7 +1649,7 @@ class ConsignmentController extends Controller
                 'promodiser' => $item->promodiser,
                 'image' => $img,
                 'webp' => $webp,
-                'creation' => Carbon::parse($item->creation)->format('F d, Y'),
+                'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i a'),
                 'test' => $orig_exists,
                 'test2' => $webp_exists
             ];
@@ -1706,7 +1706,7 @@ class ConsignmentController extends Controller
 
                 $ste_arr[] = [
                     'name' => $ste->name,
-                    'creation' => Carbon::parse($ste->creation)->format('F d, Y'),
+                    'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i a'),
                     'source_warehouse' => $ste->from_warehouse,
                     'target_warehouse' => $ste->to_warehouse,
                     'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
