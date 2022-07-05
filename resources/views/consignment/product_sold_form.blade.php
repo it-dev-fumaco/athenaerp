@@ -52,7 +52,6 @@
                                             $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
                                             $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
                                             $qty = array_key_exists($row->item_code, $existing_record) ? ($existing_record[$row->item_code] * 1) : 0;
-                                            $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
 
                                             $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
 
@@ -83,14 +82,14 @@
                                                                 <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                             </div>
                                                             <div class="custom-a p-0">
-                                                                <input type="number" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $consigned_qty }}">
+                                                                <input type="number" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $row->consigned_qty }}">
                                                             </div>
                                                             <div class="input-group-append p-0">
                                                                 <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
                                                             </div>
                                                         </div>
                                                         <div class="text-center">
-                                                            <small>Available: {{ $consigned_qty }}</small>
+                                                            <small>Available: {{ number_format($row->consigned_qty) }}</small>
                                                         </div>
                                                     </div>
                                                 </div>

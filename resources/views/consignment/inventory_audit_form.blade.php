@@ -56,7 +56,6 @@
                                             $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
                                             $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
                                             $sold_qty = array_key_exists($row->item_code, $item_total_sold) ? ($item_total_sold[$row->item_code] * 1) : 0;
-                                            $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
 
                                             $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
 
@@ -81,6 +80,7 @@
                                                     </div>
                                                     <div class="p-1 m-0">
                                                         <span class="font-weight-bold">{{ $row->item_code }}</span>
+                                                        <div class="d-none">{!! strip_tags($row->description) !!}</div>
                                                     </div>
                                                 </div>
                                                 <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -140,8 +140,8 @@
                                                 </div>
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
-                                                <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
+                                                <span class="d-block item-consigned-qty">{{ number_format($row->consigned_qty) }}</span>
+                                                <span class="d-none orig-item-consigned-qty">{{ $row->consigned_qty }}</span>
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
                                                 <span class="d-block item-sold-qty">{{ $sold_qty }}</span>
@@ -149,7 +149,10 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" style="border-top: 0 !important;"><div class="item-description">{!! strip_tags($row->description) !!}</div></td>
+                                            <td colspan="4" style="border-top: 0 !important;">
+                                                <span class="d-none">{{ $row->item_code }}</span>
+                                                <div class="item-description">{!! strip_tags($row->description) !!}</div>
+                                            </td>
                                         </tr>
                                         @empty
                                         <tr>
