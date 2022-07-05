@@ -2623,7 +2623,10 @@ class MainController extends Controller
                 ->where('w.stock_warehouse', 1)
                 ->pluck('w.name')->toArray();
 
+            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse')->toArray();
+
             $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+            $allow_warehouse = array_merge($allow_warehouse, $consignment_stores);
         }
 
         $user_department = Auth::user()->department;
@@ -2698,7 +2701,7 @@ class MainController extends Controller
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
             ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
-            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'stock_uom', 'parent_warehouse')
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'stock_uom', 'parent_warehouse')
             ->get()->toArray();
 
         $stock_warehouses = array_column($item_inventory, 'warehouse');
@@ -2751,12 +2754,17 @@ class MainController extends Controller
                     'stock_uom' => $value->stock_uom,
                 ];
             }else{
+                $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
+                if(Auth::user()->user_group == 'Promodiser'){
+                    $available_qty = $value->consigned_qty;
+                }
+
                 $site_warehouses[] = [
                     'warehouse' => $value->warehouse,
                     'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
                     'actual_qty' => $value->actual_qty,
-                    'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                    'available_qty' => $available_qty,
                     'stock_uom' => $value->stock_uom,
                 ];
             }
