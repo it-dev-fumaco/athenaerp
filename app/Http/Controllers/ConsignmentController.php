@@ -889,7 +889,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        if(Auth::user()->user_group == 'Consignment Supervisor'){
+        if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
             return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
         }
 
@@ -1584,7 +1584,7 @@ class ConsignmentController extends Controller
         });
 
         $ste_item_codes = [];
-        if (Auth::user()->user_group == 'Consignment Supervisor') { // for supervisor stock transfers list
+        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
             $stock_entry = DB::table('tabStock Entry')
                 ->when($request->tab1_q, function ($q) use ($request){
                     return $q->where('name', 'like', '%'.$request->tab1_q.'%');
@@ -1660,7 +1660,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        if (Auth::user()->user_group == 'Consignment Supervisor') {
+        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) {
             $source_warehouses = collect($stock_entry->items())->map(function ($q){
                 return $q->from_warehouse;
             })->unique();
