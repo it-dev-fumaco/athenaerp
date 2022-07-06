@@ -121,6 +121,7 @@ class MainController extends Controller
                 $duration = Carbon::parse($duration_from)->addDay()->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
                 $total_item_sold = DB::table('tabConsignment Product Sold')
+                    ->where('status', '!=', 'Cancelled')
                     ->whereIn('branch_warehouse', $assigned_consignment_store)->where('qty', '>', 0)
                     ->whereBetween('transaction_date', [Carbon::parse($duration_from)->addDay()->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
                     ->count();
@@ -381,6 +382,7 @@ class MainController extends Controller
         $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->count();
 
         $total_item_sold = DB::table('tabConsignment Product Sold')->where('qty', '>', 0)
+            ->where('status', '!=', 'Cancelled')
             ->whereBetween('transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
             ->groupBy('branch_warehouse')->count();
 
@@ -5433,6 +5435,7 @@ class MainController extends Controller
     public function consignmentSalesReport($warehouse, Request $request) {
         $year = $request->year ? $request->year : Carbon::now()->format('Y');
         $query = DB::table('tabConsignment Product Sold')
+            ->where('status', '!=', 'Cancelled')
             ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
             ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(amount) as grand_total')
             ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();

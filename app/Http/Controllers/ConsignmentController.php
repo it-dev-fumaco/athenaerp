@@ -108,6 +108,7 @@ class ConsignmentController extends Controller
         $consigned_stocks = DB::table('tabBin')->whereIn('item_code', $item_codes)->where('warehouse', $branch)->pluck('consigned_qty', 'item_code')->toArray();
 
         $item_total_sold = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+            ->where('status', '!=', 'Cancelled')
             ->whereBetween('transaction_date', [$start, $end])->selectRaw('SUM(qty) as sold_qty, item_code')
             ->groupBy('item_code')->pluck('sold_qty', 'item_code')->toArray();
 
@@ -182,7 +183,7 @@ class ConsignmentController extends Controller
                     DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
                         ->update(['consigned_qty' => (float)$row['qty']]);
 
-                    $checker = DB::table('tabConsignment Product Sold')->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])->where('transaction_date', $data['transaction_date'])->first();
+                    $checker = DB::table('tabConsignment Product Sold')->where('status', '!=', 'Cancelled')->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])->where('transaction_date', $data['transaction_date'])->first();
 
                     // for update
                     if($checker){
@@ -271,7 +272,7 @@ class ConsignmentController extends Controller
                         'audit_date_to' => $data['audit_date_to'],
                     ];
                     
-                    $checker = DB::table('tabConsignment Product Sold')->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])->where('transaction_date', $data['transaction_date'])->first();
+                    $checker = DB::table('tabConsignment Product Sold')->where('status', '!=', 'Cancelled')->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])->where('transaction_date', $data['transaction_date'])->first();
 
                     if($checker){
                         $values = [
@@ -353,6 +354,7 @@ class ConsignmentController extends Controller
         $item_images = collect($item_images)->groupBy('parent')->toArray();
 
         $existing_record = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
+            ->where('status', '!=', 'Cancelled')
             ->where('transaction_date', $transaction_date)->pluck('qty', 'item_code')->toArray();
 
         return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks'));
@@ -436,6 +438,7 @@ class ConsignmentController extends Controller
             foreach ($data['item'] as $item_code => $row) {
                 $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
                 $existing = DB::table('tabConsignment Product Sold')
+                ->where('status', '!=', 'Cancelled')
                     ->where('item_code', $item_code)->where('branch_warehouse', $data['branch_warehouse'])
                     ->where('transaction_date', $data['transaction_date'])->first();
                 if ($existing) {
@@ -540,7 +543,7 @@ class ConsignmentController extends Controller
         $start = $request->start;
         $end = $request->end;
         $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
-            ->whereBetween('transaction_date', [$start, $end])
+            ->whereBetween('transaction_date', [$start, $end])->where('status', '!=', 'Cancelled')
             ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'), DB::raw('SUM(amount) as grand_total'))
             ->groupBy('transaction_date')->get();
 
@@ -647,7 +650,7 @@ class ConsignmentController extends Controller
     }
 
     public function salesReport(){
-        $sales_report = DB::table('tabConsignment Product Sold')->get();
+        $sales_report = DB::table('tabConsignment Product Sold')->where('status', '!=', 'Cancelled')->get();
     
         $warehouses_with_approved_inventory = DB::table('tabConsignment Beginning Inventory')->where('status', 'Approved')->pluck('branch_warehouse')->unique();
     
@@ -2676,6 +2679,7 @@ class ConsignmentController extends Controller
             $result = [];
             foreach ($query as $row) {
                 $total_sales = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
+                ->where('status', '!=', 'Cancelled')
                     ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
 
                 $result[$row->branch_warehouse][] = [
@@ -2702,10 +2706,10 @@ class ConsignmentController extends Controller
         $result = [];
         foreach ($list as $row) {
             $total_sales = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
-                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
+                ->where('status', '!=', 'Cancelled')->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
 
             $total_qty_sold = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
-                ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('qty');
+                ->where('status', '!=', 'Cancelled')->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('qty');
 
             $result[] = [
                 'transaction_date' => $row->transaction_date,
@@ -2729,7 +2733,8 @@ class ConsignmentController extends Controller
             ->where('audit_date_to', $to)->get();
 
         $product_sold_query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $store)
-            ->whereBetween('transaction_date', [$from, $to])->selectRaw('SUM(qty) as sold_qty, SUM(amount) as total_value, item_code')
+            ->where('status', '!=', 'Cancelled')->whereBetween('transaction_date', [$from, $to])
+            ->selectRaw('SUM(qty) as sold_qty, SUM(amount) as total_value, item_code')
             ->groupBy('item_code')->get();
 
         $total_sales = collect($product_sold_query)->sum('total_value');
@@ -3016,6 +3021,7 @@ class ConsignmentController extends Controller
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('cutoff_period_from', $year);
             })
+            ->where('status', '!=', 'Cancelled')
             ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, SUM(qty) as total_sold, SUM(amount) as total_amount, COUNT(DISTINCT item_code) as total_item, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodisers')
             ->orderBy('transaction_date', 'desc')->groupBy('branch_warehouse', 'cutoff_period_from', 'cutoff_period_to')
             ->paginate(20);
@@ -3025,6 +3031,7 @@ class ConsignmentController extends Controller
 
     public function viewProductSoldItems($store, $from, $to) {
         $list = DB::table('tabConsignment Product Sold')
+            ->where('status', '!=', 'Cancelled')
             ->where('branch_warehouse', $store)
             ->where('cutoff_period_from', $from)
             ->where('cutoff_period_to', $to)
@@ -3032,6 +3039,7 @@ class ConsignmentController extends Controller
             ->orderBy('description', 'asc')->groupBy('item_code', 'description')->get();
 
         $promodisers = DB::table('tabConsignment Product Sold')
+            ->where('status', '!=', 'Cancelled')
             ->where('branch_warehouse', $store)->where('cutoff_period_from', $from)
             ->where('cutoff_period_to', $to)->distinct()->pluck('promodiser')->toArray();
             
