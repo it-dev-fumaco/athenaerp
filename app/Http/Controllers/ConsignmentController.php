@@ -1072,7 +1072,7 @@ class ConsignmentController extends Controller
             ->where('ste.docstatus', '<', 2)
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->whereIn('sted.t_warehouse', $assigned_consignment_store)
-            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received')
+            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received')
             ->orderBy('ste.creation', 'desc')->paginate(10);
 
         $delivery_report_q = collect($delivery_report->items())->groupBy('name');
@@ -1081,9 +1081,15 @@ class ConsignmentController extends Controller
             return $q->item_code;
         });
 
-        $warehouses = collect($delivery_report->items())->map(function ($q){
+        $source_warehouses = collect($delivery_report->items())->map(function ($q){
+            return $q->s_warehouse;
+        });
+
+        $target_warehouses = collect($delivery_report->items())->map(function ($q){
             return $q->t_warehouse;
-        })->unique();
+        });
+
+        $warehouses = collect($source_warehouses)->merge($target_warehouses)->unique();
 
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
             ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
@@ -1105,6 +1111,7 @@ class ConsignmentController extends Controller
         foreach($delivery_report_q as $ste => $row){
             $items_arr = [];
             foreach($row as $item){
+                $ref_warehouse = $row[0]->transfer_as == 'Consignment' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
                 $items_arr[] = [
                     'item_code' => $item->item_code,
                     'description' => $item->description,
@@ -1112,7 +1119,7 @@ class ConsignmentController extends Controller
                     'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
                     'delivered_qty' => $item->transfer_qty,
                     'stock_uom' => $item->stock_uom,
-                    'price' => isset($prices_arr[$row[0]->t_warehouse][$item->item_code]) ? number_format($prices_arr[$row[0]->t_warehouse][$item->item_code]['price'], 2) : 0,
+                    'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? number_format($prices_arr[$ref_warehouse][$item->item_code]['price'], 2) : 0,
                     'delivery_status' => $item->consignment_status,
                     'date_received' => $item->consignment_date_received
                 ];

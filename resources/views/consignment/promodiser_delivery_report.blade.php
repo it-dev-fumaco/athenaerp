@@ -143,7 +143,7 @@
                                                                         </td>
                                                                         <td class="text-center p-1 align-middle">
                                                                             <input type="text" name="item_codes[]" class="d-none" value="{{ $item['item_code'] }}"/>
-                                                                            <input type="text" value='{{ $item['price'] > 0 ? number_format($item['price']) : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
+                                                                            <input type="text" value='{{ $item['price'] > 0 ? $item['price'] : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
                                                                         </td>
                                                                     </tr>
                                                                     <tr>

@@ -229,7 +229,7 @@ class MainController extends Controller
                         $q->whereNull('sted.consignment_status')
                         ->orWhere('sted.consignment_status', '!=', 'Received');
                     })
-                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
+                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
                     ->orderBy('ste.creation', 'desc')->get();
 
                 $delivery_report = collect($delivery_report_query)->groupBy('name');
@@ -237,6 +237,27 @@ class MainController extends Controller
                 $item_codes = collect($delivery_report_query)->map(function ($q){
                     return $q->item_code;
                 });
+
+                $source_warehouses = collect($delivery_report_query)->map(function ($q){
+                    return $q->s_warehouse;
+                });
+        
+                $target_warehouses = collect($delivery_report_query)->map(function ($q){
+                    return $q->t_warehouse;
+                });
+        
+                $warehouses = collect($source_warehouses)->merge($target_warehouses)->unique();
+
+                $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
+                    ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+                    ->whereIn('cbi.item_code', $item_codes)->whereIn('cb.branch_warehouse', $warehouses)->select('cbi.item_code', 'cbi.price', 'cb.branch_warehouse')->get();
+                
+                $prices_arr = [];
+                foreach($beginning_inventory as $inv){
+                    $prices_arr[$inv->branch_warehouse][$inv->item_code] = [
+                        'price' => $inv->price
+                    ];
+                }
 
                 $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
                 $item_image = collect($item_images)->groupBy('parent');
@@ -247,6 +268,7 @@ class MainController extends Controller
                 foreach($delivery_report as $ste => $row){
                     $items_arr = [];
                     foreach($row as $item){
+                        $ref_warehouse = $row[0]->transfer_as == 'Consignment' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
                         $items_arr[] = [
                             'item_code' => $item->item_code,
                             'description' => $item->description,
@@ -254,7 +276,7 @@ class MainController extends Controller
                             'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
                             'delivered_qty' => $item->transfer_qty,
                             'stock_uom' => $item->stock_uom,
-                            'price' => $item->basic_rate,
+                            'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? number_format($prices_arr[$ref_warehouse][$item->item_code]['price'], 2) : 0,
                             'delivery_status' => $item->consignment_status
                         ];
                     }
@@ -271,33 +293,17 @@ class MainController extends Controller
                         $status = 'Pending';
                     }
 
-                    if ($row[0]->transfer_as == 'Consignment' && $row[0]->docstatus == 1) {
-                        $ste_arr[] = [
-                            'name' => $row[0]->name,
-                            'from' => $row[0]->from_warehouse,
-                            'to_consignment' => $row[0]->t_warehouse,
-                            'status' => $status,
-                            'items' => $items_arr,
-                            'creation' => $row[0]->creation,
-                            'delivery_date' => $row[0]->delivery_date,
-                            'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
-                            'posting_time' => $row[0]->posting_time
-                        ];
-                    }
-
-                    if ($row[0]->transfer_as == 'Store Transfer' && $row[0]->docstatus == 0) {
-                        $ste_arr[] = [
-                            'name' => $row[0]->name,
-                            'from' => $row[0]->from_warehouse,
-                            'to_consignment' => $row[0]->t_warehouse,
-                            'status' => $status,
-                            'items' => $items_arr,
-                            'creation' => $row[0]->creation,
-                            'delivery_date' => $row[0]->delivery_date,
-                            'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
-                            'posting_time' => $row[0]->posting_time
-                        ];
-                    }
+                    $ste_arr[] = [
+                        'name' => $row[0]->name,
+                        'from' => $row[0]->from_warehouse,
+                        'to_consignment' => $row[0]->t_warehouse,
+                        'status' => $status,
+                        'items' => $items_arr,
+                        'creation' => $row[0]->creation,
+                        'delivery_date' => $row[0]->delivery_date,
+                        'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
+                        'posting_time' => $row[0]->posting_time
+                    ];
                 }
 
                 return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr'));
