@@ -81,7 +81,7 @@
                                             <span class="font-weight-bold">{{ $ste['transfer_type'] }}</span>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
                                         </div>
                                     </td>
-                                    <td class="d-none p-1 d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
+                                    <td class="d-none p-1 d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
                                     @else {{-- Sales Returns --}}
                                     <td class="p-1">
                                         <div class="d-none d-lg-inline text-center">
@@ -236,7 +236,7 @@
                                     <td colspan="2" class="p-1 border-top-0 border-bottom">
                                         @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                             <b>From: </b>{{ $ste['from_warehouse'] }} <br>
-                                            <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
+                                            <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
                                         @else {{-- Sales Returns --}}
                                             <b>{{ $ste['to_warehouse'] }}</b> <br>
                                         @endif

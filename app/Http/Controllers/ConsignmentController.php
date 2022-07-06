@@ -1985,9 +1985,9 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('error', 'No Beginning Inventory Record found for this item.');
             }
 
-            $consigned_qty = DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse P2 - FI')->where('item_code', $damaged_item->item_code)->pluck('consigned_qty')->first();
+            $consigned_qty = DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse - FI')->where('item_code', $damaged_item->item_code)->pluck('consigned_qty')->first();
             if($consigned_qty){
-                DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse P2 - FI')->where('item_code', $damaged_item->item_code)->update([
+                DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse - FI')->where('item_code', $damaged_item->item_code)->update([
                     'modified' => Carbon::now()->toDateTimeString(),
                     'modified_by' => Auth::user()->full_name,
                     'consigned_qty' => $consigned_qty + $damaged_item->qty
@@ -2007,7 +2007,7 @@ class ConsignmentController extends Controller
                     'owner' => Auth::user()->full_name,
                     'docstatus' => 0,
                     'idx' => 0,
-                    'warehouse' => 'Quarantine Warehouse P2 - FI',
+                    'warehouse' => 'Quarantine Warehouse - FI',
                     'item_code' => $damaged_item->item_code,
                     'stock_uom' => $damaged_item->stock_uom,
                     'valuation_rate' => $price,
@@ -2121,7 +2121,7 @@ class ConsignmentController extends Controller
             $transfer_qty = $request->item;
 
             $source_warehouse = $request->transfer_as == 'Sales Return' ? null : $request->source_warehouse;
-            $target_warehouse = $request->transfer_as == 'For Return' ? 'Quarantine Warehouse P2 - FI' : $request->target_warehouse;
+            $target_warehouse = $request->transfer_as == 'For Return' ? 'Quarantine Warehouse - FI' : $request->target_warehouse;
 
             $reference_warehouse = $request->transfer_as == 'Sales Return' ? $request->target_warehouse : $request->source_warehouse; // used to get data from bin
             if(!$item_codes || !$transfer_qty){
