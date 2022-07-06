@@ -2397,23 +2397,25 @@ class ConsignmentController extends Controller
                     }
                 }
 
-                // target warehouse
-                $target_warehouse_qty = $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty;
-                $target_warehouse_qty = $target_warehouse_qty > 0 ? $target_warehouse_qty : 0;
+                if($stock_entry->transfer_as != 'Store Transfer'){
+                    // target warehouse
+                    $target_warehouse_qty = $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty;
+                    $target_warehouse_qty = $target_warehouse_qty > 0 ? $target_warehouse_qty : 0;
 
-                DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name,
-                    'consigned_qty' => $target_warehouse_qty
-                ]);
-
-                // source warehouse
-                if($stock_entry->purpose == 'Material Transfer'){ // Stock Transfers and Returns
-                    DB::table('tabBin')->where('warehouse', $items->s_warehouse)->where('item_code', $items->item_code)->update([
+                    DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->full_name,
-                        'consigned_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty
+                        'consigned_qty' => $target_warehouse_qty
                     ]);
+
+                    // source warehouse
+                    if($stock_entry->purpose == 'Material Transfer'){ // Returns
+                        DB::table('tabBin')->where('warehouse', $items->s_warehouse)->where('item_code', $items->item_code)->update([
+                            'modified' => $now->toDateTimeString(),
+                            'modified_by' => Auth::user()->full_name,
+                            'consigned_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty
+                        ]);
+                    }
                 }
             }
 
