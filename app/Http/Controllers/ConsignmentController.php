@@ -530,7 +530,7 @@ class ConsignmentController extends Controller
         $end = $request->end;
         $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
             ->whereBetween('transaction_date', [$start, $end])
-            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))
+            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'), DB::raw('SUM(amount) as grand_total'))
             ->groupBy('transaction_date')->get();
 
         $beginning_inventories = DB::table('tabConsignment Beginning Inventory')
@@ -553,6 +553,14 @@ class ConsignmentController extends Controller
                 'borderColor' => $color,
                 'allDay' => true,
                 'display' => 'background'
+            ];
+
+            $data[] = [
+                'title' => '₱ ' . number_format($row->grand_total, 2),
+                'start' => $row->transaction_date,
+                'backgroundColor' => '#808B96',
+                'borderColor' => '#808B96',
+                'allDay' => false,
             ];
         }
 
