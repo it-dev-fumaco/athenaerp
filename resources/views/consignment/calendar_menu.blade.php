@@ -65,6 +65,12 @@
 	.fc-event-time {
 		display: none !important;
 	}
+	.fc-event-title {
+		font-size: 7pt;
+	}
+	.fc-daygrid-event-dot {
+		display: none;
+	}
 	.fc-header-toolbar {
 		padding: 5px !important;
 		margin-bottom: 8px !important;

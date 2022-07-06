@@ -9,7 +9,7 @@
         @if (Auth::user()->user_group == 'Director')
         <ul class="nav nav-pills mb-2 mt-2">
             <li class="nav-item p-0">
-                <a class="nav-link font-responsive text-center" href="/">Plant Transaction</a>
+                <a class="nav-link font-responsive text-center" href="/">In House Warehouse Transaction</a>
             </li>
             <li class="nav-item p-0">
                 <a class="nav-link active font-responsive text-center" href="/consignment_dashboard">Consignment Dashboard</a>
@@ -70,17 +70,17 @@
             <div class="row mt-2">
                 <div class="col-md-12">
                     <div class="card card-secondary card-outline">
-                        <div class="card-header p-2">
+                        <div class="card-header p-1">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="d-flex flex-row align-items-center">
-                                        <div class="p-0 col-6">
+                                        <div class="p-0 col-5">
                                             <ul class="nav nav-pills custom-navpill">
                                                 <li class="nav-item col-4 p-0">
-                                                    <a class="nav-link active font-responsive text-center rounded-0" style="height: 80px; padding-top: 25px;" data-toggle="pill" href="#pending-content" role="tab" href="#">Sales Report</a>
+                                                    <a class="nav-link active font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#pending-content" role="tab" href="#">Sales Report</a>
                                                 </li>
                                                 <li class="nav-item col-4 p-0">
-                                                    <a class="nav-link font-responsive text-center rounded-0" style="height: 80px; padding-top: 25px;" data-toggle="pill" href="#audit-report-content" role="tab" href="#">Audit Report</a>
+                                                    <a class="nav-link font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#audit-report-content" role="tab" href="#">Audit Report</a>
                                                 </li>
                                             </ul>
                                         </div>
@@ -95,19 +95,19 @@
                                         </div>
                                         <div class="p-0 col-2">
                                             <a href="/view_promodisers" style="color: inherit;">
-                                            <div class="text-center">
-                                                <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 1.2rem;">{{ ($promodisers) }}</p>
-                                                <span class="d-block" style="font-size: 9pt;">Promodiser(s)</span>
-                                            </div>
-                                        </a>
+                                                <div class="text-center">
+                                                    <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 1.2rem;">{{ ($promodisers) }}</p>
+                                                    <span class="d-block" style="font-size: 9pt;">Promodiser(s)</span>
+                                                </div>
+                                            </a>
                                         </div>
-                                        <div class="p-0 col-2">
-                                            <a href="/beginning_inv_list" style="color: inherit">
-                                                <div class="row">
-                                                    <div class="col-4 d-none d-xl-block">
-                                                        <div class="skills_section text-center mb-1 p-0">
-                                                            <div class="skills-area m-0">
-                                                                <div class="single-skill w-100 m-2">
+                                        <div class="p-0 col-3 m-0">
+                                            <a href="/beginning_inv_list" style="color: inherit;">
+                                                <div class="d-flex flex-row align-items-center m-0 p-0">
+                                                    <div class="p-0 m-0">
+                                                        <div class="skills_section text-right m-0 p-0">
+                                                            <div class="skills-area m-0 p-0">
+                                                                <div class="single-skill w-100 mb-1">
                                                                     <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
                                                                         <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
                                                                     </div>
@@ -115,10 +115,10 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="col-8" style="display: flex; justify-content: center; align-items: center;">
+                                                    <div class="p-0 m-0">
                                                         <div class="text-center">
                                                             <span class="d-block text-muted" style="font-size: 1.2rem;">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</span>
-                                                            <span class="d-block" style="font-size: 9pt;">Beginning Inventory Completion</span>
+                                                            <span class="d-block" style="font-size: 8pt;">Beginning Inventory Completion</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -185,8 +185,8 @@
         background-color:rgba(58, 112, 170, 0.905);
     }
     .circle-chart {
-        width: 100px;
-        height: 60px;
+        width: 80px;
+        height: 50px;
     }
     .circle-chart__circle {
         stroke: #00acc1;
