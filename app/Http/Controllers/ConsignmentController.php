@@ -541,7 +541,7 @@ class ConsignmentController extends Controller
         $end = $request->end;
         $query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)
             ->whereBetween('transaction_date', [$start, $end])
-            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))
+            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'), DB::raw('SUM(amount) as grand_total'))
             ->groupBy('transaction_date')->get();
 
         $beginning_inventories = DB::table('tabConsignment Beginning Inventory')
@@ -564,6 +564,14 @@ class ConsignmentController extends Controller
                 'borderColor' => $color,
                 'allDay' => true,
                 'display' => 'background'
+            ];
+
+            $data[] = [
+                'title' => '₱ ' . number_format($row->grand_total, 2),
+                'start' => $row->transaction_date,
+                'backgroundColor' => '#808B96',
+                'borderColor' => '#808B96',
+                'allDay' => false,
             ];
         }
 
@@ -892,7 +900,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        if(Auth::user()->user_group == 'Consignment Supervisor'){
+        if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
             return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
         }
 
@@ -1689,7 +1697,7 @@ class ConsignmentController extends Controller
         });
 
         $ste_item_codes = [];
-        if (Auth::user()->user_group == 'Consignment Supervisor') { // for supervisor stock transfers list
+        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
             $stock_entry = DB::table('tabStock Entry')
                 ->when($request->tab1_q, function ($q) use ($request){
                     return $q->where('name', 'like', '%'.$request->tab1_q.'%');
@@ -1765,7 +1773,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        if (Auth::user()->user_group == 'Consignment Supervisor') {
+        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) {
             $source_warehouses = collect($stock_entry->items())->map(function ($q){
                 return $q->from_warehouse;
             })->unique();
@@ -2665,9 +2673,20 @@ class ConsignmentController extends Controller
                 ->orderBy('audit_date_from', 'desc')
                 ->paginate(10);
 
-            $list = collect($query->items())->groupBy('branch_warehouse');
+            $result = [];
+            foreach ($query as $row) {
+                $total_sales = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $row->branch_warehouse)
+                    ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('amount');
 
-            return view('consignment.tbl_submitted_inventory_audit', compact('list', 'query'));
+                $result[$row->branch_warehouse][] = [
+                    'audit_date_from' => $row->audit_date_from,
+                    'audit_date_to' => $row->audit_date_to,
+                    'status' => $row->status,
+                    'total_sales' => $total_sales,
+                ];
+            }
+
+            return view('consignment.tbl_submitted_inventory_audit', compact('result', 'query'));
         }
 
         $list = DB::table('tabConsignment Inventory Audit')
@@ -2712,6 +2731,8 @@ class ConsignmentController extends Controller
         $product_sold_query = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $store)
             ->whereBetween('transaction_date', [$from, $to])->selectRaw('SUM(qty) as sold_qty, SUM(amount) as total_value, item_code')
             ->groupBy('item_code')->get();
+
+        $total_sales = collect($product_sold_query)->sum('total_value');
 
         $product_sold = collect($product_sold_query)->groupBy('item_code')->toArray();
         
@@ -2785,7 +2806,7 @@ class ConsignmentController extends Controller
         }
 
         if($is_promodiser) {
-            return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result'));
+            return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'total_sales'));
         }
 
         $promodisers = DB::table('tabConsignment Inventory Audit')
