@@ -712,8 +712,8 @@ class ConsignmentController extends Controller
         $end = $request->end;
         $query = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $branch)
             ->whereBetween('transaction_date', [$start, $end])
-            ->select('transaction_date', DB::raw('GROUP_CONCAT(DISTINCT status) as status'))
-            ->groupBy('transaction_date')->get();
+            ->select('transaction_date', 'status', 'grand_total')
+            ->get();
 
         $beginning_inventories = DB::table('tabConsignment Beginning Inventory')
             ->where('branch_warehouse', $branch)->where('status', 'Approved')
@@ -735,6 +735,14 @@ class ConsignmentController extends Controller
                 'borderColor' => $color,
                 'allDay' => true,
                 'display' => 'background'
+            ];
+
+            $data[] = [
+                'title' => '₱ ' . number_format($row->grand_total, 2),
+                'start' => $row->transaction_date,
+                'backgroundColor' => '#808B96',
+                'borderColor' => '#808B96',
+                'allDay' => false,
             ];
         }
 
@@ -3276,5 +3284,173 @@ class ConsignmentController extends Controller
         ];
 
         return view('consignment.supervisor.tbl_audit_sales', compact('sales', 'transaction_dates', 'summary'));
+    }
+                    'idx' => 0,
+                    'transaction_date' => $row->transaction_date,
+                    'branch_warehouse' => $row->branch_warehouse,
+                    'grand_total' => $row->amount,
+                    'promodiser' => $row->promodiser,
+                    'status' => $row->status,
+                    'cutoff_period_from' => $row->cutoff_period_from,
+                    'cutoff_period_to' => $row->cutoff_period_to,
+                    'total_qty_sold' => $row->qty,
+                    'total_items' => 1,
+                ];
+
+                DB::table('tabConsignment Sales Report')->insert($parent_data);
+
+                $child_data = [
+                    'name' => uniqid(),
+                    'creation' => $row->creation,
+                    'modified' => $row->modified,
+                    'modified_by' => $row->modified_by,
+                    'owner' => $row->owner,
+                    'docstatus' => 0,
+                    'parent' => $new_id,
+                    'parentfield' => 'items',
+                    'parenttype' => 'Consignment Sales Report',
+                    'idx' => 1,
+                    'item_code' => $row->item_code,
+                    'description' => $row->description,
+                    'qty' => $row->qty,
+                    'price' => $row->price,
+                    'amount' => $row->amount,
+                    'available_stock_on_transaction' => $row->available_stock_on_transaction
+                ];
+
+                DB::table('tabConsignment Sales Report Item')->insert($child_data);
+            }
+
+            if ($existing) {
+                $grand_total += $existing->grand_total + $row->amount;
+                $total_qty_sold += $existing->total_qty_sold + $row->qty;
+                $total_items += $existing->total_items + 1;
+                $child_data = [
+                    'name' => uniqid(),
+                    'creation' => $row->creation,
+                    'modified' => $row->modified,
+                    'modified_by' => $row->modified_by,
+                    'owner' => $row->owner,
+                    'docstatus' => 0,
+                    'parent' => $existing->name,
+                    'parentfield' => 'items',
+                    'parenttype' => 'Consignment Sales Report',
+                    'idx' => 1,
+                    'item_code' => $row->item_code,
+                    'description' => $row->description,
+                    'qty' => $row->qty,
+                    'price' => $row->price,
+                    'amount' => $row->amount,
+                    'available_stock_on_transaction' => $row->available_stock_on_transaction
+                ];
+
+                DB::table('tabConsignment Sales Report')->where('name', $existing->name)->update(['grand_total' => $grand_total, 'total_qty_sold' => $total_qty_sold, 'total_items' => $total_items]);
+
+                DB::table('tabConsignment Sales Report Item')->insert($child_data);
+            }
+        }
+
+        // DB::commit();
+        // DB::rollback();
+
+        // return $parent_data;
+
+        $product_sold = DB::table('tabConsignment Inventory Audit')->orderBy('creation', 'asc')->get();
+
+        foreach($product_sold as $row) {
+            $latest_id = DB::table('tabConsignment Inventory Audit Report')->max('name');
+            $latest_id_exploded = explode("-", $latest_id);
+            $new_id = (($latest_id) ? $latest_id_exploded[1] : 0) + 1;
+            $new_id = str_pad($new_id, 7, '0', STR_PAD_LEFT);
+            $new_id = 'IAR-'.$new_id;
+
+            $existing = DB::table('tabConsignment Inventory Audit Report')
+                ->where('transaction_date', $row->transaction_date)
+                ->where('branch_warehouse', $row->branch_warehouse)
+                ->where('cutoff_period_from', $row->cutoff_period_from)
+                ->where('cutoff_period_to', $row->cutoff_period_to)
+                ->where('audit_date_from', $row->audit_date_from)
+                ->where('audit_date_to', $row->audit_date_to)
+                ->where('promodiser', $row->promodiser)
+                ->first();
+
+            $grand_total = $total_items = 0;
+            if (!$existing) {
+                $parent_data = [
+                    'name' => $new_id,
+                    'creation' => $row->creation,
+                    'modified' => $row->modified,
+                    'modified_by' => $row->modified_by,
+                    'owner' => $row->owner,
+                    'docstatus' => 0,
+                    'parent' => null,
+                    'parentfield' => null,
+                    'parenttype' => null,
+                    'idx' => 0,
+                    'transaction_date' => $row->transaction_date,
+                    'branch_warehouse' => $row->branch_warehouse,
+                    'grand_total' => $row->amount,
+                    'promodiser' => $row->promodiser,
+                    'status' => $row->status,
+                    'cutoff_period_from' => $row->cutoff_period_from,
+                    'cutoff_period_to' => $row->cutoff_period_to,
+                    'audit_date_from' => $row->audit_date_from,
+                    'audit_date_to' => $row->audit_date_to,
+                    'total_items' => 1,
+                ];
+
+                DB::table('tabConsignment Inventory Audit Report')->insert($parent_data);
+
+                $child_data = [
+                    'name' => uniqid(),
+                    'creation' => $row->creation,
+                    'modified' => $row->modified,
+                    'modified_by' => $row->modified_by,
+                    'owner' => $row->owner,
+                    'docstatus' => 0,
+                    'parent' => $new_id,
+                    'parentfield' => 'items',
+                    'parenttype' => 'Consignment Inventory Audit Report',
+                    'idx' => 1,
+                    'item_code' => $row->item_code,
+                    'description' => $row->description,
+                    'qty' => $row->qty,
+                    'price' => $row->price,
+                    'amount' => $row->amount,
+                    'available_stock_on_transaction' => $row->available_stock_on_transaction
+                ];
+
+                DB::table('tabConsignment Inventory Audit Report Item')->insert($child_data);
+            }
+
+            if ($existing) {
+                $grand_total += $existing->grand_total + $row->amount;
+                $total_items += $existing->total_items + 1;
+                $child_data = [
+                    'name' => uniqid(),
+                    'creation' => $row->creation,
+                    'modified' => $row->modified,
+                    'modified_by' => $row->modified_by,
+                    'owner' => $row->owner,
+                    'docstatus' => 0,
+                    'parent' => $existing->name,
+                    'parentfield' => 'items',
+                    'parenttype' => 'Consignment Inventory Audit Report',
+                    'idx' => 1,
+                    'item_code' => $row->item_code,
+                    'description' => $row->description,
+                    'qty' => $row->qty,
+                    'price' => $row->price,
+                    'amount' => $row->amount,
+                    'available_stock_on_transaction' => $row->available_stock_on_transaction
+                ];
+
+                DB::table('tabConsignment Inventory Audit Report')->where('name', $existing->name)->update(['grand_total' => $grand_total, 'total_items' => $total_items]);
+
+                DB::table('tabConsignment Inventory Audit Report Item')->insert($child_data);
+            }
+        }
+
+        DB::commit();
     }
 }
