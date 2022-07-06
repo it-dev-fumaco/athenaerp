@@ -7,8 +7,18 @@
 <div class="content bg-white">
 	<div class="content-header pt-0">
 		<div class="container-fluid">
-			<div class="row pt-3">
+			<div class="row pt-2">
 				<div class="col-sm-12">
+					@if (Auth::user()->user_group == 'Director')
+					<ul class="nav nav-pills mb-2 mt-0">
+						<li class="nav-item p-0">
+							<a class="nav-link active font-responsive text-center" href="#">Plant Transaction</a>
+						</li>
+						<li class="nav-item p-0">
+							<a class="nav-link font-responsive text-center" href="/consignment_dashboard">Consignment Dashboard</a>
+						</li>
+					</ul>
+					@endif
 					<div class="card bg-light">
 						<div class="card-body p-0" style="min-height: 900px;">
 							<div class="row pt-2 m-0">
@@ -577,7 +587,7 @@
             $('#monthly-inv-chart .item-classification').append(row);
          },
          error: function(data) {
-            alert('Error fetching data!');
+            console.log('Error fetching data!');
          }
       });
    }

@@ -1071,7 +1071,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        if(Auth::user()->user_group == 'Consignment Supervisor'){
+        if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
             return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
         }
 
@@ -1739,7 +1739,7 @@ class ConsignmentController extends Controller
         });
 
         $ste_item_codes = [];
-        if (Auth::user()->user_group == 'Consignment Supervisor') { // for supervisor stock transfers list
+        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) {// for supervisor stock transfers list
             $stock_entry = DB::table('tabStock Entry')
                 ->when($request->tab1_q, function ($q) use ($request){
                     return $q->where('name', 'like', '%'.$request->tab1_q.'%');
@@ -1812,7 +1812,7 @@ class ConsignmentController extends Controller
             ];
         }
 
-        if (Auth::user()->user_group == 'Consignment Supervisor') {
+        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) {
             $source_warehouses = collect($stock_entry->items())->map(function ($q){
                 return $q->from_warehouse;
             })->unique();
@@ -3042,7 +3042,8 @@ class ConsignmentController extends Controller
             ->when($year, function ($q) use ($year){
                 return $q->whereYear('cutoff_period_from', $year);
             })
-            ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, total_qty_sold as total_sold, grand_total as total_amount, promodiser as promodisers')
+            ->selectRaw('branch_warehouse, cutoff_period_from, cutoff_period_to, sum(total_qty_sold) as total_sold, sum(grand_total) as total_amount,  GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodisers')
+            ->groupBy('branch_warehouse', 'cutoff_period_from', 'cutoff_period_to')
             ->orderBy('transaction_date', 'desc')->paginate(20);
 
         return view('consignment.supervisor.tbl_product_sold_history', compact('list'));

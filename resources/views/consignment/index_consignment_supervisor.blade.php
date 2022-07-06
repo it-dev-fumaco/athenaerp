@@ -6,7 +6,18 @@
 @section('content')
 <div class="content">
 	<div class="content-header p-0">
+        @if (Auth::user()->user_group == 'Director')
+        <ul class="nav nav-pills mb-2 mt-2">
+            <li class="nav-item p-0">
+                <a class="nav-link font-responsive text-center" href="/">Plant Transaction</a>
+            </li>
+            <li class="nav-item p-0">
+                <a class="nav-link active font-responsive text-center" href="/consignment_dashboard">Consignment Dashboard</a>
+            </li>
+        </ul>
+        @endif
         <div class="col-12 col-xl-10 mx-auto p-0">
+           
             <div class="row p-0 mr-0 ml-0 mb-0 mt-2">
                 <div class="col-6 col-md-3 p-1">
                     <a href="/view_sales_report">
