@@ -1383,7 +1383,7 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('error', 'Inventory Record Not Found.');
         }
         
-        $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+        $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->orderBy('item_description', 'asc')->get();
 
         $item_codes = collect($inventory)->map(function ($q){
             return $q->item_code;
@@ -1478,12 +1478,14 @@ class ConsignmentController extends Controller
             $inv_name = null;
             if($action == 'update'){ // If 'For Approval' beginning inventory record exists for this branch
                 $inv_name = $id;
-                $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->select('item_code', 'item_description', 'stock_uom', 'opening_stock', 'stocks_displayed', 'price')->get();
+                $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)
+                    ->select('item_code', 'item_description', 'stock_uom', 'opening_stock', 'stocks_displayed', 'price')
+                    ->orderBy('item_description', 'asc')->get();
 
                 foreach($inventory as $inv){
                     $items[] = [
                         'item_code' => $inv->item_code,
-                        'item_description' => $inv->item_description,
+                        'item_description' => trim(strip_tags($inv->item_description)),
                         'stock_uom' => $inv->stock_uom,
                         'opening_stock' => $inv->opening_stock * 1,
                         'stocks_displayed' => $inv->stocks_displayed * 1,
@@ -1504,7 +1506,7 @@ class ConsignmentController extends Controller
                 foreach($bin_items as $item){
                     $items[] = [
                         'item_code' => $item->item_code,
-                        'item_description' => $item->description,
+                        'item_description' => trim(strip_tags($item->description)),
                         'stock_uom' => $item->stock_uom,
                         'opening_stock' => 0,
                         'stocks_displayed' => 0,
@@ -1512,6 +1514,8 @@ class ConsignmentController extends Controller
                     ];
                 }
             }
+
+            $items = collect($items)->sortBy('item_description');
 
             $item_codes = collect($items)->map(function($q){
                 return $q['item_code'];
@@ -1958,7 +1962,7 @@ class ConsignmentController extends Controller
 
     public function damagedItems(){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-        $damaged_items = DB::table('tabConsignment Damaged Item')->whereIn('branch_warehouse', $assigned_consignment_store)->paginate(10);
+        $damaged_items = DB::table('tabConsignment Damaged Item')->whereIn('branch_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->paginate(10);
 
         $item_codes = collect($damaged_items->items())->map(function ($q){
             return $q->item_code;
