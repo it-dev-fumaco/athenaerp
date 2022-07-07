@@ -2033,14 +2033,24 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('error', 'No Beginning Inventory Record found for this item.');
             }
 
-            $consigned_qty = DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse - FI')->where('item_code', $damaged_item->item_code)->pluck('consigned_qty')->first();
-            if($consigned_qty){
-                DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse - FI')->where('item_code', $damaged_item->item_code)->update([
+            $existing_target =  DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse - FI')->where('item_code', $damaged_item->item_code)->first();
+            if ($existing_target) {
+                // add qty to target quarantine wareghouse
+                DB::table('tabBin')->where('name', $existing_target->name)->update([
                     'modified' => Carbon::now()->toDateTimeString(),
                     'modified_by' => Auth::user()->full_name,
-                    'consigned_qty' => $consigned_qty + $damaged_item->qty
+                    'consigned_qty' => $existing_target->consigned_qty + $damaged_item->qty
                 ]);
-            }else{
+
+                // get bin for returned item
+                $existing_source =  DB::table('tabBin')->where('warehouse', $damaged_item->branch_warehouse)->where('item_code', $damaged_item->item_code)->first();
+                 // deduct qty to source warehouse
+                 DB::table('tabBin')->where('name', $existing_source->name)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->full_name,
+                    'consigned_qty' => $existing_source->consigned_qty - $damaged_item->qty
+                ]);
+            } else {
                 $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
                 $latest_bin_exploded = explode("/", $latest_bin);
                 $bin_id = (($latest_bin) ? $latest_bin_exploded[1] : 0) + 1;
@@ -2070,6 +2080,7 @@ class ConsignmentController extends Controller
             ]);
 
             DB::commit();
+            
             return redirect()->back()->with('success', 'Item Returned.');
         } catch (Exception $e) {
             DB::rollback();
