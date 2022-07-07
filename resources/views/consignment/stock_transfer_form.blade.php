@@ -89,7 +89,7 @@
                                                                     <table class="table" id='items-selection-table' style="font-size: 10pt;">
                                                                         <tr>
                                                                             <th class="text-center" style="width: 40%">Item</th>
-                                                                            <th class="text-center" style="width: 25%">Stocks</th>
+                                                                            <th class="text-center" style="width: 25%"><span class='qty-col'>Stocks</span></th>
                                                                             <th class="text-center transfer-text">Qty to Transfer</th>
                                                                         </tr>
                                                                         <tr>
@@ -112,7 +112,11 @@
                                                                                     </div>
                                                                                     <div class="col-3" style="display: flex; justify-content: center; align-items: center; height: 44px">
                                                                                         <div class="text-center">
-                                                                                            <b><span id="stocks-text"></span></b><br><small><span id="uom-text"></span></small>
+                                                                                            {{-- <b><span id="stocks-text"></span></b><br><small><span id="uom-text"></span></small> --}}
+                                                                                            <div>
+                                                                                                <b><span id="stocks-text"></span></b><br>
+                                                                                                <small><span id="uom-text"></span></small>
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
                                                                                     <div class="col p-0">
@@ -152,7 +156,7 @@
                                             <thead>
                                                 <tr>
                                                     <th class="text-center" style="width: 40%">Item</th>
-                                                    <th class="text-center" style="width: 25%">Stocks</th>
+                                                    <th class="text-center" style="width: 25%"><span class='qty-col'>Stocks</span></th>
                                                     <th class="text-center transfer-text">Qty to Transfer</th>
                                                 </tr>
                                             </thead>
@@ -198,6 +202,7 @@
             $('#transfer-as').change(function (){
                 $('#target').slideDown();
                 var src = $('#src-warehouse').val();
+                $('.qty-col').text('Stocks');
                 if($(this).val() == 'Store Transfer'){
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
@@ -234,6 +239,7 @@
 
                     $('#src-warehouse').prop('required', false);
                     $('.transfer-text').text('Qty Returned');
+                    $('.qty-col').text('Qty Sold');
 
                     if($('#source').is(':visible')){
                         $('#source').slideUp();
@@ -252,6 +258,7 @@
 
                 $('#submit-btn').addClass('d-none');
                 $('#placeholder').removeClass('d-none');
+                $('#items-container').addClass('d-none');
 
                 get_received_items(src);
                 reset_placeholders();
@@ -326,7 +333,6 @@
             function get_received_items(branch){
                 $('#received-items').select2({
                     templateResult: formatState,
-                    // templateSelection: formatState,
                     placeholder: 'Select an Item',
                     allowClear: true,
                     ajax: {
@@ -336,7 +342,8 @@
                         data: function (data) {
                             return {
                                 q: data.term, // search term
-                                excluded_items: items_array
+                                excluded_items: items_array,
+                                purpose: $('#transfer-as').val()
                             };
                         },
                         processResults: function (response) {
@@ -516,7 +523,8 @@
                                 '<span class="font-weight-bold">' + item_code + '</span>' +
                             '</div>' +
                             '<div class="col-3 offset-1" style="display: flex; justify-content: center; align-items: center; height: 44px">' +
-                                '<span><b>' + stocks + '</b></span>&nbsp;<small>' + uom + '</small>' +
+                                '<div><span><b>' + stocks + '</b></span><br/>' +
+                                '<small>' + uom + '</small></div>' +
                             '</div>' +
                             '<div class="col p-0">' +
                                 '<div class="input-group p-1 ml-2">' +
@@ -617,8 +625,8 @@
             });
 
             cut_text();
+            var showTotalChar = 90, showChar = "Show more", hideChar = "Show less";
             function cut_text(){
-                var showTotalChar = 90, showChar = "Show more", hideChar = "Show less";
                 $('.item-description').each(function() {
                     var content = $(this).text();
                     if (content.length > showTotalChar) {
@@ -630,7 +638,7 @@
                 });
             }
 
-            $(".show-more").click(function(e) {
+            $('table#items-table').on('click', '.show-more', function(e){
                 e.preventDefault();
                 if ($(this).hasClass("sample")) {
                     $(this).removeClass("sample");

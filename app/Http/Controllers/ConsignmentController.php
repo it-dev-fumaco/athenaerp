@@ -2092,6 +2092,33 @@ class ConsignmentController extends Controller
         $search_str = explode(' ', $request->q);
         $excluded_item_codes = $request->excluded_items ? $request->excluded_items : []; // exclude items already added in the items table
 
+        $sold_item_codes = [];
+        $sold_qty = [];
+        // Get sold items
+        if($request->purpose == 'Sales Return'){
+            $sold_items = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $branch)->where('status', '!=', 'Cancelled')->where('qty', '>', 0)->selectRaw('item_code, SUM(qty) as qty')->groupBy('item_code')->get();
+
+            // Deduct already submitted sales returns
+            $submitted_sales_returns = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.to_warehouse', $branch)->where('ste.purpose', 'Material Receipt')->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)
+                ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->get();
+            $submitted_sales_returns = collect($submitted_sales_returns)->groupBy('item_code');
+
+            $sold_qty = [];
+            foreach($sold_items as $sold){
+                $ste_qty = isset($submitted_sales_returns[$sold->item_code]) ? $submitted_sales_returns[$sold->item_code][0]->qty : 0;
+                $qty = $sold->qty - $ste_qty;
+                if($qty > 0){
+                    $sold_qty[$sold->item_code] = [
+                        'qty' => $qty
+                    ];
+                }
+            }
+
+            $sold_item_codes = array_keys($sold_qty);
+        }
+
         $items = DB::table('tabBin as bin')
             ->join('tabItem as item', 'item.item_code', 'bin.item_code')
             ->when($request->q, function ($query) use ($request, $search_str){
@@ -2103,7 +2130,13 @@ class ConsignmentController extends Controller
                     $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
                 });
             })
-            ->where('bin.warehouse', $branch)->where('bin.consigned_qty', '>', 0)->get();
+            ->when($request->purpose == 'Sales Return', function ($q) use ($sold_item_codes){
+                return $q->whereIn('bin.item_code', $sold_item_codes);
+            })
+            ->when($request->purpose != 'Sales Return', function ($q){
+                return $q->where('bin.consigned_qty', '>', 0);
+            })
+            ->where('bin.warehouse', $branch)->get();
         
         $item_codes = collect($items)->map(function ($q) {
             return $q->item_code;
@@ -2154,11 +2187,18 @@ class ConsignmentController extends Controller
                 }
             }
 
+            $max = 0;
+            if($request->purpose == 'Sales Return'){
+                $max = isset($sold_qty[$item->item_code]) ? $sold_qty[$item->item_code]['qty'] * 1 : 0;
+            }else{
+                $max = isset($items[$item->item_code]) ? $items[$item->item_code][0]->consigned_qty * 1 : 0;
+            }
+
             $items_arr[] = [
                 'id' => $item->item_code,
                 'text' => $item->item_code.' - '.(isset($items[$item->item_code]) ? strip_tags($items[$item->item_code][0]->description) : null),
                 'description' =>  isset($items[$item->item_code]) ? strip_tags($items[$item->item_code][0]->description) : null,
-                'max' => isset($items[$item->item_code]) ? $items[$item->item_code][0]->consigned_qty * 1 : null,
+                'max' => $max,
                 'uom' => isset($items[$item->item_code]) ? $items[$item->item_code][0]->stock_uom : null,
                 'price' => isset($inventory[$item->item_code]) ? '₱ '.number_format($inventory[$item->item_code][0]->price, 2) : '₱ 0.00',
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
@@ -2280,13 +2320,41 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
+            $sold_qty = [];
+            if($request->transfer_as == 'Sales Return'){
+                $sold_items = DB::table('tabConsignment Product Sold')->where('branch_warehouse', $reference_warehouse)->whereIn('item_code', $item_codes)->where('status', '!=', 'Cancelled')->where('qty', '>', 0)->selectRaw('item_code, SUM(qty) as qty')->groupBy('item_code')->get();
+
+                // Deduct already submitted sales returns
+                $submitted_sales_returns = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.to_warehouse', $reference_warehouse)->where('ste.purpose', 'Material Receipt')->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)
+                ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->get();
+                $submitted_sales_returns = collect($submitted_sales_returns)->groupBy('item_code');
+
+                $sold_qty = [];
+                foreach($sold_items as $sold){
+                    $ste_qty = isset($submitted_sales_returns[$sold->item_code]) ? $submitted_sales_returns[$sold->item_code][0]->qty : 0;
+                    $qty = $sold->qty - $ste_qty;
+                    if($qty > 0){
+                        $sold_qty[$sold->item_code] = [
+                            'qty' => $qty
+                        ];
+                    }
+                }
+            }
+
             foreach($item_codes as $i => $item_code){
                 if(!isset($transfer_qty[$item_code])){
                     return redirect()->back()->with('error', 'Please enter transfer qty for '. $item_code);
                 }
 
-                if(isset($items[$reference_warehouse][$item_code])){
-                    if($transfer_qty[$item_code]['transfer_qty'] > $items[$reference_warehouse][$item_code]['consigned_qty']){
+                if($request->transfer_as == 'Sales Return'){
+                    $max_qty = isset($sold_qty[$item_code]) ? $sold_qty[$item_code]['qty'] : 0;
+                    if($transfer_qty[$item_code]['transfer_qty'] > $max_qty){
+                        return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
+                    }
+                }else{
+                    if(isset($items[$reference_warehouse][$item_code]) && $transfer_qty[$item_code]['transfer_qty'] > $items[$reference_warehouse][$item_code]['consigned_qty']){
                         return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
                     }
                 }
