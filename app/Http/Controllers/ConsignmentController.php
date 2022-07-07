@@ -2963,16 +2963,20 @@ class ConsignmentController extends Controller
 
             foreach($item_codes as $item_code){
                 if(isset($stocks[$item_code])){
+                    $opening_qty = preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']);
+                    $price = $stocks[$item_code]['price'];
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update([
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
-                        'opening_stock' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
+                        'opening_stock' => $opening_qty,
+                        'price' => $price,
+                        'amount' => $price * $opening_qty
                     ]);
 
                     DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update([
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
-                        'consigned_qty' => preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty'])
+                        'consigned_qty' => $opening_qty
                     ]);
 
                     $previous_stock = isset($bin[$item_code]) ? $bin[$item_code][0]->consigned_qty : 0;
@@ -3000,12 +3004,16 @@ class ConsignmentController extends Controller
                 }
             }
 
+            $grand_total = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->sum('amount');
+
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update([
                 'modified' => $now,
-                'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name
+                'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
+                'grand_total' => $grand_total
             ]);
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Warehouse Stocks Adjusted.');
         } catch (Exception $e) {
             DB::rollback();
