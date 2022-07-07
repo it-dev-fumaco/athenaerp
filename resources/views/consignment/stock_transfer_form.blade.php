@@ -507,7 +507,13 @@
                 var item_code = $('#item-code-text').text();
                 var description = $('#description-text').text();
 
-                var row = '<tr class="row-' + item_code + '">' +
+                var existing = $('#items-table').find('.' + item_code).eq(0).length;
+                if (existing) {
+                    showNotification("warning", 'Item <b>' + item_code + '</b> already exists in the list.', "fa fa-info");
+					return false;
+                }
+
+                var row = '<tr class="row-' + item_code + ' ' + item_code + '">' +
                     '<td colspan=3 class="text-center p-0">' +
                         '<div class="d-none">' + description + '</div>' + // reference for search
                         '<div class="row">' +
@@ -652,6 +658,21 @@
                 $(this).prev().toggle();
                 return false;
             });
+
+            function showNotification(color, message, icon){
+			$.notify({
+				icon: icon,
+				message: message
+			},{
+				type: color,
+				timer: 500,
+				z_index: 1060,
+				placement: {
+					from: 'top',
+					align: 'center'
+				}
+			});
+		}
         });
     </script>
 @endsection

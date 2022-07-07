@@ -2080,7 +2080,7 @@ class ConsignmentController extends Controller
             ]);
 
             DB::commit();
-            
+
             return redirect()->back()->with('success', 'Item Returned.');
         } catch (Exception $e) {
             DB::rollback();
@@ -2090,7 +2090,6 @@ class ConsignmentController extends Controller
 
     public function getReceivedItems(Request $request, $branch){
         $search_str = explode(' ', $request->q);
-        $excluded_item_codes = $request->excluded_items ? $request->excluded_items : []; // exclude items already added in the items table
 
         $sold_item_codes = [];
         $sold_qty = [];
@@ -2153,9 +2152,6 @@ class ConsignmentController extends Controller
         $inventory_arr = DB::table('tabConsignment Beginning Inventory as inv')
             ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'inv.name')
             ->where('inv.branch_warehouse', $branch)->where('inv.status', 'Approved')->where('item.status', 'Approved')->whereIn('item.item_code', $item_codes)
-            ->when($excluded_item_codes, function ($q) use ($excluded_item_codes){
-                return $q->whereNotIn('item.item_code', $excluded_item_codes);
-            })
             ->select('item.item_code', 'item.price', 'inv.transaction_date')->get();
 
         $inventory = collect($inventory_arr)->groupBy('item_code');
