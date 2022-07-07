@@ -204,13 +204,6 @@
                                         </div>
                                     </div>
                                     </td>
-                                    {{-- <td class="text-center p-1 align-middle">
-                                      <span class="d-block font-weight-bold">{{ $item['delivered_qty'] * 1 }}</span>
-                                      <small>{{ $item['stock_uom'] }}</small>
-                                    </td>
-                                    <td class="text-center p-1 align-middle">
-                                      <span class="d-block font-weight-bold">₱ {{ number_format($item['price'] * 1, 2) }}</span>
-                                    </td> --}}
                                     <td class="text-center p-1 align-middle">
                                       <span class="d-block font-weight-bold">{{ number_format($item['delivered_qty'] * 1) }}</span>
                                       <span class="d-none font-weight-bold" id="{{ $item['item_code'] }}-qty">{{ $item['delivered_qty'] * 1 }}</span>
@@ -218,7 +211,7 @@
                                     </td>
                                     <td class="text-center p-1 align-middle">
                                         <input type="text" name="item_codes[]" class="d-none" value="{{ $item['item_code'] }}"/>
-                                        <input type="text" value='{{ $item['price'] > 0 ? number_format($item['price']) : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
+                                        <input type="text" value='{{ $item['price'] > 0 ? $item['price'] : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
                                     </td>
                                   </tr>
                                   <tr>
@@ -231,11 +224,6 @@
                                 </tbody>
                               </table>
                             </div>
-                            {{-- @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
-                            <div class="text-center m-3">
-                              <a href="/promodiser/receive/{{ $ste['name'] }}" class="btn btn-primary w-100">Receive</a>
-                            </div>
-                            @endif --}}
                             <div class="modal-footer">
                               @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
                                   <button type="submit" class="btn btn-primary w-100">Receive</button>

@@ -33,12 +33,20 @@
                             }
                         @endphp
                         <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
-                            <div class="d-flex flex-row mt-2" style="font-size: 9pt;">
-                                <div class="p-0 col-7">
-                                    <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y - h:i a') }}</b></span>
+                            <div class="d-flex flex-row mt-2 pl-2" style="font-size: 9pt;">
+                                <div class="p-0 col-7 text-left">
+                                    <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y - h:i A') }}</b></span>
                                 </div>
                                 <div class="p-0 col-5">
                                     <span class="d-block">Total item(s): <b>{{ count($inventory) }}</b></span>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-row pl-2" style="font-size: 9pt;">
+                                <div class="p-0 col-12 text-left">
+                                    @if ($beginning_inventory->status == 'Approved')
+                                    <span class="d-block">Approved by: <b>{{ $beginning_inventory->approved_by }}</b></span>
+                                    <span class="d-block">Date Approved: <b>{{ Carbon\Carbon::parse($beginning_inventory->date_approved)->format('M d, Y - h:i A') }}</b></span>
+                                @endif
                                 </div>
                             </div>
                             <div class="col-12">
