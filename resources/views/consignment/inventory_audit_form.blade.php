@@ -81,6 +81,7 @@
                                                     </div>
                                                     <div class="p-1 m-0">
                                                         <span class="font-weight-bold">{{ $row->item_code }}</span>
+                                                        <div class="d-none">{!! strip_tags($row->description) !!}</div>
                                                     </div>
                                                 </div>
                                                 <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -149,7 +150,10 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" style="border-top: 0 !important;"><div class="item-description">{!! strip_tags($row->description) !!}</div></td>
+                                            <td colspan="4" style="border-top: 0 !important;">
+                                                <span class="d-none">{{ $row->item_code }}</span>
+                                                <div class="item-description">{!! strip_tags($row->description) !!}</div>
+                                            </td>
                                         </tr>
                                         @empty
                                         <tr>

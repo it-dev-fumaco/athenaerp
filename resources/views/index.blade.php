@@ -12,7 +12,7 @@
 					@if (Auth::user()->user_group == 'Director')
 					<ul class="nav nav-pills mb-2 mt-0">
 						<li class="nav-item p-0">
-							<a class="nav-link active font-responsive text-center" href="#">Plant Transaction</a>
+							<a class="nav-link active font-responsive text-center" href="/">In House Warehouse Transaction</a>
 						</li>
 						<li class="nav-item p-0">
 							<a class="nav-link font-responsive text-center" href="/consignment_dashboard">Consignment Dashboard</a>

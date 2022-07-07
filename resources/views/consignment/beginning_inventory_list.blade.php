@@ -202,6 +202,9 @@
 																			<td class="text-center p-1 align-middle" style="white-space: nowrap">
 																				@if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
 																				₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
+																				@elseif ($inv['status'] == 'Approved')
+																				<input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
+																				<span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
 																				@else
 																				₱ {{ number_format($item['price'], 2) }}
 																				@endif
@@ -445,6 +448,8 @@
                 var reference = $(this).data('reference');
                 $('#'+reference+'-qty').addClass('d-none');
                 $('#'+reference+'-new-qty').removeClass('d-none');
+				$('#'+reference+'-price').addClass('d-none');
+                $('#'+reference+'-new-price').removeClass('d-none');
                 $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
             });
 

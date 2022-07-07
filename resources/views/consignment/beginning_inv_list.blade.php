@@ -34,7 +34,7 @@
                             <table class="table table-striped">
                                 <thead class="text-uppercase">
                                     <th class="font-responsive text-center p-2">Date</th>
-                                    <th class="font-responsive text-center p-2" style="width: 65%;">Branch Warehouse</th>
+                                    <th class="font-responsive text-center p-2" style="width: 70%;">Branch Warehouse</th>
                                 </thead>
                                 @forelse ($beginning_inventory as $store)
                                     @php
@@ -47,11 +47,16 @@
                                     @endphp
                                     <tr>
                                         <td class="font-responsive text-center p-2 align-middle">
-                                            <small class="d-block">{{ Carbon\Carbon::parse($store->transaction_date)->format('F d, Y') }}</small>
+                                            <small class="d-block">{{ Carbon\Carbon::parse($store->transaction_date)->format('M d, Y - h:i A') }}</small>
                                             <span class="badge badge-{{ $badge }}">{{ $store->status }}</span>
                                         </td>
                                         <td class="font-responsive p-2 align-middle">
                                             <a href="/beginning_inventory{{ ($store->status == 'For Approval' ? '/' : '_items/').$store->name }}">{{ $store->branch_warehouse }}</a>
+
+                                            @if ($store->status == 'Approved')
+                                                <small class="d-block">Approved by: {{ $store->approved_by }}</small>
+                                                <small class="d-block">Date: {{ Carbon\Carbon::parse($store->date_approved)->format('M d, Y - h:i A') }}</small>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

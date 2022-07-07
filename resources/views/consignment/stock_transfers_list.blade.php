@@ -70,7 +70,7 @@
                                     }
                                 @endphp
                                 <tr>
-                                    <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}</td>
+                                    <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</td>
                                     <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['transfer_type'] }}</span></td>
                                     @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                     <td class="p-1">
@@ -81,7 +81,7 @@
                                             <span class="font-weight-bold">{{ $ste['transfer_type'] }}</span>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
                                         </div>
                                     </td>
-                                    <td class="d-none p-1 d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
+                                    <td class="d-none p-1 d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
                                     @else {{-- Sales Returns --}}
                                     <td class="p-1">
                                         <div class="d-none d-lg-inline text-center">
@@ -115,7 +115,7 @@
                                                         @else {{-- Sales Returns --}}
                                                         <span class="d-block text-left">{{ $ste['to_warehouse'] }}</span>
                                                         @endif
-                                                        <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}</small>
+                                                        <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
                                                        
                                                         <table class="table" style="font-size: 9pt;">
                                                             <thead>
@@ -236,20 +236,18 @@
                                     <td colspan="2" class="p-1 border-top-0 border-bottom">
                                         @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                             <b>From: </b>{{ $ste['from_warehouse'] }} <br>
-                                            <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse P2 - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
+                                            <b>To: </b>{{ $ste['to_warehouse'] == 'Quarantine Warehouse - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
                                         @else {{-- Sales Returns --}}
                                             <b>{{ $ste['to_warehouse'] }}</b> <br>
                                         @endif
-                                        <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('F d, Y') }}</small>
+                                        <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
                                     </td>
                                 </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="2"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
-                                    </tr>
-                                        
-                                    @endforelse
-
+                                @empty
+                                <tr>
+                                    <td colspan="2"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
+                                </tr>
+                                @endforelse
                                 </tbody>
                             </table>
                             <div class="mt-3 ml-3 clearfix pagination d-block">

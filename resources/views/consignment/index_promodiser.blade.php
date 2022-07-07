@@ -110,7 +110,7 @@
                   <tr>
                     <td class="p-2">
                       <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal">{{ $ste['to_consignment'] }}</a>
-                      <small class="d-block"><b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</small>
+                      <small class="d-block"><b>{{ $ste['name'] }}</b> | <b>Delivery Date:</b> {{ Carbon\Carbon::parse($ste['delivery_date'])->format('M d, Y').' - '.Carbon\Carbon::parse($ste['posting_time'])->format('h:i a') }}</small>
                       <span class="badge badge-{{ $ste['status'] == 'Pending' ? 'warning' : 'success' }}">{{ $ste['status'] }}</span>
                       @if ($ste['status'] == 'Delivered')
                         <span class="badge badge-{{ $ste['delivery_status'] == 0 ? 'warning' : 'success' }}">{{ $ste['delivery_status'] == 0 ? 'To Receive' : 'Received' }}</span>
@@ -120,6 +120,7 @@
                       <div class="modal fade" id="{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered" role="document">
                           <div class="modal-content">
+                            <form action="/promodiser/receive/{{ $ste['name'] }}" method="get">
                             <div class="modal-header bg-navy">
                               <h6 class="modal-title">Incoming Item(s)</h6>
                               <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
@@ -129,7 +130,7 @@
                             <div class="modal-body">
                               <form></form>
                               <h5 class="text-center font-responsive font-weight-bold m-0">{{ $ste['to_consignment'] }}</h5>
-                              <small class="d-block text-center mb-2">Delivery Date: {{ Carbon\Carbon::parse($ste['delivery_date'])->format('F d, Y') }}</small>
+                              <small class="d-block text-center mb-2">{{ $ste['name'] }} | Delivery Date: {{ Carbon\Carbon::parse($ste['delivery_date'])->format('M d, Y').' - '.Carbon\Carbon::parse($ste['posting_time'])->format('h:i a') }}</small>
                               <div class="callout callout-info text-center">
                                 <small><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</small>
                               </div>
@@ -137,7 +138,7 @@
                                 <thead>
                                   <th class="text-center p-1 align-middle" style="width: 40%">Item Code</th>
                                   <th class="text-center p-1 align-middle" style="width: 30%">Delivered Qty</th>
-                                  <th class="text-center p-1 align-middle" style="width: 30%">Amount</th>
+                                  <th class="text-center p-1 align-middle" style="width: 30%">Rate</th>
                                 </thead>
                                 <tbody>
                                   @foreach ($ste['items'] as $item)
@@ -166,6 +167,7 @@
                                       <div class="modal fade" id="mobile-{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered" role="document">
                                           <div class="modal-content">
+                                            <form action="/promodiser/receive/{{ $ste['name'] }}" method="get">
                                             <div class="modal-header">
                                               <h5 class="modal-title">{{ $item['item_code'] }}</h5>
                                               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -173,7 +175,6 @@
                                               </button>
                                             </div>
                                             <div class="modal-body">
-                                              <form></form>
                                               <div id="image-container" class="container-fluid">
                                                         <div id="carouselExampleControls" class="carousel slide" data-interval="false">
                                                             <div class="carousel-inner">
@@ -204,27 +205,33 @@
                                     </div>
                                     </td>
                                     <td class="text-center p-1 align-middle">
-                                      <span class="d-block font-weight-bold">{{ $item['delivered_qty'] * 1 }}</span>
+                                      <span class="d-block font-weight-bold">{{ number_format($item['delivered_qty'] * 1) }}</span>
+                                      <span class="d-none font-weight-bold" id="{{ $item['item_code'] }}-qty">{{ $item['delivered_qty'] * 1 }}</span>
                                       <small>{{ $item['stock_uom'] }}</small>
                                     </td>
                                     <td class="text-center p-1 align-middle">
-                                      <span class="d-block font-weight-bold">₱ {{ number_format($item['price'] * 1, 2) }}</span>
+                                        <input type="text" name="item_codes[]" class="d-none" value="{{ $item['item_code'] }}"/>
+                                        <input type="text" value='{{ $item['price'] > 0 ? $item['price'] : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
                                     </td>
                                   </tr>
                                   <tr>
                                     <td colspan="3" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-                                      <span class="item-description">{!! strip_tags($item['description']) !!}</span>
+                                      <span class="item-description">{!! strip_tags($item['description']) !!}</span> <br>
+                                      Amount: ₱ <span id="{{ $item['item_code'] }}-amount" class='font-weight-bold amount'>{{ number_format($item['delivered_qty'] * $item['price'], 2) }}</span>
                                     </td>
                                   </tr>
                                   @endforeach
                                 </tbody>
                               </table>
                             </div>
-                            @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
-                            <div class="text-center m-3">
-                              <a href="/promodiser/receive/{{ $ste['name'] }}" class="btn btn-primary w-100">Receive</a>
+                            <div class="modal-footer">
+                              @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
+                                  <button type="submit" class="btn btn-primary w-100">Receive</button>
+                              @else
+                                  <button type="submit" class="btn btn-info w-100">Update Prices</button>
+                              @endif
                             </div>
-                            @endif
+                            </form>
                           </div>
                         </div>
                       </div>
@@ -309,6 +316,20 @@
 @section('script')
 <script>
   $(function () {
+    $('.price').keyup(function(){
+        var item_code = $(this).data('item-code');
+        var price = $(this).val().replace(/,/g, '');
+        if($.isNumeric($(this).val()) && price > 0 || $(this).val().indexOf(',') > -1 && price > 0){
+            var qty = parseInt($('#'+item_code+'-qty').text());
+            var total_amount = price * qty;
+
+            const amount = total_amount.toLocaleString('en-US', {maximumFractionDigits: 2});
+            $('#'+item_code+'-amount').text(amount);
+        }else{
+            $('#'+item_code+'-amount').text('0');
+            $(this).val('');
+        }
+    });
 
     var showTotalChar = 150, showChar = "Show more", hideChar = "Show less";
             $('.item-description').each(function() {

@@ -4,7 +4,7 @@
 ])
 
 @section('content')
-<div class="content" style='min-height: 90vh'>
+<div class="content">
 	<div class="content-header p-0">
         <div class="container">
             <div class="row pt-1">
@@ -20,7 +20,7 @@
                         </div>
                     </div>
                     <div class="card card-secondary card-outline">
-                        <div class="card-body p-2">
+                        <div class="card-body p-2 col-12">
                             <form id="product-sold-form" method="GET">
                                 <div class="d-flex flex-row align-items-center mt-2">
                                     <div class="p-1 col-6">

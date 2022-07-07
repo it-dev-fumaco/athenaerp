@@ -313,6 +313,10 @@
 
             $('#item-count').text(parseInt($('#item-count').text()) - 1);
 
+            items_array = jQuery.grep(items_array, function(value) {
+                return value != item_code;
+            });
+
             if(existing_record == 1){
                 enable_submit();
             }
@@ -424,7 +428,8 @@
                 dataType: 'json',
                 data: function (data) {
                     return {
-                        q: data.term // search term
+                        q: data.term, // search term
+                        excluded_items: items_array
                     };
                 },
                 processResults: function (response) {
@@ -505,6 +510,7 @@
             validate_submit();
         });
 
+        var items_array = new Array();
         function add_item(table){
             var item_code = $('#new-item-code').text();
             var description = $('#new-description').text();
@@ -560,10 +566,17 @@
 
 			$(table).prepend(row);
             $('#placeholder').addClass('d-none');
+
+            if(jQuery.inArray(item_code, items_array) === -1){
+                items_array.push(item_code);
+            }
             
             if(existing_record == 1){
                 enable_submit();
             }
+
+            $("#item-selection").empty().trigger('change');
+
             validate_submit();
 		}
 

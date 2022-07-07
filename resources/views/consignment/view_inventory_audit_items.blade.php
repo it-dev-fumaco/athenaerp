@@ -23,6 +23,8 @@
                         <div class="card-body p-1">
                             <h5 class="font-responsive font-weight-bold text-center m-1 text-uppercase d-block">{{ $store }}</h5>
                             <h6 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h6>
+
+                            <span class="d-block text-center font-responsive m-1">Total Sales: <b>{{ '₱ ' . number_format($total_sales, 2) }}</b></span>
                             <table class="table" style="font-size: 8pt;">
                                 <thead class="border-top">
                                     <th class="text-center align-middle p-1" style="width: 33%;">ITEM CODE</th>
