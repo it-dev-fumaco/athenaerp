@@ -41,7 +41,7 @@
                             <table class="table" style="font-size: 10pt;">
                                 <thead class="border-top">
                                     <th class="text-center p-1 d-none d-lg-table-cell">Date</th>
-                                    <th class="text-center p-1 d-none d-lg-table-cell">Transaction Type</th>
+                                    {{-- <th class="text-center p-1 d-none d-lg-table-cell">Transaction Type</th> --}}
                                     @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                     <th class="text-center p-1 mobile-first-row">
                                         <span class="d-none d-lg-inline">From Warehouse</span>
@@ -71,7 +71,7 @@
                                 @endphp
                                 <tr>
                                     <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</td>
-                                    <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['transfer_type'] }}</span></td>
+                                    {{-- <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['transfer_type'] }}</span></td> --}}
                                     @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                     <td class="p-1">
                                         <div class="d-none d-lg-inline text-center">
@@ -82,7 +82,7 @@
                                         </div>
                                     </td>
                                     <td class="d-none p-1 d-lg-table-cell">{{ $ste['to_warehouse'] == 'Quarantine Warehouse - FI' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
-                                    @else {{-- Sales Returns --}}
+                                    @else 
                                     <td class="p-1">
                                         <div class="d-none d-lg-inline text-center">
                                             {{ $ste['to_warehouse'] }}

@@ -2501,7 +2501,7 @@ class ConsignmentController extends Controller
 
             foreach($stock_entry_detail as $items){
                 if($stock_entry->purpose == 'Material Transfer'){ // Stock Transfers and Returns
-                    if(!isset($bin_arr[$items->s_warehouse][$items->item_code]) || !isset($bin_arr[$items->t_warehouse][$items->item_code])){
+                    if(!isset($bin_arr[$items->s_warehouse][$items->item_code])){
                         return redirect()->back()->with('error', 'Items not found.');
                     }
                 }else{ // Sales Returns
@@ -2535,15 +2535,9 @@ class ConsignmentController extends Controller
             DB::table('tabStock Entry')->where('name', $id)->delete();
             DB::table('tabStock Entry Detail')->where('parent', $id)->delete();
 
-            $transaction = null;
-            if($stock_entry->purpose == 'Material Transfer'){
-                if($stock_entry->transfer_as == 'Consignment'){
-                    $transaction = 'Store Transfer';
-                }else{
-                    $transaction = 'Return to Plant';
-                }
-            }else{
-                $transaction = 'Sales Return';
+            $transaction = $stock_entry->purpose == 'Material Transfer' ? $stock_entry->transfer_as : $stock_entry->receive_as;
+            if($stock_entry->purpose == 'Material Transfer' && $stock_entry->transfer_as == 'Consignment'){
+                $transaction = 'Store Transfer';
             }
 
             DB::commit();
@@ -2650,7 +2644,7 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'owner' => $ste->owner,
                 'docstatus' => $ste->docstatus,
-                'transfer_type' => $ste->transfer_as,
+                'transfer_type' => $ste->purpose == 'Material Transfer' ? $ste->transfer_as : $ste->receive_as,
                 'date' => $ste->creation
             ];
         }
