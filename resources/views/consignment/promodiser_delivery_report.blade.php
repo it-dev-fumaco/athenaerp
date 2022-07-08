@@ -143,7 +143,7 @@
                                                                         </td>
                                                                         <td class="text-center p-1 align-middle">
                                                                             <input type="text" name="item_codes[]" class="d-none" value="{{ $item['item_code'] }}"/>
-                                                                            <input type="text" value='{{ $item['price'] > 0 ? $item['price'] : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
+                                                                            <input type="text" value='{{ $item['price'] > 0 ? number_format($item['price'], 2) : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
@@ -158,9 +158,9 @@
                                                         </div>
                                                         <div class="modal-footer">
                                                             @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
-                                                                <button type="submit" class="btn btn-primary w-100">Receive</button>
+                                                                <button type="submit" class="btn btn-primary w-100 submit-once">Receive</button>
                                                             @else
-                                                                <button type="submit" class="btn btn-info w-100">Update Prices</button>
+                                                                <button type="submit" class="btn btn-info w-100 submit-once">Update Prices</button>
                                                             @endif
                                                         </div>
                                                         </form>

@@ -137,7 +137,7 @@
                                                                                     Return {{ $item['item_code'] }} to Plant?
                                                                                 </div>
                                                                                 <div class="modal-footer">
-                                                                                    <a href="/damaged/return/{{ $item['name'] }}" class="btn btn-primary w-100">Confirm</a>
+                                                                                    <a href="/damaged/return/{{ $item['name'] }}" class="btn btn-primary w-100 submit-once" disabled>Confirm</a>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -207,7 +207,13 @@
                 var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="showmoretxt">' + showChar + '</a></span>';
                 $(this).html(txt);
             }
-        });
+        // });
+
+        // $('.test').click(function(){
+        //     if($(this).is('a')){
+		// 			console.log('test');
+        //     }
+        // });
 
         $(".showmoretxt").click(function(e) {
             e.preventDefault();
