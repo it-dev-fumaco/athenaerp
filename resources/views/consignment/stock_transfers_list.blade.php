@@ -220,7 +220,7 @@
                                                                     <form></form>
                                                                     <h6 class="mb-3">Cancel {{ $ste['transfer_type'] }} Request?</h6>
                                                                     <div class="text-center m-2">
-                                                                        <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary">Confirm</a>
+                                                                        <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary submit-once">Confirm</a>
                                                                     </div>
                                                                 </div>
                                                             </div>

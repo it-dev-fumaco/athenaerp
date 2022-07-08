@@ -135,7 +135,7 @@
                                             </table>
                                             <div class="col-12 text-right">
                                                 <div class="m-2">
-                                                    <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
+                                                    <button type="submit" class="btn btn-primary btn-block submit-once" id="submit-btn" disabled><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
                                                 </div>
                                             </div>
                                         </div>

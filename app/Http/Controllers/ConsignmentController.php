@@ -1124,7 +1124,7 @@ class ConsignmentController extends Controller
                     'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
                     'delivered_qty' => $item->transfer_qty,
                     'stock_uom' => $item->stock_uom,
-                    'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? number_format($prices_arr[$ref_warehouse][$item->item_code]['price'], 2) : 0,
+                    'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? $prices_arr[$ref_warehouse][$item->item_code]['price'] : 0,
                     'delivery_status' => $item->consignment_status,
                     'date_received' => $item->consignment_date_received
                 ];

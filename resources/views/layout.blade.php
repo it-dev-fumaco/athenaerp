@@ -2102,6 +2102,17 @@
 			});
 		});
 
+		$('.submit-once').click(function(){
+			if(!$(this).hasClass('submitted')){
+				$(this).addClass('submitted');
+			}else{
+				$(this).prop('disabled', true);
+				if($(this).is('a')){
+					$(this).off("click").attr('href', "javascript: void(0);");
+				}
+			}
+		});
+
 		function close_modal(modal){
 			$(modal).modal('hide');
 		}
