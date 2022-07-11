@@ -1208,15 +1208,23 @@ class ConsignmentController extends Controller
 
             $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
 
-            // Update each item in Bin and Product Sold
-            foreach($items as $item){
-                DB::table('tabBin')->where('warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'consigned_qty' => 0
-                ]);
+            if(count($items) > 0) {
+                // Update each item in Bin and Product Sold
+                foreach($items as $item){
+                    DB::table('tabBin')->where('warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'consigned_qty' => 0
+                    ]);
+                }
 
-                DB::table('tabConsignment Product Sold')->where('branch_warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
+                $sales_report_names = DB::table('tabConsignment Sales Report as csr')
+                    ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                    ->where('csr.branch_warehouse', $inventory->branch_warehouse)
+                    ->whereIn('csri.item_code', collect($items)->pluck('item_code')->toArray())
+                    ->distinct()->pluck('csr.name');
+
+                DB::table('tabConsignment Sales Report')->whereIn('name', $sales_report_names)->update([
                     'modified' => Carbon::now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'status' => 'Cancelled'
@@ -1233,6 +1241,7 @@ class ConsignmentController extends Controller
             DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Beginning Inventory for '.$inventory->branch_warehouse.' was cancelled.');
         } catch (Exception $e) {
             DB::rollback();
