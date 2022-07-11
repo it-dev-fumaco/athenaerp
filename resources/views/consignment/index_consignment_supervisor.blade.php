@@ -128,6 +128,11 @@
 
                                     <div class="tab-content custom-tabcontent">
                                         <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
+                                            <div class="form-check float-right mr-4 mt-2 mb-2 text-white">
+                                                <input class="form-check-input" type="checkbox" id="hide-zero-check">
+                                                <label class="form-check-label" for="hide-zero-check"> Hide zero values
+                                                </label>
+                                              </div>
                                             <div id="beginning-inventory-list-el" class="p-2"></div>
                                         </div>
                                         <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
@@ -318,11 +323,17 @@
     $(function () {
         $('.circlechart').circlechart();
 
+        $(document).on('change', '#hide-zero-check', function() {
+            loadSalesReport();
+        });
+
         loadSalesReport();
         function loadSalesReport() {
+            var hidezero = $('#hide-zero-check').is(":checked");
             $.ajax({
                 type: "GET",
                 url: "/sales_report",
+                data: {hidezero},
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
                 }

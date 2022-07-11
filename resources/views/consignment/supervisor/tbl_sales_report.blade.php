@@ -24,7 +24,7 @@
                 $total_amount_sold_per_warehouse = isset($product_sold[$report['user']][$warehouse->warehouse]) ? collect($product_sold[$report['user']][$warehouse->warehouse])->sum('amount') : 0;
                 $total_value_per_warehouse = isset($total_amount_arr[$report['user']][$warehouse->warehouse]) ? collect($total_amount_arr[$report['user']][$warehouse->warehouse])->sum('amount') : 0;
             @endphp
-            <tr>
+            <tr {{ $hidezero == 'true' && $total_amount_sold_per_warehouse <= 0 ? 'hidden' : ''  }}>
                 <td>&nbsp;</td>
                 <td class="text-left font-responsive align-middle p-1">{{ $warehouse->warehouse }}</td>
                 <td class="text-center font-responsive align-middle p-1">

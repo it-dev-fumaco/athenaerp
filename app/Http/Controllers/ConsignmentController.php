@@ -818,17 +818,22 @@ class ConsignmentController extends Controller
         return $data;
     }
 
-    public function salesReport(){
-        $sales_report = DB::table('tabConsignment Product Sold')->where('status', '!=', 'Cancelled')->get();
-    
+    public function salesReport(Request $request){
+        $hidezero = $request->hidezero;
         $warehouses_with_approved_inventory = DB::table('tabConsignment Beginning Inventory')->where('status', 'Approved')->pluck('branch_warehouse')->unique();
-    
-        $product_sold_arr = DB::table('tabConsignment Product Sold')->whereYear('transaction_date', Carbon::now()->format('Y'))
-            ->where('status', '!=', 'Cancelled')->whereIn('branch_warehouse', $warehouses_with_approved_inventory)
-            ->select('cutoff_period_from', 'branch_warehouse', 'promodiser', DB::raw('sum(qty) as qty'), DB::raw('sum(amount) as amount'))
-            ->groupBy('cutoff_period_from', 'branch_warehouse', 'promodiser')
+            
+        $product_sold_arr = DB::table('tabConsignment Sales Report as csr')
+            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('csri.qty', '>', 0)->whereIn('csr.branch_warehouse', $warehouses_with_approved_inventory)->where('csr.status', '!=', 'Cancelled')
+            ->select('csr.cutoff_period_from', 'csr.branch_warehouse', 'csr.promodiser', DB::raw('sum(csri.qty) as qty'), DB::raw('sum(csri.amount) as amount'))
+            ->groupBy('csr.cutoff_period_from', 'csr.branch_warehouse', 'csr.promodiser')
             ->get();
-    
+
+        $promodisers_with_sales = []; 
+        if ($hidezero == 'true') {
+            $promodisers_with_sales = DB::table('tabConsignment Sales Report')->where('grand_total', '>', 0)->distinct()->pluck('promodiser');
+        }
+        
         $cutoff_periods = collect($product_sold_arr)->map(function ($q){
             return $q->cutoff_period_from;
         })->unique();
@@ -855,6 +860,9 @@ class ConsignmentController extends Controller
         $included_promodisers = collect($included_promodisers)->unique();
 
         $promodisers = DB::table('tabWarehouse Users')->where('user_group', 'Promodiser')
+            ->when($hidezero == 'true', function ($q) use ($promodisers_with_sales){
+                return $q->whereIn('full_name', $promodisers_with_sales);
+            })
             ->whereIn('frappe_userid', $included_promodisers)->get();
     
         $included_promodisers_full_name = collect($promodisers)->map(function($q){
@@ -903,7 +911,7 @@ class ConsignmentController extends Controller
             ];
         }
     
-        return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff', 'total_amount_arr'));
+        return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff', 'total_amount_arr', 'hidezero'));
     }
 
     public function beginningInventoryApproval(Request $request){
