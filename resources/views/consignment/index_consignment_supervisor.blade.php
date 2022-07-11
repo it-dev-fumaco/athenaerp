@@ -157,7 +157,7 @@
                                                         </div>
                                                     </form>
                                                     <div class="row m-0 p-2">
-                                                        <div class="col-md-6" id="deliveries-content">
+                                                        <div class="col-md-6 bg-white m-0 p-0" id="deliveries-content">
                 
                                                         </div>
                                                         <div class="col-md-6 bg-white m-0 p-0" id="returns-content">

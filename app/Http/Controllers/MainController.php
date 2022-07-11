@@ -5481,10 +5481,10 @@ class MainController extends Controller
 
     public function consignmentSalesReport($warehouse, Request $request) {
         $year = $request->year ? $request->year : Carbon::now()->format('Y');
-        $query = DB::table('tabConsignment Product Sold')
+        $query = DB::table('tabConsignment Sales Report')
             ->where('status', '!=', 'Cancelled')
             ->whereYear('transaction_date', $year)->where('branch_warehouse', $warehouse)
-            ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(amount) as grand_total')
+            ->selectRaw('MONTH(transaction_date) as transaction_month, SUM(grand_total) as grand_total')
             ->groupBy('transaction_month')->pluck('grand_total', 'transaction_month')->toArray();
         
         $result = [];
