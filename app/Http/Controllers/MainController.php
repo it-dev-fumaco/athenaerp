@@ -491,6 +491,11 @@ class MainController extends Controller
             }
         }
 
+        $sales_report_included_years = DB::table('tabConsignment Sales Report')->where('status', '!=', 'Cancelled')->select('transaction_date')->get();
+        $sales_report_included_years = collect($sales_report_included_years)->map(function ($q){
+            return Carbon::parse($q->transaction_date)->format('Y');
+        })->unique();
+
         // delivery summary metrics
         // get total stock transfer
         $ds_stock_transfer = DB::table('tabStock Entry')->whereIn('transfer_as', ['Store Transfer', 'For Return'])
@@ -533,7 +538,7 @@ class MainController extends Controller
             'stock_receiving_completion' => number_format($stock_receiving_completion, 2)
         ];
 
-        return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'delivery_summary'));
+        return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'delivery_summary', 'sales_report_included_years'));
     }
 
     public function search_results(Request $request){

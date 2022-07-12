@@ -819,6 +819,7 @@ class ConsignmentController extends Controller
         return $data;
     }
 
+    // /sales_report
     public function salesReport(Request $request){
         $hidezero = $request->hidezero;
         $warehouses_with_approved_inventory = DB::table('tabConsignment Beginning Inventory')->where('status', 'Approved')->pluck('branch_warehouse')->unique();
@@ -826,15 +827,25 @@ class ConsignmentController extends Controller
         $product_sold_arr = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('csri.qty', '>', 0)->whereIn('csr.branch_warehouse', $warehouses_with_approved_inventory)->where('csr.status', '!=', 'Cancelled')
+            ->when($request->year && $request->year != 'All', function ($q) use ($request){
+                return $q->whereYear('csr.transaction_date', $request->year);
+            })
             ->select('csr.cutoff_period_from', 'csr.branch_warehouse', 'csr.promodiser', DB::raw('sum(csri.qty) as qty'), DB::raw('sum(csri.amount) as amount'))
             ->groupBy('csr.cutoff_period_from', 'csr.branch_warehouse', 'csr.promodiser')
             ->get();
 
-        $promodisers_with_sales = []; 
-        if ($hidezero == 'true') {
-            $promodisers_with_sales = DB::table('tabConsignment Sales Report')->where('grand_total', '>', 0)->distinct()->pluck('promodiser');
+        $promodiser_with_input_per_specific_year = [];
+        if($request->year && $request->year != 'All'){
+            $promodiser_with_input_per_specific_year = collect($product_sold_arr)->map(function ($q){
+                return $q->promodiser;
+            })->unique()->toArray();
         }
         
+        $promodisers_with_sales = [];
+        if ($hidezero == 'true') {
+            $promodisers_with_sales = DB::table('tabConsignment Sales Report')->where('status', '!=', 'Cancelled')->where('grand_total', '>', 0)->distinct()->pluck('promodiser');
+        }
+
         $cutoff_periods = collect($product_sold_arr)->map(function ($q){
             return $q->cutoff_period_from;
         })->unique();
@@ -864,6 +875,9 @@ class ConsignmentController extends Controller
             ->when($hidezero == 'true', function ($q) use ($promodisers_with_sales){
                 return $q->whereIn('full_name', $promodisers_with_sales);
             })
+            ->when($request->year && $request->year != 'All', function ($q) use ($promodiser_with_input_per_specific_year){
+                return $q->whereIn('full_name', $promodiser_with_input_per_specific_year);
+            })
             ->whereIn('frappe_userid', $included_promodisers)->get();
     
         $included_promodisers_full_name = collect($promodisers)->map(function($q){
@@ -873,7 +887,7 @@ class ConsignmentController extends Controller
         $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->get();
         $assigned_consignment_stores = collect($assigned_consignment_stores)->groupBy('parent');
     
-       $opening_stocks = DB::table('tabConsignment Beginning Inventory as cbi')
+        $opening_stocks = DB::table('tabConsignment Beginning Inventory as cbi')
             ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
             ->where('cbi.status', 'Approved')
             ->whereIn('cbi.owner', $included_promodisers_full_name)

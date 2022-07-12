@@ -128,11 +128,22 @@
         
                                             <div class="tab-content custom-tabcontent">
                                                 <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
-                                                    <div class="form-check float-right mr-4 mt-2 mb-2 text-white">
-                                                        <input class="form-check-input" type="checkbox" id="hide-zero-check">
-                                                        <label class="form-check-label" for="hide-zero-check"> Hide zero values
-                                                        </label>
-                                                      </div>
+                                                    <div class="row">
+                                                        <div class="col-2 offset-8 mt-2 text-center">
+                                                            <select class="form-control" id="year-filter">
+                                                                <option value="" disabled selected>Select Year</option>
+                                                                <option value="All">All</option>
+                                                                @foreach ($sales_report_included_years as $year)
+                                                                    <option value="{{ $year }}">{{ $year }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-check col-2 text-center mt-2 mb-2 text-white">
+                                                            <input class="form-check-input" type="checkbox" id="hide-zero-check">
+                                                            <label class="form-check-label" for="hide-zero-check"> Hide zero values
+                                                            </label>
+                                                        </div>
+                                                    </div>
                                                     <div id="beginning-inventory-list-el" class="p-2"></div>
                                                 </div>
                                                 <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
@@ -361,13 +372,19 @@
             loadSalesReport();
         });
 
+        $('#year-filter').change(function(){
+            loadSalesReport();
+        });
+
         loadSalesReport();
         function loadSalesReport() {
             var hidezero = $('#hide-zero-check').is(":checked");
+            var year = $('#year-filter').val();
+
             $.ajax({
                 type: "GET",
                 url: "/sales_report",
-                data: {hidezero},
+                data: {hidezero, year},
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
                 }
