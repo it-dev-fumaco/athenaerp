@@ -3389,14 +3389,13 @@ class ConsignmentController extends Controller
     public function viewProductSoldItems($store, $from, $to) {
         $list = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.branch_warehouse', $store)
-            ->where('csr.cutoff_period_from', $from)
-            ->where('csr.cutoff_period_to', $to)
+            ->where('csr.status', '!=', 'Cancelled')->where('csr.branch_warehouse', $store)
+            ->where('csr.cutoff_period_from', $from)->where('csr.cutoff_period_to', $to)
             ->selectRaw('csri.item_code, csri.description, SUM(csri.qty) as qty, SUM(csri.amount) as amount')
             ->orderBy('csri.description', 'asc')->groupBy('csri.item_code', 'csri.description')->get();
 
         $promodisers = DB::table('tabConsignment Sales Report')
-            ->where('branch_warehouse', $store)->where('cutoff_period_from', $from)
+            ->where('status', '!=', 'Cancelled')->where('branch_warehouse', $store)->where('cutoff_period_from', $from)
             ->where('cutoff_period_to', $to)->distinct()->pluck('promodiser')->toArray();
             
         $promodisers = implode(', ', $promodisers);
