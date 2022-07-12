@@ -1349,6 +1349,7 @@ class ConsignmentController extends Controller
         return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr', 'type'));
     }
 
+    // /promodiser/receive/{id}
     public function promodiserReceiveDelivery(Request $request, $id){
         DB::beginTransaction();
         try {
@@ -1385,7 +1386,7 @@ class ConsignmentController extends Controller
 
             $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
                 ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                ->whereIn('cb.branch_warehouse', array_filter([$target_warehouses, $wh->to_warehouse]))
+                ->whereIn('cb.branch_warehouse', array_filter([$target_warehouses, $wh->to_warehouse]))->whereIn('cb.status', ['For Approval', 'Approved'])
                 ->select('cb.branch_warehouse', 'cbi.item_code', 'cb.name', 'cb.status', 'cbi.opening_stock')->get();
 
             $item_codes_with_beginning_inventory = collect($beginning_inventory)->map(function ($q){
@@ -1662,6 +1663,7 @@ class ConsignmentController extends Controller
         ]);
     }
 
+    // /beginning_inv_items
     public function beginningInvItems(Request $request, $action, $branch, $id = null){
         if($request->ajax()){
             $items = [];
@@ -1718,6 +1720,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /save_beginning_inventory
     public function saveBeginningInventory(Request $request){
         DB::beginTransaction();
         try {
@@ -1751,6 +1754,10 @@ class ConsignmentController extends Controller
             $items = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'description', 'stock_uom')->get();
             $item = collect($items)->groupBy('name');
 
+            $item_codes_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory as cbi')
+                ->join('tabConsignment Beginning Inventory Item as item', 'cbi.name', 'item.parent')
+                ->where('cbi.branch_warehouse', $branch)->whereIn('cbi.status', ['Approved', 'For Approval'])->pluck('item_code')->toArray();
+
             $item_count = 0;
             if(!$request->inv_name){ // If beginning inventory record does not exist
                 $latest_inv = DB::table('tabConsignment Beginning Inventory')->where('name', 'like', '%inv%')->max('name');
@@ -1776,6 +1783,10 @@ class ConsignmentController extends Controller
                 $grand_total = 0;
                 foreach($item_codes as $i => $item_code){
                     if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
+                        continue;
+                    }
+
+                    if(in_array($item_code, $item_codes_with_beginning_inventory)){
                         continue;
                     }
 
@@ -1826,7 +1837,6 @@ class ConsignmentController extends Controller
                 session()->flash('success', 'Beginning Inventory is Cancelled');
                 session()->flash('cancelled', 'Cancelled');
             }else{
-
                 $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->pluck('item_code')->toArray();
                 $removed_items = array_diff($inventory_items, $item_codes->toArray());
 
@@ -1838,6 +1848,10 @@ class ConsignmentController extends Controller
                 $row_values = [];
                 foreach($item_codes as $i => $item_code){
                     if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
+                        continue;
+                    }
+                    
+                    if(in_array($item_code, $item_codes_with_beginning_inventory)){
                         continue;
                     }
 
@@ -1887,8 +1901,6 @@ class ConsignmentController extends Controller
                         ];
 
                         $grand_total += ($item_price * $qty);
-    
-                        
                     }
                     $item_count = $item_count + 1; 
                 }
