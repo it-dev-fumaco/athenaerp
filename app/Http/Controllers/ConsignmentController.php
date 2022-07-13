@@ -1574,6 +1574,80 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /promodiser/cancel/received/{id}
+    public function promodiserCancelReceivedDelivery($id){
+        DB::beginTransaction();
+        try {
+            $stock_entry = DB::table('tabStock Entry')->where('name', $id)->first();
+            $received_items = DB::table('tabStock Entry Detail')->where('parent', $id)->get();
+
+            $item_codes = collect($received_items)->map(function ($q){
+                return $q->item_code;
+            });
+
+            $branches = [];
+            if($stock_entry->transfer_as == 'Consignment'){
+                $branches = collect($received_items)->map(function ($q){
+                    return $q->t_warehouse;
+                })->unique()->toArray();
+            }else{
+                $branches = [$stock_entry->from_warehouse, $stock_entry->to_warehouse];
+            }
+
+            $bin_consigned_qty = DB::table('tabBin')->whereIn('item_code', $item_codes)->whereIn('warehouse', $branches)->select('warehouse', 'item_code', 'consigned_qty')->get();
+
+            $consigned_qty = [];
+            foreach($bin_consigned_qty as $bin){
+                $consigned_qty[$bin->warehouse][$bin->item_code] = [
+                    'consigned_qty' => $bin->consigned_qty
+                ];
+            }
+
+            foreach($received_items as $item){
+                $branch = $stock_entry->transfer_as == 'Store Transfer' ? $stock_entry->to_warehouse : $item->t_warehouse;
+                if($item->consignment_status != 'Received'){
+                    return redirect()->back()->with('error', $id.' is not yet received.');
+                }
+
+                if(!isset($consigned_qty[$branch][$item->item_code])){
+                    return redirect()->back()->with('error', 'Item not found.');
+                }
+
+                if($consigned_qty[$branch][$item->item_code]['consigned_qty'] < $item->transfer_qty ){
+                    return redirect()->back()->with('error', 'Cannot cancel received items.<br/> Available qty is '.$consigned_qty[$branch][$item->item_code]['consigned_qty'].', received qty is '.$item->transfer_qty);
+                }
+
+                if($stock_entry->transfer_as == 'Store Transfer'){ // return stocks to source warehouse
+                    $src_branch = $stock_entry->from_warehouse ? $stock_entry->from_warehouse : $item->s_warehouse;
+                    DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $src_branch)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->full_name,
+                        'consigned_qty' => $consigned_qty[$src_branch][$item->item_code]['consigned_qty'] + $item->transfer_qty
+                    ]);
+                }
+
+                DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $branch)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->full_name,
+                    'consigned_qty' => $consigned_qty[$branch][$item->item_code]['consigned_qty'] - $item->transfer_qty
+                ]);
+                
+                DB::table('tabStock Entry Detail')->where('parent', $id)->where('item_code', $item->item_code)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->full_name,
+                    'consignment_status' => null,
+                    'consignment_date_received' => null
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Received Item(s) Cancelled');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'An error occured. Please try again later');
+        }
+    }
+
     public function beginningInventoryList(Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->paginate(10);

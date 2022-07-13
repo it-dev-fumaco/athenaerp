@@ -12,10 +12,10 @@
                     <div class="card card-lightblue">
                         <div class="card-header text-center p-2">
                             @if(session()->has('success'))
-                            <div class="alert alert-success fade show font-responsive" role="alert">{{ session()->get('success') }}</div>
+                            <div class="alert alert-success fade show font-responsive" role="alert">{!! session()->get('success') !!}</div>
                             @endif
                             @if(session()->has('error'))
-                            <div class="alert alert-danger fade show font-responsive" role="alert">{{ session()->get('error') }}</div>
+                            <div class="alert alert-danger fade show font-responsive" role="alert">{!! session()->get('error') !!}</div>
                             @endif
                             <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">
                                 @if ($type == 'all')
@@ -158,9 +158,31 @@
                                                         </div>
                                                         <div class="modal-footer">
                                                             @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
-                                                                <button type="submit" class="btn btn-primary w-100">Receive</button>
+                                                                <button type="submit" class="btn btn-primary w-100 submit-once">Receive</button>
                                                             @else
-                                                                <button type="submit" class="btn btn-info w-100">Update Prices</button>
+                                                                <button type="submit" class="btn btn-info w-100 submit-once">Update Prices</button>
+                                                                <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">
+                                                                    Cancel
+                                                                </button>
+                                                                  
+                                                                <div class="modal fade" id="cancel-{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                    <div class="modal-dialog" role="document">
+                                                                        <div class="modal-content">
+                                                                            <div class="modal-header bg-navy">
+                                                                                <h5 class="modal-title" id="exampleModalLabel">Cancel</h5>
+                                                                                <button type="button" class="close" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
+                                                                                <span aria-hidden="true" style="color: #fff;">&times;</span>
+                                                                                </button>
+                                                                            </div>
+                                                                            <div class="modal-body">
+                                                                                Cancel {{ $ste['name'] }}?
+                                                                            </div>
+                                                                            <div class="modal-footer">
+                                                                                <a href="/promodiser/cancel/received/{{ $ste['name'] }}" class="btn btn-primary w-100 submit-once">Confirm</a>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             @endif
                                                         </div>
                                                         </form>
@@ -209,6 +231,9 @@
         /* Firefox */
         input[type=number] {
         -moz-appearance: textfield;
+        }
+        .modal{
+            background-color: rgba(0,0,0,0.4);
         }
     </style>
 @endsection
