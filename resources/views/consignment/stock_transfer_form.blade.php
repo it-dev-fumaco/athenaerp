@@ -169,7 +169,7 @@
                                     </div>
 
                                     <div class="container-fluid mt-2 text-center">
-                                        <button type="submit" id="submit-btn" class="btn btn-primary w-100 d-none">Submit</button>
+                                        <button type="submit" id="submit-btn" class="btn btn-primary w-100 d-none submit-once">Submit</button>
                                     </div>
 
                                     <span id="counter" class='d-none'>0</span>

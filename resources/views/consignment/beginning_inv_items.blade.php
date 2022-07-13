@@ -203,9 +203,9 @@
         <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
         <div class="m-2">
             @if ($inv_name)
-                <button type="submit" class="btn btn-danger btn-block" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
+                <button type="submit" class="btn btn-danger btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
             @else
-                <button type="submit" class="btn btn-primary btn-block" id="submit-btn"><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
+                <button type="submit" class="btn btn-primary btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
             @endif
             <input type="checkbox" class='d-none' name="cancel" id="cancel-check" {{ $inv_name ? 'checked' : null }}>
         </div>

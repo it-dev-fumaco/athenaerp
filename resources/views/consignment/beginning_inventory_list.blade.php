@@ -305,7 +305,7 @@
 																					@endif
 																				</div>
 																				<div class="modal-footer">
-																					<a href="/cancel/approved_beginning_inv/{{ $inv['name'] }}" class="btn btn-primary w-100">Confirm</a>
+																					<a href="/cancel/approved_beginning_inv/{{ $inv['name'] }}" class="btn btn-primary w-100 submit-once">Confirm</a>
 																				</div>
 																			</div>
 																		</div>
