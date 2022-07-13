@@ -3407,7 +3407,8 @@ class ConsignmentController extends Controller
     public function viewInventoryAuditItems($store, $from, $to) {
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? true : false;
 
-        $list = DB::table('tabConsignment Inventory Audit Report')
+        $list = DB::table('tabConsignment Inventory Audit Report as cia')
+            ->join('tabConsignment Inventory Audit Report Item as ciar', 'cia.name', 'ciar.parent')
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->get();
 
