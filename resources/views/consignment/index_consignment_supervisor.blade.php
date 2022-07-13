@@ -18,7 +18,7 @@
         @endif
         <div class="container-fluid">
             <div class="row p-0 mr-0 ml-0 mb-0 mt-2">
-                <div class="col-9 m-0 p-0">
+                <div class="col-12 m-0 p-0">
                     <div class="row p-0 m-0">
                         <div class="col-6 col-md-3 p-1">
                             <a href="/view_sales_report">
@@ -128,27 +128,28 @@
         
                                             <div class="tab-content custom-tabcontent">
                                                 <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
-                                                    <div class="row">
-                                                        <div class="col-2 offset-8 mt-2 text-center">
-                                                            <select class="form-control" id="year-filter">
-                                                                <option value="" disabled selected>Select Year</option>
-                                                                <option value="All">All</option>
+                                                    <div class="d-flex flex-row text-center align-items-center m-0">
+                                                        <div class="p-2">
+                                                            <select class="form-control w-100" id="year-filter">
+                                                                <option value="" disabled>Select Year</option>
                                                                 @foreach ($sales_report_included_years as $year)
-                                                                    <option value="{{ $year }}">{{ $year }}</option>
+                                                                <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
                                                                 @endforeach
                                                             </select>
                                                         </div>
-                                                        <div class="form-check col-2 text-center mt-2 mb-2 text-white">
-                                                            <input class="form-check-input" type="checkbox" id="hide-zero-check">
-                                                            <label class="form-check-label" for="hide-zero-check"> Hide zero values
-                                                            </label>
+                                                        <div class="p-2">
+                                                            <div class="form-check text-center text-white">
+                                                                <input class="form-check-input" type="checkbox" id="hide-zero-check">
+                                                                <label class="form-check-label" for="hide-zero-check"> Hide zero values
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div id="beginning-inventory-list-el" class="p-2"></div>
+                                                    <div id="beginning-inventory-list-el" class="pl-2 pr-2 pb-2"></div>
                                                 </div>
                                                 <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
                                                     <form method="GET" id="search-audit-form">
-                                                        <div class="row m-0 p-2">
+                                                        <div class="row p-2">
                                                             <div class="col-3">
                                                                 <select name="store" class="form-control" id="consignment-audit-select" required>
                                                                     <option value="">Select Store</option>
@@ -167,7 +168,7 @@
                                                             </div>
                                                         </div>
                                                     </form>
-                                                    <div class="row m-0 p-2">
+                                                    <div class="row m-0 pr-2 pl-2 pb-2">
                                                         <div class="col-md-6 bg-white m-0 p-0" id="deliveries-content">
                 
                                                         </div>
@@ -187,57 +188,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-3 m-0 p-1">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center text-uppercase font-weight-bold">Delivery Summary</div>
-                        <div class="card-body">
-                            <h6 class="text-center">Stock Transfer</h6>
-                            <div class="d-flex flex-row mb-3 text-center">
-                                <div class="p-2 col-6">
-                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_transfer_qty'] }}</span>    
-                                    <small class="d-block text-muted">Total Qty</small>
-                                </div>
-                                <div class="p-2 col-6">
-                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_transfer_request'] }}</span>    
-                                    <small class="d-block text-muted">Total Request(s)</small>
-                                </div>
-                            </div>
-                            <h6 class="text-center">Delivered Item</h6>
-                            <div class="d-flex flex-row mb-3 text-center">
-                                <div class="p-2 col-6">
-                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['delivered_qty'] }}</span>    
-                                    <small class="d-block text-muted">Total Qty</small>
-                                </div>
-                                <div class="p-2 col-6">
-                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['delivered_value'] }}</span>    
-                                    <small class="d-block text-muted">Total Value</small>
-                                </div>
-                            </div>
-                            <h6 class="text-center">Stock Receiving Completion</h6>
-                            <p class="d-block text-center font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_receiving_completion'] }}<small class="text-muted">%</small></p>
-                            <div class="callout callout-info font-responsive text-center p-2 m-1" style="font-size: 9pt;"><i class="fas fa-exclamation-circle"></i> Note: Displayed data is based on current cutoff period except for "Stock Receiving Completion".</div>
-                        </div>
-                    </div>
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center text-uppercase font-weight-bold">Stocks Summary</div>
-                        <div class="card-body">
-                            <h6 class="text-center">Total Return(s)</h6>
-                            <div class="d-flex flex-row mb-3 text-center">
-                                <div class="p-2 col-6">
-                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_qty'] }}</span>    
-                                    <small class="d-block text-muted">Total Qty</small>
-                                </div>
-                                <div class="p-2 col-6">
-                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_value'] }}</span>    
-                                    <small class="d-block text-muted">Total Value</small>
-                                </div>
-                            </div>
-                            <h6 class="text-center">No. of Transaction(s)</h6>
-                            <p class="d-block text-center font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_transaction_count'] }}</p>
-                            <div class="callout callout-info font-responsive text-center p-2 m-1" style="font-size: 9pt;"><i class="fas fa-exclamation-circle"></i> Note: Displayed data is based on current cutoff period.</div>
                         </div>
                     </div>
                 </div>
