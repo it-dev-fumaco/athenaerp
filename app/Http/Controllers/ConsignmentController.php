@@ -1588,13 +1588,18 @@ class ConsignmentController extends Controller
             });
 
             $branches = [];
-            if($stock_entry->transfer_as == 'Consignment'){
-                $branches = collect($received_items)->map(function ($q){
-                    return $q->t_warehouse;
-                })->unique()->toArray();
-            }else{
-                $branches = [$stock_entry->from_warehouse, $stock_entry->to_warehouse];
-            }
+
+            $target_warehouses = collect($received_items)->map(function ($q){
+                return $q->t_warehouse;
+            })->unique()->toArray();
+
+            $source_warehouses = collect($received_items)->map(function ($q){
+                return $q->s_warehouse;
+            })->unique()->toArray();
+
+            $st_warehouses = [$stock_entry->from_warehouse, $stock_entry->to_warehouse];
+
+            $branches = array_merge($target_warehouses, $source_warehouses, $st_warehouses);
 
             $bin_consigned_qty = DB::table('tabBin')->whereIn('item_code', $item_codes)->whereIn('warehouse', $branches)->select('warehouse', 'item_code', 'consigned_qty')->get();
 
@@ -1606,7 +1611,7 @@ class ConsignmentController extends Controller
             }
 
             foreach($received_items as $item){
-                $branch = $stock_entry->transfer_as == 'Store Transfer' ? $stock_entry->to_warehouse : $item->t_warehouse;
+                $branch = $stock_entry->to_warehouse ? $stock_entry->to_warehouse : $item->t_warehouse;
                 if($item->consignment_status != 'Received'){
                     return redirect()->back()->with('error', $id.' is not yet received.');
                 }
