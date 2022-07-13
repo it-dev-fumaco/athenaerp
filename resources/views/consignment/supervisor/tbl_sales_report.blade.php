@@ -25,11 +25,11 @@
                 $total_value_per_warehouse = isset($total_amount_arr[$report['user']][$warehouse->warehouse]) ? collect($total_amount_arr[$report['user']][$warehouse->warehouse])->sum('amount') : 0;
             @endphp
             <tr {{ $hidezero == 'true' && $total_amount_sold_per_warehouse <= 0 ? 'hidden' : ''  }}>
-                <td>&nbsp;</td>
-                <td class="text-left font-responsive align-middle p-1">{{ $warehouse->warehouse }}</td>
+                <td class="p-1">&nbsp;</td>
+                <td class="text-left font-responsive align-middle p-1" style=" font-size: 8pt;">{{ $warehouse->warehouse }}</td>
                 <td class="text-center font-responsive align-middle p-1">
                     @if ($opening_stock > 0)
-                        <span style="white-space: nowrap">{{ number_format($opening_stock) }}</span>
+                        <span style="white-space: nowrap; font-size: 8pt;">{{ number_format($opening_stock) }}</span>
                     @else
                         <span class="text-muted">-</span>
                     @endif
@@ -37,7 +37,7 @@
                 </td>
                 <td class="text-center font-responsive align-middle p-1">
                     @if ($total_value_per_warehouse > 0)
-                        <span style="white-space: nowrap">₱ {{ number_format($total_value_per_warehouse) }}</span>
+                        <span style="white-space: nowrap; font-size: 8pt;">₱ {{ number_format($total_value_per_warehouse) }}</span>
                     @else
                         <span class="text-muted">-</span>
                     @endif
@@ -49,7 +49,7 @@
                     @endphp
                     <td class="text-center font-responsive align-middle p-1">
                         @if ($amount > 0)
-                            <span style="white-space: nowrap">₱ {{ number_format($amount) }}</span>
+                            <span style="white-space: nowrap; font-size: 8pt;">₱ {{ number_format($amount) }}</span>
                         @else
                             <span class="text-muted">-</span>
                         @endif
@@ -58,7 +58,7 @@
                 @endforeach
                 <td class="text-center font-responsive align-middle p-1">
                     @if ($total_amount_sold_per_warehouse > 0)
-                        <span style="white-space: nowrap">₱ {{ number_format($total_amount_sold_per_warehouse) }}</span>
+                        <span style="white-space: nowrap; font-size: 8pt;">₱ {{ number_format($total_amount_sold_per_warehouse) }}</span>
                     @else
                         <span class="text-muted">-</span>
                     @endif
@@ -69,20 +69,20 @@
     @endforeach
     <tr>
         <td class="text-center font-responsive font-weight-bold align-middle p-1">Total: </td>
-        <td>&nbsp;</td>
+        <td class="p-1">&nbsp;</td>
         <td class="text-center font-responsive align-middle p-1">
-            <span id="total-opening-stocks" style="white-space: nowrap"></span>
+            <span id="total-opening-stocks" style="white-space: nowrap; font-size: 8pt;"></span>
         </td>
         <td class="text-center font-responsive align-middle p-1">
-            <span id="total-opening-values" style="white-space: nowrap"></span>
+            <span id="total-opening-values" style="white-space: nowrap; font-size: 8pt;"></span>
         </td>
         @foreach ($cutoff_periods as $period)
             <td class="text-center font-responsive align-middle p-1">
-                <span id="total-of-cutoff-{{ $period }}" style="white-space: nowrap"></span>
+                <span id="total-of-cutoff-{{ $period }}" style="white-space: nowrap; font-size: 8pt;"></span>
             </td>
         @endforeach
         <td class="text-center font-responsive align-middle p-1">
-            <span id="total-of-all-warehouse" style="white-space: nowrap"></span>
+            <span id="total-of-all-warehouse" style="white-space: nowrap; font-size: 8pt;"></span>
         </td>
     </tr>
 </table>

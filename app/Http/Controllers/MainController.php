@@ -491,10 +491,10 @@ class MainController extends Controller
             }
         }
 
-        $sales_report_included_years = DB::table('tabConsignment Sales Report')->where('status', '!=', 'Cancelled')->select('transaction_date')->get();
-        $sales_report_included_years = collect($sales_report_included_years)->map(function ($q){
-            return Carbon::parse($q->transaction_date)->format('Y');
-        })->unique();
+        $sales_report_included_years = [];
+        for ($i = 2022; $i <= date('Y') ; $i++) { 
+            $sales_report_included_years[] = $i;
+        }
 
         return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'sales_report_included_years'));
     }
