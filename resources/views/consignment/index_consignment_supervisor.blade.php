@@ -16,152 +16,170 @@
             </li>
         </ul>
         @endif
-        <div class="col-12 col-xl-10 mx-auto p-0">
+        <div class="container-fluid">
             <div class="row p-0 mr-0 ml-0 mb-0 mt-2">
-                <div class="col-6 col-md-3 p-1">
-                    <a href="/view_sales_report">
-                        <div class="info-box bg-gradient-primary m-0">
-                            <div class="info-box-content p-1">
-                                <span class="info-box-text font-responsive m-0">Sales Report</span>
-                                <span class="info-box-number font-responsive m-0">{{ number_format($total_item_sold) }}</span>
-                                <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-6 col-md-3 p-1">
-                    <a href="/inventory_audit">
-                        <div class="info-box bg-gradient-info m-0">
-                            <div class="info-box-content p-1">
-                                <span class="info-box-text font-responsive m-0">Inventory Audit</span>
-                                <span class="info-box-number font-responsive m-0">{{ number_format($total_pending_inventory_audit) }}</span>
-                                <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-6 col-md-3 p-1">
-                    <a href="/stocks_report/list">
-                        <div class="info-box bg-gradient-warning m-0">
-                            <div class="info-box-content p-1">
-                                <span class="info-box-text font-responsive">Stock Transfers</span>
-                                <span class="info-box-number font-responsive">{{ number_format($total_stock_transfers) }}</span>
-                                <div class="progress">
-                                    <div class="progress-bar"></div>
+                <div class="col-9 m-0 p-0">
+                    <div class="row p-0 m-0">
+                        <div class="col-6 col-md-3 p-1">
+                            <a href="/view_sales_report">
+                                <div class="info-box bg-gradient-primary m-0">
+                                    <div class="info-box-content p-1">
+                                        <span class="info-box-text font-responsive m-0">Sales Report</span>
+                                        <span class="info-box-number font-responsive m-0">{{ number_format($total_item_sold) }}</span>
+                                        <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
-                    </a>
-                </div>
-                <div class="col-6 col-md-3 p-1">
-                    <a href="/beginning_inv_list" style="color: inherit">
-                        <div class="info-box bg-gradient-secondary m-0">
-                            <div class="info-box-content p-1">
-                                <span class="info-box-text font-responsive">Stock Adjustments</span>
-                                <span class="info-box-number font-responsive">{{ number_format($total_stock_adjustments) }}</span>
-                                <div class="progress">
-                                    <div class="progress-bar"></div>
+                        <div class="col-6 col-md-3 p-1">
+                            <a href="/inventory_audit">
+                                <div class="info-box bg-gradient-info m-0">
+                                    <div class="info-box-content p-1">
+                                        <span class="info-box-text font-responsive m-0">Inventory Audit</span>
+                                        <span class="info-box-number font-responsive m-0">{{ number_format($total_pending_inventory_audit) }}</span>
+                                        <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
-                    </a>
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-md-12">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header p-1">
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="d-flex flex-row align-items-center">
-                                        <div class="p-0 col-5">
-                                            <ul class="nav nav-pills custom-navpill">
-                                                <li class="nav-item col-4 p-0">
-                                                    <a class="nav-link active font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#pending-content" role="tab" href="#">Sales Report</a>
-                                                </li>
-                                                <li class="nav-item col-4 p-0">
-                                                    <a class="nav-link font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#audit-report-content" role="tab" href="#">Audit Report</a>
-                                                </li>
-                                            </ul>
+                        <div class="col-6 col-md-3 p-1">
+                            <a href="/stocks_report/list">
+                                <div class="info-box bg-gradient-warning m-0">
+                                    <div class="info-box-content p-1">
+                                        <span class="info-box-text font-responsive">Stock Transfers</span>
+                                        <span class="info-box-number font-responsive">{{ number_format($total_stock_transfers) }}</span>
+                                        <div class="progress">
+                                            <div class="progress-bar"></div>
                                         </div>
-                                        <div class="p-0 col-2">
-                                            <div class="text-center">
-                                                <p class="text-center m-0 font-responsive">
-                                                    <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
-                                                    <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
-                                                </p>
-                                                <span class="d-block" style="font-size: 9pt;">Active Store</span>
-                                            </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3 p-1">
+                            <a href="/beginning_inv_list" style="color: inherit">
+                                <div class="info-box bg-gradient-secondary m-0">
+                                    <div class="info-box-content p-1">
+                                        <span class="info-box-text font-responsive">Stock Adjustments</span>
+                                        <span class="info-box-number font-responsive">{{ number_format($total_stock_adjustments) }}</span>
+                                        <div class="progress">
+                                            <div class="progress-bar"></div>
                                         </div>
-                                        <div class="p-0 col-2">
-                                            <a href="/view_promodisers" style="color: inherit;">
-                                                <div class="text-center">
-                                                    <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 1.2rem;">{{ ($promodisers) }}</p>
-                                                    <span class="d-block" style="font-size: 9pt;">Promodiser(s)</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <div class="card card-secondary card-outline">
+                                <div class="card-header p-1">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex flex-row align-items-center">
+                                                <div class="p-0 col-5">
+                                                    <ul class="nav nav-pills custom-navpill">
+                                                        <li class="nav-item col-6 p-0">
+                                                            <a class="nav-link active font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#pending-content" role="tab" href="#">Sales Report</a>
+                                                        </li>
+                                                        <li class="nav-item col-6 p-0">
+                                                            <a class="nav-link font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#audit-report-content" role="tab" href="#">Inventory Audit Report</a>
+                                                        </li>
+                                                    </ul>
                                                 </div>
-                                            </a>
-                                        </div>
-                                        <div class="p-0 col-3 m-0">
-                                            <a href="/beginning_inv_list" style="color: inherit;">
-                                                <div class="d-flex flex-row align-items-center m-0 p-0">
-                                                    <div class="p-0 m-0">
-                                                        <div class="skills_section text-right m-0 p-0">
-                                                            <div class="skills-area m-0 p-0">
-                                                                <div class="single-skill w-100 mb-1">
-                                                                    <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
-                                                                        <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
+                                                <div class="p-0 col-2">
+                                                    <div class="text-center">
+                                                        <p class="text-center m-0 font-responsive">
+                                                            <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
+                                                            <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
+                                                        </p>
+                                                        <span class="d-block" style="font-size: 9pt;">Active Store</span>
+                                                    </div>
+                                                </div>
+                                                <div class="p-0 col-2">
+                                                    <a href="/view_promodisers" style="color: inherit;">
+                                                        <div class="text-center">
+                                                            <p class="text-center font-weight-bolder m-0 font-responsive" style="font-size: 1.2rem;">{{ ($promodisers) }}</p>
+                                                            <span class="d-block" style="font-size: 9pt;">Promodiser(s)</span>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                                <div class="p-0 col-3 m-0">
+                                                    <a href="/beginning_inv_list" style="color: inherit;">
+                                                        <div class="d-flex flex-row align-items-center m-0 p-0">
+                                                            <div class="p-0 m-0">
+                                                                <div class="skills_section text-right m-0 p-0">
+                                                                    <div class="skills-area m-0 p-0">
+                                                                        <div class="single-skill w-100 mb-1">
+                                                                            <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
+                                                                                <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                            <div class="p-0 m-0">
+                                                                <div class="text-center">
+                                                                    <span class="d-block text-muted" style="font-size: 1.2rem;">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</span>
+                                                                    <span class="d-block" style="font-size: 8pt;">Beginning Inventory Completion</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="p-0 m-0">
-                                                        <div class="text-center">
-                                                            <span class="d-block text-muted" style="font-size: 1.2rem;">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</span>
-                                                            <span class="d-block" style="font-size: 8pt;">Beginning Inventory Completion</span>
-                                                        </div>
-                                                    </div>
+                                                    </a>
                                                 </div>
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div class="tab-content custom-tabcontent">
-                                        <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
-                                            <div id="beginning-inventory-list-el" class="p-2"></div>
-                                        </div>
-                                        <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
-                                            <form method="GET" id="search-audit-form">
-                                                <div class="row m-0 p-2">
-                                                    <div class="col-3">
-                                                        <select name="store" class="form-control" id="consignment-audit-select" required>
-                                                            <option value="">Select Store</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-3">
-                                                        <select name="cutoff" class="form-control" required>
-                                                            <option value="">Select Cutoff Date</option>
-                                                            @foreach ($cutoff_filters as $cf)
-                                                            <option value="{{ $cf['id'] }}">{{ $cf['cutoff_start'] . ' - ' . $cf['cutoff_end'] }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-3">
-                                                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                            <div class="row m-0 p-2">
-                                                <div class="col-md-6" id="deliveries-content">
+                                            </div>
         
+                                            <div class="tab-content custom-tabcontent">
+                                                <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
+                                                    <div class="row">
+                                                        <div class="col-2 offset-8 mt-2 text-center">
+                                                            <select class="form-control" id="year-filter">
+                                                                <option value="" disabled selected>Select Year</option>
+                                                                <option value="All">All</option>
+                                                                @foreach ($sales_report_included_years as $year)
+                                                                    <option value="{{ $year }}">{{ $year }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-check col-2 text-center mt-2 mb-2 text-white">
+                                                            <input class="form-check-input" type="checkbox" id="hide-zero-check">
+                                                            <label class="form-check-label" for="hide-zero-check"> Hide zero values
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div id="beginning-inventory-list-el" class="p-2"></div>
                                                 </div>
-                                                <div class="col-md-6 bg-white m-0 p-0" id="returns-content">
-                                                   
-                                                </div>
-                                                <div class="col-md-12 bg-white m-0 p-0">
-                                                    <div id="sales-content">
-                                                        <h5 class="text-center text-uppercase mt-2 p-2 border-bottom font-weight-bolder">Sales</h5>
-                                                        <h6 class="text-center text-uppercase text-muted">Please select Store and Cutoff Period</h6>
+                                                <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
+                                                    <form method="GET" id="search-audit-form">
+                                                        <div class="row m-0 p-2">
+                                                            <div class="col-3">
+                                                                <select name="store" class="form-control" id="consignment-audit-select" required>
+                                                                    <option value="">Select Store</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-3">
+                                                                <select name="cutoff" class="form-control" required>
+                                                                    <option value="">Select Cutoff Date</option>
+                                                                    @foreach ($cutoff_filters as $cf)
+                                                                    <option value="{{ $cf['id'] }}">{{ $cf['cutoff_start'] . ' - ' . $cf['cutoff_end'] }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-3">
+                                                                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                    <div class="row m-0 p-2">
+                                                        <div class="col-md-6 bg-white m-0 p-0" id="deliveries-content">
+                
+                                                        </div>
+                                                        <div class="col-md-6 bg-white m-0 p-0" id="returns-content">
+                                                           
+                                                        </div>
+                                                        <div class="col-md-12 bg-white m-0 p-0">
+                                                            <div id="sales-content">
+                                                                <h5 class="text-center text-uppercase mt-2 p-2 border-bottom font-weight-bolder">Sales</h5>
+                                                                <h6 class="text-center text-uppercase text-muted">Please select Store and Cutoff Period</h6>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -169,6 +187,57 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3 m-0 p-1">
+                    <div class="card card-secondary card-outline">
+                        <div class="card-header text-center text-uppercase font-weight-bold">Delivery Summary</div>
+                        <div class="card-body">
+                            <h6 class="text-center">Stock Transfer</h6>
+                            <div class="d-flex flex-row mb-3 text-center">
+                                <div class="p-2 col-6">
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_transfer_qty'] }}</span>    
+                                    <small class="d-block text-muted">Total Qty</small>
+                                </div>
+                                <div class="p-2 col-6">
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_transfer_request'] }}</span>    
+                                    <small class="d-block text-muted">Total Request(s)</small>
+                                </div>
+                            </div>
+                            <h6 class="text-center">Delivered Item</h6>
+                            <div class="d-flex flex-row mb-3 text-center">
+                                <div class="p-2 col-6">
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['delivered_qty'] }}</span>    
+                                    <small class="d-block text-muted">Total Qty</small>
+                                </div>
+                                <div class="p-2 col-6">
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['delivered_value'] }}</span>    
+                                    <small class="d-block text-muted">Total Value</small>
+                                </div>
+                            </div>
+                            <h6 class="text-center">Stock Receiving Completion</h6>
+                            <p class="d-block text-center font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_receiving_completion'] }}<small class="text-muted">%</small></p>
+                            <div class="callout callout-info font-responsive text-center p-2 m-1" style="font-size: 9pt;"><i class="fas fa-exclamation-circle"></i> Note: Displayed data is based on current cutoff period except for "Stock Receiving Completion".</div>
+                        </div>
+                    </div>
+                    <div class="card card-secondary card-outline">
+                        <div class="card-header text-center text-uppercase font-weight-bold">Stocks Summary</div>
+                        <div class="card-body">
+                            <h6 class="text-center">Total Return(s)</h6>
+                            <div class="d-flex flex-row mb-3 text-center">
+                                <div class="p-2 col-6">
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_qty'] }}</span>    
+                                    <small class="d-block text-muted">Total Qty</small>
+                                </div>
+                                <div class="p-2 col-6">
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_value'] }}</span>    
+                                    <small class="d-block text-muted">Total Value</small>
+                                </div>
+                            </div>
+                            <h6 class="text-center">No. of Transaction(s)</h6>
+                            <p class="d-block text-center font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_transaction_count'] }}</p>
+                            <div class="callout callout-info font-responsive text-center p-2 m-1" style="font-size: 9pt;"><i class="fas fa-exclamation-circle"></i> Note: Displayed data is based on current cutoff period.</div>
                         </div>
                     </div>
                 </div>
@@ -318,11 +387,23 @@
     $(function () {
         $('.circlechart').circlechart();
 
+        $(document).on('change', '#hide-zero-check', function() {
+            loadSalesReport();
+        });
+
+        $('#year-filter').change(function(){
+            loadSalesReport();
+        });
+
         loadSalesReport();
         function loadSalesReport() {
+            var hidezero = $('#hide-zero-check').is(":checked");
+            var year = $('#year-filter').val();
+
             $.ajax({
                 type: "GET",
                 url: "/sales_report",
+                data: {hidezero, year},
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
                 }
