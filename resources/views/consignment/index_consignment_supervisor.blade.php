@@ -197,27 +197,27 @@
                             <h6 class="text-center">Stock Transfer</h6>
                             <div class="d-flex flex-row mb-3 text-center">
                                 <div class="p-2 col-6">
-                                    <span class="d-block">{{ $delivery_summary['stock_transfer_qty'] }}</span>    
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_transfer_qty'] }}</span>    
                                     <small class="d-block text-muted">Total Qty</small>
                                 </div>
                                 <div class="p-2 col-6">
-                                    <span class="d-block">{{ $delivery_summary['stock_transfer_request'] }}</span>    
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_transfer_request'] }}</span>    
                                     <small class="d-block text-muted">Total Request(s)</small>
                                 </div>
                             </div>
                             <h6 class="text-center">Delivered Item</h6>
                             <div class="d-flex flex-row mb-3 text-center">
                                 <div class="p-2 col-6">
-                                    <span class="d-block">{{ $delivery_summary['delivered_qty'] }}</span>    
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['delivered_qty'] }}</span>    
                                     <small class="d-block text-muted">Total Qty</small>
                                 </div>
                                 <div class="p-2 col-6">
-                                    <span class="d-block">{{ $delivery_summary['delivered_value'] }}</span>    
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['delivered_value'] }}</span>    
                                     <small class="d-block text-muted">Total Value</small>
                                 </div>
                             </div>
                             <h6 class="text-center">Stock Receiving Completion</h6>
-                            <p class="d-block text-center">{{ $delivery_summary['stock_receiving_completion'] }}<small class="text-muted">%</small></p>
+                            <p class="d-block text-center font-weight-bolder" style="font-size: 18pt;">{{ $delivery_summary['stock_receiving_completion'] }}<small class="text-muted">%</small></p>
                             <div class="callout callout-info font-responsive text-center p-2 m-1" style="font-size: 9pt;"><i class="fas fa-exclamation-circle"></i> Note: Displayed data is based on current cutoff period except for "Stock Receiving Completion".</div>
                         </div>
                     </div>
@@ -227,16 +227,16 @@
                             <h6 class="text-center">Total Return(s)</h6>
                             <div class="d-flex flex-row mb-3 text-center">
                                 <div class="p-2 col-6">
-                                    <span class="d-block">{{ $inventory_summary['stock_return_qty'] }}</span>    
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_qty'] }}</span>    
                                     <small class="d-block text-muted">Total Qty</small>
                                 </div>
                                 <div class="p-2 col-6">
-                                    <span class="d-block">{{ $inventory_summary['stock_return_value'] }}</span>    
+                                    <span class="d-block font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_value'] }}</span>    
                                     <small class="d-block text-muted">Total Value</small>
                                 </div>
                             </div>
                             <h6 class="text-center">No. of Transaction(s)</h6>
-                            <p class="d-block text-center">{{ $inventory_summary['stock_return_transaction_count'] }}</p>
+                            <p class="d-block text-center font-weight-bolder" style="font-size: 18pt;">{{ $inventory_summary['stock_return_transaction_count'] }}</p>
                             <div class="callout callout-info font-responsive text-center p-2 m-1" style="font-size: 9pt;"><i class="fas fa-exclamation-circle"></i> Note: Displayed data is based on current cutoff period.</div>
                         </div>
                     </div>
