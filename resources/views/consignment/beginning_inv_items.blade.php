@@ -1,4 +1,4 @@
-<form action='/save_beginning_inventory' method="post" class="text-center {{ $branch != 'none' ? null : 'd-none' }}">
+<form action='/save_beginning_inventory' id='beginning-inventory-form' method="post" class="text-center {{ $branch != 'none' ? null : 'd-none' }}">
     @csrf
     <div class="row">
         <div class="col-8">
@@ -203,9 +203,9 @@
         <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
         <div class="m-2">
             @if ($inv_name)
-                <button type="submit" class="btn btn-danger btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
+                <button type="button" class="btn btn-danger btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
             @else
-                <button type="submit" class="btn btn-primary btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
+                <button type="button" class="btn btn-primary btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
             @endif
             <input type="checkbox" class='d-none' name="cancel" id="cancel-check" {{ $inv_name ? 'checked' : null }}>
         </div>
@@ -219,6 +219,28 @@
 
     <div class="w-100 text-center d-none p-2" id="add-item-success" style="position: absolute; top: 0; left: 0">
         <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">New item added.</div>
+    </div>
+
+    <div class="modal fade" id="inputErrorModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-navy">
+                    <h6 class="modal-title" id="exampleModalLabel">Warning</h6>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" style="color: #fff;">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid text-justify" id="input-error-container" style="font-size: 8pt;">
+                        <span><i class="fas fa-info-circle"></i> Please remove item(s) with zero(0) stocks and/or price:</span> <br>
+                        <span>You can remove item(s) by clicking (<i class="fa fa-remove" style='color: red;'></i>)</span>
+                        <div id="inc-item-codes">
+                            <ul></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </form>
 <style>
@@ -239,59 +261,79 @@
             validate_submit();
         });
 
-        validate_submit();
-        function validate_submit(){
-            var inputs = new Array();
-            var item_codes = new Array();
+        var item_codes = new Array();
+        var incorrect_item_codes = new Array();
+        $('#submit-btn').click(function (){
+            $('.wrong-item-code').remove();
+            item_codes = [];
+            incorrect_item_codes = [];
             
             $('.validate.stock').each(function(){ // check stocks
                 var item_code = $(this).data('item-code');
                 var stock_value = parseInt($(this).val());
                 var val = 0;
 
-                if($.isNumeric($(this).val())){
-                    if(stock_value < 0){ // if negative
-                        $(this).css('border', '1px solid red');
-                    }else if(stock_value > 0){ // push in array if user puts value in stocks
-                        item_codes.push(item_code);
-                        $(this).css('border', '1px solid #CED4DA');
+                if($(this).val() != ''){
+                    if($.isNumeric($(this).val())){
+                        if(stock_value > 0){ // push in array if user puts value in stocks
+                            item_codes.push(item_code);
+                        }
                     }else{
-                        $(this).css('border', '1px solid #CED4DA');
+                        incorrect_item_codes.push(item);
                     }
-                }else if($(this).val() == ''){
-                    $(this).css('border', '1px solid red');
-                }else{
-                    $(this).css('border', '1px solid red');
+                }
+            });
+
+            $('.validate.price').each(function(){ // check price
+                var item_code = $(this).data('item-code');
+                var price = parseInt($(this).val());
+
+                if($(this).val() != ''){
+                    if($.isNumeric($(this).val())){
+                        if(price > 0){ // push in array if user puts value in stocks
+                            item_codes.push(item_code);
+                        }
+                    }else{
+                        incorrect_item_codes.push(item);
+                    }
                 }
             });
 
             $.each(item_codes, function (e, item){ // validate stocks and price
-                var val = 0;
-                if($.isNumeric($('#'+item+'-price').val())){
+                if($.isNumeric($('#'+item+'-price').val()) && $.isNumeric($('#'+item+'-stock').val())){
                     var stock = parseInt($('#'+item+'-stock').val());
                     var price = parseInt($('#'+item+'-price').val());
-                    if(stock > 0 && price <= 0){ // if item has stock qty and the price is 0
-                        val = 0;
-                        $('#'+item+'-price').css('border', '1px solid red');
+                    if(price > 0 && stock > 0){
+                        incorrect_item_codes = jQuery.grep(incorrect_item_codes, function(value) {
+                            return value != item;
+                        });
                     }else{
-                        val = 1;
-                        $('#'+item+'-price').css('border', '1px solid #CED4DA');
-                        $('#'+item+'-stock').css('border', '1px solid #CED4DA');
+                        incorrect_item_codes.push(item);
                     }
                 }else{
-                    val = 0
-                    $('#'+item+'-price').css('border', '1px solid red');
+                    incorrect_item_codes.push(item);
                 }
-                
-                inputs.push(val);
             });
 
-            var allow_inputs = 0;
-            if(inputs.length > 0){
-                allow_inputs = Math.min.apply(Math, inputs);
-            }
+            $.each(incorrect_item_codes, function(i, e) {
+                if ($.inArray(e, incorrect_item_codes) == -1) incorrect_item_codes.push(e);
+            });
 
-            if(parseInt($('#item-count').text()) > 0 && allow_inputs == 1){
+            if(incorrect_item_codes.length > 0){
+                $.each(incorrect_item_codes, function(e, item){
+                    $('#inc-item-codes ul').append('<li class="wrong-item-code">'+ item +'</li>');
+                });
+
+                $('#inputErrorModal').modal('show');
+            }else{
+                $('#beginning-inventory-form').submit();
+            }
+        });
+
+
+        validate_submit();
+        function validate_submit(){
+            if(parseInt($('#item-count').text()) > 0){
                 $('#submit-btn').prop('disabled', false);
             }else{
                 $('#submit-btn').prop('disabled', true);
