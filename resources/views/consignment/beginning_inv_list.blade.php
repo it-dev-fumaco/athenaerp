@@ -11,16 +11,6 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
                         <div class="card-header p-2">
-                            @if(session()->has('success'))
-                                <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
-                                    {{ session()->get('success') }}
-                                </div>
-                            @endif
-                            @if(session()->has('error'))
-                                <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
-                                    {{ session()->get('error') }}
-                                </div>
-                            @endif
                             <div class="d-flex flex-row align-items-center justify-content-between" style="font-size: 9pt;">
                                 <div class="p-0">
                                     <span class="font-responsive font-weight-bold text-uppercase m-0 p-0">Beginning Inventory</span>
@@ -31,6 +21,16 @@
                             </div>
                         </div>
                         <div class="card-body p-0">
+                            @if(session()->has('success'))
+                                <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
+                                    {{ session()->get('success') }}
+                                </div>
+                            @endif
+                            @if(session()->has('error'))
+                                <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
+                                    {{ session()->get('error') }}
+                                </div>
+                            @endif
                             <table class="table table-striped">
                                 <thead class="text-uppercase">
                                     <th class="font-responsive text-center p-2">Date</th>
