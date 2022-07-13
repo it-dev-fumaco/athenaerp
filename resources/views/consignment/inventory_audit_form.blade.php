@@ -66,7 +66,7 @@
                                                 $qty = $data['item'][$row->item_code]['qty'];
                                             }
                                         @endphp
-                                        <tr style="border-bottom: 0 !important;" class="{{ session()->has('error') && session()->has('item_code') ? 'bg-warning' : '' }}">
+                                        <tr style="border-bottom: 0 !important;" class="{{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
                                             <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-1 text-left">
@@ -149,7 +149,7 @@
                                                 <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr class="{{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
                                             <td colspan="4" style="border-top: 0 !important;">
                                                 <span class="d-none">{{ $row->item_code }}</span>
                                                 <div class="item-description">{!! strip_tags($row->description) !!}</div>
