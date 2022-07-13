@@ -242,6 +242,7 @@ class ConsignmentController extends Controller
                 $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
                 $sold_qty = $consigned_qty - (float)$row['qty'];
                 $amount = ((float)$price * (float)$sold_qty);
+                $iar_amount = ((float)$price * (float)$row['qty']);
 
                 if ($consigned_qty < (float)$row['qty']) {
                     return redirect()->back()
@@ -311,13 +312,13 @@ class ConsignmentController extends Controller
                     if ($iar_existing_child_record) {
                         $no_of_items_updated++;
                         $iar_total_items++;
-                        $iar_grand_total += $amount;
+                        $iar_grand_total += $iar_amount;
 
                         DB::table('tabConsignment Sales Report Item')->where('name', $iar_existing_child_record->name)->update([
                             'modified' => $currentDateTime->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
                             'qty' => (float)$row['qty'],
-                            'amount' => $amount
+                            'amount' => $iar_amount
                         ]);
 
                         $has_existing_iari = true;
@@ -327,31 +328,28 @@ class ConsignmentController extends Controller
                 } 
 
                 if (!$has_existing_iari) {
-                    if ($sold_qty > 0) {
-                        $no_of_items_updated++;
-                        $csr_total_items++;
-                        $csr_grand_total += $amount;
-                        $csr_total_qty_sold += $sold_qty;
+                    $no_of_items_updated++;
+                    $iar_total_items++;
+                    $iar_grand_total += $iar_amount;
 
-                        $new_iar_child_data[] = [
-                            'name' => uniqid(),
-                            'creation' => $currentDateTime->toDateTimeString(),
-                            'modified' => $currentDateTime->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'owner' => Auth::user()->wh_user,
-                            'docstatus' => 0,
-                            'parent' => $iar_child_parent_name,
-                            'parentfield' => 'items',
-                            'parenttype' => 'Consignment Inventory Audit Report',
-                            'idx' => $no_of_items_updated,
-                            'item_code' => $item_code,
-                            'description' => $row['description'],
-                            'qty' => (float)$row['qty'],
-                            'price' => (float)$price,
-                            'amount' => $amount,
-                            'available_stock_on_transaction' => $consigned_qty
-                        ];
-                    }
+                    $new_iar_child_data[] = [
+                        'name' => uniqid(),
+                        'creation' => $currentDateTime->toDateTimeString(),
+                        'modified' => $currentDateTime->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => $iar_child_parent_name,
+                        'parentfield' => 'items',
+                        'parenttype' => 'Consignment Inventory Audit Report',
+                        'idx' => $no_of_items_updated,
+                        'item_code' => $item_code,
+                        'description' => $row['description'],
+                        'qty' => (float)$row['qty'],
+                        'price' => (float)$price,
+                        'amount' => $iar_amount,
+                        'available_stock_on_transaction' => $consigned_qty
+                    ];
                 }
             }
 
