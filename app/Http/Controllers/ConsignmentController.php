@@ -2099,10 +2099,6 @@ class ConsignmentController extends Controller
                     if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
                         continue;
                     }
-                    
-                    if(in_array($item_code, $item_codes_with_beginning_inventory)){
-                        continue;
-                    }
 
                     if(isset($opening_stock[$item_code]) && $opening_stock[$item_code] < 0 || isset($price[$item_code]) && $price[$item_code] < 0){
                         return redirect()->back()->with('error', 'Cannot enter value below 0');
