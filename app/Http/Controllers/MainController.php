@@ -154,7 +154,7 @@ class MainController extends Controller
                     ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
                     ->toArray();
 
-                $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+                $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit Report')
                     ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
                     ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
                     ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
@@ -401,7 +401,7 @@ class MainController extends Controller
             ->orderBy('branch_warehouse', 'asc')->groupBy('branch_warehouse')
             ->pluck('transaction_date', 'branch_warehouse')->toArray();
 
-        $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+        $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit Report')
             ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
             ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
             ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')

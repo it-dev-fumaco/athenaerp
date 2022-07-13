@@ -77,7 +77,7 @@ class ConsignmentController extends Controller
 
     public function viewInventoryAuditForm($branch, $transaction_date) {
         // get last inventory audit date
-        $last_inventory_date = DB::table('tabConsignment Inventory Audit')
+        $last_inventory_date = DB::table('tabConsignment Inventory Audit Report')
             ->where('status', 'Approved')->where('branch_warehouse', $branch)->max('transaction_date');
 
         if (!$last_inventory_date) {
@@ -3232,7 +3232,7 @@ class ConsignmentController extends Controller
                 ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
                 ->toArray();
     
-            $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+            $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit Report')
                 ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
                 ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
                 ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
@@ -3337,9 +3337,9 @@ class ConsignmentController extends Controller
         if ($is_promodiser) {
             $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')
                 ->where('parent', Auth::user()->frappe_userid)->orderBy('warehouse', 'asc')
-                ->distinct()->pluck('warehouse');
+                ->distinct()->pluck('warehouse')->toArray();
 
-            $query = DB::table('tabConsignment Inventory Audit')
+            $query = DB::table('tabConsignment Inventory Audit Report')
                 ->when($store, function ($q) use ($store){
                     return $q->where('branch_warehouse', $store);
                 })
@@ -3369,7 +3369,7 @@ class ConsignmentController extends Controller
             return view('consignment.tbl_submitted_inventory_audit', compact('result', 'query'));
         }
 
-        $list = DB::table('tabConsignment Inventory Audit')
+        $list = DB::table('tabConsignment Inventory Audit Report')
             ->when($store, function ($q) use ($store){
                 return $q->where('branch_warehouse', $store);
             })
@@ -3407,7 +3407,7 @@ class ConsignmentController extends Controller
     public function viewInventoryAuditItems($store, $from, $to) {
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? true : false;
 
-        $list = DB::table('tabConsignment Inventory Audit')
+        $list = DB::table('tabConsignment Inventory Audit Report')
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->get();
 
@@ -3435,7 +3435,7 @@ class ConsignmentController extends Controller
 
         $beginning_inventory = collect($beginning_inventory)->groupBy('item_code')->toArray();
 
-        $inv_audit = DB::table('tabConsignment Inventory Audit')
+        $inv_audit = DB::table('tabConsignment Inventory Audit Report as cia')->join('tabConsignment Inventory Audit Report Item as ciar', 'cia.name', 'ciar.parent')
             ->where('branch_warehouse', $store)->where('transaction_date', '<', $from)
             ->select('item_code', 'qty', 'transaction_date')
             ->orderBy('transaction_date', 'asc')->get();
@@ -3495,7 +3495,7 @@ class ConsignmentController extends Controller
             return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'total_sales'));
         }
 
-        $promodisers = DB::table('tabConsignment Inventory Audit')
+        $promodisers = DB::table('tabConsignment Inventory Audit Report')
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->distinct()->pluck('promodiser')->toArray();
             
@@ -3616,7 +3616,7 @@ class ConsignmentController extends Controller
             ->orderBy('branch_warehouse', 'asc')->groupBy('branch_warehouse')
             ->pluck('transaction_date', 'branch_warehouse')->toArray();
 
-        $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit')
+        $inventory_audit_per_warehouse = DB::table('tabConsignment Inventory Audit Report as cia')->join('tabConsignment Inventory Audit Report Item as ciar', 'cia.name', 'ciar.parent')
             ->whereIn('branch_warehouse', array_keys($stores_with_beginning_inventory))
             ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
             ->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')
@@ -3917,7 +3917,7 @@ class ConsignmentController extends Controller
 
         $beginning_inventory = collect($beginning_inventory)->groupBy('item_code')->toArray();
 
-        $inv_audit = DB::table('tabConsignment Inventory Audit')
+        $inv_audit = DB::table('tabConsignment Inventory Audit Report')
             ->where('branch_warehouse', $store)->where('transaction_date', '<', $cutoff_start)
             ->select('item_code', 'qty', 'transaction_date')
             ->orderBy('transaction_date', 'asc')->get();
