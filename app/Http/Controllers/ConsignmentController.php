@@ -199,7 +199,7 @@ class ConsignmentController extends Controller
 
             $csr_existing_record = DB::table('tabConsignment Sales Report')->where('transaction_date', $data['transaction_date'])
                 ->where('branch_warehouse', $data['branch_warehouse'])->where('cutoff_period_from', $period_from)
-                ->where('cutoff_period_to', $period_to)->first();
+                ->where('cutoff_period_to', $period_to)->where('status', '!=', 'Cancelled')->first();
 
             if (!$csr_existing_record) {
                 $csr_latest_id = DB::table('tabConsignment Sales Report')->max('name');
