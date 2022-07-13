@@ -366,8 +366,8 @@ class ConsignmentController extends Controller
             } 
 
             if (!$iar_existing_record) {
-                $new_iar_parent_data['grand_total'] = $csr_grand_total;
-                $new_iar_parent_data['total_items'] = $csr_total_items;
+                $new_iar_parent_data['grand_total'] = $iar_grand_total;
+                $new_iar_parent_data['total_items'] = $iar_total_items;
 
                 DB::table('tabConsignment Inventory Audit Report')->insert($new_iar_parent_data);
                 $reference = $iar_existing_record ? $iar_existing_record->name : $iar_new_id;
