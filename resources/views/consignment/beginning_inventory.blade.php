@@ -11,14 +11,14 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
                         <div class="card-header text-center p-2">
-                            @if(session()->has('error'))
-                                <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
-                                    {{ session()->get('error') }}
-                                </div>
-                            @endif
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory Entry</span>
                         </div>
                         <div class="card-body p-1">
+                            @if(session()->has('error'))
+                                <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
+                                    {{ session()->get('error') }}
+                                </div>
+                            @endif
                             <h5 class="text-center mt-2 font-weight-bolder">
                                 {{ \Carbon\Carbon::now()->format('F d, Y') }} <span class="badge badge-success float-right {{ $inv_record ? null : 'd-none' }}">{{ $inv_record ? $inv_record->status : null }}</span>
                             </h5>

@@ -11,17 +11,17 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
                         <div class="card-header text-center">
-                            @if(session()->has('error'))
-                                <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
-                                    {{ session()->get('error') }}
-                                </div>
-                            @endif
                             <h6 class="text-center mt-1 font-weight-bold">Stock Transfer Request</h6>
                         </div>
                         <div class="card-header text-center font-weight-bold">
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
                         </div>
                         <div class="card-body p-1">
+                            @if(session()->has('error'))
+                                <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
+                                    {{ session()->get('error') }}
+                                </div>
+                            @endif
                             <form action="/stock_transfer/submit" method="post">
                                 @csrf
                                 <div class="row p-1" style="font-size: 9pt">

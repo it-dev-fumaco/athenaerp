@@ -12,12 +12,12 @@
                     <div class="card card-lightblue">
                         <div class="card-header p-2">
                             @if(session()->has('success'))
-                                <div class="alert alert-success alert-dismissible fade show" role="alert" style="font-size: 10pt;">
+                                <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
                                     {{ session()->get('success') }}
                                 </div>
                             @endif
                             @if(session()->has('error'))
-                                <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert" style="font-size: 10pt;">
+                                <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
                                     {{ session()->get('error') }}
                                 </div>
                             @endif

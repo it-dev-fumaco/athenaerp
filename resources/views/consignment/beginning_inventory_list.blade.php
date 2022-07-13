@@ -15,10 +15,10 @@
 						</div>
 						<div class="card-body p-0">
 							@if(session()->has('success'))
-							<div class="alert alert-success fade show font-responsive" role="alert">{{ session()->get('success') }}</div>
+							<div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('success') }}</div>
 							@endif
 							@if(session()->has('error'))
-							<div class="alert alert-danger fade show font-responsive" role="alert">{{ session()->get('error') }}</div>
+							<div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('error') }}</div>
 							@endif
 							<div id="accordion">
 								<button type="button" class="btn btn-link border-bottom btn-block text-left" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne" style="font-size: 10pt;">

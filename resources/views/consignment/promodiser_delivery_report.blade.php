@@ -11,12 +11,6 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
                         <div class="card-header text-center p-2">
-                            @if(session()->has('success'))
-                            <div class="alert alert-success fade show font-responsive" role="alert">{!! session()->get('success') !!}</div>
-                            @endif
-                            @if(session()->has('error'))
-                            <div class="alert alert-danger fade show font-responsive" role="alert">{!! session()->get('error') !!}</div>
-                            @endif
                             <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">
                                 @if ($type == 'all')
                                     Delivery Report
@@ -26,6 +20,12 @@
                             </span>
                         </div>
                         <div class="card-body p-1">
+                            @if(session()->has('success'))
+                            <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{!! session()->get('success') !!}</div>
+                            @endif
+                            @if(session()->has('error'))
+                            <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{!! session()->get('error') !!}</div>
+                            @endif
                             <table class="table" style='font-size: 10pt;'>
                                 <thead>
                                     <th class="text-center p-1 align-middle">Store</th>

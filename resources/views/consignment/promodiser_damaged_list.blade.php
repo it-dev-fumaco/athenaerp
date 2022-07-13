@@ -10,24 +10,25 @@
                 <div class="row pt-1">
                     <div class="col-md-12 p-0 m-0">
                         <div class="card card-lightblue">
-                            @if(session()->has('success'))
+                          
+                            <div class="card-header text-center p-2">
+                                <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Damaged Items List</span>
+                            </div>
+                            <div class="card-body p-0">
+                                @if(session()->has('success'))
                                 <div class="p-2">
-                                    <div class="alert alert-success fade show font-responsive text-center" role="alert">
+                                    <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
                                         {{ session()->get('success') }}
                                     </div>
                                 </div>
                             @endif
                             @if(session()->has('error'))
                                 <div class="p-2">
-                                    <div class="alert alert-danger fade show font-responsive text-center" role="alert">
+                                    <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
                                         {{ session()->get('error') }}
                                     </div>
                                 </div>
                             @endif
-                            <div class="card-header text-center p-2">
-                                <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Damaged Items List</span>
-                            </div>
-                            <div class="card-body p-0">
                                 <div class="col-12">
                                     <input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
                                 </div>

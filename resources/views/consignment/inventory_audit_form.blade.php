@@ -22,12 +22,12 @@
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('success'))
-                            <div class="alert alert-success fade show text-center" role="alert" style="font-size: 10pt;">
+                            <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
                                 {!! session()->get('success') !!}
                             </div>
                             @endif
                             @if(session()->has('error'))
-                            <div class="alert alert-danger fade show text-center" role="alert" style="font-size: 10pt;">
+                            <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
                                 {!! session()->get('error') !!}
                             </div>
                             @endif
@@ -66,7 +66,7 @@
                                                 $qty = $data['item'][$row->item_code]['qty'];
                                             }
                                         @endphp
-                                        <tr style="border-bottom: 0 !important;">
+                                        <tr style="border-bottom: 0 !important;" class="{{ session()->has('error') && session()->has('item_code') ? 'bg-warning' : '' }}">
                                             <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-1 text-left">

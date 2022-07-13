@@ -218,9 +218,7 @@
     </div>
 
     <div class="w-100 text-center d-none p-2" id="add-item-success" style="position: absolute; top: 0; left: 0">
-        <div class="alert alert-success alert-dismissible fade show font-responsive p-1" role="alert">
-            New item added.
-        </div>
+        <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">New item added.</div>
     </div>
 </form>
 <style>
