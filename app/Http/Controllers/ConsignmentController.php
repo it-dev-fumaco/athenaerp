@@ -167,6 +167,7 @@ class ConsignmentController extends Controller
                 ->where('branch_warehouse', $data['branch_warehouse'])->first();
 
             $new_iar_parent_data = $new_csr_parent_data = [];
+            $iar_new_id = null;
             if (!$iar_existing_record) {
                 $iar_latest_id = DB::table('tabConsignment Inventory Audit Report')->max('name');
                 $iar_latest_id_exploded = explode("-", $iar_latest_id);
@@ -201,6 +202,7 @@ class ConsignmentController extends Controller
                 ->where('branch_warehouse', $data['branch_warehouse'])->where('cutoff_period_from', $period_from)
                 ->where('cutoff_period_to', $period_to)->where('status', '!=', 'Cancelled')->first();
 
+            $csr_new_id = null;
             if (!$csr_existing_record) {
                 $csr_latest_id = DB::table('tabConsignment Sales Report')->max('name');
                 $csr_latest_id_exploded = explode("-", $csr_latest_id);
@@ -353,12 +355,14 @@ class ConsignmentController extends Controller
                 }
             }
 
+            $reference = null;
             if (!$csr_existing_record) {
                 $new_csr_parent_data['grand_total'] = $csr_grand_total;
                 $new_csr_parent_data['total_qty_sold'] = $csr_total_qty_sold;
                 $new_csr_parent_data['total_items'] = $csr_total_items;
 
                 DB::table('tabConsignment Sales Report')->insert($new_csr_parent_data);
+                $reference = $csr_existing_record ? $csr_existing_record->name : $csr_new_id;
             } 
 
             if (!$iar_existing_record) {
@@ -366,6 +370,7 @@ class ConsignmentController extends Controller
                 $new_iar_parent_data['total_items'] = $csr_total_items;
 
                 DB::table('tabConsignment Inventory Audit Report')->insert($new_iar_parent_data);
+                $reference = $iar_existing_record ? $iar_existing_record->name : $iar_new_id;
             } 
 
             if ($csr_existing_record) {
@@ -376,6 +381,7 @@ class ConsignmentController extends Controller
                     'total_qty_sold' => $csr_total_qty_sold,
                     'total_items' => $csr_total_items,
                 ]);
+                $reference = $csr_existing_record ? $csr_existing_record->name : $csr_new_id;
             } 
 
             if ($iar_existing_record) {
@@ -385,6 +391,7 @@ class ConsignmentController extends Controller
                     'grand_total' => $iar_grand_total,
                     'total_items' => $iar_total_items,
                 ]);
+                $reference = $iar_existing_record ? $iar_existing_record->name : $iar_new_id;
             }
 
             if (count($new_iar_child_data) > 0) {
@@ -395,6 +402,25 @@ class ConsignmentController extends Controller
                 DB::table('tabConsignment Sales Report Item')->insert($new_csr_child_data);
             }
 
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Inventory Audit Report of '.$data['branch_warehouse'].' for cutoff periods '.$period_from.' - '.$period_to.'  has been created by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Inventory Audit',
+                'reference_name' => $reference,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
             DB::commit();
 
             return redirect()->back()->with([
@@ -516,6 +542,7 @@ class ConsignmentController extends Controller
                 ->where('cutoff_period_to', $period_to)->first();
 
             $grand_total = $total_qty_sold = $total_items = 0;
+            $new_id = null;
             if (!$existing_record) {
                 $latest_id = DB::table('tabConsignment Sales Report')->max('name');
                 $latest_id_exploded = explode("-", $latest_id);
@@ -695,7 +722,26 @@ class ConsignmentController extends Controller
                     'total_items' => $total_items,
                 ]);
             }
-   
+
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Sales Report of '.$request->branch_warehouse.' for the date of '.$request->transaction_date.' has been '.($existing_record ? 'updated' : 'created').' by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Sales Report',
+                'reference_name' => $existing_record ? $existing_record->name : $new_id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
             DB::commit();
 
             return redirect()->back()->with([
@@ -1257,6 +1303,26 @@ class ConsignmentController extends Controller
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update($update_values);
             DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
 
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Approved Beginning Inventory Record for '.$inventory->branch_warehouse.' has been cancelled by '.$inventory->owner.' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Beginning Inventory',
+                'reference_name' => $inventory->name,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
+
             DB::commit();
 
             return redirect()->back()->with('success', 'Beginning Inventory for '.$inventory->branch_warehouse.' was cancelled.');
@@ -1403,7 +1469,8 @@ class ConsignmentController extends Controller
             $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
                 ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
                 ->whereIn('cb.branch_warehouse', array_filter([$target_warehouses, $wh->to_warehouse]))->whereIn('cb.status', ['For Approval', 'Approved'])
-                ->select('cb.branch_warehouse', 'cbi.item_code', 'cb.name', 'cb.status', 'cbi.opening_stock')->get();
+                ->select('cb.branch_warehouse', 'cbi.item_code', 'cb.name', 'cb.status', 'cbi.opening_stock', 'cbi.price')->get();
+            $previous_check = collect($beginning_inventory)->groupBy('item_code');
 
             $item_codes_with_beginning_inventory = collect($beginning_inventory)->map(function ($q){
                 return $q->item_code;
@@ -1566,7 +1633,60 @@ class ConsignmentController extends Controller
                 }
 
                 DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
+
+                $previous_price = isset($previous_check[$item->item_code]) ? (float)$previous_check[$item->item_code][0]->price : 0;
+                if((float)$basic_rate != $previous_price){
+                    $logs = [
+                        'name' => uniqid(),
+                        'creation' => Carbon::now()->toDateTimeString(),
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'subject' => 'Stock Adjustment for '.$branch.', set '.$item->item_code.' price from '.number_format($previous_price).' to '.number_format($basic_rate).' has been created by '.Auth::user()->full_name. ' at '.Carbon::now()->toDateTimeString(),
+                        'content' => 'Consignment Activity Log',
+                        'communication_date' => Carbon::now()->toDateTimeString(),
+                        'reference_doctype' => 'Stock Adjustment',
+                        'reference_name' => $id,
+                        'reference_owner' => Auth::user()->wh_user,
+                        'user' => Auth::user()->wh_user,
+                        'full_name' => Auth::user()->full_name,
+                    ];
+        
+                    DB::table('tabActivity Log')->insert($logs);
+                }
             }
+
+            $source_warehouse = $wh->from_warehouse ? $wh->from_warehouse : null;
+            if(!$source_warehouse){
+                $source_warehouse = isset($source_warehouses[0]) ? $source_warehouses[0] : null;
+            }
+
+            $target_warehouse = $wh->to_warehouse ? $wh->to_warehouse : null;
+            if(!$target_warehouse){
+                $target_warehouse = isset($target_warehouses[0]) ? $target_warehouses[0] : null;
+            }
+
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Stock Transfer from '.$source_warehouse.' to '.$target_warehouse.' has been received by '.Auth::user()->full_name. ' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Stock Entry',
+                'reference_name' => $id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
 
             DB::commit();
             return redirect()->back()->with('success', 'Items received');
@@ -1646,6 +1766,36 @@ class ConsignmentController extends Controller
                     'consignment_date_received' => null
                 ]);
             }
+
+            $source_warehouse = $stock_entry->from_warehouse ? $stock_entry->from_warehouse : null;
+            if(!$source_warehouse){
+                $source_warehouse = isset($received_items[0]) ? $received_items[0]->s_warehouse : null;
+            }
+
+            $target_warehouse = $stock_entry->to_warehouse ? $stock_entry->to_warehouse : null;
+            if(!$target_warehouse){
+                $target_warehouse = isset($received_items[0]) ? $received_items[0]->t_warehouse : null;
+            }
+
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Stock Transfer from '.$source_warehouse.' to '.$target_warehouse.' has been cancelled by '.Auth::user()->full_name. ' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Stock Entry',
+                'reference_name' => $id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
 
             DB::commit();
             return redirect()->back()->with('success', 'Received Item(s) Cancelled');
@@ -1925,12 +2075,18 @@ class ConsignmentController extends Controller
                 }
 
                 session()->flash('success', 'Beginning Inventory is For Approval');
+
+                $subject = 'For Approval Beginning Inventory Entry for ' .$branch. ' has been created by '.Auth::user()->full_name.' at '.$now;
+                $reference = $inv_id;
             }else if(isset($request->cancel)){ // delete cancelled beginning inventory record
                 DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->delete();
                 DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->delete();
 
                 session()->flash('success', 'Beginning Inventory is Cancelled');
                 session()->flash('cancelled', 'Cancelled');
+
+                $subject = 'For Approval Beginning Inventory Record for ' .$branch. ' has been deleted by '.Auth::user()->full_name.' at '.$now;
+                $reference = $request->inv_name;
             }else{
                 $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->pluck('item_code')->toArray();
                 $removed_items = array_diff($inventory_items, $item_codes->toArray());
@@ -2011,7 +2167,30 @@ class ConsignmentController extends Controller
                 ]);
 
                 session()->flash('success', 'Beginning Inventory is Updated');
+
+                $subject = 'For Approval Beginning Inventory Record for ' .$branch. ' has been updated by '.Auth::user()->full_name.' at '.$now;
+                $reference = $request->inv_name;
             }
+
+            $logs = [
+                'name' => uniqid(),
+                'creation' => $now,
+                'modified' => $now,
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => $subject,
+                'content' => 'Consignment Activity Log',
+                'communication_date' => $now,
+                'reference_doctype' => 'Beginning Inventory',
+                'reference_name' => $reference,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
 
             DB::commit();
             return view('consignment.beginning_inv_success', compact('item_count', 'branch'));
@@ -2229,6 +2408,9 @@ class ConsignmentController extends Controller
                     }
                 }
 
+                $qty = isset($damaged_qty[$item_code]) ? number_format($damaged_qty[$item_code]) : 0;
+                $uom = isset($items[$item_code]) ? $items[$item_code][0]->stock_uom : null;
+
                 $insert_values = [
                     'name' => uniqid(),
                     'creation' => Carbon::now()->toDateTimeString(),
@@ -2238,8 +2420,8 @@ class ConsignmentController extends Controller
                     'branch_warehouse' => $request->branch,
                     'item_code' => $item_code,
                     'description' => isset($items[$item_code]) ? $items[$item_code][0]->description : null,
-                    'qty' => isset($damaged_qty[$item_code]) ? $damaged_qty[$item_code] : 0,
-                    'stock_uom' => isset($items[$item_code]) ? $items[$item_code][0]->stock_uom : null,
+                    'qty' => $qty,
+                    'stock_uom' => $uom,
                     'damage_description' => isset($reason[$item_code]) ? $reason[$item_code] : 0,
                     'promodiser' => Auth::user()->full_name,
                     'modified' => Carbon::now()->toDateTimeString(),
@@ -2247,6 +2429,26 @@ class ConsignmentController extends Controller
                 ];
 
                 DB::table('tabConsignment Damaged Item')->insert($insert_values);
+
+                $logs = [
+                    'name' => uniqid(),
+                    'creation' => Carbon::now()->toDateTimeString(),
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'idx' => 0,
+                    'subject' => 'Damaged Item Report for '.$qty.' '.$uom.' of '.$item_code.' from '.$request->branch.' has been created by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
+                    'content' => 'Consignment Activity Log',
+                    'communication_date' => Carbon::now()->toDateTimeString(),
+                    'reference_doctype' => 'Damaged Items',
+                    'reference_name' => $item_code,
+                    'reference_owner' => Auth::user()->wh_user,
+                    'user' => Auth::user()->wh_user,
+                    'full_name' => Auth::user()->full_name,
+                ];
+
+                DB::table('tabActivity Log')->insert($logs);
             }
 
             DB::commit();
@@ -2376,8 +2578,27 @@ class ConsignmentController extends Controller
                 'status' => 'Returned'
             ]);
 
-            DB::commit();
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Damaged Item Report for '.number_format($damaged_item->qty).' '.$damaged_item->stock_uom.' of '.$damaged_item->item_code.' from '.$damaged_item->branch_warehouse.' has been returned to Quarantine Warehouse - FI by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Damaged Items',
+                'reference_name' => $id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
 
+            DB::table('tabActivity Log')->insert($logs);
+
+            DB::commit();
             return redirect()->back()->with('success', 'Item Returned.');
         } catch (Exception $e) {
             DB::rollback();
@@ -2508,6 +2729,7 @@ class ConsignmentController extends Controller
         return response()->json($items_arr);
     }
 
+    // /stock_transfer/form
     public function stockTransferSubmit(Request $request){
         DB::beginTransaction();
         try {
@@ -2596,6 +2818,8 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabStock Entry')->insert($stock_entry_data);
+
+            $from_msg = $request->transfer_as != 'Sales Return' ?  ' from '.$request->source_warehouse : null;
       
             $logs = [
                 'name' => uniqid(),
@@ -2605,7 +2829,7 @@ class ConsignmentController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => $request->transfer_as . ' request from ' . $request->source_warehouse . ' to ' . $target_warehouse. ' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                'subject' => $request->transfer_as . ' request' .$from_msg. ' to '.$target_warehouse. ' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
                 'reference_doctype' => 'Stock Entry',
@@ -2851,6 +3075,30 @@ class ConsignmentController extends Controller
             }else{
                 $transaction = 'Sales Return';
             }
+
+            $source_warehouse = $source_warehouse ? $source_warehouse : $stock_entry_detail[0]->s_warehouse;
+            $target_warehouse = $target_warehouse ? $target_warehouse : $stock_entry_detail[0]->t_warehouse;
+            $from_msg = $transaction != 'Sales Return' ? ' from '.$source_warehouse : null;
+
+            $logs = [
+                'name' => uniqid(),
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => $transaction.' request'.$from_msg.' to '.$target_warehouse.' has been deleted by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => $now->toDateTimeString(),
+                'reference_doctype' => 'Stock Entry',
+                'reference_name' => $id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
 
             DB::commit();
             return redirect()->route('stock_transfers', ['purpose' => $stock_entry->purpose])->with('success', $transaction.' has been cancelled.');
@@ -3272,6 +3520,9 @@ class ConsignmentController extends Controller
             $bin = DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->whereIn('item_code', $item_codes)->select('name', 'item_code', 'consigned_qty')->get();
             $bin = collect($bin)->groupBy('item_code');
 
+            $cbi_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+            $cbi_items = collect($cbi_items)->groupBy('item_code');
+
             foreach($item_codes as $item_code){
                 if(isset($stocks[$item_code])){
                     $opening_qty = preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']);
@@ -3290,18 +3541,13 @@ class ConsignmentController extends Controller
                         'consigned_qty' => $opening_qty
                     ]);
 
-                    $previous_stock = isset($bin[$item_code]) ? $bin[$item_code][0]->consigned_qty : 0;
-                    $previous_stock = number_format($previous_stock);
-
                     $logs = [
-                        'name' => uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
                         'idx' => 0,
-                        'subject' => 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' consigned qty from '.$previous_stock.' to '.preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']).' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                         'content' => 'Consignment Activity Log',
                         'communication_date' => $now->toDateTimeString(),
                         'reference_doctype' => 'Stock Adjustment',
@@ -3310,8 +3556,31 @@ class ConsignmentController extends Controller
                         'user' => Auth::user()->wh_user,
                         'full_name' => Auth::user()->full_name,
                     ];
-        
-                    DB::table('tabActivity Log')->insert($logs);
+
+                    if(isset($cbi_items[$item_code])){
+                        $previous_stock = isset($bin[$item_code]) ? (float)$bin[$item_code][0]->consigned_qty : 0;
+                        $previous_price = (float)$cbi_items[$item_code][0]->price;
+
+                        if($previous_stock != (float)$opening_qty){
+                            unset($logs['subject']);
+                            unset($logs['name']);
+
+                            $logs['name'] = uniqid();
+                            $logs['subject'] = 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' consigned qty from '.number_format($previous_stock).' to '.$opening_qty.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString();
+
+                            DB::table('tabActivity Log')->insert($logs);
+                        }
+
+                        if($previous_price != (float)$price){
+                            unset($logs['subject']);
+                            unset($logs['name']);
+                            
+                            $logs['name'] = uniqid();
+                            $logs['subject'] = 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' price from '.number_format($previous_price).' to '.$price.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString();
+
+                            DB::table('tabActivity Log')->insert($logs);
+                        }
+                    }
                 }
             }
 
@@ -3324,7 +3593,6 @@ class ConsignmentController extends Controller
             ]);
 
             DB::commit();
-
             return redirect()->back()->with('success', 'Warehouse Stocks Adjusted.');
         } catch (Exception $e) {
             DB::rollback();
