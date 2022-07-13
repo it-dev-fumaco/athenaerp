@@ -496,74 +496,7 @@ class MainController extends Controller
             return Carbon::parse($q->transaction_date)->format('Y');
         })->unique();
 
-        // delivery summary metrics
-        // get total stock transfer
-        $ds_stock_transfer = DB::table('tabStock Entry')->whereIn('transfer_as', ['Store Transfer', 'For Return'])
-            ->whereBetween('creation', [$duration_from, $duration_to])
-            ->where('docstatus', 1)->where('purpose', 'Material Transfer')->where('naming_series', 'STEC-')->count();
-
-        $ds_stock_transfer_qty = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->whereBetween('ste.creation', [$duration_from, $duration_to])
-            ->whereIn('ste.transfer_as', ['Store Transfer'])
-            ->where('ste.docstatus', 1)->where('ste.purpose', 'Material Transfer')
-            ->where('ste.naming_series', 'STEC-')->sum('sted.qty');
-
-        $ds_delivery_qty_per_cutoff = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment'])
-            ->whereBetween('creation', [$duration_from, $duration_to])
-            ->where('docstatus', 1)->where('purpose', 'Material Transfer')->count();
-
-        $ds_delivery_value = DB::table('tabStock Entry')
-            ->whereIn('transfer_as', ['Consignment'])
-            ->whereBetween('creation', [$duration_from, $duration_to])
-            ->where('docstatus', 1)->where('purpose', 'Material Transfer')
-            ->sum('total_outgoing_value');
-
-        $ds_delivery_received_qty = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
-            ->where('ste.docstatus', 1)->where('ste.purpose', 'Material Transfer')
-            ->where('sted.consignment_status', 'Received')->sum('sted.qty');
-
-        $ds_delivery_qty = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment'])
-            ->where('docstatus', 1)->where('purpose', 'Material Transfer')->count();
-
-        $stock_receiving_completion = $ds_delivery_qty > 0 ? ($ds_delivery_received_qty / $ds_delivery_qty) * 100 : 0;
-
-        $inv_stock_return_qty = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->whereBetween('ste.creation', [$duration_from, $duration_to])
-            ->whereIn('ste.transfer_as', ['For Return'])
-            ->where('ste.docstatus', 1)->where('ste.purpose', 'Material Transfer')
-            ->sum('sted.qty');
-
-        $inv_returns_value = DB::table('tabStock Entry')
-            ->whereIn('transfer_as', ['For Return'])
-            ->whereBetween('creation', [$duration_from, $duration_to])
-            ->where('docstatus', 1)->where('purpose', 'Material Transfer')
-            ->sum('total_outgoing_value');
-
-        $inv_returns_count = DB::table('tabStock Entry')
-            ->whereIn('transfer_as', ['For Return'])
-            ->whereBetween('creation', [$duration_from, $duration_to])
-            ->where('docstatus', 1)->where('purpose', 'Material Transfer')
-            ->count();
-
-        $delivery_summary = [
-            'stock_transfer_request' => number_format($ds_stock_transfer),
-            'stock_transfer_qty' => number_format($ds_stock_transfer_qty),
-            'delivered_qty' => number_format($ds_delivery_qty_per_cutoff),
-            'delivered_value' => '₱ ' . number_format($ds_delivery_value, 2),
-            'stock_receiving_completion' => number_format($stock_receiving_completion, 2)
-        ];
-
-        $inventory_summary = [
-            'stock_return_qty' => number_format($inv_stock_return_qty),
-            'stock_return_transaction_count' => number_format($inv_returns_count),
-            'stock_return_value' => '₱ ' . number_format($inv_returns_value, 2),
-        ];
-
-        return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'delivery_summary', 'inventory_summary', 'sales_report_included_years'));
+        return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'sales_report_included_years'));
     }
 
     public function search_results(Request $request){

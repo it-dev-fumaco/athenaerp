@@ -36,7 +36,7 @@ return [
 
         'cwebp' => [
             'path' => '/usr/bin/cwebp',
-            //'path' => 'C:\xampp\htdocs\cwebp'
+            // 'path' => 'C:\xampp\htdocs\cwebp'
         ],
 
     ],

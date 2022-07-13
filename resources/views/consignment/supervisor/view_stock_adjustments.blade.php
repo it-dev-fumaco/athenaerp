@@ -22,10 +22,10 @@
                     <div class="card card-secondary card-outline">
                         <div class="card-body p-2">
                             @if(session()->has('success'))
-                            <div class="alert alert-success fade show font-responsive" role="alert">{{ session()->get('success') }}</div>
+                            <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('success') }}</div>
                             @endif
                             @if(session()->has('error'))
-                            <div class="alert alert-danger fade show font-responsive" role="alert">{{ session()->get('error') }}</div>
+                            <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('error') }}</div>
                             @endif
                             <ul class="nav nav-pills">
                                 <li class="nav-item">

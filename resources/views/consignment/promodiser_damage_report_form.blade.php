@@ -11,19 +11,20 @@
                     <div class="col-md-12 p-0 m-0">
                         <div class="card card-lightblue">
                             <div class="card-header text-center p-2" id="report">
+                                
+                                <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Damaged Report Form</span>
+                            </div>
+                            <div class="card-body p-0">
                                 @if(session()->has('success'))
-                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
                                         {{ session()->get('success') }}
                                     </div>
                                 @endif
                                 @if(session()->has('error'))
-                                    <div class="alert alert-danger alert-dismissible fade show font-responsive" role="alert">
+                                    <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
                                         {{ session()->get('error') }}
                                     </div>
                                 @endif
-                                <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Damaged Report Form</span>
-                            </div>
-                            <div class="card-body p-0">
                                 <h6 class="text-center mt-2 font-weight-bolder">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h6>
                                 <form action="/promodiser/damage_report/submit" method="post">
                                     @csrf
