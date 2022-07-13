@@ -76,7 +76,9 @@
             var selected_branch = '{{ $branch ? $branch : "none" }}';
             selected_branch = selected_branch ? selected_branch : $('#selected-branch').val();
 
-            get_inv_record(selected_branch);
+            if(selected_branch != 'none'){
+                get_inv_record(selected_branch);
+            }
             function get_inv_record(branch){
                 var inv_record = '{{ $inv_record ? $inv_record->name : null }}';
                 var link = inv_record ? 'update/' + branch + '/{{ $inv }}' : 'new/' + branch;
