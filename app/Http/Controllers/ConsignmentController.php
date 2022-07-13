@@ -245,7 +245,7 @@ class ConsignmentController extends Controller
 
                 if ($consigned_qty < (float)$row['qty']) {
                     return redirect()->back()
-                        ->with(['old_data' => $data])
+                        ->with(['old_data' => $data, 'item_code' => $item_code])
                         ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                 }
 
