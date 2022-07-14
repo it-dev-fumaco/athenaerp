@@ -2758,19 +2758,19 @@ class MainController extends Controller
             $reserved_qty = $reserved_qty - $consumed_qty;
 
             $actual_qty = $value->actual_qty - $issued_qty;
+            $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
             if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                 $consignment_warehouses[] = [
                     'warehouse' => $value->warehouse,
                     'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
                     'actual_qty' => $value->actual_qty,
-                    'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                    'available_qty' => $available_qty,
                     'stock_uom' => $value->stock_uom,
                 ];
             }else{
-                $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
-                if(Auth::user()->user_group == 'Promodiser'){
-                    $available_qty = $value->consigned_qty;
+                if(Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == "P2 Consignment Warehouse - FI"){
+                    $available_qty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
                 }
 
                 $site_warehouses[] = [
