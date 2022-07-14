@@ -818,6 +818,7 @@ class MainController extends Controller
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $value->actual_qty,
                         'available_qty' => $available_qty,
+                        'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
                         'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
                         'parent_warehouse' => $value->parent_warehouse
@@ -833,6 +834,7 @@ class MainController extends Controller
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $value->actual_qty,
                         'available_qty' => $available_qty,
+                        'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
                         'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
                         'parent_warehouse' => $value->parent_warehouse
