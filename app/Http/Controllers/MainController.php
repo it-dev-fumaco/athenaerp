@@ -579,13 +579,8 @@ class MainController extends Controller
             ->when($request->brand, function($q) use ($request){
                 return $q->where('tabItem.brand', $request->brand);
             })
-            ->when($check_qty == 1, function($q) use ($allow_warehouse){
-                if(Auth::user()->user_group == 'Promodiser'){
-                    $allowed_warehouses = collect($allow_warehouse)->implode('","');
-                    return $q->where(DB::raw('(SELECT SUM(consigned_qty) FROM `tabBin` WHERE item_code = `tabItem`.name and warehouse in ("'.$allowed_warehouses.'"))'), '>', 0);
-                }else{
-                    return $q->where(DB::raw('(SELECT COUNT(`tabItem`.name) FROM `tabBin` JOIN tabWarehouse ON tabWarehouse.name = `tabBin`.warehouse WHERE `tabBin`.item_code = `tabItem`.name and `tabWarehouse`.stock_warehouse = 1)'), '>', 0);
-                }
+            ->when($check_qty && !$is_promodiser, function($q) {
+                return $q->where(DB::raw('(SELECT SUM(`tabBin`.actual_qty) FROM `tabBin` JOIN tabWarehouse ON tabWarehouse.name = `tabBin`.warehouse WHERE `tabBin`.item_code = `tabItem`.name and `tabWarehouse`.stock_warehouse = 1)'), '>', 0);
             })
             ->when($request->assigned_to_me, function($q) use ($item_codes_based_on_warehouse_assigned){
                 return $q->whereIn('tabItem.name', $item_codes_based_on_warehouse_assigned);
@@ -814,24 +809,23 @@ class MainController extends Controller
                 if (array_key_exists($value->item_code . '-' . $value->warehouse, $lowLevelStock)) {
                     $warehouse_reorder_level = $lowLevelStock[$value->item_code . '-' . $value->warehouse][0]->total_warehouse_reorder_level;
                 }
-                        
+
+                $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
                 if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                     $consignment_warehouses[] = [
                         'warehouse' => $value->warehouse,
                         'location' => $value->location,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $value->actual_qty,
-                        'available_qty' => ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                        'available_qty' => $available_qty,
                         'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
                         'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
+                        'parent_warehouse' => $value->parent_warehouse
                     ];
                 }else{
-                    $available_qty = 0;
-                    if(Auth::user()->user_group == 'Promodiser'){
+                    if(Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == "P2 Consignment Warehouse - FI"){
                         $available_qty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
-                    }else{
-                        $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
                     }
 
                     $site_warehouses[] = [
@@ -839,10 +833,11 @@ class MainController extends Controller
                         'location' => $value->location,
                         'reserved_qty' => $reserved_qty,
                         'actual_qty' => $value->actual_qty,
-                        'available_qty' => $available_qty,//($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0,
+                        'available_qty' => $available_qty,
                         'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
                         'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouse_reorder_level,
+                        'parent_warehouse' => $value->parent_warehouse
                     ];
                 }
             }

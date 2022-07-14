@@ -974,6 +974,7 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff', 'total_amount_arr', 'hidezero'));
     }
 
+    // /beginning_inv_list
     public function beginningInventoryApproval(Request $request){
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
         $to_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[1])->endOfDay() : null;
@@ -1021,7 +1022,6 @@ class ConsignmentController extends Controller
                 ->when($request->store, function ($q) use ($request){
                     return $q->where('branch_warehouse', $request->store);
                 })
-                ->where('status', '!=', 'For Approval')
                 ->orderBy('creation', 'desc')
                 ->paginate(10);
         }
@@ -1143,11 +1143,14 @@ class ConsignmentController extends Controller
             ];
         }
 
+        $last_record = collect($beginning_inventory->items()) ? collect($beginning_inventory->items())->sortByDesc('creation')->last() : [];
+        $earliest_date = $last_record ? Carbon::parse($last_record->creation)->format("Y-M-d") : Carbon::now()->format("Y-M-d");
+
         if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
             return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
         }
 
-        return view('consignment.beginning_inventory_list', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
+        return view('consignment.beginning_inventory_list', compact('consignment_stores', 'inv_arr', 'beginning_inventory', 'earliest_date'));
     }
 
     public function approveBeginningInventory(Request $request, $id){

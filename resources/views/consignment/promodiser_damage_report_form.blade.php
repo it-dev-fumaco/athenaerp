@@ -180,6 +180,7 @@
                 $('#add-modal-btn').prop('disabled', false);
 
                 items_array = [];
+                clear_add_table();
 
                 validate_submit();
             });
@@ -235,6 +236,11 @@
                 truncate_description();
                 close_modal('#add-Modal');
 
+                clear_add_table();
+                validate_submit();
+            });
+
+            function clear_add_table(){
                 $('#item-code-display').text('');
                 $('#description-display').text('');
                 $('#img-display').text('');
@@ -248,8 +254,7 @@
                 $("#item-selection").empty().trigger('change');
 
                 $('#item-selection-table').addClass('d-none');
-                validate_submit();
-            });
+            }
 
             $(document).on('select2:select', '#item-selection', function(e){
                 // Display
