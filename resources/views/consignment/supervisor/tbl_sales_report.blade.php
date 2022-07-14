@@ -4,7 +4,7 @@
         <th class="text-center font-responsive align-middle p-1" rowspan=2 colspan=2 style="width: 20%;">Promodiser</th>
         <th class="text-center font-responsive align-middle p-1" rowspan=2 style="width: 5%;">Opening Stock</th>
         <th class="text-center font-responsive align-middle p-1" rowspan=2 style="width: 5%;">Opening Value</th>
-        <th class="text-center font-responsive align-middle p-1" colspan={{ count($cutoff_periods) }}>Cut Off Period(s)</th>
+        <th class="text-center font-responsive align-middle p-1" colspan={{ count($cutoff_periods) }}>Sales Per Cutt Off Date</th>
         <th class="text-center font-responsive align-middle p-1" rowspan=2 style="width: 8%;">Total</th>
     </tr>
     <tr>
