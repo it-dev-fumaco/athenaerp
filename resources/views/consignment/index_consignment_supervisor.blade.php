@@ -139,7 +139,7 @@
                                                         </div>
                                                         <div class="p-2">
                                                             <div class="form-check text-center text-white">
-                                                                <input class="form-check-input" type="checkbox" id="hide-zero-check">
+                                                                <input class="form-check-input" type="checkbox" id="hide-zero-check" checked>
                                                                 <label class="form-check-label" for="hide-zero-check"> Hide zero values
                                                                 </label>
                                                             </div>
