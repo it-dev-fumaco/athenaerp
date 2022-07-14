@@ -273,6 +273,7 @@
                 $('#target-warehouse').attr("disabled", false);
 
                 $('#placeholder').removeClass('d-none');
+                $('#items-container').addClass('d-none');
                 $("#received-items").empty().trigger('change');
 
                 $('.items-list').each(function() {
