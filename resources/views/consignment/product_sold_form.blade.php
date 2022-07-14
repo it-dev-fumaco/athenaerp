@@ -21,11 +21,6 @@
                             </div>
                         </div>
                         <div class="card-body p-1">
-                            @if(session()->has('success'))
-                            <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
-                                {!! session()->get('success') !!}
-                            </div>
-                            @endif
                             @if(session()->has('error'))
                             <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
                                 {!! session()->get('error') !!}
@@ -33,6 +28,9 @@
                             @endif
                             <span id="branch-name" class="font-weight-bolder d-block text-center" style="font-size: 11pt;">{{ $branch }}</span>
                             <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
+                            <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3 m-2" style="font-size: 10pt;">
+                                <span class="d-block"><i class="fas fa-info-circle"></i> Instructions: Enter your item quantity sold for this date.</span>
+                            </div>
                             <form action="/submit_product_sold_form" method="POST" autocomplete="off">
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
@@ -160,6 +158,35 @@
 	</div>
 </div>
 
+<div class="modal fade" id="instructions-modal" tabindex="-1" role="dialog" aria-labelledby="instructions-modal" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-navy">
+                <h5 class="modal-title"><i class="fas fa-info-circle"></i> INSTRUCTIONS</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form></form>
+                <p class="text-center mt-0">
+                    <span class="d-block">Enter your item quantity sold</span>
+                    <span class="d-block">for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                </p>
+                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
+                    <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
+                    <small class="d-block">Branch / Store</small>
+                </div>
+                <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">CLOSE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="success-modal" tabindex="-1" role="dialog" aria-labelledby="success-modalTitle" aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -228,6 +255,9 @@
 @section('script')
 <script>
     $(function () {
+        @if (!session()->has('success'))
+        $('#instructions-modal').modal('show');
+        @endif
         @if (session()->has('success'))
         $('#success-modal').modal('show');
         @endif
