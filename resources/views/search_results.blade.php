@@ -42,19 +42,19 @@
 							</div>
 							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0">
 								<div class="card m-0">
-									<div class="row">
+									<div class="row m-0 p-0">
 										<div class="col-8">
 											@php
 												$promodiser_restriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
 											@endphp
-											<button class="float-left btn text-left pt-0 d-inline d-xl-none" data-toggle="modal" data-target="#mobile-filters-modal">
-												<p class="card-title mt-2 ml-4" style="font-size: 10pt !important">
+											<button class="float-left btn text-left pt-0 d-block d-xl-none" data-toggle="modal" data-target="#mobile-filters-modal">
+												<p class="card-title mt-2 ml-0" style="font-size: 10pt !important">
 													<i class="fa fa-bars"></i>&nbsp;Filters
 												</p>
 											</button>
 
-											<button class="float-left btn text-left pt-0" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-												<p class="card-title mt-2 ml-4" style="font-size: 10pt !important">
+											<button class="float-left btn text-left pt-0 collapsed d-block" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+												<p class="card-title mt-2 ml-0" style="font-size: 10pt !important">
 													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
 												</p>
 											</button>
@@ -121,7 +121,7 @@
 										</div>
 									</div>
 									
-									<div id="collapseOne" class="collapse border border-outline-secondary show" aria-labelledby="headingOne" data-parent="#accordion">
+									<div id="collapseOne" class="collapse border border-outline-secondary collapse" aria-labelledby="headingOne" data-parent="#accordion">
 										<div class="card-body p-0">
 											<div class="col-12 mx-auto">
 												<div class="row pt-2">
@@ -143,6 +143,7 @@
 															<select name="brand" id="brand-filter" class="form-control"></select>
 														</div>
 													</div>
+													@if (!$promodiser_restriction)
 													<div class="col-12 col-md-2 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
 														<div class="row">
 															<div class="form-group m-0r col-12 m-0">
@@ -160,16 +161,17 @@
 															</div>
 														</div>
 													</div>
+													@endif
 													@if ($promodiser_restriction)
-														<div class="col-8 col-md-3 col-xl-2 mx-auto text-center">
-															<div class="form-group m-0r">
-																<label style="white-space: nowrap">
-																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
-																	
-																	<span class="filter-font">Warehouse Assigned to Me</span>
-																</label>
-															</div>
+													<div class="col-8 col-md-3 col-xl-2 mx-auto text-center">
+														<div class="form-group m-0r">
+															<label style="white-space: nowrap">
+																<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
+																
+																<span class="filter-font">Warehouse Assigned to Me</span>
+															</label>
 														</div>
+													</div>
 													@endif
 												</div>
 											</div>
