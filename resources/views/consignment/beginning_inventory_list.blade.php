@@ -81,7 +81,7 @@
 										</td>
 										<td class="p-2 text-left align-middle text-xl-center">
 											<span class="d-block">{{ $inv['branch'] }}</span>
-											<small>By: {{ $inv['owner'] }} - {{ $inv['transaction_date'] }}</small>
+											<small class="d-lg-none">By: {{ $inv['owner'] }} - {{ $inv['transaction_date'] }}</small>
 											<div class="row p-0 d-lg-none">
 												<div class="col-4"><b>Qty: </b>{{ number_format($inv['qty']) }}</div>
 												<div class="col-8"><b>Amount: </b>₱ {{ number_format($inv['amount'], 2) }}</div>
@@ -417,8 +417,9 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : Carbon\Carbon::now()->subDays(7)->format("Y-M-d")  }}';
-            var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : Carbon\Carbon::now()->format("Y-M-d")  }}';
+            var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : $earliest_date }}';
+            var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : Carbon\Carbon::now()->format("Y-M-d") }}';
+
             $('#date-filter').daterangepicker({
                 opens: 'left',
                 startDate: from_date,
