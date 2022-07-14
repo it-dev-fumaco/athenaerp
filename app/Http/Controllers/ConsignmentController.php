@@ -3912,7 +3912,8 @@ class ConsignmentController extends Controller
 
         $beginning_inventory = collect($beginning_inventory)->groupBy('item_code')->toArray();
 
-        $inv_audit = DB::table('tabConsignment Inventory Audit Report')
+        $inv_audit = DB::table('tabConsignment Inventory Audit Report as iar')
+            ->join('tabConsignment Inventory Audit Report Item as iari', 'iar.name', 'iari.parent')
             ->where('branch_warehouse', $store)->where('transaction_date', '<', $cutoff_start)
             ->select('item_code', 'qty', 'transaction_date')
             ->orderBy('transaction_date', 'asc')->get();
