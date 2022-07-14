@@ -974,6 +974,25 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff', 'total_amount_arr', 'hidezero'));
     }
 
+    // /inventory_items/{branch}
+    public function inventoryItems($branch){
+        $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $inv_summary = DB::table('tabBin as b')
+            ->join('tabItem as i', 'i.name', 'b.item_code')
+            ->where('i.disabled', 0)->where('i.is_stock_item', 1)
+            ->where('b.warehouse', $branch)
+            ->where('consigned_qty', '>', 0)
+            ->select('i.item_code', 'i.description', 'i.stock_uom', 'b.consigned_qty')
+            ->get()->toArray();
+
+        $item_codes = collect($inv_summary)->pluck('item_code');
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        return view('consignment.promodiser_warehouse_items', compact('inv_summary', 'item_image', 'branch', 'assigned_consignment_stores'));
+    }
+
     // /beginning_inv_list
     public function beginningInventoryApproval(Request $request){
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;

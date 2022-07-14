@@ -79,7 +79,9 @@
                     $total_qty = array_key_exists($branch, $inventory_summary) ? $inventory_summary[$branch]['total_qty'] : 0;
                   @endphp
                   <tr>
-                    <td class="text-justify pt-2 pb-2 pr-1 pl-1 align-middle">{{ $branch }}</td>
+                    <td class="text-justify pt-2 pb-2 pr-1 pl-1 align-middle">
+                      <a href="/inventory_items/{{ $branch }}">{{ $branch }}</a>
+                    </td>
                     <td class="text-center pt-2 pb-2 pr-1 pl-1 align-middle font-weight-bold">{{ number_format($items_on_hand) }}</td>
                     <td class="text-center pt-2 pb-2 pr-1 pl-1 align-middle font-weight-bold">{{ number_format($total_qty) }}</td>
                   </tr> 
