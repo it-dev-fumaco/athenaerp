@@ -147,7 +147,7 @@
                                     </tbody>
                                 </table>
                                 <div class="m-3">
-                                    <button type="button" id="submit-form" class="btn btn-primary btn-block submit-1once" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
+                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
                             </form>
                         </div>
@@ -171,8 +171,7 @@
             <div class="modal-body">
                 <form></form>
                 <p class="text-center mt-0">
-                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your sales report entry</span>
-                    <span class="d-block">for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your sales report entry for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
                 </p>
                 <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-4" id="total-qty-sold">0</span>

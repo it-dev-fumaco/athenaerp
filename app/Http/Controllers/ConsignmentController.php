@@ -93,7 +93,7 @@ class ConsignmentController extends Controller
 
         $duration = Carbon::parse($inventory_audit_from)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($inventory_audit_to)->format('F d, Y');
 
-        $start = Carbon::parse($inventory_audit_from)->format('Y-m-d');
+        $start = Carbon::parse($inventory_audit_from)->addDay()->format('Y-m-d');
         $end = Carbon::parse($inventory_audit_to)->format('Y-m-d');
 
         $items = DB::table('tabConsignment Beginning Inventory as cb')
@@ -102,7 +102,7 @@ class ConsignmentController extends Controller
             ->where('cb.status', 'Approved')
             ->where('i.disabled', 0)->where('i.is_stock_item', 1)
             ->whereDate('cb.transaction_date', '<=', Carbon::parse($transaction_date))
-            ->where('cb.branch_warehouse', $branch)->select('i.item_code', 'i.description')
+            ->where('cb.branch_warehouse', $branch)->select('i.item_code', 'i.description', 'cbi.price')
             ->orderBy('i.description', 'asc')->get();
             
         $item_codes = collect($items)->pluck('item_code');

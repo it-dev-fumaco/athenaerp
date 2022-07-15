@@ -31,7 +31,7 @@
                             <div class="callout callout-info font-responsive text-center pr-3 pl-3 pb-3 pt-3 m-2" style="font-size: 10pt;">
                                 <span class="d-block"><i class="fas fa-info-circle"></i> Instructions: Enter your current physical count of quantity per item as of <u>TODAY</u>.</span>
                             </div>
-                            <form action="/submit_inventory_audit_form" method="POST" autocomplete="off">
+                            <form action="/submit_inventory_audit_form" method="POST" autocomplete="off" id="inventory-report-entry-form">
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
                                 <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
@@ -64,7 +64,7 @@
                                                 $qty = $data['item'][$row->item_code]['qty'];
                                             }
                                         @endphp
-                                        <tr style="border-bottom: 0 !important;" class="{{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
+                                        <tr style="border-bottom: 0 !important;" class="item-row {{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
                                             <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-1 text-left">
@@ -73,7 +73,7 @@
                                                             <picture>
                                                                 <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
                                                                 <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
                                                             </picture>
                                                         </a>
                                                     </div>
@@ -123,13 +123,13 @@
                                             </td>
                                             <td class="text-justify p-0 align-middle" style="border-bottom: 0 !important;">
                                                 <div class="d-flex flex-row justify-content-center align-items-center">
-                                                    <div class="p-1">
+                                                    <div class="p-0">
                                                         <div class="input-group p-1 justify-content-center">
                                                             <div class="input-group-prepend p-0">
                                                                 <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                             </div>
                                                             <div class="custom-a p-0">
-                                                                <input type="number" class="form-control form-control-sm qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required>
+                                                                <input type="number" class="form-control form-control-sm qty item-audit-qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}">
                                                             </div>
                                                             <div class="input-group-append p-0">
                                                                 <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
@@ -145,6 +145,7 @@
                                             <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
                                                 <span class="d-block item-sold-qty">{{ $sold_qty }}</span>
                                                 <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
+                                                <span class="d-none item-price">{{ $row->price }}</span>
                                             </td>
                                         </tr>
                                         <tr class="{{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
@@ -161,7 +162,7 @@
                                     </tbody>
                                 </table>
                                 <div class="m-3">
-                                    <button type="submit" class="btn btn-primary btn-block submit-once" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
+                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
                             </form>
                         </div>
@@ -170,6 +171,52 @@
             </div>
         </div>
 	</div>
+</div>
+
+<div class="modal fade" id="confirmation-modal" tabindex="-1" role="dialog" aria-labelledby="instructions-modal" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-navy">
+                <h5 class="modal-title"><i class="fas fa-info-circle"></i> CONFIRM INVENTORY AUDIT</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form></form>
+                <p class="text-center mt-0">
+                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your current physical count of quantity per item as of <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                </p>
+                <div class="text-center mb-3 mt-2" style="font-size: 9pt;">
+                    <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
+                    <small class="d-block">Branch / Store</small>
+                </div>
+                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
+                    <span class="d-block font-weight-bolder mt-3">{{ $duration }}</span>
+                    <small class="d-block">Cut-off Period</small>
+                </div>
+                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase border-bottom">Sales Report Summary</p>
+                <div class="d-flex flex-row mt-1 justify-content-between">
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" id="total-qty-sold" style="font-size: 12pt;">0</span>
+                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
+                    </div>
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" id="total-sales-amount" style="font-size: 12pt;">0</span>
+                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
+                    </div>
+                </div>
+                <div class="row pt-5">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-primary btn-block" id="confirm-inventory-report-btn">CONFIRM</button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal">CLOSE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="instructions-modal" tabindex="-1" role="dialog" aria-labelledby="instructions-modal" aria-hidden="true" data-backdrop="static" data-keyboard="false">
@@ -262,6 +309,55 @@
         @if (session()->has('success'))
         $('#success-modal').modal('show');
         @endif
+
+        const formatToCurrency = amount => {
+            return "₱ " + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
+        };
+
+        $('#submit-form').click(function(e) {
+            e.preventDefault();
+
+            var empty_inputs = [];
+            $('.item-audit-qty').each(function() {
+                if (!$(this).val()) {
+                    var id = $(this).attr('id');
+                    empty_inputs.push(id);
+                }
+            });
+
+            if(empty_inputs.length > 0) {
+                $('#' + empty_inputs[0]).focus();
+
+                return false;
+            }
+
+            var total_sold_qty = total_sales_amount = 0;
+            $('.item-row').each(function() {
+                var item_price = parseFloat($(this).find('.item-price').eq(0).text());
+                var orig_sold_qty = parseInt($(this).find('.orig-item-sold-qty').eq(0).text());
+                var audit_qty = parseInt($(this).find('.item-audit-qty').eq(0).val());
+                var orig_consigned_qty = parseInt($(this).find('.orig-item-consigned-qty').eq(0).text());
+                total_sold_qty += orig_sold_qty;
+                total_sales_amount += (orig_sold_qty * item_price);
+
+                var new_item_sold_qty = orig_consigned_qty - audit_qty;
+                if (new_item_sold_qty > -1) {
+                    total_sold_qty += new_item_sold_qty;
+                    total_sales_amount += (new_item_sold_qty * item_price);
+                }
+            });
+
+            $('#total-qty-sold').text(total_sold_qty);
+            $('#total-sales-amount').text(formatToCurrency(total_sales_amount));
+
+            $('#confirmation-modal').modal('show');
+        });
+
+        $('#confirm-inventory-report-btn').click(function(e){
+            e.preventDefault();
+            $('#inventory-report-entry-form').submit();
+        });
+
         $('.qtyplus').click(function(e){
             // Stop acting like a button
             e.preventDefault();
@@ -284,8 +380,12 @@
                 fieldName.val(0);
             }
             var new_sold_qty = 0;
-            new_sold_qty = origSold + (origConsigned - fieldName.val());
-            soldField.text(new_sold_qty);
+            new_sold_qty = (origConsigned - fieldName.val());
+            if (new_sold_qty > -1) {
+                soldField.text(new_sold_qty + origSold);
+            } else {
+                soldField.text(0 + origSold);
+            }
         });
         // This button will decrement the value till 0
         $(".qtyminus").click(function(e) {
@@ -310,9 +410,12 @@
                 fieldName.val(0);
             }
             var new_sold_qty = 0;
-
-            new_sold_qty = (origSold + origConsigned) - (origConsigned- parseInt(fieldName.val()));
-            soldField.text(new_sold_qty);
+            new_sold_qty = (origConsigned- parseInt(fieldName.val()));
+            if (new_sold_qty > -1) {
+                soldField.text(new_sold_qty + origSold);
+            } else {
+                soldField.text(0 + origSold);
+            }
         });
 
         $("#search-filter").on("keyup", function() {
