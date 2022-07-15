@@ -672,6 +672,7 @@ class ConsignmentController extends Controller
 
                         $no_of_items_updated++;
                         $grand_total += $amount;
+                        $total_qty_sold += $row['qty'];
 
                         DB::table('tabConsignment Sales Report Item')->where('name', $existing->name)->update($values);
                     } else {
@@ -694,6 +695,7 @@ class ConsignmentController extends Controller
                             
                             $no_of_items_updated++;
                             $grand_total += $amount;
+                            $total_qty_sold += $row['qty'];
     
                             $child_data[] = [
                                 'name' => uniqid(),
@@ -749,11 +751,13 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabActivity Log')->insert($logs);
+
             DB::commit();
 
             return redirect()->back()->with([
                 'success' => 'Record successfully updated',
-                'no_of_items_updated' => $no_of_items_updated,
+                'total_qty_sold' => $total_qty_sold,
+                'grand_total' => $grand_total,
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);

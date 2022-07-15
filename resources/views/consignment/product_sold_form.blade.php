@@ -174,18 +174,20 @@
                     <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your sales report entry for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
                 </p>
                 <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
-                    <span class="d-block font-weight-bolder mt-4" id="total-qty-sold">0</span>
-                    <small class="d-block">Total Qty Sold</small>
-                </div>
-                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
-                    <span class="d-block font-weight-bolder mt-4" id="total-sales-amount">0</span>
-                    <small class="d-block">Total Sales Amount</small>
-                </div>
-                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
                     <small class="d-block">Branch / Store</small>
                 </div>
-                <div class="row pt-3">
+                <div class="d-flex flex-row mt-1 justify-content-between">
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" id="total-qty-sold" style="font-size: 12pt;">0</span>
+                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
+                    </div>
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" id="total-sales-amount" style="font-size: 12pt;">0</span>
+                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
+                    </div>
+                </div>
+                <div class="row pt-4">
                     <div class="col-6">
                         <button type="button" class="btn btn-primary btn-block" id="confirm-sales-report-btn">CONFIRM</button>
                     </div>
@@ -244,16 +246,30 @@
                     <i class="fas fa-check-circle"></i>
                 </p>
                 <p class="text-center text-uppercase mt-0 font-weight-bold">Product Sold is Saved</p>
+               <hr>
+                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Sales Report Summary</p>
                 <div class="text-center mb-2" style="font-size: 9pt;">
-                    <span class="d-block font-weight-bold mt-3">{{ session()->get('no_of_items_updated') }}</span>
-                    <small class="d-block">No. of updated Items</small>
-                    <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
-                    <small class="d-block">Transaction Date</small>
+               
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
                     <small class="d-block">Branch / Store</small>
+                    <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
+                    <small class="d-block">Transaction Date</small>
                 </div>
+
+              
+                <div class="d-flex flex-row mt-1 justify-content-between">
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ number_format(session()->get('total_qty_sold')) }}</span>
+                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
+                    </div>
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ '₱ ' . number_format(session()->get('grand_total'), 2) }}</span>
+                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
+                    </div>
+                </div>
+
                 <div class="d-flex flex-row justify-content-center">
-                    <div class="p-2">
+                    <div class="pt-4">
                         <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to Calendar</a>
                     </div>
                 </div>
