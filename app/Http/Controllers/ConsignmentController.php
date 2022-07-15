@@ -1191,6 +1191,10 @@ class ConsignmentController extends Controller
 
             $item_codes = array_keys($prices);
 
+            if(count($item_codes) <= 0){
+                return redirect()->back()->with('error', 'Please Enter an Item');
+            }
+
             if(!$branch){
                 return redirect()->back()->with('error', 'Inventory record not found.');
             }

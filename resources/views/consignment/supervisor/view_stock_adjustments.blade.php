@@ -175,20 +175,21 @@
                                                                                 @endphp
                                                                                         
                                                                                 <div class="input-group">
-                                                                                    <select class="custom-select font-responsive" name="status" id="inputGroupSelect04" required>
+                                                                                    <select class="custom-select font-responsive" name="status" required>
                                                                                         <option value="" selected disabled>Select a status</option>
                                                                                         @foreach ($status_selection as $status)
                                                                                         <option value="{{ $status['value'] }}">{{ $status['title'] }}</option>
                                                                                         @endforeach
                                                                                     </select>
                                                                                     <div class="input-group-append">
-                                                                                        <button class="btn btn-primary" type="submit">Submit</button>
+                                                                                        <button class="btn btn-primary" type="submit" id="{{ $inv['name'] }}-submit">Submit</button>
                                                                                     </div>
                                                                                 </div>
                                                                                 @endif
                                                                             </div>
                                                                         </div>
                                                                         
+                                                                        <span id="item-count-{{ $inv['name'] }}" class="d-none">{{ count($inv['items']) }}</span>
                                                                         <table class="table table-striped items-table" style="font-size: 10pt;">
                                                                             <thead>
                                                                                 <th class="text-center p-2 align-middle col-lg-4 col-3" style="width: 36%">Item Code</th>
@@ -203,12 +204,11 @@
                                                                             @forelse ($inv['items'] as $i => $item)
                                                                             @php
                                                                                 $target = $inv['name'].'-'.$item['item_code'];
-                                                                            @endphp
-                                                                                @php
+                                                                            
                                                                                     $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
                                                                                     $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
                                                                                 @endphp
-                                                                                <tr>
+                                                                                <tr id="row-{{ $target }}">
                                                                                     <td class="text-center p-1 align-middle">
                                                                                         <div class="d-flex flex-row justify-content-start align-items-center" id="{{ $target }}-container">
                                                                                             <div class="p-2 text-left">
@@ -231,7 +231,7 @@
                                                                                                     <select class="form-control replacement-item" id="{{ $target }}-replacement" data-original-code='{{ $item['item_code'] }}' style="width: 200px !important;"></select>
                                                                                                 </div>
                                                                                                 <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
-                                                                                                    <span class="undo-replacement" data-item-code="{{ $item['item_code'] }}" data-target="{{ $target }}"><i class="fa fa-undo"></i> Reset</span>
+                                                                                                    <span class="undo-replacement" data-item-code="{{ $item['item_code'] }}" data-target="{{ $target }}" data-name="{{ $inv['name'] }}"><i class="fa fa-undo"></i> Reset</span>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -300,7 +300,8 @@
                                                                                     @else
                                                                                         <td class="text-center p-1 align-middle">
                                                                                             <div class="btn-group" role="group" aria-label="Basic example">
-                                                                                                <button type="button" class="btn btn-xs btn-outline-primary p-1 change-item" data-target="{{ $target }}" style="font-size: 9pt;">Change Item</button>
+                                                                                                <button type="button" class="btn btn-xs btn-outline-primary p-1 change-item" data-target="{{ $target }}" style="font-size: 9pt;">Change</button>
+                                                                                                <button type="button" class="btn btn-xs btn-outline-secondary p-1 remove-item" data-name="{{ $inv['name'] }}" data-target="{{ $target }}" style="font-size: 9pt;">Remove</button>
                                                                                             </div>
                                                                                         </td>
                                                                                     @endif
@@ -512,6 +513,28 @@
                         $('#activity-logs-el').html(response);
                     }
                 });
+            }
+
+            $('.remove-item').click(function (){
+                var name = $(this).data('name');
+                var target = $(this).data('target');
+
+                remove_row(name, target);
+                validate_submit(name);
+            });
+
+            function remove_row(name, target){
+                $('#row-' + target).remove();
+                $('#item-count-' + name).text(parseInt($('#item-count-' + name).text()) - 1);
+            }
+
+            function validate_submit(name){
+                var count = parseInt($('#item-count-' + name).text());
+                if(count <= 0){
+                    $('#' + name + '-submit').prop('disabled', true);
+                }else{
+                    $('#' + name + '-submit').prop('disabled', false);
+                }
             }
 
             $('.change-item').click(function (){
