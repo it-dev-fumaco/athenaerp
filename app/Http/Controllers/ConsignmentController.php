@@ -75,6 +75,7 @@ class ConsignmentController extends Controller
         return response()->json(['status' => 1, 'message' => 'Beginning inventory found.']);
     }
 
+    // /view_inventory_audit_form/{branch}/{transaction_date}
     public function viewInventoryAuditForm($branch, $transaction_date) {
         // get last inventory audit date
         $last_inventory_date = DB::table('tabConsignment Inventory Audit Report')
@@ -131,6 +132,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /submit_inventory_audit_form
     public function submitInventoryAuditForm(Request $request) {
         $data = $request->all();
         DB::beginTransaction();
@@ -138,7 +140,13 @@ class ConsignmentController extends Controller
             $cutoff_date = $this->getCutoffDate($data['transaction_date']);
             $period_from = $cutoff_date[0];
             $period_to = $cutoff_date[1];
-            
+
+            // If user submits without qty input
+            $null_qty_items = collect($data['item'])->where('qty', null);
+            if(count($null_qty_items) > 0){
+                return redirect()->back();
+            }
+
             $currentDateTime = Carbon::now();
             $no_of_items_updated = 0;
 

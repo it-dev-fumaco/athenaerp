@@ -129,7 +129,7 @@
                                                                 <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                             </div>
                                                             <div class="custom-a p-0">
-                                                                <input type="number" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;">
+                                                                <input type="number" class="form-control form-control-sm qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required>
                                                             </div>
                                                             <div class="input-group-append p-0">
                                                                 <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
