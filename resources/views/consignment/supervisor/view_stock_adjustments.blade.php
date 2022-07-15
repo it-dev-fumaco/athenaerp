@@ -396,7 +396,7 @@
                                         @endforelse
                                     </table>
                                     <div class="float-right mt-4">
-                                        {{ $beginning_inventory->links('pagination::bootstrap-4') }}
+                                        {{ $beginning_inventory->appends(request()->input())->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="inventory-audit-history-content" role="tabpanel" aria-labelledby="inventory-audit-history-tab">
