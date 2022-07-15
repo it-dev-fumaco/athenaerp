@@ -1919,9 +1919,9 @@ class ConsignmentController extends Controller
     public function getItems(Request $request, $branch){
         $items_already_added_in_table = $request->excluded_items ? $request->excluded_items : [];
 
-        $bin_items = [];
+        $bin_items = DB::table('tabBin')->where('warehouse', $branch)->pluck('item_code');
         if($request->has('all_items') && $request->all_items == 1){
-            $bin_items = DB::table('tabBin')->where('warehouse', $branch)->pluck('item_code');
+            $bin_items = [];
         }
 
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereIn('status', ['Approved', 'For Approval'])->pluck('name');
