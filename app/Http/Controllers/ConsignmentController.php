@@ -450,8 +450,7 @@ class ConsignmentController extends Controller
             ->where('i.disabled', 0)->where('i.is_stock_item', 1)
             ->whereDate('cb.transaction_date', '<=', Carbon::parse($transaction_date))
             ->where('cb.branch_warehouse', $branch)
-            ->select('i.item_code', 'i.description')
-            ->groupBy('i.item_code', 'i.description')
+            ->select('i.item_code', 'i.description', 'cbi.price')
             ->orderBy('i.description', 'asc')->get();
 
         $item_codes = collect($items)->pluck('item_code');

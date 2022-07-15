@@ -31,7 +31,7 @@
                             <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3 m-2" style="font-size: 10pt;">
                                 <span class="d-block"><i class="fas fa-info-circle"></i> Instructions: Enter your item quantity sold for this date.</span>
                             </div>
-                            <form action="/submit_product_sold_form" method="POST" autocomplete="off">
+                            <form action="/submit_product_sold_form" method="POST" autocomplete="off" id="sales-report-entry-form">
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
                                 <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
@@ -81,7 +81,7 @@
                                                                 <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                             </div>
                                                             <div class="custom-a p-0">
-                                                                <input type="number" class="form-control form-control-sm qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $consigned_qty }}">
+                                                                <input type="number" class="form-control form-control-sm qty item-sold-qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $consigned_qty }}" data-price="{{ $row->price }}">
                                                             </div>
                                                             <div class="input-group-append p-0">
                                                                 <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
@@ -147,7 +147,7 @@
                                     </tbody>
                                 </table>
                                 <div class="m-3">
-                                    <button type="submit" class="btn btn-primary btn-block submit-once" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
+                                    <button type="button" id="submit-form" class="btn btn-primary btn-block submit-1once" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
                             </form>
                         </div>
@@ -156,6 +156,47 @@
             </div>
         </div>
 	</div>
+</div>
+
+
+<div class="modal fade" id="confirmation-modal" tabindex="-1" role="dialog" aria-labelledby="instructions-modal" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-navy">
+                <h5 class="modal-title"><i class="fas fa-info-circle"></i> CONFIRM SALES ENTRY</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form></form>
+                <p class="text-center mt-0">
+                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your sales report entry</span>
+                    <span class="d-block">for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                </p>
+                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
+                    <span class="d-block font-weight-bolder mt-4" id="total-qty-sold">0</span>
+                    <small class="d-block">Total Qty Sold</small>
+                </div>
+                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
+                    <span class="d-block font-weight-bolder mt-4" id="total-sales-amount">0</span>
+                    <small class="d-block">Total Sales Amount</small>
+                </div>
+                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
+                    <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
+                    <small class="d-block">Branch / Store</small>
+                </div>
+                <div class="row pt-3">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-primary btn-block" id="confirm-sales-report-btn">CONFIRM</button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal">CLOSE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="instructions-modal" tabindex="-1" role="dialog" aria-labelledby="instructions-modal" aria-hidden="true" data-backdrop="static" data-keyboard="false">
@@ -261,6 +302,33 @@
         @if (session()->has('success'))
         $('#success-modal').modal('show');
         @endif
+
+        const formatToCurrency = amount => {
+            return "₱ " + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
+        };
+
+        $('#submit-form').click(function(e) {
+            e.preventDefault();
+
+            var total_sold_qty = 0;
+            var total_sales_amount = 0;
+            $('.item-sold-qty').each(function() {
+                total_sold_qty += parseInt($(this).val());
+                var amount = parseInt($(this).val()) * parseFloat($(this).data('price'));
+                total_sales_amount += amount;
+            });
+
+            $('#total-qty-sold').text(total_sold_qty);
+            $('#total-sales-amount').text(formatToCurrency(total_sales_amount));
+
+            $('#confirmation-modal').modal('show');
+        });
+
+        $('#confirm-sales-report-btn').click(function(e){
+            e.preventDefault();
+            $('#sales-report-entry-form').submit();
+        });
+
         $('.qtyplus').click(function(e){
             // Stop acting like a button
             e.preventDefault();
