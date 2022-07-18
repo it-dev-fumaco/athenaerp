@@ -23,15 +23,15 @@
                         <div class="card-body p-0 text-center">
                             <span class="font-weight-bold d-block font-responsive text-center mt-2">{{ $beginning_inventory->branch_warehouse }}</span>
                             @php
-                            $badge = null;
-                            if($beginning_inventory->status == 'Approved'){
-                                $badge = 'success';
-                            }else if($beginning_inventory->status == 'Cancelled'){
-                                $badge = 'secondary';
-                            }else{
-                                $badge = 'primary';
-                            }
-                        @endphp
+                                $badge = null;
+                                if($beginning_inventory->status == 'Approved'){
+                                    $badge = 'success';
+                                }else if($beginning_inventory->status == 'Cancelled'){
+                                    $badge = 'secondary';
+                                }else{
+                                    $badge = 'primary';
+                                }
+                            @endphp
                         <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
                             <div class="d-flex flex-row mt-2 pl-2" style="font-size: 9pt;">
                                 <div class="p-0 col-7 text-left">

@@ -12,6 +12,7 @@ use Storage;
 
 class ConsignmentController extends Controller
 {
+    // /view_calendar_menu/{branch}
     public function viewCalendarMenu($branch){
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
         if ($sales_report_deadline) {
@@ -75,6 +76,7 @@ class ConsignmentController extends Controller
         return response()->json(['status' => 1, 'message' => 'Beginning inventory found.']);
     }
 
+    // /view_inventory_audit_form/{branch}/{transaction_date}
     public function viewInventoryAuditForm($branch, $transaction_date) {
         // get last inventory audit date
         $last_inventory_date = DB::table('tabConsignment Inventory Audit Report')
@@ -91,17 +93,37 @@ class ConsignmentController extends Controller
 
         $duration = Carbon::parse($inventory_audit_from)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($inventory_audit_to)->format('F d, Y');
 
-        $start = Carbon::parse($inventory_audit_from)->format('Y-m-d');
+        $start = Carbon::parse($inventory_audit_from)->addDay()->format('Y-m-d');
         $end = Carbon::parse($inventory_audit_to)->format('Y-m-d');
 
-        $items = DB::table('tabConsignment Beginning Inventory as cb')
-            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-            ->join('tabItem as i', 'i.name', 'cbi.item_code')
-            ->where('cb.status', 'Approved')
-            ->where('i.disabled', 0)->where('i.is_stock_item', 1)
-            ->whereDate('cb.transaction_date', '<=', Carbon::parse($transaction_date))
-            ->where('cb.branch_warehouse', $branch)->select('i.item_code', 'i.description')
-            ->orderBy('i.description', 'asc')->get();
+        $existing_items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
+            ->where('csr.transaction_date', $transaction_date)->exists();
+
+        if ($existing_items) {
+            $items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)->where('csr.transaction_date', $transaction_date)
+                ->select('csri.item_code', 'csri.description', 'csri.price')
+                ->get()->toArray();
+        } else {
+            $items = DB::table('tabBin as b')
+                ->join('tabItem as i', 'i.name', 'b.item_code')
+                ->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
+                ->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->orderBy('i.description', 'asc')->get();
+        }
+
+        if ($existing_items) {
+            $item_codes = collect($items)->pluck('item_code');
+            $bin_items_not_in_product_sold = DB::table('tabBin as b')
+                ->join('tabItem as i', 'i.name', 'b.item_code')->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
+                ->whereNotIn('b.item_code', $item_codes)->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->orderBy('i.description', 'asc')->get();
+
+            $items = $bin_items_not_in_product_sold->merge($items);
+        }
+
+        $items = $items->sortBy('description');
             
         $item_codes = collect($items)->pluck('item_code');
         
@@ -131,6 +153,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /submit_inventory_audit_form
     public function submitInventoryAuditForm(Request $request) {
         $data = $request->all();
         DB::beginTransaction();
@@ -138,7 +161,13 @@ class ConsignmentController extends Controller
             $cutoff_date = $this->getCutoffDate($data['transaction_date']);
             $period_from = $cutoff_date[0];
             $period_to = $cutoff_date[1];
-            
+
+            // If user submits without qty input
+            $null_qty_items = collect($data['item'])->where('qty', null);
+            if(count($null_qty_items) > 0){
+                return redirect()->back();
+            }
+
             $currentDateTime = Carbon::now();
             $no_of_items_updated = 0;
 
@@ -153,15 +182,8 @@ class ConsignmentController extends Controller
             $consigned_stocks = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
                 ->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code')->toArray();
 
-            $item_prices = DB::table('tabConsignment Beginning Inventory as cb')
-                ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                ->where('cb.status', 'Approved')
-                ->whereIn('cbi.item_code', array_keys($data['item']))
-                ->where('cb.branch_warehouse', $data['branch_warehouse'])
-                ->select('cb.transaction_date', 'cbi.item_code', 'cbi.price')
-                ->orderBy('cb.transaction_date', 'desc')->get();
-
-            $item_prices = collect($item_prices)->groupBy('item_code')->toArray();
+            $item_prices = DB::table('tabBin')->where('warehouse', $data['branch_warehouse'])
+                ->whereIn('item_code', array_keys($data['item']))->pluck('consignment_price', 'item_code')->toArray();
 
             $iar_existing_record = DB::table('tabConsignment Inventory Audit Report')->where('transaction_date', $data['transaction_date'])
                 ->where('branch_warehouse', $data['branch_warehouse'])->first();
@@ -239,7 +261,7 @@ class ConsignmentController extends Controller
             $iar_grand_total = $iar_total_items = 0;
             foreach ($data['item'] as $item_code => $row) {
                 $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
-                $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
+                $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
                 $sold_qty = $consigned_qty - (float)$row['qty'];
                 $amount = ((float)$price * (float)$sold_qty);
                 $iar_amount = ((float)$price * (float)$row['qty']);
@@ -419,11 +441,26 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabActivity Log')->insert($logs);
+
+            $start = Carbon::parse($data['audit_date_from'])->addDay()->format('Y-m-d');
+            $end = Carbon::parse($data['audit_date_to'])->format('Y-m-d');
+
+            $item_total_sold = DB::table('tabConsignment Sales Report')
+                ->where('branch_warehouse', $data['branch_warehouse'])->where('status', '!=', 'Cancelled')
+                ->whereBetween('transaction_date', [$start, $end])->selectRaw('SUM(grand_total) as grand_total, SUM(total_qty_sold) as total_qty_sold, branch_warehouse')
+                ->groupBy('branch_warehouse')->get()->toArray();
+
+            $item_total_sold = collect($item_total_sold)->groupBy('branch_warehouse');
+
+            $total_qty_sold = $item_total_sold[$data['branch_warehouse']][0]->total_qty_sold;
+            $grand_total = $item_total_sold[$data['branch_warehouse']][0]->grand_total;
+
             DB::commit();
 
             return redirect()->back()->with([
                 'success' => 'Record successfully updated',
-                'no_of_items_updated' => $no_of_items_updated,
+                'total_qty_sold' => $total_qty_sold,
+                'grand_total' => $grand_total,
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);
@@ -434,17 +471,36 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /view_product_sold_form/{branch}/{transaction_date}
     public function viewProductSoldForm($branch, $transaction_date) {
-        $items = DB::table('tabConsignment Beginning Inventory as cb')
-            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-            ->join('tabItem as i', 'i.name', 'cbi.item_code')
-            ->where('cb.status', 'Approved')
-            ->where('i.disabled', 0)->where('i.is_stock_item', 1)
-            ->whereDate('cb.transaction_date', '<=', Carbon::parse($transaction_date))
-            ->where('cb.branch_warehouse', $branch)
-            ->select('i.item_code', 'i.description')
-            ->groupBy('i.item_code', 'i.description')
-            ->orderBy('i.description', 'asc')->get();
+        $existing_items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
+            ->where('csr.transaction_date', $transaction_date)->exists();
+
+        if ($existing_items) {
+            $items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)->where('csr.transaction_date', $transaction_date)
+                ->select('csri.item_code', 'csri.description', 'csri.price')
+                ->get()->toArray();
+        } else {
+            $items = DB::table('tabBin as b')
+                ->join('tabItem as i', 'i.name', 'b.item_code')
+                ->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
+                ->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->orderBy('i.description', 'asc')->get();
+        }
+
+        if ($existing_items) {
+            $item_codes = collect($items)->pluck('item_code');
+            $bin_items_not_in_product_sold = DB::table('tabBin as b')
+                ->join('tabItem as i', 'i.name', 'b.item_code')->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
+                ->whereNotIn('b.item_code', $item_codes)->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->orderBy('i.description', 'asc')->get();
+
+            $items = $bin_items_not_in_product_sold->merge($items);
+        }
+
+        $items = $items->sortBy('description');
 
         $item_codes = collect($items)->pluck('item_code');
 
@@ -521,15 +577,7 @@ class ConsignmentController extends Controller
             $period_from = Carbon::parse($cutoff_date[0])->format('Y-m-d');
             $period_to = Carbon::parse($cutoff_date[1])->format('Y-m-d');
 
-            $item_prices = DB::table('tabConsignment Beginning Inventory as cb')
-                ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                ->where('cb.status', 'Approved')
-                ->whereIn('cbi.item_code', array_keys($data['item']))
-                ->where('cb.branch_warehouse', $data['branch_warehouse'])
-                ->select('cb.transaction_date', 'cbi.item_code', 'cbi.price')
-                ->orderBy('cb.transaction_date', 'desc')->get();
-
-            $item_prices = collect($item_prices)->groupBy('item_code')->toArray();
+            $item_prices = DB::table('tabBin')->where('warehouse', $data['branch_warehouse'])->whereIn('item_code', array_keys($data['item']))->pluck('consignment_price', 'item_code')->toArray();
 
             $consigned_stocks = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
                 ->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code')->toArray();
@@ -572,7 +620,7 @@ class ConsignmentController extends Controller
                 foreach ($data['item'] as $item_code => $row) {
                     if ($row['qty'] > 0) {
                         $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
-                        $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
+                        $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
                         if ((float)$row['qty'] < 0) {
                             return redirect()->back()
                                 ->with(['old_data' => $data])
@@ -628,7 +676,7 @@ class ConsignmentController extends Controller
                 $child_data = [];
                 foreach ($data['item'] as $item_code => $row) {
                     $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
-                    $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code][0]->price : 0;
+                    $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
 
                     $amount = ((float)$price * (float)$row['qty']);
 
@@ -663,6 +711,7 @@ class ConsignmentController extends Controller
 
                         $no_of_items_updated++;
                         $grand_total += $amount;
+                        $total_qty_sold += $row['qty'];
 
                         DB::table('tabConsignment Sales Report Item')->where('name', $existing->name)->update($values);
                     } else {
@@ -685,6 +734,7 @@ class ConsignmentController extends Controller
                             
                             $no_of_items_updated++;
                             $grand_total += $amount;
+                            $total_qty_sold += $row['qty'];
     
                             $child_data[] = [
                                 'name' => uniqid(),
@@ -740,11 +790,13 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabActivity Log')->insert($logs);
+
             DB::commit();
 
             return redirect()->back()->with([
                 'success' => 'Record successfully updated',
-                'no_of_items_updated' => $no_of_items_updated,
+                'total_qty_sold' => $total_qty_sold,
+                'grand_total' => $grand_total,
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);
@@ -974,6 +1026,25 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.tbl_sales_report', compact('report_arr', 'product_sold', 'cutoff_periods', 'opening_stocks_arr', 'product_sold_total_per_cutoff', 'total_amount_arr', 'hidezero'));
     }
 
+    // /inventory_items/{branch}
+    public function inventoryItems($branch){
+        $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $inv_summary = DB::table('tabBin as b')
+            ->join('tabItem as i', 'i.name', 'b.item_code')
+            ->where('i.disabled', 0)->where('i.is_stock_item', 1)
+            ->where('b.warehouse', $branch)
+            ->where('consigned_qty', '>', 0)
+            ->select('i.item_code', 'i.description', 'i.stock_uom', 'b.consigned_qty')
+            ->get()->toArray();
+
+        $item_codes = collect($inv_summary)->pluck('item_code');
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        return view('consignment.promodiser_warehouse_items', compact('inv_summary', 'item_image', 'branch', 'assigned_consignment_stores'));
+    }
+
     // /beginning_inv_list
     public function beginningInventoryApproval(Request $request){
         $from_date = $request->date ? Carbon::parse(explode(' to ', $request->date)[0])->startOfDay() : null;
@@ -1037,6 +1108,17 @@ class ConsignmentController extends Controller
         $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->get();
         $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
 
+        $inventory_item_codes = $beginning_inv_items->pluck('item_code');
+
+        $item_prices = DB::table('tabBin')->whereIn('warehouse', $warehouses)->whereIn('item_code', $inventory_item_codes)->select('warehouse', 'consignment_price', 'item_code')->get();
+        $item_price = [];
+
+        foreach($item_prices as $item){
+            $item_price[$item->warehouse][$item->item_code] = [
+                'price' => $item->consignment_price
+            ];
+        }
+
         $product_sold_arr = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('csri.qty', '>', 0)->whereIn('csr.branch_warehouse', $warehouses)->where('csr.status', '!=', 'Cancelled')
@@ -1068,8 +1150,12 @@ class ConsignmentController extends Controller
         foreach($beginning_inventory as $inv){
             $items_arr = [];
             $included_items = [];
+            $branch = isset($grouped_beginning_inventory[$inv->name]) ? $grouped_beginning_inventory[$inv->name][0]->branch_warehouse : null;
+            
             if(isset($beginning_inventory_items[$inv->name])){
                 foreach($beginning_inventory_items[$inv->name] as $item){
+                    $price = isset($item_price[$inv->branch_warehouse][$item->item_code]) ? $item_price[$inv->branch_warehouse][$item->item_code]['price'] * 1 : 0;
+
                     $items_arr[] = [
                         'parent' => $item->parent,
                         'inv_name' => $inv->name,
@@ -1079,8 +1165,8 @@ class ConsignmentController extends Controller
                         'item_description' => $item->item_description,
                         'uom' => $item->stock_uom,
                         'opening_stock' => ($item->opening_stock * 1),
-                        'price' => ($item->price * 1),
-                        'amount' => ($item->price * 1) * ($item->opening_stock * 1),
+                        'price' => $price,
+                        'amount' => ($price * 1) * ($item->opening_stock * 1)
                     ];
                 }
 
@@ -1153,11 +1239,19 @@ class ConsignmentController extends Controller
         return view('consignment.beginning_inventory_list', compact('consignment_stores', 'inv_arr', 'beginning_inventory', 'earliest_date'));
     }
 
+    // /approve_beginning_inv/{id}
     public function approveBeginningInventory(Request $request, $id){
         DB::beginTransaction();
         try {
             $branch = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->pluck('branch_warehouse')->first();
             $prices = $request->price;
+            $qty = $request->qty;
+
+            $item_codes = array_keys($prices);
+
+            if(count($item_codes) <= 0){
+                return redirect()->back()->with('error', 'Please Enter an Item');
+            }
 
             if(!$branch){
                 return redirect()->back()->with('error', 'Inventory record not found.');
@@ -1171,25 +1265,30 @@ class ConsignmentController extends Controller
                 'modified' => $now
             ];
 
-
             if($request->status == 'Approved'){
-                $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+                DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->whereNotIn('item_code', $item_codes)->delete();
 
-                $item_codes = collect($items)->map(function ($q){
-                    return $q->item_code;
-                });
+                $items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
+                $items = collect($items)->groupBy('item_code');
+
+                $item_details = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'description', 'stock_uom')->get();
+                $item_details = collect($item_details)->groupBy('name');
 
                 $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
                 $bin_items = collect($bin)->groupBy('item_code');
 
-                foreach($items as $item){
-                    if($item->status != 'For Approval'){ // Skip the approved/cancelled items
+                foreach($item_codes as $i => $item_code){
+                    if(isset($items[$item_code]) && $items[$item_code][0]->status != 'For Approval'){ // Skip the approved/cancelled items
                         continue;
                     }
-    
-                    if(isset($bin_items[$item->item_code])){
-                        DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $branch)->update([
-                            'consigned_qty' => $item->opening_stock,
+                    
+                    $price = isset($prices[$item_code]) ? preg_replace("/[^0-9 .]/", "", $prices[$item_code][0]) * 1 : 0;
+                    
+                    // Bin
+                    if(isset($bin_items[$item_code])){
+                        DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $branch)->update([
+                            'consigned_qty' => isset($qty[$item_code]) ? $qty[$item_code][0] : 0,
+                            'consigned_price' => $price,
                             'modified' => $now,
                             'modified_by' => Auth::user()->wh_user
                         ]);
@@ -1209,28 +1308,61 @@ class ConsignmentController extends Controller
                             'docstatus' => 0,
                             'idx' => 0, 
                             'warehouse' => $branch,
-                            'item_code' => $item->item_code,
-                            'stock_uom' => $item->stock_uom,
-                            'valuation_rate' => isset($prices[$item->item_code]) ? preg_replace("/[^0-9 .]/", "", $prices[$item->item_code][0]) * 1 : 0,
-                            'consigned_qty' => $item->opening_stock
+                            'item_code' => $item_code,
+                            'stock_uom' => isset($item_details[$item_code]) ? $item_details[$item_code][0]->stock_uom : null,
+                            'valuation_rate' => $price,
+                            'consigned_qty' => isset($qty[$item_code]) ? $qty[$item_code][0] : 0,
+                            'consignment_price' => $price
                         ]);
                     }
-                    
 
-                    if(isset($prices[$item->item_code])){ // in case there is an update in price
-                        $update_values['price'] = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code][0]) * 1;
+                    // Beginning Inventory
+                    if(isset($items[$item_code])){
+                        if(isset($prices[$item_code])){ // in case there is an update in price
+                            $update_values['price'] = $price;
+                            $update_values['idx'] = $i + 1;
+                        }
+        
+                        // update each item, allows checking if item for this branch is approved/cancelled
+                        DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update($update_values);
+                    }else{
+                        $item_qty = isset($qty[$item_code]) ? $qty[$item_code][0] : 0;
+
+                        $insert = [
+                            'name' => uniqid(),
+                            'creation' => $now,
+                            'owner' => Auth::user()->wh_user,
+                            'docstatus' => 0,
+                            'parent' => $id,
+                            'idx' => $i + 1,
+                            'item_code' => $item_code,
+                            'item_description' => isset($item_details[$item_code]) ? $item_details[$item_code][0]->description : null,
+                            'stock_uom' => isset($item_details[$item_code]) ? $item_details[$item_code][0]->stock_uom : null,
+                            'opening_stock' => $item_qty,
+                            'stocks_displayed' => 0,
+                            'status' => 'For Approval',
+                            'price' => $price,
+                            'amount' => $price * $item_qty,
+                            'modified' => $now,
+                            'modified_by' => Auth::user()->wh_user,
+                            'parentfield' => 'items',
+                            'parenttype' => 'Consignment Beginning Inventory' 
+                        ];
+
+                        DB::table('tabConsignment Beginning Inventory Item')->insert($insert);
                     }
-    
-                    // update each item, allows checking if item for this branch is approved/cancelled
-                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item->item_code)->update($update_values);
                 }
             }else{
                 // update item status' to cancelled
                 DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->update($update_values);
             }
 
-            if(isset($update_values['price'])){ // remove price in updates array, parent table of beginning inventory does not have price
+            if(isset($update_values['price'])){ // remove price/idx in updates array, parent table of beginning inventory does not have price/idx
                 unset($update_values['price']);
+            }
+
+            if(isset($update_values['idx'])){
+                unset($update_values['idx']);
             }
 
             if($request->status == 'Approved'){
@@ -1333,6 +1465,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /promodiser/delivery_report/{type}
     public function promodiserDeliveryReport($type){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
@@ -1351,32 +1484,30 @@ class ConsignmentController extends Controller
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->whereIn('sted.t_warehouse', $assigned_consignment_store)
             ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received')
-            ->orderBy('ste.creation', 'desc')->paginate(10);
+            ->orderBy('ste.creation', 'desc')->get();
 
-        $delivery_report_q = collect($delivery_report->items())->groupBy('name');
+        $delivery_report_q = collect($delivery_report)->groupBy('name');
 
-        $item_codes = collect($delivery_report->items())->map(function ($q){
+        $item_codes = collect($delivery_report)->map(function ($q){
             return $q->item_code;
         });
 
-        $source_warehouses = collect($delivery_report->items())->map(function ($q){
+        $source_warehouses = collect($delivery_report)->map(function ($q){
             return $q->s_warehouse;
         });
 
-        $target_warehouses = collect($delivery_report->items())->map(function ($q){
+        $target_warehouses = collect($delivery_report)->map(function ($q){
             return $q->t_warehouse;
         });
 
         $warehouses = collect($source_warehouses)->merge($target_warehouses)->unique();
 
-        $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
-            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-            ->whereIn('cbi.item_code', $item_codes)->whereIn('cb.branch_warehouse', $warehouses)->select('cbi.item_code', 'cbi.price', 'cb.branch_warehouse')->get();
-        
+        $item_prices = DB::table('tabBin')->whereIn('warehouse', $warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get();
         $prices_arr = [];
-        foreach($beginning_inventory as $inv){
-            $prices_arr[$inv->branch_warehouse][$inv->item_code] = [
-                'price' => $inv->price
+
+        foreach($item_prices as $item){
+            $prices_arr[$item->warehouse][$item->item_code] = [
+                'price' => $item->consignment_price
             ];
         }
 
@@ -1428,6 +1559,20 @@ class ConsignmentController extends Controller
                 'date_received' => min($status_check) == 1 ? collect($items_arr)->min('date_received') : null
             ];
         }
+
+        
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data3
+        $itemCollection = collect($ste_arr);
+        // Define how many items we want to be visible in each page
+        $perPage = 20;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+        $ste_arr = $paginatedItems;
 
         return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr', 'type'));
     }
@@ -1488,30 +1633,6 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            $inv_id = null;
-            if($item_codes_without_beginning_inventory){
-                $latest_inv = DB::table('tabConsignment Beginning Inventory')->where('name', 'like', '%inv%')->max('name');
-                $latest_inv_exploded = explode("-", $latest_inv);
-                $inv_id = (($latest_inv) ? $latest_inv_exploded[1] : 0) + 1;
-                $inv_id = str_pad($inv_id, 6, '0', STR_PAD_LEFT);
-                $inv_id = 'INV-'.$inv_id;
-    
-                $values = [
-                    'docstatus' => 0,
-                    'name' => $inv_id,
-                    'idx' => 0,
-                    'status' => 'For Approval',
-                    'branch_warehouse' => $target_warehouses ? $target_warehouses->first() : $wh->to_warehouse,
-                    'creation' => Carbon::now()->toDateTimeString(),
-                    'transaction_date' => Carbon::now()->toDateTimeString(),
-                    'owner' => Auth::user()->full_name,
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name
-                ];
-                
-                DB::table('tabConsignment Beginning Inventory')->insert($values);
-            }
-
             $now = Carbon::now();
             $prices = $request->price ? $request->price : [];
 
@@ -1527,47 +1648,6 @@ class ConsignmentController extends Controller
                 
                 $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
 
-                // Beginning Inventory
-                if(in_array($item->item_code, $item_codes_with_beginning_inventory) && isset($beginning_inventory_arr[$branch][$item->item_code])){
-                    $inv_arr = [
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
-                        'price' => $basic_rate,
-                        'amount' => $item->transfer_qty * $basic_rate
-                    ];
-
-                    if($beginning_inventory_arr[$branch][$item->item_code]['status'] == 'For Approval'){
-                        unset($inv_arr['amount']);
-
-                        $opening_stock = $beginning_inventory_arr[$branch][$item->item_code]['consigned_qty'] + $item->transfer_qty;
-                        $inv_arr['opening_stock'] = $opening_stock;
-                        $inv_arr['amount'] = $opening_stock * $basic_rate;
-                    }
-
-                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $beginning_inventory_arr[$branch][$item->item_code]['name'])->where('item_code', $item->item_code)->update($inv_arr);
-                }else{
-                    DB::table('tabConsignment Beginning Inventory Item')->insert([
-                        'name' => uniqid(),
-                        'creation' => Carbon::now()->toDateTimeString(),
-                        'owner' => Auth::user()->full_name,
-                        'docstatus' => 0,
-                        'parent' => $inv_id,
-                        'idx' => $i++,
-                        'item_code' => $item->item_code,
-                        'item_description' => $item->description,
-                        'stock_uom' => $item->stock_uom,
-                        'opening_stock' => $item->transfer_qty,
-                        'stocks_displayed' => 0,
-                        'status' => 'For Approval',
-                        'price' => $basic_rate,
-                        'amount' => $basic_rate * $item->transfer_qty,
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
-                        'parentfield' => 'items',
-                        'parenttype' => 'Consignment Beginning Inventory' 
-                    ]);
-                }
-
                 // Source Warehouse
                 if($wh->transfer_as == 'Store Transfer' && $wh->purpose != 'Material Receipt'){
                     $src_consigned = isset($bin_items[$src_branch][$item->item_code]) ? $bin_items[$src_branch][$item->item_code]['consigned_qty'] : 0;
@@ -1578,23 +1658,30 @@ class ConsignmentController extends Controller
                     DB::table('tabBin')->where('warehouse', $src_branch)->where('item_code', $item->item_code)->update([
                         'modified' => Carbon::now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $src_consigned - $item->transfer_qty
+                        'consigned_qty' => $src_consigned - $item->transfer_qty,
+                        'consignment_price' => $basic_rate
                     ]);
                 }
 
                 // Target Warehouse
                 if(isset($bin_items[$branch][$item->item_code])){
-                    if($item->consignment_status == 'Received'){
+                    $consigned_qty = $bin_items[$branch][$item->item_code]['consigned_qty'] + $item->transfer_qty;
+
+                    $update_values = [
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'consignment_price' => $basic_rate
+                    ];
+
+                    if(!isset($request->update_price)){
+                        $update_values['consigned_qty'] = $consigned_qty;
+                    }
+
+                    if($item->consignment_status == 'Received' && !isset($request->update_price)){
                         continue;
                     }
 
-                    $consigned_qty = $bin_items[$branch][$item->item_code]['consigned_qty'];
-
-                    DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $consigned_qty + $item->transfer_qty
-                    ]);
+                    DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update($update_values);
                 }else{
                     $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
                     $latest_bin_exploded = explode("/", $latest_bin);
@@ -1614,7 +1701,8 @@ class ConsignmentController extends Controller
                         'item_code' => $item->item_code,
                         'stock_uom' => $item->stock_uom,
                         'valuation_rate' => $basic_rate,
-                        'consigned_qty' => $item->transfer_qty
+                        'consigned_qty' => $item->transfer_qty,
+                        'consignment_price' => $basic_rate
                     ]);
                 }
 
@@ -1689,8 +1777,10 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
+            $message = isset($request->update_price) ? 'Price(s) updated.' : 'Items received.';
+
             DB::commit();
-            return redirect()->back()->with('success', 'Items received');
+            return redirect()->back()->with('success', $message);
         } catch (Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'An error occured. Please try again later');
@@ -1848,9 +1938,14 @@ class ConsignmentController extends Controller
         return view('consignment.beginning_inventory', compact('assigned_consignment_store',  'inv', 'branch', 'inv_record'));
     }
 
+    // /get_items/{branch}
     public function getItems(Request $request, $branch){
         $items_already_added_in_table = $request->excluded_items ? $request->excluded_items : [];
+
         $bin_items = DB::table('tabBin')->where('warehouse', $branch)->pluck('item_code');
+        if($request->has('all_items') && $request->all_items == 1){
+            $bin_items = [];
+        }
 
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereIn('status', ['Approved', 'For Approval'])->pluck('name');
         $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $beginning_inventory)->whereIn('status', ['Approved', 'For Approval'])->pluck('item_code');
@@ -2565,7 +2660,8 @@ class ConsignmentController extends Controller
                     'item_code' => $damaged_item->item_code,
                     'stock_uom' => $damaged_item->stock_uom,
                     'valuation_rate' => $price,
-                    'consigned_qty' => $damaged_item->qty
+                    'consigned_qty' => $damaged_item->qty,
+                    'consignment_price' => $price
                 ]);
             }
 
@@ -2675,6 +2771,8 @@ class ConsignmentController extends Controller
 
         $inventory = collect($inventory_arr)->groupBy('item_code');
 
+        $item_prices = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', array_keys($inventory->toArray()))->pluck('consignment_price', 'item_code')->toArray();
+
         $items_arr = [];
         foreach($inventory_arr as $item){
             $orig_exists = 0;
@@ -2715,7 +2813,7 @@ class ConsignmentController extends Controller
                 'description' =>  isset($items[$item->item_code]) ? strip_tags($items[$item->item_code][0]->description) : null,
                 'max' => $max,
                 'uom' => isset($items[$item->item_code]) ? $items[$item->item_code][0]->stock_uom : null,
-                'price' => isset($inventory[$item->item_code]) ? '₱ '.number_format($inventory[$item->item_code][0]->price, 2) : '₱ 0.00',
+                'price' => isset($item_prices[$item->item_code]) ? '₱ '.number_format($item_prices[$item->item_code], 2) : '₱ 0.00',
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
                 'img' => asset('storage'.$img),
                 'webp' => asset('storage'.$webp),
@@ -2874,7 +2972,7 @@ class ConsignmentController extends Controller
                 if($request->transfer_as == 'Sales Return'){
                     $max_qty = isset($sold_qty[$item_code]) ? $sold_qty[$item_code]['qty'] : 0;
                     if($transfer_qty[$item_code]['transfer_qty'] > $max_qty){
-                        return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
+                        return redirect()->back()->with('error', 'Sales return qty cannot be more than the total sold qty.');
                     }
                 }else{
                     if(isset($items[$reference_warehouse][$item_code]) && $transfer_qty[$item_code]['transfer_qty'] > $items[$reference_warehouse][$item_code]['consigned_qty']){
@@ -2965,7 +3063,8 @@ class ConsignmentController extends Controller
                             'item_code' => $item_code,
                             'stock_uom' => isset($items[$target_warehouse][$item_code]) ? $items[$target_warehouse][$item_code]['uom'] : null,
                             'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
-                            'consigned_qty' => $transfer_qty[$item_code]['transfer_qty']
+                            'consigned_qty' => $transfer_qty[$item_code]['transfer_qty'],
+                            'consignment_price' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0
                         ]);
                     }
                 }

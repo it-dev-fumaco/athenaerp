@@ -90,7 +90,6 @@
                                             </div>
                                         </div>
                                     </form>
-                                    
                                     <table class="table table-striped" style="font-size: 9pt;">
                                         <thead>
                                             <th class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">Date</th>
@@ -132,7 +131,7 @@
                                                     <span class="badge badge-{{ $badge }}">{{ $inv['status'] }}</span>
                                                 </td>
                                                 <td class="font-responsive align-middle p-2 text-center">
-                                                    <a href="#" class="d-block" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal">View Items</a>
+                                                    <a href="#" class="d-block modal-trigger" data-branch='{{ $inv["branch"] }}' data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal">View Items</a>
                                                     <span class="badge badge-{{ $badge }} d-xl-none d-lg-none">{{ $inv['status'] }}</span>
                                                         
                                                     <div class="modal fade" id="{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -176,37 +175,42 @@
                                                                                 @endphp
                                                                                         
                                                                                 <div class="input-group">
-                                                                                    <select class="custom-select font-responsive" name="status" id="inputGroupSelect04" required>
+                                                                                    <select class="custom-select font-responsive" name="status" required>
                                                                                         <option value="" selected disabled>Select a status</option>
                                                                                         @foreach ($status_selection as $status)
                                                                                         <option value="{{ $status['value'] }}">{{ $status['title'] }}</option>
                                                                                         @endforeach
                                                                                     </select>
                                                                                     <div class="input-group-append">
-                                                                                        <button class="btn btn-primary" type="submit">Submit</button>
+                                                                                        <button class="btn btn-primary" type="submit" id="{{ $inv['name'] }}-submit">Submit</button>
                                                                                     </div>
                                                                                 </div>
                                                                                 @endif
                                                                             </div>
                                                                         </div>
                                                                         
-                                                                        <table class="table table-striped" style="font-size: 10pt;">
+                                                                        <span id="item-count-{{ $inv['name'] }}" class="d-none">{{ count($inv['items']) }}</span>
+                                                                        <table class="table table-striped items-table" style="font-size: 10pt;">
                                                                             <thead>
-                                                                                <th class="text-center p-2 align-middle col-lg-4 col-3">Item Code</th>
-                                                                                <th class="text-center p-2 align-middle col-lg-2 col-3">Opening Stock</th>
-                                                                                <th class="text-center p-2 align-middle col-lg-2 col-3">Price</th>
+                                                                                <th class="text-center p-2 align-middle col-lg-4 col-3" style="width: 36%">Item Code</th>
+                                                                                <th class="text-center p-2 align-middle col-lg-2 col-3" style='width: 16%'>Opening Stock</th>
+                                                                                <th class="text-center p-2 align-middle col-lg-2 col-3" style='width: 16%'>Price</th>
                                                                                 @if ($inv['status'] == 'Approved')
-                                                                                <th class="text-center p-2 align-middle col-lg-2 col-3">-</th>
+                                                                                    <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 16%'>-</th>
+                                                                                @else
+                                                                                    <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 16%'>Action</th>
                                                                                 @endif
                                                                             </thead>
-                                                                            @forelse ($inv['items'] as $item)
+                                                                            @forelse ($inv['items'] as $i => $item)
                                                                                 @php
+                                                                                    $target = $inv['name'].'-'.$item['item_code'];
+                                                                            
                                                                                     $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
                                                                                     $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
                                                                                 @endphp
-                                                                                <tr>
+                                                                                <tr id="row-{{ $target }}">
                                                                                     <td class="text-center p-1 align-middle">
-                                                                                        <div class="d-flex flex-row justify-content-start align-items-center">
+                                                                                        <div class="d-flex flex-row justify-content-start align-items-center" id="{{ $target }}-container">
                                                                                             <div class="p-2 text-left">
                                                                                                 <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
                                                                                                     <picture>
@@ -219,6 +223,16 @@
                                                                                             <div class="p-2 text-left">
                                                                                                 <b>{!! ''.$item['item_code'] !!}</b>
                                                                                                 <span class="d-none d-xl-inline"> - {!! strip_tags($item['item_description']) !!}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div class="p-2 w-100 text-left d-none" id="{{ $target }}-selection">
+                                                                                            <div class="row">
+                                                                                                <div class="col-9">
+                                                                                                    <select class="form-control replacement-item" id="{{ $target }}-replacement" data-original-code='{{ $item['item_code'] }}' style="width: 200px !important;"></select>
+                                                                                                </div>
+                                                                                                <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
+                                                                                                    <span class="undo-replacement" data-item-code="{{ $item['item_code'] }}" data-target="{{ $target }}" data-name="{{ $inv['name'] }}"><i class="fa fa-undo"></i> Reset</span>
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                         <div class="modal fade" id="mobile-{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -270,7 +284,8 @@
                                                                                     </td>
                                                                                     <td class="text-center p-1 align-middle">
                                                                                         @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
-                                                                                            ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
+                                                                                            ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" id="item-price-{{ $item['item_code'] }}" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
+                                                                                            <input id="item-qty-{{ $item['item_code'] }}" type="text" class="d-none" name="qty[{{ $item['item_code'] }}][]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
                                                                                         @elseif ($inv['status'] == 'Approved')
                                                                                             <input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
                                                                                             <span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
@@ -279,9 +294,16 @@
                                                                                         @endif
                                                                                     </td>
                                                                                     @if ($inv['status'] == 'Approved')
-                                                                                    <td class="text-center p-1 align-middle">
-                                                                                        <span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"><i class="fa fa-edit"></i></span>
-                                                                                    </td>
+                                                                                        <td class="text-center p-1 align-middle">
+                                                                                            <span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"><i class="fa fa-edit"></i></span>
+                                                                                        </td>
+                                                                                    @else
+                                                                                        <td class="text-center p-1 align-middle">
+                                                                                            <div class="btn-group" role="group" aria-label="Basic example">
+                                                                                                <button type="button" class="btn btn-xs btn-outline-primary p-1 change-item" data-target="{{ $target }}" style="font-size: 9pt;">Change</button>
+                                                                                                <button type="button" class="btn btn-xs btn-outline-secondary p-1 remove-item" data-name="{{ $inv['name'] }}" data-target="{{ $target }}" style="font-size: 9pt;">Remove</button>
+                                                                                            </div>
+                                                                                        </td>
                                                                                     @endif
                                                                                 </tr>
                                                                                 <tr class="d-xl-none">
@@ -396,7 +418,7 @@
                                         @endforelse
                                     </table>
                                     <div class="float-right mt-4">
-                                        {{ $beginning_inventory->links('pagination::bootstrap-4') }}
+                                        {{ $beginning_inventory->appends(request()->input())->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="inventory-audit-history-content" role="tabpanel" aria-labelledby="inventory-audit-history-tab">
@@ -414,6 +436,10 @@
 
 @section('style')
     <style>
+        table .items-table{
+            table-layout: fixed;
+            width: 100%;   
+        }
         .morectnt span {
             display: none;
         }
@@ -429,6 +455,13 @@
         }
         .modal{
             background-color: rgba(0,0,0,0.4);
+        }
+        .undo-replacement{
+            cursor: pointer;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
         }
         @media (max-width: 575.98px) {
             .last-row{
@@ -475,7 +508,6 @@
 @section('script')
     <script>
         $(document).ready(function() {
-
             loadActivityLogs();
             function loadActivityLogs(page) {
                 $.ajax({
@@ -487,12 +519,115 @@
                 });
             }
 
+            $('.remove-item').click(function (){
+                var name = $(this).data('name');
+                var target = $(this).data('target');
+
+                remove_row(name, target);
+                validate_submit(name);
+            });
+
+            function remove_row(name, target){
+                $('#row-' + target).remove();
+                $('#item-count-' + name).text(parseInt($('#item-count-' + name).text()) - 1);
+            }
+
+            function validate_submit(name){
+                var count = parseInt($('#item-count-' + name).text());
+                if(count <= 0){
+                    $('#' + name + '-submit').prop('disabled', true);
+                }else{
+                    $('#' + name + '-submit').prop('disabled', false);
+                }
+            }
+
+            $('.change-item').click(function (){
+                $('#'+$(this).data('target')+'-container').removeClass('d-flex').addClass('d-none');
+                $('#'+$(this).data('target')+'-selection').removeClass('d-none');
+                $('#'+$(this).data('target')+'-replacement').prop('required', true);
+            });
+
+            $('.undo-replacement').click(function(){
+                var replaced_code = $('#'+$(this).data('target')+'-replacement').val();
+                if(replaced_code != ''){
+                    excluded_items_arr = jQuery.grep(excluded_items_arr, function(value){
+                        return value != replaced_code;
+                    });
+                }
+
+                $('#'+$(this).data('target')+'-container').addClass('d-flex').removeClass('d-none');
+                $('#'+$(this).data('target')+'-selection').addClass('d-none');
+                $('#'+$(this).data('target')+'-replacement').prop('required', false);
+                $('#'+$(this).data('target')+'-replacement').empty().trigger('change');
+
+                $('#item-price-'+$(this).data('item-code')).attr('name', 'price[' + $(this).data('item-code') + '][]');
+                $('#item-qty-'+$(this).data('item-code')).attr('name', 'qty[' + $(this).data('item-code') + '][]');
+            });
+
+            var excluded_items_arr = new Array();
+            $('.modal-trigger').click(function(){
+                excluded_items_arr = [];
+                var active_branch = $(this).data('branch');
+                $('.replacement-item').select2({
+                    templateResult: formatState,
+                    placeholder: 'Select an Item',
+
+                    ajax: {
+                        url: '/get_items/'+active_branch,
+                        method: 'GET',
+                        dataType: 'json',
+                        data: function (data) {
+                            return {
+                                q: data.term, // search term
+                                excluded_items: excluded_items_arr,
+                                all_items: 1
+                            };
+                        },
+                        processResults: function (response) {
+                            return {
+                                results: response.items
+                            };
+                        },
+                        cache: true
+                    }
+                });
+            });
+
+            $(document).on('select2:select', '.replacement-item', function(e){
+                var item_code = e.params.data.id;
+                excluded_items_arr.push(item_code);
+                var original_item_code = $(this).data('original-code');
+
+                $('#item-price-'+original_item_code).attr('name', 'price[' + item_code + '][]');
+                $('#item-qty-'+original_item_code).attr('name', 'qty[' + item_code + '][]');
+            });
+
+            function formatState (opt) {
+                if (!opt.id) {
+                    return opt.text;
+                }
+
+                var optimage = opt.image_webp;
+                if(optimage.indexOf('/icon/no_img') != -1){
+                    optimage = opt.image;
+                }
+
+                if(!optimage){
+                    return opt.text;
+                } else {
+                    var $opt = $(
+                    '<span><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>'
+                    );
+                    return $opt;
+                }
+            };
+
             $(document).on('click', '#activity-logs-pagination a', function(event){
                 event.preventDefault();
                 var page = $(this).attr('href').split('page=')[1];
                 loadActivityLogs(page);
             });
-
+            
             var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : Carbon\Carbon::now()->subDays(7)->format("Y-M-d")  }}';
             var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : Carbon\Carbon::now()->format("Y-M-d")  }}';
             $('#date-filter').daterangepicker({
@@ -550,24 +685,24 @@
 			}
 
             $('#consignment-store-select').select2({
-            placeholder: "Select Store",
-            ajax: {
-                url: '/consignment_stores',
-                method: 'GET',
-                dataType: 'json',
-                data: function (data) {
-                    return {
-                        q: data.term // search term
-                    };
-                },
-                processResults: function (response) {
-                    return {
-                        results: response
-                    };
-                },
-                cache: true
-            }
-        });
+                placeholder: "Select Store",
+                ajax: {
+                    url: '/consignment_stores',
+                    method: 'GET',
+                    dataType: 'json',
+                    data: function (data) {
+                        return {
+                            q: data.term // search term
+                        };
+                    },
+                    processResults: function (response) {
+                        return {
+                            results: response
+                        };
+                    },
+                    cache: true
+                }
+            });
         });
     </script>
 @endsection

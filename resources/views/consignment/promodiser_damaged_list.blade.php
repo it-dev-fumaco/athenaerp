@@ -208,7 +208,7 @@
                 var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="showmoretxt">' + showChar + '</a></span>';
                 $(this).html(txt);
             }
-        // });
+        });
 
         // $('.test').click(function(){
         //     if($(this).is('a')){
