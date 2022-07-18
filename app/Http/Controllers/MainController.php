@@ -21,6 +21,12 @@ use Carbon\CarbonPeriod;
 
 class MainController extends Controller
 {
+    public function testing(){
+        $test = DB::table('tabConsignment Beginning Inventory as cb')->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')->where('cb.branch_warehouse', 'HANDYMAN ZABARTE TOWN CENTER  - FI')->select('cbi.item_code', 'cb.status as inv_status', 'cbi.status as item_status')->get();
+
+            return $test;
+    }
+    
     public function allowed_parent_warehouses(){
         $user = Auth::user()->frappe_userid;
         return DB::table('tabWarehouse Access')
@@ -249,14 +255,12 @@ class MainController extends Controller
         
                 $warehouses = collect($source_warehouses)->merge($target_warehouses)->unique();
 
-                $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
-                    ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                    ->whereIn('cbi.item_code', $item_codes)->whereIn('cb.branch_warehouse', $warehouses)->select('cbi.item_code', 'cbi.price', 'cb.branch_warehouse')->get();
-                
+                $item_prices = DB::table('tabBin')->whereIn('warehouse', $warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get();
                 $prices_arr = [];
-                foreach($beginning_inventory as $inv){
-                    $prices_arr[$inv->branch_warehouse][$inv->item_code] = [
-                        'price' => $inv->price
+
+                foreach($item_prices as $item){
+                    $prices_arr[$item->warehouse][$item->item_code] = [
+                        'price' => $item->consignment_price
                     ];
                 }
 

@@ -138,18 +138,18 @@
                                                                         </td>
                                                                         <td class="text-center p-1 align-middle">
                                                                             <span class="d-block font-weight-bold">{{ number_format($item['delivered_qty'] * 1) }}</span>
-                                                                            <span class="d-none font-weight-bold" id="{{ $item['item_code'] }}-qty">{{ $item['delivered_qty'] * 1 }}</span>
+                                                                            <span class="d-none font-weight-bold" id="{{ $ste['name'].'-'.$item['item_code'] }}-qty">{{ $item['delivered_qty'] * 1 }}</span>
                                                                             <small>{{ $item['stock_uom'] }}</small>
                                                                         </td>
                                                                         <td class="text-center p-1 align-middle">
                                                                             <input type="text" name="item_codes[]" class="d-none" value="{{ $item['item_code'] }}"/>
-                                                                            <input type="text" value='{{ $item['price'] > 0 ? number_format($item['price'], 2) : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-item-code='{{ $item['item_code'] }}' placeholder='0' required>
+                                                                            <input type="text" value='{{ $item['price'] > 0 ? number_format($item['price'], 2) : null }}' class='form-control text-center price' name='price[{{ $item['item_code'] }}]' data-target='{{ $ste['name'].'-'.$item['item_code'] }}' placeholder='0' required>
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td colspan="3" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
                                                                             <span class="item-description">{!! strip_tags($item['description']) !!}</span> <br>
-                                                                            Amount: ₱ <span id="{{ $item['item_code'] }}-amount" min='1' class='font-weight-bold amount'>{{ number_format($item['delivered_qty'] * $item['price'], 2) }}</span>
+                                                                            Amount: ₱ <span id="{{ $ste['name'].'-'.$item['item_code'] }}-amount" min='1' class='font-weight-bold amount'>{{ number_format($item['delivered_qty'] * $item['price'], 2) }}</span>
                                                                         </td>
                                                                     </tr>
                                                                     @endforeach
@@ -158,8 +158,10 @@
                                                         </div>
                                                         <div class="modal-footer">
                                                             @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
+                                                                <input type="checkbox" name="update_price" class="d-none" readonly>
                                                                 <button type="submit" class="btn btn-primary w-100 submit-once">Receive</button>
                                                             @else
+                                                                <input type="checkbox" name="update_price" class="d-none" checked readonly>
                                                                 <button type="submit" class="btn btn-info w-100 submit-once">Update Prices</button>
                                                                 <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">
                                                                     Cancel
@@ -244,16 +246,16 @@
             var showTotalChar = 150, showChar = "Show more", hideChar = "Show less";
 
             $('.price').keyup(function(){
-                var item_code = $(this).data('item-code');
+                var target = $(this).data('target');
                 var price = $(this).val().replace(/,/g, '');
                 if($.isNumeric($(this).val()) && price > 0 || $(this).val().indexOf(',') > -1 && price > 0){
-                    var qty = parseInt($('#'+item_code+'-qty').text());
+                    var qty = parseInt($('#'+target+'-qty').text());
                     var total_amount = price * qty;
 
                     const amount = total_amount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                    $('#'+item_code+'-amount').text(amount);
+                    $('#'+target+'-amount').text(amount);
                 }else{
-                    $('#'+item_code+'-amount').text('0');
+                    $('#'+target+'-amount').text('0');
                     $(this).val('');
                 }
             });
