@@ -428,11 +428,26 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabActivity Log')->insert($logs);
+
+            $start = Carbon::parse($data['audit_date_from'])->addDay()->format('Y-m-d');
+            $end = Carbon::parse($data['audit_date_to'])->format('Y-m-d');
+
+            $item_total_sold = DB::table('tabConsignment Sales Report')
+                ->where('branch_warehouse', $data['branch_warehouse'])->where('status', '!=', 'Cancelled')
+                ->whereBetween('transaction_date', [$start, $end])->selectRaw('SUM(grand_total) as grand_total, SUM(total_qty_sold) as total_qty_sold, branch_warehouse')
+                ->groupBy('branch_warehouse')->get()->toArray();
+
+            $item_total_sold = collect($item_total_sold)->groupBy('branch_warehouse');
+
+            $total_qty_sold = $item_total_sold[$data['branch_warehouse']][0]->total_qty_sold;
+            $grand_total = $item_total_sold[$data['branch_warehouse']][0]->grand_total;
+
             DB::commit();
 
             return redirect()->back()->with([
                 'success' => 'Record successfully updated',
-                'no_of_items_updated' => $no_of_items_updated,
+                'total_qty_sold' => $total_qty_sold,
+                'grand_total' => $grand_total,
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);
@@ -445,15 +460,34 @@ class ConsignmentController extends Controller
 
     // /view_product_sold_form/{branch}/{transaction_date}
     public function viewProductSoldForm($branch, $transaction_date) {
-        $items = DB::table('tabConsignment Beginning Inventory as cb')
-            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-            ->join('tabItem as i', 'i.name', 'cbi.item_code')
-            ->where('cb.status', 'Approved')
-            ->where('i.disabled', 0)->where('i.is_stock_item', 1)
-            ->whereDate('cb.transaction_date', '<=', Carbon::parse($transaction_date))
-            ->where('cb.branch_warehouse', $branch)
-            ->select('i.item_code', 'i.description', 'cbi.price')
-            ->orderBy('i.description', 'asc')->get();
+        $existing_items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
+            ->where('csr.transaction_date', $transaction_date)->exists();
+
+        if ($existing_items) {
+            $items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)->where('csr.transaction_date', $transaction_date)
+                ->select('csri.item_code', 'csri.description', 'csri.price')
+                ->get()->toArray();
+        } else {
+            $items = DB::table('tabBin as b')
+                ->join('tabItem as i', 'i.name', 'b.item_code')
+                ->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
+                ->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->orderBy('i.description', 'asc')->get();
+        }
+
+        if ($existing_items) {
+            $item_codes = collect($items)->pluck('item_code');
+            $bin_items_not_in_product_sold = DB::table('tabBin as b')
+                ->join('tabItem as i', 'i.name', 'b.item_code')->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
+                ->whereNotIn('b.item_code', $item_codes)->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->orderBy('i.description', 'asc')->get();
+
+            $items = $bin_items_not_in_product_sold->merge($items);
+        }
+
+        $items = $items->sortBy('description');
 
         $item_codes = collect($items)->pluck('item_code');
 

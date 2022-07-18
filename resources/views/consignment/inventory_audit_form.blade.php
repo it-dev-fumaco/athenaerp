@@ -208,10 +208,10 @@
                 </div>
                 <div class="row pt-5">
                     <div class="col-6">
-                        <button type="button" class="btn btn-primary btn-block" id="confirm-inventory-report-btn">CONFIRM</button>
+                        <button type="button" class="btn btn-primary btn-block" id="confirm-inventory-report-btn"><i class="fas fa-check"></i> CONFIRM</button>
                     </div>
                     <div class="col-6">
-                        <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal">CLOSE</button>
+                        <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal"><i class="fas fa-times"></i> CLOSE</button>
                     </div>
                 </div>
             </div>
@@ -239,7 +239,7 @@
                 </div>
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">CLOSE</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i> CLOSE</button>
                     </div>
                 </div>
             </div>
@@ -264,13 +264,23 @@
                     <i class="fas fa-check-circle"></i>
                 </p>
                 <p class="text-center text-uppercase mt-0 font-weight-bold">{{ session()->get('success') }}</p>
+                <hr>
+                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Sales Report Summary</p>
                 <div class="text-center mb-2" style="font-size: 9pt;">
-                    <span class="d-block font-weight-bold mt-3">{{ session()->get('no_of_items_updated') }}</span>
-                    <small class="d-block">No. of updated Items</small>
-                    <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
-                    <small class="d-block">Transaction Date</small>
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
                     <small class="d-block">Branch / Store</small>
+                    <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
+                    <small class="d-block">Transaction Date</small>
+                </div>
+                <div class="d-flex flex-row mt-1 justify-content-between">
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ number_format(session()->get('total_qty_sold')) }}</span>
+                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
+                    </div>
+                    <div class="p-1 col-6 text-center">
+                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ '₱ ' . number_format(session()->get('grand_total'), 2) }}</span>
+                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
+                    </div>
                 </div>
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">
@@ -278,6 +288,33 @@
                     </div>
                 </div>
                 @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="notifications-modal" tabindex="-1" role="dialog" aria-labelledby="notifications-modal-title" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-navy">
+                <h5 class="modal-title"><i class="fas fa-info-circle"></i> WARNING</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="font-size: 10pt;">
+                <form></form>
+                <p class="text-center mt-0">
+                    <span class="d-block">Please enter physical count of quantity for the following item(s):</span>
+                </p>
+                <div id="inc-item-codes">
+                    <ul></ul>
+                </div>
+                <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i> CLOSE</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -326,7 +363,12 @@
             });
 
             if(empty_inputs.length > 0) {
-                $('#' + empty_inputs[0]).focus();
+                $('#inc-item-codes ul').empty();
+                $.each(empty_inputs, function(e, item){
+                    $('#inc-item-codes ul').append('<li class="wrong-item-code">'+ item +'</li>');
+                });
+
+                $('#notifications-modal').modal('show');
 
                 return false;
             }
@@ -347,7 +389,7 @@
                 }
             });
 
-            $('#total-qty-sold').text(total_sold_qty);
+            $('#total-qty-sold').text(total_sold_qty.toLocaleString());
             $('#total-sales-amount').text(formatToCurrency(total_sales_amount));
 
             $('#confirmation-modal').modal('show');
