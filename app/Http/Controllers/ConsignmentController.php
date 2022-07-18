@@ -1283,11 +1283,12 @@ class ConsignmentController extends Controller
                     }
                     
                     $price = isset($prices[$item_code]) ? preg_replace("/[^0-9 .]/", "", $prices[$item_code][0]) * 1 : 0;
-                    
+
                     // Bin
                     if(isset($bin_items[$item_code])){
                         DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $branch)->update([
                             'consigned_qty' => isset($qty[$item_code]) ? $qty[$item_code][0] : 0,
+                            'consignment_price' => $price,
                             'modified' => $now,
                             'modified_by' => Auth::user()->wh_user
                         ]);
