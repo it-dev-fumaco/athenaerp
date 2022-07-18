@@ -1288,7 +1288,6 @@ class ConsignmentController extends Controller
                     if(isset($bin_items[$item_code])){
                         DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $branch)->update([
                             'consigned_qty' => isset($qty[$item_code]) ? $qty[$item_code][0] : 0,
-                            'consigned_price' => $price,
                             'modified' => $now,
                             'modified_by' => Auth::user()->wh_user
                         ]);
@@ -1466,7 +1465,7 @@ class ConsignmentController extends Controller
     }
 
     // /promodiser/delivery_report/{type}
-    public function promodiserDeliveryReport($type){
+    public function promodiserDeliveryReport($type, Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
         $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
