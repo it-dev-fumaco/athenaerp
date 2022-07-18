@@ -1955,7 +1955,10 @@ class ConsignmentController extends Controller
 
                     $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
                 });
-            })->get();
+            })
+            ->select('item.item_code', 'item.description', 'item.item_image_path', 'item.item_classification')
+            ->groupBy('item.item_code', 'item.description', 'item.item_image_path', 'item.item_classification')
+            ->get();
 
         $item_codes = collect($items)->map(function ($q){
             return $q->item_code;
