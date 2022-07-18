@@ -21,12 +21,6 @@ use Carbon\CarbonPeriod;
 
 class MainController extends Controller
 {
-    // public function testing(){
-    //     $test = DB::table('tabConsignment Beginning Inventory as cb')->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')->where('cb.branch_warehouse', 'HANDYMAN ZABARTE TOWN CENTER  - FI')->select('cbi.item_code', 'cb.status as inv_status', 'cbi.status as item_status')->get();
-
-    //         return $test;
-    // }
-    
     public function allowed_parent_warehouses(){
         $user = Auth::user()->frappe_userid;
         return DB::table('tabWarehouse Access')
