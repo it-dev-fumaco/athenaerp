@@ -1447,7 +1447,7 @@ class ConsignmentController extends Controller
         }
     }
 
-    public function promodiserDeliveryReport($type){
+    public function promodiserDeliveryReport($type, Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
         $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
@@ -1465,19 +1465,19 @@ class ConsignmentController extends Controller
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->whereIn('sted.t_warehouse', $assigned_consignment_store)
             ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received')
-            ->orderBy('ste.creation', 'desc')->paginate(10);
+            ->orderBy('ste.creation', 'desc')->get();
 
-        $delivery_report_q = collect($delivery_report->items())->groupBy('name');
+        $delivery_report_q = collect($delivery_report)->groupBy('name');
 
-        $item_codes = collect($delivery_report->items())->map(function ($q){
+        $item_codes = collect($delivery_report)->map(function ($q){
             return $q->item_code;
         });
 
-        $source_warehouses = collect($delivery_report->items())->map(function ($q){
+        $source_warehouses = collect($delivery_report)->map(function ($q){
             return $q->s_warehouse;
         });
 
-        $target_warehouses = collect($delivery_report->items())->map(function ($q){
+        $target_warehouses = collect($delivery_report)->map(function ($q){
             return $q->t_warehouse;
         });
 
@@ -1542,6 +1542,20 @@ class ConsignmentController extends Controller
                 'date_received' => min($status_check) == 1 ? collect($items_arr)->min('date_received') : null
             ];
         }
+
+        
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data3
+        $itemCollection = collect($ste_arr);
+        // Define how many items we want to be visible in each page
+        $perPage = 20;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+        $ste_arr = $paginatedItems;
 
         return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr', 'type'));
     }

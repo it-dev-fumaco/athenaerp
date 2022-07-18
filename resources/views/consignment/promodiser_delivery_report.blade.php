@@ -205,7 +205,7 @@
                                 </tbody>
                             </table>
                             <div class="mt-3 ml-3 clearfix pagination d-block">
-                                <div class="col-md-4 float-right">{{ $delivery_report->links() }}</div>
+                                <div class="col-md-4 float-right">{{ $ste_arr->links() }}</div>
                             </div>
                         </div>
                     </div>
