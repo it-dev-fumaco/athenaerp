@@ -2754,12 +2754,10 @@ class ConsignmentController extends Controller
                 return $q->where('bin.consigned_qty', '>', 0);
             })
             ->where('bin.warehouse', $branch)->get();
-        
+
         $item_codes = collect($items)->map(function ($q) {
             return $q->item_code;
         });
-
-        $items = collect($items)->groupBy('item_code');
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
         $item_image = collect($item_images)->groupBy('parent');
@@ -2774,10 +2772,8 @@ class ConsignmentController extends Controller
 
         $inventory = collect($inventory_arr)->groupBy('item_code');
 
-        $item_prices = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', array_keys($inventory->toArray()))->pluck('consignment_price', 'item_code')->toArray();
-
         $items_arr = [];
-        foreach($inventory_arr as $item){
+        foreach($items as $item){
             $orig_exists = 0;
             $webp_exists = 0;
 
@@ -2807,16 +2803,16 @@ class ConsignmentController extends Controller
             if($request->purpose == 'Sales Return'){
                 $max = isset($sold_qty[$item->item_code]) ? $sold_qty[$item->item_code]['qty'] * 1 : 0;
             }else{
-                $max = isset($items[$item->item_code]) ? $items[$item->item_code][0]->consigned_qty * 1 : 0;
+                $max = $item->consigned_qty * 1;
             }
 
             $items_arr[] = [
                 'id' => $item->item_code,
-                'text' => $item->item_code.' - '.(isset($items[$item->item_code]) ? strip_tags($items[$item->item_code][0]->description) : null),
-                'description' =>  isset($items[$item->item_code]) ? strip_tags($items[$item->item_code][0]->description) : null,
+                'text' => $item->item_code.' - '.strip_tags($item->description),
+                'description' => strip_tags($item->description),
                 'max' => $max,
-                'uom' => isset($items[$item->item_code]) ? $items[$item->item_code][0]->stock_uom : null,
-                'price' => isset($item_prices[$item->item_code]) ? '₱ '.number_format($item_prices[$item->item_code], 2) : '₱ 0.00',
+                'uom' => $item->stock_uom,
+                'price' => '₱ '.number_format($item->consignment_price, 2),
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
                 'img' => asset('storage'.$img),
                 'webp' => asset('storage'.$webp),
