@@ -189,7 +189,7 @@
                                                                             </div>
                                                                         </div>
                                                                         
-                                                                        <!-- Add item modal -->
+                                                                        {{-- <!-- Add item modal -->
                                                                         <button type='button' class="btn btn-primary float-right mb-2" style='font-size: 10pt;' data-toggle="modal" data-target="#addItems{{ $inv['name'] }}Modal"><i class="fa fa-plus"></i> Add Items</button>
                                                                         
                                                                         <div class="modal fade" id="addItems{{ $inv['name'] }}Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -257,7 +257,7 @@
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                        <!-- Add item modal -->
+                                                                        <!-- Add item modal --> --}}
                                                                         
                                                                         <span id="item-count-{{ $inv['name'] }}" class="d-none">{{ count($inv['items']) }}</span>
                                                                         <table class="table table-striped items-table" style="font-size: 10pt;">
@@ -700,67 +700,67 @@
 
 
             // Add Modal Controls
-            $(document).on('select2:select', '.add-item-modal .replacement-item', function(e){
-                var name = $(this).data('name');
-                // Display
-                $('#' + name + '-item-code-display').text(e.params.data.id); // item code
-                $('#' + name + '-description-display').text(e.params.data.description); // description
-                $('#' + name + '-new-img').attr('src', e.params.data.image); // image
+            // $(document).on('select2:select', '.add-item-modal .replacement-item', function(e){
+            //     var name = $(this).data('name');
+            //     // Display
+            //     $('#' + name + '-item-code-display').text(e.params.data.id); // item code
+            //     $('#' + name + '-description-display').text(e.params.data.description); // description
+            //     $('#' + name + '-new-img').attr('src', e.params.data.image); // image
 
-                $('#' + name + '-new-src-img-webp').attr('src', e.params.data.image_webp); // webp
-                $('#' + name + '-new-src-img').attr('src', e.params.data.image); // image
-                $('#' + name + '-new-item-stock').data('max', e.params.data.max); // max
+            //     $('#' + name + '-new-src-img-webp').attr('src', e.params.data.image_webp); // webp
+            //     $('#' + name + '-new-src-img').attr('src', e.params.data.image); // image
+            //     $('#' + name + '-new-item-stock').data('max', e.params.data.max); // max
 
-                // hidden values
-                $('#' + name + '-webp-display').text(e.params.data.image_webp);
-                $('#' + name + '-img-display').text(e.params.data.image);
-                $('#' + name + '-alt-display').text(e.params.data.alt);
-                $('#' + name + '-max-display').text(e.params.data.max);
+            //     // hidden values
+            //     $('#' + name + '-webp-display').text(e.params.data.image_webp);
+            //     $('#' + name + '-img-display').text(e.params.data.image);
+            //     $('#' + name + '-alt-display').text(e.params.data.alt);
+            //     $('#' + name + '-max-display').text(e.params.data.max);
                 
-                $('#' + name + '-new-item-stock').val(0);
+            //     $('#' + name + '-new-item-stock').val(0);
 
-                $('#' + name + '-item-selection-table').removeClass('d-none');
-                $('#' + name + '-add-item').prop('disabled', false);
-            });
+            //     $('#' + name + '-item-selection-table').removeClass('d-none');
+            //     $('#' + name + '-add-item').prop('disabled', false);
+            // });
 
-            $('table.new-item-table').on('click', '.new-item-qtyplus', function(e){
-                // Stop acting like a button
-                e.preventDefault();
-                // Get the field name
-                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-                // get max value
-                var max = fieldName.data('max');
-                // Get its current value
-                var currentVal = parseInt(fieldName.val());
-                // If is not undefined
-                if (!isNaN(currentVal)) {
-                    // Increment
-                    if (currentVal < max) {
-                        fieldName.val(currentVal + 1);
-                    }
-                } else {
-                    // Otherwise put a 0 there
-                    fieldName.val(0);
-                }
-            });
+            // $('table.new-item-table').on('click', '.new-item-qtyplus', function(e){
+            //     // Stop acting like a button
+            //     e.preventDefault();
+            //     // Get the field name
+            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+            //     // get max value
+            //     var max = fieldName.data('max');
+            //     // Get its current value
+            //     var currentVal = parseInt(fieldName.val());
+            //     // If is not undefined
+            //     if (!isNaN(currentVal)) {
+            //         // Increment
+            //         if (currentVal < max) {
+            //             fieldName.val(currentVal + 1);
+            //         }
+            //     } else {
+            //         // Otherwise put a 0 there
+            //         fieldName.val(0);
+            //     }
+            // });
 
-            // This button will decrement the value till 0
-            $('table.new-item-table').on('click', '.new-item-qtyminus', function(e){
-                // Stop acting like a button
-                e.preventDefault();
-                // Get the field name
-                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-                // Get its current value
-                var currentVal = parseInt(fieldName.val());
-                // If it isn't undefined or its greater than 0
-                if (!isNaN(currentVal) && currentVal > 0) {
-                    // Decrement one
-                    fieldName.val(currentVal - 1);
-                } else {
-                    // Otherwise put a 0 there
-                    fieldName.val(0);
-                }
-            });
+            // // This button will decrement the value till 0
+            // $('table.new-item-table').on('click', '.new-item-qtyminus', function(e){
+            //     // Stop acting like a button
+            //     e.preventDefault();
+            //     // Get the field name
+            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+            //     // Get its current value
+            //     var currentVal = parseInt(fieldName.val());
+            //     // If it isn't undefined or its greater than 0
+            //     if (!isNaN(currentVal) && currentVal > 0) {
+            //         // Decrement one
+            //         fieldName.val(currentVal - 1);
+            //     } else {
+            //         // Otherwise put a 0 there
+            //         fieldName.val(0);
+            //     }
+            // });
 
             // Add Modal Controls
             
