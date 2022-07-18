@@ -1943,23 +1943,19 @@ class ConsignmentController extends Controller
 
     // /get_items/{branch}
     public function getItems(Request $request, $branch){
-        $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereIn('status', ['Approved', 'For Approval'])->pluck('name');
-        $excluded_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $beginning_inventory)->whereIn('status', ['Approved', 'For Approval'])->pluck('item_code');
-
         $search_str = explode(' ', $request->q);
 
-        $items = DB::table('tabItem')->whereNotIn('item_code', $excluded_items)
-            ->where('disabled', 0)->where('has_variants', 0)->where('is_stock_item', 1)
-            ->when($request->q, function ($query) use ($search_str, $request) {
+        $items = DB::table('tabBin as bin')
+            ->join('tabItem as item', 'item.item_code', 'bin.item_code')
+            ->when($request->q, function ($query) use ($request, $search_str){
                 return $query->where(function($q) use ($search_str, $request) {
                     foreach ($search_str as $str) {
-                        $q->where('description', 'LIKE', "%".$str."%");
+                        $q->where('item.description', 'LIKE', "%".$str."%");
                     }
 
-                    $q->orWhere('name', 'LIKE', "%".$request->q."%");
+                    $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
                 });
-            })
-            ->limit(4)->get();
+            })->get();
 
         $item_codes = collect($items)->map(function ($q){
             return $q->item_code;
