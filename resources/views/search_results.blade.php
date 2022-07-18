@@ -1083,3 +1083,15 @@
 	}
 </style>
 @endsection
+
+@section('script')
+	<script>
+		$(document).ready(function (){
+			if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { // mobile/tablet
+				$('#collapseOne').removeClass('show');
+			}else{ // desktop
+				$('#collapseOne').addClass('show');
+			}
+		});
+	</script>
+@endsection	
