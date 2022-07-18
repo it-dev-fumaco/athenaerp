@@ -1155,6 +1155,9 @@ class ConsignmentController extends Controller
             if(isset($beginning_inventory_items[$inv->name])){
                 foreach($beginning_inventory_items[$inv->name] as $item){
                     $price = isset($item_price[$inv->branch_warehouse][$item->item_code]) ? $item_price[$inv->branch_warehouse][$item->item_code]['price'] * 1 : 0;
+                    if($inv->status == 'For Approval'){
+                        $price = $item->price;
+                    }
 
                     $items_arr[] = [
                         'parent' => $item->parent,
