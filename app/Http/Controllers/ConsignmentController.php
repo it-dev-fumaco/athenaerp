@@ -3117,18 +3117,19 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            foreach($stock_entry_detail as $items){
-                if($stock_entry->purpose == 'Material Transfer'){ // Stock Transfers and Returns
-                    if(!isset($bin_arr[$items->s_warehouse][$items->item_code]) || !isset($bin_arr[$items->t_warehouse][$items->item_code])){
-                        return redirect()->back()->with('error', 'Items not found.');
+            $transaction = $stock_entry->transfer_as;
+            if($stock_entry->transfer_as != 'Store Transfer'){
+                foreach($stock_entry_detail as $items){
+                    if($stock_entry->purpose == 'Material Transfer'){ // Returns
+                        if(!isset($bin_arr[$items->s_warehouse][$items->item_code]) || !isset($bin_arr[$items->t_warehouse][$items->item_code])){
+                            return redirect()->back()->with('error', 'Items not found.');
+                        }
+                    }else{ // Sales Returns
+                        if(!isset($bin_arr[$items->t_warehouse][$items->item_code])){
+                            return redirect()->back()->with('error', 'Items not found.');
+                        }
                     }
-                }else{ // Sales Returns
-                    if(!isset($bin_arr[$items->t_warehouse][$items->item_code])){
-                        return redirect()->back()->with('error', 'Items not found.');
-                    }
-                }
 
-                if($stock_entry->transfer_as != 'Store Transfer'){
                     // target warehouse
                     $target_warehouse_qty = $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty;
                     $target_warehouse_qty = $target_warehouse_qty > 0 ? $target_warehouse_qty : 0;
@@ -3148,21 +3149,16 @@ class ConsignmentController extends Controller
                         ]);
                     }
                 }
+
+                if($stock_entry->purpose == 'Material Transfer'){
+                    $transaction = $stock_entry->transfer_as == 'Consignment' ? 'Store Transfer' : 'Return to Plant';
+                }else{
+                    $transaction = 'Sales Return';
+                }
             }
 
             DB::table('tabStock Entry')->where('name', $id)->delete();
             DB::table('tabStock Entry Detail')->where('parent', $id)->delete();
-
-            $transaction = null;
-            if($stock_entry->purpose == 'Material Transfer'){
-                if($stock_entry->transfer_as == 'Consignment'){
-                    $transaction = 'Store Transfer';
-                }else{
-                    $transaction = 'Return to Plant';
-                }
-            }else{
-                $transaction = 'Sales Return';
-            }
 
             $source_warehouse = $source_warehouse ? $source_warehouse : $stock_entry_detail[0]->s_warehouse;
             $target_warehouse = $target_warehouse ? $target_warehouse : $stock_entry_detail[0]->t_warehouse;
