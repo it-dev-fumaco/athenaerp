@@ -426,6 +426,13 @@
                 var stock = $('#new-item-stock').val();
                 var price = $('#selected-item-price').text();
 
+                var existing = $('#selected-items-table').find('#row-' + item_code).eq(0).length;
+                if (existing) {
+                    showNotification("warning", 'Item <b>' + item_code + '</b> already exists in the list.', "fa fa-info");
+                    $("#item-selection").empty().trigger('change');
+					return false;
+                }
+
                 var row = '<tr id="row-' + item_code + '">' +
                     '<td class="text-justify p-1 align-middle" colspan="3">' +
                         '<input type="text" name="item_code[]" id="' + item_code + '" class="d-none item-codes" value="' + item_code + '" />' +
@@ -516,6 +523,21 @@
                 }else{
                     $('#submit-btn').prop('disabled', true);
                 }
+            }
+
+            function showNotification(color, message, icon){
+                $.notify({
+                    icon: icon,
+                    message: message
+                },{
+                    type: color,
+                    timer: 500,
+                    z_index: 1060,
+                    placement: {
+                        from: 'top',
+                        align: 'center'
+                    }
+                });
             }
         });
     </script>

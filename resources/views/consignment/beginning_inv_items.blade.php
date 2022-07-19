@@ -94,6 +94,11 @@
 
         </div>
     </div>
+    <div id="item-codes-with-beginning-inventory" class='d-none'>
+        @foreach ($inv_items as $item)
+            <span class="{{ $item }}">{{ $item }}</span>
+        @endforeach
+    </div>
     <table class="table table-striped text-left" id="items-table"> 
         <thead>
             <th class="font-responsive text-center p-1 align-middle" style="width: 38%">Item Code</th>
@@ -102,7 +107,7 @@
         </thead>
         <tbody>
             @forelse ($items as $item)
-                <tr id="{{ $item['item_code'] }}">
+                <tr id="{{ $item['item_code'] }}" class="{{ $item['item_code'] }}">
                     @php
                         $img = array_key_exists($item['item_code'], $item_images) ? "/img/" . $item_images[$item['item_code']][0]->image_path : "/icon/no_img.png";
                         $img_webp = array_key_exists($item['item_code'], $item_images) ? "/img/" . explode('.',$item_images[$item['item_code']][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
@@ -561,8 +566,21 @@
 
             var stock = $('#new-item-stock').val();
             var price = $('#new-item-price').val();
+            
+            var existing = $('#items-table').find('.' + item_code).eq(0).length;
+            var existing_in_inventory = $('#item-codes-with-beginning-inventory').find('.' + item_code).eq(0).length;
 
-			var row = '<tr id="' + item_code + '">' +
+            if (existing) {
+                showNotification("warning", 'Item <b>' + item_code + '</b> already exists in the list.', "fa fa-info");
+                $("#item-selection").empty().trigger('change');
+                return false;
+            }else if(existing_in_inventory){
+                showNotification("warning", 'Beginning Inventory for Item <b>' + item_code + '</b> already exists.', "fa fa-info");
+                $("#item-selection").empty().trigger('change');
+                return false;
+            }
+
+			var row = '<tr id="' + item_code + '" class="' + item_code + '">' +
                 '<td class="text-justify p-1 align-middle" colspan="3">' +
                     '<input type="text" name="item_code[]" id="' + item_code + '-id" class="d-none" value="' + item_code + '" />' +
                     '<div class="d-flex flex-row justify-content-center align-items-center">' +
@@ -678,5 +696,20 @@
 
             validate_submit();
         });
+
+        function showNotification(color, message, icon){
+            $.notify({
+                icon: icon,
+                message: message
+            },{
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: {
+                    from: 'top',
+                    align: 'center'
+                }
+            });
+        }
     });
 </script>

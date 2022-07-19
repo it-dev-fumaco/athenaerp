@@ -1925,6 +1925,7 @@ class ConsignmentController extends Controller
         return view('consignment.beginning_inv_items_list', compact('inventory', 'item_image', 'beginning_inventory'));
     }
 
+    // /beginning_inventory
     public function beginningInventory($inv = null){
         $inv_record = [];
         if($inv){
@@ -2001,6 +2002,14 @@ class ConsignmentController extends Controller
         if($request->ajax()){
             $items = [];
             $inv_name = null;
+            // get approved, for approval records and items with consigned qty
+            $items_with_consigned_qty = DB::table('tabBin')->where('warehouse', $branch)->where('consigned_qty', '>', 0)->pluck('item_code');
+
+            $inv_records = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereIn('status', ['For Approval', 'Approved'])->pluck('name');
+            $inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $inv_records)->pluck('item_code');
+
+            $inv_items = collect($inv_items)->merge($items_with_consigned_qty);
+
             if($action == 'update'){ // If 'For Approval' beginning inventory record exists for this branch
                 $inv_name = $id;
                 $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)
@@ -2018,13 +2027,8 @@ class ConsignmentController extends Controller
                     ];
                 }
             }else{ // Create new beginning inventory entry
-                // get approved and for approval records
-                $inv_records = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch)->whereIn('status', ['For Approval', 'Approved'])->pluck('name');
-                $inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $inv_records)->pluck('item_code');
-
-                // Get items from Bin
                 $bin_items = DB::table('tabBin as bin')->join('tabItem as item', 'bin.item_code', 'item.name')
-                    ->where('bin.warehouse', $branch)->where('actual_qty', '>', 0)->whereNotIn('bin.item_code', $inv_items) // do not include approved and for approval items
+                    ->where('bin.warehouse', $branch)->where('bin.actual_qty', '>', 0)->where('bin.consigned_qty', 0)->whereNotIn('bin.item_code', $inv_items) // do not include approved and for approval items
                     ->select('bin.warehouse', 'bin.item_code', 'bin.actual_qty', 'bin.stock_uom', 'item.description')->orderBy('bin.actual_qty', 'desc')
                     ->get();
 
@@ -2049,7 +2053,7 @@ class ConsignmentController extends Controller
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
             $item_images = collect($item_images)->groupBy('parent')->toArray();
 
-            return view('consignment.beginning_inv_items', compact('items', 'branch', 'item_images', 'inv_name'));
+            return view('consignment.beginning_inv_items', compact('items', 'branch', 'item_images', 'inv_name', 'inv_items'));
         }
     }
 

@@ -661,19 +661,19 @@
             });
 
             function showNotification(color, message, icon){
-			$.notify({
-				icon: icon,
-				message: message
-			},{
-				type: color,
-				timer: 500,
-				z_index: 1060,
-				placement: {
-					from: 'top',
-					align: 'center'
-				}
-			});
-		}
+                $.notify({
+                    icon: icon,
+                    message: message
+                },{
+                    type: color,
+                    timer: 500,
+                    z_index: 1060,
+                    placement: {
+                        from: 'top',
+                        align: 'center'
+                    }
+                });
+            }
         });
     </script>
 @endsection
