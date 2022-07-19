@@ -2464,6 +2464,7 @@ class ConsignmentController extends Controller
         return view('consignment.promodiser_damage_report_form', compact('assigned_consignment_store', 'beginning_inventory'));
     }
 
+    // /promodiser/damage_report/submit
     public function submitDamagedItem(Request $request){
         DB::beginTransaction();
         try {
@@ -2481,18 +2482,12 @@ class ConsignmentController extends Controller
                 ->select('bin.item_code', 'item.description', 'bin.consigned_qty', 'bin.stock_uom')->get();
             $items = collect($items)->groupBy('item_code');
 
-            $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cbi')
-                ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
-                ->where('cbi.branch_warehouse', $request->branch)->whereIn('item.item_code', $item_codes)->where('cbi.status', 'Approved')
-                ->select('item.item_code', 'cbi.name', 'cbi.transaction_date')->get();
-            $beginning_inventory = collect($beginning_inventory)->groupBy('item_code');
-
             foreach($item_codes as $item_code){
-                if(!isset($items[$item_code]) || !isset($beginning_inventory[$item_code])){
+                if(!isset($items[$item_code])){
                     return redirect()->back()->with('error', $item_code.' has not been delivered to '.$request->branch.' yet or beginning inventory has not been approved yet.');
                 }else{
                     if($items[$item_code][0]->consigned_qty < $damaged_qty[$item_code]){
-                        return redirect()->back()->with('error', 'Damaged qty for '.$item_code.' is more than the delivered qty.');
+                        return redirect()->back()->with('error', 'Damaged qty for '.$item_code.' is more than the available qty.');
                     }
                 }
 
@@ -2504,7 +2499,7 @@ class ConsignmentController extends Controller
                     'creation' => Carbon::now()->toDateTimeString(),
                     'owner' => Auth::user()->full_name,
                     'docstatus' => 1,
-                    'transaction_date' => $beginning_inventory[$item_code][0]->transaction_date,
+                    'transaction_date' => Carbon::now()->toDateTimeString(),
                     'branch_warehouse' => $request->branch,
                     'item_code' => $item_code,
                     'description' => isset($items[$item_code]) ? $items[$item_code][0]->description : null,
