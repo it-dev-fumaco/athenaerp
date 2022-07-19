@@ -3593,6 +3593,7 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'promodisers'));
     }
 
+    // /stock_adjust/submit/{id}
     public function submitStockAdjustment(Request $request, $id){
         DB::beginTransaction();
         try {
@@ -3627,7 +3628,8 @@ class ConsignmentController extends Controller
                     DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update([
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
-                        'consigned_qty' => $opening_qty
+                        'consigned_qty' => $opening_qty,
+                        'consignment_price' => $price
                     ]);
 
                     $logs = [
