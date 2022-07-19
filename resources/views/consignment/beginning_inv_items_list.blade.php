@@ -32,7 +32,7 @@
                                     $badge = 'primary';
                                 }
                             @endphp
-                        <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
+                            <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
                             <div class="d-flex flex-row mt-2 pl-2" style="font-size: 9pt;">
                                 <div class="p-0 col-7 text-left">
                                     <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y - h:i A') }}</b></span>
@@ -46,7 +46,7 @@
                                     @if ($beginning_inventory->status == 'Approved')
                                     <span class="d-block">Approved by: <b>{{ $beginning_inventory->approved_by }}</b></span>
                                     <span class="d-block">Date Approved: <b>{{ Carbon\Carbon::parse($beginning_inventory->date_approved)->format('M d, Y - h:i A') }}</b></span>
-                                @endif
+                                    @endif
                                 </div>
                             </div>
                             <div class="col-12">
@@ -88,9 +88,9 @@
                                                     <div class="modal-content">
                                                         <div class="modal-header">
                                                             <h5 class="modal-title">{{ $inv->item_code }}</h5>
-                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                            <span aria-hidden="true">&times;</span>
-                                                        </button>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
                                                         </div>
                                                         <div class="modal-body">
                                                             <div id="image-container" class="container-fluid">
@@ -139,7 +139,6 @@
                                     </tr>
                                 @endforelse
                                 </tbody>
-                              
                             </table>
                         </div>
                     </div>
@@ -151,46 +150,46 @@
 @endsection
 
 @section('style')
-    <style>
-        .morectnt span {
-            display: none;
-        }
-    </style>
+<style>
+    .morectnt span {
+        display: none;
+    }
+</style>
 @endsection
 
 @section('script')
-    <script>
-        var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
-        $('.item-description').each(function() {
-            var content = $(this).text();
-            if (content.length > showTotalChar) {
-                var con = content.substr(0, showTotalChar);
-                var hcon = content.substr(showTotalChar, content.length - showTotalChar);
-                var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="show-more">' + showChar + '</a></span>';
-                $(this).html(txt);
-            }
-        });
+<script>
+    var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
+    $('.item-description').each(function() {
+        var content = $(this).text();
+        if (content.length > showTotalChar) {
+            var con = content.substr(0, showTotalChar);
+            var hcon = content.substr(showTotalChar, content.length - showTotalChar);
+            var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="show-more">' + showChar + '</a></span>';
+            $(this).html(txt);
+        }
+    });
 
-        $(".show-more").click(function(e) {
-            e.preventDefault();
-            if ($(this).hasClass("sample")) {
-                $(this).removeClass("sample");
-                $(this).text(showChar);
-            } else {
-                $(this).addClass("sample");
-                $(this).text(hideChar);
-            }
+    $(".show-more").click(function(e) {
+        e.preventDefault();
+        if ($(this).hasClass("sample")) {
+            $(this).removeClass("sample");
+            $(this).text(showChar);
+        } else {
+            $(this).addClass("sample");
+            $(this).text(hideChar);
+        }
 
-            $(this).parent().prev().toggle();
-            $(this).prev().toggle();
-            return false;
-        });
+        $(this).parent().prev().toggle();
+        $(this).prev().toggle();
+        return false;
+    });
 
-        $("#item-search").on("keyup", function() {
-            var value = $(this).val().toLowerCase();
-            $("#items-table tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
+    $("#item-search").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        $("#items-table tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
         });
-    </script>
+    });
+</script>
 @endsection
