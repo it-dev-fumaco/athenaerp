@@ -191,7 +191,7 @@
 
                                                                         @if ($inv['status'] == 'For Approval')
                                                                             <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3" style="font-size: 10pt;">
-                                                                                <span class="d-block"><i class="fas fa-info-circle"></i> "For your Approval - you can modify/change item code, prices and stock on hand" - Once Approved stocks will be automatically added to this consignment Store</span>
+                                                                                <span class="d-block"><i class="fas fa-info-circle"></i> "For your Approval - you can modify/change item code and prices" - Once Approved stocks will be automatically added to this consignment Store</span>
                                                                             </div>
                                                                             <!-- Add item modal -->
                                                                             <button type='button' class="btn btn-primary float-right mb-2" style='font-size: 10pt;' data-toggle="modal" data-target="#addItems{{ $inv['name'] }}Modal"><i class="fa fa-plus"></i> Add Items</button>
@@ -380,7 +380,26 @@
                                                                                             <td class="text-center p-1 align-middle">
                                                                                                 <div class="btn-group" role="group" aria-label="Basic example">
                                                                                                     <button type="button" class="btn btn-xs btn-outline-primary p-1 change-item" data-target="{{ $target }}" style="font-size: 9pt;">Change</button>
-                                                                                                    <button type="button" class="btn btn-xs btn-outline-secondary p-1 remove-item" data-name="{{ $inv['name'] }}" data-target="{{ $target }}" style="font-size: 9pt;">Remove</button>
+                                                                                                    <button type="button" class="btn btn-xs btn-outline-secondary p-1" style="font-size: 9pt;" data-toggle="modal" data-target="#{{ $target }}-remove-confirmation-Modal">Remove</button>
+
+                                                                                                    <div class="modal fade" id="{{ $target }}-remove-confirmation-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                                                        <div class="modal-dialog" role="document">
+                                                                                                            <div class="modal-content">
+                                                                                                                <div class="modal-header bg-navy">
+                                                                                                                    <h5 class="modal-title" id="exampleModalLabel">Remove Item</h5>
+                                                                                                                    <button type="button" class="close" onclick="close_modal('#{{ $target }}-remove-confirmation-Modal')">
+                                                                                                                        <span aria-hidden="true" style="color: #fff">&times;</span>
+                                                                                                                    </button>
+                                                                                                                </div>
+                                                                                                                <div class="modal-body">
+                                                                                                                    Remove {{ $item['item_code'] }}?
+                                                                                                                </div>
+                                                                                                                <div class="modal-footer">
+                                                                                                                <button type="button" class="btn btn-primary w-100 remove-item" data-name="{{ $inv['name'] }}" data-target="{{ $target }}">Confirm</button>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
                                                                                                 </div>
                                                                                             </td>
                                                                                         @endif
