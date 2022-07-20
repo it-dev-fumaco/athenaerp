@@ -1169,7 +1169,8 @@ class ConsignmentController extends Controller
                         'uom' => $item->stock_uom,
                         'opening_stock' => ($item->opening_stock * 1),
                         'price' => $price,
-                        'amount' => ($price * 1) * ($item->opening_stock * 1)
+                        'amount' => ($price * 1) * ($item->opening_stock * 1),
+                        'idx' => $item->idx
                     ];
                 }
 

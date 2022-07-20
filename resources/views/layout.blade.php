@@ -456,6 +456,10 @@
 		textarea:focus, input:focus, select:focus{
 			outline: none;
 		}
+
+		.vertically-align-element{
+			display: flex; justify-content: center; align-items: center;
+		}
 	</style>
 	@yield('style')
 </head>

@@ -270,13 +270,14 @@
                                                                         <span id="item-count-{{ $inv['name'] }}" class="d-none">{{ count($inv['items']) }}</span>
                                                                         <table class="table table-striped items-table" id="{{ $inv['name'] }}-items-table" style="font-size: 10pt;">
                                                                             <thead>
+                                                                                <th class="text-center p-2 align-middle col-lg-4 col-3" style="width: 2%"></th>
                                                                                 <th class="text-center p-2 align-middle col-lg-4 col-3" style="width: 36%">Item Code</th>
                                                                                 <th class="text-center p-2 align-middle col-lg-2 col-3" style='width: 16%'>Opening Stock</th>
                                                                                 <th class="text-center p-2 align-middle col-lg-2 col-3" style='width: 16%'>Price</th>
                                                                                 @if ($inv['status'] == 'Approved')
-                                                                                    <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 16%'>-</th>
+                                                                                    <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 15%'>-</th>
                                                                                 @else
-                                                                                    <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 16%'>Action</th>
+                                                                                    <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 15%'>Action</th>
                                                                                 @endif
                                                                             </thead>
                                                                             <tbody>
@@ -287,7 +288,10 @@
                                                                                         $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
                                                                                         $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
                                                                                     @endphp
-                                                                                    <tr id="row-{{ $target }}">
+                                                                                    <tr id="row-{{ $target }}" class="{{ $item['item_code'] }}">
+                                                                                        <td class="text-center p-1 align-middle">
+                                                                                            {{ $item['idx'] }}
+                                                                                        </td>
                                                                                         <td class="text-center p-1 align-middle">
                                                                                             <div class="d-flex flex-row justify-content-start align-items-center" id="{{ $target }}-container">
                                                                                                 <div class="p-2 text-left">
@@ -304,14 +308,19 @@
                                                                                                     <span class="d-none d-xl-inline"> - {!! strip_tags($item['item_description']) !!}</span>
                                                                                                 </div>
                                                                                             </div>
-                                                                                            <div class="p-2 w-100 text-left d-none" id="{{ $target }}-selection">
-                                                                                                <div class="row">
-                                                                                                    <div class="col-9">
-                                                                                                        <select class="form-control replacement-item" id="{{ $target }}-replacement" data-original-code='{{ $item['item_code'] }}' style="width: 200px !important;"></select>
-                                                                                                    </div>
-                                                                                                    <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
-                                                                                                        <span class="undo-replacement" data-item-code="{{ $item['item_code'] }}" data-target="{{ $target }}" data-name="{{ $inv['name'] }}"><i class="fa fa-undo"></i> Reset</span>
-                                                                                                    </div>
+                                                                                            <div class="d-none flex-row justify-content-start align-items-center" id="{{ $target }}-replacement-container">
+                                                                                                <div class="p-2 text-left">
+                                                                                                    <a href="" data-toggle="mobile-lightbox" data-gallery="" data-title="">
+                                                                                                        <picture>
+                                                                                                            <source id="{{ $target }}-webp-replacement" srcset="" type="image/webp">
+                                                                                                            <source id="{{ $target }}-img-src-replacement" srcset="" type="image/jpeg">
+                                                                                                            <img src="" id="{{ $target }}-img-replacement" alt="" width="60" height="60">
+                                                                                                        </picture>
+                                                                                                    </a>
+                                                                                                </div>
+                                                                                                <div class="p-2 text-left">
+                                                                                                    <b><span id="{{ $target }}-item-code-replacement"></span></b>
+                                                                                                    <span class="d-none d-xl-inline"> - <span id="{{ $target }}-description-replacement"></span></span>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div class="modal fade" id="mobile-{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -324,7 +333,6 @@
                                                                                                             </button>
                                                                                                         </div>
                                                                                                         <div class="modal-body">
-                                                                                                            <form></form>
                                                                                                             <div class="container-fluid">
                                                                                                                 <div id="carouselExampleControls" class="carousel slide" data-interval="false">
                                                                                                                     <div class="carousel-inner">
@@ -359,12 +367,12 @@
                                                                                             @if ($inv['status'] == 'Approved')
                                                                                                 <input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-qty" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][qty]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
                                                                                             @endif
-                                                                                            <small>{{ $item['uom'] }}</small>
+                                                                                            <small id="{{ $target }}-uom">{{ $item['uom'] }}</small>
                                                                                         </td>
                                                                                         <td class="text-center p-1 align-middle">
                                                                                             @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
-                                                                                                ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" id="item-price-{{ $item['item_code'] }}" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
-                                                                                                <input id="item-qty-{{ $item['item_code'] }}" type="text" class="d-none" name="qty[{{ $item['item_code'] }}][]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
+                                                                                                ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" id="item-price-{{ $target }}" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
+                                                                                                <input id="item-qty-{{ $target }}" type="text" class="d-none" name="qty[{{ $item['item_code'] }}][]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
                                                                                             @elseif ($inv['status'] == 'Approved')
                                                                                                 <input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
                                                                                                 <span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
@@ -379,9 +387,62 @@
                                                                                         @else
                                                                                             <td class="text-center p-1 align-middle">
                                                                                                 <div class="btn-group" role="group" aria-label="Basic example">
-                                                                                                    <button type="button" class="btn btn-xs btn-outline-primary p-1 change-item" data-target="{{ $target }}" style="font-size: 9pt;">Change</button>
-                                                                                                    <button type="button" class="btn btn-xs btn-outline-secondary p-1" style="font-size: 9pt;" data-toggle="modal" data-target="#{{ $target }}-remove-confirmation-Modal">Remove</button>
+                                                                                                    <!-- Change Button -->
+                                                                                                    <button type="button" class="btn btn-xs btn-outline-primary p-1" id="{{ $target }}-replacement-button" style="font-size: 9pt;" data-toggle="modal" data-target="#{{ $target }}-replacement-Modal" data-original-code="{{ $item['item_code'] }}">Change</button>
+                                                                                                    <!-- Change Button -->
 
+                                                                                                    <!-- Undo Button -->
+                                                                                                    <button type="button" class="btn btn-xs btn-outline-primary p-1 undo-change d-none" id="{{ $target }}-undo-button" style="font-size: 9pt;" data-target="{{ $target }}" data-original-code="{{ $item['item_code'] }}" data-orignal-uom="{{ $item['uom'] }}" data-replacement=''><i class="fa fa-undo"></i> Reset</button>
+                                                                                                    <!-- Undo Button -->
+
+                                                                                                    <!-- Remove Button -->
+                                                                                                    <button type="button" class="btn btn-xs btn-outline-secondary p-1" style="font-size: 9pt;" data-toggle="modal" data-target="#{{ $target }}-remove-confirmation-Modal">Remove</button>
+                                                                                                    <!-- Remove Button -->
+
+                                                                                                    <!-- Replace Item Modal -->
+                                                                                                    <div class="modal fade" id="{{ $target }}-replacement-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                                                        <div class="modal-dialog" role="document">
+                                                                                                            <div class="modal-content">
+                                                                                                                <div class="modal-header bg-navy">
+                                                                                                                    <h5 class="modal-title" id="exampleModalLabel">Change Code for {{ $item['item_code'] }}</h5>
+                                                                                                                    <button type="button" class="close" onclick="close_modal('#{{ $target }}-replacement-Modal')">
+                                                                                                                        <span aria-hidden="true" style="color: #fff">&times;</span>
+                                                                                                                    </button>
+                                                                                                                </div>
+                                                                                                                <div class="modal-body replace-item-modal">
+                                                                                                                    <select class="form-control replacement-item" id="{{ $target }}-replacement" data-original-code='{{ $item['item_code'] }}' data-id='{{ $target }}' style="width: 200px !important;"></select>
+                                                                                                                    <br>
+                                                                                                                    <div class="row d-none" id="{{ $target }}-replacement-info">
+                                                                                                                        <div class="p-2 col-2 vertically-align-element">
+                                                                                                                            <picture>
+                                                                                                                                <source class="src-placeholder" id="{{ $target }}-replacement-webp" srcset="" type="image/webp">
+                                                                                                                                <source class="src-placeholder" id="{{ $target }}-replacement-img-src" srcset="" type="image/jpeg">
+                                                                                                                                <img class="d-block w-100 src-placeholder" id="{{ $target }}-replacement-img" src="{{ asset('storage/').$img }}" alt="">
+                                                                                                                            </picture>
+                                                                                                                        </div>
+                                                                                                                        <div class="p-2 col-10 vertically-align-element">
+                                                                                                                            <div class="p-2 text-left">
+                                                                                                                                <b><span id="{{ $target }}-replacement-item-code"></span></b>
+                                                                                                                                <span class="d-none d-xl-inline"> - <span id="{{ $target }}-replacement-description"></span></span>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                    <div class="row d-none">
+                                                                                                                        <span class="text-placeholder" id="{{ $target }}-replacement-display-webp"></span> <br>
+                                                                                                                        <span class="text-placeholder" id="{{ $target }}-replacement-display-image"></span> <br>
+                                                                                                                        <span class="text-placeholder" id="{{ $target }}-replacement-display-alt"></span> <br>
+                                                                                                                        <span class="text-placeholder" id="{{ $target }}-replacement-display-uom"></span>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                                <div class="modal-footer">
+                                                                                                                <button type="button" class="btn btn-primary w-100 {{ $target }} change-item" data-name="{{ $inv['name'] }}" data-target="{{ $target }}" data-original-code="{{ $item['item_code'] }}" disabled>Change Item</button>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <!-- Replace Item Modal -->
+
+                                                                                                    <!-- Remove Confirmation Modal -->
                                                                                                     <div class="modal fade" id="{{ $target }}-remove-confirmation-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                                                                         <div class="modal-dialog" role="document">
                                                                                                             <div class="modal-content">
@@ -400,6 +461,7 @@
                                                                                                             </div>
                                                                                                         </div>
                                                                                                     </div>
+                                                                                                    <!-- Remove Confirmation Modal -->
                                                                                                 </div>
                                                                                             </td>
                                                                                         @endif
@@ -640,29 +702,6 @@
                 }
             }
 
-            $('.change-item').click(function (){
-                $('#'+$(this).data('target')+'-container').removeClass('d-flex').addClass('d-none');
-                $('#'+$(this).data('target')+'-selection').removeClass('d-none');
-                $('#'+$(this).data('target')+'-replacement').prop('required', true);
-            });
-
-            $('.undo-replacement').click(function(){
-                var replaced_code = $('#'+$(this).data('target')+'-replacement').val();
-                if(replaced_code != ''){
-                    excluded_items_arr = jQuery.grep(excluded_items_arr, function(value){
-                        return value != replaced_code;
-                    });
-                }
-
-                $('#'+$(this).data('target')+'-container').addClass('d-flex').removeClass('d-none');
-                $('#'+$(this).data('target')+'-selection').addClass('d-none');
-                $('#'+$(this).data('target')+'-replacement').prop('required', false);
-                $('#'+$(this).data('target')+'-replacement').empty().trigger('change');
-
-                $('#item-price-'+$(this).data('item-code')).attr('name', 'price[' + $(this).data('item-code') + '][]');
-                $('#item-qty-'+$(this).data('item-code')).attr('name', 'qty[' + $(this).data('item-code') + '][]');
-            });
-
             var excluded_items_arr = new Array();
             $('.modal-trigger').click(function(){
                 excluded_items_arr = [];
@@ -692,15 +731,6 @@
                 });
             });
 
-            $(document).on('select2:select', '.replacement-item', function(e){
-                var item_code = e.params.data.id;
-                excluded_items_arr.push(item_code);
-                var original_item_code = $(this).data('original-code');
-
-                $('#item-price-'+original_item_code).attr('name', 'price[' + item_code + '][]');
-                $('#item-qty-'+original_item_code).attr('name', 'qty[' + item_code + '][]');
-            });
-
             function formatState (opt) {
                 if (!opt.id) {
                     return opt.text;
@@ -727,6 +757,91 @@
                 loadActivityLogs(page);
             });
 
+            // Change Item Controls
+
+            $(document).on('select2:select', '.replace-item-modal .replacement-item', function(e){
+                var name = $(this).data('id');
+
+                // Display
+                $('#' + name + '-replacement-item-code').text(e.params.data.id); // item code
+                $('#' + name + '-replacement-description').text(e.params.data.description); // description
+                $('#' + name + '-replacement-img-src').attr('src', e.params.data.image); // image
+
+                $('#' + name + '-replacement-webp').attr('src', e.params.data.image_webp); // webp
+                $('#' + name + '-replacement-img').attr('src', e.params.data.image); // image
+
+                // hidden values
+                $('#' + name + '-replacement-display-webp').text(e.params.data.image_webp);
+                $('#' + name + '-replacement-display-image').text(e.params.data.image);
+                $('#' + name + '-replacement-display-alt').text(e.params.data.alt);
+                $('#' + name + '-replacement-display-uom').text(e.params.data.uom);
+
+                $('#' + name + '-replacement-info').removeClass('d-none');
+                $('.' + name + '.change-item').prop('disabled', false);
+            });
+
+            $('.change-item').click(function (){
+                var target = $(this).data('target');
+                var original_item_code = $(this).data('original-code');
+
+                var item_code = $('#' + target + '-replacement-item-code').text(); // item code
+                var description = $('#' + target + '-replacement-description').text(); // description
+                var webp = $('#' + target + '-replacement-display-webp').text();
+                var image = $('#' + target + '-replacement-display-image').text();
+                var alt = $('#' + target + '-replacement-display-alt').text();
+                var uom = $('#' + target + '-replacement-display-uom').text();
+
+                $('#row-' + target).removeClass(original_item_code).addClass(item_code);
+                $('#' + target + '-item-code-replacement').text(item_code);
+                $('#' + target + '-webp-replacement').attr('src', webp);
+                $('#' + target + '-img-src-replacement').attr('src', image);
+                $('#' + target + '-img-replacement').attr('src', image);
+                $('#' + target + '-description-replacement').text(description);
+                $('#' + target + '-uom').text(uom);
+
+                $('#' + target + '-container').removeClass('d-flex').addClass('d-none');
+                $('#' + target + '-replacement-container').addClass('d-flex').removeClass('d-none');
+
+                $('#item-price-' + target).attr('name', 'price[' + item_code + '][]');
+                $('#item-qty-' + target).attr('name', 'qty[' + item_code + '][]');
+
+                $('#' + target + '-replacement-info').addClass('d-none');
+                $(".replacement-item").empty().trigger('change');
+                $('.' + target + '.change-item').prop('disabled', true);
+                $('#' + target + '-replacement-button').addClass('d-none');
+                $('#' + target + '-undo-button').removeClass('d-none');
+                $('#' + target + '-undo-button').data('replacement', item_code);
+
+                reset_placeholders();
+                close_modal('#' + target + '-replacement-Modal');
+            });
+
+            $('.undo-change').click(function (){
+                var target = $(this).data('target');
+                var original_item_code = $(this).data('original-code');
+                var item_code = $(this).data('replacement');
+
+                $('#item-price-' + target).attr('name', 'price[' + original_item_code + '][]');
+                $('#item-qty-' + target).attr('name', 'qty[' + original_item_code + '][]');
+
+                $('#row-' + target).removeClass(item_code).addClass(original_item_code);
+                $('#' + target + '-item-code-replacement').text('');
+                $('#' + target + '-webp-replacement').attr('src', '');
+                $('#' + target + '-img-src-replacement').attr('src', '');
+                $('#' + target + '-img-replacement').attr('src', '');
+                $('#' + target + '-description-replacement').text('');
+                $('#' + target + '-uom').text($(this).data('original-uom'));
+
+                $('#' + target + '-container').addClass('d-flex').removeClass('d-none');
+                $('#' + target + '-replacement-container').removeClass('d-flex').addClass('d-none');
+                $('#' + target + '-undo-button').data('replacement', '');
+
+                $('#' + target + '-replacement-button').removeClass('d-none');
+                $('#' + target + '-undo-button').addClass('d-none');
+            });
+
+            // Change Item Controls
+
             // Add Modal Controls
             $(document).on('select2:select', '.add-item-modal .replacement-item', function(e){
                 var name = $(this).data('name');
@@ -746,7 +861,7 @@
                 $('#' + name + '-img-display').text(e.params.data.image);
                 $('#' + name + '-alt-display').text(e.params.data.alt);
                 $('#' + name + '-max-display').text(e.params.data.max);
-                $('#' + name + '-uom-display').text(e.params.data.uom)
+                $('#' + name + '-uom-display').text(e.params.data.uom);
 
                 $('#' + name + '-new-item-stock').val(0);
 
@@ -894,7 +1009,6 @@
                     '</td>' + 
                     '<td class="text-center p-1 align-middle">' + 
                         '<div class="btn-group" role="group" aria-label="Basic example">' + 
-                            // '<button type="button" class="btn btn-xs btn-outline-primary p-1 change-item" data-target="' + target + '" style="font-size: 9pt;">Change</button>' + 
                             '<button type="button" class="btn btn-xs btn-outline-secondary p-1 remove-item" data-name="' + id + '" data-target="' + target + '" style="font-size: 9pt;">Remove</button>' + 
                         '</div>' + 
                     '</td>' + 
