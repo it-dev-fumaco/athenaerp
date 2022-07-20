@@ -1750,6 +1750,12 @@ class ConsignmentController extends Controller
                     DB::table('tabActivity Log')->insert($logs);
                 }
 
+                $received_items[] = [
+                    'item_code' => $item->item_code,
+                    'qty' => $item->transfer_qty,
+                    'price' => $basic_rate,
+                    'amount' => $basic_rate * $item->transfer_qty
+                ];
             }
 
             $source_warehouse = $wh->from_warehouse ? $wh->from_warehouse : null;
