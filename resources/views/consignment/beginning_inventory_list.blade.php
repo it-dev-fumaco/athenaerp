@@ -10,9 +10,16 @@
 			<div class="row pt-1">
 				<div class="col-md-12 p-0 m-0">
 					<div class="card card-lightblue">
-						<div class="card-header text-center p-2">
-							<span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Stock Adjustments List</span>
-						</div>
+						<div class="card-header p-2">
+                            <div class="d-flex flex-row align-items-center justify-content-between" style="font-size: 9pt;">
+                                <div class="p-0">
+                                    <span class="font-responsive font-weight-bold text-uppercase m-0 p-0">Stock Adjustments List</span>
+                                </div>
+                                <div class="p-0">
+                                    <a href="/beginning_inventory" class="btn btn-sm btn-primary m-0"><i class="fas fa-plus"></i> Create</a>
+                                </div>
+                            </div>
+                        </div>
 						<div class="card-body p-0">
 							@if(session()->has('success'))
 							<div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('success') }}</div>

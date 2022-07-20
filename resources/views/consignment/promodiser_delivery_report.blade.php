@@ -10,6 +10,33 @@
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
+                        @if (session()->has('success'))
+                            @php
+                                $received = session()->get('success');
+                            @endphp
+                            <div class="modal fade" id="receivedDeliveryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-navy">
+                                            <h5 class="modal-title" id="exampleModalLabel">Delivered Item(s)</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true" style="color: #fff">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body" style="font-size: 10pt;">
+                                            <span>{{ $received['message'] }}</span> <br>
+                                            <span>Branch: <b>{{ $received['branch'] }}</b></span> <br>
+                                            <span>Total Amount: <b>₱ {{ number_format(collect($received)->sum('amount'), 2) }}</b></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                                $(document).ready(function(){
+                                    $('#receivedDeliveryModal').modal('show');
+                                });
+                            </script>
+                        @endif
                         <div class="card-header text-center p-2">
                             <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">
                                 @if ($type == 'all')
@@ -20,9 +47,6 @@
                             </span>
                         </div>
                         <div class="card-body p-1">
-                            @if(session()->has('success'))
-                            <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{!! session()->get('success') !!}</div>
-                            @endif
                             @if(session()->has('error'))
                             <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{!! session()->get('error') !!}</div>
                             @endif
@@ -159,9 +183,11 @@
                                                         <div class="modal-footer">
                                                             @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
                                                                 <input type="checkbox" name="update_price" class="d-none" readonly>
+                                                                <input type="checkbox" name="receive_delivery" class="d-none" checked readonly>
                                                                 <button type="submit" class="btn btn-primary w-100 submit-once">Receive</button>
                                                             @else
                                                                 <input type="checkbox" name="update_price" class="d-none" checked readonly>
+                                                                <input type="checkbox" name="receive_delivery" class="d-none" readonly>
                                                                 <button type="submit" class="btn btn-info w-100 submit-once">Update Prices</button>
                                                                 <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">
                                                                     Cancel

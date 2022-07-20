@@ -72,13 +72,19 @@
                 var branch = $(this).val();
                 get_inv_record(branch);
             });
-            
-            var selected_branch = '{{ $branch ? $branch : "none" }}';
-            selected_branch = selected_branch ? selected_branch : $('#selected-branch').val();
 
-            if(selected_branch != 'none'){
+            let searchParams = new URLSearchParams(window.location.search);
+            if(searchParams.has('branch')){
+                $('#selected-branch').val(searchParams.get('branch'));
+            }
+
+            var selected_branch = '{{ $branch ? $branch : "none" }}';
+            selected_branch = selected_branch != 'none' ? selected_branch : $('#selected-branch').val();
+
+            if(selected_branch != 'none' && $('#selected-branch').val() != null){
                 get_inv_record(selected_branch);
             }
+            
             function get_inv_record(branch){
                 var inv_record = '{{ $inv_record ? $inv_record->name : null }}';
                 var link = inv_record ? 'update/' + branch + '/{{ $inv }}' : 'new/' + branch;

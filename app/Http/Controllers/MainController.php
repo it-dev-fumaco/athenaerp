@@ -305,7 +305,32 @@ class MainController extends Controller
                     ];
                 }
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr'));
+                $beginning_inventory_items = DB::table('tabConsignment Beginning Inventory as cb')
+                    ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+                    ->whereIn('cb.branch_warehouse', $assigned_consignment_store)->where('cb.status', '!=', 'Cancelled')
+                    ->select('cb.branch_warehouse', 'cbi.item_code', 'cb.status')->get();
+                $beginning_inventory_items = collect($beginning_inventory_items)->groupBy('branch_warehouse');
+
+                $bin_items = DB::table('tabBin')->whereIn('warehouse', $assigned_consignment_store)->where('consigned_qty', 0)->where('actual_qty', '>', 0)->select('warehouse', 'item_code', 'consigned_qty')->get();
+                $bin_items = collect($bin_items)->groupBy('warehouse');
+
+                $branches = array_keys($bin_items->toArray());
+
+                $branches_with_pending_beginning_inventory = [];
+                foreach($branches as $branch){
+                    $items_with_beginning_inventory = isset($beginning_inventory_items[$branch]) ? collect($beginning_inventory_items[$branch])->pluck('item_code') : [];
+                    if(isset($bin_items[$branch])){
+                        $item_array = collect($bin_items[$branch])->pluck('item_code');
+                        $count = 1;
+                        foreach($item_array as $item_code){
+                            if(!in_array($item_code, collect($items_with_beginning_inventory)->toArray())){
+                                $branches_with_pending_beginning_inventory[$branch] = $count++;
+                            }
+                        }
+                    }
+                }
+
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr', 'branches_with_pending_beginning_inventory'));
             }
 
             return redirect('/search_results');
