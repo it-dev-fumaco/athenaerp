@@ -8,6 +8,44 @@
 	<div class="content-header p-0">
     <div class="container p-0">
       <div class="row p-0 m-0">
+        @if ($branches_with_pending_beginning_inventory)
+          <div class="modal fade" id="pendingBeginningInventoryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header bg-navy">
+                  <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-info-circle"></i> Reminder</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="color: #fff">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body" style="font-size: 10pt;">
+                  <span>Please enter your beginning inventory for:</span>
+                  <table class="table table-striped mt-2">
+                    <thead>
+                      <tr>
+                        <th class="text-center" style="width: 70%;">Branch</th>
+                        <th class="text-center">-</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach (array_keys($branches_with_pending_beginning_inventory) as $branch)
+                        <tr>
+                          <td>{{ $branch }}</td>
+                          <td class="text-center"><a href="/beginning_inventory?branch={{ $branch }}" class="btn btn-primary btn-xs" style="font-size: 9pt"><i class="fa fa-plus"></i> Create</a></td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <script>
+            $(document).ready(function(){
+              $('#pendingBeginningInventoryModal').modal('show');
+            });
+          </script>
+        @endif
         <div class="col-6 p-1">
           @if (count($assigned_consignment_store) > 1)
           <a href="#" data-toggle="modal" data-target="#select-branch-modal">
