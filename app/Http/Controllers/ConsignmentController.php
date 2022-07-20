@@ -1640,6 +1640,7 @@ class ConsignmentController extends Controller
             $prices = $request->price ? $request->price : [];
 
             $i = 0;
+            $received_items = [];
             foreach($ste_items as $item){
                 $basic_rate = $item->basic_rate;
                 $branch =  $wh->to_warehouse ? $wh->to_warehouse : $item->t_warehouse;
@@ -1676,11 +1677,11 @@ class ConsignmentController extends Controller
                         'consignment_price' => $basic_rate
                     ];
 
-                    if(!isset($request->update_price)){
+                    if(isset($request->receive_delivery)){
                         $update_values['consigned_qty'] = $consigned_qty;
                     }
 
-                    if($item->consignment_status == 'Received' && !isset($request->update_price)){
+                    if($item->consignment_status == 'Received' && isset($request->receive_delivery)){
                         continue;
                     }
 
@@ -1704,7 +1705,7 @@ class ConsignmentController extends Controller
                         'item_code' => $item->item_code,
                         'stock_uom' => $item->stock_uom,
                         'valuation_rate' => $basic_rate,
-                        'consigned_qty' => $item->transfer_qty,
+                        'consigned_qty' => isset($request->receive_delivery) ? $item->transfer_qty : 0,
                         'consignment_price' => $basic_rate
                     ]);
                 }
@@ -1719,7 +1720,7 @@ class ConsignmentController extends Controller
                     'custom_basic_amount' => $basic_rate * $item->transfer_qty
                 ];
 
-                if($item->consignment_status != 'Received'){
+                if($item->consignment_status != 'Received' && isset($request->receive_delivery)){
                     $ste_details_update['consignment_status'] = 'Received';
                     $ste_details_update['consignment_date_received'] = Carbon::now()->toDateTimeString();
                 }
@@ -1748,6 +1749,7 @@ class ConsignmentController extends Controller
         
                     DB::table('tabActivity Log')->insert($logs);
                 }
+
             }
 
             $source_warehouse = $wh->from_warehouse ? $wh->from_warehouse : null;
@@ -1780,10 +1782,20 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
-            $message = isset($request->update_price) ? 'Price(s) updated.' : 'Items received.';
+            $message = null;
+            if(isset($request->update_price)){
+                $message = 'Prices are successfully updated!';
+            }
+
+            if(isset($request->receive_delivery)){
+                $message = collect($received_items)->sum('qty').' Item(s) is successfully received and added to your store inventory!';
+            }
+
+            $received_items['message'] = $message;
+            $received_items['branch'] = $target_warehouse;
 
             DB::commit();
-            return redirect()->back()->with('success', $message);
+            return redirect()->back()->with('success', $received_items);
         } catch (Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'An error occured. Please try again later');
