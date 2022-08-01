@@ -80,7 +80,7 @@ class ConsignmentController extends Controller
     public function viewInventoryAuditForm($branch, $transaction_date) {
         // get last inventory audit date
         $last_inventory_date = DB::table('tabConsignment Inventory Audit Report')
-            ->where('status', 'Approved')->where('branch_warehouse', $branch)->max('transaction_date');
+            ->where('branch_warehouse', $branch)->max('transaction_date');
 
         if (!$last_inventory_date) {
             // get beginning inventory date if last inventory date is not null
