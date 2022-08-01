@@ -54,6 +54,11 @@
 
                                             $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
 
+                                            $max = $consigned_qty;
+                                            if ($qty > 0) {
+                                                $max = $consigned_qty + $qty;
+                                            }
+
                                             if(session()->has('error')) {
                                                 $data = session()->get('old_data');
                                                 $qty = $data['item'][$row->item_code]['qty'];
@@ -81,7 +86,7 @@
                                                                 <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                             </div>
                                                             <div class="custom-a p-0">
-                                                                <input type="number" class="form-control form-control-sm qty item-sold-qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $consigned_qty }}" data-price="{{ $row->price }}">
+                                                                <input type="number" class="form-control form-control-sm qty item-sold-qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $max }}" data-price="{{ $row->price }}">
                                                             </div>
                                                             <div class="input-group-append p-0">
                                                                 <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>

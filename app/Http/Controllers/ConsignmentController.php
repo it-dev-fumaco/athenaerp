@@ -3593,7 +3593,7 @@ class ConsignmentController extends Controller
                 'img_count' => $img_count,
                 'total_value' => $total_value,
                 'opening_qty' => number_format($opening_qty),
-                'sold_qty' => $total_sold,
+                'sold_qty' => number_format($total_sold),
                 'audit_qty' => number_format($row->qty)
             ];
         }
