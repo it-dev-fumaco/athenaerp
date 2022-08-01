@@ -8,10 +8,10 @@
 <div class="table-responsive p-0 {{ count($list) > 0 ? 'tbl-custom-height' : '' }}">
     <table class="table table-bordered table-striped table-head-fixed" style="font-size: 9pt;">
         <thead class="border-top bg-navy">
-            <th class="text-center font-responsive p-2 align-middle first" style="width: 55%;">Item Code</th>
-            <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Qty</th>
-            <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Rate</th>
-            <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Amount</th>
+            <th class="text-center font-responsive p-2 align-middle first bg-navy" style="width: 55%;">Item Code</th>
+            <th class="text-center font-responsive p-2 align-middle bg-navy" style="width: 15%;">Qty</th>
+            <th class="text-center font-responsive p-2 align-middle bg-navy" style="width: 15%;">Rate</th>
+            <th class="text-center font-responsive p-2 align-middle bg-navy" style="width: 15%;">Amount</th>
         </thead>
         <tbody>
             @forelse ($list as $d)

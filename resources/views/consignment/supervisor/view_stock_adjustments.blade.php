@@ -970,7 +970,7 @@
                                                         '<picture>' +
                                                             '<source id="mobile-' + item_code + '-webp-image-src" srcset="' + webp + '" type="image/webp" class="d-block w-100" style="width: 100% !important;">' +
                                                             '<source id="mobile-' + item_code + '-orig-image-src" srcset="' + img + '" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">' +
-                                                            '<img class="d-block w-100" id="mobile-' + item_code + '-image" src="' + img + '" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">' +
+                                                            '<img class="d-block w-100" id="mobile-' + item_code + '-image" src="' + img + '" alt="' + item_code + '">' +
                                                         '</picture>' +
                                                     '</div>' +
                                                     '<span class="d-none" id="mobile-' + item_code + '-image-data">0</span>' +

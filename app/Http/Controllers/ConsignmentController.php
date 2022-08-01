@@ -3397,12 +3397,10 @@ class ConsignmentController extends Controller
                             $is_late++;
                         }
                     }
-        
-                    $check = Carbon::parse($start)->between($period_from, $period_to);
     
                     $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
-                    if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                        if (!$check) {
+                    if (Carbon::parse($start)->addDay()->lt(Carbon::now())) {
+                        if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                             $pending_arr[] = [
                                 'store' => $store,
                                 'beginning_inventory_date' => $beginning_inventory_transaction_date,
@@ -3786,11 +3784,9 @@ class ConsignmentController extends Controller
                 }
             }
    
-            $check = Carbon::parse($start)->between($period_from, $period_to);
-    
             $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
-            if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                if (!$check) {
+            if (Carbon::parse($start)->addDay()->lt(Carbon::now())) {
+                if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                     $pending[] = [
                         'store' => $store,
                         'beginning_inventory_date' => $beginning_inventory_transaction_date,
@@ -3800,19 +3796,17 @@ class ConsignmentController extends Controller
                         'promodisers' => $promodisers
                     ];
                 }
-             }
+            }
 
              if(!$beginning_inventory_transaction_date) {
-                 if (!$check) {
-                    $pending[] = [
-                        'store' => $store,
-                        'beginning_inventory_date' => $beginning_inventory_transaction_date,
-                        'last_inventory_audit_date' => $last_inventory_audit_date,
-                        'duration' => $duration,
-                        'is_late' => $is_late,
-                        'promodisers' => $promodisers
-                    ];
-                }
+                $pending[] = [
+                    'store' => $store,
+                    'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                    'last_inventory_audit_date' => $last_inventory_audit_date,
+                    'duration' => $duration,
+                    'is_late' => $is_late,
+                    'promodisers' => $promodisers
+                ];
             }
         }
 
