@@ -237,13 +237,10 @@
                 </div>
                 <div class="modal-body">
                     <div class="container-fluid text-justify" id="input-error-container" style="font-size: 8pt;">
-                        <span id="null-branch-placeholder" class="d-none"><i class="fas fa-info-circle"></i> Please select a branch<br></span>
-                        <div id="error-in-items-placeholder" class='d-none'>
-                            <span><i class="fas fa-info-circle"></i> Please remove item(s) with zero(0) stocks and/or price:</span> <br>
-                            <span>You can remove item(s) by clicking (<i class="fa fa-remove" style='color: red;'></i>)</span>
-                            <div id="inc-item-codes">
-                                <ul></ul>
-                            </div>
+                        <span><i class="fas fa-info-circle"></i> Please remove item(s) with zero(0) stocks and/or price:</span> <br>
+                        <span>You can remove item(s) by clicking (<i class="fa fa-remove" style='color: red;'></i>)</span>
+                        <div id="inc-item-codes">
+                            <ul></ul>
                         </div>
                     </div>
                 </div>
