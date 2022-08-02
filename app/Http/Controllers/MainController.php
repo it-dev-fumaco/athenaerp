@@ -120,6 +120,8 @@ class MainController extends Controller
 
                 $duration = Carbon::parse($duration_from)->addDay()->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
+                $due = 'Due: '. Carbon::parse($duration_to)->format('M d, Y');
+
                 $total_item_sold = DB::table('tabConsignment Sales Report as csr')
                     ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                     ->where('csri.qty', '>', 0)->where('csr.status', '!=', 'Cancelled')
@@ -316,7 +318,7 @@ class MainController extends Controller
                     }
                 }
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr', 'branches_with_pending_beginning_inventory'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr', 'branches_with_pending_beginning_inventory', 'due'));
             }
 
             return redirect('/search_results');

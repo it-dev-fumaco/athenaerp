@@ -13,7 +13,7 @@
 						<div class="card-header p-2">
                             <div class="d-flex flex-row align-items-center justify-content-between" style="font-size: 9pt;">
                                 <div class="p-0">
-                                    <span class="font-responsive font-weight-bold text-uppercase m-0 p-0">Stock Adjustments List</span>
+                                    <span class="font-responsive font-weight-bold text-uppercase m-0 p-0">Beginning Inventory List</span>
                                 </div>
                                 <div class="p-0">
                                     <a href="/beginning_inventory" class="btn btn-sm btn-primary m-0"><i class="fas fa-plus"></i> Create</a>

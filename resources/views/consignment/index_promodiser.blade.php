@@ -65,9 +65,9 @@
           <a href="/inventory_audit">
             <div class="info-box bg-gradient-info m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Inventory Audit</span>
+                <span class="info-box-text" style="font-size: 9pt;">Inventory Report</span>
                 <span class="info-box-number">{{ number_format($total_pending_inventory_audit) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
+                <span class="progress-description" style="font-size: 7pt;">{{ $due }}</span>
               </div>
             </div>
           </a>
@@ -89,7 +89,7 @@
           <a href="/beginning_inv_list">
             <div class="info-box bg-gradient-secondary m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Stock Adjustment</span>
+                <span class="info-box-text" style="font-size: 9pt;">Beginning Inventory</span>
                 <span class="info-box-number">{{ number_format($total_stock_adjustments) }}</span>
                 <div class="progress">
                   <div class="progress-bar"></div>
