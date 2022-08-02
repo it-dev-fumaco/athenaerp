@@ -1431,11 +1431,31 @@ class ConsignmentController extends Controller
                     ->whereIn('csri.item_code', collect($items)->pluck('item_code')->toArray())
                     ->distinct()->pluck('csr.name');
 
-                DB::table('tabConsignment Sales Report')->whereIn('name', $sales_report_names)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'status' => 'Cancelled'
-                ]);
+                // get items from sales reported
+                $sales_report_items = DB::table('tabConsignment Sales Report Item')->whereIn('parent', $sales_report_names)->get();
+                if (count($sales_report_items) > count($items)) {
+                    // delete items only
+                    DB::table('tabConsignment Sales Report Item')->whereIn('parent', $sales_report_names)
+                        ->whereIn('item_code', collect($items)->pluck('item_code')->toArray())->delete();
+
+                    foreach ($sales_report_names as $srn) {
+                        $sales_report_total = DB::table('tabConsignment Sales Report Item')->where('parent', $srn)
+                            ->selectRaw('COUNT(name) as total_items, SUM(qty) as total_qty_sold, SUM(amount) as grand_total')
+                            ->groupBy('parent')->first();
+
+                        DB::table('tabConsignment Sales Report')->where('name', $srn)->update([
+                            'total_items' => $sales_report_total->total_items,
+                            'total_qty_sold' => $sales_report_total->total_qty_sold,
+                            'grand_total' => $sales_report_total->grand_total
+                        ]);
+                    }
+                } else {
+                    DB::table('tabConsignment Sales Report')->whereIn('name', $sales_report_names)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'status' => 'Cancelled'
+                    ]);
+                }             
             }
 
             $update_values = [
