@@ -3419,7 +3419,7 @@ class ConsignmentController extends Controller
                     }
     
                     $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
-                    if (Carbon::parse($start)->addDay()->lt(Carbon::now())) {
+                    if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::now()->startOfDay())) {
                         if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                             $pending_arr[] = [
                                 'store' => $store,
@@ -3805,7 +3805,7 @@ class ConsignmentController extends Controller
             }
    
             $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
-            if (Carbon::parse($start)->addDay()->lt(Carbon::now())) {
+            if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::now()->startOfDay())) {
                 if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                     $pending[] = [
                         'store' => $store,
@@ -3930,7 +3930,7 @@ class ConsignmentController extends Controller
     }
 
     public function viewPromodisersList() {
-        if (Auth::user()->user_group != 'Consignment Supervisor') {
+        if (!in_array(Auth::user()->user_group, ['Director', 'Consignment Supervisor'])) {
             return redirect('/');
         }
 

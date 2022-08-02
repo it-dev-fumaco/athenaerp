@@ -197,9 +197,8 @@ class MainController extends Controller
 
                         $start = $start->startOfDay();
             
-                        $check = Carbon::parse($start)->between($period_from, $period_to);
-                        if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                            if (!$check) {
+                        if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::parse($period_to)->startOfDay())) {
+                            if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                                 $total_pending_inventory_audit++;
                             }
                         }
@@ -452,9 +451,8 @@ class MainController extends Controller
 
             $start = $start->startOfDay();
 
-            $check = Carbon::parse($start)->between($period_from, $period_to);
-            if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                if (!$check) {
+            if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::parse($period_to)->startOfDay())) {
+                if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                     $total_pending_inventory_audit++;
                 }
             }

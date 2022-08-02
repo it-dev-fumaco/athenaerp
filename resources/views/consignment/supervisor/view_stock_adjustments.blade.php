@@ -12,7 +12,10 @@
                     <div class="row">
                         <div class="col-2">
                             <div style="margin-bottom: -43px;">
-                                <a href="/" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
+                                @php
+                                    $redirecthref = Auth::user()->user_group == 'Director' ? '/consignment_dashboard' : '/';
+                                @endphp
+                                <a href="{{ $redirecthref }}" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
                             </div>
                         </div>
                         <div class="col-8 col-lg-8 p-0">
