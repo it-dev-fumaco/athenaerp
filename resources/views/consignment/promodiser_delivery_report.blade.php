@@ -65,6 +65,9 @@
                                             <small class="d-block"><b>{{ $ste['name'] }}</b> | <b>Delivery Date:</b> {{ $delivery_date }}</small>
                                             @if ($ste['delivery_status'] == 1)
                                                 <small class="d-block"><b>Date Received:</b> {{ Carbon\Carbon::parse($ste['date_received'])->format('M d, Y - h:i a') }}</small>
+                                                @if ($ste['received_by'])
+                                                    <small class="d-block"><b>Received By:</b> {{ $ste['received_by'] }}</small>
+                                                @endif
                                             @endif
                                             <span class="badge badge-{{ $ste['status'] == 'Pending' ? 'warning' : 'success' }}">{{ $ste['status'] }}</span>
                                             @if ($ste['status'] == 'Delivered')

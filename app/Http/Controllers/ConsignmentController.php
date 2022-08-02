@@ -1514,7 +1514,7 @@ class ConsignmentController extends Controller
             ->where('ste.docstatus', 1)
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->whereIn('sted.t_warehouse', $assigned_consignment_store)
-            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received')
+            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received', 'sted.consignment_received_by')
             ->orderBy('ste.creation', 'desc')->get();
 
         $delivery_report_q = collect($delivery_report)->groupBy('name');
@@ -1561,7 +1561,8 @@ class ConsignmentController extends Controller
                     'stock_uom' => $item->stock_uom,
                     'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? $prices_arr[$ref_warehouse][$item->item_code]['price'] : 0,
                     'delivery_status' => $item->consignment_status,
-                    'date_received' => $item->consignment_date_received
+                    'date_received' => $item->consignment_date_received,
+                    'received_by' => $item->consignment_received_by
                 ];
             }
 
@@ -1587,11 +1588,11 @@ class ConsignmentController extends Controller
                 'delivery_date' => $row[0]->delivery_date,
                 'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
                 'posting_time' => $row[0]->posting_time,
-                'date_received' => min($status_check) == 1 ? collect($items_arr)->min('date_received') : null
+                'date_received' => min($status_check) == 1 ? collect($items_arr)->min('date_received') : null,
+                'received_by' => collect($items_arr)->pluck('received_by')->first()
             ];
         }
 
-        
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         // Create a new Laravel collection from the array data3
         $itemCollection = collect($ste_arr);
@@ -1751,6 +1752,7 @@ class ConsignmentController extends Controller
                 if($item->consignment_status != 'Received' && isset($request->receive_delivery)){
                     $ste_details_update['consignment_status'] = 'Received';
                     $ste_details_update['consignment_date_received'] = Carbon::now()->toDateTimeString();
+                    $ste_details_update['consignment_received_by'] = Auth::user()->full_name;
                 }
 
                 DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
@@ -1945,6 +1947,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /beginning_inventory_list
     public function beginningInventoryList(Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->paginate(10);

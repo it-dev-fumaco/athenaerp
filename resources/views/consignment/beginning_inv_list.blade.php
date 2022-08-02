@@ -52,7 +52,7 @@
                                         </td>
                                         <td class="font-responsive p-2 align-middle">
                                             <a href="/beginning_inventory{{ ($store->status == 'For Approval' ? '/' : '_items/').$store->name }}">{{ $store->branch_warehouse }}</a>
-
+                                            <small class="d-block">Created by: {{ $store->owner }}</small>
                                             @if ($store->status == 'Approved')
                                                 <small class="d-block">Approved by: {{ $store->approved_by }}</small>
                                                 <small class="d-block">Date: {{ Carbon\Carbon::parse($store->date_approved)->format('M d, Y - h:i A') }}</small>
