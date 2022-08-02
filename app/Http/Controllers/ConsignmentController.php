@@ -2597,6 +2597,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /damage_report/list
     public function damagedItems(){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         $damaged_items = DB::table('tabConsignment Damaged Item')->whereIn('branch_warehouse', $assigned_consignment_store)->orderBy('creation', 'desc')->paginate(10);
@@ -2648,26 +2649,19 @@ class ConsignmentController extends Controller
         return view('consignment.promodiser_damaged_list', compact('damaged_arr', 'damaged_items'));
     }
 
+    // /damaged/return/{id}
     public function returnDamagedItem($id){
         DB::beginTransaction();
         try {
             $damaged_item = DB::table('tabConsignment Damaged Item')->where('name', $id)->first();
+            $existing_source =  DB::table('tabBin')->where('warehouse', $damaged_item->branch_warehouse)->where('item_code', $damaged_item->item_code)->first();
 
-            if(!$damaged_item){
+            if(!$damaged_item || !$existing_source){
                 return redirect()->back()->with('error', 'Item not found.');
             }
 
             if($damaged_item->status == 'Returned'){
                 return redirect()->back()->with('error', 'Item is already returned.');
-            }
-
-            $price = DB::table('tabConsignment Beginning Inventory as cbi')
-                ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
-                ->where('cbi.branch_warehouse', $damaged_item->branch_warehouse)->where('item.item_code', $damaged_item->item_code)->where('cbi.status', 'Approved')
-                ->pluck('price')->first();
-
-            if(!$price){
-                return redirect()->back()->with('error', 'No Beginning Inventory Record found for this item.');
             }
 
             $existing_target =  DB::table('tabBin')->where('warehouse', 'Quarantine Warehouse - FI')->where('item_code', $damaged_item->item_code)->first();
@@ -2677,15 +2671,6 @@ class ConsignmentController extends Controller
                     'modified' => Carbon::now()->toDateTimeString(),
                     'modified_by' => Auth::user()->full_name,
                     'consigned_qty' => $existing_target->consigned_qty + $damaged_item->qty
-                ]);
-
-                // get bin for returned item
-                $existing_source =  DB::table('tabBin')->where('warehouse', $damaged_item->branch_warehouse)->where('item_code', $damaged_item->item_code)->first();
-                 // deduct qty to source warehouse
-                 DB::table('tabBin')->where('name', $existing_source->name)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name,
-                    'consigned_qty' => $existing_source->consigned_qty - $damaged_item->qty
                 ]);
             } else {
                 $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
@@ -2705,11 +2690,18 @@ class ConsignmentController extends Controller
                     'warehouse' => 'Quarantine Warehouse - FI',
                     'item_code' => $damaged_item->item_code,
                     'stock_uom' => $damaged_item->stock_uom,
-                    'valuation_rate' => $price,
+                    'valuation_rate' => $existing_source->consignment_price,
                     'consigned_qty' => $damaged_item->qty,
-                    'consignment_price' => $price
+                    'consignment_price' => $existing_source->consignment_price
                 ]);
             }
+
+            // deduct qty to source warehouse
+            DB::table('tabBin')->where('name', $existing_source->name)->update([
+               'modified' => Carbon::now()->toDateTimeString(),
+               'modified_by' => Auth::user()->full_name,
+               'consigned_qty' => $existing_source->consigned_qty - $damaged_item->qty
+            ]);
 
             DB::table('tabConsignment Damaged Item')->where('name', $id)->update([
                 'modified' => Carbon::now()->toDateTimeString(),
