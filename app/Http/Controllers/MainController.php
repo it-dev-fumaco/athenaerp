@@ -223,7 +223,7 @@ class MainController extends Controller
                     })
                     ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
                     ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.docstatus', '<', 2)
+                    ->where('ste.docstatus', 1)
                     ->whereIn('ste.item_status', ['For Checking', 'Issued'])
                     ->whereIn('sted.t_warehouse', $assigned_consignment_store)
                     ->where(function($q) {
