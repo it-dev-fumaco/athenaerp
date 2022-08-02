@@ -28,7 +28,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @foreach (array_keys($branches_with_pending_beginning_inventory) as $branch)
+                      @foreach (($branches_with_pending_beginning_inventory) as $branch)
                         <tr>
                           <td>{{ $branch }}</td>
                           <td class="text-center"><a href="/beginning_inventory?branch={{ $branch }}" class="btn btn-primary btn-xs" style="font-size: 9pt"><i class="fa fa-plus"></i> Create</a></td>
