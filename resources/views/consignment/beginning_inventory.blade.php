@@ -31,6 +31,7 @@
                                             <option value="{{ $store }}">{{ $store }}</option>
                                         @endforeach
                                     </select>
+                                    <span class='font-italic d-none' id='null-store-warning' style="font-size: 9pt; color: red;">* Please select a store first</span>
                                 </div>
                             </div>
                             @endif
@@ -81,7 +82,7 @@
             var selected_branch = '{{ $branch ? $branch : "none" }}';
             selected_branch = selected_branch != 'none' ? selected_branch : $('#selected-branch').val();
 
-            if(selected_branch != 'none' && $('#selected-branch').val() != null){
+            if(selected_branch != 'none' || $('#selected-branch').val() != null){
                 get_inv_record(selected_branch);
             }
             

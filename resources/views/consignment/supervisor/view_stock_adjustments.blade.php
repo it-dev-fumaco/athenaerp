@@ -12,7 +12,10 @@
                     <div class="row">
                         <div class="col-2">
                             <div style="margin-bottom: -43px;">
-                                <a href="/" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
+                                @php
+                                    $redirecthref = Auth::user()->user_group == 'Director' ? '/consignment_dashboard' : '/';
+                                @endphp
+                                <a href="{{ $redirecthref }}" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
                             </div>
                         </div>
                         <div class="col-8 col-lg-8 p-0">
@@ -970,7 +973,7 @@
                                                         '<picture>' +
                                                             '<source id="mobile-' + item_code + '-webp-image-src" srcset="' + webp + '" type="image/webp" class="d-block w-100" style="width: 100% !important;">' +
                                                             '<source id="mobile-' + item_code + '-orig-image-src" srcset="' + img + '" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">' +
-                                                            '<img class="d-block w-100" id="mobile-' + item_code + '-image" src="' + img + '" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">' +
+                                                            '<img class="d-block w-100" id="mobile-' + item_code + '-image" src="' + img + '" alt="' + item_code + '">' +
                                                         '</picture>' +
                                                     '</div>' +
                                                     '<span class="d-none" id="mobile-' + item_code + '-image-data">0</span>' +

@@ -16,7 +16,7 @@
                                     <a href="/inventory_audit" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
                                 </div>
                                 <div class="p-1 col-8">
-                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Inventory Audit Item(s)</span>
+                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Inventory Report Item(s)</span>
                                 </div>
                             </div>
                         </div>

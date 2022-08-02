@@ -12,7 +12,7 @@
                     <div class="card card-lightblue">
                         @if (count($pending) > 0)
                         <div class="card-header text-center p-2">
-                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Audit List</span>
+                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Report List</span>
                         </div>
                         <div class="card-body p-1">
                             <div class="p-2">
@@ -46,7 +46,7 @@
                         </div>
                         @endif
                         <div class="card-header text-center p-2 bg-lightblue border-0 rounded-0">
-                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Audit History</span>
+                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Report History</span>
                         </div>
                         <div class="card-body p-1">
                             <form id="inventory-audit-history-form" method="GET">

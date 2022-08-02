@@ -120,6 +120,8 @@ class MainController extends Controller
 
                 $duration = Carbon::parse($duration_from)->addDay()->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
+                $due = 'Due: '. Carbon::parse($duration_to)->format('M d, Y');
+
                 $total_item_sold = DB::table('tabConsignment Sales Report as csr')
                     ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                     ->where('csri.qty', '>', 0)->where('csr.status', '!=', 'Cancelled')
@@ -195,9 +197,8 @@ class MainController extends Controller
 
                         $start = $start->startOfDay();
             
-                        $check = Carbon::parse($start)->between($period_from, $period_to);
-                        if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                            if (!$check) {
+                        if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::parse($period_to)->startOfDay())) {
+                            if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                                 $total_pending_inventory_audit++;
                             }
                         }
@@ -223,7 +224,7 @@ class MainController extends Controller
                     })
                     ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
                     ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.docstatus', '<', 2)
+                    ->where('ste.docstatus', 1)
                     ->whereIn('ste.item_status', ['For Checking', 'Issued'])
                     ->whereIn('sted.t_warehouse', $assigned_consignment_store)
                     ->where(function($q) {
@@ -305,32 +306,18 @@ class MainController extends Controller
                     ];
                 }
 
-                $beginning_inventory_items = DB::table('tabConsignment Beginning Inventory as cb')
-                    ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                    ->whereIn('cb.branch_warehouse', $assigned_consignment_store)->where('cb.status', '!=', 'Cancelled')
-                    ->select('cb.branch_warehouse', 'cbi.item_code', 'cb.status')->get();
-                $beginning_inventory_items = collect($beginning_inventory_items)->groupBy('branch_warehouse');
-
-                $bin_items = DB::table('tabBin')->whereIn('warehouse', $assigned_consignment_store)->where('consigned_qty', 0)->where('actual_qty', '>', 0)->select('warehouse', 'item_code', 'consigned_qty')->get();
-                $bin_items = collect($bin_items)->groupBy('warehouse');
-
-                $branches = array_keys($bin_items->toArray());
+                $branches_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+                    ->whereIn('branch_warehouse', $assigned_consignment_store)->where('status', '!=', 'Cancelled')
+                    ->distinct()->pluck('branch_warehouse')->toArray();
 
                 $branches_with_pending_beginning_inventory = [];
-                foreach($branches as $branch){
-                    $items_with_beginning_inventory = isset($beginning_inventory_items[$branch]) ? collect($beginning_inventory_items[$branch])->pluck('item_code') : [];
-                    if(isset($bin_items[$branch])){
-                        $item_array = collect($bin_items[$branch])->pluck('item_code');
-                        $count = 1;
-                        foreach($item_array as $item_code){
-                            if(!in_array($item_code, collect($items_with_beginning_inventory)->toArray())){
-                                $branches_with_pending_beginning_inventory[$branch] = $count++;
-                            }
-                        }
+                foreach ($assigned_consignment_store as $store) {
+                    if (!in_array($store, $branches_with_beginning_inventory)) {
+                        $branches_with_pending_beginning_inventory[] = $store;
                     }
                 }
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr', 'branches_with_pending_beginning_inventory'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr', 'branches_with_pending_beginning_inventory', 'due'));
             }
 
             return redirect('/search_results');
@@ -464,9 +451,8 @@ class MainController extends Controller
 
             $start = $start->startOfDay();
 
-            $check = Carbon::parse($start)->between($period_from, $period_to);
-            if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                if (!$check) {
+            if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::parse($period_to)->startOfDay())) {
+                if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                     $total_pending_inventory_audit++;
                 }
             }

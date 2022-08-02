@@ -28,7 +28,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @foreach (array_keys($branches_with_pending_beginning_inventory) as $branch)
+                      @foreach (($branches_with_pending_beginning_inventory) as $branch)
                         <tr>
                           <td>{{ $branch }}</td>
                           <td class="text-center"><a href="/beginning_inventory?branch={{ $branch }}" class="btn btn-primary btn-xs" style="font-size: 9pt"><i class="fa fa-plus"></i> Create</a></td>
@@ -65,9 +65,9 @@
           <a href="/inventory_audit">
             <div class="info-box bg-gradient-info m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Inventory Audit</span>
+                <span class="info-box-text" style="font-size: 9pt;">Inventory Report</span>
                 <span class="info-box-number">{{ number_format($total_pending_inventory_audit) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
+                <span class="progress-description" style="font-size: 7pt;">{{ $due }}</span>
               </div>
             </div>
           </a>
@@ -89,7 +89,7 @@
           <a href="/beginning_inv_list">
             <div class="info-box bg-gradient-secondary m-0">
               <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Stock Adjustment</span>
+                <span class="info-box-text" style="font-size: 9pt;">Beginning Inventory</span>
                 <span class="info-box-number">{{ number_format($total_stock_adjustments) }}</span>
                 <div class="progress">
                   <div class="progress-bar"></div>
@@ -266,6 +266,7 @@
                             </div>
                             <div class="modal-footer">
                               @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
+                                <input type="checkbox" name="receive_delivery" class="d-none" checked readonly>
                                 <button type="submit" class="btn btn-primary w-100">Receive</button>
                               @else
                                 <button type="submit" class="btn btn-info w-100">Update Prices</button>
