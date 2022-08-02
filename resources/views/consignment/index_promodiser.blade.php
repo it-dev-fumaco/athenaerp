@@ -266,6 +266,7 @@
                             </div>
                             <div class="modal-footer">
                               @if ($ste['status'] == 'Delivered' && $ste['delivery_status'] == 0)
+                                <input type="checkbox" name="receive_delivery" class="d-none" checked readonly>
                                 <button type="submit" class="btn btn-primary w-100">Receive</button>
                               @else
                                 <button type="submit" class="btn btn-info w-100">Update Prices</button>
