@@ -2108,6 +2108,11 @@ class ConsignmentController extends Controller
     public function saveBeginningInventory(Request $request){
         DB::beginTransaction();
         try {
+
+            if(!$request->branch || $request->branch == 'null'){
+                return redirect()->back()->with('error', 'Please select a store');
+            }
+
             $opening_stock = $request->opening_stock;
             $opening_stock = preg_replace("/[^0-9 .]/", "", $opening_stock);
 

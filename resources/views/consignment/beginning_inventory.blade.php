@@ -31,6 +31,7 @@
                                             <option value="{{ $store }}">{{ $store }}</option>
                                         @endforeach
                                     </select>
+                                    <span class='font-italic d-none' id='null-store-warning' style="font-size: 9pt; color: red;">* Please select a store first</span>
                                 </div>
                             </div>
                             @endif

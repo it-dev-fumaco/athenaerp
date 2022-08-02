@@ -5,7 +5,7 @@
             <input type="text" class="form-control form-control-sm mt-2 mb-2 ml-0 mr-0" id="item-search" name="search" autocomplete="off" placeholder="Search"/>
         </div>
         <div class="col-4" style="display: flex; justify-content: center; align-items: center;">
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#add-item-Modal" style="font-size: 10pt;">
+            <button type="button" class="btn btn-primary btn-sm" id="open-add-items-modal" style="font-size: 10pt;">
                 <i class="fa fa-plus"></i> Add Items
             </button>
               
@@ -218,7 +218,7 @@
 
     <div class="d-none">
         {{-- values to save --}}
-        <input type="text" name="branch" value="{{ $branch }}">
+        <input type="text" id="branch-warehouse" name="branch" value="{{ $branch }}">
         <input type="text" name="inv_name" value="{{ $inv_name }}">
     </div>
 
@@ -237,10 +237,13 @@
                 </div>
                 <div class="modal-body">
                     <div class="container-fluid text-justify" id="input-error-container" style="font-size: 8pt;">
-                        <span><i class="fas fa-info-circle"></i> Please remove item(s) with zero(0) stocks and/or price:</span> <br>
-                        <span>You can remove item(s) by clicking (<i class="fa fa-remove" style='color: red;'></i>)</span>
-                        <div id="inc-item-codes">
-                            <ul></ul>
+                        <span id="null-branch-placeholder" class="d-none"><i class="fas fa-info-circle"></i> Please select a branch<br></span>
+                        <div id="error-in-items-placeholder" class='d-none'>
+                            <span><i class="fas fa-info-circle"></i> Please remove item(s) with zero(0) stocks and/or price:</span> <br>
+                            <span>You can remove item(s) by clicking (<i class="fa fa-remove" style='color: red;'></i>)</span>
+                            <div id="inc-item-codes">
+                                <ul></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -266,13 +269,37 @@
             validate_submit();
         });
 
+        function valid_branch(){
+            if($('#branch-warehouse').val() == '' || $('#branch-warehouse').val() == 'null'){
+                $('#null-store-warning').removeClass('d-none');
+                $('#selected-branch').css('border', '1px solid red');
+            }else{
+                $('#null-store-warning').addClass('d-none');
+                $('#selected-branch').css('border', '1px solid #CED4DA');
+            }
+        }
+        if(branch != 'null' && branch != ''){
+            valid_branch();
+        }
+
+        $("#open-add-items-modal").click(function (){
+            if($('#branch-warehouse').val() == '' || $('#branch-warehouse').val() == 'null'){
+                $('#null-store-warning').removeClass('d-none');
+                $('#selected-branch').css('border', '1px solid red');
+            }else{
+                $('#null-store-warning').addClass('d-none');
+                $('#selected-branch').css('border', '1px solid #CED4DA');
+                $('#add-item-Modal').modal('show');
+            }
+        });
+
         var item_codes = new Array();
         var incorrect_item_codes = new Array();
         $('#submit-btn').click(function (){
             $('.wrong-item-code').remove();
             item_codes = [];
             incorrect_item_codes = [];
-            
+
             $('.validate.stock').each(function(){ // check stocks
                 var item_code = $(this).data('item-code');
                 var stock_value = parseInt($(this).val());
@@ -526,8 +553,6 @@
             add_item('#items-table tbody');
             $('#add-item-Modal').modal('hide')
 
-            $('#item-count').text(parseInt($('#item-count').text()) + 1);
-
             // Reset values
             $('#new-item-code').text('');
             $('#new-description').text('');
@@ -634,6 +659,7 @@
             }
 
             $("#item-selection").empty().trigger('change');
+            $('#item-count').text(parseInt($('#item-count').text()) + 1);
 
             validate_submit();
 		}
