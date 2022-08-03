@@ -101,15 +101,17 @@ class ConsignmentController extends Controller
             ->where('csr.transaction_date', $transaction_date)->exists();
 
         if ($existing_items) {
-            $items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            $items = DB::table('tabConsignment Sales Report as csr')
+                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->join('tabItem as i', 'i.item_code', 'csri.item_code')
                 ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)->where('csr.transaction_date', $transaction_date)
-                ->select('csri.item_code', 'csri.description', 'csri.price')
+                ->select('csri.item_code', 'csri.description', 'csri.price', 'i.item_classification')
                 ->get()->toArray();
         } else {
             $items = DB::table('tabBin as b')
                 ->join('tabItem as i', 'i.name', 'b.item_code')
                 ->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
-                ->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')
                 ->orderBy('i.description', 'asc')->get();
         }
 
@@ -117,13 +119,14 @@ class ConsignmentController extends Controller
             $item_codes = collect($items)->pluck('item_code');
             $bin_items_not_in_product_sold = DB::table('tabBin as b')
                 ->join('tabItem as i', 'i.name', 'b.item_code')->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
-                ->whereNotIn('b.item_code', $item_codes)->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->whereNotIn('b.item_code', $item_codes)->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')
                 ->orderBy('i.description', 'asc')->get();
 
             $items = $bin_items_not_in_product_sold->merge($items);
         }
 
         $items = $items->sortBy('description');
+        $item_count = count($items);
             
         $item_codes = collect($items)->pluck('item_code');
         
@@ -138,7 +141,9 @@ class ConsignmentController extends Controller
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_images = collect($item_images)->groupBy('parent')->toArray();
 
-        return view('consignment.inventory_audit_form', compact('branch', 'transaction_date', 'items', 'item_images', 'item_total_sold', 'duration', 'inventory_audit_from', 'inventory_audit_to', 'consigned_stocks'));
+        $item_classification = collect($items)->groupBy('item_classification');
+
+        return view('consignment.inventory_audit_form', compact('branch', 'transaction_date', 'items', 'item_images', 'item_total_sold', 'duration', 'inventory_audit_from', 'inventory_audit_to', 'consigned_stocks', 'item_classification', 'item_count'));
     }
 
     public function consignmentStores(Request $request) {
@@ -478,15 +483,17 @@ class ConsignmentController extends Controller
             ->where('csr.transaction_date', $transaction_date)->exists();
 
         if ($existing_items) {
-            $items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            $items = DB::table('tabConsignment Sales Report as csr')
+                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->join('tabItem as i', 'i.item_code', 'csri.item_code')
                 ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)->where('csr.transaction_date', $transaction_date)
-                ->select('csri.item_code', 'csri.description', 'csri.price')
+                ->select('csri.item_code', 'csri.description', 'csri.price', 'i.item_classification')
                 ->get()->toArray();
         } else {
             $items = DB::table('tabBin as b')
                 ->join('tabItem as i', 'i.name', 'b.item_code')
                 ->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
-                ->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')
                 ->orderBy('i.description', 'asc')->get();
         }
 
@@ -494,13 +501,14 @@ class ConsignmentController extends Controller
             $item_codes = collect($items)->pluck('item_code');
             $bin_items_not_in_product_sold = DB::table('tabBin as b')
                 ->join('tabItem as i', 'i.name', 'b.item_code')->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
-                ->whereNotIn('b.item_code', $item_codes)->select('b.item_code', 'i.description', 'b.consignment_price as price')
+                ->whereNotIn('b.item_code', $item_codes)->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')
                 ->orderBy('i.description', 'asc')->get();
 
             $items = $bin_items_not_in_product_sold->merge($items);
         }
 
         $items = $items->sortBy('description');
+        $item_count = count($items);
 
         $item_codes = collect($items)->pluck('item_code');
 
@@ -513,7 +521,9 @@ class ConsignmentController extends Controller
             ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
             ->where('csr.transaction_date', $transaction_date)->pluck('csri.qty', 'csri.item_code')->toArray();
 
-        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks'));
+        $item_classification = collect($items)->groupBy('item_classification');
+
+        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks', 'item_classification', 'item_count'));
     }
 
     public function getCutoffDate($transaction_date) {

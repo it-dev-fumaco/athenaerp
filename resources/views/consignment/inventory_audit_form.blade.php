@@ -48,121 +48,134 @@
                                         <th class="text-center p-1" style="width: 15%;">SOLD</th>
                                     </thead>
                                     <tbody>
-                                        @forelse ($items as $row)
-                                        @php
-                                            $id = $row->item_code;
-                                            $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
-                                            $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-                                            $sold_qty = array_key_exists($row->item_code, $item_total_sold) ? ($item_total_sold[$row->item_code] * 1) : 0;
-                                            $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
-
-                                            $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
-
-                                            $qty = 0;
-                                            if(session()->has('error')) {
-                                                $data = session()->get('old_data');
-                                                $qty = $data['item'][$row->item_code]['qty'];
-                                            }
-                                        @endphp
-                                        <tr style="border-bottom: 0 !important;" class="item-row {{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
-                                            <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
-                                                <div class="d-flex flex-row justify-content-start align-items-center">
-                                                    <div class="p-1 text-left">
-                                                        <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
-                                                        <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
-                                                            <picture>
-                                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                                <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
-                                                            </picture>
-                                                        </a>
+                                        @forelse ($item_classification as $class => $items)
+                                            <tr>
+                                                <td colspan=4 class='p-0'>
+                                                    <div class="bg-navy p-2">
+                                                        <span style="font-weight: bold; font-size: 10pt;">{{ $class }}</span>
                                                     </div>
-                                                    <div class="p-1 m-0">
-                                                        <span class="font-weight-bold">{{ $row->item_code }}</span>
-                                                        <div class="d-none">{!! strip_tags($row->description) !!}</div>
+                                                </td>
+                                            </tr>
+                                            @forelse ($items as $row)
+                                            @php
+                                                $id = $row->item_code;
+                                                $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
+                                                $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+                                                $sold_qty = array_key_exists($row->item_code, $item_total_sold) ? ($item_total_sold[$row->item_code] * 1) : 0;
+                                                $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
+
+                                                $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
+
+                                                $qty = 0;
+                                                if(session()->has('error')) {
+                                                    $data = session()->get('old_data');
+                                                    $qty = $data['item'][$row->item_code]['qty'];
+                                                }
+                                            @endphp
+                                            <tr style="border-bottom: 0 !important;" class="item-row {{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
+                                                <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
+                                                    <div class="d-flex flex-row justify-content-start align-items-center">
+                                                        <div class="p-1 text-left">
+                                                            <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
+                                                            <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
+                                                                <picture>
+                                                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                    <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
+                                                                </picture>
+                                                            </a>
+                                                        </div>
+                                                        <div class="p-1 m-0">
+                                                            <span class="font-weight-bold">{{ $row->item_code }}</span>
+                                                            <div class="d-none">{!! strip_tags($row->description) !!}</div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog" role="document">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title">{{ $row->item_code }}</h5>
-                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div id="image-container" class="container-fluid">
-                                                                    <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                        <div class="carousel-inner">
-                                                                            <div class="carousel-item active">
-                                                                                <picture>
-                                                                                    <source id="mobile-{{ $row->item_code }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <source id="mobile-{{ $row->item_code }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <img class="d-block w-100" id="mobile-{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
-                                                                                </picture>
+                                                    <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog" role="document">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">{{ $row->item_code }}</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div id="image-container" class="container-fluid">
+                                                                        <div id="carouselExampleControls" class="carousel slide" data-interval="false">
+                                                                            <div class="carousel-inner">
+                                                                                <div class="carousel-item active">
+                                                                                    <picture>
+                                                                                        <source id="mobile-{{ $row->item_code }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                        <source id="mobile-{{ $row->item_code }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                        <img class="d-block w-100" id="mobile-{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
+                                                                                    </picture>
+                                                                                </div>
+                                                                                <span class='d-none5' id="mobile-{{ $row->item_code }}-image-data">0</span>
                                                                             </div>
-                                                                            <span class='d-none5' id="mobile-{{ $row->item_code }}-image-data">0</span>
+                                                                            @if ($img_count > 1)
+                                                                            <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                                                <span class="sr-only">Previous</span>
+                                                                            </a>
+                                                                            <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row->item_code }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                                                <span class="sr-only">Next</span>
+                                                                            </a>
+                                                                            @endif
                                                                         </div>
-                                                                        @if ($img_count > 1)
-                                                                        <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Previous</span>
-                                                                        </a>
-                                                                        <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row->item_code }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Next</span>
-                                                                        </a>
-                                                                        @endif
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td class="text-justify p-0 align-middle" style="border-bottom: 0 !important;">
-                                                <div class="d-flex flex-row justify-content-center align-items-center">
-                                                    <div class="p-0">
-                                                        <div class="input-group p-1 justify-content-center">
-                                                            <div class="input-group-prepend p-0">
-                                                                <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
-                                                            </div>
-                                                            <div class="custom-a p-0">
-                                                                <input type="number" class="form-control form-control-sm qty item-audit-qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}">
-                                                            </div>
-                                                            <div class="input-group-append p-0">
-                                                                <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
+                                                </td>
+                                                <td class="text-justify p-0 align-middle" style="border-bottom: 0 !important;">
+                                                    <div class="d-flex flex-row justify-content-center align-items-center">
+                                                        <div class="p-0">
+                                                            <div class="input-group p-1 justify-content-center">
+                                                                <div class="input-group-prepend p-0">
+                                                                    <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
+                                                                </div>
+                                                                <div class="custom-a p-0">
+                                                                    <input type="number" class="form-control form-control-sm qty item-audit-qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}">
+                                                                </div>
+                                                                <div class="input-group-append p-0">
+                                                                    <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
-                                                <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
-                                            </td>
-                                            <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                <span class="d-block item-sold-qty">{{ $sold_qty }}</span>
-                                                <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
-                                                <span class="d-none item-price">{{ $row->price }}</span>
-                                            </td>
-                                        </tr>
-                                        <tr class="{{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
-                                            <td colspan="4" style="border-top: 0 !important;">
-                                                <span class="d-none">{{ $row->item_code }}</span>
-                                                <div class="item-description">{!! strip_tags($row->description) !!}</div>
-                                            </td>
-                                        </tr>
+                                                </td>
+                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                                    <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
+                                                    <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
+                                                </td>
+                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                                    <span class="d-block item-sold-qty">{{ $sold_qty }}</span>
+                                                    <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
+                                                    <span class="d-none item-price">{{ $row->price }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr class="{{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
+                                                <td colspan="4" style="border-top: 0 !important;">
+                                                    <span class="d-none">{{ $row->item_code }}</span>
+                                                    <div class="item-description">{!! strip_tags($row->description) !!}</div>
+                                                </td>
+                                            </tr>
+                                            @empty
+                                            <tr>
+                                                <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
+                                            </tr> 
+                                            @endforelse
                                         @empty
                                         <tr>
                                             <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
-                                        </tr> 
+                                        </tr>
                                         @endforelse
                                     </tbody>
                                 </table>
                                 <div class="m-3">
-                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
+                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ $item_count <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
                             </form>
                         </div>
