@@ -1829,6 +1829,7 @@ class ConsignmentController extends Controller
 
             $received_items['message'] = $message;
             $received_items['branch'] = $target_warehouse;
+            $received_items['action'] = 'received';
 
             DB::commit();
             return redirect()->back()->with('success', $received_items);
@@ -1948,6 +1949,7 @@ class ConsignmentController extends Controller
 
             $cancelled_arr['message'] = 'Stock transfer cancelled.';
             $cancelled_arr['branch'] = $target_warehouse;
+            $cancelled_arr['action'] = 'canceled';
 
             DB::commit();
             return redirect()->back()->with('success', $cancelled_arr);
