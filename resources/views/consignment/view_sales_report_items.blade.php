@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'Products Sold Form',
+    'namePage' => 'Sales Report Item(s)',
     'activePage' => 'dashboard',
 ])
 
@@ -13,10 +13,10 @@
                         <div class="card-header text-center p-1">
                             <div class="d-flex flex-row align-items-center">
                                 <div class="p-0 col-2 text-left">
-                                    <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
+                                    <a href="/sales_reports" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
                                 </div>
                                 <div class="p-1 col-8">
-                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Product Sold Entry</span>
+                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Sales Report Item(s)</span>
                                 </div>
                             </div>
                         </div>
@@ -28,9 +28,6 @@
                             @endif
                             <span id="branch-name" class="font-weight-bolder d-block text-center" style="font-size: 11pt;">{{ $branch }}</span>
                             <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
-                            <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3 m-2" style="font-size: 10pt;">
-                                <span class="d-block"><i class="fas fa-info-circle"></i> Instructions: Enter your item quantity sold for this date.</span>
-                            </div>
                             <form action="/submit_product_sold_form" method="POST" autocomplete="off" id="sales-report-entry-form">
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
@@ -49,7 +46,7 @@
                                             $id = $row->item_code;
                                             $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
                                             $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-                                            $qty = array_key_exists($row->item_code, $existing_record) ? ($existing_record[$row->item_code] * 1) : 0;
+                                            $qty = ($row->qty * 1);
                                             $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
 
                                             $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
@@ -152,7 +149,7 @@
                                     </tbody>
                                 </table>
                                 <div class="m-3">
-                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
+                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ count($items) <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> UPDATE</button>
                                 </div>
                             </form>
                         </div>
@@ -205,35 +202,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="instructions-modal" tabindex="-1" role="dialog" aria-labelledby="instructions-modal" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-navy">
-                <h5 class="modal-title"><i class="fas fa-info-circle"></i> INSTRUCTIONS</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form></form>
-                <p class="text-center mt-0">
-                    <span class="d-block">Enter your item quantity sold</span>
-                    <span class="d-block">for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
-                </p>
-                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
-                    <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
-                    <small class="d-block">Branch / Store</small>
-                </div>
-                <div class="d-flex flex-row justify-content-center">
-                    <div class="p-2">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i> CLOSE</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="success-modal" tabindex="-1" role="dialog" aria-labelledby="success-modalTitle" aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -250,9 +218,9 @@
                 <p class="text-success text-center mb-0" style="font-size: 5rem; margin-top: -40px;">
                     <i class="fas fa-check-circle"></i>
                 </p>
-                <p class="text-center text-uppercase mt-0 font-weight-bold">Product Sold is Saved</p>
+                <p class="text-center text-uppercase mt-0 font-weight-bold">Sales Report Updated</p>
                <hr>
-                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Sales Report Summary</p>
+                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Summary</p>
                 <div class="text-center mb-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
                     <small class="d-block">Branch / Store</small>
@@ -271,19 +239,7 @@
                 </div>
                 <div class="d-flex flex-row justify-content-center">
                     <div class="pt-4">
-                        <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to Calendar</a>
-                    </div>
-                </div>
-                <div class="d-flex flex-row justify-content-between">
-                    <div class="p-2">
-                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
-                            <i class="fas fa-arrow-left"></i> {{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('F d, Y') }}
-                        </a>
-                    </div>
-                    <div class="p-2">
-                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
-                            {{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('F d, Y') }} <i class="fas fa-arrow-right"></i>
-                        </a>
+                        <a href="/sales_reports" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to List</a>
                     </div>
                 </div>
                 @endif
@@ -312,9 +268,6 @@
 @section('script')
 <script>
     $(function () {
-        @if (!session()->has('success'))
-        $('#instructions-modal').modal('show');
-        @endif
         @if (session()->has('success'))
         $('#success-modal').modal('show');
         @endif

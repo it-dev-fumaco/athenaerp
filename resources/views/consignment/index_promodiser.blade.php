@@ -14,8 +14,8 @@
               <div class="modal-content">
                 <div class="modal-header bg-navy">
                   <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-info-circle"></i> Reminder</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="color: #fff">&times;</span>
+                  <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
                 <div class="modal-body" style="font-size: 10pt;">
@@ -47,27 +47,27 @@
           </script>
         @endif
         <div class="col-6 p-1">
-          @if (count($assigned_consignment_store) > 1)
-          <a href="#" data-toggle="modal" data-target="#select-branch-modal">
-          @else
-          <a href="/view_calendar_menu/{{ $assigned_consignment_store[0] }}">
-          @endif
-            <div class="info-box bg-gradient-primary m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Product Sold</span>
-                <span class="info-box-number">{{ number_format($total_item_sold) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
+          <a href="/inventory_audit">
+            <div class="info-box bg-gradient-info m-0">
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_pending_inventory_audit) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Inventory Report <span class="d-block" style="font-size: 7pt;">{{ $due }}</span></div>
+                </div>
               </div>
             </div>
           </a>
         </div>
         <div class="col-6 p-1">
-          <a href="/inventory_audit">
-            <div class="info-box bg-gradient-info m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Inventory Report</span>
-                <span class="info-box-number">{{ number_format($total_pending_inventory_audit) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $due }}</span>
+          <a href="/promodiser/delivery_report/all">
+            <div class="info-box bg-gradient-primary m-0">
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format(count($ste_arr)) }}
+                    <span class="d-block mb-0 p-0" style="font-size: 8px; margin-top: -12px;">Pending</span>
+                  </div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Delivery Report</div>
+                </div>
               </div>
             </div>
           </a>
@@ -75,11 +75,10 @@
         <div class="col-6 p-1">
           <a href="/stock_transfer/list/Material Transfer">
             <div class="info-box bg-gradient-warning m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Stock Transfer</span>
-                <span class="info-box-number">{{ number_format($total_stock_transfer) }}</span>
-                <div class="progress">
-                  <div class="progress-bar"></div>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_transfer) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Stock Transfer</div>
                 </div>
               </div>
             </div>
@@ -88,11 +87,10 @@
         <div class="col-6 p-1">
           <a href="/beginning_inv_list">
             <div class="info-box bg-gradient-secondary m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Beginning Inventory</span>
-                <span class="info-box-number">{{ number_format($total_stock_adjustments) }}</span>
-                <div class="progress">
-                  <div class="progress-bar"></div>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_adjustments) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Beginning Entries</div>
                 </div>
               </div>
             </div>
@@ -336,39 +334,6 @@
   </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="select-branch-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header pt-2 pb-2 bg-navy">
-        <h5 class="modal-title">Select Store</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true" style="color: #fff">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body p-0">
-        <table class="table" style="font-size: 10pt;">
-          <tbody>
-            @forelse ($assigned_consignment_store as $branch)
-            <tr>
-              <td class="text-justify p-2 align-middle">
-                <a href="/view_calendar_menu/{{ $branch }}">{{ $branch }}</a>
-              </td>
-              <td class="text-center p-2 align-middle">
-                <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-primary btn-xs"><i class="fas fa-search"></i></a>
-              </td>
-            </tr> 
-            @empty
-            <tr>
-              <td class="text-center font-weight-bold" colspan="2">No assigned consignment branch</td>
-            </tr> 
-            @endforelse
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
 <style>
   .morectnt span {
       display: none;
