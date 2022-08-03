@@ -18,15 +18,37 @@
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header bg-navy">
-                                            <h5 class="modal-title" id="exampleModalLabel">Delivered Item(s)</h5>
+                                            <h5 class="modal-title" id="exampleModalLabel">
+                                                @switch($received['action'])
+                                                    @case('received')
+                                                        Item(s) Received
+                                                        @break
+                                                    @case('canceled')
+                                                        Stock Transfer Cancelled
+                                                        @break
+                                                    @default
+                                                        Delivered Item(s)
+                                                @endswitch
+                                            </h5>
                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                 <span aria-hidden="true" style="color: #fff">&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body" style="font-size: 10pt;">
-                                            <span>{{ $received['message'] }}</span> <br>
-                                            <span>Branch: <b>{{ $received['branch'] }}</b></span> <br>
-                                            <span>Total Amount: <b>₱ {{ number_format(collect($received)->sum('amount'), 2) }}</b></span>
+                                            <div class="row">
+                                                <div class="col-2">
+                                                    <center>
+                                                        <p class="text-success text-center mb-0" style="font-size: 4rem;">
+                                                            <i class="fas fa-check-circle"></i>
+                                                        </p>
+                                                    </center>
+                                                </div>
+                                                <div class="col-10">
+                                                    <span>{{ $received['message'] }}</span> <br>
+                                                    <span>Branch: <b>{{ $received['branch'] }}</b></span> <br>
+                                                    <span>Total Amount: <b>₱ {{ number_format(collect($received)->sum('amount'), 2) }}</b></span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

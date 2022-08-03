@@ -1829,6 +1829,7 @@ class ConsignmentController extends Controller
 
             $received_items['message'] = $message;
             $received_items['branch'] = $target_warehouse;
+            $received_items['action'] = 'received';
 
             DB::commit();
             return redirect()->back()->with('success', $received_items);
@@ -1883,7 +1884,7 @@ class ConsignmentController extends Controller
                 }
 
                 if($consigned_qty[$branch][$item->item_code]['consigned_qty'] < $item->transfer_qty ){
-                    return redirect()->back()->with('error', 'Cannot cancel received items.<br/> Available qty is '.$consigned_qty[$branch][$item->item_code]['consigned_qty'].', received qty is '.$item->transfer_qty);
+                    return redirect()->back()->with('error', 'Cannot cancel received items.<br/> Available qty is '.number_format($consigned_qty[$branch][$item->item_code]['consigned_qty']).', received qty is '.number_format($item->transfer_qty));
                 }
 
                 if($stock_entry->transfer_as == 'Store Transfer'){ // return stocks to source warehouse
@@ -1907,6 +1908,13 @@ class ConsignmentController extends Controller
                     'consignment_status' => null,
                     'consignment_date_received' => null
                 ]);
+
+                $cancelled_arr[] = [
+                    'item_code' => $item->item_code,
+                    'qty' => $item->transfer_qty,
+                    'price' => $item->basic_rate,
+                    'amount' => $item->basic_rate * $item->transfer_qty
+                ];
             }
 
             $source_warehouse = $stock_entry->from_warehouse ? $stock_entry->from_warehouse : null;
@@ -1939,8 +1947,12 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
+            $cancelled_arr['message'] = 'Stock transfer cancelled.';
+            $cancelled_arr['branch'] = $target_warehouse;
+            $cancelled_arr['action'] = 'canceled';
+
             DB::commit();
-            return redirect()->back()->with('success', 'Received Item(s) Cancelled');
+            return redirect()->back()->with('success', $cancelled_arr);
         } catch (Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'An error occured. Please try again later');
