@@ -46,6 +46,33 @@
             });
           </script>
         @endif
+        @if (session()->has('success'))
+          @php
+              $received = session()->get('success');
+          @endphp
+          <div class="modal fade" id="receivedDeliveryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                      <div class="modal-header bg-navy">
+                          <h5 class="modal-title" id="exampleModalLabel">Delivered Item(s)</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true" style="color: #fff">&times;</span>
+                          </button>
+                      </div>
+                      <div class="modal-body" style="font-size: 10pt;">
+                          <span>{{ $received['message'] }}</span> <br>
+                          <span>Branch: <b>{{ $received['branch'] }}</b></span> <br>
+                          <span>Total Amount: <b>₱ {{ number_format(collect($received)->sum('amount'), 2) }}</b></span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <script>
+              $(document).ready(function(){
+                  $('#receivedDeliveryModal').modal('show');
+              });
+          </script>
+        @endif
         <div class="col-6 p-1">
           @if (count($assigned_consignment_store) > 1)
           <a href="#" data-toggle="modal" data-target="#select-branch-modal">
