@@ -556,7 +556,7 @@
 						<div class="btn-group" role="group" style="width: 33%;">
 							<button id="btnGroupDrop2" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Report</button>
 							<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop2">
-								<a class="dropdown-item" href="/sales_reports">Sales Report</a>
+								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
 								<a class="dropdown-item" href="/damage_report/list">Damaged Item Report</a>
 								<a class="dropdown-item" href="/stock_transfer/list/Material Receipt">Sales Returns Report</a>
 							</div>

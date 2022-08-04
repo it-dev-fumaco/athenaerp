@@ -136,6 +136,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/approve_beginning_inv/{id}', 'ConsignmentController@approveBeginningInventory');
     Route::get('/sales_report', 'ConsignmentController@salesReport');
     // Promodisers
+    Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
+    Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
     Route::get('/view_inventory_audit_form/{branch}/{transaction_date}', 'ConsignmentController@viewInventoryAuditForm');
     Route::post('/submit_product_sold_form', 'ConsignmentController@submitProductSoldForm');
     Route::post('/submit_inventory_audit_form', 'ConsignmentController@submitInventoryAuditForm');
@@ -144,8 +146,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/stock_transfer/list/{purpose}', 'ConsignmentController@stockTransferList')->name('stock_transfers');
     Route::get('/stock_transfer/cancel/{id}', 'ConsignmentController@stockTransferCancel');
     Route::post('/stock_adjust/submit/{id}', 'ConsignmentController@submitStockAdjustment');
-    Route::get('/sales_reports', 'ConsignmentController@viewSalesReportList');
-    Route::get('/sales_report_items/{id}', 'ConsignmentController@viewSalesReportItems');
+    
+    Route::get('/calendar_data/{branch}', 'ConsignmentController@calendarData');
     Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');
     Route::get('/beginning_inventory_items/{id}', 'ConsignmentController@beginningInvItemsList');
     Route::get('/beginning_inventory/{inv?}', 'ConsignmentController@beginningInventory');

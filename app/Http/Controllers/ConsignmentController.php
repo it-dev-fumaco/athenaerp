@@ -12,6 +12,40 @@ use Storage;
 
 class ConsignmentController extends Controller
 {
+    // /view_calendar_menu/{branch}
+    public function viewCalendarMenu($branch){
+        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        if ($sales_report_deadline) {
+            $currentDate = Carbon::now();
+
+            $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
+            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
+
+            $currentMonth = $currentDate->format('m');
+            $currentYear = $currentDate->format('Y');
+
+            $first_cutoff = Carbon::createFromFormat('m/d/Y', $currentMonth .'/'. $cutoff_1 .'/'. $currentYear)->format('Y-m-d');
+            $second_cutoff = Carbon::createFromFormat('m/d/Y', $currentMonth .'/'. $cutoff_2 .'/'. $currentYear)->format('Y-m-d');
+
+            $due_alert = 0;
+            if ($first_cutoff > $currentDate->format('Y-m-d')) {
+                $date_difference_in_days = Carbon::parse($first_cutoff)->diffInDays($currentDate->format('Y-m-d'));
+                if ($date_difference_in_days <= 1) {
+                    $due_alert = 1;
+                }
+            }
+
+            if ($second_cutoff > $currentDate->format('Y-m-d')) {
+                $date_difference_in_days = Carbon::parse($second_cutoff)->diffInDays($currentDate->format('Y-m-d'));
+                if ($date_difference_in_days <= 1) {
+                    $due_alert = 1;
+                }
+            }
+        }
+
+        return view('consignment.calendar_menu', compact('branch', 'due_alert'));
+    }
+
     public function salesReportDeadline(Request $request) {        
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
         if ($sales_report_deadline) {
@@ -868,6 +902,19 @@ class ConsignmentController extends Controller
                 'allDay' => false,
             ];
         }
+
+        foreach($beginning_inventories as $transaction_date) {
+            $data[] = [
+                'title' => 'Beginning Inventory',
+                'start' => $transaction_date,
+                'backgroundColor' => '#2874a6',
+                'borderColor' => '#2874a6',
+                'allDay' => false,
+            ];
+        }
+    
+        return $data;
+    }
 
     // /sales_report
     public function salesReport(Request $request){
@@ -4049,194 +4096,5 @@ class ConsignmentController extends Controller
         ];
 
         return view('consignment.supervisor.tbl_audit_sales', compact('sales', 'transaction_dates', 'summary'));
-    }
-
-    public function viewSalesReportList(Request $request) {
-        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')
-            ->where('parent', Auth::user()->frappe_userid)->pluck('warehouse')->toArray();
-
-        $list = DB::table('tabConsignment Sales Report')
-            ->where('status', '!=', 'Cancelled')
-            ->wherein('branch_warehouse', $assigned_consignment_store)
-            ->orderBy('transaction_date', 'desc')->simplePaginate(10);
-
-        return view('consignment.view_sales_report_list', compact('list'));
-    }
-
-    public function viewSalesReportItems($id) {
-
-        $detail =  DB::table('tabConsignment Sales Report')->where('status', '!=', 'Cancelled')->where('name', $id)->first();
-        if (!$detail) {
-            return redirect()->back();
-        }
-
-        $items = DB::table('tabConsignment Sales Report Item')->where('parent', $id)->select('item_code', 'description', 'price', 'qty')->get();
-        
-        $items = $items->sortBy('description');
-    
-        $item_codes = collect($items)->pluck('item_code');
-    
-        $consigned_stocks = DB::table('tabBin')->whereIn('item_code', $item_codes)
-            ->where('warehouse', $detail->branch_warehouse)->pluck('consigned_qty', 'item_code')->toArray();
-    
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-        $item_images = collect($item_images)->groupBy('parent')->toArray();
-
-        $branch = $detail->branch_warehouse;
-        $transaction_date = $detail->transaction_date;
-        
-        return view('consignment.view_sales_report_items', compact('branch', 'transaction_date', 'items', 'item_images', 'consigned_stocks'));
-    }
-
-    public function test() {
-
-          
-        $query = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.status', '!=', 'Cancelled')
-            ->select('csri.item_code', 'csr.transaction_date', 'csri.qty', 'csr.branch_warehouse')
-            ->orderBy('csr.transaction_date', 'asc')->get()->toArray();
-        $product_sold_entries = [];
-        foreach ($query as $r) {
-            $product_sold_entries[$r->branch_warehouse][$r->item_code][$r->transaction_date] = $r->qty;
-        }
-    
-        $item_opening_stock = DB::table('tabConsignment Beginning Inventory as cb')
-            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-            ->where('cb.status', 'Approved')
-            ->select('cbi.item_code', 'cbi.opening_stock', 'cb.transaction_date', 'cb.branch_warehouse')
-            ->orderBy('cb.transaction_date', 'asc')->get();
-    
-        $item_opening_stock = collect($item_opening_stock)->groupBy('branch_warehouse');
-    
-        $opening_stocks = [];
-        foreach ($item_opening_stock as $branch_warehouse => $values) {
-            $opening_stocks[$branch_warehouse] = collect($values)->groupBy('item_code')->toArray();
-        }
-    
-        $bin_consigned_qty = DB::table('tabBin as b')
-            ->join('tabConsignment Sales Report Item as csri', 'b.item_code', 'csri.item_code')
-            ->whereNotNull('warehouse')->where('consigned_qty', '>', 0)
-            ->select('warehouse', 'b.item_code', 'consigned_qty')
-            ->groupBy('warehouse', 'b.item_code', 'consigned_qty')
-            ->get();
-    
-            $query = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.status', '!=', 'Cancelled')
-            ->select('csri.item_code', 'csr.transaction_date', 'csri.qty', 'csr.branch_warehouse')
-            ->orderBy('csr.transaction_date', 'asc')->get()->toArray();
-    
-    
-        $bin_consigned = [];
-        foreach ($bin_consigned_qty as $b) {
-            $bin_consigned[$b->warehouse][$b->item_code] = $b->consigned_qty;
-        }
-    
-        $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
-    
-        $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
-    
-        $delivery_report = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
-                return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
-            })
-            ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
-            ->where('ste.purpose', 'Material Transfer')
-            ->where('ste.docstatus', 1)
-            ->where('sted.consignment_status', 'Received')
-            ->select('ste.name', 'sted.t_warehouse', 'sted.consignment_date_received', 'sted.item_code', 'sted.transfer_qty')
-            ->orderBy('sted.consignment_date_received', 'desc')->get();
-    
-        $received_arr = [];
-        foreach ($delivery_report as $c) {
-            $received_arr[$c->t_warehouse][$c->item_code][] = [
-                'consignment_date_received' => $c->consignment_date_received,
-                'transfer_qty' => $c->transfer_qty
-            ];
-        }
-    
-        $inventory_audit_query = DB::table('tabConsignment Inventory Audit Report as iar')->join('tabConsignment Inventory Audit Report Item as iari', 'iar.name', 'iari.parent')
-            ->select('item_code', 'transaction_date', 'qty', 'branch_warehouse')
-            ->orderBy('transaction_date', 'asc')->get();
-    
-        $inventory_audit_entries = [];
-        foreach ($inventory_audit_query as $r) {
-            $inventory_audit_entries[$r->branch_warehouse][$r->item_code][$r->transaction_date] = $r->qty;
-        }
-    
-        $result = [];
-        foreach ($query as $row) {
-            $result[$row->branch_warehouse][$row->item_code] = [
-                'opening_stock' => isset($opening_stocks[$row->branch_warehouse][$row->item_code]) ? $opening_stocks[$row->branch_warehouse][$row->item_code][0]->opening_stock : 0,
-                'opening_stock_date' => isset($opening_stocks[$row->branch_warehouse][$row->item_code]) ? $opening_stocks[$row->branch_warehouse][$row->item_code][0]->transaction_date : 0,
-                'product_sold_entries' => $product_sold_entries[$row->branch_warehouse][$row->item_code],
-                'current_bin_consigned_qty' => isset($bin_consigned[$row->branch_warehouse][$row->item_code]) ? $bin_consigned[$row->branch_warehouse][$row->item_code] : '-',
-                'stock_received' => isset($received_arr[$row->branch_warehouse][$row->item_code]) ? $received_arr[$row->branch_warehouse][$row->item_code] : [],
-                'inventory_audit_entries' => isset($inventory_audit_entries[$row->branch_warehouse][$row->item_code]) ? $inventory_audit_entries[$row->branch_warehouse][$row->item_code] : [],
-            ];
-        }
-    
-        // return $result;
-    
-        $dates = collect($query)->map(function ($q){
-            return $q->transaction_date;
-        })->unique()->toArray();
-    
-        usort($dates, function ($time1, $time2) {
-            return strtotime($time1) - strtotime($time2);
-        });
-    
-        // $audit_dates = collect($inventory_audit_query)->map(function ($q){
-        //     return $q->transaction_date;
-        // })->unique()->toArray();
-    
-        // usort($audit_dates, function ($time1, $time2) {
-        //     return strtotime($time1) - strtotime($time2);
-        // });
-    
-        // $query = DB::table('tabConsignment Product Sold')
-        //     ->select('item_code', 'branch_warehouse')
-        //     ->groupBy('item_code', 'branch_warehouse')
-        //     ->orderBy('branch_warehouse', 'asc')->orderBy('item_code', 'asc')->get();
-    
-        $stores = DB::table('tabConsignment Product Sold')->distinct()->pluck('branch_warehouse')->toArray();
-            // ->select('item_code', 'branch_warehouse')
-            // ->groupBy('item_code', 'branch_warehouse')
-            // ->orderBy('branch_warehouse', 'asc')->orderBy('item_code', 'asc')->get();
-    
-        return view('consignment.test', compact('result', 'dates', 'query', 'stores'));
-    
-        $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->distinct()->pluck('warehouse');
-    
-        $ste_received = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.purpose', 'Material Transfer')->whereIn('transfer_as', ['Consignment', 'Stock Transfer'])
-            ->where('ste.docstatus', 1)->whereDate('ste.delivery_date', '>=', Carbon::parse('2022-06-25')->format('Y-m-d'))
-            ->where('sted.consignment_status', 'Received')
-            ->select('ste.creation', 'ste.delivery_date', 'ste.name', 'sted.s_warehouse', 'sted.t_warehouse', 'sted.item_code', 'sted.transfer_qty', 'sted.consignment_status', 'sted.consignment_date_received')
-            ->get();
-    
-        $item_codes = array_unique(array_column($ste_received->toArray(), 'item_code'));
-        $t_warehouses = array_unique(array_column($ste_received->toArray(), 't_warehouse'));
-    
-        $ste_received = collect($ste_received)->groupBy('t_warehouse')->toArray();
-    
-        $current_consigned_stocks = DB::table('tabBin')->whereIn('item_code', $item_codes)->whereIn('warehouse', $t_warehouses)->select('item_code', 'warehouse', 'actual_qty', 'consigned_qty')->get();
-        $consigned_qty = [];
-        foreach ($current_consigned_stocks as $row) {
-            $consigned_qty[$row->item_code][$row->warehouse] = $row->consigned_qty;
-        }
-    
-        $data = [];
-        foreach ($consignment_stores as $store) {
-            $data[] = [
-                'store' => $store,
-                'data' => array_key_exists($store, $ste_received) ? $ste_received[$store] : []
-            ];
-        }
-    
-        return $data;
     }
 }
