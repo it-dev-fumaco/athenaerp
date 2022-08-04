@@ -108,11 +108,21 @@ class ConsignmentController extends Controller
                 ->select('csri.item_code', 'csri.description', 'csri.price', 'i.item_classification')
                 ->get()->toArray();
         } else {
+            $sold_out_items = DB::table('tabConsignment Sales Report as csr')
+                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->join('tabBin as bin', 'bin.item_code', 'csri.item_code')
+                ->join('tabItem as item', 'item.item_code', 'csri.item_code')
+                ->where('bin.consigned_qty', 0)->where('status', '!=', 'Cancelled')->where('bin.warehouse', $branch)->where('csr.branch_warehouse', $branch)
+                ->select('csri.item_code', 'csri.description', 'csri.price', 'item.item_classification')
+                ->get();
+
             $items = DB::table('tabBin as b')
                 ->join('tabItem as i', 'i.name', 'b.item_code')
                 ->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
-                ->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')
+                ->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')//->union($sold_out_items)
                 ->orderBy('i.description', 'asc')->get();
+
+            $items = collect($items)->merge($sold_out_items)->unique('item_code');
         }
 
         if ($existing_items) {
