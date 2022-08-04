@@ -108,11 +108,21 @@ class ConsignmentController extends Controller
                 ->select('csri.item_code', 'csri.description', 'csri.price', 'i.item_classification')
                 ->get()->toArray();
         } else {
+            $sold_out_items = DB::table('tabConsignment Sales Report as csr')
+                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->join('tabBin as bin', 'bin.item_code', 'csri.item_code')
+                ->join('tabItem as item', 'item.item_code', 'csri.item_code')
+                ->where('bin.consigned_qty', 0)->where('status', '!=', 'Cancelled')->where('bin.warehouse', $branch)->where('csr.branch_warehouse', $branch)
+                ->select('csri.item_code', 'csri.description', 'csri.price', 'item.item_classification')
+                ->get();
+
             $items = DB::table('tabBin as b')
                 ->join('tabItem as i', 'i.name', 'b.item_code')
                 ->where('b.warehouse', $branch)->where('b.consigned_qty', '>', 0)
-                ->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')
+                ->select('b.item_code', 'i.description', 'b.consignment_price as price', 'i.item_classification')//->union($sold_out_items)
                 ->orderBy('i.description', 'asc')->get();
+
+            $items = collect($items)->merge($sold_out_items)->unique('item_code');
         }
 
         if ($existing_items) {
@@ -3672,23 +3682,42 @@ class ConsignmentController extends Controller
             $cbi_items = collect($cbi_items)->groupBy('item_code');
 
             foreach($item_codes as $item_code){
-                if(isset($stocks[$item_code])){
-                    $opening_qty = preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']);
-                    $price = $stocks[$item_code]['price'];
-                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update([
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
-                        'opening_stock' => $opening_qty,
-                        'price' => $price,
-                        'amount' => $price * $opening_qty
-                    ]);
+                if(isset($stocks[$item_code]) && isset($cbi_items[$item_code])){
+                    $previous_stock = isset($bin[$item_code]) ? (float)$bin[$item_code][0]->consigned_qty : 0;
+                    $previous_price = (float)$cbi_items[$item_code][0]->price;
 
-                    DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update([
+                    $opening_qty = (float)preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']);
+                    $price = (float)preg_replace("/[^0-9 .]/", "", $stocks[$item_code]['price']);
+
+                    if($previous_stock == $opening_qty && $previous_price == $price){
+                        continue;
+                    }
+
+                    $cbi_array = $cbi_stock_array = $cbi_price_array = [];
+                    $bin_array = $bin_stock_array = $bin_price_array = [];
+                    $update_array = [
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
-                        'consigned_qty' => $opening_qty,
-                        'consignment_price' => $price
-                    ]);
+                        'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name
+                    ];
+
+                    if($previous_stock != $opening_qty){
+                        $bin_stock_array = ['consigned_qty' => $opening_qty];
+                        $cbi_stock_array = ['opening_stock' => $opening_qty];
+                    }
+
+                    if($previous_price != $price){
+                        $bin_stock_array = ['consignment_price' => $price];
+                        $cbi_price_array = [
+                            'price' => $price,
+                            'amount' => $price * $opening_qty
+                        ];
+                    }
+
+                    $cbi_array = array_merge($update_array, $cbi_price_array, $cbi_stock_array);
+                    $bin_array = array_merge($update_array, $bin_price_array, $bin_stock_array);
+                    
+                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update($cbi_array);
+                    DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update($bin_array);
 
                     $logs = [
                         'creation' => $now->toDateTimeString(),
@@ -3706,29 +3735,24 @@ class ConsignmentController extends Controller
                         'full_name' => Auth::user()->full_name,
                     ];
 
-                    if(isset($cbi_items[$item_code])){
-                        $previous_stock = isset($bin[$item_code]) ? (float)$bin[$item_code][0]->consigned_qty : 0;
-                        $previous_price = (float)$cbi_items[$item_code][0]->price;
+                    if($previous_stock != (float)$opening_qty){
+                        unset($logs['subject']);
+                        unset($logs['name']);
 
-                        if($previous_stock != (float)$opening_qty){
-                            unset($logs['subject']);
-                            unset($logs['name']);
+                        $logs['name'] = uniqid();
+                        $logs['subject'] = 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' consigned qty from '.number_format($previous_stock).' to '.$opening_qty.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString();
 
-                            $logs['name'] = uniqid();
-                            $logs['subject'] = 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' consigned qty from '.number_format($previous_stock).' to '.$opening_qty.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString();
+                        DB::table('tabActivity Log')->insert($logs);
+                    }
 
-                            DB::table('tabActivity Log')->insert($logs);
-                        }
+                    if($previous_price != (float)$price){
+                        unset($logs['subject']);
+                        unset($logs['name']);
+                        
+                        $logs['name'] = uniqid();
+                        $logs['subject'] = 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' price from '.number_format($previous_price).' to '.$price.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString();
 
-                        if($previous_price != (float)$price){
-                            unset($logs['subject']);
-                            unset($logs['name']);
-                            
-                            $logs['name'] = uniqid();
-                            $logs['subject'] = 'Stock Adjustment for '.$beginning_inventory->branch_warehouse.', set '.$item_code.' price from '.number_format($previous_price).' to '.$price.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString();
-
-                            DB::table('tabActivity Log')->insert($logs);
-                        }
+                        DB::table('tabActivity Log')->insert($logs);
                     }
                 }
             }
