@@ -3501,7 +3501,7 @@ class ConsignmentController extends Controller
                 return $q->whereYear('audit_date_from', $year);
             })
             ->selectRaw('audit_date_from, audit_date_to, branch_warehouse, transaction_date, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodiser')
-            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(10);
+            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(15);
 
         $result = [];
         foreach ($list as $row) {

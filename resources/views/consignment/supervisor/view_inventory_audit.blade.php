@@ -6,72 +6,65 @@
 @section('content')
 <div class="content">
 	<div class="content-header p-0">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row pt-1">
-                <div class="col-md-12 p-0 m-0">
-                    <div class="row">
-                        <div class="col-2">
-                            <div style="margin-bottom: -43px;">
-                                @php
-                                    $redirecthref = Auth::user()->user_group == 'Director' ? '/consignment_dashboard' : '/';
-                                @endphp
-                                <a href="{{ $redirecthref }}" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
-                            </div>
-                        </div>
-                        <div class="col-8 col-lg-8 p-0">
-                            <h4 class="text-center font-weight-bold m-2 text-uppercase">Inventory Audit List</h4>
+                <div class="col-2 offset-1">
+                    <div style="margin-bottom: -43px;">
+                        @php
+                            $redirecthref = Auth::user()->user_group == 'Director' ? '/consignment_dashboard' : '/';
+                        @endphp
+                        <a href="{{ $redirecthref }}" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <h4 class="text-center font-weight-bold m-2 text-uppercase">Inventory Report List</h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8 offset-md-1">
+                    <div class="card card-info card-outline">
+                        <div class="card-body p-2">
+                            <h6 class="text-center font-weight-bolder text-uppercase">Inventory Report History</h6>
+                            <form id="inventory-audit-history-form" method="GET">
+                                <div class="d-flex flex-row align-items-center mt-2">
+                                    <div class="p-1 col-6">
+                                        <select class="form-control inventory-audit-history-filter store" name="store" id="consignment-store-select-history">
+                                            <option value="">Select Store</option>
+                                        </select>
+                                    </div>
+                                    <div class="p-1 col-4 col-lg-2">
+                                        <select class="form-control inventory-audit-history-filter year" name="year">
+                                            @foreach ($select_year as $year)
+                                            <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="p-1 col-2">
+                                        <a href="#" class="btn btn-secondary inventory-audit-history-refresh"><i class="fas fa-undo"></i></a>
+                                    </div>
+                                </div>
+                            </form>
+                            <div id="submitted-inventory-audit-el" class="p-1" style="height: 852px;"></div>
                         </div>
                     </div>
-                    <div class="card card-secondary card-outline">
+                </div>
+                <div class="col-md-2">
+                    <div class="card card-warning card-outline">
                         <div class="card-body p-2">
-                            <ul class="nav nav-pills">
-                                <li class="nav-item">
-                                    <a class="nav-link active font-responsive" id="pending-tab" data-toggle="pill" href="#pending-content" role="tab" href="#">Pending for Submission</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link font-responsive" id="inventory-audit-history-tab" data-toggle="pill" href="#inventory-audit-history-content" role="tab" href="#">Inventory Audit History</a>
-                                </li>
-                            </ul>
-
-                            <div class="tab-content">
-                                <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
-                                    <form action="#" id="pending-inventory-audit-filter-form">
-                                        <div class="row p-1 mt-1 mb-1">
-                                            <div class="col-10 col-lg-6">
-                                                <select class="form-control" name="store" id="consignment-store-select">
-                                                    <option value="">Select Store</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-2 p-0">
-                                                <a href="#" class="btn btn-secondary d-inline-block float-left ml-1 consignment-store-refresh"><i class="fas fa-undo"></i></a>
-                                            </div>
-                                        </div>
-                                    </form>
-                                    <div id="beginning-inventory-list-el"></div>
+                            <h6 class="text-center font-weight-bolder text-uppercase">Pending for Submission</h6>
+                            <form action="#" id="pending-inventory-audit-filter-form">
+                                <div class="row p-1 mt-1 mb-1">
+                                    <div class="col-10">
+                                        <select class="form-control" name="store" id="consignment-store-select">
+                                            <option value="">Select Store</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-2 p-0">
+                                        <a href="#" class="btn btn-secondary consignment-store-refresh m-0"><i class="fas fa-undo"></i></a>
+                                    </div>
                                 </div>
-                                <div class="tab-pane fade" id="inventory-audit-history-content" role="tabpanel" aria-labelledby="inventory-audit-history-tab">
-                                    <form id="inventory-audit-history-form" method="GET">
-                                        <div class="d-flex flex-row align-items-center mt-2">
-                                            <div class="p-1 col-6">
-                                                <select class="form-control inventory-audit-history-filter store" name="store" id="consignment-store-select-history">
-                                                    <option value="">Select Store</option>
-                                                </select>
-                                            </div>
-                                            <div class="p-1 col-4 col-lg-2">
-                                                <select class="form-control inventory-audit-history-filter year" name="year">
-                                                    @foreach ($select_year as $year)
-                                                    <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="p-1 col-2">
-                                                <a href="#" class="btn btn-secondary inventory-audit-history-refresh"><i class="fas fa-undo"></i></a>
-                                            </div>
-                                        </div>
-                                    </form>
-                                    <div id="submitted-inventory-audit-el" class="p-2"></div>
-                                </div>
-                            </div>
+                            </form>
+                            <div id="beginning-inventory-list-el" style="height: 850px; overflow-y: auto"></div>
                         </div>
                     </div>
                 </div>
