@@ -1538,9 +1538,7 @@ class ConsignmentController extends Controller
 
         $delivery_report = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ // do not include ste's of received items
-                return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
-            })
+            ->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date)
             ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
             ->where('ste.purpose', 'Material Transfer')
             ->where('ste.docstatus', 1)
@@ -3699,12 +3697,12 @@ class ConsignmentController extends Controller
             $cbi_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
             $cbi_items = collect($cbi_items)->groupBy('item_code');
 
-            $beginning_inventory_start_date = $beginning_inventory ? $beginning_inventory->transaction_date : '2022-06-25';
-            $beginning_inventory_start_date = Carbon::parse($beginning_inventory_start_date)->startOfDay()->format('Y-m-d');
+            $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
+            $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
 
             $total_received_qty = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date)->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->whereIn('sted.item_code', $item_codes)->where('sted.t_warehouse', $beginning_inventory->branch_warehouse)->where('sted.consignment_status', 'Received')
+                ->whereDate('sted.consignment_date_received', '>=', $beginning_inventory_start_date)->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->whereIn('sted.item_code', $item_codes)->where('sted.t_warehouse', $beginning_inventory->branch_warehouse)->where('sted.consignment_status', 'Received')
                 ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')
                 ->groupBy('sted.item_code')->get();
             $total_received_qty = collect($total_received_qty)->groupBy('item_code');
