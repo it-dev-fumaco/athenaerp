@@ -1999,6 +1999,7 @@ class ConsignmentController extends Controller
         return view('consignment.beginning_inv_list', compact('beginning_inventory'));
     }
 
+    // /beginning_inventory_items/{id}
     public function beginningInvItemsList($id){
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
 

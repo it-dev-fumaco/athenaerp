@@ -140,6 +140,10 @@
                                 @endforelse
                                 </tbody>
                             </table>
+                            <div class="container text-left pt-4">
+                                <label style="font-size: 9pt;">Remarks</label>
+                                <textarea cols="30" rows="10" class="form-control" style="font-size: 9pt;" readonly>{{ $beginning_inventory->remarks }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -226,6 +226,10 @@
 																	</tbody>
 																</table>
 															</div>
+															<div class="container text-left">
+																<label style="font-size: 9pt;"></label>
+																<textarea id="" rows="5" class="form-control" style="font-size: 9pt;" readonly>{{ $inv['remarks'] }}</textarea>
+															</div>
 															{{-- Update button for approved records --}}
 															@if ($inv['status'] == 'Approved')
 															<div class="modal-footer">
