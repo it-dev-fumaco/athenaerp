@@ -214,14 +214,11 @@ class MainController extends Controller
 
                 // get incoming / to receive items
                 $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
-
                 $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
 
                 $delivery_report_query = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ // do not include ste's of received items
-                        return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
-                    })
+                    ->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date)
                     ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
                     ->where('ste.purpose', 'Material Transfer')
                     ->where('ste.docstatus', 1)
