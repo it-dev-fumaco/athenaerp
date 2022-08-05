@@ -178,7 +178,7 @@
                                                                                 @endphp
                                                                                         
                                                                                 <div class="input-group">
-                                                                                    <select class="custom-select font-responsive" name="status" required>
+                                                                                    <select class="custom-select font-responsive" name="status">
                                                                                         <option value="" selected disabled>Select a status</option>
                                                                                         @foreach ($status_selection as $status)
                                                                                         <option value="{{ $status['value'] }}">{{ $status['title'] }}</option>
@@ -481,6 +481,10 @@
                                                                                 @endforelse
                                                                             </tbody>
                                                                         </table>
+                                                                    </div>
+                                                                    <div class="container text-left p-2">
+                                                                        <label style='font-size: 10pt;'>Remarks</label>
+                                                                        <textarea name="remarks" id="remarks" cols="30" rows="5" class="form-control" placeholder='Remarks' data-name="{{ $inv['name'] }}" style="font-size: 10pt;">{{ $inv['remarks'] }}</textarea>
                                                                     </div>
                                                                     {{-- Update button for approved records --}}
                                                                     @if ($inv['status'] == 'Approved')
@@ -929,7 +933,8 @@
 
                 var target = id + '-' + item_code;
 
-                var row = '<tr id="row-' + target + '" class="' + item_code + '">' + 
+                var row = '<tr id="row-' + target + '" class="' + item_code + '">' +
+                    '<td class="text-center p-1 align-middle">-</td>' +
                     '<td class="text-center p-1 align-middle">' +
                         '<div class="d-flex flex-row justify-content-start align-items-center" id="' + target + '-container">' +
                             '<div class="p-2 text-left">' +
@@ -1110,6 +1115,10 @@
                 $('#'+reference+'-new-qty').removeClass('d-none');
                 $('#'+reference+'-price').addClass('d-none');
                 $('#'+reference+'-new-price').removeClass('d-none');
+                $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
+            });
+
+            $(document).on('keyup', '#remarks', function(){
                 $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
             });
 
