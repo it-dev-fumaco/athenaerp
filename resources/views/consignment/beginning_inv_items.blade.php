@@ -99,6 +99,17 @@
             <span class="{{ $item }}">{{ $item }}</span>
         @endforeach
     </div>
+    <div class="m-2">
+        @php
+            if($inv_name) {
+                $transaction_date = $detail ? \Carbon\Carbon::parse($detail->transaction_date)->format('Y-m-d') : \Carbon\Carbon::now()->format('Y-m-d');
+            } else {
+                $transaction_date = \Carbon\Carbon::now()->format('Y-m-d');
+            }
+        @endphp
+        <label for="transaction-date" style="font-size: 16px;">Transaction Date</label>
+        <input type="date" id="transaction-date" name="transaction_date" class="form-control validate" value="{{ $transaction_date }}" required>
+    </div>
     <table class="table table-striped text-left" id="items-table"> 
         <thead>
             <th class="font-responsive text-center p-1 align-middle" style="width: 38%">Item Code</th>
@@ -263,6 +274,14 @@
     $(document).ready(function(){
         var branch = '{{ $branch }}';
         var existing_record = '{{ $inv_name ? 1 : 0 }}';
+
+        $(document).on('change', '#transaction-date', function(e){
+            if(existing_record == 1){
+                enable_submit();
+            }
+
+            validate_submit();
+        });
 
         $(document).on('keyup', '.validate', function(){            
             if(existing_record == 1){

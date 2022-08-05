@@ -2149,8 +2149,12 @@ class ConsignmentController extends Controller
 
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
             $item_images = collect($item_images)->groupBy('parent')->toArray();
+            $detail = [];
+            if ($id) {
+                $detail = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
+            }
 
-            return view('consignment.beginning_inv_items', compact('items', 'branch', 'item_images', 'inv_name', 'inv_items', 'remarks'));
+            return view('consignment.beginning_inv_items', compact('items', 'branch', 'item_images', 'inv_name', 'inv_items', 'remarks', 'detail'));
         }
     }
 
@@ -2188,6 +2192,8 @@ class ConsignmentController extends Controller
             }
 
             $now = Carbon::now()->toDateTimeString();
+
+            $transaction_date = $request->transaction_date ? $request->transaction_date : $now;
     
             $items = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'description', 'stock_uom')->get();
             $item = collect($items)->groupBy('name');
@@ -2211,7 +2217,7 @@ class ConsignmentController extends Controller
                     'status' => 'For Approval',
                     'branch_warehouse' => $branch,
                     'creation' => $now,
-                    'transaction_date' => $now,
+                    'transaction_date' => $transaction_date,
                     'owner' => Auth::user()->full_name,
                     'modified' => $now,
                     'modified_by' => Auth::user()->full_name,
@@ -2354,7 +2360,8 @@ class ConsignmentController extends Controller
                     'modified' => $now,
                     'modified_by' => Auth::user()->wh_user,
                     'grand_total' => $grand_total,
-                    'remarks' => $request->remarks
+                    'remarks' => $request->remarks,
+                    'transaction_date' => $transaction_date,
                 ]);
 
                 session()->flash('success', 'Beginning Inventory is Updated');
@@ -2382,6 +2389,8 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabActivity Log')->insert($logs);
+
+            session()->flash('transaction_date', Carbon::parse($transaction_date)->format('F d, Y'));
 
             DB::commit();
             return view('consignment.beginning_inv_success', compact('item_count', 'branch'));

@@ -20,10 +20,7 @@
                                 </div>
                             @endif
                             <h5 class="text-center mt-2 font-weight-bolder">
-                                @php
-                                    $date = $inv_record ? \Carbon\Carbon::parse($inv_record->transaction_date)->format('F d, Y') : \Carbon\Carbon::now()->format('F d, Y');
-                                @endphp
-                                {{ $date }} <span class="badge badge-success float-right {{ $inv_record ? null : 'd-none' }}">{{ $inv_record ? $inv_record->status : null }}</span>
+                                <span class="badge badge-success float-right {{ $inv_record ? null : 'd-none' }}">{{ $inv_record ? $inv_record->status : null }}</span>
                             </h5>
                             @if (!$inv_record)
                             <div class="row">
