@@ -3675,15 +3675,32 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('error', 'Record not found or has been deleted.');
             }
 
-            $bin = DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->whereIn('item_code', $item_codes)->select('name', 'item_code', 'consigned_qty')->get();
+            $bin = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
             $bin = collect($bin)->groupBy('item_code');
 
             $cbi_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->get();
             $cbi_items = collect($cbi_items)->groupBy('item_code');
 
+            $beginning_inventory_start_date = $beginning_inventory ? $beginning_inventory->transaction_date : '2022-06-25';
+            $beginning_inventory_start_date = Carbon::parse($beginning_inventory_start_date)->startOfDay()->format('Y-m-d');
+
+            $total_received_qty = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date)->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->whereIn('sted.item_code', $item_codes)->where('sted.t_warehouse', $beginning_inventory->branch_warehouse)->where('sted.consignment_status', 'Received')
+                ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')
+                ->groupBy('sted.item_code')->get();
+            $total_received_qty = collect($total_received_qty)->groupBy('item_code');
+
+            $total_sold_qty = DB::table('tabConsignment Sales Report as csr')
+                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->where('status', '!=', 'Cancelled')->whereIn('csri.item_code', $item_codes)->where('csr.branch_warehouse', $beginning_inventory->branch_warehouse)
+                ->selectRaw('csri.item_code, SUM(csri.qty) as qty')
+                ->groupBy('csri.item_code')->get();
+            $total_sold_qty = collect($total_sold_qty)->groupBy('item_code');
+
             foreach($item_codes as $item_code){
                 if(isset($stocks[$item_code]) && isset($cbi_items[$item_code])){
-                    $previous_stock = isset($bin[$item_code]) ? (float)$bin[$item_code][0]->consigned_qty : 0;
+                    $previous_stock = isset($bin[$item_code]) ? (float)$bin[$item_code][0]->opening_stock : 0;
                     $previous_price = (float)$cbi_items[$item_code][0]->price;
 
                     $opening_qty = (float)preg_replace("/[^0-9]/", "", $stocks[$item_code]['qty']);
@@ -3701,7 +3718,17 @@ class ConsignmentController extends Controller
                     ];
 
                     if($previous_stock != $opening_qty){
-                        $bin_stock_array = ['consigned_qty' => $opening_qty];
+                        $total_received = isset($total_received_qty[$item_code]) ? $total_received_qty[$item_code][0]->qty : 0;
+                        $total_sold = isset($total_sold_qty[$item_code]) ? $total_sold_qty[$item_code][0]->qty : 0;
+
+                        if($total_sold > ($opening_qty + $total_received)){
+                            return redirect()->back()->with('error', 'Total sold qty cannot be more than the stocks left<br>Total sold qty for <b>'.$item_code.'</b> is '.number_format($total_sold).' '.$cbi_items[$item_code][0]->stock_uom.'. After update, stocks will be '.($opening_qty + $total_received).' '.$cbi_items[$item_code][0]->stock_uom);
+                        }
+
+                        $updated_stocks = ($opening_qty + $total_received) - $total_sold;
+                        $updated_stocks = $updated_stocks > 0 ? $updated_stocks : 0;
+
+                        $bin_stock_array = ['consigned_qty' => $updated_stocks];
                         $cbi_stock_array = ['opening_stock' => $opening_qty];
                     }
 

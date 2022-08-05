@@ -22,10 +22,10 @@
                         </div>
 						<div class="card-body p-0">
 							@if(session()->has('success'))
-							<div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('success') }}</div>
+							<div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{!! session()->get('success') !!}</div>
 							@endif
 							@if(session()->has('error'))
-							<div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('error') }}</div>
+							<div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{!! session()->get('error') !!}</div>
 							@endif
 							<div id="accordion">
 								<button type="button" class="btn btn-link border-bottom btn-block text-left" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne" style="font-size: 10pt;">
@@ -131,9 +131,6 @@
 																		<th class="text-center p-1 align-middle">Item Code</th>
 																		<th class="text-center p-1 align-middle">Opening Stock</th>
 																		<th class="text-center p-1 align-middle">Price</th>
-																		@if ($inv['status'] == 'Approved')
-																		<th class="text-center p-1 align-middle">-</th>
-																		@endif
 																	</thead>
 																	<tbody>
 																		@forelse ($inv['items'] as $item)
@@ -158,13 +155,12 @@
 																					</div>
 																				</div>
 
-
 																				<div class="modal fade" id="mobile-{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 																					<div class="modal-dialog modal-dialog-centered" role="document">
 																					  <div class="modal-content">
 																						 <div class="modal-header">
 																							<h5 class="modal-title">{{ $item['item_code'] }}</h5>
-																							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+																							<button type="button" class="close" onclick="close_modal('#mobile-{{ $item['item_code'] }}-images-modal')">
 																							  <span aria-hidden="true">&times;</span>
 																							</button>
 																						 </div>
@@ -216,13 +212,8 @@
 																				₱ {{ number_format($item['price'], 2) }}
 																				@endif
 																			</td>
-																			@if ($inv['status'] == 'Approved')
-																			<td class="text-center">
-																				<span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"><i class="fa fa-edit"></i></span>
-																			</td>
-																			@endif
 																		</tr>
-																		<tr class="d-xl-none">
+																		<tr>
 																			<td colspan="4" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
 																				<div class="w-100 item-description">{{ strip_tags($item['item_description']) }}</div>
 																			</td>
@@ -238,9 +229,6 @@
 															{{-- Update button for approved records --}}
 															@if ($inv['status'] == 'Approved')
 															<div class="modal-footer">
-																<div class="container-fluid" id="{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
-																	<button type="submit" class="btn btn-info w-100">Update</button>
-																</div>
 																<div class="container-fluid">
 																	<button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $inv['name'] }}-Modal">
 																		Cancel
@@ -450,15 +438,6 @@
                 $(this).parent().prev().toggle();
                 $(this).prev().toggle();
                 return false;
-            });
-
-            $(document).on('click', '.edit-stock_qty', function(){
-                var reference = $(this).data('reference');
-                $('#'+reference+'-qty').addClass('d-none');
-                $('#'+reference+'-new-qty').removeClass('d-none');
-				$('#'+reference+'-price').addClass('d-none');
-                $('#'+reference+'-new-price').removeClass('d-none');
-                $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
             });
 
             var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
