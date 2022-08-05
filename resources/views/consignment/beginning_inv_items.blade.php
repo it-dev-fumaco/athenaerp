@@ -203,6 +203,12 @@
             @endforelse
         </tbody>
     </table>
+
+    <div class="col-12 text-left">
+        <label style="font-size: 9pt;">Remarks</label>
+        <textarea name="remarks" rows="5" class="form-control" placeholder='Remarks' id="remarks" style="font-size: 9pt;">{{ $remarks }}</textarea>
+        <br>
+    </div>
     
     <div class="col-12 text-right">
         <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
@@ -278,6 +284,13 @@
         if(branch != 'null' && branch != ''){
             valid_branch();
         }
+
+        $('#remarks').keyup(function(){
+            if(existing_record == 1){
+                enable_submit();
+            }
+            validate_submit();
+        });
 
         $("#open-add-items-modal").click(function (){
             if($('#branch-warehouse').val() == '' || $('#branch-warehouse').val() == 'null'){

@@ -2079,11 +2079,12 @@ class ConsignmentController extends Controller
         ]);
     }
 
-    // /beginning_inv_items
+    // /beginning_inv_items/{action}/{branch}/{id?}
     public function beginningInvItems(Request $request, $action, $branch, $id = null){
         if($request->ajax()){
             $items = [];
             $inv_name = null;
+            $remarks = null;
             // get approved, for approval records and items with consigned qty
             $items_with_consigned_qty = DB::table('tabBin')->where('warehouse', $branch)->where('consigned_qty', '>', 0)->pluck('item_code');
 
@@ -2094,6 +2095,9 @@ class ConsignmentController extends Controller
 
             if($action == 'update'){ // If 'For Approval' beginning inventory record exists for this branch
                 $inv_name = $id;
+                $cbi = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
+                $remarks = $cbi ? $cbi->remarks : null;
+
                 $inventory = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)
                     ->select('item_code', 'item_description', 'stock_uom', 'opening_stock', 'stocks_displayed', 'price')
                     ->orderBy('item_description', 'asc')->get();
@@ -2135,7 +2139,7 @@ class ConsignmentController extends Controller
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
             $item_images = collect($item_images)->groupBy('parent')->toArray();
 
-            return view('consignment.beginning_inv_items', compact('items', 'branch', 'item_images', 'inv_name', 'inv_items'));
+            return view('consignment.beginning_inv_items', compact('items', 'branch', 'item_images', 'inv_name', 'inv_items', 'remarks'));
         }
     }
 
@@ -2143,7 +2147,6 @@ class ConsignmentController extends Controller
     public function saveBeginningInventory(Request $request){
         DB::beginTransaction();
         try {
-
             if(!$request->branch || $request->branch == 'null'){
                 return redirect()->back()->with('error', 'Please select a store');
             }
@@ -2200,9 +2203,10 @@ class ConsignmentController extends Controller
                     'transaction_date' => $now,
                     'owner' => Auth::user()->full_name,
                     'modified' => $now,
-                    'modified_by' => Auth::user()->full_name
+                    'modified_by' => Auth::user()->full_name,
+                    'remarks' => $request->remarks
                 ];
-                
+
                 $row_values = [];
                 $grand_total = 0;
                 foreach($item_codes as $i => $item_code){
@@ -2338,7 +2342,8 @@ class ConsignmentController extends Controller
                 DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->update([
                     'modified' => $now,
                     'modified_by' => Auth::user()->wh_user,
-                    'grand_total' => $grand_total
+                    'grand_total' => $grand_total,
+                    'remarks' => $request->remarks
                 ]);
 
                 session()->flash('success', 'Beginning Inventory is Updated');
