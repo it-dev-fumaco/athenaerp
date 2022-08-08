@@ -14,8 +14,8 @@
               <div class="modal-content">
                 <div class="modal-header bg-navy">
                   <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-info-circle"></i> Reminder</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="color: #fff">&times;</span>
+                  <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
                 <div class="modal-body" style="font-size: 10pt;">
@@ -91,10 +91,11 @@
           <a href="/view_calendar_menu/{{ $assigned_consignment_store[0] }}">
           @endif
             <div class="info-box bg-gradient-primary m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Product Sold</span>
-                <span class="info-box-number">{{ number_format($total_item_sold) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_item_sold) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Product Sold <span class="d-block" style="font-size: 6pt;">{{ $duration }}</span></div>
+                </div>
               </div>
             </div>
           </a>
@@ -102,10 +103,11 @@
         <div class="col-6 p-1">
           <a href="/inventory_audit">
             <div class="info-box bg-gradient-info m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Inventory Report</span>
-                <span class="info-box-number">{{ number_format($total_pending_inventory_audit) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $due }}</span>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_pending_inventory_audit) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Inventory Report <span class="d-block" style="font-size: 7pt;">{{ $due }}</span></div>
+                </div>
               </div>
             </div>
           </a>
@@ -113,11 +115,10 @@
         <div class="col-6 p-1">
           <a href="/stock_transfer/list/Material Transfer">
             <div class="info-box bg-gradient-warning m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Stock Transfer</span>
-                <span class="info-box-number">{{ number_format($total_stock_transfer) }}</span>
-                <div class="progress">
-                  <div class="progress-bar"></div>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_transfer) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Stock Transfer</div>
                 </div>
               </div>
             </div>
@@ -126,11 +127,10 @@
         <div class="col-6 p-1">
           <a href="/beginning_inv_list">
             <div class="info-box bg-gradient-secondary m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Beginning Inventory</span>
-                <span class="info-box-number">{{ number_format($total_stock_adjustments) }}</span>
-                <div class="progress">
-                  <div class="progress-bar"></div>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_adjustments) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Beginning Entries</div>
                 </div>
               </div>
             </div>

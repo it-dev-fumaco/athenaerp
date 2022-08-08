@@ -21,35 +21,37 @@
                 <div class="col-12 m-0 p-0">
                     <div class="row p-0 m-0">
                         <div class="col-6 col-md-3 p-1">
-                            <a href="/view_sales_report">
-                                <div class="info-box bg-gradient-primary m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive m-0">Sales Report</span>
-                                        <span class="info-box-number font-responsive m-0">{{ number_format($total_item_sold) }}</span>
-                                        <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
+                            <a href="/inventory_audit">
+                                <div class="info-box bg-gradient-info m-0">
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_pending_inventory_audit) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-left col-8">Inventory Report</div>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
                         </div>
                         <div class="col-6 col-md-3 p-1">
-                            <a href="/inventory_audit">
-                                <div class="info-box bg-gradient-info m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive m-0">Inventory Audit</span>
-                                        <span class="info-box-number font-responsive m-0">{{ number_format($total_pending_inventory_audit) }}</span>
-                                        <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
+                            <a href="/view_consignment_deliveries">
+                                <div class="info-box bg-gradient-primary m-0">
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($pending_to_receive) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-left col-8">To Receive</div>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
                         </div>
+                    
                         <div class="col-6 col-md-3 p-1">
                             <a href="/stocks_report/list">
                                 <div class="info-box bg-gradient-warning m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive">Stock Transfers</span>
-                                        <span class="info-box-number font-responsive">{{ number_format($total_stock_transfers) }}</span>
-                                        <div class="progress">
-                                            <div class="progress-bar"></div>
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_stock_transfers) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">For Approval</small></div>
+                                            <div class="p-1 text-left col-8">Stock Transfers</div>
                                         </div>
                                     </div>
                                 </div>
@@ -58,11 +60,10 @@
                         <div class="col-6 col-md-3 p-1">
                             <a href="/beginning_inv_list" style="color: inherit">
                                 <div class="info-box bg-gradient-secondary m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive">Stock Adjustments</span>
-                                        <span class="info-box-number font-responsive">{{ number_format($total_stock_adjustments) }}</span>
-                                        <div class="progress">
-                                            <div class="progress-bar"></div>
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_stock_adjustments) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-left col-8">Beginning Entries</div>
                                         </div>
                                     </div>
                                 </div>
