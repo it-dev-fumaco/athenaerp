@@ -4359,4 +4359,85 @@ class ConsignmentController extends Controller
 
         return view('consignment.supervisor.tbl_audit_sales', compact('sales', 'transaction_dates', 'summary'));
     }
+
+    public function viewDeliveries(Request $request) {
+        $list = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereDate('ste.delivery_date', '>=', '2022-06-25')
+            ->whereIn('ste.transfer_as', ['Consignment', 'For Return', 'Store Transfer'])
+            ->where('ste.purpose', 'Material Transfer')
+            ->where('ste.docstatus', 1)
+            ->when($request->store, function ($q) use ($request){
+                return $q->whereYear('sted.t_warehouse', $request->store);
+            })
+            ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by')
+            ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by')
+            ->orderBy('ste.creation', 'desc')->orderBy('sted.consignment_status', 'desc')->paginate(20);
+
+        $stes = collect($list->items())->pluck('name')->toArray();
+
+        $list_items = DB::table('tabStock Entry Detail')
+            ->whereIn('parent', $stes)
+            ->select('item_code', 'description', 'transfer_qty', 'stock_uom', 'basic_rate', 'basic_amount', 'parent', 'stock_uom')
+            ->orderBy('idx', 'asc')->get();
+
+        $item_codes = collect($list_items)->pluck('item_code')->unique();
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+        $item_images = collect($item_images)->groupBy('parent')->toArray();
+
+        $items = [];
+        foreach ($list_items as $s) {
+            $item_code = $s->item_code;
+            $orig_exists = $webp_exists = 0;
+    
+            $img = '/icon/no_img.png';
+            $webp = '/icon/no_img.webp';
+    
+            if(array_key_exists($item_code ,$item_images)){
+                $orig_exists = Storage::disk('public')->exists('/img/'.$item_images[$item_code][0]->image_path) ? 1 : 0;
+                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+    
+                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp' : null;
+                $img = $orig_exists == 1 ? '/img/'.$item_images[$item_code][0]->image_path : null;
+    
+                if($orig_exists == 0 && $webp_exists == 0){
+                    $img = '/icon/no_img.png';
+                    $webp = '/icon/no_img.webp';
+                }
+            }
+    
+            $img_count = array_key_exists($item_code, $item_images) ? count($item_images[$item_code]) : 0;
+            
+            $items[] = [
+                'parent' => $s->parent,
+                'item_code' => $item_code,
+                'description' => $s->description,
+                'price' => $s->basic_rate,
+                'amount' => $s->basic_amount,
+                'img' => $img,
+                'img_webp' => $webp,
+                'stock_uom' => $s->stock_uom,
+                'img_count' => $img_count,
+                'transfer_qty' => number_format($s->transfer_qty),
+            ];
+        }
+
+        $list_items = collect($items)->groupBy('parent')->toArray();
+
+        $result = [];
+        foreach ($list as $r) {
+            $result[] = [
+                'name' => $r->name,
+                'delivery_date' => Carbon::parse($r->delivery_date)->format('M. d, Y'),
+                'warehouse' => $r->t_warehouse,
+                'status' => $r->consignment_status,
+                'received_by' => $r->consignment_received_by,
+                'date_received' =>  Carbon::parse($r->consignment_date_received)->format('M. d, Y h:i A'),
+                'items' => array_key_exists($r->name, $list_items) ? $list_items[$r->name] : []
+            ];
+        }
+
+        return view('consignment.supervisor.view_deliveries', compact('list', 'result'));
+    }
 }

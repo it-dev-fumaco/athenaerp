@@ -389,17 +389,24 @@ class MainController extends Controller
         }
 
         // get total stock transfer
-        $total_stock_transfers = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
-            ->where('purpose', 'Material Transfer')->where('naming_series', 'STEC-')->count();
+        $total_stock_transfers = DB::table('tabStock Entry')->whereDate('delivery_date', '>', '2022-06-25')
+            ->whereIn('transfer_as', ['Store Transfer', 'For Return'])->where('purpose', 'Material Transfer')
+            ->where('docstatus', 0)->count();
+
+        $pending_to_receive = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereDate('ste.delivery_date', '>=', '2022-06-25')
+            ->whereIn('ste.transfer_as', ['Consignment', 'For Return', 'Store Transfer'])
+            ->where('ste.purpose', 'Material Transfer')
+            ->where('ste.docstatus', 1)
+            ->where(function($q) {
+                $q->whereNull('sted.consignment_status')
+                ->orwhere('sted.consignment_status', '!=', 'Received');
+            })
+            ->count();
 
         // get total stock adjustments
-        $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->count();
-
-        $total_item_sold = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csri.qty', '>', 0)->where('csr.status', '!=', 'Cancelled')
-            ->whereBetween('csr.transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
-            ->groupBy('csri.item_code')->count();
+        $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->where('status', 'For Approval')->count();
 
         $total_pending_inventory_audit = 0;
         // get total pending inventory audit
@@ -502,7 +509,7 @@ class MainController extends Controller
             $sales_report_included_years[] = $i;
         }
 
-        return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'sales_report_included_years'));
+        return view('consignment.index_consignment_supervisor', compact('duration', 'pending_to_receive', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'sales_report_included_years'));
     }
 
     public function search_results(Request $request){
