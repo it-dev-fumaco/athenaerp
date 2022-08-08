@@ -2423,6 +2423,9 @@ class ConsignmentController extends Controller
         $ste_item_codes = [];
         if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
             $stock_entry = DB::table('tabStock Entry')
+                ->whereDate('delivery_date', '>', '2022-06-25')
+                ->whereIn('transfer_as', ['Store Transfer', 'For Return'])
+                ->where('purpose', 'Material Transfer')
                 ->when($request->tab1_q, function ($q) use ($request){
                     return $q->where('name', 'like', '%'.$request->tab1_q.'%');
                 })
@@ -2438,9 +2441,7 @@ class ConsignmentController extends Controller
                 ->when($request->tab1_purpose, function ($q) use ($request){
                     return $q->where('transfer_as', $request->tab1_purpose);
                 })
-                ->where('naming_series', 'STEC-')
-                ->orderBy('docstatus', 'asc')
-                ->orderBy('creation', 'desc')
+                ->orderBy('docstatus', 'asc')->orderBy('creation', 'desc')
                 ->paginate(20, ['*'], 'stock_transfers');
 
             $reference = collect($stock_entry->items())->map(function ($q){
@@ -2491,7 +2492,7 @@ class ConsignmentController extends Controller
                 'promodiser' => $item->promodiser,
                 'image' => $img,
                 'webp' => $webp,
-                'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i a'),
+                'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i A'),
                 'test' => $orig_exists,
                 'test2' => $webp_exists
             ];
@@ -2548,7 +2549,7 @@ class ConsignmentController extends Controller
 
                 $ste_arr[] = [
                     'name' => $ste->name,
-                    'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i a'),
+                    'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i A'),
                     'source_warehouse' => $ste->from_warehouse,
                     'target_warehouse' => $ste->to_warehouse,
                     'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
@@ -3558,7 +3559,7 @@ class ConsignmentController extends Controller
                 return $q->whereYear('audit_date_from', $year);
             })
             ->selectRaw('audit_date_from, audit_date_to, branch_warehouse, transaction_date, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodiser')
-            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(10);
+            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(15);
 
         $result = [];
         foreach ($list as $row) {
@@ -3592,6 +3593,10 @@ class ConsignmentController extends Controller
             ->join('tabConsignment Inventory Audit Report Item as ciar', 'cia.name', 'ciar.parent')
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->get();
+
+        if (count($list) <= 0) {
+            return redirect()->back()->with('error', 'Record not found.');
+        }
 
         $product_sold_query = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
@@ -3663,6 +3668,8 @@ class ConsignmentController extends Controller
             $result[] = [
                 'item_code' => $id,
                 'description' => $row->description,
+                'price' => $row->price,
+                'amount' => $row->amount,
                 'img' => $img,
                 'img_webp' => $webp,
                 'img_count' => $img_count,
@@ -3674,16 +3681,138 @@ class ConsignmentController extends Controller
         }
 
         if($is_promodiser) {
+            return 1;
             return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'total_sales'));
         }
 
+        $next_record = DB::table('tabConsignment Inventory Audit Report')
+            ->where('branch_warehouse', $store)->where('transaction_date', '>', $list[0]->transaction_date)
+            ->where('name', '!=', $list[0]->name)->orderBy('transaction_date', 'asc')->first();
+
+        $previous_record = DB::table('tabConsignment Inventory Audit Report')
+            ->where('branch_warehouse', $store)->where('transaction_date', '<', $list[0]->transaction_date)
+            ->where('name', '!=', $list[0]->name)->orderBy('transaction_date', 'desc')->first();
+        
+        $next_record_link = $previous_record_link = null;
+        $sales_increase = true;
+        $previous_sales_record = 0;
+        if ($next_record) {
+            $next_record_link = "/view_inventory_audit_items/". $store ."/".$next_record->audit_date_from."/".$next_record->audit_date_to;
+        }
+
+        if ($previous_record) {
+            $previous_record_link = "/view_inventory_audit_items/". $store ."/".$previous_record->audit_date_from."/".$previous_record->audit_date_to;
+
+            $previous_sales_record = DB::table('tabConsignment Sales Report')
+                ->where('branch_warehouse', $store)->whereBetween('transaction_date', [$previous_record->audit_date_from, $previous_record->audit_date_to])
+                ->sum('grand_total');
+
+            $sales_increase = collect($result)->sum('total_value') > $previous_sales_record ? true : false;
+        }
+
+        $sold_items = DB::table('tabConsignment Sales Report as csr')
+            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('csr.status', '!=', 'Cancelled')
+            ->where('csr.branch_warehouse', $store)->whereBetween('csr.transaction_date', [$from, $to])
+            ->where('csri.qty', '>', 0)
+            ->selectRaw('SUM(csri.qty) as sold_qty, SUM(csri.amount) as total_value, csri.item_code, csri.price')
+            ->groupBy('csri.item_code', 'csri.price')->get();
+
+        $item_descriptions = DB::table('tabItem')->whereIn('name', collect($sold_items)->pluck('item_code'))
+            ->pluck('description', 'name')->toArray();
+
+        $sales_items = [];
+        foreach ($sold_items as $row) {
+            $id = $row->item_code;
+            $orig_exists = $webp_exists = 0;
+
+            $img = '/icon/no_img.png';
+            $webp = '/icon/no_img.webp';
+
+            if(isset($item_image[$id])){
+                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$id][0]->image_path) ? 1 : 0;
+                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp') ? 1 : 0;
+
+                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp' : null;
+                $img = $orig_exists == 1 ? '/img/'.$item_image[$id][0]->image_path : null;
+
+                if($orig_exists == 0 && $webp_exists == 0){
+                    $img = '/icon/no_img.png';
+                    $webp = '/icon/no_img.webp';
+                }
+            }
+
+            $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
+            $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
+            $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
+
+            $description = array_key_exists($id, $item_descriptions) ? $item_descriptions[$id] : null;
+           
+            $sales_items[] = [
+                'item_code' => $id,
+                'description' => $description,
+                'img' => $img,
+                'img_webp' => $webp,
+                'img_count' => $img_count,
+                'amount' => $total_value,
+                'price' => $row->price,
+                'qty' => number_format($total_sold),
+            ];
+        }
+
+        $ste_received_items = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereBetween('sted.consignment_date_received', [$from, $to])
+            ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
+            ->whereIn('ste.item_status', ['For Checking', 'Issued'])
+            ->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)
+            ->where('sted.t_warehouse', $store)
+            ->where('sted.consignment_status', 'Received')
+            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount')
+            ->get();
+
+        $received_items = [];
+        foreach ($ste_received_items as $row) {
+            $id = $row->item_code;
+            $orig_exists = $webp_exists = 0;
+
+            $img = '/icon/no_img.png';
+            $webp = '/icon/no_img.webp';
+
+            if(isset($item_image[$id])){
+                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$id][0]->image_path) ? 1 : 0;
+                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp') ? 1 : 0;
+
+                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp' : null;
+                $img = $orig_exists == 1 ? '/img/'.$item_image[$id][0]->image_path : null;
+
+                if($orig_exists == 0 && $webp_exists == 0){
+                    $img = '/icon/no_img.png';
+                    $webp = '/icon/no_img.webp';
+                }
+            }
+
+            $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
+            
+            $received_items[] = [
+                'item_code' => $id,
+                'description' => $row->description,
+                'img' => $img,
+                'img_webp' => $webp,
+                'img_count' => $img_count,
+                'amount' => $row->basic_amount,
+                'price' => $row->basic_rate,
+                'qty' => number_format($row->transfer_qty),
+            ];
+        }
+    
         $promodisers = DB::table('tabConsignment Inventory Audit Report')
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->distinct()->pluck('promodiser')->toArray();
             
         $promodisers = implode(', ', $promodisers);
 
-        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'promodisers'));
+        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'promodisers', 'sales_items', 'received_items', 'previous_record_link', 'next_record_link', 'sales_increase'));
     }
 
     // /stock_adjust/submit/{id}
