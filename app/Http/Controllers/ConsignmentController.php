@@ -3586,7 +3586,7 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.tbl_inventory_audit_history', compact('list', 'result'));
     }
 
-    public function viewInventoryAuditItems($store, $from, $to) {
+    public function viewInventoryAuditItems($store, $from, $to, Request $request) {
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? true : false;
 
         $list = DB::table('tabConsignment Inventory Audit Report as cia')
@@ -3664,10 +3664,23 @@ class ConsignmentController extends Controller
             } else {
                 $opening_qty = array_key_exists($id, $beginning_inventory) ? $beginning_inventory[$id][0]->opening_stock : 0;
             }
+
+            if(!$is_promodiser) {
+                $description = explode(',', strip_tags($row->description));
+
+                $description_part1 = array_key_exists(0, $description) ? trim($description[0]) : null;
+                $description_part2 = array_key_exists(1, $description) ? trim($description[1]) : null;
+                $description_part3 = array_key_exists(2, $description) ? trim($description[2]) : null;
+                $description_part4 = array_key_exists(3, $description) ? trim($description[3]) : null;
+    
+                $displayed_description = $description_part1 . ', ' . $description_part2 . ', ' . $description_part3 . ', ' . $description_part4;
+            } else {
+                $displayed_description = $row->description;
+            }
             
             $result[] = [
                 'item_code' => $id,
-                'description' => $row->description,
+                'description' => $displayed_description,
                 'price' => $row->price,
                 'amount' => $row->amount,
                 'img' => $img,
@@ -3681,7 +3694,6 @@ class ConsignmentController extends Controller
         }
 
         if($is_promodiser) {
-            return 1;
             return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'total_sales'));
         }
 
@@ -3747,10 +3759,19 @@ class ConsignmentController extends Controller
             $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
 
             $description = array_key_exists($id, $item_descriptions) ? $item_descriptions[$id] : null;
+
+            $description = explode(',', strip_tags($description));
+
+            $description_part1 = array_key_exists(0, $description) ? trim($description[0]) : null;
+            $description_part2 = array_key_exists(1, $description) ? trim($description[1]) : null;
+            $description_part3 = array_key_exists(2, $description) ? trim($description[2]) : null;
+            $description_part4 = array_key_exists(3, $description) ? trim($description[3]) : null;
+
+            $displayed_description = $description_part1 . ', ' . $description_part2 . ', ' . $description_part3 . ', ' . $description_part4;
            
             $sales_items[] = [
                 'item_code' => $id,
-                'description' => $description,
+                'description' => $displayed_description,
                 'img' => $img,
                 'img_webp' => $webp,
                 'img_count' => $img_count,
@@ -3768,7 +3789,8 @@ class ConsignmentController extends Controller
             ->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)
             ->where('sted.t_warehouse', $store)
             ->where('sted.consignment_status', 'Received')
-            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount')
+            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount, ste.name, sted.consignment_date_received')
+            ->orderBy('sted.consignment_date_received', 'desc')
             ->get();
 
         $received_items = [];
@@ -3793,16 +3815,28 @@ class ConsignmentController extends Controller
             }
 
             $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
+
+            $description = explode(',', strip_tags($row->description));
+
+            $description_part1 = array_key_exists(0, $description) ? trim($description[0]) : null;
+            $description_part2 = array_key_exists(1, $description) ? trim($description[1]) : null;
+            $description_part3 = array_key_exists(2, $description) ? trim($description[2]) : null;
+            $description_part4 = array_key_exists(3, $description) ? trim($description[3]) : null;
+
+            $displayed_description = $description_part1 . ', ' . $description_part2 . ', ' . $description_part3 . ', ' . $description_part4;
+           
             
             $received_items[] = [
                 'item_code' => $id,
-                'description' => $row->description,
+                'description' => $displayed_description,
                 'img' => $img,
                 'img_webp' => $webp,
                 'img_count' => $img_count,
                 'amount' => $row->basic_amount,
                 'price' => $row->basic_rate,
                 'qty' => number_format($row->transfer_qty),
+                'reference' => $row->name,
+                'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A')
             ];
         }
     

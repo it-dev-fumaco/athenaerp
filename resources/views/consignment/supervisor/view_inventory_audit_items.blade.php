@@ -21,7 +21,7 @@
                     </div>
                     <div class="row">
                         <div class="col-12 p-0">
-                            <h4 class="text-center font-weight-bold m-2 text-uppercase">Sales & Inventory Report</h4>
+                            <h5 class="text-center font-weight-bold m-2 text-uppercase">Sales Report</h5>
                         </div>
                     </div>
                     <div class="card card-secondary card-outline">
@@ -173,28 +173,31 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-4">
+                        <div class="col-12 p-0">
+                            <h5 class="text-center font-weight-bold m-2 text-uppercase">Inventory Report</h5>
+                        </div>
+                        <div class="col-6">
                             <div class="card card-secondary card-outline p-2">
                                 <div class="d-flex flex-row align-items-end">
                                     <div class="p-1 col-12 text-left">
                                         <p class="m-1 font-details font-weight-bold text-uppercase">Received Item(s) within this period</p>
                                     </div>
                                 </div>
-                                <style>
-                                    #received-items-table tbody:nth-child(even) {
-                                        background-color: #f2f2f2 !important;
-                                    }
-                                </style>
                                 <table class="table mr-2 border" id="received-items-table" style="font-size: 10pt;">
                                     <thead class="border-top text-uppercase">
-                                        <th class="text-center font-responsive p-2 align-middle first" style="width: 40%;">Item Code</th>
-                                        <th class="text-center font-responsive p-2 align-middle" style="width: 20%;">Qty</th>
-                                        <th class="text-center font-responsive p-2 align-middle" style="width: 20%;">Rate</th>
-                                        <th class="text-center font-responsive p-2 align-middle" style="width: 20%;">Amount</th>
+                                        <th class="text-center font-responsive p-2 align-middle first" style="width: 15%;">Reference</th>
+                                        <th class="text-center font-responsive p-2 align-middle first" style="width: 50%;">Item Code</th>
+                                        <th class="text-center font-responsive p-2 align-middle" style="width: 10%;">Qty</th>
+                                        <th class="text-center font-responsive p-2 align-middle" style="width: 10%;">Rate</th>
+                                        <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Amount</th>
                                     </thead>
-                                    @forelse ($received_items as $r)
                                     <tbody>
+                                    @forelse ($received_items as $r)
                                         <tr>
+                                            <td class="text-center p-2 align-middle font-weight-bold">
+                                                <small class="d-block font-weight-bold">{{ $r['reference'] }}</small>
+                                                <small class="d-block">{{ $r['date_received'] }}</small>
+                                            </td>
                                             <td class="text-justify p-1 align-middle">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-1 text-left">
@@ -207,7 +210,7 @@
                                                         </a>
                                                     </div>
                                                     <div class="p-1 m-0">
-                                                        <span class="d-block font-weight-bold">{{ $r['item_code'] }}</span>
+                                                        <small class="d-block"><b>{{ $r['item_code'] }}</b> {!! strip_tags($r['description']) !!}</small>
                                                     </div>
                                                 </div>
     
@@ -252,35 +255,28 @@
                                                 </div>
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
-                                                <span class="d-block">{{ $r['qty'] }}</span>
+                                                <small class="d-block">{{ $r['qty'] }}</small>
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
-                                                <span class="d-block">{{ '₱ ' . number_format($r['price'], 2) }}</span>
+                                                <small class="d-block">{{ '₱ ' . number_format($r['price'], 2) }}</small>
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
-                                                <span class="d-block">{{ '₱ ' . number_format($r['amount'], 2) }}</span>
+                                                <small class="d-block">{{ '₱ ' . number_format($r['amount'], 2) }}</small>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <td class="p-2 text-justify border-top-0" colspan=4>
-                                                <small class="item-description">{!! strip_tags($r['description']) !!}</small>
-                                            </td>
-                                        </tr>
-                                    </tbody>
                                     @empty
-                                    <tbody>
                                         <tr>
                                             <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
                                         </tr> 
-                                    </tbody>
                                     @endforelse
+                                    </tbody>
                                 </table>
                                     <div class="m-2">
                                         Total: <b>{{ count($received_items) }}</b>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-8">
+                            <div class="col-6">
                                 <div class="card card-secondary card-outline p-2">
                                     <div class="d-flex flex-row align-items-end">
                                         <div class="p-1 col-6 text-left">
@@ -292,11 +288,11 @@
                                     </div>
                                     <table class="table table-bordered table-striped" style="font-size: 10pt;">
                                         <thead class="border-top text-uppercase">
-                                            <th class="text-center font-responsive p-2 align-middle first" style="width: 50%;">Item Code</th>
-                                            <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Opening Stock</th>
-                                            <th class="text-center font-responsive p-2 align-middle" style="width: 10%;">Audit Qty</th>
-                                            <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Rate</th>
-                                            <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Amount</th>
+                                            <th class="text-center p-2 align-middle first" style="width: 50%;">Item Code</th>
+                                            <th class="text-center p-2 align-middle" style="width: 15%;">Opening</th>
+                                            <th class="text-center p-2 align-middle" style="width: 10%;">Qty</th>
+                                            <th class="text-center p-2 align-middle" style="width: 15%;">Rate</th>
+                                            <th class="text-center p-2 align-middle" style="width: 15%;">Amount</th>
                                         </thead>
                                         <tbody>
                                             @forelse ($result as $row)
@@ -313,7 +309,7 @@
                                                             </a>
                                                         </div>
                                                         <div class="p-1 m-0">
-                                                            <span class="d-block font-weight-bold">{{ $row['item_code'] }} - {{ explode(',', strip_tags($row['description']))[0] }}</span>
+                                                            <small class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</small>
                                                         </div>
                                                     </div>
         
@@ -358,16 +354,16 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <span class="d-block">{{ $row['opening_qty'] }}</span>
+                                                    <small class="d-block">{{ $row['opening_qty'] }}</small>
                                                 </td>
                                                 <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <span class="d-block">{{ $row['audit_qty'] }}</span>
+                                                    <small class="d-block">{{ $row['audit_qty'] }}</small>
                                                 </td>
                                                 <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <span class="d-block">{{ '₱ ' . number_format($row['price'], 2) }}</span>
+                                                    <small class="d-block">{{ '₱ ' . number_format($row['price'], 2) }}</small>
                                                 </td>
                                                 <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <span class="d-block">{{ '₱ ' . number_format($row['amount'], 2) }}</span>
+                                                    <small class="d-block">{{ '₱ ' . number_format($row['amount'], 2) }}</small>
                                                 </td>
                                             </tr>
                                             @empty
