@@ -190,4 +190,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/view_consignment_deliveries', 'ConsignmentController@viewDeliveries');
 
     
+Route::get('/user_manual', function () {
+    return view('consignment.user_manual.promodiser');
+});
 });

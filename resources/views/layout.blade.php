@@ -504,6 +504,9 @@
 													<i class="fas fa-user"></i> <span class="d-xl-inline-block">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 												</center>
 											</a>
+											<a href="/user_manual" class="dropdown-item w-100" style="color: #0074CC !important">
+												<center><i class="fas fa-question-circle"></i> <span class="d-xl-inline-block">Help</span></center>
+											</a>
 											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
 												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
 											</a>
