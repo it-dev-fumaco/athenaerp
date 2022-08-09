@@ -4029,7 +4029,7 @@ class ConsignmentController extends Controller
             $end = $second_cutoff;
         }
 
-        $cutoff_date = $this->getCutoffDate($end->endOfDay());
+        $cutoff_date = $this->getCutoffDate(Carbon::now()->endOfDay());
         $period_from = $cutoff_date[0];
         $period_to = $cutoff_date[1];
 
@@ -4067,16 +4067,19 @@ class ConsignmentController extends Controller
             }
    
             $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
+            $check = Carbon::parse($start)->between($period_from, $period_to);
             if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::now()->startOfDay())) {
                 if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                    $pending[] = [
-                        'store' => $store,
-                        'beginning_inventory_date' => $beginning_inventory_transaction_date,
-                        'last_inventory_audit_date' => $last_inventory_audit_date,
-                        'duration' => $duration,
-                        'is_late' => $is_late,
-                        'promodisers' => $promodisers
-                    ];
+                    if (!$check) {
+                        $pending[] = [
+                            'store' => $store,
+                            'beginning_inventory_date' => $beginning_inventory_transaction_date,
+                            'last_inventory_audit_date' => $last_inventory_audit_date,
+                            'duration' => $duration,
+                            'is_late' => $is_late,
+                            'promodisers' => $promodisers,
+                        ];
+                    }
                 }
             }
 
@@ -4433,7 +4436,7 @@ class ConsignmentController extends Controller
                 'warehouse' => $r->t_warehouse,
                 'status' => $r->consignment_status,
                 'received_by' => $r->consignment_received_by,
-                'date_received' =>  Carbon::parse($r->consignment_date_received)->format('M. d, Y h:i A'),
+                'date_received' =>  $r->consignment_status == 'Received' ? Carbon::parse($r->consignment_date_received)->format('M. d, Y h:i A') : null,
                 'items' => array_key_exists($r->name, $list_items) ? $list_items[$r->name] : []
             ];
         }
