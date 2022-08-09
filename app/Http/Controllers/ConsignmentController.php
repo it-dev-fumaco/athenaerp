@@ -4435,7 +4435,7 @@ class ConsignmentController extends Controller
                 'delivery_date' => Carbon::parse($r->delivery_date)->format('M. d, Y'),
                 'warehouse' => $r->t_warehouse,
                 'status' => $r->consignment_status,
-                'received_by' => $r->consignment_received_by,
+                'received_by' => $r->consignment_status == 'Received' ? $r->consignment_received_by : null,
                 'date_received' =>  $r->consignment_status == 'Received' ? Carbon::parse($r->consignment_date_received)->format('M. d, Y h:i A') : null,
                 'items' => array_key_exists($r->name, $list_items) ? $list_items[$r->name] : []
             ];
