@@ -434,7 +434,7 @@ class MainController extends Controller
             $end = $second_cutoff;
         }
 
-        $cutoff_date = $this->getCutoffDate($end->endOfDay());
+        $cutoff_date = $this->getCutoffDate(Carbon::now()->endOfDay());
         $period_from = $cutoff_date[0]->addDay();
         $period_to = $cutoff_date[1];
 
@@ -455,9 +455,12 @@ class MainController extends Controller
 
             $start = $start->startOfDay();
 
+            $check = Carbon::parse($start)->between($period_from, $period_to);
             if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::parse($period_to)->startOfDay())) {
                 if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                    $total_pending_inventory_audit++;
+                        if(!$check) {
+                        $total_pending_inventory_audit++;
+                    }
                 }
             }
         }
