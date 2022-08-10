@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	@if (Auth::user()->user_group == 'Promodiser')
-	<title>ERP Inventory {{ $namePage }} - {{ Auth::user()->full_name }}</title>
+	<title>{{ $namePage }} - {{ Auth::user()->full_name }}</title>
 	@else
 	<title>ERP Inventory {{ $namePage }}</title>
 	@endif
