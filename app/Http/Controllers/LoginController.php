@@ -53,7 +53,8 @@ class LoginController extends Controller
                     ->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
             }
         } catch (adLDAPException $e) {
-            return $e;
+            return redirect()->back()->withInput($request->except('password'))
+                ->withErrors('<span class="blink_text">Cannot connect to LDAP.<br>Please contact your system administrator.</span>');
         }
     }
 
