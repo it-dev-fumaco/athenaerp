@@ -185,7 +185,7 @@
                                                             <img class="d-block w-100" id="mobile-{{ $item['item_code'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
                                                         </picture>
                                                     </div>
-                                                    <span class='d-none5' id="mobile-{{ $item['item_code'] }}-image-data">0</span>
+                                                    <span class='d-none' id="mobile-{{ $item['item_code'] }}-image-data">0</span>
                                                 </div>
                                                 @if ($img_count > 1)
                                                 <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
@@ -331,7 +331,7 @@
 
             $('.validate.stock').each(function(){ // check stocks
                 var item_code = $(this).data('item-code');
-                var stock_value = parseInt($(this).val());
+                var stock_value = parseInt($(this).val().replace(/,/g, ''));
                 var val = 0;
 
                 if($(this).val() != ''){
@@ -340,14 +340,14 @@
                             item_codes.push(item_code);
                         }
                     }else{
-                        incorrect_item_codes.push(item);
+                        incorrect_item_codes.push(item_code);
                     }
                 }
             });
 
             $('.validate.price').each(function(){ // check price
                 var item_code = $(this).data('item-code');
-                var price = parseInt($(this).val());
+                var price = parseInt($(this).val().replace(/,/g, ''));
 
                 if($(this).val() != ''){
                     if($.isNumeric($(this).val())){
@@ -355,13 +355,13 @@
                             item_codes.push(item_code);
                         }
                     }else{
-                        incorrect_item_codes.push(item);
+                        incorrect_item_codes.push(item_code);
                     }
                 }
             });
 
             $.each(item_codes, function (e, item){ // validate stocks and price
-                if($.isNumeric($('#'+item+'-price').val()) && $.isNumeric($('#'+item+'-stock').val())){
+                if($.isNumeric($('#'+item+'-price').val().replace(/,/g, '')) && $.isNumeric($('#'+item+'-stock').val().replace(/,/g, ''))){
                     var stock = parseInt($('#'+item+'-stock').val());
                     var price = parseInt($('#'+item+'-price').val());
                     if(price > 0 && stock > 0){
