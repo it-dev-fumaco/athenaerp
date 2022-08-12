@@ -350,7 +350,7 @@
                 var price = parseInt($(this).val().replace(/,/g, ''));
 
                 if($(this).val() != ''){
-                    if($.isNumeric($(this).val())){
+                    if($.isNumeric($(this).val().replace(/,/g, ''))){
                         if(price > 0){ // push in array if user puts value in stocks
                             item_codes.push(item_code);
                         }
@@ -362,8 +362,9 @@
 
             $.each(item_codes, function (e, item){ // validate stocks and price
                 if($.isNumeric($('#'+item+'-price').val().replace(/,/g, '')) && $.isNumeric($('#'+item+'-stock').val().replace(/,/g, ''))){
-                    var stock = parseInt($('#'+item+'-stock').val());
-                    var price = parseInt($('#'+item+'-price').val());
+                    var stock = parseInt($('#'+item+'-stock').val().replace(/,/g, ''));
+                    var price = parseInt($('#'+item+'-price').val().replace(/,/g, ''));
+                    
                     if(price > 0 && stock > 0){
                         incorrect_item_codes = jQuery.grep(incorrect_item_codes, function(value) {
                             return value != item;
@@ -376,8 +377,8 @@
                 }
             });
 
-            $.each(incorrect_item_codes, function(i, e) {
-                if ($.inArray(e, incorrect_item_codes) == -1) incorrect_item_codes.push(e);
+            incorrect_item_codes = incorrect_item_codes.filter(function(element,index,self){
+                return index === self.indexOf(element); 
             });
 
             if(incorrect_item_codes.length > 0){
