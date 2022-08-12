@@ -1146,7 +1146,7 @@ class MainController extends Controller
 
     public function get_select_filters(Request $request){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 0)->where('disabled', 0)
-            ->where('category', 'Physical')
+            ->whereIn('category', ['Physical', 'Consigned'])
             ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
         $item_groups = DB::table('tabItem Group')->where('is_group', 0)->where('name','LIKE', '%'.$request->q.'%')
