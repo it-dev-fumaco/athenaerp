@@ -145,82 +145,82 @@
                                 <textarea cols="30" rows="10" class="form-control" style="font-size: 9pt;" readonly>{{ $beginning_inventory->remarks }}</textarea>
                             </div>
                             @if ($beginning_inventory->status != 'Cancelled')
-                                <div class="container p-2">
-                                    <button class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-Modal">Cancel</button>
+                            <div class="container p-2">
+                                <button class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-Modal">Cancel</button>
 
-                                    <!-- Modal -->
-                                    <div class="modal fade" id="cancel-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog" role="document">
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-navy">
-                                                    <h6 id="exampleModalLabel">Cancel Beginning Inventory?</h6>
-                                                    <button type="button" class="close">
-                                                    <span aria-hidden="true" style="color: #fff" onclick="close_modal('#cancel-Modal')">&times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    @if ($products_sold)
-                                                        <div class="callout callout-danger text-justify" style="font-size: 9pt;">
-                                                            <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records of the following:
-                                                        </div>
-                                                        <div class="container-fluid" id="cancel-container">
-                                                            <table class="table" style="font-size: 9pt;">
+                                <!-- Modal -->
+                                <div class="modal fade" id="cancel-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-navy">
+                                                <h6 id="exampleModalLabel">Cancel Beginning Inventory?</h6>
+                                                <button type="button" class="close">
+                                                <span aria-hidden="true" style="color: #fff" onclick="close_modal('#cancel-Modal')">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                @if ($products_sold)
+                                                    <div class="callout callout-danger text-justify" style="font-size: 9pt !important;">
+                                                        <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records of the following:
+                                                    </div>
+                                                    <div class="container-fluid" id="cancel-container">
+                                                        <table class="table" style="font-size: 9pt;">
+                                                            <tr>
+                                                                <th class="text-center" style='width: 60%;'>Item</th>
+                                                                <th class="text-center" style="width: 20%;">Qty</th>
+                                                                <th class="text-center" style="width: 20%;">Amount</th>
+                                                            </tr>
+                                                            @foreach($products_sold as $item)
                                                                 <tr>
-                                                                    <th class="text-center" style='width: 60%;'>Item</th>
-                                                                    <th class="text-center" style="width: 20%;">Qty</th>
-                                                                    <th class="text-center" style="width: 20%;">Amount</th>
-                                                                </tr>
-                                                                @foreach($products_sold as $item)
-                                                                    <tr>
-                                                                        <td class="p-0" colspan=3>
-                                                                            <div class="p-0 row">
-                                                                                <div class="col-6">
-                                                                                    <div class="row">
-                                                                                        <div class="col-4">
-                                                                                            <picture>
-                                                                                                <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
-                                                                                                <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                                                <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
-                                                                                            </picture>
-                                                                                        </div>
-                                                                                        <div class="col-8" style="display: flex; justify-content: center; align-items: center;">
-                                                                                            <b>{{ $item['item_code'] }}</b>
-                                                                                        </div>
+                                                                    <td class="p-0" colspan=3>
+                                                                        <div class="p-0 row">
+                                                                            <div class="col-6">
+                                                                                <div class="row">
+                                                                                    <div class="col-4">
+                                                                                        <picture>
+                                                                                            <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
+                                                                                            <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
+                                                                                            <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+                                                                                        </picture>
+                                                                                    </div>
+                                                                                    <div class="col-8" style="display: flex; justify-content: center; align-items: center;">
+                                                                                        <b>{{ $item['item_code'] }}</b>
                                                                                     </div>
                                                                                 </div>
-                                                                                <div class="col-3 pt-2">
-                                                                                    <b>{{ number_format($item['qty']) }}</b> <br>
-                                                                                    <small>{{ $item['uom'] }}</small>
-                                                                                </div>
-                                                                                <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
-                                                                                    ₱ {{ number_format($item['price'], 2) }}
-                                                                                </div>
                                                                             </div>
-                                                                            <div class="text-justify item-description">
-                                                                                {{ $item['description'] }}
+                                                                            <div class="col-3 pt-2">
+                                                                                <b>{{ number_format($item['qty']) }}</b> <br>
+                                                                                <small>{{ $item['uom'] }}</small>
                                                                             </div>
-                                                                            <div class="text-justify pt-1 pb-2">
-                                                                                <b>Transaction Date:</b>&nbsp;{{ Carbon\Carbon::parse($item['date'])->format('F d, Y') }}
+                                                                            <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
+                                                                                ₱ {{ number_format($item['price'], 2) }}
                                                                             </div>
-                                                                        </td>
-                                                                    </tr>
-                                                                @endforeach
-                                                            </table>
-                                                        </div>
-                                                    @else
-                                                        <div class="callout callout-danger text-justify">
-                                                            <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records.
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <a href="/cancel/approved_beginning_inv/{{ $beginning_inventory->name }}" class="btn btn-primary w-100 submit-once">Confirm</a>
-                                                </div>
+                                                                        </div>
+                                                                        <div class="text-justify item-description">
+                                                                            {{ $item['description'] }}
+                                                                        </div>
+                                                                        <div class="text-justify pt-1 pb-2">
+                                                                            <b>Transaction Date:</b>&nbsp;{{ Carbon\Carbon::parse($item['date'])->format('F d, Y') }}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </table>
+                                                    </div>
+                                                @else
+                                                    <div class="callout callout-danger text-justify">
+                                                        <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records.
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a href="/cancel/approved_beginning_inv/{{ $beginning_inventory->name }}" class="btn btn-primary w-100 submit-once">Confirm</a>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            @endif
+                            </div>
+                        @endif
                         </div>
                     </div>
                 </div>

@@ -6,9 +6,9 @@
 @section('content')
 <div class="content">
 	<div class="content-header p-0">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row pt-1">
-                <div class="col-md-12 p-0 m-0">
+                <div class="col-md-10 offset-md-1">
                     <div class="row">
                         <div class="col-2">
                             <div style="margin-bottom: -43px;">
@@ -31,6 +31,13 @@
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
+                                    <div class="p-1 col-2">
+                                        <select class="form-control" name="status">
+                                            <option value="">Select Status</option>
+                                            <option value="Received" {{ request('status') == 'Received' ? 'selected' : '' }}>Received</option>
+                                            <option value="To Receive" {{ request('status') == 'To Receive' ? 'selected' : '' }}>To Receive</option>
+                                        </select>
+                                    </div>
                                     <div class="p-1">
                                         <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
                                     </div>
@@ -44,7 +51,9 @@
                                     <thead class="text-uppercase">
                                         <th class="text-center align-middle">Reference</th>
                                         <th class="text-center align-middle">Branch / Store</th>
+                                        <th class="text-center align-middle">MREQ No.</th>
                                         <th class="text-center align-middle">Delivery Date</th>
+                                        <th class="text-center align-middle">Promodiser</th>
                                         <th class="text-center align-middle">Status</th>
                                         <th class="text-center align-middle">Received By</th>
                                         <th class="text-center align-middle">Action</th>
@@ -54,7 +63,9 @@
                                         <tr>
                                             <td class="text-center align-middle">{{ $r['name'] }}</td>
                                             <td class="text-center align-middle">{{ $r['warehouse'] }}</td>
+                                            <td class="text-center align-middle">{{ $r['mreq_no'] }}</td>
                                             <td class="text-center align-middle">{{ $r['delivery_date'] }}</td>
+                                            <td class="text-center align-middle">{{ $r['promodiser'] }}</td>
                                             <td class="text-center align-middle">
                                                 @if ($r['status'] == 'Received')
                                                 <span class="badge badge-success" style="font-size: 8pt;">{{ $r['status'] }}</span>
@@ -69,7 +80,7 @@
                                         </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="6" class="text-center text-uppercase text-muted">No record(s) found.</td>
+                                                <td colspan="8" class="text-center text-uppercase text-muted">No record(s) found.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

@@ -1431,6 +1431,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /cancel/approved_beginning_inv/{id}
     public function cancelApprovedBeginningInventory($id){
         DB::beginTransaction();
         try {
@@ -1474,6 +1475,10 @@ class ConsignmentController extends Controller
                         $sales_report_total = DB::table('tabConsignment Sales Report Item')->where('parent', $srn)
                             ->selectRaw('COUNT(name) as total_items, SUM(qty) as total_qty_sold, SUM(amount) as grand_total')
                             ->groupBy('parent')->first();
+
+                        if(!$sales_report_total){
+                            continue;
+                        }
 
                         DB::table('tabConsignment Sales Report')->where('name', $srn)->update([
                             'total_items' => $sales_report_total->total_items,
@@ -1581,7 +1586,7 @@ class ConsignmentController extends Controller
         foreach($delivery_report_q as $ste => $row){
             $items_arr = [];
             foreach($row as $item){
-                $ref_warehouse = $row[0]->transfer_as == 'Consignment' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
+                $ref_warehouse = in_array($row[0]->transfer_as, ['Consignment', 'Store Transfer']) && $item->consignment_status == 'Received' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
                 $items_arr[] = [
                     'item_code' => $item->item_code,
                     'description' => $item->description,
@@ -1705,14 +1710,14 @@ class ConsignmentController extends Controller
                 $branch =  $wh->to_warehouse ? $wh->to_warehouse : $item->t_warehouse;
                 $src_branch = $wh->from_warehouse ? $wh->from_warehouse : $item->s_warehouse;
 
-                if(!isset($prices[$item->item_code])){
+                if(isset($request->receive_delivery) && !isset($prices[$item->item_code])){
                     return redirect()->back()->with('error', 'Please enter price for all items.');
                 }
                 
                 $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
 
                 // Source Warehouse
-                if($wh->transfer_as == 'Store Transfer' && $wh->purpose != 'Material Receipt'){
+                if(isset($request->receive_delivery) && $wh->transfer_as == 'Store Transfer' && $wh->purpose != 'Material Receipt'){
                     $src_consigned = isset($bin_items[$src_branch][$item->item_code]) ? $bin_items[$src_branch][$item->item_code]['consigned_qty'] : 0;
                     if($src_consigned < $item->transfer_qty){
                         return redirect()->back()->with('error', 'Not enough qty for '.$item->item_code.'. Qty needed is '.number_format($item->transfer_qty).', available qty is '.number_format($src_consigned).'.');
@@ -1733,8 +1738,11 @@ class ConsignmentController extends Controller
                     $update_values = [
                         'modified' => Carbon::now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consignment_price' => $basic_rate
                     ];
+
+                    if(isset($request->update_price)){
+                        $update_values['consignment_price'] = $basic_rate;
+                    }
 
                     if(isset($request->receive_delivery)){
                         $update_values['consigned_qty'] = $consigned_qty;
@@ -1765,7 +1773,8 @@ class ConsignmentController extends Controller
                         'stock_uom' => $item->stock_uom,
                         'valuation_rate' => $basic_rate,
                         'consigned_qty' => isset($request->receive_delivery) ? $item->transfer_qty : 0,
-                        'consignment_price' => $basic_rate
+                        'consignment_price' => $basic_rate,
+                        'consignment_status' => isset($request->receive_delivery) ? 'Received' : null
                     ]);
                 }
 
@@ -3553,7 +3562,39 @@ class ConsignmentController extends Controller
             return view('consignment.promodiser_inventory_audit_list', compact('pending', 'assigned_consignment_stores', 'select_year'));
         }
 
-        return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year'));
+        // get previous cutoff
+        $current_cutoff = $this->getCutoffDate(Carbon::now()->endOfDay());
+        $previous_cutoff = $this->getCutoffDate($current_cutoff[0]);
+
+        $previous_cutoff_start = $previous_cutoff[0];
+        $previous_cutoff_end = $previous_cutoff[1];
+
+        $previous_cutoff_display = Carbon::parse($previous_cutoff_start)->format('M. d, Y') . ' - ' . Carbon::parse($previous_cutoff_end)->format('M. d, Y');
+
+        $previous_cutoff_sales = DB::table('tabConsignment Sales Report')
+            ->where('status', '!=', 'Cancelled')->where('cutoff_period_from', Carbon::parse($previous_cutoff_start)->format('Y-m-d'))
+            ->where('cutoff_period_to', Carbon::parse($previous_cutoff_end)->format('Y-m-d'))->sum('grand_total');
+
+        $consignment_branches = DB::table('tabWarehouse Users as wu')
+            ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+            ->join('tabWarehouse as w', 'w.name', 'acw.warehouse')
+            ->where('wu.user_group', 'Promodiser')->where('w.is_group', 0)
+            ->where('w.disabled', 0)->distinct()->pluck('w.name')->count();
+
+        $stores_with_submitted_report = DB::table('tabConsignment Inventory Audit Report')
+            ->where('cutoff_period_from', Carbon::parse($previous_cutoff_start)->format('Y-m-d'))
+            ->where('cutoff_period_to', Carbon::parse($previous_cutoff_end)->format('Y-m-d'))
+            ->distinct()->pluck('branch_warehouse')->count();
+
+        $displayed_data = [
+            'recent_period' => $previous_cutoff_display,
+            'stores_submitted' => $stores_with_submitted_report,
+            'stores_pending' => $consignment_branches - $stores_with_submitted_report,
+            'total_sales' => '₱ ' . number_format($previous_cutoff_sales, 2) 
+        ];
+
+
+        return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year', 'displayed_data'));
     }
 
     public function getSubmittedInvAudit(Request $request) {
@@ -3604,7 +3645,7 @@ class ConsignmentController extends Controller
                 return $q->whereYear('audit_date_from', $year);
             })
             ->selectRaw('audit_date_from, audit_date_to, branch_warehouse, transaction_date, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodiser')
-            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(15);
+            ->orderBy('audit_date_to', 'desc')->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(25);
 
         $result = [];
         foreach ($list as $row) {
@@ -4409,6 +4450,8 @@ class ConsignmentController extends Controller
     }
 
     public function viewDeliveries(Request $request) {
+        $status = $request->status;
+
         $list = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->whereDate('ste.delivery_date', '>=', '2022-06-25')
@@ -4416,10 +4459,16 @@ class ConsignmentController extends Controller
             ->where('ste.purpose', 'Material Transfer')
             ->where('ste.docstatus', 1)
             ->when($request->store, function ($q) use ($request){
-                return $q->whereYear('sted.t_warehouse', $request->store);
+                return $q->where('sted.t_warehouse', $request->store);
             })
-            ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by')
-            ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by')
+            ->when($status && $status == 'Received', function ($q) use ($status){
+                return $q->where('sted.consignment_status', $status);
+            })
+            ->when($status && $status == 'To Receive', function ($q) use ($status){
+                return $q->whereNull('sted.consignment_status');
+            })
+            ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
+            ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
             ->orderBy('ste.creation', 'desc')->orderBy('sted.consignment_status', 'desc')->paginate(20);
 
         $stes = collect($list->items())->pluck('name')->toArray();
@@ -4433,6 +4482,12 @@ class ConsignmentController extends Controller
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_images = collect($item_images)->groupBy('parent')->toArray();
+
+        $assigned_consignment_promodisers = DB::table('tabWarehouse Users as wu')
+            ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+            ->where('user_group', 'Promodiser')->where('enabled', 1)
+            ->selectRaw('GROUP_CONCAT(DISTINCT full_name) as promodiser, warehouse')
+            ->groupBy('warehouse')->pluck('promodiser', 'warehouse')->toArray();
 
         $items = [];
         foreach ($list_items as $s) {
@@ -4478,8 +4533,10 @@ class ConsignmentController extends Controller
             $result[] = [
                 'name' => $r->name,
                 'delivery_date' => Carbon::parse($r->delivery_date)->format('M. d, Y'),
+                'mreq_no' => $r->material_request ? $r->material_request : '--',
                 'warehouse' => $r->t_warehouse,
                 'status' => $r->consignment_status,
+                'promodiser' => array_key_exists($r->t_warehouse, $assigned_consignment_promodisers) ? $assigned_consignment_promodisers[$r->t_warehouse] : '--',
                 'received_by' => $r->consignment_status == 'Received' ? $r->consignment_received_by : null,
                 'date_received' =>  $r->consignment_status == 'Received' ? Carbon::parse($r->consignment_date_received)->format('M. d, Y h:i A') : null,
                 'items' => array_key_exists($r->name, $list_items) ? $list_items[$r->name] : []
