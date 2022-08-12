@@ -189,5 +189,43 @@ Route::group(['middleware' => 'auth'], function(){
 
     Route::get('/view_consignment_deliveries', 'ConsignmentController@viewDeliveries');
 
-    
+    Route::get('/user_manual', function () {
+        return view('consignment.user_manual.index');
+    });
+    Route::get('/user_manual/beginning_inventory', function () {
+        return view('consignment.user_manual.beginning_inventory');
+    });
+    Route::get('/user_manual/product_sold_entry', function () {
+        return view('consignment.user_manual.product_sold');
+    });
+    Route::get('/user_manual/stock_transfer', function () {
+        return view('consignment.user_manual.stock_transfer');
+    });
+    Route::get('/user_manual/damaged_items', function () {
+        return view('consignment.user_manual.damaged_items');
+    });
+    Route::get('/user_manual/stock_receiving', function () {
+        return view('consignment.user_manual.stock_receiving');
+    });
+    Route::get('/user_manual/inventory_audit', function () {
+        return view('consignment.user_manual.inventory_audit');
+    });
+    Route::get('/user_manual/consignment_dashboard', function () {
+        return view('consignment.user_manual.consignment_dashboard');
+    });
+    Route::get('/user_manual/beginning_entries', function () {
+        return view('consignment.user_manual.beginning_entries');
+    });
+    Route::get('/user_manual/inventory_report', function () {
+        return view('consignment.user_manual.inventory_report');
+    });
+    Route::get('/user_manual/inventory_summary', function () {
+        return view('consignment.user_manual.inventory_summary');
+    });
+    Route::get('/user_manual/stock_to_receive', function () {
+        return view('consignment.user_manual.stock_to_receive');
+    });
+    Route::get('/user_manual/consignment_stock_transfer', function () {
+        return view('consignment.user_manual.consignment_stock_transfer');
+    });
 });

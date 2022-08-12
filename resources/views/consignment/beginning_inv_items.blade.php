@@ -331,7 +331,7 @@
 
             $('.validate.stock').each(function(){ // check stocks
                 var item_code = $(this).data('item-code');
-                var stock_value = parseInt($(this).val());
+                var stock_value = parseInt($(this).val().replace(/,/g, ''));
                 var val = 0;
 
                 if($(this).val() != ''){
