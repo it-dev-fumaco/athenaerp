@@ -45,19 +45,19 @@
                             <form id="inventory-audit-history-form" method="GET">
                                 <div class="d-flex flex-row align-items-center mt-2">
                                     <div class="p-1 col-6">
-                                        <select class="form-control inventory-audit-history-filter store" name="store" id="consignment-store-select-history">
+                                        <select class="form-control inventory-audit-history-filter store form-control-sm" name="store" id="consignment-store-select-history">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
                                     <div class="p-1 col-4 col-lg-2">
-                                        <select class="form-control inventory-audit-history-filter year" name="year">
+                                        <select class="form-control inventory-audit-history-filter year form-control-sm" name="year">
                                             @foreach ($select_year as $year)
                                             <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="p-1 col-2">
-                                        <a href="#" class="btn btn-secondary inventory-audit-history-refresh"><i class="fas fa-undo"></i></a>
+                                        <a href="#" class="btn btn-secondary inventory-audit-history-refresh btn-sm"><i class="fas fa-undo"></i></a>
                                     </div>
                                 </div>
                             </form>
@@ -72,12 +72,12 @@
                             <form action="#" id="pending-inventory-audit-filter-form">
                                 <div class="row p-1 mt-1 mb-1">
                                     <div class="col-10">
-                                        <select class="form-control" name="store" id="consignment-store-select">
+                                        <select class="form-control form-control-sm" name="store" id="consignment-store-select">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
                                     <div class="col-2 p-0">
-                                        <a href="#" class="btn btn-secondary consignment-store-refresh m-0"><i class="fas fa-undo"></i></a>
+                                        <a href="#" class="btn btn-secondary consignment-store-refresh m-0 btn-sm"><i class="fas fa-undo"></i></a>
                                     </div>
                                 </div>
                             </form>
@@ -89,6 +89,25 @@
         </div>
 	</div>
 </div>
+
+<style>
+    .select2{
+			width: 100% !important;
+			outline: none !important;
+		}
+		.select2-selection__rendered {
+			line-height: 25px !important;
+			outline: none !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 31px !important;
+			padding-top: 1.5%;
+			outline: none !important;
+		}
+		.select2-selection__arrow {
+			height: 36px !important;
+		}
+</style>
 @endsection
 
 @section('script')
