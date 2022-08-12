@@ -1581,7 +1581,7 @@ class ConsignmentController extends Controller
         foreach($delivery_report_q as $ste => $row){
             $items_arr = [];
             foreach($row as $item){
-                $ref_warehouse = $row[0]->transfer_as == 'Consignment' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
+                $ref_warehouse = in_array($row[0]->transfer_as, ['Consignment', 'Store Transfer']) && $item->consignment_status == 'Received' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
                 $items_arr[] = [
                     'item_code' => $item->item_code,
                     'description' => $item->description,
@@ -1705,14 +1705,14 @@ class ConsignmentController extends Controller
                 $branch =  $wh->to_warehouse ? $wh->to_warehouse : $item->t_warehouse;
                 $src_branch = $wh->from_warehouse ? $wh->from_warehouse : $item->s_warehouse;
 
-                if(!isset($prices[$item->item_code])){
+                if(isset($request->receive_delivery) && !isset($prices[$item->item_code])){
                     return redirect()->back()->with('error', 'Please enter price for all items.');
                 }
                 
                 $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
 
                 // Source Warehouse
-                if($wh->transfer_as == 'Store Transfer' && $wh->purpose != 'Material Receipt'){
+                if(isset($request->receive_delivery) && $wh->transfer_as == 'Store Transfer' && $wh->purpose != 'Material Receipt'){
                     $src_consigned = isset($bin_items[$src_branch][$item->item_code]) ? $bin_items[$src_branch][$item->item_code]['consigned_qty'] : 0;
                     if($src_consigned < $item->transfer_qty){
                         return redirect()->back()->with('error', 'Not enough qty for '.$item->item_code.'. Qty needed is '.number_format($item->transfer_qty).', available qty is '.number_format($src_consigned).'.');
@@ -1733,8 +1733,11 @@ class ConsignmentController extends Controller
                     $update_values = [
                         'modified' => Carbon::now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consignment_price' => $basic_rate
                     ];
+
+                    if(isset($request->update_price)){
+                        $update_values['consignment_price'] = $basic_rate;
+                    }
 
                     if(isset($request->receive_delivery)){
                         $update_values['consigned_qty'] = $consigned_qty;
@@ -1765,7 +1768,8 @@ class ConsignmentController extends Controller
                         'stock_uom' => $item->stock_uom,
                         'valuation_rate' => $basic_rate,
                         'consigned_qty' => isset($request->receive_delivery) ? $item->transfer_qty : 0,
-                        'consignment_price' => $basic_rate
+                        'consignment_price' => $basic_rate,
+                        'consignment_status' => isset($request->receive_delivery) ? 'Received' : null
                     ]);
                 }
 
