@@ -1431,6 +1431,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /cancel/approved_beginning_inv/{id}
     public function cancelApprovedBeginningInventory($id){
         DB::beginTransaction();
         try {
@@ -1474,6 +1475,10 @@ class ConsignmentController extends Controller
                         $sales_report_total = DB::table('tabConsignment Sales Report Item')->where('parent', $srn)
                             ->selectRaw('COUNT(name) as total_items, SUM(qty) as total_qty_sold, SUM(amount) as grand_total')
                             ->groupBy('parent')->first();
+
+                        if(!$sales_report_total){
+                            continue;
+                        }
 
                         DB::table('tabConsignment Sales Report')->where('name', $srn)->update([
                             'total_items' => $sales_report_total->total_items,
@@ -2015,10 +2020,55 @@ class ConsignmentController extends Controller
             return $q->item_code;
         });
 
+        $product_sold_arr = DB::table('tabConsignment Sales Report as csr')
+            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('csri.qty', '>', 0)->where('csr.branch_warehouse', $beginning_inventory->branch_warehouse)->whereIn('csri.item_code', $item_codes)->where('csr.status', '!=', 'Cancelled')
+            ->select('csr.transaction_date', 'csr.branch_warehouse', 'csri.item_code', 'csri.description', 'csri.price', DB::raw('sum(csri.qty) as qty'), DB::raw('sum(csri.amount) as amount'))
+            ->groupBy('csr.transaction_date', 'csr.branch_warehouse', 'csri.item_code', 'csri.description', 'csri.price')
+            ->orderBy('transaction_date', 'desc')
+            ->get();
+
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
         $item_image = collect($item_images)->groupBy('parent');
 
-        return view('consignment.beginning_inv_items_list', compact('inventory', 'item_image', 'beginning_inventory'));
+        $uoms = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'stock_uom')->get();
+        $uom = collect($uoms)->groupBy('item_code');
+
+        $products_sold = [];
+        foreach($product_sold_arr as $sold){
+            $orig_exists = 0;
+            $webp_exists = 0;
+
+            $img = '/icon/no_img.png';
+            $webp = '/icon/no_img.webp';
+
+            if(isset($item_image[$sold->item_code])){
+                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$sold->item_code][0]->image_path) ? 1 : 0;
+                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$sold->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+
+                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$sold->item_code][0]->image_path)[0].'.webp' : null;
+                $img = $orig_exists == 1 ? '/img/'.$item_image[$sold->item_code][0]->image_path : null;
+
+                if($orig_exists == 0 && $webp_exists == 0){
+                    $img = '/icon/no_img.png';
+                    $webp = '/icon/no_img.webp';
+                }
+            }
+
+            $products_sold[] = [
+                'date' => $sold->transaction_date,
+                'item_code' => $sold->item_code,
+                'description' => $sold->description,
+                'image' => $img,
+                'webp' => $webp,
+                'uom' => isset($uom[$sold->item_code]) ? $uom[$sold->item_code][0]->stock_uom : null,
+                'qty' => $sold->qty,
+                'price' => $sold->price,
+                'amount' => $sold->amount
+            ];
+        }
+
+        return view('consignment.beginning_inv_items_list', compact('inventory', 'item_image', 'beginning_inventory', 'products_sold'));
     }
 
     // /beginning_inventory
