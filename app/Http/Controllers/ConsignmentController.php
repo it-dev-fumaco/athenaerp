@@ -4459,8 +4459,8 @@ class ConsignmentController extends Controller
             ->when($request->store, function ($q) use ($request){
                 return $q->whereYear('sted.t_warehouse', $request->store);
             })
-            ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by')
-            ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by')
+            ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
+            ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
             ->orderBy('ste.creation', 'desc')->orderBy('sted.consignment_status', 'desc')->paginate(20);
 
         $stes = collect($list->items())->pluck('name')->toArray();
@@ -4474,6 +4474,12 @@ class ConsignmentController extends Controller
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
         $item_images = collect($item_images)->groupBy('parent')->toArray();
+
+        $assigned_consignment_promodisers = DB::table('tabWarehouse Users as wu')
+            ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+            ->where('user_group', 'Promodiser')->where('enabled', 1)
+            ->selectRaw('GROUP_CONCAT(DISTINCT full_name) as promodiser, warehouse')
+            ->groupBy('warehouse')->pluck('promodiser', 'warehouse')->toArray();
 
         $items = [];
         foreach ($list_items as $s) {
@@ -4519,8 +4525,10 @@ class ConsignmentController extends Controller
             $result[] = [
                 'name' => $r->name,
                 'delivery_date' => Carbon::parse($r->delivery_date)->format('M. d, Y'),
+                'mreq_no' => $r->material_request ? $r->material_request : '--',
                 'warehouse' => $r->t_warehouse,
                 'status' => $r->consignment_status,
+                'promodiser' => array_key_exists($r->t_warehouse, $assigned_consignment_promodisers) ? $assigned_consignment_promodisers[$r->t_warehouse] : '--',
                 'received_by' => $r->consignment_status == 'Received' ? $r->consignment_received_by : null,
                 'date_received' =>  $r->consignment_status == 'Received' ? Carbon::parse($r->consignment_date_received)->format('M. d, Y h:i A') : null,
                 'items' => array_key_exists($r->name, $list_items) ? $list_items[$r->name] : []

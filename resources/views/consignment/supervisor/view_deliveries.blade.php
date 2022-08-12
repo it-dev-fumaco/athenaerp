@@ -6,9 +6,9 @@
 @section('content')
 <div class="content">
 	<div class="content-header p-0">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row pt-1">
-                <div class="col-md-12 p-0 m-0">
+                <div class="col-md-10 offset-md-1">
                     <div class="row">
                         <div class="col-2">
                             <div style="margin-bottom: -43px;">
@@ -44,7 +44,9 @@
                                     <thead class="text-uppercase">
                                         <th class="text-center align-middle">Reference</th>
                                         <th class="text-center align-middle">Branch / Store</th>
+                                        <th class="text-center align-middle">MREQ No.</th>
                                         <th class="text-center align-middle">Delivery Date</th>
+                                        <th class="text-center align-middle">Promodiser</th>
                                         <th class="text-center align-middle">Status</th>
                                         <th class="text-center align-middle">Received By</th>
                                         <th class="text-center align-middle">Action</th>
@@ -54,7 +56,9 @@
                                         <tr>
                                             <td class="text-center align-middle">{{ $r['name'] }}</td>
                                             <td class="text-center align-middle">{{ $r['warehouse'] }}</td>
+                                            <td class="text-center align-middle">{{ $r['mreq_no'] }}</td>
                                             <td class="text-center align-middle">{{ $r['delivery_date'] }}</td>
+                                            <td class="text-center align-middle">{{ $r['promodiser'] }}</td>
                                             <td class="text-center align-middle">
                                                 @if ($r['status'] == 'Received')
                                                 <span class="badge badge-success" style="font-size: 8pt;">{{ $r['status'] }}</span>
