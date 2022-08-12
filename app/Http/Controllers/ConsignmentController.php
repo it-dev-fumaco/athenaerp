@@ -4450,6 +4450,8 @@ class ConsignmentController extends Controller
     }
 
     public function viewDeliveries(Request $request) {
+        $status = $request->status;
+
         $list = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->whereDate('ste.delivery_date', '>=', '2022-06-25')
@@ -4457,7 +4459,13 @@ class ConsignmentController extends Controller
             ->where('ste.purpose', 'Material Transfer')
             ->where('ste.docstatus', 1)
             ->when($request->store, function ($q) use ($request){
-                return $q->whereYear('sted.t_warehouse', $request->store);
+                return $q->where('sted.t_warehouse', $request->store);
+            })
+            ->when($status && $status == 'Received', function ($q) use ($status){
+                return $q->where('sted.consignment_status', $status);
+            })
+            ->when($status && $status == 'To Receive', function ($q) use ($status){
+                return $q->whereNull('sted.consignment_status');
             })
             ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
             ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')

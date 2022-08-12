@@ -31,6 +31,13 @@
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
+                                    <div class="p-1 col-2">
+                                        <select class="form-control" name="status">
+                                            <option value="">Select Status</option>
+                                            <option value="Received" {{ request('status') == 'Received' ? 'selected' : '' }}>Received</option>
+                                            <option value="To Receive" {{ request('status') == 'To Receive' ? 'selected' : '' }}>To Receive</option>
+                                        </select>
+                                    </div>
                                     <div class="p-1">
                                         <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
                                     </div>
@@ -73,7 +80,7 @@
                                         </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="6" class="text-center text-uppercase text-muted">No record(s) found.</td>
+                                                <td colspan="8" class="text-center text-uppercase text-muted">No record(s) found.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
