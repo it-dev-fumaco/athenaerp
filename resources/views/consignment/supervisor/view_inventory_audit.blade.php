@@ -24,7 +24,24 @@
                 <div class="col-md-8 offset-md-1">
                     <div class="card card-info card-outline">
                         <div class="card-body p-2">
-                            <h6 class="text-center font-weight-bolder text-uppercase">Inventory Report History</h6>
+                            <div class="d-flex flex-row">
+                                <div class="p-1 col-3">
+                                    <small class="d-block">Recent Period:</small>
+                                    <span class="d-block font-weight-bold text-center">{{ $displayed_data['recent_period'] }}</span>
+                                </div>
+                                <div class="p-1 col-3" style="border-left: 10px solid #2E86C1;">
+                                    <small class="d-block" style="font-size: 8pt;">Stores Submitted</small>
+                                    <h5 class="d-block font-weight-bold m-0">{{ $displayed_data['stores_submitted'] }}</h5>
+                                </div>
+                                <div class="p-1 col-3" style="border-left: 10px solid #E67E22;">
+                                    <small class="d-block" style="font-size: 8pt;">Stores Pending</small>
+                                    <h5 class="d-block font-weight-bold m-0">{{ $displayed_data['stores_pending'] }}</h5>
+                                </div>
+                                <div class="p-1 col-3" style="border-left: 10px solid #27AE60;">
+                                    <small class="d-block">Total Sales</small>
+                                    <h4 class="d-block font-weight-bold m-0">{{ $displayed_data['total_sales'] }}</h4>
+                                </div>
+                            </div>
                             <form id="inventory-audit-history-form" method="GET">
                                 <div class="d-flex flex-row align-items-center mt-2">
                                     <div class="p-1 col-6">

@@ -3562,7 +3562,39 @@ class ConsignmentController extends Controller
             return view('consignment.promodiser_inventory_audit_list', compact('pending', 'assigned_consignment_stores', 'select_year'));
         }
 
-        return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year'));
+        // get previous cutoff
+        $current_cutoff = $this->getCutoffDate(Carbon::now()->endOfDay());
+        $previous_cutoff = $this->getCutoffDate($current_cutoff[0]);
+
+        $previous_cutoff_start = $previous_cutoff[0];
+        $previous_cutoff_end = $previous_cutoff[1];
+
+        $previous_cutoff_display = Carbon::parse($previous_cutoff_start)->format('M. d, Y') . ' - ' . Carbon::parse($previous_cutoff_end)->format('M. d, Y');
+
+        $previous_cutoff_sales = DB::table('tabConsignment Sales Report')
+            ->where('status', '!=', 'Cancelled')->where('cutoff_period_from', Carbon::parse($previous_cutoff_start)->format('Y-m-d'))
+            ->where('cutoff_period_to', Carbon::parse($previous_cutoff_end)->format('Y-m-d'))->sum('grand_total');
+
+        $consignment_branches = DB::table('tabWarehouse Users as wu')
+            ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+            ->join('tabWarehouse as w', 'w.name', 'acw.warehouse')
+            ->where('wu.user_group', 'Promodiser')->where('w.is_group', 0)
+            ->where('w.disabled', 0)->distinct()->pluck('w.name')->count();
+
+        $stores_with_submitted_report = DB::table('tabConsignment Inventory Audit Report')
+            ->where('cutoff_period_from', Carbon::parse($previous_cutoff_start)->format('Y-m-d'))
+            ->where('cutoff_period_to', Carbon::parse($previous_cutoff_end)->format('Y-m-d'))
+            ->distinct()->pluck('branch_warehouse')->count();
+
+        $displayed_data = [
+            'recent_period' => $previous_cutoff_display,
+            'stores_submitted' => $stores_with_submitted_report,
+            'stores_pending' => $consignment_branches - $stores_with_submitted_report,
+            'total_sales' => '₱ ' . number_format($previous_cutoff_sales, 2) 
+        ];
+
+
+        return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year', 'displayed_data'));
     }
 
     public function getSubmittedInvAudit(Request $request) {
@@ -3613,7 +3645,7 @@ class ConsignmentController extends Controller
                 return $q->whereYear('audit_date_from', $year);
             })
             ->selectRaw('audit_date_from, audit_date_to, branch_warehouse, transaction_date, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodiser')
-            ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(15);
+            ->orderBy('audit_date_to', 'desc')->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(15);
 
         $result = [];
         foreach ($list as $row) {
