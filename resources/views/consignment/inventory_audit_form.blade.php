@@ -137,7 +137,7 @@
                                                                     <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                                 </div>
                                                                 <div class="custom-a p-0">
-                                                                    <input type="number" class="form-control form-control-sm qty item-audit-qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}">
+                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}">
                                                                 </div>
                                                                 <div class="input-group-append p-0">
                                                                     <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
@@ -369,7 +369,7 @@
 
             var empty_inputs = [];
             $('.item-audit-qty').each(function() {
-                if (!$(this).val()) {
+                if (!$(this).val().replace(/,/g, '') || !$.isNumeric($(this).val().replace(/,/g, ''))) {
                     var id = $(this).attr('id');
                     empty_inputs.push(id);
                 }
@@ -390,7 +390,7 @@
             $('.item-row').each(function() {
                 var item_price = parseFloat($(this).find('.item-price').eq(0).text());
                 var orig_sold_qty = parseInt($(this).find('.orig-item-sold-qty').eq(0).text());
-                var audit_qty = parseInt($(this).find('.item-audit-qty').eq(0).val());
+                var audit_qty = parseInt($(this).find('.item-audit-qty').eq(0).val().replace(/,/g, ''));
                 var orig_consigned_qty = parseInt($(this).find('.orig-item-consigned-qty').eq(0).text());
                 total_sold_qty += orig_sold_qty;
                 total_sales_amount += (orig_sold_qty * item_price);
@@ -419,7 +419,7 @@
             // Get the field name
             var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
             // Get its current value
-            var currentVal = parseInt(fieldName.val());
+            var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
             // get consigned qty
             var origConsigned = parseInt($(this).parents('tr').find('.orig-item-consigned-qty').eq(0).text());
             var consignedField = $(this).parents('tr').find('.item-consigned-qty').eq(0);
@@ -449,7 +449,7 @@
             // Get the field name
             var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
             // Get its current value
-            var currentVal = parseInt(fieldName.val());
+            var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
              // get consigned qty
             var origConsigned = parseInt($(this).parents('tr').find('.orig-item-consigned-qty').eq(0).text());
             var consignedField = $(this).parents('tr').find('.item-consigned-qty').eq(0);

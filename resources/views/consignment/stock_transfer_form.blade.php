@@ -385,7 +385,7 @@
 
                 $('.validate.qty.to-return').each(function (){
                     var max = $(this).data('max');
-                    var val = $(this).val();
+                    var val = $(this).val().replace(/,/g, '');
 
                     if($.isNumeric(val) && parseInt(val) > 0 && parseInt(val) <= parseInt(max)){
                         $(this).css('border', '1px solid #CED4DA');
@@ -457,7 +457,7 @@
                 var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
                 var max = fieldName.data('max');
                 // Get its current value
-                var currentVal = parseInt(fieldName.val());
+                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
                 // If is not undefined
                 if (!isNaN(currentVal)) {
                     // Increment
@@ -477,7 +477,7 @@
                 // Get the field name
                 var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
                 // Get its current value
-                var currentVal = parseInt(fieldName.val());
+                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
                 // If it isn't undefined or its greater than 0
                 if (!isNaN(currentVal) && currentVal > 0) {
                     // Decrement one
@@ -596,7 +596,7 @@
                 var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
                 var max = fieldName.data('max');
                 // Get its current value
-                var currentVal = parseInt(fieldName.val());
+                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
                 // If is not undefined
                 if (!isNaN(currentVal)) {
                     // Increment
@@ -618,7 +618,7 @@
                 // Get the field name
                 var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
                 // Get its current value
-                var currentVal = parseInt(fieldName.val());
+                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
                 // If it isn't undefined or its greater than 0
                 if (!isNaN(currentVal) && currentVal > 0) {
                     // Decrement one

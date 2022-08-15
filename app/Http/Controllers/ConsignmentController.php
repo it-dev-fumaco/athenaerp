@@ -275,20 +275,21 @@ class ConsignmentController extends Controller
             $csr_grand_total = $csr_total_qty_sold = $csr_total_items = 0;
             $iar_grand_total = $iar_total_items = 0;
             foreach ($data['item'] as $item_code => $row) {
+                $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
                 $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
                 $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
-                $sold_qty = $consigned_qty - (float)$row['qty'];
+                $sold_qty = $consigned_qty - (float)$qty;
                 $amount = ((float)$price * (float)$sold_qty);
-                $iar_amount = ((float)$price * (float)$row['qty']);
+                $iar_amount = ((float)$price * (float)$qty);
 
-                if ($consigned_qty < (float)$row['qty']) {
+                if ($consigned_qty < (float)$qty) {
                     return redirect()->back()
                         ->with(['old_data' => $data, 'item_code' => $item_code])
                         ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                 }
 
                 DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                    ->update(['consigned_qty' => (float)$row['qty']]);
+                    ->update(['consigned_qty' => (float)$qty]);
 
                 // Consignment Sales Report
                 $has_existing_csri = false;
@@ -354,7 +355,7 @@ class ConsignmentController extends Controller
                         DB::table('tabConsignment Sales Report Item')->where('name', $iar_existing_child_record->name)->update([
                             'modified' => $currentDateTime->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
-                            'qty' => (float)$row['qty'],
+                            'qty' => (float)$qty,
                             'amount' => $iar_amount
                         ]);
 
@@ -382,7 +383,7 @@ class ConsignmentController extends Controller
                         'idx' => $no_of_items_updated,
                         'item_code' => $item_code,
                         'description' => $row['description'],
-                        'qty' => (float)$row['qty'],
+                        'qty' => (float)$qty,
                         'price' => (float)$price,
                         'amount' => $iar_amount,
                         'available_stock_on_transaction' => $consigned_qty
@@ -577,6 +578,7 @@ class ConsignmentController extends Controller
         return [$period_from, $period_to];
     }
 
+    // /submit_product_sold_form
     public function submitProductSoldForm(Request $request) {
         $data = $request->all();
 
@@ -638,28 +640,29 @@ class ConsignmentController extends Controller
 
                 $child_data = [];
                 foreach ($data['item'] as $item_code => $row) {
-                    if ($row['qty'] > 0) {
+                    $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
+                    if ($qty > 0) {
                         $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
                         $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
-                        if ((float)$row['qty'] < 0) {
+                        if ((float)$qty < 0) {
                             return redirect()->back()
                                 ->with(['old_data' => $data])
                                 ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
                         }
     
-                        if ($consigned_qty < (float)$row['qty']) {
+                        if ($consigned_qty < (float)$qty) {
                             return redirect()->back()
                                 ->with(['old_data' => $data])
                                 ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                         }
     
                         DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
                         
                         $no_of_items_updated++;
-                        $amount = ((float)$price * (float)$row['qty']);
+                        $amount = ((float)$price * (float)$qty);
                         $grand_total += $amount;
-                        $total_qty_sold += $row['qty'];
+                        $total_qty_sold += $qty;
                         $total_items++;
                         $child_data[] = [
                             'name' => uniqid(),
@@ -674,7 +677,7 @@ class ConsignmentController extends Controller
                             'idx' => $no_of_items_updated,
                             'item_code' => $item_code,
                             'description' => $row['description'],
-                            'qty' => $row['qty'],
+                            'qty' => $qty,
                             'price' => (float)$price,
                             'amount' => $amount,
                             'available_stock_on_transaction' => $consigned_qty
@@ -695,10 +698,11 @@ class ConsignmentController extends Controller
             if ($existing_record) {
                 $child_data = [];
                 foreach ($data['item'] as $item_code => $row) {
+                    $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
                     $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
                     $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
 
-                    $amount = ((float)$price * (float)$row['qty']);
+                    $amount = ((float)$price * (float)$qty);
 
                     $existing = DB::table('tabConsignment Sales Report Item')
                         ->where('item_code', $item_code)->where('parent', $existing_record->name)->first();
@@ -706,55 +710,55 @@ class ConsignmentController extends Controller
                     if ($existing) {
                         $consigned_qty = $consigned_qty + $existing->qty;
 
-                        if ($consigned_qty < (float)$row['qty']) {
+                        if ($consigned_qty < (float)$qty) {
                             return redirect()->back()
                                 ->with(['old_data' => $data])
                                 ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                         }
 
-                        if ((float)$row['qty'] < 0) {
+                        if ((float)$qty < 0) {
                             return redirect()->back()
                                 ->with(['old_data' => $data])
                                 ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
                         }
 
                         DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
 
                         // for update
                         $values = [
                             'modified' => $currentDateTime->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
-                            'qty' => $row['qty'],
+                            'qty' => $qty,
                             'amount' => $amount
                         ];
 
                         $no_of_items_updated++;
                         $grand_total += $amount;
-                        $total_qty_sold += $row['qty'];
+                        $total_qty_sold += $qty;
 
                         DB::table('tabConsignment Sales Report Item')->where('name', $existing->name)->update($values);
                     } else {
                         // for insert
-                        if ($row['qty'] > 0) {
-                            if ((float)$row['qty'] < 0) {
+                        if ($qty > 0) {
+                            if ((float)$qty < 0) {
                                 return redirect()->back()
                                     ->with(['old_data' => $data])
                                     ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
                             }
     
-                            if ($consigned_qty < (float)$row['qty']) {
+                            if ($consigned_qty < (float)$qty) {
                                 return redirect()->back()
                                     ->with(['old_data' => $data])
                                     ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                             }
     
                             DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                                ->update(['consigned_qty' => (float)$consigned_qty - (float)$row['qty']]);
+                                ->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
                             
                             $no_of_items_updated++;
                             $grand_total += $amount;
-                            $total_qty_sold += $row['qty'];
+                            $total_qty_sold += $qty;
     
                             $child_data[] = [
                                 'name' => uniqid(),
@@ -769,7 +773,7 @@ class ConsignmentController extends Controller
                                 'idx' => $no_of_items_updated,
                                 'item_code' => $item_code,
                                 'description' => $row['description'],
-                                'qty' => $row['qty'],
+                                'qty' => $qty,
                                 'price' => (float)$price,
                                 'amount' => $amount,
                                 'available_stock_on_transaction' => $consigned_qty
@@ -2636,7 +2640,7 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $item_codes = $request->item_code;
-            $damaged_qty = preg_replace("/[^0-9]/", "", $request->damaged_qty);
+            $damaged_qty = preg_replace("/[^0-9 .]/", "", $request->damaged_qty);
             $reason = $request->reason;
 
             if(collect($damaged_qty)->min() <= 0){
@@ -2658,7 +2662,7 @@ class ConsignmentController extends Controller
                     }
                 }
 
-                $qty = isset($damaged_qty[$item_code]) ? number_format($damaged_qty[$item_code]) : 0;
+                $qty = isset($damaged_qty[$item_code]) ? $damaged_qty[$item_code] : 0;
                 $uom = isset($items[$item_code]) ? $items[$item_code][0]->stock_uom : null;
 
                 $insert_values = [
@@ -2977,7 +2981,9 @@ class ConsignmentController extends Controller
             $now = Carbon::now();
 
             $item_codes = array_filter(collect($request->item_code)->unique()->toArray());
-            $transfer_qty = $request->item;
+            $transfer_qty = collect($request->item)->map(function ($q){
+                return preg_replace("/[^0-9 .]/", "", $q);
+            });
 
             $source_warehouse = $request->transfer_as == 'Sales Return' ? null : $request->source_warehouse;
             $target_warehouse = $request->transfer_as == 'For Return' ? 'Quarantine Warehouse - FI' : $request->target_warehouse;
@@ -3450,6 +3456,7 @@ class ConsignmentController extends Controller
         return view('consignment.stock_transfers_list', compact('stock_transfers', 'ste_arr', 'purpose'));
     }
 
+    // /inventory_audit
     public function viewInventoryAuditList(Request $request) {
         $select_year = [];
         for ($i = 2022; $i <= date('Y') ; $i++) { 
