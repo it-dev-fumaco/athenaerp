@@ -102,7 +102,7 @@
                                                                                 </div>
                                                                                 <div class="p-1" id="description-display" style="font-size: 9.5pt !important;"></div>
                                                                                 <div class="p-1" style="font-size: 9.5pt !important;">
-                                                                                    <textarea id="reason-display" class="form-control" placeholder='Describe the damage...' rows=5></textarea>
+                                                                                    <textarea id="reason-display" class="form-control" placeholder='(Required) Describe the damage...' rows=5></textarea>
                                                                                 </div>
                                                                             </td>
                                                                         </tr>
@@ -469,7 +469,7 @@
                             description + 
                         '</div>' +
                         '<div class="p-1" style="font-size: 9.5pt !important;">' +
-                            '<textarea name="reason[' + item_code +']" class="form-control reason" id="reason-' + item_code + '" placeholder="Describe the damage..." rows="5" required>' + reason + '</textarea>' +
+                            '<textarea name="reason[' + item_code +']" class="form-control reason" id="reason-' + item_code + '" placeholder="(Required) Describe the damage..." rows="5" required>' + reason + '</textarea>' +
                         '</div>' +
                     '</td>' +
                 '</tr>';
@@ -507,7 +507,7 @@
                 // check if all qty inputs are numbers and more than 0
                 var qty_arr = new Array();
                 $('.validate.dmg-qty').each(function(){
-                    if($.isNumeric($(this).val()) && parseInt($(this).val()) > 0){
+                    if($.isNumeric($(this).val().replace(/,/g, '')) && parseInt($(this).val().replace(/,/g, '')) > 0){
                         qty_arr.push(1);
                         $(this).css('border', '1px solid #CED4DA');
                     }else{
