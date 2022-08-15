@@ -8,7 +8,7 @@
 	<div class="content-header p-0">
         <div class="container-fluid">
             <div class="row pt-1">
-                <div class="col-md-10 offset-md-1">
+                <div class="col-md-12">
                     <div class="row">
                         <div class="col-2">
                             <div style="margin-bottom: -43px;">
@@ -21,7 +21,7 @@
                     </div>
                     <div class="row">
                         <div class="col-12 p-0">
-                            <h5 class="text-center font-weight-bold m-2 text-uppercase">Sales Report</h5>
+                            <h5 class="text-center font-weight-bold m-2 text-uppercase">Sales & Inventory Report</h5>
                         </div>
                     </div>
                     <div class="card card-secondary card-outline">
@@ -81,46 +81,60 @@
                             </div>
                             <div class="d-flex flex-row justify-content-between mt-3">
                                 <div class="p-1 text-left">
-                                    <h6 class="m-0 font-weight-bolder text-uppercase">Sold Item(s)</h6>
+                                    <h6 class="m-0 font-weight-bolder text-uppercase">Item List</h6>
                                 </div>
                                 <div class="p-1 text-center">
-                                    <p class="m-0 font-details">Total Qty Sold: <span class="font-weight-bold">{{ collect($result)->sum('sold_qty') }}</span></p>
+                                    <p class="m-0 font-details">Total Item(s): <span class="font-weight-bold">{{ count($result) }}</span></p>
                                 </div>
                             </div>
-                            <table class="table table-bordered table-striped" style="font-size: 10pt;">
-                                <thead class="border-top text-uppercase">
-                                    <th class="text-center font-responsive p-2 align-middle first" style="width: 55%;">Item Code</th>
-                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Sold Qty</th>
-                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Rate</th>
-                                    <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Amount</th>
+                            <table class="table table-bordered table-striped">
+                                <thead class="border-top">
+                                    <tr>
+                                        <th class="text-center p-1 align-middle text-uppercase" style="width: 30%; font-size: 8pt;" rowspan="2">Item Code</th>
+                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Opening</th>
+                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Audit Qty</th>
+                                        <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) + 3 }}" style="width: 44%; font-size: 8pt;">Sold Qty</th>
+                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Received</th>
+                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Returned</th>
+                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Transferred</th>
+                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Damaged</th>
+                                    </tr>
+                                    <tr>
+                                        @foreach ($sales_transaction_dates as $date)
+                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
+                                        @endforeach
+                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">Total</th>
+                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">Rate</th>
+                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">Amount</th>
+                                    </tr>
                                 </thead>
-                                <tbody>
-                                    @forelse ($sales_items as $s)
+                                <tbody style="font-size: 10pt;">
+                                    @forelse ($result as $row)
                                     <tr>
                                         <td class="text-justify p-1 align-middle">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
-                                                <div class="p-1 text-left">
-                                                    <a href="{{ asset('storage/') }}{{ $s['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $s['item_code'] }}" data-title="{{ $s['item_code'] }}">
+                                                <div class="p-0 text-left">
+                                                    <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
                                                         <picture>
-                                                            <source srcset="{{ asset('storage'.$s['img_webp']) }}" type="image/webp">
-                                                            <source srcset="{{ asset('storage'.$s['img']) }}" type="image/jpeg">
-                                                            <img src="{{ asset('storage'.$s['img']) }}" alt="{{ str_slug(explode('.', $s['img'])[0], '-') }}" class="row-img">
+                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp">
+                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg">
+                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" class="row-img">
                                                         </picture>
                                                     </a>
                                                 </div>
-                                                <div class="p-1 m-0">
-                                                    <span class="d-block font-weight-bold">{{ $s['item_code'] }}</span>
-                                                    <small class="d-block">{!! strip_tags($s['description']) !!}</small>
+                                                <div class="pl-2 m-0">
+                                                    <small class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</small>
                                                 </div>
                                             </div>
-                                            <div class="modal fade" id="mobile-{{ $s['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+                                            <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog" role="document">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">{{ $s['item_code'] }}</h5>
-                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                            <span aria-hidden="true">&times;</span>
-                                                        </button>
+                                                            <h5 class="modal-title">{{ $row['item_code'] }}</h5>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
                                                         </div>
                                                         <div class="modal-body">
                                                             <form></form>
@@ -129,19 +143,19 @@
                                                                     <div class="carousel-inner">
                                                                         <div class="carousel-item active">
                                                                             <picture>
-                                                                                <source id="mobile-{{ $s['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$s['img_webp'] }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                <source id="mobile-{{ $s['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$s['img'] }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                <img class="d-block w-100" id="mobile-{{ $s['item_code'] }}-image" src="{{ asset('storage/').$s['img'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $s['img'])[0], '-') }}">
+                                                                                <source id="mobile-{{ $row['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$row['img_webp'] }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                <source id="mobile-{{ $row['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$row['img'] }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                <img class="d-block w-100" id="mobile-{{ $row['item_code'] }}-image" src="{{ asset('storage/').$row['img'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}">
                                                                             </picture>
                                                                         </div>
-                                                                        <span class='d-none5' id="mobile-{{ $s['item_code'] }}-image-data">0</span>
+                                                                        <span class='d-none5' id="mobile-{{ $row['item_code'] }}-image-data">0</span>
                                                                     </div>
-                                                                    @if ($s['img_count'] > 1)
-                                                                    <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $s['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                    @if ($row['img_count'] > 1)
+                                                                    <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
                                                                         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                                                         <span class="sr-only">Previous</span>
                                                                     </a>
-                                                                    <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $s['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                    <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
                                                                         <span class="carousel-control-next-icon" aria-hidden="true"></span>
                                                                         <span class="sr-only">Next</span>
                                                                     </a>
@@ -154,230 +168,78 @@
                                             </div>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
-                                            <span class="d-block">{{ number_format($s['qty']) }}</span>
+                                            <small class="d-block">{{ $row['opening_qty'] }}</small>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
-                                            <span class="d-block">{{ '₱ ' . number_format($s['price'], 2) }}</span>
+                                            <small class="d-block">{{ $row['audit_qty'] }}</small>
+                                        </td>
+                                        @foreach ($sales_transaction_dates as $date)
+                                        <td class="text-center p-1 align-middle font-weight-bold">
+                                            <small class="d-block">{{ isset($sales_items[$row['item_code']][$date]) ? $sales_items[$row['item_code']][$date]['qty'] : '-' }}</small>
+                                        </td>
+                                        @endforeach
+                                        @php
+                                            $total_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('qty') : '-';
+                                            $total_amount_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('amount') : 0;
+                                            $sold_item_price = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->pluck('price')->first() : 0;
+                                        @endphp
+                                        <td class="text-center p-1 align-middle font-weight-bold">{{ $total_sold }}</td>
+                                        <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
+                                            <small class="d-block">{{ '₱ ' . number_format($sold_item_price, 2) }}</small>
+                                        </td>
+                                        <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
+                                            <small class="d-block">{{ '₱ ' . number_format($total_amount_sold, 2) }}</small>
+                                        </td>
+                                        @php
+                                            $total_received = isset($received_items[$row['item_code']]) ? collect($received_items[$row['item_code']])->sum('qty') : '-';
+                                            $total_returned = isset($returned_items[$row['item_code']]) ? collect($returned_items[$row['item_code']])->sum('qty') : '-';
+                                            $total_transferred = isset($transferred_items[$row['item_code']]) ? collect($transferred_items[$row['item_code']])->sum('qty') : '-';
+                                            $total_damaged = isset($damaged_item_list[$row['item_code']]) ? collect($damaged_item_list[$row['item_code']])->sum('qty') : '-';
+                                        @endphp
+                                        <td class="text-center p-1 align-middle">
+                                            @if ($total_received != '-')
+                                            <a href="#" data-toggle="modal" data-target="#received-{{ $row['item_code'] }}-modal">
+                                                <small class="d-block">{{ $total_received }}</small>
+                                            </a>
+                                            @else
+                                                <small class="d-block">{{ $total_received }}</small>
+                                            @endif
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
-                                            <span class="d-block">{{ '₱ ' . number_format($s['amount'], 2) }}</span>
+                                            @if ($total_returned != '-')
+                                            <a href="#" data-toggle="modal" data-target="#returned-{{ $row['item_code'] }}-modal">
+                                                <small class="d-block">{{ $total_returned }}</small>
+                                            </a>
+                                            @else
+                                                <small class="d-block">{{ $total_returned }}</small>
+                                            @endif
+                                        </td>
+                                        <td class="text-center p-1 align-middle font-weight-bold">
+                                            @if ($total_transferred != '-')
+                                            <a href="#" data-toggle="modal" data-target="#transferred-{{ $row['item_code'] }}-modal">
+                                                <small class="d-block">{{ $total_transferred }}</small>
+                                            </a>
+                                            @else
+                                                <small class="d-block">{{ $total_transferred }}</small>
+                                            @endif
+                                        </td>
+                                        <td class="text-center p-1 align-middle font-weight-bold">
+                                            @if ($total_damaged != '-')
+                                            <a href="#" data-toggle="modal" data-target="#damaged-{{ $row['item_code'] }}-modal">
+                                                <small class="d-block">{{ $total_damaged }}</small>
+                                            </a>
+                                            @else
+                                                <small class="d-block">{{ $total_damaged }}</small>
+                                            @endif
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
+                                        <td class="text-center font-weight-bold text-uppercase text-muted" colspan="5">No item(s) found</td>
                                     </tr> 
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12 p-0">
-                            <h5 class="text-center font-weight-bold m-2 text-uppercase">Inventory Report</h5>
-                        </div>
-                        <div class="col-6">
-                            <div class="card card-secondary card-outline p-2">
-                                <div class="d-flex flex-row align-items-end">
-                                    <div class="p-1 col-12 text-left">
-                                        <p class="m-1 font-details font-weight-bold text-uppercase">Received Item(s) within this period</p>
-                                    </div>
-                                </div>
-                                <table class="table mr-2 border" id="received-items-table" style="font-size: 10pt;">
-                                    <thead class="border-top text-uppercase">
-                                        <th class="text-center font-responsive p-2 align-middle first" style="width: 15%;">Reference</th>
-                                        <th class="text-center font-responsive p-2 align-middle first" style="width: 50%;">Item Code</th>
-                                        <th class="text-center font-responsive p-2 align-middle" style="width: 10%;">Qty</th>
-                                        <th class="text-center font-responsive p-2 align-middle" style="width: 10%;">Rate</th>
-                                        <th class="text-center font-responsive p-2 align-middle" style="width: 15%;">Amount</th>
-                                    </thead>
-                                    <tbody>
-                                    @forelse ($received_items as $r)
-                                        <tr>
-                                            <td class="text-center p-2 align-middle font-weight-bold">
-                                                <small class="d-block font-weight-bold">{{ $r['reference'] }}</small>
-                                                <small class="d-block">{{ $r['date_received'] }}</small>
-                                            </td>
-                                            <td class="text-justify p-1 align-middle">
-                                                <div class="d-flex flex-row justify-content-start align-items-center">
-                                                    <div class="p-1 text-left">
-                                                        <a href="{{ asset('storage/') }}{{ $r['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $r['item_code'] }}" data-title="{{ $r['item_code'] }}">
-                                                            <picture>
-                                                                <source srcset="{{ asset('storage'.$r['img_webp']) }}" type="image/webp">
-                                                                <source srcset="{{ asset('storage'.$r['img']) }}" type="image/jpeg">
-                                                                <img src="{{ asset('storage'.$r['img']) }}" alt="{{ str_slug(explode('.', $r['img'])[0], '-') }}" class="row-img">
-                                                            </picture>
-                                                        </a>
-                                                    </div>
-                                                    <div class="p-1 m-0">
-                                                        <small class="d-block"><b>{{ $r['item_code'] }}</b> {!! strip_tags($r['description']) !!}</small>
-                                                    </div>
-                                                </div>
-    
-                                                <div class="modal fade" id="mobile-{{ $r['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog" role="document">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title">{{ $r['item_code'] }}</h5>
-                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                    <span aria-hidden="true">&times;</span>
-                                                                </button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <form></form>
-                                                                <div id="image-container" class="container-fluid">
-                                                                    <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                        <div class="carousel-inner">
-                                                                            <div class="carousel-item active">
-                                                                                <picture>
-                                                                                    <source id="mobile-{{ $r['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$r['img_webp'] }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <source id="mobile-{{ $r['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$r['img'] }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <img class="d-block w-100" id="mobile-{{ $r['item_code'] }}-image" src="{{ asset('storage/').$r['img'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $r['img'])[0], '-') }}">
-                                                                                </picture>
-                                                                            </div>
-                                                                            <span class='d-none5' id="mobile-{{ $r['item_code'] }}-image-data">0</span>
-                                                                        </div>
-                                                                        @if ($r['img_count'] > 1)
-                                                                        <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $r['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Previous</span>
-                                                                        </a>
-                                                                        <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $r['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Next</span>
-                                                                        </a>
-                                                                        @endif
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="text-center p-1 align-middle font-weight-bold">
-                                                <small class="d-block">{{ $r['qty'] }}</small>
-                                            </td>
-                                            <td class="text-center p-1 align-middle font-weight-bold">
-                                                <small class="d-block">{{ '₱ ' . number_format($r['price'], 2) }}</small>
-                                            </td>
-                                            <td class="text-center p-1 align-middle font-weight-bold">
-                                                <small class="d-block">{{ '₱ ' . number_format($r['amount'], 2) }}</small>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
-                                        </tr> 
-                                    @endforelse
-                                    </tbody>
-                                </table>
-                                    <div class="m-2">
-                                        Total: <b>{{ count($received_items) }}</b>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="card card-secondary card-outline p-2">
-                                    <div class="d-flex flex-row align-items-end">
-                                        <div class="p-1 col-6 text-left">
-                                            <p class="m-1 font-details font-weight-bold text-uppercase">Stock Level</p>
-                                        </div>
-                                        <div class="p-1 col-6 text-right">
-                                            <p class="m-1 font-details">Inventory Value: <span class="font-weight-bold">{{ '₱ ' . number_format($list[0]->grand_total, 2) }}</span></p>
-                                        </div>
-                                    </div>
-                                    <table class="table table-bordered table-striped" style="font-size: 10pt;">
-                                        <thead class="border-top text-uppercase">
-                                            <th class="text-center p-2 align-middle first" style="width: 50%;">Item Code</th>
-                                            <th class="text-center p-2 align-middle" style="width: 15%;">Opening</th>
-                                            <th class="text-center p-2 align-middle" style="width: 10%;">Qty</th>
-                                            <th class="text-center p-2 align-middle" style="width: 15%;">Rate</th>
-                                            <th class="text-center p-2 align-middle" style="width: 15%;">Amount</th>
-                                        </thead>
-                                        <tbody>
-                                            @forelse ($result as $row)
-                                            <tr>
-                                                <td class="text-justify p-1 align-middle">
-                                                    <div class="d-flex flex-row justify-content-start align-items-center">
-                                                        <div class="p-1 text-left">
-                                                            <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
-                                                                <picture>
-                                                                    <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp">
-                                                                    <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg">
-                                                                    <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" class="row-img">
-                                                                </picture>
-                                                            </a>
-                                                        </div>
-                                                        <div class="p-1 m-0">
-                                                            <small class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</small>
-                                                        </div>
-                                                    </div>
-        
-                                                    <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog" role="document">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title">{{ $row['item_code'] }}</h5>
-                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                        <span aria-hidden="true">&times;</span>
-                                                                    </button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <form></form>
-                                                                    <div id="image-container" class="container-fluid">
-                                                                        <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                            <div class="carousel-inner">
-                                                                                <div class="carousel-item active">
-                                                                                    <picture>
-                                                                                        <source id="mobile-{{ $row['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$row['img_webp'] }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                        <source id="mobile-{{ $row['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$row['img'] }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                        <img class="d-block w-100" id="mobile-{{ $row['item_code'] }}-image" src="{{ asset('storage/').$row['img'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}">
-                                                                                    </picture>
-                                                                                </div>
-                                                                                <span class='d-none5' id="mobile-{{ $row['item_code'] }}-image-data">0</span>
-                                                                            </div>
-                                                                            @if ($row['img_count'] > 1)
-                                                                            <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                                <span class="sr-only">Previous</span>
-                                                                            </a>
-                                                                            <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                                <span class="sr-only">Next</span>
-                                                                            </a>
-                                                                            @endif
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <small class="d-block">{{ $row['opening_qty'] }}</small>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <small class="d-block">{{ $row['audit_qty'] }}</small>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <small class="d-block">{{ '₱ ' . number_format($row['price'], 2) }}</small>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold">
-                                                    <small class="d-block">{{ '₱ ' . number_format($row['amount'], 2) }}</small>
-                                                </td>
-                                            </tr>
-                                            @empty
-                                            <tr>
-                                                <td class="text-center font-weight-bold text-uppercase text-muted" colspan="5">No item(s) found</td>
-                                            </tr> 
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                    <div class="m-2">
-                                        Total: <b>{{ count($list) }}</b>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -386,6 +248,180 @@
 	</div>
 </div>
 
+@foreach ($result as $r)
+@php
+    $receiving_txn = isset($received_items[$r['item_code']]) ? $received_items[$r['item_code']] : [];
+    $returned_txn = isset($returned_items[$r['item_code']]) ? $returned_items[$r['item_code']] : [];
+    $transfer_txn = isset($transferred_items[$r['item_code']]) ? $transferred_items[$r['item_code']] : [];
+    $damaged_txn = isset($damaged_item_list[$r['item_code']]) ? $damaged_item_list[$r['item_code']] : [];
+@endphp
+<div class="modal fade" id="received-{{ $r['item_code'] }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" style="font-size: 9pt;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ $r['item_code'] }} - Stocks Received</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form></form>
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                        <th class="p-2 align-middle text-center">Reference No.</th>
+                        <th class="p-2 align-middle text-center">Delivery Date</th>
+                        <th class="p-2 align-middle text-center">Quantity</th>
+                        <th class="p-2 align-middle text-center">Rate</th>
+                        <th class="p-2 align-middle text-center">Amount</th>
+                        <th class="p-2 align-middle text-center">Date Received</th>
+                        <th class="p-2 align-middle text-center">Received By</th>
+                    </thead>
+                    <tbody>
+                        @forelse ($receiving_txn as $rtxn)
+                        <tr>
+                            <td class="p-1 align-middle text-center">{{ $rtxn['reference'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $rtxn['delivery_date'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ number_format($rtxn['qty']) }}</td>
+                            <td class="p-1 align-middle text-center">{{ '₱ ' . number_format($rtxn['price'], 2) }}</td>
+                            <td class="p-1 align-middle text-center">{{ '₱ ' . number_format($rtxn['amount'], 2) }}</td>
+                            <td class="p-1 align-middle text-center">{{ $rtxn['date_received'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $rtxn['received_by'] }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="7">No item(s) found</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="damaged-{{ $r['item_code'] }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" style="font-size: 9pt;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ $r['item_code'] }} - Stocks Damaged</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form></form>
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                        <th class="p-2 align-middle text-center">Transaction Date</th>
+                        <th class="p-2 align-middle text-center">Quantity</th>
+                        <th class="p-2 align-middle text-center">Stock UOM</th>
+                        <th class="p-2 align-middle text-center">Damage Description</th>
+                    </thead>
+                    <tbody>
+                        @forelse ($damaged_txn as $dtxn)
+                        <tr>
+                            <td class="p-1 align-middle text-center">{{ $dtxn['transaction_date'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ number_format($dtxn['qty']) }}</td>
+                            <td class="p-1 align-middle text-center">{{ $dtxn['stock_uom'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $dtxn['damage_description'] }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="8">No item(s) found</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="transferred-{{ $r['item_code'] }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" style="font-size: 9pt;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ $r['item_code'] }} - Stocks Transferred</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form></form>
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                        <th class="p-2 align-middle text-center">Transaction Date</th>
+                        <th class="p-2 align-middle text-center">Reference No.</th>
+                        <th class="p-2 align-middle text-center">Target</th>
+                        <th class="p-2 align-middle text-center">Quantity</th>
+                        <th class="p-2 align-middle text-center">Rate</th>
+                        <th class="p-2 align-middle text-center">Amount</th>
+                        <th class="p-2 align-middle text-center">Date Received</th>
+                        <th class="p-2 align-middle text-center">Received By</th>
+                    </thead>
+                    <tbody>
+                        @forelse ($transfer_txn as $ttxn)
+                        <tr>
+                            <td class="p-1 align-middle text-center">{{ $ttxn['transaction_date'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $ttxn['reference'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $ttxn['t_warehouse'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ number_format($ttxn['qty']) }}</td>
+                            <td class="p-1 align-middle text-center">{{ '₱ ' . number_format($ttxn['price'], 2) }}</td>
+                            <td class="p-1 align-middle text-center">{{ '₱ ' . number_format($ttxn['amount'], 2) }}</td>
+                            <td class="p-1 align-middle text-center">{{ $ttxn['date_received'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $ttxn['received_by'] }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="8">No item(s) found</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="returned-{{ $r['item_code'] }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" style="font-size: 9pt;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ $r['item_code'] }} - Stocks Returned</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form></form>
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                        <th class="p-2 align-middle text-center">Transaction Date</th>
+                        <th class="p-2 align-middle text-center">Reference No.</th>
+                        <th class="p-2 align-middle text-center">Target</th>
+                        <th class="p-2 align-middle text-center">Quantity</th>
+                        <th class="p-2 align-middle text-center">Rate</th>
+                        <th class="p-2 align-middle text-center">Amount</th>
+                    </thead>
+                    <tbody>
+                        @forelse ($returned_txn as $rrtxn)
+                        <tr>
+                            <td class="p-1 align-middle text-center">{{ $rrtxn['transaction_date'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $rrtxn['reference'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ $rrtxn['t_warehouse'] }}</td>
+                            <td class="p-1 align-middle text-center">{{ number_format($rrtxn['qty']) }}</td>
+                            <td class="p-1 align-middle text-center">{{ '₱ ' . number_format($rrtxn['price'], 2) }}</td>
+                            <td class="p-1 align-middle text-center">{{ '₱ ' . number_format($rrtxn['amount'], 2) }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="6">No item(s) found</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 <style>
     table {
         table-layout: fixed;
@@ -395,8 +431,8 @@
         display: none;
     }
     .row-img{
-        width: 50px;
-        height: 50px;
+        width: 30px;
+        height: 30px;
     }
     .first{
         width: 70%;

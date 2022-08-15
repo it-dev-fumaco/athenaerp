@@ -3727,18 +3727,19 @@ class ConsignmentController extends Controller
 
         $result = [];
         foreach ($list as $row) {
-            $orig_exists = 0;
-            $webp_exists = 0;
+            $id = $row->item_code;
+            
+            $orig_exists = $webp_exists = 0;
 
             $img = '/icon/no_img.png';
             $webp = '/icon/no_img.webp';
 
-            if(isset($item_image[$row->item_code])){
-                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$row->item_code][0]->image_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$row->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+            if(isset($item_image[$id])){
+                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$id][0]->image_path) ? 1 : 0;
+                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp') ? 1 : 0;
 
-                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$row->item_code][0]->image_path)[0].'.webp' : null;
-                $img = $orig_exists == 1 ? '/img/'.$item_image[$row->item_code][0]->image_path : null;
+                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp' : null;
+                $img = $orig_exists == 1 ? '/img/'.$item_image[$id][0]->image_path : null;
 
                 if($orig_exists == 0 && $webp_exists == 0){
                     $img = '/icon/no_img.png';
@@ -3746,7 +3747,6 @@ class ConsignmentController extends Controller
                 }
             }
 
-            $id = $row->item_code;
             $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
             $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
             $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
@@ -3817,62 +3817,28 @@ class ConsignmentController extends Controller
 
         $sold_items = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csr.status', '!=', 'Cancelled')
-            ->where('csr.branch_warehouse', $store)->whereBetween('csr.transaction_date', [$from, $to])
-            ->where('csri.qty', '>', 0)
-            ->selectRaw('SUM(csri.qty) as sold_qty, SUM(csri.amount) as total_value, csri.item_code, csri.price')
-            ->groupBy('csri.item_code', 'csri.price')->get();
+            ->where('csr.status', '!=', 'Cancelled')->where('csr.branch_warehouse', $store)
+            ->whereBetween('csr.transaction_date', [$from, $to])->where('csri.qty', '>', 0)
+            ->selectRaw('csri.qty as sold_qty, csri.amount as total_value, csri.item_code, csri.price, csr.transaction_date')
+            ->orderBy('transaction_date', 'asc')->get();
 
-        $item_descriptions = DB::table('tabItem')->whereIn('name', collect($sold_items)->pluck('item_code'))
-            ->pluck('description', 'name')->toArray();
-
-        $sales_items = [];
+        $sales_items = $sales_transaction_dates = [];
         foreach ($sold_items as $row) {
             $id = $row->item_code;
-            $orig_exists = $webp_exists = 0;
-
-            $img = '/icon/no_img.png';
-            $webp = '/icon/no_img.webp';
-
-            if(isset($item_image[$id])){
-                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$id][0]->image_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp' : null;
-                $img = $orig_exists == 1 ? '/img/'.$item_image[$id][0]->image_path : null;
-
-                if($orig_exists == 0 && $webp_exists == 0){
-                    $img = '/icon/no_img.png';
-                    $webp = '/icon/no_img.webp';
-                }
-            }
-
-            $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
+           
             $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
             $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
 
-            $description = array_key_exists($id, $item_descriptions) ? $item_descriptions[$id] : null;
-
-            $description = explode(',', strip_tags($description));
-
-            $description_part1 = array_key_exists(0, $description) ? trim($description[0]) : null;
-            $description_part2 = array_key_exists(1, $description) ? trim($description[1]) : null;
-            $description_part3 = array_key_exists(2, $description) ? trim($description[2]) : null;
-            $description_part4 = array_key_exists(3, $description) ? trim($description[3]) : null;
-
-            $displayed_description = $description_part1 . ', ' . $description_part2 . ', ' . $description_part3 . ', ' . $description_part4;
+            $sales_transaction_dates[] = $row->transaction_date;
            
-            $sales_items[] = [
-                'item_code' => $id,
-                'description' => $displayed_description,
-                'img' => $img,
-                'img_webp' => $webp,
-                'img_count' => $img_count,
+            $sales_items[$id][$row->transaction_date] = [
                 'amount' => $total_value,
                 'price' => $row->price,
                 'qty' => number_format($total_sold),
             ];
         }
+
+        $sales_transaction_dates = array_unique($sales_transaction_dates);
 
         $ste_received_items = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
@@ -3880,66 +3846,91 @@ class ConsignmentController extends Controller
             ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)
-            ->where('sted.t_warehouse', $store)
-            ->where('sted.consignment_status', 'Received')
-            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount, ste.name, sted.consignment_date_received')
-            ->orderBy('sted.consignment_date_received', 'desc')
-            ->get();
+            ->where('sted.t_warehouse', $store)->where('sted.consignment_status', 'Received')
+            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount, ste.name, sted.consignment_date_received, sted.consignment_received_by, ste.delivery_date')
+            ->orderBy('sted.consignment_date_received', 'desc')->get();
+
+        $ste_returned_items = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereBetween('sted.consignment_date_received', [$from, $to])
+            ->whereIn('ste.transfer_as', ['For Return'])
+            ->whereIn('ste.item_status', ['For Checking', 'Issued'])
+            ->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)
+            ->where('sted.s_warehouse', $store)
+            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount, ste.name, ste.creation, sted.t_warehouse')
+            ->orderBy('sted.creation', 'desc')->get();
+
+        $ste_transferred_items = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereBetween('sted.consignment_date_received', [$from, $to])
+            ->whereIn('ste.transfer_as', ['Store Transfer'])
+            ->whereIn('ste.item_status', ['For Checking', 'Issued'])
+            ->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)
+            ->where('sted.s_warehouse', $store)
+            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount, ste.name, sted.t_warehouse, ste.creation, sted.consignment_date_received, sted.consignment_received_by')
+            ->orderBy('sted.creation', 'desc')->get();
+
+        $damaged_items = DB::table('tabConsignment Damaged Item')
+            ->where('branch_warehouse', $store)
+            ->whereBetween('transaction_date', [$from, $to])
+            ->orderBy('transaction_date', 'desc')->get();
 
         $received_items = [];
         foreach ($ste_received_items as $row) {
-            $id = $row->item_code;
-            $orig_exists = $webp_exists = 0;
-
-            $img = '/icon/no_img.png';
-            $webp = '/icon/no_img.webp';
-
-            if(isset($item_image[$id])){
-                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$id][0]->image_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp' : null;
-                $img = $orig_exists == 1 ? '/img/'.$item_image[$id][0]->image_path : null;
-
-                if($orig_exists == 0 && $webp_exists == 0){
-                    $img = '/icon/no_img.png';
-                    $webp = '/icon/no_img.webp';
-                }
-            }
-
-            $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
-
-            $description = explode(',', strip_tags($row->description));
-
-            $description_part1 = array_key_exists(0, $description) ? trim($description[0]) : null;
-            $description_part2 = array_key_exists(1, $description) ? trim($description[1]) : null;
-            $description_part3 = array_key_exists(2, $description) ? trim($description[2]) : null;
-            $description_part4 = array_key_exists(3, $description) ? trim($description[3]) : null;
-
-            $displayed_description = $description_part1 . ', ' . $description_part2 . ', ' . $description_part3 . ', ' . $description_part4;
-           
-            
-            $received_items[] = [
-                'item_code' => $id,
-                'description' => $displayed_description,
-                'img' => $img,
-                'img_webp' => $webp,
-                'img_count' => $img_count,
+            $received_items[$row->item_code][] = [
                 'amount' => $row->basic_amount,
                 'price' => $row->basic_rate,
                 'qty' => number_format($row->transfer_qty),
                 'reference' => $row->name,
-                'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A')
+                'delivery_date' => Carbon::parse($row->delivery_date)->format('M. d, Y'),
+                'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A'),
+                'received_by' => $row->consignment_received_by
             ];
         }
-    
+
+        $returned_items = [];
+        foreach ($ste_returned_items as $row) {
+            $returned_items[$row->item_code][] = [
+                'amount' => $row->basic_amount,
+                'price' => $row->basic_rate,
+                'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
+                'qty' => number_format($row->transfer_qty),
+                'reference' => $row->name,
+                't_warehouse' => $row->t_warehouse
+            ];
+        }
+
+        $transferred_items = [];
+        foreach ($ste_transferred_items as $row) {
+            $transferred_items[$row->item_code][] = [
+                'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
+                'amount' => $row->basic_amount,
+                'price' => $row->basic_rate,
+                'qty' => number_format($row->transfer_qty),
+                'reference' => $row->name,
+                't_warehouse' => $row->t_warehouse,
+                'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A'),
+                'received_by' => $row->consignment_received_by
+            ];
+        }
+
+        $damaged_item_list = [];
+        foreach ($damaged_items as $row) {
+            $damaged_item_list[$row->item_code][] = [
+                'qty' => number_format($row->qty),
+                'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
+                'damage_description' => $row->damage_description,
+                'stock_uom' => $row->stock_uom
+            ];
+        }
+
         $promodisers = DB::table('tabConsignment Inventory Audit Report')
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->distinct()->pluck('promodiser')->toArray();
             
         $promodisers = implode(', ', $promodisers);
 
-        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'promodisers', 'sales_items', 'received_items', 'previous_record_link', 'next_record_link', 'sales_increase'));
+        return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'promodisers', 'sales_items', 'received_items', 'previous_record_link', 'next_record_link', 'sales_increase', 'sales_transaction_dates', 'transferred_items', 'returned_items', 'damaged_item_list'));
     }
 
     // /stock_adjust/submit/{id}
@@ -4551,5 +4542,134 @@ class ConsignmentController extends Controller
         }
 
         return view('consignment.supervisor.view_deliveries', compact('list', 'result'));
+    }
+
+    
+    public function test() {
+
+          
+        $query = DB::table('tabConsignment Sales Report as csr')
+            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('csr.status', '!=', 'Cancelled')
+            ->where('branch_warehouse', 'HANDYMAN NEW FARMERS PLAZA - FI')
+            ->select('csri.item_code', 'csr.transaction_date', 'csri.qty', 'csr.branch_warehouse')
+            ->orderBy('csr.transaction_date', 'asc')->get()->toArray();
+        $product_sold_entries = [];
+        foreach ($query as $r) {
+            $product_sold_entries[$r->branch_warehouse][$r->item_code][$r->transaction_date] = $r->qty;
+        }
+    
+        $item_opening_stock = DB::table('tabConsignment Beginning Inventory as cb')
+            ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+            ->where('cb.status', 'Approved')
+            ->where('branch_warehouse', 'HANDYMAN NEW FARMERS PLAZA - FI')
+            ->select('cbi.item_code', 'cbi.opening_stock', 'cb.transaction_date', 'cb.branch_warehouse')
+            ->orderBy('cb.transaction_date', 'asc')->get();
+    
+        $item_opening_stock = collect($item_opening_stock)->groupBy('branch_warehouse');
+    
+        $opening_stocks = [];
+        foreach ($item_opening_stock as $branch_warehouse => $values) {
+            $opening_stocks[$branch_warehouse] = collect($values)->groupBy('item_code')->toArray();
+        }
+    
+        $bin_consigned_qty = DB::table('tabBin as b')
+            ->join('tabConsignment Sales Report Item as csri', 'b.item_code', 'csri.item_code')
+            ->whereNotNull('warehouse')->where('consigned_qty', '>', 0)
+            ->where('warehouse', 'HANDYMAN NEW FARMERS PLAZA - FI')
+            ->select('warehouse', 'b.item_code', 'consigned_qty')
+            ->groupBy('warehouse', 'b.item_code', 'consigned_qty')
+            ->get();
+    
+            $query = DB::table('tabConsignment Sales Report as csr')
+            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('csr.status', '!=', 'Cancelled')
+            ->where('branch_warehouse', 'HANDYMAN NEW FARMERS PLAZA - FI')
+            ->select('csri.item_code', 'csr.transaction_date', 'csri.qty', 'csr.branch_warehouse')
+            ->orderBy('csr.transaction_date', 'asc')->get()->toArray();
+    
+    
+        $bin_consigned = [];
+        foreach ($bin_consigned_qty as $b) {
+            $bin_consigned[$b->warehouse][$b->item_code] = $b->consigned_qty;
+        }
+    
+        $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
+    
+        $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
+    
+        $delivery_report = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
+                return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+            })
+            ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
+            ->where('ste.purpose', 'Material Transfer')
+            ->where('ste.docstatus', 1)
+            ->where('sted.consignment_status', 'Received')
+            ->select('ste.name', 'sted.t_warehouse', 'sted.consignment_date_received', 'sted.item_code', 'sted.transfer_qty')
+            ->orderBy('sted.consignment_date_received', 'desc')->get();
+    
+        $received_arr = [];
+        foreach ($delivery_report as $c) {
+            $received_arr[$c->t_warehouse][$c->item_code][] = [
+                'consignment_date_received' => $c->consignment_date_received,
+                'transfer_qty' => $c->transfer_qty
+            ];
+        }
+    
+        $inventory_audit_query = DB::table('tabConsignment Inventory Audit Report as iar')->join('tabConsignment Inventory Audit Report Item as iari', 'iar.name', 'iari.parent')
+            ->select('item_code', 'transaction_date', 'qty', 'branch_warehouse')
+            ->where('branch_warehouse', 'HANDYMAN NEW FARMERS PLAZA - FI')
+            ->orderBy('transaction_date', 'asc')->get();
+    
+        $inventory_audit_entries = [];
+        foreach ($inventory_audit_query as $r) {
+            $inventory_audit_entries[$r->branch_warehouse][$r->item_code][$r->transaction_date] = $r->qty;
+        }
+    
+        $result = [];
+        foreach ($query as $row) {
+            $result[$row->branch_warehouse][$row->item_code] = [
+                'opening_stock' => isset($opening_stocks[$row->branch_warehouse][$row->item_code]) ? $opening_stocks[$row->branch_warehouse][$row->item_code][0]->opening_stock : 0,
+                'opening_stock_date' => isset($opening_stocks[$row->branch_warehouse][$row->item_code]) ? $opening_stocks[$row->branch_warehouse][$row->item_code][0]->transaction_date : 0,
+                'product_sold_entries' => $product_sold_entries[$row->branch_warehouse][$row->item_code],
+                'current_bin_consigned_qty' => isset($bin_consigned[$row->branch_warehouse][$row->item_code]) ? $bin_consigned[$row->branch_warehouse][$row->item_code] : '-',
+                'stock_received' => isset($received_arr[$row->branch_warehouse][$row->item_code]) ? $received_arr[$row->branch_warehouse][$row->item_code] : [],
+                'inventory_audit_entries' => isset($inventory_audit_entries[$row->branch_warehouse][$row->item_code]) ? $inventory_audit_entries[$row->branch_warehouse][$row->item_code] : [],
+            ];
+        }
+    
+        // return $result;
+    
+        $dates = collect($query)->map(function ($q){
+            return $q->transaction_date;
+        })->unique()->toArray();
+    
+        usort($dates, function ($time1, $time2) {
+            return strtotime($time1) - strtotime($time2);
+        });
+    
+        // $audit_dates = collect($inventory_audit_query)->map(function ($q){
+        //     return $q->transaction_date;
+        // })->unique()->toArray();
+    
+        // usort($audit_dates, function ($time1, $time2) {
+        //     return strtotime($time1) - strtotime($time2);
+        // });
+    
+        // $query = DB::table('tabConsignment Product Sold')
+        //     ->select('item_code', 'branch_warehouse')
+        //     ->groupBy('item_code', 'branch_warehouse')
+        //     ->orderBy('branch_warehouse', 'asc')->orderBy('item_code', 'asc')->get();
+    
+        $stores = DB::table('tabConsignment Product Sold')->distinct()->pluck('branch_warehouse')->toArray();
+            // ->select('item_code', 'branch_warehouse')
+            // ->groupBy('item_code', 'branch_warehouse')
+            // ->orderBy('branch_warehouse', 'asc')->orderBy('item_code', 'asc')->get();
+    
+        return view('consignment.test', compact('result', 'dates', 'query', 'stores'));
+    
+
     }
 }
