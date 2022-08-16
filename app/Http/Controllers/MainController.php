@@ -465,7 +465,7 @@ class MainController extends Controller
             }
         }
 
-        $start_date = Carbon::parse('2022-01-25')->startOfDay()->format('Y-m-d');
+        $start_date = Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
         $end_date = Carbon::now();
 
         $period = CarbonPeriod::create($start_date, '28 days' , $end_date);

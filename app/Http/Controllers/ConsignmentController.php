@@ -3103,9 +3103,10 @@ class ConsignmentController extends Controller
 
                 // Deduct already submitted sales returns
                 $submitted_sales_returns = DB::table('tabStock Entry as ste')
-                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('ste.to_warehouse', $reference_warehouse)->where('ste.purpose', 'Material Receipt')->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)
-                ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->get();
+                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                    ->where('ste.to_warehouse', $reference_warehouse)->where('ste.purpose', 'Material Receipt')
+                    ->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)
+                    ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->get();
                 $submitted_sales_returns = collect($submitted_sales_returns)->groupBy('item_code');
 
                 $sold_qty = [];
