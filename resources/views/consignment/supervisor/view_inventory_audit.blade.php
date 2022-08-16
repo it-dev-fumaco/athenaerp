@@ -91,7 +91,7 @@
 </div>
 
 <style>
-    .select2{
+        .select2{
 			width: 100% !important;
 			outline: none !important;
 		}

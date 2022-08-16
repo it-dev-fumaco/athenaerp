@@ -50,7 +50,13 @@
                                             </span>
                                             @endforeach
                                         </td>
-                                        <td class="text-center p-1 align-middle">{{ $row['last_login'] ? \Carbon\Carbon::parse($row['last_login'])->format('F d, Y h:i A') : null }}</td>
+                                        <td class="text-center p-1 align-middle">
+                                            @if ($row['login_status'])
+                                            {!! $row['login_status'] !!}
+                                            @else
+                                            <span class="text-muted">Offline</span>
+                                            @endif
+                                        </td>
                                     </tr>
                                     @empty
                                     <tr>
