@@ -9,6 +9,7 @@ use Carbon\CarbonPeriod;
 use Auth;
 use DB;
 use Storage;
+use Cache;
 
 class ConsignmentController extends Controller
 {
@@ -4291,7 +4292,7 @@ class ConsignmentController extends Controller
         $query = DB::table('tabWarehouse Users as wu')
             ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
             ->where('wu.user_group', 'Promodiser')
-            ->select('wu.wh_user', 'wu.last_login', 'wu.full_name', 'acw.warehouse')
+            ->select('wu.wh_user', 'wu.last_login', 'wu.full_name', 'acw.warehouse', 'wu.name')
             ->orderBy('wu.wh_user', 'asc')->get();
 
         $list = collect($query)->groupBy('wh_user')->toArray();
@@ -4300,10 +4301,16 @@ class ConsignmentController extends Controller
 
         $result = [];
         foreach($list as $prmodiser => $row) {
+            if (Cache::has('user-is-online-' . $row[0]->name)) {
+                $login_status = '<span class="text-success font-weight-bold">ONLINE NOW</span>';
+            } else {
+                $login_status = Carbon::parse($row[0]->last_login)->format('F d, Y h:i A');
+            }
+            
             $result[] = [
                 'promodiser_name' => $row[0]->full_name,
                 'stores' => array_column($row, 'warehouse'),
-                'last_login' => $row[0]->last_login,
+                'login_status' => $login_status,
             ];
         }
 
