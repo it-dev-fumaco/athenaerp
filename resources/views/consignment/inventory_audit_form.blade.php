@@ -21,11 +21,6 @@
                             </div>
                         </div>
                         <div class="card-body p-1">
-                            @if(session()->has('error'))
-                            <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2" style="font-size: 10pt;">
-                                {!! session()->get('error') !!}
-                            </div>
-                            @endif
                             <h6 class="font-weight-bold text-center m-1 text-uppercase" style="font-size: 10pt;">{{ $branch }}</h6>
                             <h5 class="text-center mt-1 font-weight-bolder font-responsive">{{ $duration }}</h5>
                             <div class="callout callout-info font-responsive text-center pr-3 pl-3 pb-3 pt-3 m-2" style="font-size: 10pt;">
@@ -66,13 +61,13 @@
 
                                                 $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
 
-                                                $qty = 0;
+                                                $qty = null;
                                                 if(session()->has('error')) {
                                                     $data = session()->get('old_data');
                                                     $qty = $data['item'][$row->item_code]['qty'];
                                                 }
                                             @endphp
-                                            <tr style="border-bottom: 0 !important;" class="item-row {{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
+                                            <tr style="border-bottom: 0 !important;" class="item-row {{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">
                                                 <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
                                                     <div class="d-flex flex-row justify-content-start align-items-center">
                                                         <div class="p-1 text-left">
@@ -137,7 +132,7 @@
                                                                     <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                                 </div>
                                                                 <div class="custom-a p-0">
-                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" value="" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}">
+                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}" value="{{ $qty }}">
                                                                 </div>
                                                                 <div class="input-group-append p-0">
                                                                     <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
@@ -156,7 +151,7 @@
                                                     <span class="d-none item-price">{{ $row->price }}</span>
                                                 </td>
                                             </tr>
-                                            <tr class="{{ (session()->has('error') && session()->has('item_code') && session()->get('item_code') == $row->item_code) ? 'bg-warning' : '' }}">
+                                            <tr class="{{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">
                                                 <td colspan="4" style="border-top: 0 !important;">
                                                     <span class="d-none">{{ $row->item_code }}</span>
                                                     <div class="item-description">{!! strip_tags($row->description) !!}</div>
@@ -306,6 +301,39 @@
     </div>
 </div>
 
+@if(session()->has('error'))
+<div class="modal fade" id="error-modal" tabindex="-1" role="dialog" aria-labelledby="notifications-modal-title" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-navy">
+                <h5 class="modal-title"><i class="fas fa-info-circle"></i> WARNING</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="font-size: 10pt;">
+                <form></form>
+                <p class="text-center mt-0">
+                    <span class="d-block">Insufficient stocks for the following item(s):</span>
+                </p>
+                <div>
+                    <ul>
+                        @foreach (session()->get('item_codes') as $code)
+                            <li>{{ $code }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i> CLOSE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="modal fade" id="notifications-modal" tabindex="-1" role="dialog" aria-labelledby="notifications-modal-title" aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -353,11 +381,15 @@
 @section('script')
 <script>
     $(function () {
-        @if (!session()->has('success'))
+        @if (!session()->has('success') && !session()->has('error'))
         $('#instructions-modal').modal('show');
         @endif
         @if (session()->has('success'))
         $('#success-modal').modal('show');
+        @endif
+
+        @if (session()->has('error'))
+        $('#error-modal').modal('show');
         @endif
 
         const formatToCurrency = amount => {

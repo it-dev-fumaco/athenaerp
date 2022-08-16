@@ -271,7 +271,7 @@ class ConsignmentController extends Controller
             $csr_child_parent_name = ($csr_existing_record) ? $csr_existing_record->name : $csr_new_id;
             $iar_child_parent_name = ($iar_existing_record) ? $iar_existing_record->name : $iar_new_id;
 
-            $new_csr_child_data = $new_iar_child_data = [];
+            $new_csr_child_data = $new_iar_child_data = $items_with_insufficient_stocks = [];
             $csr_grand_total = $csr_total_qty_sold = $csr_total_items = 0;
             $iar_grand_total = $iar_total_items = 0;
             foreach ($data['item'] as $item_code => $row) {
@@ -283,9 +283,7 @@ class ConsignmentController extends Controller
                 $iar_amount = ((float)$price * (float)$qty);
 
                 if ($consigned_qty < (float)$qty) {
-                    return redirect()->back()
-                        ->with(['old_data' => $data, 'item_code' => $item_code])
-                        ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
+                    $items_with_insufficient_stocks[] = $item_code;
                 }
 
                 DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
@@ -389,6 +387,12 @@ class ConsignmentController extends Controller
                         'available_stock_on_transaction' => $consigned_qty
                     ];
                 }
+            }
+
+            if (count($items_with_insufficient_stocks) > 0) {
+                return redirect()->back()
+                    ->with(['old_data' => $data, 'item_codes' => $items_with_insufficient_stocks])
+                    ->with('error', true);
             }
 
             $reference = null;
