@@ -87,159 +87,153 @@
                                     <p class="m-0 font-details">Total Item(s): <span class="font-weight-bold">{{ count($result) }}</span></p>
                                 </div>
                             </div>
-                            <table class="table table-bordered table-striped">
-                                <thead class="border-top">
-                                    <tr>
-                                        <th class="text-center p-1 align-middle text-uppercase" style="width: 30%; font-size: 8pt;" rowspan="2">Item Code</th>
-                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Opening</th>
-                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Audit Qty</th>
-                                        <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) + 3 }}" style="width: 44%; font-size: 8pt;">Sold Qty</th>
-                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Received</th>
-                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Returned</th>
-                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Transferred</th>
-                                        <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Damaged</th>
-                                    </tr>
-                                    <tr>
-                                        @foreach ($sales_transaction_dates as $date)
-                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
-                                        @endforeach
-                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">Total</th>
-                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">Rate</th>
-                                        <th class="text-center p-0 align-middle" style="font-size: 8pt;">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody style="font-size: 10pt;">
-                                    @forelse ($result as $row)
-                                    <tr>
-                                        <td class="text-justify p-1 align-middle">
-                                            <div class="d-flex flex-row justify-content-start align-items-center">
-                                                <div class="p-0 text-left">
-                                                    <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp">
-                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg">
-                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" class="row-img">
-                                                        </picture>
-                                                    </a>
+                            <div class="tableFixHead">
+                                <table id="customers">
+                                    <thead class="border-top">
+                                        <tr>
+                                            <th class="text-center p-1 align-middle text-uppercase" style="width: 30%; font-size: 8pt;" rowspan="2">Item Code</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Opening</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Audit Qty</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) + 3 }}" style="width: 44%; font-size: 8pt;">Sold Qty</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Received</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Returned</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Transferred</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Damaged</th>
+                                        </tr>
+                                        <tr>
+                                            @foreach ($sales_transaction_dates as $date)
+                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
+                                            @endforeach
+                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">Total</th>
+                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">Rate</th>
+                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="font-size: 10pt;">
+                                        @forelse ($result as $row)
+                                        <tr>
+                                            <td class="text-justify p-1 align-middle">
+                                                <div class="d-flex flex-row justify-content-start align-items-center">
+                                                    <div class="p-0 text-left">
+                                                        <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
+                                                            <picture>
+                                                                <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp">
+                                                                <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg">
+                                                                <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" class="row-img">
+                                                            </picture>
+                                                        </a>
+                                                    </div>
+                                                    <div class="pl-2 m-0">
+                                                        <small class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</small>
+                                                    </div>
                                                 </div>
-                                                <div class="pl-2 m-0">
-                                                    <small class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</small>
-                                                </div>
-                                            </div>
-
-                                            <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                <div class="modal-dialog" role="document">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">{{ $row['item_code'] }}</h5>
-                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <form></form>
-                                                            <div id="image-container" class="container-fluid">
-                                                                <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                    <div class="carousel-inner">
-                                                                        <div class="carousel-item active">
-                                                                            <picture>
-                                                                                <source id="mobile-{{ $row['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$row['img_webp'] }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                <source id="mobile-{{ $row['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$row['img'] }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                <img class="d-block w-100" id="mobile-{{ $row['item_code'] }}-image" src="{{ asset('storage/').$row['img'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}">
-                                                                            </picture>
+    
+                                                <div class="modal fade" id="mobile-{{ $row['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">{{ $row['item_code'] }}</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form></form>
+                                                                <div id="image-container" class="container-fluid">
+                                                                    <div id="carouselExampleControls" class="carousel slide" data-interval="false">
+                                                                        <div class="carousel-inner">
+                                                                            <div class="carousel-item active">
+                                                                                <picture>
+                                                                                    <source id="mobile-{{ $row['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$row['img_webp'] }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
+                                                                                    <source id="mobile-{{ $row['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$row['img'] }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
+                                                                                    <img class="d-block w-100" id="mobile-{{ $row['item_code'] }}-image" src="{{ asset('storage/').$row['img'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}">
+                                                                                </picture>
+                                                                            </div>
+                                                                            <span class='d-none5' id="mobile-{{ $row['item_code'] }}-image-data">0</span>
                                                                         </div>
-                                                                        <span class='d-none5' id="mobile-{{ $row['item_code'] }}-image-data">0</span>
+                                                                        @if ($row['img_count'] > 1)
+                                                                        <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
+                                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                                            <span class="sr-only">Previous</span>
+                                                                        </a>
+                                                                        <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
+                                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                                            <span class="sr-only">Next</span>
+                                                                        </a>
+                                                                        @endif
                                                                     </div>
-                                                                    @if ($row['img_count'] > 1)
-                                                                    <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                        <span class="sr-only">Previous</span>
-                                                                    </a>
-                                                                    <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                        <span class="sr-only">Next</span>
-                                                                    </a>
-                                                                    @endif
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td class="text-center p-1 align-middle font-weight-bold">
-                                            <small class="d-block">{{ $row['opening_qty'] }}</small>
-                                        </td>
-                                        <td class="text-center p-1 align-middle font-weight-bold">
-                                            <small class="d-block">{{ $row['audit_qty'] }}</small>
-                                        </td>
-                                        @foreach ($sales_transaction_dates as $date)
-                                        <td class="text-center p-1 align-middle font-weight-bold">
-                                            <small class="d-block">{{ isset($sales_items[$row['item_code']][$date]) ? $sales_items[$row['item_code']][$date]['qty'] : '-' }}</small>
-                                        </td>
-                                        @endforeach
-                                        @php
-                                            $total_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('qty') : '-';
-                                            $total_amount_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('amount') : 0;
-                                            $sold_item_price = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->pluck('price')->first() : 0;
-                                        @endphp
-                                        <td class="text-center p-1 align-middle font-weight-bold">{{ $total_sold }}</td>
-                                        <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
-                                            <small class="d-block">{{ '₱ ' . number_format($sold_item_price, 2) }}</small>
-                                        </td>
-                                        <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
-                                            <small class="d-block">{{ '₱ ' . number_format($total_amount_sold, 2) }}</small>
-                                        </td>
-                                        @php
-                                            $total_received = isset($received_items[$row['item_code']]) ? collect($received_items[$row['item_code']])->sum('qty') : '-';
-                                            $total_returned = isset($returned_items[$row['item_code']]) ? collect($returned_items[$row['item_code']])->sum('qty') : '-';
-                                            $total_transferred = isset($transferred_items[$row['item_code']]) ? collect($transferred_items[$row['item_code']])->sum('qty') : '-';
-                                            $total_damaged = isset($damaged_item_list[$row['item_code']]) ? collect($damaged_item_list[$row['item_code']])->sum('qty') : '-';
-                                        @endphp
-                                        <td class="text-center p-1 align-middle">
-                                            @if ($total_received != '-')
-                                            <a href="#" data-toggle="modal" data-target="#received-{{ $row['item_code'] }}-modal">
-                                                <small class="d-block">{{ $total_received }}</small>
-                                            </a>
-                                            @else
-                                                <small class="d-block">{{ $total_received }}</small>
-                                            @endif
-                                        </td>
-                                        <td class="text-center p-1 align-middle font-weight-bold">
-                                            @if ($total_returned != '-')
-                                            <a href="#" data-toggle="modal" data-target="#returned-{{ $row['item_code'] }}-modal">
-                                                <small class="d-block">{{ $total_returned }}</small>
-                                            </a>
-                                            @else
-                                                <small class="d-block">{{ $total_returned }}</small>
-                                            @endif
-                                        </td>
-                                        <td class="text-center p-1 align-middle font-weight-bold">
-                                            @if ($total_transferred != '-')
-                                            <a href="#" data-toggle="modal" data-target="#transferred-{{ $row['item_code'] }}-modal">
-                                                <small class="d-block">{{ $total_transferred }}</small>
-                                            </a>
-                                            @else
-                                                <small class="d-block">{{ $total_transferred }}</small>
-                                            @endif
-                                        </td>
-                                        <td class="text-center p-1 align-middle font-weight-bold">
-                                            @if ($total_damaged != '-')
-                                            <a href="#" data-toggle="modal" data-target="#damaged-{{ $row['item_code'] }}-modal">
-                                                <small class="d-block">{{ $total_damaged }}</small>
-                                            </a>
-                                            @else
-                                                <small class="d-block">{{ $total_damaged }}</small>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td class="text-center font-weight-bold text-uppercase text-muted" colspan="5">No item(s) found</td>
-                                    </tr> 
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                            </td>
+                                            <td class="text-center p-1 align-middle font-weight-bold">
+                                                <span class="d-block">{{ $row['opening_qty'] }}</span>
+                                            </td>
+                                            <td class="text-center p-1 align-middle font-weight-bold">
+                                                <span class="d-block">{{ $row['audit_qty'] }}</span>
+                                            </td>
+                                            @foreach ($sales_transaction_dates as $date)
+                                            <td class="text-center p-1 align-middle font-weight-bold">
+                                                <span class="d-block text-success">{{ isset($sales_items[$row['item_code']][$date]) ? $sales_items[$row['item_code']][$date]['qty'] : '' }}</span>
+                                            </td>
+                                            @endforeach
+                                            @php
+                                                $total_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('qty') : '-';
+                                                $total_amount_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('amount') : 0;
+                                                $sold_item_price = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->pluck('price')->first() : 0;
+                                            @endphp
+                                            <td class="text-center p-1 align-middle font-weight-bold">{{ $total_sold }}</td>
+                                            <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
+                                                <span class="d-block">{{ '₱ ' . number_format($sold_item_price, 2) }}</span>
+                                            </td>
+                                            <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
+                                                <span class="d-block">{{ '₱ ' . number_format($total_amount_sold, 2) }}</span>
+                                            </td>
+                                            @php
+                                                $total_received = isset($received_items[$row['item_code']]) ? collect($received_items[$row['item_code']])->sum('qty') : '-';
+                                                $total_returned = isset($returned_items[$row['item_code']]) ? collect($returned_items[$row['item_code']])->sum('qty') : '-';
+                                                $total_transferred = isset($transferred_items[$row['item_code']]) ? collect($transferred_items[$row['item_code']])->sum('qty') : '-';
+                                                $total_damaged = isset($damaged_item_list[$row['item_code']]) ? collect($damaged_item_list[$row['item_code']])->sum('qty') : '-';
+                                            @endphp
+                                            <td class="text-center p-1 align-middle">
+                                                @if ($total_received != '-')
+                                                <a href="#" data-toggle="modal" data-target="#received-{{ $row['item_code'] }}-modal">
+                                                    <span class="d-block">{{ $total_received }}</span>
+                                                </a>
+                                                @endif
+                                            </td>
+                                            <td class="text-center p-1 align-middle font-weight-bold">
+                                                @if ($total_returned != '-')
+                                                <a href="#" data-toggle="modal" data-target="#returned-{{ $row['item_code'] }}-modal">
+                                                    <span class="d-block">{{ $total_returned }}</span>
+                                                </a>
+                                                @endif
+                                            </td>
+                                            <td class="text-center p-1 align-middle font-weight-bold">
+                                                @if ($total_transferred != '-')
+                                                <a href="#" data-toggle="modal" data-target="#transferred-{{ $row['item_code'] }}-modal">
+                                                    <span class="d-block">{{ $total_transferred }}</span>
+                                                </a>
+                                                @endif
+                                            </td>
+                                            <td class="text-center p-1 align-middle font-weight-bold">
+                                                @if ($total_damaged != '-')
+                                                <a href="#" data-toggle="modal" data-target="#damaged-{{ $row['item_code'] }}-modal">
+                                                    <span class="d-block">{{ $total_damaged }}</span>
+                                                </a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="5">No item(s) found</td>
+                                        </tr> 
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -474,12 +468,41 @@
         }
     }
 
+    .tableFixHead { overflow-y: auto; height: 600px; }
+   
+   table #customers {
+      display: table;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    #customers td, #customers th {
+      border: 1px solid #ddd;
+    }
+
+    #customers tr:nth-child(even){background-color: #f2f2f2;}
+
+    #customers tr:hover {background-color: #ddd;}
+
+    #customers th {
+      padding-top: 12px;
+      padding-bottom: 12px;
+      text-align: left;
+      background-color: #2C3B49;
+      color: white;
+    }
+
 </style>
 @endsection
 
 @section('script')
 <script>
     $(function () {
+        var $th = $('.tableFixHead').find('thead th')
+        $('.tableFixHead').on('scroll', function() {
+            $th.css('transform', 'translateY('+ this.scrollTop +'px)');
+        });
+
         var showTotalChar = 98, showChar = "Show more", hideChar = "Show less";
         $('.item-description').each(function() {
             var content = $(this).text();
