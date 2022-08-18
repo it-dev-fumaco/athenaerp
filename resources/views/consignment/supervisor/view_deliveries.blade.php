@@ -52,10 +52,11 @@
                                         <th class="text-center align-middle">Reference</th>
                                         <th class="text-center align-middle">Branch / Store</th>
                                         <th class="text-center align-middle">MREQ No.</th>
+                                        <th class="text-center align-middle">Created By</th>
                                         <th class="text-center align-middle">Delivery Date</th>
-                                        <th class="text-center align-middle">Promodiser</th>
                                         <th class="text-center align-middle">Status</th>
                                         <th class="text-center align-middle">Received By</th>
+                                        <th class="text-center align-middle">Date Received</th>
                                         <th class="text-center align-middle">Action</th>
                                     </thead>
                                     <tbody>
@@ -64,8 +65,8 @@
                                             <td class="text-center align-middle">{{ $r['name'] }}</td>
                                             <td class="text-center align-middle">{{ $r['warehouse'] }}</td>
                                             <td class="text-center align-middle">{{ $r['mreq_no'] }}</td>
+                                            <td class="text-center align-middle">{{ $r['created_by'] }}</td>
                                             <td class="text-center align-middle">{{ $r['delivery_date'] }}</td>
-                                            <td class="text-center align-middle">{{ $r['promodiser'] }}</td>
                                             <td class="text-center align-middle">
                                                 @if ($r['status'] == 'Received')
                                                 <span class="badge badge-success" style="font-size: 8pt;">{{ $r['status'] }}</span>
@@ -74,6 +75,7 @@
                                                 @endif
                                             </td>
                                             <td class="text-center align-middle">{{ $r['received_by'] }}</td>
+                                            <td class="text-center align-middle">{{ $r['date_received'] }}</td>
                                             <td class="text-center align-middle">
                                                 <a href="#" data-toggle="modal" data-target="#{{ $r['name'] }}-modal">View</a>
                                             </td>
@@ -86,10 +88,14 @@
                                     </tbody>
                                 </table>
 
-                                <div class="m-2">
-                                    {{ $list->appends(request()->query())->links('pagination::bootstrap-4') }}
+                                <div class="d-flex flex-row justify-content-between">
+                                    <div class="m-0">
+                                        {{ $list->appends(request()->query())->links('pagination::bootstrap-4') }}
+                                    </div>
+                                    <div class="m-0">
+                                        Total Records: <b>{{ $list->total() }}</b>
+                                    </div>
                                 </div>
-
                                 @foreach ($result as $r)
                                 <div class="modal fade" id="{{ $r['name'] }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                     <div class="modal-dialog modal-xl" role="document" style="font-size: 10pt;">
@@ -107,7 +113,8 @@
                                                     <div class="col-6 pl-5">
                                                         <p class="m-1 font-details">Reference STE: <span class="font-weight-bold">{{ $r['name'] }}</span></p>
                                                         <p class="m-1 font-details">Delivery Date: <span class="font-weight-bold">{{ $r['delivery_date'] }}</span></p>
-                                                        <p class="m-1 font-details">Date Received: <span class="font-weight-bold">{{ $r['date_received'] }}</span></p>
+                                                        <p class="m-1 font-details">MREQ No.: <span class="font-weight-bold">{{ $r['mreq_no'] }}</span></p>
+                                                        <p class="m-1 font-details">Created By: <span class="font-weight-bold">{{ $r['created_by'] }}</span></p>
                                                     </div>
                                                     <div class="col-6 pl-5" >
                                                         <p class="m-1 font-details">Status: 
@@ -118,6 +125,7 @@
                                                             @endif
                                                         </p>
                                                         <p class="m-1 font-details">Received By: <span class="font-weight-bold">{{ $r['received_by'] }}</span></p>
+                                                        <p class="m-1 font-details">Date Received: <span class="font-weight-bold">{{ $r['date_received'] }}</span></p>
                                                     </div>
                                                 </div>
                                                 <table class="table table-bordered table-striped" style="font-size: 9pt;">
