@@ -19,6 +19,13 @@
                 <div class="col-6">
                     <h4 class="text-center font-weight-bold m-2 text-uppercase">Inventory Report List</h4>
                 </div>
+                @if (Auth::check() && in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
+                <div class="col-2">
+                    <div class="float-right pt-2">
+                        <a href="/consignment_ledger" class="btn btn-info btn-sm">View Stock Movement</a>
+                    </div>
+                </div>
+                @endif
             </div>
             <div class="row">
                 <div class="col-md-8 offset-md-1">

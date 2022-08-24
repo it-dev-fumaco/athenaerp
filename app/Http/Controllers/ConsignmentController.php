@@ -4563,4 +4563,325 @@ class ConsignmentController extends Controller
 
         return view('consignment.supervisor.view_deliveries', compact('list', 'result'));
     }
+
+    public function getErpItems(Request $request) {
+        $search_str = explode(' ', $request->q);
+
+        return DB::table('tabItem')
+            ->where('disabled', 0)->where('has_variants', 0)->where('is_stock_item', 1)
+            ->when($request->q, function ($query) use ($request, $search_str){
+                return $query->where(function($q) use ($search_str, $request) {
+                    foreach ($search_str as $str) {
+                        $q->where('description', 'LIKE', "%".$str."%");
+                    }
+
+                    $q->orWhere('item_code', 'LIKE', "%".$request->q."%");
+                });
+            })
+            ->select('item_code as id', DB::raw('CONCAT(item_code, "-", description) as text '))->orderBy('item_code', 'asc')
+            ->limit(8)->get();
+    }
+
+    public function consignmentLedger(Request $request) {
+        if ($request->ajax()) {
+            $branch_warehouse = $request->branch_warehouse;
+            $item_code = $request->item_code;
+
+            $result = $item_descriptions = [];
+            if ($branch_warehouse) {
+                $item_opening_stock = DB::table('tabConsignment Beginning Inventory as cb')
+                    ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+                    ->where('cb.status', 'Approved')->where('branch_warehouse', $branch_warehouse)
+                    ->when($item_code, function ($q) use ($item_code){ 
+                        return $q->where('cbi.item_code', $item_code);
+                    })
+                    ->select('cbi.item_code', 'cbi.opening_stock', 'cb.transaction_date', 'cb.branch_warehouse', 'cb.name', 'cb.owner', 'cbi.item_description')
+                    ->orderBy('cb.transaction_date', 'asc')->get();
+            
+                foreach ($item_opening_stock as $r) {
+                    $result[$r->item_code][$r->transaction_date][] = [
+                        'qty' => number_format($r->opening_stock),
+                        'type' => 'Beginning Inventory',
+                        'transaction_date' => $r->transaction_date,
+                        'reference' => $r->name,
+                        'owner' => $r->owner
+                    ];
+
+                    $item_descriptions[$r->item_code] = $r->item_description;
+                }
+        
+                $item_sales_report = DB::table('tabConsignment Sales Report as csr')
+                    ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                    ->where('csr.status', '!=', 'Cancelled')
+                    ->where('branch_warehouse', $branch_warehouse)
+                    ->when($item_code, function ($q) use ($item_code){ 
+                        return $q->where('csri.item_code', $item_code);
+                    })
+                    ->select('csri.item_code', 'csr.transaction_date', 'csri.qty', 'csr.branch_warehouse', 'csr.name', 'csr.owner', 'csri.description')
+                    ->orderBy('csr.transaction_date', 'asc')->get()->toArray();
+        
+                foreach ($item_sales_report as $s) {
+                    $result[$s->item_code][$s->transaction_date][] = [
+                        'qty' => '-'.number_format($s->qty),
+                        'type' => 'Product Sold',
+                        'transaction_date' => $s->transaction_date,
+                        'reference' => $s->name,
+                        'owner' => $s->owner
+                    ];
+
+                    $item_descriptions[$s->item_code] = $s->description;
+                }
+        
+                $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->where('branch_warehouse', $branch_warehouse)
+                    ->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
+            
+                $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
+        
+                $item_receive = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                    ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
+                        return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+                    })
+                    ->when($item_code, function ($q) use ($item_code){ 
+                        return $q->where('sted.item_code', $item_code);
+                    })
+                    ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
+                    ->where('ste.purpose', 'Material Transfer')
+                    ->where('ste.docstatus', 1)
+                    ->where('sted.consignment_status', 'Received')
+                    ->where('sted.t_warehouse', $branch_warehouse)
+                    ->select('ste.name', 'sted.t_warehouse', 'sted.consignment_date_received', 'sted.item_code', 'sted.transfer_qty', 'sted.consignment_received_by', 'sted.description')
+                    ->orderBy('sted.consignment_date_received', 'desc')->get();
+                
+                foreach ($item_receive as $a) {
+                    $date_received = Carbon::parse($a->consignment_date_received)->format('Y-m-d');
+                    $result[$a->item_code][$date_received][] = [
+                        'qty' =>  number_format($a->transfer_qty),
+                        'type' => 'Stocks Received',
+                        'transaction_date' => $date_received,
+                        'reference' => $a->name,
+                        'owner' => $a->consignment_received_by
+                    ];
+
+                    $item_descriptions[$a->item_code] = $a->description;
+                }
+        
+                $item_transferred = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                    ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
+                        return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+                    })
+                    ->when($item_code, function ($q) use ($item_code){ 
+                        return $q->where('sted.item_code', $item_code);
+                    })
+                    ->whereIn('ste.transfer_as', ['Store Transfer'])
+                    ->where('ste.purpose', 'Material Transfer')
+                    ->where('ste.docstatus', 1)
+                    ->where('sted.s_warehouse', $branch_warehouse)
+                    ->select('ste.name', 'sted.t_warehouse', 'sted.creation', 'sted.item_code', 'sted.transfer_qty', 'ste.owner', 'sted.description')
+                    ->orderBy('sted.creation', 'desc')->get();
+        
+                foreach ($item_transferred as $v) {
+                    $date_transferred = Carbon::parse($v->creation)->format('Y-m-d');
+                    $result[$v->item_code][$date_transferred][] = [
+                        'qty' =>  number_format($v->transfer_qty),
+                        'type' => 'Store Transfer',
+                        'transaction_date' => $date_transferred,
+                        'reference' => $v->name,
+                        'owner' => $v->owner
+                    ];
+
+                    $item_descriptions[$v->item_code] = $v->description;
+                }
+        
+                $item_returned = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                    ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
+                        return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+                    })
+                    ->when($item_code, function ($q) use ($item_code){ 
+                        return $q->where('sted.item_code', $item_code);
+                    })
+                    ->whereIn('ste.transfer_as', ['For Return'])
+                    ->where('ste.purpose', 'Material Transfer')
+                    ->where('ste.docstatus', 1)
+                    ->where('sted.s_warehouse', $branch_warehouse)
+                    ->select('ste.name', 'sted.t_warehouse', 'sted.creation', 'sted.item_code', 'sted.transfer_qty', 'ste.owner', 'sted.description')
+                    ->orderBy('sted.creation', 'desc')->get();
+        
+                foreach ($item_returned as $a) {
+                    $date_returned = Carbon::parse($a->creation)->format('Y-m-d');
+                    $result[$a->item_code][$date_returned][] = [
+                        'qty' =>  number_format($a->transfer_qty),
+                        'type' => 'Stocks Returned',
+                        'transaction_date' => $date_returned,
+                        'reference' => $a->name,
+                        'owner' => $a->owner
+                    ];
+
+                    $item_descriptions[$a->item_code] = $a->description;
+                }
+            }
+    
+            return view('consignment.tbl_consignment_ledger', compact('result', 'branch_warehouse', 'item_descriptions'));
+        }
+
+        return view('consignment.consignment_ledger');
+    }
+
+    public function consignmentStockMovement($item_code, Request $request) {
+        $branch_warehouse = $request->branch_warehouse;
+        $result = [];
+        if ($item_code) {
+            $item_opening_stock = DB::table('tabConsignment Beginning Inventory as cb')
+                ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+                ->where('cb.status', 'Approved')->where('cbi.item_code', $item_code)
+                ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
+                    return $q->where('branch_warehouse', $branch_warehouse);
+                })
+                ->select('cbi.item_code', 'cbi.opening_stock', 'cb.transaction_date', 'cb.branch_warehouse', 'cb.name', 'cb.owner')
+                ->orderBy('cb.transaction_date', 'asc')->get();
+        
+            foreach ($item_opening_stock as $r) {
+                $result[] = [
+                    'qty' => number_format($r->opening_stock),
+                    'type' => 'Beginning Inventory',
+                    'transaction_date' => $r->transaction_date,
+                    'branch_warehouse' => $r->branch_warehouse,
+                    'reference' => $r->name,
+                    'owner' => $r->owner
+                ];
+            }
+    
+            $item_sales_report = DB::table('tabConsignment Sales Report as csr')
+                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                ->where('csr.status', '!=', 'Cancelled')
+                ->where('csri.item_code', $item_code)
+                ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
+                    return $q->where('branch_warehouse', $branch_warehouse);
+                })
+                ->select('csri.item_code', 'csr.transaction_date', 'csri.qty', 'csr.branch_warehouse', 'csr.name', 'csr.owner')
+                ->orderBy('csr.transaction_date', 'asc')->get()->toArray();
+    
+            foreach ($item_sales_report as $s) {
+                $result[] = [
+                    'qty' => '-'.number_format($s->qty),
+                    'type' => 'Product Sold',
+                    'transaction_date' => $s->transaction_date,
+                    'branch_warehouse' => $s->branch_warehouse,
+                    'reference' => $s->name,
+                    'owner' => $s->owner
+                ];
+            }
+    
+            $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')
+                ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
+                    return $q->where('branch_warehouse', $branch_warehouse);
+                })
+                ->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
+        
+            $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
+    
+            $item_receive = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
+                    return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+                })
+                ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
+                    return $q->where('sted.t_warehouse', $branch_warehouse);
+                })
+                ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
+                ->where('ste.purpose', 'Material Transfer')
+                ->where('ste.docstatus', 1)
+                ->where('sted.consignment_status', 'Received')
+                ->where('sted.item_code', $item_code)
+                ->select('ste.name', 'sted.t_warehouse', 'sted.consignment_date_received', 'sted.item_code', 'sted.transfer_qty', 'sted.consignment_received_by')
+                ->orderBy('sted.consignment_date_received', 'desc')->get();
+            
+            foreach ($item_receive as $a) {
+                $date_received = Carbon::parse($a->consignment_date_received)->format('Y-m-d');
+                $result[] = [
+                    'qty' =>  number_format($a->transfer_qty),
+                    'type' => 'Stocks Received',
+                    'transaction_date' => $date_received,
+                    'branch_warehouse' => $a->t_warehouse,
+                    'reference' => $a->name,
+                    'owner' => $a->consignment_received_by
+                ];
+            }
+    
+            $item_transferred = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
+                    return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+                })
+                ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
+                    return $q->where('sted.s_warehouse', $branch_warehouse);
+                })
+                ->whereIn('ste.transfer_as', ['Store Transfer'])
+                ->where('ste.purpose', 'Material Transfer')
+                ->where('ste.docstatus', 1)
+                ->where('sted.item_code', $item_code)
+                ->select('ste.name', 'sted.s_warehouse', 'sted.creation', 'sted.item_code', 'sted.transfer_qty', 'ste.owner')
+                ->orderBy('sted.creation', 'desc')->get();
+    
+            foreach ($item_transferred as $v) {
+                $date_transferred = Carbon::parse($v->creation)->format('Y-m-d');
+                $result[] = [
+                    'qty' =>  number_format($v->transfer_qty),
+                    'type' => 'Store Transfer',
+                    'transaction_date' => $date_transferred,
+                    'branch_warehouse' => $v->s_warehouse,
+                    'reference' => $v->name,
+                    'owner' => $v->owner
+                ];
+            }
+    
+            $item_returned = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ 
+                    return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
+                })
+                ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
+                    return $q->where('sted.s_warehouse', $branch_warehouse);
+                })
+                ->whereIn('ste.transfer_as', ['For Return'])
+                ->where('ste.purpose', 'Material Transfer')
+                ->where('ste.docstatus', 1)
+                ->where('sted.item_code', $item_code)
+                ->select('ste.name', 'sted.s_warehouse', 'sted.creation', 'sted.item_code', 'sted.transfer_qty', 'ste.owner')
+                ->orderBy('sted.creation', 'desc')->get();
+    
+            foreach ($item_returned as $a) {
+                $date_returned = Carbon::parse($a->creation)->format('Y-m-d');
+                $result[] = [
+                    'qty' =>  number_format($a->transfer_qty),
+                    'type' => 'Stocks Returned',
+                    'transaction_date' => $date_returned,
+                    'branch_warehouse' => $a->s_warehouse,
+                    'reference' => $a->name,
+                    'owner' => $a->owner
+                ];
+            }
+        }
+
+        $result = collect($result)->sortBy('transaction_date')->reverse()->toArray();
+
+        // Get current page form url e.x. &page=1
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // Create a new Laravel collection from the array data
+        $itemCollection = collect($result);
+        // Define how many items we want to be visible in each page
+        $perPage = 20;
+        // Slice the collection to get the items to display in current page
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // Create our paginator and pass it to the view
+        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // set url path for generted links
+        $paginatedItems->setPath($request->url());
+
+        $result = $paginatedItems;
+
+        return view('tbl_consignment_stock_movement', compact('result'));
+    }
 }

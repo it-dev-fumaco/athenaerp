@@ -43,8 +43,43 @@
                         <a class="nav-link d-block d-md-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
                     </li>
                     @endif
+                    @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Promodiser', 'Director']))
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#consignment-stock-movement">
+                            <span class="d-none d-md-block">Consignment Stock Movement</span>
+                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                        </a>
+                    </li>
+                    @endif
                 </ul>
                 <div class="tab-content">
+                    <div class="container-fluid tab-pane bg-white" id="consignment-stock-movement">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="row">
+                                    <div class="col-4 p-2">
+                                        @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
+                                        <select class="form-control csm-filter" name="store" id="consignment-store-select"></select>
+                                        @else
+                                        @if (count($consignment_branches) > 1)
+                                        <select class="form-control csm-filter" name="store">
+                                            @foreach ($consignment_branches as $store)
+                                            <option value="{{ $store }}">{{ $store }}</option>
+                                            @endforeach
+                                        </select>
+                                        @endif
+                                        @if ((count($consignment_branches) == 1))
+                                        <input type="hidden" class="csm-filter" name="store" value="{{ $consignment_branches[0] }}">
+                                        @endif
+                                        @endif
+                                    </div>
+                                    <div class="col-12">
+                                        <div id="consignment-ledger-content"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="item-info" class="container-fluid tab-pane active bg-white">
                         <div class="row">
                             @php
@@ -824,6 +859,27 @@
                 font-size: 8pt !important;
             }
         }
+
+        .select2{
+			width: 100% !important;
+			outline: none !important;
+            font-size: 9pt;
+		}
+		.select2-selection__rendered {
+			line-height: 18px !important;
+			outline: none !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 29px !important;
+			padding-top: 1.5%;
+			outline: none !important;
+		}
+		.select2-selection__arrow {
+			height: 28px !important;
+		}
+        .myFont{
+            font-size:9pt;
+        }
     </style>
 @endsection
 @section('script')
@@ -1128,6 +1184,52 @@
             $("#erp_dates").attr("placeholder","Select Date Range");
             $("#ath_dates").val('');
             $("#ath_dates").attr("placeholder","Select Date Range");
+        });
+
+        $('#consignment-store-select').select2({
+            dropdownCssClass: "myFont",
+            placeholder: "Select Store",
+            ajax: {
+                url: '/consignment_stores',
+                method: 'GET',
+                dataType: 'json',
+                data: function (data) {
+                    return {
+                        q: data.term // search term
+                    };
+                },
+                processResults: function (response) {
+                    return {
+                        results: response
+                    };
+                },
+                cache: true
+            }
+        });
+
+        $(document).on('change', '.csm-filter', function(e){
+            load();
+        });
+
+        load();
+        function load(page) {
+            var item_code = '{{ $item_details->name }}';
+            var branch_warehouse = $('.csm-filter').eq(0).val();
+
+            $.ajax({
+                type: "GET",
+                url: "/consignment_stock_movement/" + item_code + "?page=" + page,
+                data: {branch_warehouse},
+                success: function (response) {
+                    $('#consignment-ledger-content').html(response);
+                }
+            });
+        }
+
+        $(document).on('click', '#consignment-stock-movement-pagination a', function(event){
+            event.preventDefault();
+            var page = $(this).attr('href').split('page=')[1];
+            load(page);
         });
     </script>
 @endsection
