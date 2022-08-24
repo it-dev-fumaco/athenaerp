@@ -1773,8 +1773,8 @@ class ConsignmentController extends Controller
                         'name' => $bin_id,
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
-                        'owner' => Auth::user()->full_name,
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
                         'idx' => 0,
                         'warehouse' => $branch,
@@ -1800,7 +1800,7 @@ class ConsignmentController extends Controller
                 if($item->consignment_status != 'Received' && isset($request->receive_delivery)){
                     $ste_details_update['consignment_status'] = 'Received';
                     $ste_details_update['consignment_date_received'] = Carbon::now()->toDateTimeString();
-                    $ste_details_update['consignment_received_by'] = Auth::user()->full_name;
+                    $ste_details_update['consignment_received_by'] = Auth::user()->wh_user;
                 }
 
                 DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
@@ -1939,20 +1939,20 @@ class ConsignmentController extends Controller
                     $src_branch = $stock_entry->from_warehouse ? $stock_entry->from_warehouse : $item->s_warehouse;
                     DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $src_branch)->update([
                         'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
+                        'modified_by' => Auth::user()->wh_user,
                         'consigned_qty' => $consigned_qty[$src_branch][$item->item_code]['consigned_qty'] + $item->transfer_qty
                     ]);
                 }
 
                 DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $branch)->update([
                     'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name,
+                    'modified_by' => Auth::user()->wh_user,
                     'consigned_qty' => $consigned_qty[$branch][$item->item_code]['consigned_qty'] - $item->transfer_qty
                 ]);
                 
                 DB::table('tabStock Entry Detail')->where('parent', $id)->where('item_code', $item->item_code)->update([
                     'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name,
+                    'modified_by' => Auth::user()->wh_user,
                     'consignment_status' => null,
                     'consignment_date_received' => null
                 ]);
@@ -2281,9 +2281,9 @@ class ConsignmentController extends Controller
                     'branch_warehouse' => $branch,
                     'creation' => $now,
                     'transaction_date' => $transaction_date,
-                    'owner' => Auth::user()->full_name,
+                    'owner' => Auth::user()->wh_user,
                     'modified' => $now,
-                    'modified_by' => Auth::user()->full_name,
+                    'modified_by' => Auth::user()->wh_user,
                     'remarks' => $request->remarks
                 ];
 
@@ -2308,7 +2308,7 @@ class ConsignmentController extends Controller
                     $row_values[] = [
                         'name' => uniqid(),
                         'creation' => $now,
-                        'owner' => Auth::user()->full_name,
+                        'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
                         'parent' => $inv_id,
                         'idx' => $i + 1,
@@ -2321,7 +2321,7 @@ class ConsignmentController extends Controller
                         'price' => $item_price,
                         'amount' => $item_price * $qty,
                         'modified' => $now,
-                        'modified_by' => Auth::user()->full_name,
+                        'modified_by' => Auth::user()->wh_user,
                         'parentfield' => 'items',
                         'parenttype' => 'Consignment Beginning Inventory' 
                     ];
@@ -2392,7 +2392,7 @@ class ConsignmentController extends Controller
                         $row_values[] = [
                             'name' => uniqid(),
                             'creation' => $now,
-                            'owner' => Auth::user()->full_name,
+                            'owner' => Auth::user()->wh_user,
                             'docstatus' => 0,
                             'parent' => $request->inv_name,
                             'idx' => $idx,
@@ -2405,7 +2405,7 @@ class ConsignmentController extends Controller
                             'price' => $item_price,
                             'amount' => $item_price * $qty,
                             'modified' => $now,
-                            'modified_by' => Auth::user()->full_name,
+                            'modified_by' => Auth::user()->wh_user,
                             'parentfield' => 'items',
                             'parenttype' => 'Consignment Beginning Inventory' 
                         ];
@@ -2673,7 +2673,7 @@ class ConsignmentController extends Controller
                 $insert_values = [
                     'name' => uniqid(),
                     'creation' => Carbon::now()->toDateTimeString(),
-                    'owner' => Auth::user()->full_name,
+                    'owner' => Auth::user()->wh_user,
                     'docstatus' => 1,
                     'transaction_date' => Carbon::now()->toDateTimeString(),
                     'branch_warehouse' => $request->branch,
@@ -2684,7 +2684,7 @@ class ConsignmentController extends Controller
                     'damage_description' => isset($reason[$item_code]) ? $reason[$item_code] : 0,
                     'promodiser' => Auth::user()->full_name,
                     'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name
+                    'modified_by' => Auth::user()->wh_user
                 ];
 
                 DB::table('tabConsignment Damaged Item')->insert($insert_values);
@@ -2790,7 +2790,7 @@ class ConsignmentController extends Controller
                 // add qty to target quarantine wareghouse
                 DB::table('tabBin')->where('name', $existing_target->name)->update([
                     'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name,
+                    'modified_by' => Auth::user()->wh_user,
                     'consigned_qty' => $existing_target->consigned_qty + $damaged_item->qty
                 ]);
             } else {
@@ -2804,8 +2804,8 @@ class ConsignmentController extends Controller
                     'name' => $bin_id,
                     'creation' => Carbon::now()->toDateTimeString(),
                     'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name,
-                    'owner' => Auth::user()->full_name,
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
                     'docstatus' => 0,
                     'idx' => 0,
                     'warehouse' => 'Quarantine Warehouse - FI',
@@ -2820,13 +2820,13 @@ class ConsignmentController extends Controller
             // deduct qty to source warehouse
             DB::table('tabBin')->where('name', $existing_source->name)->update([
                'modified' => Carbon::now()->toDateTimeString(),
-               'modified_by' => Auth::user()->full_name,
+               'modified_by' => Auth::user()->wh_user,
                'consigned_qty' => $existing_source->consigned_qty - $damaged_item->qty
             ]);
 
             DB::table('tabConsignment Damaged Item')->where('name', $id)->update([
                 'modified' => Carbon::now()->toDateTimeString(),
-                'modified_by' => Auth::user()->full_name,
+                'modified_by' => Auth::user()->wh_user,
                 'status' => 'Returned'
             ]);
 
@@ -3039,8 +3039,8 @@ class ConsignmentController extends Controller
                 'name' => $new_id,
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
-                'modified_by' => Auth::user()->full_name,
-                'owner' => Auth::user()->full_name,
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
                 'use_multi_level_bom' => 0,
@@ -3142,8 +3142,8 @@ class ConsignmentController extends Controller
                     'name' =>  uniqid(),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->full_name,
-                    'owner' => Auth::user()->full_name,
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
                     'docstatus' => 0,
                     'parent' => $new_id,
                     'parentfield' => 'items',
@@ -3189,7 +3189,7 @@ class ConsignmentController extends Controller
                 if($request->transfer_as == 'For Return' && isset($items[$reference_warehouse][$item_code])){
                     DB::table('tabBin')->where('warehouse', $reference_warehouse)->where('item_code', $item_code)->update([
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
+                        'modified_by' => Auth::user()->wh_user,
                         'consigned_qty' => $items[$reference_warehouse][$item_code]['consigned_qty'] - $transfer_qty[$item_code]['transfer_qty']
                     ]);
                 }
@@ -3199,7 +3199,7 @@ class ConsignmentController extends Controller
                     if(isset($items[$target_warehouse][$item_code])){
                         DB::table('tabBin')->where('warehouse', $target_warehouse)->where('item_code', $item_code)->update([
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->full_name,
+                            'modified_by' => Auth::user()->wh_user,
                             'consigned_qty' => $items[$target_warehouse][$item_code]['consigned_qty'] + $transfer_qty[$item_code]['transfer_qty']
                         ]);
                     }else{
@@ -3213,8 +3213,8 @@ class ConsignmentController extends Controller
                             'name' => $bin_id,
                             'creation' => $now->toDateTimeString(),
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->full_name,
-                            'owner' => Auth::user()->full_name,
+                            'modified_by' => Auth::user()->wh_user,
+                            'owner' => Auth::user()->wh_user,
                             'docstatus' => 0,
                             'idx' => 0,
                             'warehouse' => $target_warehouse,
@@ -3302,7 +3302,7 @@ class ConsignmentController extends Controller
 
                     DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->full_name,
+                        'modified_by' => Auth::user()->wh_user,
                         'consigned_qty' => $target_warehouse_qty
                     ]);
 
@@ -3310,7 +3310,7 @@ class ConsignmentController extends Controller
                     if($stock_entry->purpose == 'Material Transfer'){ // Returns
                         DB::table('tabBin')->where('warehouse', $items->s_warehouse)->where('item_code', $items->item_code)->update([
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->full_name,
+                            'modified_by' => Auth::user()->wh_user,
                             'consigned_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty
                         ]);
                     }
@@ -3992,7 +3992,7 @@ class ConsignmentController extends Controller
                     $bin_array = $bin_stock_array = $bin_price_array = [];
                     $update_array = [
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name
+                        'modified_by' => Auth::user()->wh_user
                     ];
 
                     if($previous_stock != $opening_qty){
@@ -4066,7 +4066,7 @@ class ConsignmentController extends Controller
 
             DB::table('tabConsignment Beginning Inventory')->where('name', $id)->update([
                 'modified' => $now,
-                'modified_by' => Auth::user()->user_group == 'Consignment Supervisor' ? Auth::user()->wh_user : Auth::user()->full_name,
+                'modified_by' => Auth::user()->wh_user,
                 'grand_total' => $grand_total,
                 'remarks' => $request->remarks
             ]);
