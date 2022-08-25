@@ -4613,6 +4613,7 @@ class ConsignmentController extends Controller
                 $item_sales_report = DB::table('tabConsignment Sales Report as csr')
                     ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                     ->where('csr.status', '!=', 'Cancelled')
+                    ->where('csri.qty', '>', 0)
                     ->where('branch_warehouse', $branch_warehouse)
                     ->when($item_code, function ($q) use ($item_code){ 
                         return $q->where('csri.item_code', $item_code);
@@ -4757,6 +4758,7 @@ class ConsignmentController extends Controller
                 ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                 ->where('csr.status', '!=', 'Cancelled')
                 ->where('csri.item_code', $item_code)
+                ->where('csri.qty', '>', 0)
                 ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
                     return $q->where('branch_warehouse', $branch_warehouse);
                 })
