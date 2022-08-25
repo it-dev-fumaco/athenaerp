@@ -260,7 +260,6 @@
 																					<div id="carouselExampleControls" class="carousel slide" data-interval="false">
 																						<div class="carousel-inner">
 																							<div class="carousel-item active">
-																								{{-- <img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img_webp }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img_webp)[0], '-') }}"> --}}
 																								<picture>
 																									<source id="{{ $row['name'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
 																									<source id="{{ $row['name'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
@@ -287,7 +286,6 @@
 																<div class="text-center mt-2 mb-1">
 																	<div class="d-flex flex-row">
 																		<div class="p-1 col-6">
-																			{{-- <a href="#" class="view-item-details" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}"> --}}
 																			<a href="/get_item_details/{{ $row['name'] }}">
 																				<div class="btn btn-primary btn-xs btn-block">
 																					<i class="fa fa-search"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
@@ -377,34 +375,48 @@
 																		<div class="modal-dialog modal-xl" role="document">
 																			<div class="modal-content">
 																				<div class="modal-header">
-																					<h4 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s) </h4>
+																					<h5 class="modal-title consignment-head">{{ $row['name'] }} - Consignment Warehouse(s)</h5>
 																					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 																				</div>
 																				<form></form>
 																				<div class="modal-body">
-																					<table class="table table-hover m-0">
-																						<col style="width: 70%;">
-																						<col style="width: 30%;">
+																					<table class="table table-hover m-0" style="font-size: 10pt;">
+																						<col style="width: 75%;">
+																						<col style="width: 12%;">
+																						<col style="width: 12%;">
 																						<tr>
-																							<th class="consignment-th text-center">Warehouse</th>
-																							<th class="consignment-th text-center">Available Qty</th>
-																							<th class="consignment-th text-center">In Store</th>
+																							<th class="consignment-th p-2 text-center">Warehouse</th>
+																							<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty</th>
+																							<th class="consignment-th p-2 text-center">In Store</th>
 																						</tr>
 																						@forelse($row['consignment_warehouses'] as $con)
-																						<tr>
-																							<td class="consignment-name">
-																								{{ $con['warehouse'] }}
-																								@if ($con['location'])
-																									<small class="text-muted font-italic">- {{ $con['location'] }}</small>
-																								@endif
-																							</td>
-																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
-																							</td>
-																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
-																							</td>
-																						</tr>
+																							@if ($con['actual_qty'] <= 0 && $con['consigned_qty'] <= 0)
+																								@continue
+																							@endif
+																							@php
+																								$max_actual_qty = collect($row['consignment_warehouses'])->max('actual_qty');
+																								$max_consigned_qty = collect($row['consignment_warehouses'])->max('consigned_qty');
+																							@endphp
+																							@if (($max_actual_qty * 1) > 0 || ($max_consigned_qty * 1) > 0)
+																								<tr>
+																									<td class="consignment-name p-2">
+																										{{ $con['warehouse'] }}
+																										@if ($con['location'])
+																											<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																										@endif
+																									</td>
+																									<td class="text-center p-2">
+																										<small class="text-muted">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</small>
+																									</td>
+																									<td class="text-center p-2">
+																										<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 10pt; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																									</td>
+																								</tr>
+																							@else
+																								<tr>
+																									<td class="text-center font-italic" colspan="3">NO STOCKS AVAILABLE</td>
+																								</tr>
+																							@endif
 																						@empty
 																						<tr>
 																							<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
@@ -565,29 +577,43 @@
 																					</div>
 																					<form></form>
 																					<div class="modal-body">
-																						<table class="table table-hover m-0" style='font-size: 10pt;'>
-																							<col style="width: 70%;">
-																							<col style="width: 30%;">
+																						<table class="table table-hover m-0" style="font-size: 10pt;">
+																							<col style="width: 75%;">
+																							<col style="width: 12%;">
+																							<col style="width: 12%;">
 																							<tr>
-																								<th class="consignment-th text-center">Warehouse</th>
-																								<th class="consignment-th text-center">Available Qty</th>
-																								<th class="consignment-th text-center">In Store</th>
+																								<th class="consignment-th p-2 text-center">Warehouse</th>
+																								<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty</th>
+																								<th class="consignment-th p-2 text-center">In Store</th>
 																							</tr>
 																							@forelse($row['consignment_warehouses'] as $con)
-																							<tr>
-																								<td class="consignment-name">
-																									{{ $con['warehouse'] }}
-																									@if ($con['location'])
-																										<small class="text-muted font-italic">- {{ $con['location'] }}</small>
-																									@endif
-																								</td>
-																								<td class="text-center">
-																									<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
-																								</td>
-																								<td class="text-center">
-																									<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
-																								</td>
-																							</tr>
+																								@if ($con['actual_qty'] <= 0 && $con['consigned_qty'] <= 0)
+																									@continue
+																								@endif
+																								@php
+																									$max_actual_qty = collect($row['consignment_warehouses'])->max('actual_qty');
+																									$max_consigned_qty = collect($row['consignment_warehouses'])->max('consigned_qty');
+																								@endphp
+																								@if (($max_actual_qty * 1) > 0 || ($max_consigned_qty * 1) > 0)
+																									<tr>
+																										<td class="consignment-name p-2">
+																											{{ $con['warehouse'] }}
+																											@if ($con['location'])
+																												<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																											@endif
+																										</td>
+																										<td class="text-center p-2">
+																											<small class="text-muted">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</small>
+																										</td>
+																										<td class="text-center p-2">
+																											<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 10pt; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																										</td>
+																									</tr>
+																								@else
+																									<tr>
+																										<td class="text-center font-italic" colspan="3">NO STOCKS AVAILABLE</td>
+																									</tr>
+																								@endif
 																							@empty
 																							<tr>
 																								<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
@@ -629,13 +655,6 @@
 																					<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
 																				</td>
 																				<td class="text-center">
-																					{{-- @if($inv['available_qty'] == 0)
-																						<span class="badge badge-secondary" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@elseif($inv['available_qty'] <= $inv['warehouse_reorder_level'])
-																						<span class="badge badge-warning" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@else
-																						<span class="badge badge-success" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 . ' ' . $inv['stock_uom'] }}</span>
-																					@endif --}}
 																					@php
 																						if($inv['available_qty'] == 0){
 																							$uom_badge = 'secondary';
@@ -669,29 +688,43 @@
 																				</div>
 																				<form></form>
 																				<div class="modal-body">
-																					<table class="table table-hover m-0">
-																						<col style="width: 70%;">
-																						<col style="width: 30%;">
+																					<table class="table table-hover m-0" style="font-size: 9pt;">
+																						<col style="width: 60%;">
+																						<col style="width: 15%;">
+																						<col style="width: 25%;">
 																						<tr>
-																							<th class="consignment-th text-center">Warehouse</th>
-																							<th class="consignment-th text-center">Available Qty</th>
-																							<th class="consignment-th text-center">In Store</th>
+																							<th class="consignment-th p-2 text-center">Warehouse</th>
+																							<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty</th>
+																							<th class="consignment-th p-2 text-center">In Store</th>
 																						</tr>
 																						@forelse($row['consignment_warehouses'] as $con)
-																						<tr>
-																							<td class="consignment-name">
-																								{{ $con['warehouse'] }}
-																								@if ($con['location'])
-																									<small class="text-muted font-italic">- {{ $con['location'] }}</small>
-																								@endif
-																							</td>
-																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
-																							</td>
-																							<td class="text-center">
-																								<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
-																							</td>
-																						</tr>
+																							@if ($con['actual_qty'] <= 0 && $con['consigned_qty'] <= 0)
+																								@continue
+																							@endif
+																							@php
+																								$max_actual_qty = collect($row['consignment_warehouses'])->max('actual_qty');
+																								$max_consigned_qty = collect($row['consignment_warehouses'])->max('consigned_qty');
+																							@endphp
+																							@if (($max_actual_qty * 1) > 0 || ($max_consigned_qty * 1) > 0)
+																								<tr>
+																									<td class="consignment-name p-2">
+																										{{ $con['warehouse'] }}
+																										@if ($con['location'])
+																											<small class="text-muted font-italic">- {{ $con['location'] }}</small>
+																										@endif
+																									</td>
+																									<td class="text-center p-2">
+																										<small class="text-muted">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</small>
+																									</td>
+																									<td class="text-center p-2">
+																										<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 10pt; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																									</td>
+																								</tr>
+																							@else
+																								<tr>
+																									<td class="text-center font-italic" colspan="3">NO STOCKS AVAILABLE</td>
+																								</tr>
+																							@endif
 																						@empty
 																						<tr>
 																							<td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
