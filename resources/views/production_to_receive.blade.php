@@ -204,6 +204,7 @@
 				$(element).removeClass('is-invalid');
 			},
 			submitHandler: function(form) {
+				$('#receive-item-modal form button').prop('disabled', 'true');
 				$.ajax({
 					type: 'POST',
 					url: $(form).attr('action'),
@@ -213,11 +214,14 @@
 							showNotification("success", response.message, "fa fa-check");
 							angular.element('#anglrCtrl').scope().loadData();
 							$('#receive-item-modal').modal('hide');
+							$('#receive-item-modal form button').removeAttr('disabled');
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
+							$('#receive-item-modal form button').removeAttr('disabled');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
+						$('#receive-item-modal form button').removeAttr('disabled');
 					}
 				});
 			}

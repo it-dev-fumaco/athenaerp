@@ -1239,6 +1239,7 @@ class MainController extends Controller
         return null;
     }
 
+    // /material_issue
     public function view_material_issue(Request $request){
         if(!$request->arr){
             return view('material_issue');
@@ -1301,6 +1302,7 @@ class MainController extends Controller
         return response()->json(['records' => $list]);
     }
 
+    // /material_transfer_for_manufacture
     public function view_material_transfer_for_manufacture(Request $request){
         if(!$request->arr){
             return view('material_transfer_for_manufacture');
@@ -1444,6 +1446,7 @@ class MainController extends Controller
         return response()->json(['records' => $list]);
     }
 
+    // /material_transfer
     public function view_material_transfer(Request $request){
         if(!$request->arr){
             return view('material_transfer');
@@ -1956,6 +1959,7 @@ class MainController extends Controller
         return view('deliveries_modal_content', compact('data', 'is_stock_entry'));
     }
 
+    // /submit_transaction
     public function submit_transaction(Request $request){
         DB::beginTransaction();
         try {
@@ -2419,6 +2423,7 @@ class MainController extends Controller
         }
     }
 
+    // /checkout_picking_slip_item
     public function checkout_picking_slip_item(Request $request){
         DB::beginTransaction();
         try {
@@ -3325,6 +3330,7 @@ class MainController extends Controller
             ->count();
     }
 
+    // /production_to_receive
     public function view_production_to_receive(Request $request){
         if(!$request->arr){
             return view('production_to_receive');
@@ -4402,6 +4408,7 @@ class MainController extends Controller
         return view('returns');
     }
 
+    // /replacements
     public function replacements(Request $request){
         if(!$request->arr){
             return view('replacement');
@@ -4465,6 +4472,7 @@ class MainController extends Controller
          return response()->json(['records' => $list]);
     }
 
+    // /receipts
     public function receipts(Request $request){
         if(!$request->arr){
            return view('receipt');
@@ -4622,6 +4630,7 @@ class MainController extends Controller
         return response()->json(['picking' => $list]);
     }
 
+    // /picking_slip
     public function view_picking_slip() {
         return view('picking_slip');
     }
@@ -4795,6 +4804,7 @@ class MainController extends Controller
         return view('return_modal_content', compact('data', 'is_stock_entry'));
     }
 
+     // /submit_dr_sales_return
     public function submit_dr_sales_return(Request $request){
         DB::beginTransaction();
         try {
@@ -4861,6 +4871,7 @@ class MainController extends Controller
         }
     }
     
+    // /create_feedback
     public function create_feedback(Request $request){
         DB::beginTransaction();
 		try {
