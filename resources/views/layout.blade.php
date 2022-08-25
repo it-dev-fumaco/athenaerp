@@ -1127,7 +1127,7 @@
 <script src="{{ asset('/updated/plugins/daterangepicker/daterangepicker.js') }}"></script>
 <script src="{{ asset('/updated/plugins/inputmask/jquery.inputmask.min.js') }}"></script>
 <!-- Select2 -->
-<script src="{{ asset('/updated/plugins/select2/js/select2.min.js') }}"></script>
+<script src="{{ asset('/updated/plugins/select2/js/select2.full.js') }}"></script>
 <!-- bootstrap datepicker -->
 <script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
 <!-- iCheck 1.0.1 -->

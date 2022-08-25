@@ -222,6 +222,8 @@
 				$(element).removeClass('is-invalid');
 			},
 			submitHandler: function(form) {
+				$('#btn-deduct-res').prop('disabled', 'true');
+				$('#btn-check-out').prop('disabled', 'true');
 				$.ajax({
 					type: 'POST',
 					url: $(form).attr('action'),
@@ -231,11 +233,17 @@
 							showNotification("success", response.message, "fa fa-check");
 							angular.element('#anglrCtrl').scope().loadData();
 							$('#ste-modal').modal('hide');
+							$('#btn-deduct-res').removeAttr('disabled');
+							$('#btn-check-out').removeAttr('disabled');
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
+							$('#btn-deduct-res').removeAttr('disabled');
+							$('#btn-check-out').removeAttr('disabled');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
+						$('#btn-deduct-res').removeAttr('disabled');
+						$('#btn-check-out').removeAttr('disabled');
 					}
 				});
 			}

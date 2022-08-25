@@ -228,4 +228,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/user_manual/consignment_stock_transfer', function () {
         return view('consignment.user_manual.consignment_stock_transfer');
     });
+    Route::get('/consignment_ledger', 'ConsignmentController@consignmentLedger');
+    Route::get('/get_item_list', 'ConsignmentController@getErpItems');
+    Route::get('/consignment_stock_movement/{item_code}', 'ConsignmentController@consignmentStockMovement');
 });
+
