@@ -3544,7 +3544,7 @@ class ConsignmentController extends Controller
                     }
     
                     $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . Carbon::now()->format('F d, Y');
-                    if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::now()->startOfDay())) {
+                    if (Carbon::parse($start)->addDay()->startOfDay()->lte(Carbon::now()->startOfDay())) {
                         if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
                             $pending_arr[] = [
                                 'store' => $store,
