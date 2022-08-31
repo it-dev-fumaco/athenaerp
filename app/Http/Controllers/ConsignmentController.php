@@ -4037,16 +4037,17 @@ class ConsignmentController extends Controller
                         $cbi_stock_array = ['opening_stock' => $opening_qty];
                     }
 
-                    if($previous_price != $price){
-                        $bin_stock_array = ['consignment_price' => $price];
-                        $cbi_price_array = [
-                            'price' => $price,
-                            'amount' => $price * $opening_qty
-                        ];
-                    }
+                    // if($previous_price != $price){
+                    //     $bin_stock_array = ['consignment_price' => $price];
+                    //     $cbi_price_array = [
+                    //         'price' => $price,
+                    //         'amount' => $price * $opening_qty
+                    //     ];
+                    // }
 
-                    $cbi_array = array_merge($update_array, $cbi_price_array, $cbi_stock_array);
-                    $bin_array = array_merge($update_array, $bin_price_array, $bin_stock_array);
+                    $cbi_array = array_merge($update_array, $cbi_stock_array);
+                    $bin_array = array_merge($update_array, $bin_stock_array);
+                    // return $bin_array = array_merge($update_array, $bin_price_array, $bin_stock_array);
                     
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update($cbi_array);
                     DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update($bin_array);

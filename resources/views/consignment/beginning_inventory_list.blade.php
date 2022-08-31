@@ -105,10 +105,10 @@
 											<span class="badge badge-{{ $badge }}">{{ $inv['status'] }}</span>
 										</td>
 										<td class="text-center align-middle p-2">
-											@if ($inv['status'] == 'Approved')
-												<a href="#" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal">View Items</a>
-											@elseif($inv['status'] == 'For Approval')
+											@if($inv['status'] == 'For Approval')
 												<a href="/beginning_inventory/{{ $inv['name'] }}">View Items</a>
+											@else
+												<a href="#" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal">View Items</a>
 											@endif
 											<span class="badge badge-{{ $badge }} d-xl-none">{{ $inv['status'] }}</span>
 													
@@ -226,7 +226,7 @@
 																						₱ {{ number_format($item['price'], 2) }}
 																						@endif
 																					</div>
-																					<div class="col-3 p-0">
+																					<div class="col-3 p-0 {{ $inv['status'] != 'Approved' ? 'd-none' : null }}">
 																						<button type="button" class="btn btn-primary btn-xs allow-edit" data-inv="{{ $inv['name'] }}" data-target="{{ $inv['name'].'-'.$item['item_code'] }}"><i class="fa fa-edit"></i></button>
 																					</div>
 																				</div>
@@ -490,10 +490,10 @@
 			$(document).on('click', '.allow-edit', function (){
 				var target = $(this).data('target');
 				var inventory = $(this).data('inv');
-				$('#' + target + '-price').addClass('d-none');
+				// $('#' + target + '-price').addClass('d-none');
 				$('#' + target + '-qty').addClass('d-none');
 
-				$('#' + target + '-new-price').removeClass('d-none');
+				// $('#' + target + '-new-price').removeClass('d-none');
 				$('#' + target + '-new-qty').removeClass('d-none');
 
 				$('#' + inventory + '-update').removeClass('d-none');
