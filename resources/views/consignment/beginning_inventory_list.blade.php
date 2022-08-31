@@ -221,6 +221,7 @@
 																						@elseif ($inv['status'] == 'Approved')
 																						<input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
 																						<span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
+																						<br>
 																						@else
 																						₱ {{ number_format($item['price'], 2) }}
 																						@endif
