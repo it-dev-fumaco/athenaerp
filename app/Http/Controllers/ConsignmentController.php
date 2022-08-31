@@ -1259,7 +1259,9 @@ class ConsignmentController extends Controller
                 'qty' => collect($items_arr)->sum('opening_stock'),
                 'amount' => collect($items_arr)->sum('amount'),
                 'sold' => $sold_arr,
-                'remarks' => $inv->remarks
+                'remarks' => $inv->remarks,
+                'approved_by' => $inv->approved_by,
+                'date_approved' => $inv->date_approved
             ];
         }
 
@@ -1651,6 +1653,28 @@ class ConsignmentController extends Controller
         $ste_arr = $paginatedItems;
 
         return view('consignment.promodiser_delivery_report', compact('delivery_report', 'ste_arr', 'type'));
+    }
+
+    public function promodiserInquireDelivery(Request $request){
+        $delivery_report = [];
+        $item_image = [];
+        if(isset($request->ste) && $request->ste != null){
+            $delivery_report = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('ste.name', $request->ste)
+                ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received', 'sted.consignment_received_by')
+                ->orderBy('ste.creation', 'desc')->get();
+
+            $item_images = DB::table('tabItem Images')->whereIn('parent', collect($delivery_report)->pluck('item_code'))->get();
+            $item_image = collect($item_images)->groupBy('parent');
+
+            if(count($delivery_report) <= 0){
+                // return redirect()->back()->with('error', 'Delivery record not found.');
+                session()->flash('error', 'Delivery record not found.');
+            }
+        }
+
+        return view('consignment.promodiser_delivery_inquire', compact('delivery_report', 'item_image'));
     }
 
     // /promodiser/receive/{id}

@@ -88,10 +88,14 @@
 										</td>
 										<td class="p-2 text-left align-middle text-xl-center">
 											<span class="d-block">{{ $inv['branch'] }}</span>
-											<small class="d-lg-none">By: {{ $inv['owner'] }} - {{ $inv['transaction_date'] }}</small>
+											<div class="d-lg-none">
+												<small>Created By: {{ $inv['owner'] }}</small> <br>
+												<small>Approved By: {{ $inv['approved_by'] ? $inv['approved_by'] : '-' }}</small> <br>
+												<small>Date: {{ Carbon\Carbon::parse($inv['date_approved'])->format('M d, Y h:i A') }}</small>
+											</div>
 											<div class="row p-0 d-lg-none">
-												<div class="col-4"><b>Qty: </b>{{ number_format($inv['qty']) }}</div>
-												<div class="col-8"><b>Amount: </b>₱ {{ number_format($inv['amount'], 2) }}</div>
+												<div class="col-4"><small><b>Qty: </b>{{ number_format($inv['qty']) }}</small></div>
+												<div class="col-8"><small><b>Amount: </b>₱ {{ number_format($inv['amount'], 2) }}</small></div>
 											</div>
 										</td>
 										<td class="p-2 text-center align-middle d-none d-lg-table-cell">{{ number_format($inv['qty']) }}</td>
@@ -101,13 +105,17 @@
 											<span class="badge badge-{{ $badge }}">{{ $inv['status'] }}</span>
 										</td>
 										<td class="text-center align-middle p-2">
-											<a href="#" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal">View Items</a>
+											@if ($inv['status'] == 'Approved')
+												<a href="#" data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal">View Items</a>
+											@elseif($inv['status'] == 'For Approval')
+												<a href="/beginning_inventory/{{ $inv['name'] }}">View Items</a>
+											@endif
 											<span class="badge badge-{{ $badge }} d-xl-none">{{ $inv['status'] }}</span>
 													
 											<div class="modal fade" id="{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 												<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
 													<div class="modal-content">
-														<form action="{{ $modal_form }}" method="post">
+														<form action="{{ $modal_form }}" id="{{ $inv['name'] }}-form" method="post">
 															@csrf
 															<div class="modal-header bg-navy">
 																<div class="row text-left">
@@ -125,8 +133,10 @@
 															<div class="modal-body p-2">
 																<span class="d-block text-left">Inventory Date:<b>{{ $inv['transaction_date'] }}</b></span>
 																<span class="d-block text-left">Submitted By:<b>{{ $inv['owner'] }}</b></span>
-															
-																<table class="table mt-2" style="font-size: 9pt;">
+
+																<input type="text" class="form-control mt-2 mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
+																
+																<table class="table mt-2" id="items-table" style="font-size: 9pt;">
 																	<thead>
 																		<th class="text-center p-1 align-middle">Item Code</th>
 																		<th class="text-center p-1 align-middle">Opening Stock</th>
@@ -140,6 +150,7 @@
 																		@endphp
 																		<tr>
 																			<td class="text-center p-1 align-middle">
+																				<div class="d-none">{{ strip_tags($item['item_description']) }}</div>
 																				<div class="d-flex flex-row justify-content-start align-items-center">
 																					<div class="p-1 text-left">
 																						<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
@@ -202,20 +213,30 @@
 																				@endif
 																				<small class="d-block">{{ $item['uom'] }}</small>
 																			</td>
-																			<td class="text-center p-1 align-middle" style="white-space: nowrap">
-																				@if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
-																				₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
-																				@elseif ($inv['status'] == 'Approved')
-																				<input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
-																				<span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
-																				@else
-																				₱ {{ number_format($item['price'], 2) }}
-																				@endif
+																			<td class="text-center p-1 align-middle">
+																				<div class="row p-0">
+																					<div class="col-9 p-0" style="white-space: nowrap">
+																						@if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
+																						₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
+																						@elseif ($inv['status'] == 'Approved')
+																						<input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
+																						<span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
+																						@else
+																						₱ {{ number_format($item['price'], 2) }}
+																						@endif
+																					</div>
+																					<div class="col-3 p-0">
+																						<button type="button" class="btn btn-primary btn-xs allow-edit" data-inv="{{ $inv['name'] }}" data-target="{{ $inv['name'].'-'.$item['item_code'] }}"><i class="fa fa-edit"></i></button>
+																					</div>
+																				</div>
 																			</td>
 																		</tr>
 																		<tr>
 																			<td colspan="4" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
 																				<div class="w-100 item-description">{{ strip_tags($item['item_description']) }}</div>
+																				<span class="d-none">
+																					{{ $item['item_code'] }}
+																				</span>
 																			</td>
 																		</tr>
 																		@empty
@@ -234,6 +255,7 @@
 															@if ($inv['status'] == 'Approved')
 															<div class="modal-footer">
 																<div class="container-fluid">
+																	<button type='button' class="btn btn-info w-100 mb-2 update-btn d-none" id="{{ $inv['name'] }}-update" data-form="#{{ $inv['name'] }}-form">Update</button>
 																	<button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $inv['name'] }}-Modal">
 																		Cancel
 																	</button>
@@ -463,6 +485,30 @@
                 $('#headingOne').addClass('d-none');
                 $('#collapseOne').addClass('show');
 			}
+
+			$(document).on('click', '.allow-edit', function (){
+				var target = $(this).data('target');
+				var inventory = $(this).data('inv');
+				$('#' + target + '-price').addClass('d-none');
+				$('#' + target + '-qty').addClass('d-none');
+
+				$('#' + target + '-new-price').removeClass('d-none');
+				$('#' + target + '-new-qty').removeClass('d-none');
+
+				$('#' + inventory + '-update').removeClass('d-none');
+			});
+
+			$(document).on('click', '.update-btn', function (){
+				var form = $(this).data('form');
+				$(form).submit();
+			});
+
+			$("#item-search").on("keyup", function() {
+				var value = $(this).val().toLowerCase();
+				$("#items-table tr").filter(function() {
+					$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+				});
+			});
         });
     </script>
 @endsection
