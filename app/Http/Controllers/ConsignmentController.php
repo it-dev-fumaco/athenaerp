@@ -1259,7 +1259,9 @@ class ConsignmentController extends Controller
                 'qty' => collect($items_arr)->sum('opening_stock'),
                 'amount' => collect($items_arr)->sum('amount'),
                 'sold' => $sold_arr,
-                'remarks' => $inv->remarks
+                'remarks' => $inv->remarks,
+                'approved_by' => $inv->approved_by,
+                'date_approved' => $inv->date_approved
             ];
         }
 

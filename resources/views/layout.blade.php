@@ -561,7 +561,7 @@
 						<div class="btn-group" role="group" style="width: 33%;">
 							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
-								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
+								<a class="dropdown-item" href="/beginning_inv_list">Beginning Inventory</a>
 								<a class="dropdown-item" href="/promodiser/damage_report/form">Damaged Items Entry</a>
 							</div>
 						</div>
