@@ -9,6 +9,9 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
+                    <div class="text-right">
+                        <small class="text-right">Can't find delivery record? <a href="/promodiser/inquire_delivery">Click Here</a></small>
+                    </div>
                     <div class="card card-lightblue">
                         @if (session()->has('success'))
                             @php

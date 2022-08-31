@@ -31,9 +31,9 @@ class MainController extends Controller
         $transactionDate = Carbon::parse($transaction_date);
 
         $start_date = Carbon::parse($transaction_date)->subMonth();
-        $end_date = Carbon::parse($transaction_date)->addMonth();
+        $end_date = Carbon::parse($transaction_date)->addMonths(2);
 
-        $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+        $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
 
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
@@ -84,9 +84,9 @@ class MainController extends Controller
                 $currentDateTime = Carbon::now();
 
                 $start_date = Carbon::now()->subMonth();
-                $end_date = Carbon::now()->addMonth();
+                $end_date = Carbon::now()->addMonths(2);
 
-                $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+                $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
 
                 $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
@@ -331,9 +331,9 @@ class MainController extends Controller
         $currentDateTime = Carbon::now();
 
         $start_date = Carbon::now()->subMonth();
-        $end_date = Carbon::now()->addMonth();
+        $end_date = Carbon::now()->addMonths(2);
 
-        $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+        $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
 
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
