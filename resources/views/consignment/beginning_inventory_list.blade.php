@@ -115,7 +115,7 @@
 											<div class="modal fade" id="{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 												<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
 													<div class="modal-content">
-														<form action="{{ $modal_form }}" method="post">
+														<form action="{{ $modal_form }}" id="{{ $inv['name'] }}-form" method="post">
 															@csrf
 															<div class="modal-header bg-navy">
 																<div class="row text-left">
@@ -213,15 +213,22 @@
 																				@endif
 																				<small class="d-block">{{ $item['uom'] }}</small>
 																			</td>
-																			<td class="text-center p-1 align-middle" style="white-space: nowrap">
-																				@if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
-																				₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
-																				@elseif ($inv['status'] == 'Approved')
-																				<input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
-																				<span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
-																				@else
-																				₱ {{ number_format($item['price'], 2) }}
-																				@endif
+																			<td class="text-center p-1 align-middle">
+																				<div class="row p-0">
+																					<div class="col-9 p-0" style="white-space: nowrap">
+																						@if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
+																						₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
+																						@elseif ($inv['status'] == 'Approved')
+																						<input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
+																						<span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
+																						@else
+																						₱ {{ number_format($item['price'], 2) }}
+																						@endif
+																					</div>
+																					<div class="col-3 p-0">
+																						<button type="button" class="btn btn-primary btn-xs allow-edit" data-inv="{{ $inv['name'] }}" data-target="{{ $inv['name'].'-'.$item['item_code'] }}"><i class="fa fa-edit"></i></button>
+																					</div>
+																				</div>
 																			</td>
 																		</tr>
 																		<tr>
@@ -248,6 +255,7 @@
 															@if ($inv['status'] == 'Approved')
 															<div class="modal-footer">
 																<div class="container-fluid">
+																	<button type='button' class="btn btn-info w-100 mb-2 update-btn d-none" id="{{ $inv['name'] }}-update" data-form="#{{ $inv['name'] }}-form">Update</button>
 																	<button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $inv['name'] }}-Modal">
 																		Cancel
 																	</button>
@@ -477,6 +485,23 @@
                 $('#headingOne').addClass('d-none');
                 $('#collapseOne').addClass('show');
 			}
+
+			$(document).on('click', '.allow-edit', function (){
+				var target = $(this).data('target');
+				var inventory = $(this).data('inv');
+				$('#' + target + '-price').addClass('d-none');
+				$('#' + target + '-qty').addClass('d-none');
+
+				$('#' + target + '-new-price').removeClass('d-none');
+				$('#' + target + '-new-qty').removeClass('d-none');
+
+				$('#' + inventory + '-update').removeClass('d-none');
+			});
+
+			$(document).on('click', '.update-btn', function (){
+				var form = $(this).data('form');
+				$(form).submit();
+			});
 
 			$("#item-search").on("keyup", function() {
 				var value = $(this).val().toLowerCase();
