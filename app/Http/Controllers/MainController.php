@@ -3340,10 +3340,10 @@ class MainController extends Controller
         $allowed_warehouses = $this->user_allowed_warehouse($user);
         $list = [];
 
-        $q = DB::connection('mysql_mes')->table('production_order AS po')
-            ->whereNotIn('po.status', ['Cancelled'])->whereIn('po.fg_warehouse', $allowed_warehouses)
-            ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')->where('po.produced_qty', '>', 0)
-            ->whereRaw('po.produced_qty > feedback_qty')->select('po.*')->get();
+        $q = DB::connection('mysql_mes')->table('production_order')
+            ->whereNotIn('status', ['Cancelled'])->whereIn('fg_warehouse', $allowed_warehouses)
+            ->where('fg_warehouse', 'P2 - Housing Temporary - FI')->where('produced_qty', '>', 0)
+            ->whereRaw('produced_qty > feedback_qty')->get();
 
         foreach ($q as $row) {
             $parent_warehouse = $this->get_warehouse_parent($row->fg_warehouse);
