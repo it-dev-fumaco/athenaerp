@@ -30,9 +30,12 @@
                             @if(session()->has('error'))
                             <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('error') }}</div>
                             @endif
-                            <ul class="nav nav-pills">
+                            <ul class="nav nav-tabs">
                                 <li class="nav-item">
-                                    <a class="nav-link active font-responsive" id="pending-tab" data-toggle="pill" href="#pending-content" role="tab" href="#">Stock Adjustment History</a>
+                                    <a class="nav-link active font-responsive" id="beginning-inventory-tab" data-toggle="pill" href="#beginning-inventory-content" role="tab" href="#">Beginning Inventory</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link font-responsive" id="stock-adjustment-tab" data-toggle="pill" href="#stock-adjustment-content" role="tab" href="#">Stock Adjustments</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link font-responsive" id="inventory-audit-history-tab" data-toggle="pill" href="#inventory-audit-history-content" role="tab" href="#">Activity Logs</a>
@@ -40,7 +43,7 @@
                             </ul>
 
                             <div class="tab-content">
-                                <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
+                                <div class="tab-pane fade show active" id="beginning-inventory-content" role="tabpanel" aria-labelledby="pending-tab">
                                     <form action="/beginning_inv_list" method="get">
                                         <div id="accordion" class="mt-2">
                                             <button type="button" class="btn btn-link border-bottom btn-block text-left d-xl-none d-lg-none" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne" style="font-size: 10pt;">
@@ -589,6 +592,14 @@
                                         {{ $beginning_inventory->appends(request()->input())->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
+                                <div class="tab-pane fade" id="stock-adjustment-content" role="tabpanel" aria-labelledby="stock-adjustment-tab" style="font-size: 9pt;">
+                                    <div class="row p-2">
+                                        <div class="col-4 offset-8 col-xl-2 offset-xl-10">
+                                            <a href="/stock_adjustment_form" class="btn btn-primary w-100" style="font-size: 9pt;"><i class="fa fa-edit"></i> Edit Stocks</a>
+                                        </div>
+                                    </div>
+                                    <div id="stock-adjustments-container" class="p-2"></div>
+                                </div>
                                 <div class="tab-pane fade" id="inventory-audit-history-content" role="tabpanel" aria-labelledby="inventory-audit-history-tab">
                                     <div id="activity-logs-el" class="p-2"></div>
                                 </div>
@@ -631,6 +642,11 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
+
+        .empty-border{
+            border: 1px solid red;
+        }
+
         @media (max-width: 575.98px) {
             .last-row{
                 width: 35%;
@@ -686,6 +702,20 @@
                     }
                 });
             }
+            
+            function load_stock_adjustment_history(){
+                $.ajax({
+                    type: "GET",
+                    url: "/stock_adjustment_history",
+                    success: function (response) {
+                        $('#stock-adjustments-container').html(response);
+                    }
+                });
+            }
+
+            $(document).on('click', '#stock-adjustment-tab', function (){
+                load_stock_adjustment_history();
+            });
 
             $('table.items-table').on('click', '.remove-item', function (){
                 var name = $(this).data('name');
@@ -1111,8 +1141,8 @@
 
             $(document).on('click', '.edit-stock_qty', function(){
                 var reference = $(this).data('reference');
-                $('#'+reference+'-qty').addClass('d-none');
-                $('#'+reference+'-new-qty').removeClass('d-none');
+                // $('#'+reference+'-qty').addClass('d-none');
+                // $('#'+reference+'-new-qty').removeClass('d-none');
                 $('#'+reference+'-price').addClass('d-none');
                 $('#'+reference+'-new-price').removeClass('d-none');
                 $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
@@ -1122,7 +1152,7 @@
                 $('#'+$(this).data('name')+'-stock-adjust-update-btn').slideDown();
             });
 
-            var showTotalChar = 150, showChar = "Show more", hideChar = "Show less";
+            var showTotalChar = 200, showChar = "Show more", hideChar = "Show less";
             $('.item-description').each(function() {
                 var content = $(this).text();
                 if (content.length > showTotalChar) {

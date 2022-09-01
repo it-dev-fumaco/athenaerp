@@ -1660,7 +1660,7 @@ class ConsignmentController extends Controller
         $item_image = [];
         if(isset($request->ste) && $request->ste != null){
             $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-            
+
             $delivery_report = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
                 ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('ste.name', $request->ste)->where(function ($q) use ($assigned_consignment_stores){
@@ -2885,6 +2885,24 @@ class ConsignmentController extends Controller
         }
     }
 
+    public function getConsignmentWarehouses(Request $request){
+        $search_str = $request->q ? explode(' ', $request->q) : [];
+
+        $warehouses = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')->where('docstatus', '<', 2)
+            ->when($request->q, function ($query) use ($request, $search_str){
+                return $query->where(function($q) use ($search_str, $request) {
+                    foreach ($search_str as $str) {
+                        $q->where('name', 'LIKE', "%".$str."%");
+                    }
+
+                    $q->orWhere('name', 'LIKE', "%".$request->q."%");
+                });
+            })
+            ->select('name as id', 'name as text')->get();
+        
+        return response()->json($warehouses);
+    }
+
     public function getReceivedItems(Request $request, $branch){
         $search_str = explode(' ', $request->q);
 
@@ -3964,6 +3982,348 @@ class ConsignmentController extends Controller
         $promodisers = implode(', ', $promodisers);
 
         return view('consignment.supervisor.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'promodisers', 'sales_items', 'received_items', 'previous_record_link', 'next_record_link', 'sales_increase', 'sales_transaction_dates', 'transferred_items', 'returned_items', 'damaged_item_list'));
+    }
+
+    private function check_item_transactions($item_code, $branch, $date, $csa_id = null){
+        $transaction_date = Carbon::parse($date);
+        $now = Carbon::now();
+
+        $sold_items = DB::table('tabConsignment Sales Report as csr')
+            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+            ->where('csr.branch_warehouse', $branch)->where('csr.status', '!=', 'Cancelled')->where('csri.item_code', $item_code)
+            ->whereBetween('csr.creation', [$transaction_date, $now])
+            ->where('csri.qty', '>', 0)->selectRaw('csri.item_code, SUM(csri.qty) as qty')
+            ->groupBy('csri.item_code')->first();
+        $sold_qty = $sold_items ? $sold_items->qty : 0;
+
+        // Deduct already submitted sales returns
+        $submitted_sales_returns = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.to_warehouse', $branch)->where('ste.purpose', 'Material Receipt')->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)->where('sted.item_code', $item_code)
+            ->whereBetween('ste.creation', [$transaction_date, $now])
+            ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->first();
+        $sales_return_qty = $submitted_sales_returns ? $submitted_sales_returns->qty : 0;
+
+        $sold = $sold_qty - $sales_return_qty;
+
+        $ste_items = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereBetween('sted.consignment_date_received', [$transaction_date, $now])->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('sted.item_code', $item_code)->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->where('sted.t_warehouse', $branch)->where('sted.consignment_status', 'Received')
+
+            ->orWhereBetween('sted.consignment_date_received', [$transaction_date, $now])->whereIn('ste.transfer_as', ['For Return'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('sted.item_code', $item_code)->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->where('sted.s_warehouse', $branch)
+
+            ->orWhereBetween('sted.consignment_date_received', [$transaction_date, $now])->whereIn('ste.transfer_as', ['Store Transfer'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('sted.item_code', $item_code)->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->where('sted.s_warehouse', $branch)
+
+            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount, ste.name, sted.consignment_date_received, sted.consignment_received_by, ste.delivery_date')
+            ->orderBy('sted.consignment_date_received', 'desc')->first();
+
+        $damaged_items = DB::table('tabConsignment Damaged Item')
+            ->where('branch_warehouse', $branch)
+            ->where('item_code', $item_code)
+            ->whereBetween('transaction_date', [$transaction_date, $now])
+            ->orderBy('transaction_date', 'desc')->first();
+
+        $stock_adjustments = DB::table('tabConsignment Stock Adjustment as sa')
+            ->join('tabConsignment Stock Adjustment Items as sai', 'sai.parent', 'sa.name')
+            ->whereBetween('sa.creation', [$transaction_date, $now])
+            ->where('sa.warehouse', $branch)->where('sai.item_code', $item_code)
+            ->when($csa_id != null, function ($q) use ($csa_id){
+                return $q->where('sa.name', '!=', $csa_id);
+            })
+            ->where('sa.status', '!=', 'Cancelled')
+            ->get();
+
+        return $transaction_array = [
+            'sold_transactions' => $sold > 0 ? 1 : 0,
+            'ste_transactions' => $ste_items ? 1 : 0,
+            'damaged_transactions' => $damaged_items ? 1 : 0,
+            'stock_adjustment_transactions' => count($stock_adjustments) > 0 ? 1 : 0
+        ];
+    }
+
+    public function cancelStockAdjustment($id){
+        DB::beginTransaction();
+        try{
+            $adjustment_details = DB::table('tabConsignment Stock Adjustment')->where('name', $id)->first();
+
+            if(!$adjustment_details){
+                return redirect()->back()->with('error', 'Stock adjustment record not found.');
+            }
+
+            if($adjustment_details->status == 'Cancelled'){
+                return redirect()->back()->with('error', 'Stock adjustment is already cancelled');
+            }
+
+            $adjusted_items = DB::table('tabConsignment Stock Adjustment Items')->where('parent', $adjustment_details->name)->get();
+
+            if(!$adjusted_items){
+                return redirect()->back()->with('error', 'Items not found.');
+            }
+
+            foreach($adjusted_items as $item){
+                $has_transactions = $this->check_item_transactions($item->item_code, $adjustment_details->warehouse, $adjustment_details->creation, $id);
+
+                if(collect($has_transactions)->max() > 0){
+                    return redirect()->back()->with('error', 'Cannot cancel stock adjustment record. Item '.$item->item_code.' has existing transaction(s).');
+                }
+                
+                DB::table('tabBin')->where('item_code', $item->item_code)->where('warehouse', $adjustment_details->warehouse)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'consigned_qty' => $item->previous_qty,
+                    'consignment_price' => $item->previous_price
+                ]);
+            }
+
+            DB::table('tabConsignment Stock Adjustment')->where('name', $id)->update([
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'status' => 'Cancelled'
+            ]);
+
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Stock Adjustment '.$adjustment_details->name.' has been cancelled by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Consignment Stock Adjustment',
+                'reference_name' => $adjustment_details->name,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Stock Adjustment Cancelled.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
+    }
+
+    public function viewStockAdjustmentHistory(){
+        $stock_adjustments = DB::table('tabConsignment Stock Adjustment')->orderBy('creation', 'desc')->paginate(10);
+
+        $items_qry = DB::table('tabConsignment Stock Adjustment Items')->whereIn('parent', collect($stock_adjustments->items())->pluck('name'))->get();
+        $adjusted_items = collect($items_qry)->groupBy('parent');
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($items_qry)->pluck('item_code'))->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        $stock_adjustments_array = [];
+        foreach($stock_adjustments as $sa){
+            $items_array = [];
+            if(!isset($adjusted_items[$sa->name])){
+                continue;
+            }
+
+            foreach($adjusted_items[$sa->name] as $item){
+                $orig_exists = 0;
+                $webp_exists = 0;
+
+                $img = '/icon/no_img.png';
+                $webp = '/icon/no_img.webp';
+
+                if(isset($item_image[$item->item_code])){
+                    $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
+                    $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+
+                    $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
+                    $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
+
+                    if($orig_exists == 0 && $webp_exists == 0){
+                        $img = '/icon/no_img.png';
+                        $webp = '/icon/no_img.webp';
+                    }
+                }
+
+                $items_array[] = [
+                    'item_code' => $item->item_code,
+                    'item_description' => strip_tags($item->item_description),
+                    'uom' => $item->uom,
+                    'image' => '/storage'.$img,
+                    'webp' => '/storage'.$webp,
+                    'previous_qty' => $item->previous_qty,
+                    'new_qty' => $item->new_qty,
+                    'previous_price' => $item->previous_price,
+                    'new_price' => $item->new_price,
+                    'has_transactions' => collect($this->check_item_transactions($item->item_code, $sa->warehouse, $sa->creation, $sa->name))->max(),
+                    'transactions' => $this->check_item_transactions($item->item_code, $sa->warehouse, $sa->creation, $sa->name) 
+                ];
+            }
+
+            $stock_adjustments_array[] = [
+                'name' => $sa->name,
+                'warehouse' => $sa->warehouse,
+                'created_by' => $sa->created_by,
+                'creation' => $sa->creation,
+                'status' => $sa->status,
+                'transaction_date' => $sa->transaction_date.' '.$sa->transaction_time,
+                'items' => $items_array,
+                'has_transactions' => collect($items_array)->pluck('has_transactions')->max()
+            ];
+        }
+
+        return view('consignment.supervisor.view_stock_adjustment_history', compact('stock_adjustments', 'stock_adjustments_array'));
+    }
+
+    public function viewStockAdjustmentForm(){
+        return view('consignment.supervisor.adjust_stocks');
+    }
+
+    public function adjustStocks(Request $request){
+        DB::beginTransaction();
+        try {
+            if(!$request->warehouse){
+                return redirect()->back()->with('error', 'Please select a warehouse');
+            }
+
+            $item_codes = $request->item_codes;
+            $item_details = $request->item;
+
+            if(!$item_codes || !$item_details){
+                return redirect()->back()->with('error', 'Please select an item to adjust.');
+            }
+            
+            $bin_details = DB::table('tabBin as bin')
+                ->join('tabItem as item', 'item.name', 'bin.item_code')
+                ->where('bin.warehouse', $request->warehouse)->whereIn('bin.item_code', $item_codes)->get();
+            $bin = collect($bin_details)->groupBy('item_code');
+            
+            if(!$bin_details){
+                return redirect()->back()->with('error', 'No items found.');
+            }
+
+            $now = Carbon::now();
+
+            $latest_csa = DB::table('tabConsignment Stock Adjustment')->where('name', 'like', '%csa%')->max('name');
+            $latest_csa_exploded = explode("-", $latest_csa);
+            $csa_id = (($latest_csa) ? $latest_csa_exploded[1] : 0) + 1;
+            $csa_id = str_pad($csa_id, 6, '0', STR_PAD_LEFT);
+            $csa_id = 'CSA-'.$csa_id;
+
+            DB::table('tabConsignment Stock Adjustment')->insert([
+                'name' => $csa_id,
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 1,
+                'warehouse' => $request->warehouse,
+                'created_by' => Auth::user()->wh_user,
+                'transaction_date' => $now->toDateString(),
+                'transaction_time' => $now->toTimeString()
+            ]);
+
+            foreach($item_codes as $i => $item_code){
+                if(!isset($bin[$item_code]) || !isset($item_details[$item_code])){
+                    continue;
+                }
+
+                $original_stock = $bin[$item_code][0]->consigned_qty * 1;
+                $original_price = $bin[$item_code][0]->consignment_price * 1;
+
+                $stock = preg_replace("/[^0-9]/", "", $item_details[$item_code]['qty']);
+                $new_stock = $stock ? $stock * 1 : 0;
+
+                $price = preg_replace("/[^0-9 .]/", "", $item_details[$item_code]['price']);
+                $new_price = $price ? $price * 1 : 0;
+                
+                $update_array = [
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'consigned_qty' => $new_stock,
+                    'consignment_price' => $new_price
+                ];
+
+                if($original_stock == $new_stock){ // remove if value is unchanged
+                    unset($update_array['consigned_qty']);
+                }else{
+                    $logs = [
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'subject' => 'Stock Adjustment for '. $request->warehouse.', set '.$item_code.' consigned qty from '.$original_stock.' to '.$new_stock.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                        'content' => 'Consignment Activity Log',
+                        'communication_date' => $now->toDateTimeString(),
+                        'reference_doctype' => 'Consignment Stock Adjustment',
+                        'reference_name' => $csa_id,
+                        'reference_owner' => Auth::user()->wh_user,
+                        'user' => Auth::user()->wh_user,
+                        'full_name' => Auth::user()->full_name,
+                    ];
+        
+                    DB::table('tabActivity Log')->insert($logs);
+                }
+
+                if($original_price == $new_price){ // remove if value is unchanged
+                    unset($update_array['consignment_price']);
+                }else{
+                    $logs = [
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'subject' => 'Stock Adjustment for '. $request->warehouse.', set '.$item_code.' price from '.$original_price.' to '.$new_price.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                        'content' => 'Consignment Activity Log',
+                        'communication_date' => $now->toDateTimeString(),
+                        'reference_doctype' => 'Consignment Stock Adjustment',
+                        'reference_name' => $csa_id,
+                        'reference_owner' => Auth::user()->wh_user,
+                        'user' => Auth::user()->wh_user,
+                        'full_name' => Auth::user()->full_name,
+                    ];
+        
+                    DB::table('tabActivity Log')->insert($logs);
+                }
+
+                DB::table('tabBin')->where('warehouse', $request->warehouse)->where('item_code', $item_code)->update($update_array);
+
+                if($original_stock != $new_stock || $original_price != $new_price){
+                    DB::table('tabConsignment Stock Adjustment Items')->insert([
+                        'name' => uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 1,
+                        'parent' => $csa_id,
+                        'parentfield' => 'Items',
+                        'parenttype' => 'Consignment Stock Adjustment',
+                        'idx' => $i + 1,
+                        'item_code' => $item_code,
+                        'item_description' => $bin[$item_code][0]->description,
+                        'uom' => $bin[$item_code][0]->stock_uom,
+                        'previous_qty' => $original_stock,
+                        'new_qty' => $new_stock,
+                        'previous_price' => $original_price,
+                        'new_price' => $new_price
+                    ]);
+                }
+            }
+
+            DB::commit();
+            session()->flash('success', 'Warehouse Stocks Adjusted.');
+            return redirect('/beginning_inv_list');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+        }
     }
 
     // /stock_adjust/submit/{id}
