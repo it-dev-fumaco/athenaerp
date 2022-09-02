@@ -3988,21 +3988,18 @@ class ConsignmentController extends Controller
         $transaction_date = Carbon::parse($date);
         $now = Carbon::now();
 
-        $sold_items = DB::table('tabConsignment Sales Report as csr')
+        $sold_qty = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('csr.branch_warehouse', $branch)->where('csr.status', '!=', 'Cancelled')->where('csri.item_code', $item_code)
             ->whereBetween('csr.creation', [$transaction_date, $now])
-            ->where('csri.qty', '>', 0)->selectRaw('csri.item_code, SUM(csri.qty) as qty')
-            ->groupBy('csri.item_code')->first();
-        $sold_qty = $sold_items ? $sold_items->qty : 0;
+            ->where('csri.qty', '>', 0)->sum('csri.qty');
 
         // Deduct already submitted sales returns
-        $submitted_sales_returns = DB::table('tabStock Entry as ste')
+        $sales_return_qty = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.to_warehouse', $branch)->where('ste.purpose', 'Material Receipt')->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)->where('sted.item_code', $item_code)
             ->whereBetween('ste.creation', [$transaction_date, $now])
-            ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->first();
-        $sales_return_qty = $submitted_sales_returns ? $submitted_sales_returns->qty : 0;
+            ->sum('sted.transfer_qty');
 
         $sold = $sold_qty - $sales_return_qty;
 
@@ -4303,7 +4300,7 @@ class ConsignmentController extends Controller
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
                         'parent' => $csa_id,
-                        'parentfield' => 'Items',
+                        'parentfield' => 'items',
                         'parenttype' => 'Consignment Stock Adjustment',
                         'idx' => $i + 1,
                         'item_code' => $item_code,
