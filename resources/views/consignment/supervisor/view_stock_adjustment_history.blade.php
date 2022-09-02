@@ -14,20 +14,20 @@
         <tr>
             <td class="text-justify text-xl-center">
                 <b>{{ $stock['name'] }}</b>
-                <div class="d-block d-xl-none">
+                <div class="d-block d-xl-none text-left">
                     <span>{{ $stock['warehouse'] }}</span> <br>
-                    <span><b>Created By:</b> {{ $stock['created_by'] }}</span> <br>
-                    <span><b>Created At:</b> {{ Carbon\Carbon::parse($stock['creation'])->format('M d, Y h:i A') }}</span>
+                    <span><b>Created by:</b> {{ $stock['created_by'] }}</span> <br>
+                    <span><b>Created at:</b> {{ Carbon\Carbon::parse($stock['creation'])->format('M d, Y - h:i A') }}</span>
                 </div>
             </td>
             <td class="d-none d-sm-table-cell">{{ $stock['warehouse'] }}</td>
             <td class="d-none d-sm-table-cell">{{ $stock['created_by'] }}</td>
-            <td class="d-none d-sm-table-cell">{{ Carbon\Carbon::parse($stock['creation'])->format('M d, Y h:i A') }}</td>
+            <td class="d-none d-sm-table-cell">{{ Carbon\Carbon::parse($stock['creation'])->format('M d, Y - h:i A') }}</td>
             <td class="d-none d-sm-table-cell">
                 <span class="badge badge-{{ $stock['status'] == 'Submitted' ? 'success' : 'secondary' }}">{{ $stock['status'] }}</span>
             </td>
             <td>
-                <a href="#" data-toggle="modal" data-target="#{{ $stock['name'] }}-Modal">View Items</a>
+                <a href="#" data-toggle="modal" data-target="#{{ $stock['name'] }}-Modal" style="white-space: nowrap">View Items</a>
                 <span class="d-block d-xl-none badge badge-{{ $stock['status'] == 'Submitted' ? 'success' : 'secondary' }}">{{ $stock['status'] }}</span>
 
                 <div class="modal fade" id="{{ $stock['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
