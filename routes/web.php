@@ -135,6 +135,12 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/beginning_inv_list', 'ConsignmentController@beginningInventoryApproval');
     Route::post('/approve_beginning_inv/{id}', 'ConsignmentController@approveBeginningInventory');
     Route::get('/sales_report', 'ConsignmentController@salesReport');
+    Route::get('/get_consignment_warehouses', 'ConsignmentController@getConsignmentWarehouses');
+    Route::get('/stock_adjustment_history', 'ConsignmentController@viewStockAdjustmentHistory');
+    Route::get('/stock_adjustment_form', 'ConsignmentController@viewStockAdjustmentForm');
+    Route::post('/adjust_stocks', 'ConsignmentController@adjustStocks');
+    Route::get('/cancel_stock_adjustment/{id}', 'ConsignmentController@cancelStockAdjustment');
+
     // Promodisers
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
     Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');

@@ -190,6 +190,30 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-12">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header p-2">
+                                    <h5>Deliveries Pending to Receive</h5>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="d-flex flex-row align-items-center mt-2">
+                                        <div class="p-1 col-4">
+                                            <select class="form-control" name="store" id="consignment-store-select">
+                                                <option value="">Select Store</option>
+                                            </select>
+                                        </div>
+                                        <div class="p-1">
+                                            <button class="btn btn-primary" type="button" id="to-receive-search"><i class="fas fa-search"></i> Search</button>
+                                        </div>
+                                        <div class="p-1">
+                                            <button type="button" class="btn btn-secondary reload-to-receive-table"><i class="fas fa-undo"></i></button>
+                                        </div>
+                                    </div>
+                                    <div id="pending-to-receive-table"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -386,6 +410,41 @@
 
             loadData();
         });
+
+        $(document).on('click', '.reload-to-receive-table', function(e) {
+            e.preventDefault();
+            $('#consignment-store-select').empty().trigger('change');
+            loadPendingToReceive('', 1);
+        });
+
+        $(document).on('click', '#to-receive-search', function (){
+            var warehouse = $('#consignment-store-select').val();
+            warehouse = warehouse ? warehouse : '';
+            loadPendingToReceive(warehouse, 1);
+        });
+
+        $(document).on('click', '#to-receive-pagination a', function(event){
+            event.preventDefault();
+            var warehouse = $('#consignment-store-select').val();
+            warehouse = warehouse ? warehouse : '';
+
+            var page = $(this).attr('href').split('page=')[1];
+            loadPendingToReceive(warehouse, page);
+        });
+
+        loadPendingToReceive('', 1);
+        function loadPendingToReceive(warehouse, page){
+            $.ajax({
+				type: "GET",
+				url: "/view_consignment_deliveries?page=" + page,
+                data: {
+                    store: warehouse
+                },
+				success: function (response) {
+					$('#pending-to-receive-table').html(response);
+				}
+			});
+        }
 
         function loadData() {
             loadDeliveries();
