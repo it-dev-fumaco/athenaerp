@@ -3143,34 +3143,46 @@ class MainController extends Controller
     }
 
     public function get_stock_ledger(Request $request, $item_code){
+        $warehouse_user = [];
+        if($request->wh_user != '' and $request->wh_user != 'null'){
+            $user_qry = DB::table('tabWarehouse Users')->where('full_name', 'LIKE', '%'.$request->wh_user.'%')->orWhere('wh_user', 'LIKE', '%'.$request->wh_user.'%')->first();
+
+            $warehouse_user = $user_qry ? [$user_qry->wh_user, $user_qry->full_name] : [];
+            $warehouse_user = $warehouse_user ? $warehouse_user : [$request->wh_user];
+        }
+
         $logs = DB::table('tabStock Ledger Entry as sle')->where('sle.item_code', $item_code)
             ->select(DB::raw('(SELECT GROUP_CONCAT(name) FROM `tabPacking Slip` where delivery_note = sle.voucher_no) as dr_voucher_no'))
             ->addSelect(DB::raw('
                 (CASE
-                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT date_modified FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
                     WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
-                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.date_modified FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.date_modified, psi.modified) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                 ELSE
                     sle.posting_date
                 END) as ste_date_modified'
             ))
             ->addSelect(DB::raw('
                 (CASE
-                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT session_user FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
-                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.session_user FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.session_user, psi.modified_by) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                ELSE
+                    sle.modified_by
                 END) as ste_session_user'
             ))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) as ste_purpose'))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(sales_order_no) FROM `tabStock Entry` where name = sle.voucher_no) as ste_sales_order'))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(DISTINCT purchase_order) FROM `tabPurchase Receipt Item` where parent = sle.voucher_no and item_code = sle.item_code) as pr_voucher_no'))
             ->addSelect('sle.voucher_type', 'sle.voucher_no', 'sle.warehouse', 'sle.actual_qty', 'sle.qty_after_transaction', 'sle.posting_date')
-            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($request){
-				return $q->where(DB::raw('
+            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($warehouse_user){
+				return $q->whereIn(DB::raw('
                     (CASE
-                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT session_user FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
-                        WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.session_user FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.session_user, psi.modified_by) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    ELSE
+                        sle.modified_by
                     END)'
-                ), $request->wh_user);
+                ), $warehouse_user);
             })
             ->when($request->erp_wh != '' and $request->erp_wh != 'null', function($q) use ($request){
 				return $q->where('sle.warehouse', $request->erp_wh);
@@ -3180,17 +3192,17 @@ class MainController extends Controller
 
 				return $q->whereBetween(DB::raw('
                     (CASE
-                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT date_modified FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
                         WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
                         WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.date_modified FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                     ELSE
                         sle.posting_date
                     END)'
-                ), [$dates[0], $dates[1]]);
+                ), [Carbon::parse($dates[0]), Carbon::parse($dates[1])]);
             })
             ->orderBy('sle.posting_date', 'desc')->orderBy('sle.posting_time', 'desc')
             ->orderBy('sle.name', 'desc')->paginate(20);
-            
+
         $list = [];
         foreach($logs as $row){
             if($row->voucher_type == 'Delivery Note'){
