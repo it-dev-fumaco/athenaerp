@@ -37,7 +37,7 @@
                                 <div class="info-box bg-gradient-primary m-0">
                                     <div class="info-box-content p-0">
                                         <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($pending_to_receive) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($pending_to_receive) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending Item(s)</small></div>
                                             <div class="p-1 text-left col-8">To Receive</div>
                                         </div>
                                     </div>
