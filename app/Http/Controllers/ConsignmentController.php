@@ -4853,17 +4853,22 @@ class ConsignmentController extends Controller
         $list = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->whereDate('ste.delivery_date', '>=', '2022-06-25')
-            ->whereIn('ste.transfer_as', ['Consignment', 'For Return', 'Store Transfer'])
+            ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
             ->where('ste.purpose', 'Material Transfer')
             ->where('ste.docstatus', 1)
             ->when($request->store, function ($q) use ($request){
                 return $q->where('sted.t_warehouse', $request->store);
             })
-            ->when($status && $status == 'Received', function ($q) use ($status){
-                return $q->where('sted.consignment_status', $status);
-            })
-            ->when($status && $status == 'To Receive', function ($q) use ($status){
+            ->when($request->ajax(), function ($q){
                 return $q->whereNull('sted.consignment_status');
+            })
+            ->when(!$request->ajax(), function ($q) use ($status){
+                return $q->when($status && $status == 'Received', function ($q) use ($status){
+                    return $q->where('sted.consignment_status', $status);
+                })
+                ->when($status && $status == 'To Receive', function ($q) use ($status){
+                    return $q->whereNull('sted.consignment_status');
+                });
             })
             ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
             ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
@@ -4949,7 +4954,9 @@ class ConsignmentController extends Controller
             ];
         }
 
-        return view('consignment.supervisor.view_deliveries', compact('list', 'result'));
+        $blade_file = $request->ajax() ? 'view_pending_to_receive' : 'view_deliveries';
+
+        return view('consignment.supervisor.'.$blade_file, compact('list', 'result'));
     }
 
     public function getErpItems(Request $request) {
