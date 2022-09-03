@@ -473,8 +473,8 @@ class ConsignmentController extends Controller
 
             $item_total_sold = collect($item_total_sold)->groupBy('branch_warehouse');
 
-            $total_qty_sold = $item_total_sold[$data['branch_warehouse']][0]->total_qty_sold;
-            $grand_total = $item_total_sold[$data['branch_warehouse']][0]->grand_total;
+            $total_qty_sold = isset($item_total_sold[$data['branch_warehouse']]) ? $item_total_sold[$data['branch_warehouse']][0]->total_qty_sold : 0;
+            $grand_total = isset($item_total_sold[$data['branch_warehouse']]) ? $item_total_sold[$data['branch_warehouse']][0]->grand_total : 0;
 
             DB::commit();
 
