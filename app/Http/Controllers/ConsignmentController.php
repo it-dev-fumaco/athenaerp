@@ -2948,10 +2948,10 @@ class ConsignmentController extends Controller
                     $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
                 });
             })
-            ->when($request->purpose == 'Sales Return', function ($q) use ($sold_item_codes){
+            ->when($request->purpose && $request->purpose == 'Sales Return', function ($q) use ($sold_item_codes){
                 return $q->whereIn('bin.item_code', $sold_item_codes);
             })
-            ->when($request->purpose != 'Stock Adjustment' && $request->purpose != 'Sales Return', function ($q){
+            ->when($request->purpose && $request->purpose != 'Stock Adjustment', function ($q){
                 return $q->where('bin.consigned_qty', '>', 0);
             })
             ->where('bin.warehouse', $branch)->get();
