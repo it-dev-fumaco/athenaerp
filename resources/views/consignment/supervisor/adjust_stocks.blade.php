@@ -268,7 +268,8 @@
                         dataType: 'json',
                         data: function (data) {
                             return {
-                                q: data.term // search term
+                                q: data.term,
+                                purpose: 'Stock Adjustment' // search term
                             };
                         },
                         processResults: function (response) {
