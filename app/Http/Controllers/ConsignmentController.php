@@ -473,8 +473,8 @@ class ConsignmentController extends Controller
 
             $item_total_sold = collect($item_total_sold)->groupBy('branch_warehouse');
 
-            $total_qty_sold = $item_total_sold[$data['branch_warehouse']][0]->total_qty_sold;
-            $grand_total = $item_total_sold[$data['branch_warehouse']][0]->grand_total;
+            $total_qty_sold = isset($item_total_sold[$data['branch_warehouse']]) ? $item_total_sold[$data['branch_warehouse']][0]->total_qty_sold : 0;
+            $grand_total = isset($item_total_sold[$data['branch_warehouse']]) ? $item_total_sold[$data['branch_warehouse']][0]->grand_total : 0;
 
             DB::commit();
 
@@ -2951,7 +2951,7 @@ class ConsignmentController extends Controller
             ->when($request->purpose == 'Sales Return', function ($q) use ($sold_item_codes){
                 return $q->whereIn('bin.item_code', $sold_item_codes);
             })
-            ->when($request->purpose != 'Sales Return', function ($q){
+            ->when($request->purpose != 'Stock Adjustment' && $request->purpose != 'Sales Return', function ($q){
                 return $q->where('bin.consigned_qty', '>', 0);
             })
             ->where('bin.warehouse', $branch)->get();
@@ -3015,8 +3015,8 @@ class ConsignmentController extends Controller
                 'uom' => $item->stock_uom,
                 'price' => '₱ '.number_format($item->consignment_price, 2),
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
-                'img' => asset('storage'.$img),
-                'webp' => asset('storage'.$webp),
+                'img' => $img ? asset('storage'.$img) : null,
+                'webp' => $webp ? asset('storage'.$webp) : null,
                 'alt' => str_slug(explode('.', $img)[0], '-')
             ];
         }

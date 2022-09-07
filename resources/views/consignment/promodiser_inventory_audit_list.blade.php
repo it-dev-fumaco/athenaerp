@@ -18,29 +18,23 @@
                             <div class="p-2">
                                 <span class="text-center mt-1 mb-2 d-block font-responsive text-uppercase">Pending for Submission</span>
                                 @forelse ($pending as $store => $row)
-                                @if(count($row) > 0)
-                                <span class="d-block m-2 font-weight-bold font-responsive text-left">{{ $store }}</span>
-                                @foreach ($row as $pcia)
-                                <div class="d-flex flex-row border-top justify-content-between align-items-center">
-                                    <div class="p-1 font-responsive ml-2">
-                                        @if (!$pcia['beginning_inventory_date'])
-                                        <span class="d-block text-uppercase text-muted">- Create beginning inventory -</span>
-                                        @else
-                                        <span class="d-block {{ $pcia['is_late'] ? 'text-danger' : '' }}">{{ $pcia['duration'] }} </span>
-                                        @endif
-                                    </div>
-                                    <div class="p-1 font-responsive">
-                                        @if (!$pcia['beginning_inventory_date'])
-                                        <a href="/beginning_inventory" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create</a>
-                                        @else
-                                        <a href="/view_inventory_audit_form/{{ $store }}/{{ $pcia['today'] }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create</a>
-                                        @endif
-                                    </div>
-                                </div>
-                                @endforeach
-                                @endif
+                                    @if(count($row) > 0)
+                                        <div class="row" style="border-bottom: 1px solid #CED4DA;">
+                                            <div class="col-9">
+                                                <span class="d-block m-2 font-weight-bold font-responsive text-left">{{ $store }}</span>
+                                            </div>
+                                            <div class="col-3 d-flex flex-row justify-content-center align-items-center text-right">
+                                                @php
+                                                    $link = isset($row[0]['beginning_inventory_date']) && !$row[0]['beginning_inventory_date'] ? '/beginning_inventory' : '/view_inventory_audit_form/'.$store.'/'.Carbon\Carbon::now()->format('Y-m-d');
+                                                @endphp
+                                                <div class="p-0">
+                                                    <a href="{{ $link }}" class="btn btn-primary btn-sm" style="font-size: 10pt;"><i class="fas fa-plus"></i> Create</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
                                 @empty
-                                <div class="d-block text-center font-responsive m-0 text-uppercase text-muted border-top border-bottom pb-2 pt-2">No record(s) found</div>
+                                    <div class="d-block text-center font-responsive m-0 text-uppercase text-muted border-top border-bottom pb-2 pt-2">No record(s) found</div>
                                 @endforelse
                             </div>
                         </div>

@@ -28,11 +28,14 @@
                             </div>
                             <form action="/submit_inventory_audit_form" method="POST" autocomplete="off" id="inventory-report-entry-form">
                                 @csrf
-                                <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
-                                <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
-                                <input type="hidden" name="audit_date_from" value="{{ $inventory_audit_from }}">
-                                <input type="hidden" name="audit_date_to" value="{{ $transaction_date }}">
+                                <div id="input-values" class="d-none">
+                                    <input type="text" name="transaction_date" value="{{ $transaction_date }}">
+                                    <input type="text" name="branch_warehouse" value="{{ $branch }}">
+                                    <input type="text" name="audit_date_from" value="{{ $inventory_audit_from }}">
+                                    <input type="text" name="audit_date_to" value="{{ $transaction_date }}">
+                                </div>
                                 <div class="form-group m-2">
+                                    <input type="text" class="form-control text-center mb-1" id="duration">
                                     <input type="text" class="form-control" placeholder="Search Items" id="search-filter">
                                 </div>
                                 <table class="table" style="font-size: 8pt;" id="items-table">
@@ -200,7 +203,7 @@
                     <small class="d-block">Branch / Store</small>
                 </div>
                 <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
-                    <span class="d-block font-weight-bolder mt-3">{{ $duration }}</span>
+                    <span class="d-block font-weight-bolder mt-3 cutoff-period">{{ $duration }}</span>
                     <small class="d-block">Cut-off Period</small>
                 </div>
                 <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase border-bottom">Sales Report Summary</p>
@@ -391,6 +394,47 @@
         @if (session()->has('error'))
         $('#error-modal').modal('show');
         @endif
+
+        $("#duration").daterangepicker({
+            placeholder: 'Select Duration',
+            locale: {
+                format: 'YYYY-MMM-DD',
+                separator: " to "
+            },
+            minDate: '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d") }}',
+            startDate: '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d") }}',
+            endDate: '{{ Carbon\Carbon::parse($transaction_date)->format("Y-M-d") }}',
+        });
+
+        $("#duration").on('hide.daterangepicker', function (ev, picker) {
+            var duration = picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD');
+            $(this).val(duration);
+
+            $('#input-values input[name=audit_date_from]').val(picker.startDate.format('YYYY-MM-DD'));
+            $('#input-values input[name=audit_date_to]').val(picker.endDate.format('YYYY-MM-DD'));
+
+            $('#confirmation-modal .cutoff-period').text(picker.startDate.format('MMMM D, Y') + ' - ' + picker.endDate.format('MMMM D, Y'));
+        });
+
+        $("#duration").on('apply.daterangepicker', function (ev, picker) {
+            var duration = picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD');
+            $(this).val(duration);
+
+            $('#input-values input[name=audit_date_from]').val(picker.startDate.format('YYYY-MM-DD'));
+            $('#input-values input[name=audit_date_to]').val(picker.endDate.format('YYYY-MM-DD'));
+
+            $('#confirmation-modal .cutoff-period').text(picker.startDate.format('MMMM D, Y') + ' - ' + picker.endDate.format('MMMM D, Y'));
+        });
+
+        $("#duration").on('cancel.daterangepicker', function (ev, picker) {
+            var duration = '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d")." to ".Carbon\Carbon::parse($transaction_date)->format("Y-M-d") }}';
+            $(this).val(duration);
+            
+            $('#input-values input[name=audit_date_from]').val('{{ $inventory_audit_from }}');
+            $('#input-values input[name=audit_date_to]').val('{{ $transaction_date }}');
+            
+            $('#confirmation-modal .cutoff-period').text('{{ $duration }}');
+        });
 
         const formatToCurrency = amount => {
             return "₱ " + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");

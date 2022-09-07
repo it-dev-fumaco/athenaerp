@@ -87,7 +87,7 @@
                                     </form>
                                     <table class="table table-striped" style="font-size: 9pt;">
                                         <thead>
-                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" id='first-row'>Date</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" id='first-row'>Reference</th>
                                             <th class="text-center p-2 align-middle" id='second-row'>
                                                 <span class="d-block d-xl-none">Details</span>
                                                 <span class="d-none d-xl-block">Purpose</span>
@@ -108,9 +108,15 @@
                                                 }
                                             @endphp
                                             <tr>
-                                                <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['creation'] }}</td>
+                                                <td class="text-center p-2 align-middle d-none d-xl-table-cell">
+                                                    <b>{{ $ste['name'] }}</b> <br>
+                                                    {{ $ste['creation'] }}
+                                                </td>
                                                 <td class="text-center p-2 align-middle">
-                                                    <span class="d-block text-left text-lg-center text-xl-center font-weight-bold"> {{ $ste['transfer_as'] }}</span>
+                                                    <span class="d-block text-left text-lg-center text-xl-center font-weight-bold">
+                                                        {{ $ste['transfer_as'] }}
+                                                        <span class="d-inline d-xl-none text-left"> - <b>{{ $ste['name'] }}</b></span>
+                                                    </span>
                                                     <div class="d-block d-xl-none text-left">
                                                         <b>From: </b> {{ $ste['source_warehouse'] }} <br>
                                                         <b>To: </b> {{ $ste['target_warehouse'] }} <br>
