@@ -80,6 +80,7 @@ class ConsignmentController extends Controller
     // /view_inventory_audit_form/{branch}/{transaction_date}
     public function viewInventoryAuditForm($branch, $transaction_date) {
         // get last inventory audit date
+
         $last_inventory_date = DB::table('tabConsignment Inventory Audit Report')
             ->where('branch_warehouse', $branch)->max('transaction_date');
 
@@ -2490,6 +2491,7 @@ class ConsignmentController extends Controller
         }
     }
 
+    // /stocks_report/list
     public function stockTransferReport(Request $request){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')
             ->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
@@ -2512,10 +2514,18 @@ class ConsignmentController extends Controller
 
         $ste_item_codes = [];
         if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
+            $purpose = isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
             $stock_entry = DB::table('tabStock Entry')
-                ->whereDate('delivery_date', '>', '2022-06-25')
-                ->whereIn('transfer_as', ['Store Transfer', 'For Return'])
-                ->where('purpose', 'Material Transfer')
+                // ->whereDate('delivery_date', '>', '2022-06-25')
+                ->when(!isset($request->tab1_purpose) || $request->tab1_purpose != 'Sales Return', function ($q) use ($request){
+                    $transfer_as = isset($request->tab1_purpose) ? [$request->tab1_purpose] : ['Store Transfer', 'For Return'];
+                    return $q->whereDate('delivery_date', '>', Carbon::parse('2022-06-25')->startOfDay())
+                        ->whereIn('transfer_as', $transfer_as); //
+                })
+                ->when(isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return', function ($q){
+                    return $q->where('receive_as', 'Sales Return')->whereDate('creation', '>', Carbon::parse('2022-06-25')->startOfDay()); //STEC-000138
+                })
+                ->where('purpose', $purpose)
                 ->when($request->tab1_q, function ($q) use ($request){
                     return $q->where('name', 'like', '%'.$request->tab1_q.'%');
                 })
@@ -2527,9 +2537,6 @@ class ConsignmentController extends Controller
                 })
                 ->when($request->tab1_status && $request->tab1_status != 'All', function ($q) use ($request){
                     return $q->where('docstatus', $request->tab1_status);
-                })
-                ->when($request->tab1_purpose, function ($q) use ($request){
-                    return $q->where('transfer_as', $request->tab1_purpose);
                 })
                 ->orderBy('docstatus', 'asc')->orderBy('creation', 'desc')
                 ->paginate(20, ['*'], 'stock_transfers');
@@ -2644,6 +2651,7 @@ class ConsignmentController extends Controller
                     'target_warehouse' => $ste->to_warehouse,
                     'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
                     'transfer_as' => $ste->transfer_as,
+                    'receive_as' => $ste->receive_as,
                     'submitted_by' => $ste->owner,
                     'items' => $items
                 ];
@@ -3931,7 +3939,7 @@ class ConsignmentController extends Controller
             $received_items[$row->item_code][] = [
                 'amount' => $row->basic_amount,
                 'price' => $row->basic_rate,
-                'qty' => number_format($row->transfer_qty),
+                'qty' => $row->transfer_qty * 1,
                 'reference' => $row->name,
                 'delivery_date' => Carbon::parse($row->delivery_date)->format('M. d, Y'),
                 'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A'),
@@ -3945,7 +3953,7 @@ class ConsignmentController extends Controller
                 'amount' => $row->basic_amount,
                 'price' => $row->basic_rate,
                 'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
-                'qty' => number_format($row->transfer_qty),
+                'qty' => $row->transfer_qty * 1,
                 'reference' => $row->name,
                 't_warehouse' => $row->t_warehouse
             ];
@@ -3957,7 +3965,7 @@ class ConsignmentController extends Controller
                 'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
                 'amount' => $row->basic_amount,
                 'price' => $row->basic_rate,
-                'qty' => number_format($row->transfer_qty),
+                'qty' => $row->transfer_qty * 1,
                 'reference' => $row->name,
                 't_warehouse' => $row->t_warehouse,
                 'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A'),
@@ -3968,7 +3976,7 @@ class ConsignmentController extends Controller
         $damaged_item_list = [];
         foreach ($damaged_items as $row) {
             $damaged_item_list[$row->item_code][] = [
-                'qty' => number_format($row->qty),
+                'qty' => $row->qty * 1,
                 'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
                 'damage_description' => $row->damage_description,
                 'stock_uom' => $row->stock_uom
