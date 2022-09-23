@@ -51,9 +51,10 @@
                                                             @php
                                                                 $purposes = ['Store Transfer', 'Consignment', 'For Return', 'Sales Return'];
                                                             @endphp 
-                                                            <option value="" selected>Select Purpose</option>
+                                                            <option value="" disabled {{ !request('tab1_purpose') ? 'selected' : null }}>Select Purpose</option>
+                                                            <option value="">Select All</option>
                                                             @foreach ($purposes as $purpose)
-                                                            <option value="{{ $purpose }}">{{ $purpose }}</option>
+                                                            <option value="{{ $purpose }}" {{ request('tab1_purpose') == $purpose ? 'selected' : null }}>{{ $purpose }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
@@ -72,9 +73,9 @@
                                                                     ['title' => 'Approved', 'value' => 1]
                                                                 ];
                                                             @endphp 
-                                                            <option value="" disabled selected>Select a status</option>
+                                                            <option value="" disabled {{ !request('tab1_status') ? 'selected' : null }}>Select a status</option>
                                                             @foreach ($status as $s)
-                                                            <option value="{{ $s['value'] }}">{{ $s['title'] }}</option>
+                                                                <option value="{{ $s['value'] }}" {{ request('tab1_status') == $s['value'] ? 'selected' : null }}>{{ $s['title'] }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
@@ -114,17 +115,17 @@
                                                 </td>
                                                 <td class="text-center p-2 align-middle">
                                                     <span class="d-block text-left text-lg-center text-xl-center font-weight-bold">
-                                                        {{ $ste['transfer_as'] }}
+                                                        {{ $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'] }}
                                                         <span class="d-inline d-xl-none text-left"> - <b>{{ $ste['name'] }}</b></span>
                                                     </span>
                                                     <div class="d-block d-xl-none text-left">
-                                                        <b>From: </b> {{ $ste['source_warehouse'] }} <br>
+                                                        <b>From: </b> {{ $ste['source_warehouse'] ? $ste['source_warehouse'] : '-' }} <br>
                                                         <b>To: </b> {{ $ste['target_warehouse'] }} <br>
-                                                        <b>Purpose: </b> {{ $ste['transfer_as'] }} <br>
+                                                        <b>Purpose: </b> {{ $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'] }} <br>
                                                         {{ $ste['submitted_by'] }} - {{ $ste['creation'] }}
                                                     </div>
                                                 </td>
-                                                <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['source_warehouse'] }}</td>
+                                                <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['source_warehouse'] ? $ste['source_warehouse'] : '-' }}</td>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['target_warehouse'] }}</td>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">{{ $ste['submitted_by'] }}</td>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">
@@ -138,7 +139,7 @@
                                                         <div class="modal-dialog modal-xl" role="document">
                                                             <div class="modal-content">
                                                                 <div class="modal-header bg-navy">
-                                                                    <h6 class="modal-title">{{ $ste['transfer_as'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $ste['status'] }}</span></h6>
+                                                                    <h6 class="modal-title">{{ $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $ste['status'] }}</span></h6>
                                                                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                                         <span aria-hidden="true">&times;</span>
                                                                     </button>
@@ -148,7 +149,7 @@
                                                                         <div class="pt-0 pr-2 pl-2 pb-0 col-6 text-left m-0">
                                                                             <dl class="row p-0 m-0">
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Source:</dt>
-                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['source_warehouse'] }}</dd>
+                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['source_warehouse'] ? $ste['source_warehouse'] : '-' }}</dd>
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Target:</dt>
                                                                                 <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['target_warehouse'] }}</dd>
                                                                             </dl>

@@ -200,28 +200,28 @@
                                             <td class="text-center p-1 align-middle">
                                                 @if ($total_received != '-')
                                                 <a href="#" data-toggle="modal" data-target="#received-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ $total_received }}</span>
+                                                    <span class="d-block">{{ number_format($total_received) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
                                                 @if ($total_returned != '-')
                                                 <a href="#" data-toggle="modal" data-target="#returned-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ $total_returned }}</span>
+                                                    <span class="d-block">{{ number_format($total_returned) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
                                                 @if ($total_transferred != '-')
                                                 <a href="#" data-toggle="modal" data-target="#transferred-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ $total_transferred }}</span>
+                                                    <span class="d-block">{{ number_format($total_transferred) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
                                                 @if ($total_damaged != '-')
                                                 <a href="#" data-toggle="modal" data-target="#damaged-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ $total_damaged }}</span>
+                                                    <span class="d-block">{{ number_format($total_damaged) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
