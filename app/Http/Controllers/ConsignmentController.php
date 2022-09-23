@@ -2917,33 +2917,33 @@ class ConsignmentController extends Controller
         $sold_item_codes = [];
         $sold_qty = [];
         // Get sold items
-        if($request->purpose == 'Sales Return'){
-            $sold_items = DB::table('tabConsignment Sales Report as csr')
-                ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-                ->where('csr.branch_warehouse', $branch)->where('csr.status', '!=', 'Cancelled')
-                ->where('csri.qty', '>', 0)->selectRaw('csri.item_code, SUM(csri.qty) as qty')
-                ->groupBy('csri.item_code')->get();
+        // if($request->purpose == 'Sales Return'){
+        //     $sold_items = DB::table('tabConsignment Sales Report as csr')
+        //         ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+        //         ->where('csr.branch_warehouse', $branch)->where('csr.status', '!=', 'Cancelled')
+        //         ->where('csri.qty', '>', 0)->selectRaw('csri.item_code, SUM(csri.qty) as qty')
+        //         ->groupBy('csri.item_code')->get();
 
-            // Deduct already submitted sales returns
-            $submitted_sales_returns = DB::table('tabStock Entry as ste')
-                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('ste.to_warehouse', $branch)->where('ste.purpose', 'Material Receipt')->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)
-                ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->get();
-            $submitted_sales_returns = collect($submitted_sales_returns)->groupBy('item_code');
+        //     // Deduct already submitted sales returns
+        //     $submitted_sales_returns = DB::table('tabStock Entry as ste')
+        //         ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+        //         ->where('ste.to_warehouse', $branch)->where('ste.purpose', 'Material Receipt')->where('ste.receive_as', 'Sales Return')->where('ste.naming_series', 'STEC-')->where('ste.docstatus', '<', 2)
+        //         ->selectRaw('sted.item_code, SUM(sted.transfer_qty) as qty')->groupBy('sted.item_code')->get();
+        //     $submitted_sales_returns = collect($submitted_sales_returns)->groupBy('item_code');
 
-            $sold_qty = [];
-            foreach($sold_items as $sold){
-                $ste_qty = isset($submitted_sales_returns[$sold->item_code]) ? $submitted_sales_returns[$sold->item_code][0]->qty : 0;
-                $qty = $sold->qty - $ste_qty;
-                if($qty > 0){
-                    $sold_qty[$sold->item_code] = [
-                        'qty' => $qty
-                    ];
-                }
-            }
+        //     $sold_qty = [];
+        //     foreach($sold_items as $sold){
+        //         $ste_qty = isset($submitted_sales_returns[$sold->item_code]) ? $submitted_sales_returns[$sold->item_code][0]->qty : 0;
+        //         $qty = $sold->qty - $ste_qty;
+        //         if($qty > 0){
+        //             $sold_qty[$sold->item_code] = [
+        //                 'qty' => $qty
+        //             ];
+        //         }
+        //     }
 
-            $sold_item_codes = array_keys($sold_qty);
-        }
+        //     $sold_item_codes = array_keys($sold_qty);
+        // }
 
         $items = DB::table('tabBin as bin')
             ->join('tabItem as item', 'item.item_code', 'bin.item_code')
@@ -2956,12 +2956,12 @@ class ConsignmentController extends Controller
                     $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
                 });
             })
-            ->when($request->purpose && $request->purpose == 'Sales Return', function ($q) use ($sold_item_codes){
-                return $q->whereIn('bin.item_code', $sold_item_codes);
-            })
-            ->when($request->purpose && $request->purpose != 'Stock Adjustment', function ($q){
-                return $q->where('bin.consigned_qty', '>', 0);
-            })
+            // ->when($request->purpose && $request->purpose == 'Sales Return', function ($q) use ($sold_item_codes){
+            //     return $q->whereIn('bin.item_code', $sold_item_codes);
+            // })
+            // ->when($request->purpose && !in_array('Stock Adjustment', 'Sales Return'), function ($q){
+            //     return $q->where('bin.consigned_qty', '>', 0);
+            // })
             ->where('bin.warehouse', $branch)->get();
 
         $item_codes = collect($items)->map(function ($q) {
@@ -3008,12 +3008,13 @@ class ConsignmentController extends Controller
                 }
             }
 
-            $max = 0;
-            if($request->purpose == 'Sales Return'){
-                $max = isset($sold_qty[$item->item_code]) ? $sold_qty[$item->item_code]['qty'] * 1 : 0;
-            }else{
-                $max = $item->consigned_qty * 1;
-            }
+            // $max = 0;
+            $max = $item->consigned_qty * 1;
+            // if($request->purpose == 'Sales Return'){
+            //     $max = isset($sold_qty[$item->item_code]) ? $sold_qty[$item->item_code]['qty'] * 1 : 0;
+            // }else{
+            //     $max = $item->consigned_qty * 1;
+            // }
 
             $items_arr[] = [
                 'id' => $item->item_code,
@@ -3094,7 +3095,7 @@ class ConsignmentController extends Controller
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
-                'docstatus' => 0,
+                'docstatus' => $request->transfer_as == 'Sales Return' ? 1 : 0,
                 'idx' => 0,
                 'use_multi_level_bom' => 0,
                 'naming_series' => 'STEC-',
@@ -3180,12 +3181,13 @@ class ConsignmentController extends Controller
                     return redirect()->back()->with('error', 'Please enter transfer qty for '. $item_code);
                 }
 
-                if($request->transfer_as == 'Sales Return'){
-                    $max_qty = isset($sold_qty[$item_code]) ? $sold_qty[$item_code]['qty'] : 0;
-                    if($transfer_qty[$item_code]['transfer_qty'] > $max_qty){
-                        return redirect()->back()->with('error', 'Sales return qty cannot be more than the total sold qty.');
-                    }
-                }else{
+                // if($request->transfer_as == 'Sales Return'){
+                //     $max_qty = isset($sold_qty[$item_code]) ? $sold_qty[$item_code]['qty'] : 0;
+                //     if($transfer_qty[$item_code]['transfer_qty'] > $max_qty){
+                //         return redirect()->back()->with('error', 'Sales return qty cannot be more than the total sold qty.');
+                //     }
+                // }else{
+                if($request->transfer_as != 'Sales Return'){
                     if(isset($items[$reference_warehouse][$item_code]) && $transfer_qty[$item_code]['transfer_qty'] > $items[$reference_warehouse][$item_code]['consigned_qty']){
                         return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
                     }
@@ -3197,7 +3199,7 @@ class ConsignmentController extends Controller
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
-                    'docstatus' => 0,
+                    'docstatus' => $request->transfer_as == 'Sales Return' ? 1 : 0,
                     'parent' => $new_id,
                     'parentfield' => 'items',
                     'parenttype' => 'Stock Entry',
