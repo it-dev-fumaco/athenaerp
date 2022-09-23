@@ -216,7 +216,7 @@
                     }
 
                     $('#src-warehouse').prop('required', true);
-                    $('.transfer-text').text('Qty to Transfer');
+                    // $('.transfer-text').text('Qty to Transfer');
                 }else if($(this).val() == 'For Return'){
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
@@ -227,7 +227,7 @@
                     $('#target-warehouse-container').addClass('d-none');
 
                     $('#src-warehouse').prop('required', true);
-                    $('.transfer-text').text('Qty to Transfer');
+                    // $('.transfer-text').text('Qty to Transfer');
 
                     $('#items-to-return').slideDown();
                 }else{ // sales returns
@@ -238,8 +238,8 @@
                     $('#target-warehouse').attr("disabled", false);
 
                     $('#src-warehouse').prop('required', false);
-                    $('.transfer-text').text('Qty Returned');
-                    $('.qty-col').text('Qty Sold');
+                    // $('.transfer-text').text('Qty Returned');
+                    // $('.qty-col').text('Qty Sold');
 
                     if($('#source').is(':visible')){
                         $('#source').slideUp();
@@ -403,6 +403,10 @@
                 }else{
                     $('#submit-btn').prop('disabled', true);
                 }
+
+                if($('#transfer-as').val() == 'Sales Return'){
+                    $('#submit-btn').prop('disabled', false);
+                }
             }
 
             function remove_items(item_code){
@@ -451,6 +455,7 @@
 
             // Modal Add/Subtract Controls
             $('table#items-selection-table').on('click', '.qtyplus', function(e){
+                console.log($('#transfer-as').val());
                 // Stop acting like a button
                 e.preventDefault();
                 // Get the field name
@@ -461,8 +466,12 @@
                 // If is not undefined
                 if (!isNaN(currentVal)) {
                     // Increment
-                    if (currentVal < max) {
+                    if ($('#transfer-as').val() == 'Sales Return') {
                         fieldName.val(currentVal + 1);
+                    }else{
+                        if(currentVal < max){
+                            fieldName.val(currentVal + 1);
+                        }
                     }
                 } else {
                     // Otherwise put a 0 there
@@ -600,8 +609,12 @@
                 // If is not undefined
                 if (!isNaN(currentVal)) {
                     // Increment
-                    if (currentVal < max) {
+                    if ($('#transfer-as').val() == 'Sales Return') {
                         fieldName.val(currentVal + 1);
+                    }else{
+                        if(currentVal < max){
+                            fieldName.val(currentVal + 1);
+                        }
                     }
                 } else {
                     // Otherwise put a 0 there
