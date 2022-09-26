@@ -3262,8 +3262,13 @@ class MainController extends Controller
 
     public function upload_item_image(Request $request){
         // get item removed image file names for delete
+
+        $existing_images = $request->existing_images ? $request->existing_images : [];
         $removed_images = DB::table('tabItem Images')->where('parent', $request->item_code)
-            ->whereNotIn('name', $request->existing_images)->pluck('image_path');
+            ->when($existing_images, function ($q) use ($existing_images){
+                $q->whereNotIn('name', $existing_images);
+            })
+            ->pluck('image_path');
 
         foreach($removed_images as $img) {
             // delete from file directory
@@ -3272,7 +3277,10 @@ class MainController extends Controller
 
         // delete from table item images
         DB::table('tabItem Images')->where('parent', $request->item_code)
-            ->whereNotIn('name', $request->existing_images)->delete();
+            ->when($existing_images, function ($q) use ($existing_images){
+                $q->whereNotIn('name', $existing_images);
+            })
+            ->delete();
 
         $now = Carbon::now();
         if($request->hasFile('item_image')){
