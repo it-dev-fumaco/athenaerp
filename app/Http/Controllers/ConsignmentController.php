@@ -2512,10 +2512,18 @@ class ConsignmentController extends Controller
 
         $ste_item_codes = [];
         if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
+            $purpose = isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
             $stock_entry = DB::table('tabStock Entry')
-                ->whereDate('delivery_date', '>', '2022-06-25')
-                ->whereIn('transfer_as', ['Store Transfer', 'For Return'])
-                ->where('purpose', 'Material Transfer')
+                // ->whereDate('delivery_date', '>', '2022-06-25')
+                ->when(!isset($request->tab1_purpose) || $request->tab1_purpose != 'Sales Return', function ($q) use ($request){
+                    $transfer_as = isset($request->tab1_purpose) ? [$request->tab1_purpose] : ['Store Transfer', 'For Return'];
+                    return $q->whereDate('delivery_date', '>', Carbon::parse('2022-06-25')->startOfDay())
+                        ->whereIn('transfer_as', $transfer_as); //
+                })
+                ->when(isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return', function ($q){
+                    return $q->where('receive_as', 'Sales Return')->whereDate('creation', '>', Carbon::parse('2022-06-25')->startOfDay());
+                })
+                ->where('purpose', $purpose)
                 ->when($request->tab1_q, function ($q) use ($request){
                     return $q->where('name', 'like', '%'.$request->tab1_q.'%');
                 })
@@ -2527,9 +2535,6 @@ class ConsignmentController extends Controller
                 })
                 ->when($request->tab1_status && $request->tab1_status != 'All', function ($q) use ($request){
                     return $q->where('docstatus', $request->tab1_status);
-                })
-                ->when($request->tab1_purpose, function ($q) use ($request){
-                    return $q->where('transfer_as', $request->tab1_purpose);
                 })
                 ->orderBy('docstatus', 'asc')->orderBy('creation', 'desc')
                 ->paginate(20, ['*'], 'stock_transfers');
@@ -2583,8 +2588,6 @@ class ConsignmentController extends Controller
                 'image' => $img,
                 'webp' => $webp,
                 'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i A'),
-                'test' => $orig_exists,
-                'test2' => $webp_exists
             ];
         }
 
@@ -2644,6 +2647,7 @@ class ConsignmentController extends Controller
                     'target_warehouse' => $ste->to_warehouse,
                     'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
                     'transfer_as' => $ste->transfer_as,
+                    'receive_as' => $ste->receive_as,
                     'submitted_by' => $ste->owner,
                     'items' => $items
                 ];
