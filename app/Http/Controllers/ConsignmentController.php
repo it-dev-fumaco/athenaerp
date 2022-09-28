@@ -2523,7 +2523,7 @@ class ConsignmentController extends Controller
                         ->whereIn('transfer_as', $transfer_as); //
                 })
                 ->when(isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return', function ($q){
-                    return $q->where('receive_as', 'Sales Return')->whereDate('creation', '>', Carbon::parse('2022-06-25')->startOfDay()); //STEC-000138
+                    return $q->where('receive_as', 'Sales Return')->whereDate('creation', '>', Carbon::parse('2022-06-25')->startOfDay());
                 })
                 ->where('purpose', $purpose)
                 ->when($request->tab1_q, function ($q) use ($request){
@@ -2590,8 +2590,6 @@ class ConsignmentController extends Controller
                 'image' => $img,
                 'webp' => $webp,
                 'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i A'),
-                'test' => $orig_exists,
-                'test2' => $webp_exists
             ];
         }
 
@@ -4404,17 +4402,16 @@ class ConsignmentController extends Controller
                         $cbi_stock_array = ['opening_stock' => $opening_qty];
                     }
 
-                    // if($previous_price != $price){
-                    //     $bin_stock_array = ['consignment_price' => $price];
-                    //     $cbi_price_array = [
-                    //         'price' => $price,
-                    //         'amount' => $price * $opening_qty
-                    //     ];
-                    // }
+                    if($previous_price != $price){
+                        $bin_stock_array = ['consignment_price' => $price];
+                        $cbi_price_array = [
+                            'price' => $price,
+                            'amount' => $price * $opening_qty
+                        ];
+                    }
 
-                    $cbi_array = array_merge($update_array, $cbi_stock_array);
-                    $bin_array = array_merge($update_array, $bin_stock_array);
-                    // return $bin_array = array_merge($update_array, $bin_price_array, $bin_stock_array);
+                    $cbi_array = array_merge($update_array, $cbi_stock_array, $cbi_price_array);
+                    $bin_array = array_merge($update_array, $bin_stock_array, $bin_price_array);
                     
                     DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update($cbi_array);
                     DB::table('tabBin')->where('warehouse', $beginning_inventory->branch_warehouse)->where('item_code', $item_code)->update($bin_array);

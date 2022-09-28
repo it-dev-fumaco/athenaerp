@@ -490,12 +490,17 @@
 			$(document).on('click', '.allow-edit', function (){
 				var target = $(this).data('target');
 				var inventory = $(this).data('inv');
-				// $('#' + target + '-price').addClass('d-none');
+				// users allowed to edit price
+				var allowed_users = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local']; 
+				var user = '{{ Auth::user()->wh_user }}';
 				$('#' + target + '-qty').addClass('d-none');
-
-				// $('#' + target + '-new-price').removeClass('d-none');
 				$('#' + target + '-new-qty').removeClass('d-none');
 
+				if(allowed_users.indexOf(user) > -1){
+					$('#' + target + '-price').addClass('d-none');
+					$('#' + target + '-new-price').removeClass('d-none');
+				}
+				
 				$('#' + inventory + '-update').removeClass('d-none');
 			});
 

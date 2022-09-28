@@ -50,11 +50,10 @@
                                                         <select name="tab1_purpose" id='status' class="form-control" style="font-size: 10pt;">
                                                             @php
                                                                 $purposes = ['Store Transfer', 'Consignment', 'For Return', 'Sales Return'];
-                                                            @endphp 
-                                                            <option value="" disabled {{ !request('tab1_purpose') ? 'selected' : null }}>Select Purpose</option>
-                                                            <option value="">Select All</option>
-                                                            @foreach ($purposes as $purpose)
-                                                            <option value="{{ $purpose }}" {{ request('tab1_purpose') == $purpose ? 'selected' : null }}>{{ $purpose }}</option>
+                                                            @endphp
+                                                            <option value="" {{ !request('tab1_purpose') ? 'selected' : null }}>Select Purpose</option>
+                                                            @foreach ($purposes as $p)
+                                                            <option value="{{ $p }}" {{ request('tab1_purpose') == $p ? 'selected' : null }}>{{ $p }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
@@ -75,7 +74,7 @@
                                                             @endphp 
                                                             <option value="" disabled {{ !request('tab1_status') ? 'selected' : null }}>Select a status</option>
                                                             @foreach ($status as $s)
-                                                                <option value="{{ $s['value'] }}" {{ request('tab1_status') == $s['value'] ? 'selected' : null }}>{{ $s['title'] }}</option>
+                                                            <option value="{{ $s['value'] }}" {{ $s['value'] == request('tab1_status') ? 'selected' : null }}>{{ $s['title'] }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
@@ -107,6 +106,8 @@
                                                 }else{
                                                     $badge = 'primary';
                                                 }
+
+                                                $purpose = $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'];
                                             @endphp
                                             <tr>
                                                 <td class="text-center p-2 align-middle d-none d-xl-table-cell">
@@ -115,13 +116,13 @@
                                                 </td>
                                                 <td class="text-center p-2 align-middle">
                                                     <span class="d-block text-left text-lg-center text-xl-center font-weight-bold">
-                                                        {{ $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'] }}
+                                                        {{ $purpose }}
                                                         <span class="d-inline d-xl-none text-left"> - <b>{{ $ste['name'] }}</b></span>
                                                     </span>
                                                     <div class="d-block d-xl-none text-left">
                                                         <b>From: </b> {{ $ste['source_warehouse'] ? $ste['source_warehouse'] : '-' }} <br>
                                                         <b>To: </b> {{ $ste['target_warehouse'] }} <br>
-                                                        <b>Purpose: </b> {{ $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'] }} <br>
+                                                        <b>Purpose: </b> {{ $purpose }} <br>
                                                         {{ $ste['submitted_by'] }} - {{ $ste['creation'] }}
                                                     </div>
                                                 </td>
@@ -139,12 +140,17 @@
                                                         <div class="modal-dialog modal-xl" role="document">
                                                             <div class="modal-content">
                                                                 <div class="modal-header bg-navy">
-                                                                    <h6 class="modal-title">{{ $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $ste['status'] }}</span></h6>
+                                                                    <h6 class="modal-title">{{ $purpose .' - '. $ste['name'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $ste['status'] }}</span></h6>
                                                                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                                         <span aria-hidden="true">&times;</span>
                                                                     </button>
                                                                 </div>
                                                                 <div class="modal-body">
+                                                                    @if ($purpose != 'Sales Return')
+                                                                        <div class="callout callout-info text-center mt-2">
+                                                                            <small><i class="fas fa-info-circle"></i> Consignment Supervisors can approve stock transfers in ERP.</small>
+                                                                        </div>
+                                                                    @endif
                                                                     <div class="row pb-0 mb-3">
                                                                         <div class="pt-0 pr-2 pl-2 pb-0 col-6 text-left m-0">
                                                                             <dl class="row p-0 m-0">
