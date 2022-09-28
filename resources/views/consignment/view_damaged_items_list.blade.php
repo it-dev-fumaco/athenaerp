@@ -50,7 +50,7 @@
                                                         <select name="tab1_purpose" id='status' class="form-control" style="font-size: 10pt;">
                                                             @php
                                                                 $purposes = ['Store Transfer', 'Consignment', 'For Return', 'Sales Return'];
-                                                            @endphp 
+                                                            @endphp
                                                             <option value="" {{ !request('tab1_purpose') ? 'selected' : null }}>Select Purpose</option>
                                                             @foreach ($purposes as $p)
                                                             <option value="{{ $p }}" {{ request('tab1_purpose') == $p ? 'selected' : null }}>{{ $p }}</option>
@@ -155,7 +155,7 @@
                                                                         <div class="pt-0 pr-2 pl-2 pb-0 col-6 text-left m-0">
                                                                             <dl class="row p-0 m-0">
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Source:</dt>
-                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['source_warehouse'] }}</dd>
+                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['source_warehouse'] ? $ste['source_warehouse'] : '-' }}</dd>
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Target:</dt>
                                                                                 <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['target_warehouse'] }}</dd>
                                                                             </dl>
