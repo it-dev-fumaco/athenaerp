@@ -4391,9 +4391,9 @@ class ConsignmentController extends Controller
                         $total_received = isset($total_received_qty[$item_code]) ? $total_received_qty[$item_code][0]->qty : 0;
                         $total_sold = isset($total_sold_qty[$item_code]) ? $total_sold_qty[$item_code][0]->qty : 0;
 
-                        if($total_sold > ($opening_qty + $total_received)){
-                            return redirect()->back()->with('error', 'Total sold qty cannot be more than the stocks left<br>Total sold qty for <b>'.$item_code.'</b> is '.number_format($total_sold).' '.$cbi_items[$item_code][0]->stock_uom.'. After update, stocks will be '.($opening_qty + $total_received).' '.$cbi_items[$item_code][0]->stock_uom);
-                        }
+                        // if($total_sold > ($opening_qty + $total_received)){
+                        //     return redirect()->back()->with('error', 'Total sold qty cannot be more than the stocks left<br>Total sold qty for <b>'.$item_code.'</b> is '.number_format($total_sold).' '.$cbi_items[$item_code][0]->stock_uom.'. After update, stocks will be '.($opening_qty + $total_received).' '.$cbi_items[$item_code][0]->stock_uom);
+                        // }
 
                         $updated_stocks = ($opening_qty + $total_received) - $total_sold;
                         $updated_stocks = $updated_stocks > 0 ? $updated_stocks : 0;
