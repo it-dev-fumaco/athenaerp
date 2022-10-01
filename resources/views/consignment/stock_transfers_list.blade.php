@@ -116,7 +116,11 @@
                                                         <span class="d-block text-left">{{ $ste['to_warehouse'] }}</span>
                                                         @endif
                                                         <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
-                                                       
+                                                        @if ($ste['transfer_type'] == 'Store Transfer')
+                                                            <div class="callout callout-info text-center">
+                                                                <small><i class="fas fa-info-circle"></i> Stocks will be deducted once the store recipient has received the item.</small>
+                                                            </div>
+                                                        @endif
                                                         <table class="table" style="font-size: 9pt;">
                                                             <thead>
                                                                 <th class="text-center p-1 align-middle">Item Code</th>
