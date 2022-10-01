@@ -3031,7 +3031,7 @@ class ConsignmentController extends Controller
         return response()->json($items_arr);
     }
 
-    // /stock_transfer/form
+    // /stock_transfer/submit
     public function stockTransferSubmit(Request $request){
         DB::beginTransaction();
         try {
@@ -3118,7 +3118,7 @@ class ConsignmentController extends Controller
                 'qty_repack' => 0,
                 // 'customer_1' => $target_warehouse,
                 'delivery_date' => $now->format('Y-m-d'),
-                'remarks' => 'Generated in AthenaERP'
+                'remarks' => 'Generated in AthenaERP. '. $request->remarks
             ];
 
             DB::table('tabStock Entry')->insert($stock_entry_data);
@@ -3233,6 +3233,7 @@ class ConsignmentController extends Controller
                     'session_user' => Auth::user()->full_name,
                     'issued_qty' => $transfer_qty[$item_code]['transfer_qty'],
                     'date_modified' => $now->toDateTimeString(),
+                    'return_reason' => isset($request->item[$item_code]['reason']) ? $request->item[$item_code]['reason'] : null,
                     'remarks' => 'Generated in AthenaERP'
                 ];
 
@@ -3494,7 +3495,8 @@ class ConsignmentController extends Controller
                         'uom' => $item->stock_uom,
                         'image' => $img,
                         'webp' => $webp,
-                        'img_count' => array_key_exists($item->item_code, $item_image) ? count($item_image[$item->item_code]) : 0
+                        'img_count' => array_key_exists($item->item_code, $item_image) ? count($item_image[$item->item_code]) : 0,
+                        'return_reason' => $item->return_reason
                     ];
                 }
             }
@@ -3507,8 +3509,9 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'owner' => $ste->owner,
                 'docstatus' => $ste->docstatus,
-                'transfer_type' => $ste->transfer_as,
-                'date' => $ste->creation
+                'transfer_type' => $ste->transfer_as ? $ste->transfer_as : $ste->receive_as,
+                'date' => $ste->creation,
+                'remarks' => $ste->remarks
             ];
         }
 

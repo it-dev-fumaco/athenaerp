@@ -201,8 +201,23 @@
                                                                         <span class="item-description">{!! strip_tags($item['description']) !!}</span>
                                                                     </td>
                                                                 </tr>
+                                                                @if ($purpose == 'Material Receipt')
+                                                                    <tr>
+                                                                        <td class="text-left p-1" colspan=4>
+                                                                            Reason for return: {{ $item['return_reason'] ? $item['return_reason'] : '-' }}
+                                                                        </td>
+                                                                    </tr>
+                                                                @endif
                                                             @endforeach
                                                         </table>
+                                                        <div class="container-fluid text-left p-1" style="font-size: 10pt;">
+                                                            @php
+                                                                $remarks = str_replace('Generated in AthenaERP. ', null, $ste['remarks']);
+                                                            @endphp
+                                                            @if ($remarks)
+                                                                Remarks: {{ $remarks }}
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                     <div class="text-center m-3 {{ $ste['docstatus'] == 1 ? 'd-none' : null }}">
                                                         <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">Cancel Request</button>
