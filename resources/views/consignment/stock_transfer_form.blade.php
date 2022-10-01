@@ -540,7 +540,7 @@
 
                 var sales_return_row = '';
                 if($('#transfer-as').val() == 'Sales Return'){
-                    sales_return_row = '<tr>' + 
+                    sales_return_row = '<tr class="row-' + item_code + '">' + 
                         '<td colspan=3 class="text-center p-0">' +
                             '<div class="d-none">' + item_code + '</div>' + // reference for search
                             '<div class="d-none">' + description + '</div>' +
