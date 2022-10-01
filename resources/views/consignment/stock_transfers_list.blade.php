@@ -225,28 +225,30 @@
                                                             @endif
                                                         </div>
                                                     </div>
-                                                    <div class="text-center m-3 {{ $ste['docstatus'] == 1 ? 'd-none' : null }}">
-                                                        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">Cancel Request</button>
-                                                    </div>
-                                                    <div class="modal fade" id="cancel-{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog modal-dialog-centered" role="document">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header bg-navy">
-                                                                    <span class="modal-title">{{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
-                                                                    <button type="button" class="close text-white" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
-                                                                        <span aria-hidden="true">&times;</span>
-                                                                    </button>
-                                                                </div>
-                                                                <div class="modal-body p-2">
-                                                                    <form></form>
-                                                                    <h6 class="mb-3">Cancel {{ $ste['transfer_type'] }} Request?</h6>
-                                                                    <div class="text-center m-2">
-                                                                        <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary submit-once">Confirm</a>
+                                                    @if ($ste['docstatus'] == 1 || $ste['transfer_type'] == 'Sales Return')
+                                                        <div class="text-center m-3">
+                                                            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">Cancel {{ $ste['transfer_type'] != 'Sales Return' ? 'Request' : null }}</button>
+                                                        </div>
+                                                        <div class="modal fade" id="cancel-{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header bg-navy">
+                                                                        <span class="modal-title">{{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
+                                                                        <button type="button" class="close text-white" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="modal-body p-2">
+                                                                        <form></form>
+                                                                        <h6 class="mb-3">Cancel {{ $ste['transfer_type'] }} {{ $ste['transfer_type'] != 'Sales Return' ? 'Request' : null }}?</h6>
+                                                                        <div class="text-center m-2">
+                                                                            <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary submit-once">Confirm</a>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
