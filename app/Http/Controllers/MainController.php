@@ -2033,7 +2033,7 @@ class MainController extends Controller
             }
 
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'status' => $status, 
                 'transfer_qty' => $request->qty, 
                 'qty' => $request->qty, 
@@ -2554,7 +2554,7 @@ class MainController extends Controller
 
             $now = Carbon::now();
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'status' => 'Issued',
                 'barcode' => $request->barcode,
                 'date_modified' => $now->toDateTimeString()
@@ -4860,7 +4860,7 @@ class MainController extends Controller
             }
 
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'item_status' => 'Returned',
                 'barcode_return' => $request->barcode,
                 'date_modified' => Carbon::now()->toDateTimeString()
@@ -5104,7 +5104,7 @@ class MainController extends Controller
 				'batch_no' => null,
 				'valuation_rate' => $rate,
 				'material_request' => null,
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'validate_item_code' => $production_order_details->production_item,
 				't_warehouse_personnel' => null,
 				's_warehouse_personnel' => null,
