@@ -61,8 +61,10 @@
                                 <tbody>
                                 @forelse ($ste_arr as $ste)
                                 @php
-                                    if($ste['docstatus'] == 1){
-                                        $badge = 'success';
+                                    $badge = 'success';
+                                    if($ste['transfer_type'] == 'Sales Return'){
+                                        $status = 'Received';
+                                    }else if($ste['docstatus'] == 1){
                                         $status = 'Approved';
                                     }else{
                                         $badge = 'primary';
