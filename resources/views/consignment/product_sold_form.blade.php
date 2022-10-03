@@ -167,6 +167,32 @@
                                 <div class="m-3">
                                     <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ $item_count <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
+                                @if ($existing_items)
+                                    <div class="m-3">
+                                    <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#cancelProductSold"><i class="fas fa-remove"></i> Cancel</button>
+
+                                    <!-- Modal -->
+                                    <div class="modal fade" id="cancelProductSold" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-navy">
+                                                    <h5 class="modal-title" id="exampleModalLabel">Cancel Products Sold</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #fff">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Cancel Products Sold for {{ Carbon\Carbon::parse($transaction_date)->format('M d, Y') }}?
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <a href="/product_sold/cancel/{{ $existing_items }}" class="btn btn-primary text-center w-100">Confirm</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                                
                             </form>
                         </div>
                     </div>
@@ -260,28 +286,34 @@
                     </div>
                 </div>
                 @if(session()->has('success'))
-                <p class="text-success text-center mb-0" style="font-size: 5rem; margin-top: -40px;">
-                    <i class="fas fa-check-circle"></i>
+                @php
+                    $badge = session()->get('success') == 'Cancelled' ? 'info' : 'success';
+                    $icon = session()->get('success') == 'Cancelled' ? 'info' : 'check';
+                @endphp
+                <p class="text-{{ $badge }} text-center mb-0" style="font-size: 5rem; margin-top: -40px;">
+                    <i class="fas fa-info-circle"></i>
                 </p>
-                <p class="text-center text-uppercase mt-0 font-weight-bold">Product Sold is Saved</p>
+                <p class="text-center text-uppercase mt-0 font-weight-bold">Product Sold is {{ session()->get('success') == 'Cancelled' ? 'Cancelled' : 'Saved' }}</p>
                <hr>
-                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Sales Report Summary</p>
-                <div class="text-center mb-2" style="font-size: 9pt;">
-                    <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
-                    <small class="d-block">Branch / Store</small>
-                    <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
-                    <small class="d-block">Transaction Date</small>
-                </div>
-                <div class="d-flex flex-row mt-1 justify-content-between">
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ number_format(session()->get('total_qty_sold')) }}</span>
-                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
+                @if (session()->get('success') != 'Cancelled')
+                    <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Sales Report Summary</p>
+                    <div class="text-center mb-2" style="font-size: 9pt;">
+                        <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
+                        <small class="d-block">Branch / Store</small>
+                        <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
+                        <small class="d-block">Transaction Date</small>
                     </div>
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ '₱ ' . number_format(session()->get('grand_total'), 2) }}</span>
-                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
+                    <div class="d-flex flex-row mt-1 justify-content-between">
+                        <div class="p-1 col-6 text-center">
+                            <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ number_format(session()->get('total_qty_sold')) }}</span>
+                            <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
+                        </div>
+                        <div class="p-1 col-6 text-center">
+                            <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ '₱ ' . number_format(session()->get('grand_total'), 2) }}</span>
+                        <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
+                        </div>
                     </div>
-                </div>
+                @endif
                 <div class="d-flex flex-row justify-content-center">
                     <div class="pt-4">
                         <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to Calendar</a>
