@@ -401,7 +401,7 @@
                 format: 'YYYY-MMM-DD',
                 separator: " to "
             },
-            minDate: '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d") }}',
+            // minDate: '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d") }}',
             startDate: '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d") }}',
             endDate: '{{ Carbon\Carbon::parse($transaction_date)->format("Y-M-d") }}',
         });

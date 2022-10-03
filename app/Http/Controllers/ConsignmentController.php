@@ -278,8 +278,8 @@ class ConsignmentController extends Controller
             $iar_grand_total = $iar_total_items = 0;
             foreach ($data['item'] as $item_code => $row) {
                 $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
-                $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
-                $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
+                $consigned_qty = isset($consigned_stocks[$item_code]) ? $consigned_stocks[$item_code] : 0;
+                $price = isset($item_prices[$item_code]) ? $item_prices[$item_code] : 0;
                 $sold_qty = $consigned_qty - (float)$qty;
                 $amount = ((float)$price * (float)$sold_qty);
                 $iar_amount = ((float)$price * (float)$qty);
@@ -3622,7 +3622,7 @@ class ConsignmentController extends Controller
                     ];
                 }  
             }
-    
+
             $pending = collect($pending_arr)->groupBy('store');
 
             return view('consignment.promodiser_inventory_audit_list', compact('pending', 'assigned_consignment_stores', 'select_year'));
@@ -3691,6 +3691,16 @@ class ConsignmentController extends Controller
                 $total_sales = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $row->branch_warehouse)
                     ->where('status', '!=', 'Cancelled')
                     ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('grand_total');
+
+                if($total_sales <= 0){ // if grand_total of consignment sales report did not update
+                    $sales_report = DB::table('tabConsignment Sales Report as csr')
+                        ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
+                        ->where('csr.branch_warehouse', $row->branch_warehouse)->where('csr.status', '!=', 'Cancelled')->whereBetween('csr.transaction_date', [$row->audit_date_from, $row->audit_date_to])
+                        ->select('csri.item_code', 'qty', 'price', DB::raw('csri.qty * csri.price as amount'))->get();
+
+                    $total_sales = collect($sales_report)->sum('amount');
+                    $total_sales = $total_sales > 0 ? $total_sales : 0;
+                }
 
                 $result[$row->branch_warehouse][] = [
                     'audit_date_from' => $row->audit_date_from,
