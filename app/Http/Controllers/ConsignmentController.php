@@ -3693,10 +3693,13 @@ class ConsignmentController extends Controller
                     ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('grand_total');
 
                 if($total_sales <= 0){ // if grand_total of consignment sales report did not update
-                    $total_sales = DB::table('tabConsignment Sales Report as csr')
+                    $sales_report = DB::table('tabConsignment Sales Report as csr')
                         ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                         ->where('csr.branch_warehouse', $row->branch_warehouse)->where('csr.status', '!=', 'Cancelled')->whereBetween('csr.transaction_date', [$row->audit_date_from, $row->audit_date_to])
-                        ->select(DB::raw('csri.qty * csri.price as amount'))->sum('amount');
+                        ->select('csri.item_code', 'qty', 'price', DB::raw('csri.qty * csri.price as amount'))->get();
+
+                    $total_sales = collect($sales_report)->sum('amount');
+                    $total_sales = $total_sales > 0 ? $total_sales : 0;
                 }
 
                 $result[$row->branch_warehouse][] = [
