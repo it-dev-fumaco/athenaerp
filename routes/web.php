@@ -173,7 +173,6 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/damaged/return/{id}', 'ConsignmentController@returnDamagedItem');
     Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
     Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport'); 
-    Route::get('/product_sold/cancel/{id}', 'ConsignmentController@cancelProductSold'); 
 
     Route::get('/inventory_items/{branch}', 'ConsignmentController@inventoryItems'); 
 

@@ -278,8 +278,8 @@ class ConsignmentController extends Controller
             $iar_grand_total = $iar_total_items = 0;
             foreach ($data['item'] as $item_code => $row) {
                 $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
-                $consigned_qty = isset($consigned_stocks[$item_code]) ? $consigned_stocks[$item_code] : 0;
-                $price = isset($item_prices[$item_code]) ? $item_prices[$item_code] : 0;
+                $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
+                $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
                 $sold_qty = $consigned_qty - (float)$qty;
                 $amount = ((float)$price * (float)$sold_qty);
                 $iar_amount = ((float)$price * (float)$qty);
@@ -497,7 +497,7 @@ class ConsignmentController extends Controller
     public function viewProductSoldForm($branch, $transaction_date) {
         $existing_items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
-            ->where('csr.transaction_date', $transaction_date)->pluck('csr.name')->first();//->exists();
+            ->where('csr.transaction_date', $transaction_date)->exists();
 
         if ($existing_items) {
             $items = DB::table('tabConsignment Sales Report as csr')
@@ -540,44 +540,7 @@ class ConsignmentController extends Controller
 
         $item_classification = collect($items)->groupBy('item_classification');
 
-        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks', 'item_classification', 'item_count', 'existing_items'));
-    }
-
-    public function cancelProductSold($id){
-        DB::beginTransaction();
-        try {
-            $sales_report = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-                ->where('status', '!=', 'Cancelled')->where('csr.name', $id)->get();
-            
-            $branch = isset($sales_report[0]) ? $sales_report[0]->branch_warehouse : null;
-
-            $items = DB::table('tabBin')->whereIn('item_code', collect($sales_report)->pluck('item_code'))->where('warehouse', $branch)->select('item_code', 'consigned_qty')->get();
-            $items = collect($items)->groupBy('item_code');
-
-            foreach($sales_report as $item){
-                $item_details = isset($items[$item->item_code]) ? $items[$item->item_code][0] : [];
-                
-                $new_qty = $item_details->consigned_qty + $item->qty;
-
-                DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
-                    'consigned_qty' => $new_qty,
-                    'modified_by' => Auth::user()->wh_user,
-                    'modified' => Carbon::now()->toDateTimeString()
-                ]);
-            }
-
-            DB::table('tabConsignment Sales Report')->where('name', $id)->update([
-                'status' => 'Cancelled',
-                'modified' => Carbon::now()->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user
-            ]);
-
-            DB::commit();
-            return redirect()->back()->with('success', 'Cancelled');
-        } catch (Exception $e) {
-            DB::rollback();
-            return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
-        }
+        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks', 'item_classification', 'item_count'));
     }
 
     public function getCutoffDate($transaction_date) {
@@ -3731,16 +3694,6 @@ class ConsignmentController extends Controller
                 $total_sales = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $row->branch_warehouse)
                     ->where('status', '!=', 'Cancelled')
                     ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('grand_total');
-
-                if($total_sales <= 0){ // if grand_total of consignment sales report did not update
-                    $sales_report = DB::table('tabConsignment Sales Report as csr')
-                        ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-                        ->where('csr.branch_warehouse', $row->branch_warehouse)->where('csr.status', '!=', 'Cancelled')->whereBetween('csr.transaction_date', [$row->audit_date_from, $row->audit_date_to])
-                        ->select('csri.item_code', 'qty', 'price', DB::raw('csri.qty * csri.price as amount'))->get();
-
-                    $total_sales = collect($sales_report)->sum('amount');
-                    $total_sales = $total_sales > 0 ? $total_sales : 0;
-                }
 
                 $result[$row->branch_warehouse][] = [
                     'audit_date_from' => $row->audit_date_from,
