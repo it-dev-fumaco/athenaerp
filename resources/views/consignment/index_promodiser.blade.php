@@ -428,7 +428,7 @@
             $('#'+item_code+'-amount').text(amount);
         }else{
             $('#'+item_code+'-amount').text('0');
-            $(this).val('');
+            // $(this).val('');
         }
     });
 

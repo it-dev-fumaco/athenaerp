@@ -1722,6 +1722,16 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('error', $id.' not found.');
             }
 
+            $invalid_prices = [];
+            foreach($request->price as $p){
+                $price = preg_replace("/[^0-9 .]/", "", $p);
+                if($wh->transfer_as != 'For Return'){
+                    if(!is_numeric($price) || $price <= 0){
+                        return redirect()->back()->with('error', 'Item prices cannot be less than or equal to 0');
+                    }
+                }
+            }
+
             $ste_items = DB::table('tabStock Entry Detail')->where('parent', $id)->get();
 
             $source_warehouses = collect($ste_items)->map(function($q){
@@ -1775,29 +1785,36 @@ class ConsignmentController extends Controller
             $i = 0;
             $received_items = [];
             foreach($ste_items as $item){
-                $basic_rate = $item->basic_rate;
                 $branch =  $wh->to_warehouse ? $wh->to_warehouse : $item->t_warehouse;
                 $src_branch = $wh->from_warehouse ? $wh->from_warehouse : $item->s_warehouse;
 
                 if(isset($request->receive_delivery) && !isset($prices[$item->item_code])){
                     return redirect()->back()->with('error', 'Please enter price for all items.');
                 }
+                if($wh->transfer_as == 'For Return'){
+                    $basic_rate = $item->basic_rate;
+                }else{
+                    $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
+                }
                 
-                $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
-
                 // Source Warehouse
-                if(isset($request->receive_delivery) && $wh->transfer_as == 'Store Transfer' && $wh->purpose != 'Material Receipt'){
+                if(isset($request->receive_delivery) && in_array($wh->transfer_as, ['For Return', 'Store Transfer']) && $wh->purpose != 'Material Receipt'){
                     $src_consigned = isset($bin_items[$src_branch][$item->item_code]) ? $bin_items[$src_branch][$item->item_code]['consigned_qty'] : 0;
                     if($src_consigned < $item->transfer_qty){
                         return redirect()->back()->with('error', 'Not enough qty for '.$item->item_code.'. Qty needed is '.number_format($item->transfer_qty).', available qty is '.number_format($src_consigned).'.');
                     }
 
-                    DB::table('tabBin')->where('warehouse', $src_branch)->where('item_code', $item->item_code)->update([
+                    $update_bin = [
                         'modified' => Carbon::now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $src_consigned - $item->transfer_qty,
-                        'consignment_price' => $basic_rate
-                    ]);
+                        'consigned_qty' => $src_consigned - $item->transfer_qty
+                    ];
+
+                    if($wh->transfer_as != 'For Return'){
+                        $update_bin['consignment_price'] = $basic_rate;
+                    }
+
+                    DB::table('tabBin')->where('warehouse', $src_branch)->where('item_code', $item->item_code)->update($update_bin);
                 }
 
                 // Target Warehouse
@@ -1806,7 +1823,7 @@ class ConsignmentController extends Controller
 
                     $update_values = [
                         'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
+                        'modified_by' => Auth::user()->wh_user
                     ];
 
                     if(isset($request->update_price)){
@@ -1815,10 +1832,6 @@ class ConsignmentController extends Controller
 
                     if(isset($request->receive_delivery)){
                         $update_values['consigned_qty'] = $consigned_qty;
-                    }
-
-                    if($item->consignment_status == 'Received' && isset($request->receive_delivery)){
-                        continue;
                     }
 
                     DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update($update_values);
@@ -1842,8 +1855,8 @@ class ConsignmentController extends Controller
                         'stock_uom' => $item->stock_uom,
                         'valuation_rate' => $basic_rate,
                         'consigned_qty' => isset($request->receive_delivery) ? $item->transfer_qty : 0,
-                        'consignment_price' => $basic_rate,
-                        'consignment_status' => isset($request->receive_delivery) ? 'Received' : null
+                        'consignment_price' => $basic_rate
+                        // 'consignment_status' => isset($request->receive_delivery) ? 'Received' : null
                     ]);
                 }
 
@@ -1921,10 +1934,21 @@ class ConsignmentController extends Controller
                 'reference_name' => $id,
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
-                'full_name' => Auth::user()->full_name,
+                'full_name' => Auth::user()->full_name
             ];
 
             DB::table('tabActivity Log')->insert($logs);
+
+            if(isset($request->receive_delivery)){
+                DB::table('tabStock Entry')->where('name', $id)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'consignment_status' => 'Received',
+                    'consignment_date_received' => Carbon::now()->toDateTimeString(),
+                    'consignment_received_by' => Auth::user()->wh_user,
+                    'docstatus' => 1
+                ]);
+            }
 
             $message = null;
             if(isset($request->update_price)){
@@ -1932,7 +1956,8 @@ class ConsignmentController extends Controller
             }
 
             if(isset($request->receive_delivery)){
-                $message = collect($received_items)->sum('qty').' Item(s) is successfully received and added to your store inventory!';
+                $t = $wh->transfer_as != 'For Return' ? 'your store inventory!' : 'Quaratine Warehouse!';
+                $message = collect($received_items)->sum('qty').' Item(s) is/are successfully received and added to '.$t;
             }
 
             $received_items['message'] = $message;
@@ -2548,11 +2573,10 @@ class ConsignmentController extends Controller
         if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
             $purpose = isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
             $stock_entry = DB::table('tabStock Entry')
-                // ->whereDate('delivery_date', '>', '2022-06-25')
                 ->when(!isset($request->tab1_purpose) || $request->tab1_purpose != 'Sales Return', function ($q) use ($request){
                     $transfer_as = isset($request->tab1_purpose) ? [$request->tab1_purpose] : ['Store Transfer', 'For Return'];
                     return $q->whereDate('delivery_date', '>', Carbon::parse('2022-06-25')->startOfDay())
-                        ->whereIn('transfer_as', $transfer_as); //
+                        ->whereIn('transfer_as', $transfer_as);
                 })
                 ->when(isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return', function ($q){
                     return $q->where('receive_as', 'Sales Return')->whereDate('creation', '>', Carbon::parse('2022-06-25')->startOfDay());
@@ -2666,6 +2690,7 @@ class ConsignmentController extends Controller
                             'item_code' => $item->item_code,
                             'description' => $item->description,
                             'transfer_qty' => $item->transfer_qty,
+                            'price' => $item->basic_rate,
                             'uom' => $item->stock_uom,
                             'consigned_qty' => isset($bin_arr[$ste->from_warehouse][$item->item_code]) ? $bin_arr[$ste->from_warehouse][$item->item_code]['consigned_qty'] : 0,
                             'image' => $img,
@@ -2674,15 +2699,30 @@ class ConsignmentController extends Controller
                     }
                 }
 
+                if($ste->docstatus == 1){
+                    $status = $ste->transfer_as == 'For Return' ? 'For Return' : 'Approved';
+                    if($ste->consignment_status == 'Received'){
+                        $status = 'Received';
+                    }
+                }else{
+                    if ($ste->transfer_as == 'For Return') {
+                        $status = 'For Return';
+                    }else{
+                        $status = 'To Submit in ERP';
+                    }
+                }
+
                 $ste_arr[] = [
                     'name' => $ste->name,
                     'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i A'),
                     'source_warehouse' => $ste->from_warehouse,
                     'target_warehouse' => $ste->to_warehouse,
-                    'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
+                    'docstatus' => $ste->docstatus,
+                    'status' => $status,
                     'transfer_as' => $ste->transfer_as,
                     'receive_as' => $ste->receive_as,
                     'submitted_by' => $ste->owner,
+                    'consignment_status' => $ste->consignment_status,
                     'items' => $items
                 ];
             }
@@ -3150,7 +3190,9 @@ class ConsignmentController extends Controller
                 'qty_repack' => 0,
                 // 'customer_1' => $target_warehouse,
                 'delivery_date' => $now->format('Y-m-d'),
-                'remarks' => 'Generated in AthenaERP. '. $request->remarks
+                'remarks' => 'Generated in AthenaERP. '. $request->remarks,
+                'order_from' => 'Other Reference',
+                'reference_no' => '-'
             ];
 
             DB::table('tabStock Entry')->insert($stock_entry_data);
@@ -3272,16 +3314,16 @@ class ConsignmentController extends Controller
                 DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
 
                 // source warehouse
-                if($request->transfer_as == 'For Return' && isset($items[$reference_warehouse][$item_code])){
-                    DB::table('tabBin')->where('warehouse', $reference_warehouse)->where('item_code', $item_code)->update([
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $items[$reference_warehouse][$item_code]['consigned_qty'] - $transfer_qty[$item_code]['transfer_qty']
-                    ]);
-                }
+                // if($request->transfer_as == 'For Return' && isset($items[$reference_warehouse][$item_code])){
+                //     DB::table('tabBin')->where('warehouse', $reference_warehouse)->where('item_code', $item_code)->update([
+                //         'modified' => $now->toDateTimeString(),
+                //         'modified_by' => Auth::user()->wh_user,
+                //         'consigned_qty' => $items[$reference_warehouse][$item_code]['consigned_qty'] - $transfer_qty[$item_code]['transfer_qty']
+                //     ]);
+                // }
 
                 // target warehouse
-                if($request->transfer_as != 'Store Transfer'){
+                if(!in_array($request->transfer_as, ['Store Transfer', 'For Return'])){
                     if(isset($items[$target_warehouse][$item_code])){
                         DB::table('tabBin')->where('warehouse', $target_warehouse)->where('item_code', $item_code)->update([
                             'modified' => $now->toDateTimeString(),
@@ -3543,7 +3585,8 @@ class ConsignmentController extends Controller
                 'docstatus' => $ste->docstatus,
                 'transfer_type' => $ste->transfer_as ? $ste->transfer_as : $ste->receive_as,
                 'date' => $ste->creation,
-                'remarks' => $ste->remarks
+                'remarks' => $ste->remarks,
+                'consignment_status' => $ste->consignment_status
             ];
         }
 

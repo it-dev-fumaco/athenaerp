@@ -61,14 +61,19 @@
                                 <tbody>
                                 @forelse ($ste_arr as $ste)
                                 @php
-                                    $badge = 'success';
-                                    if($ste['transfer_type'] == 'Sales Return'){
-                                        $status = 'Received';
-                                    }else if($ste['docstatus'] == 1){
-                                        $status = 'Approved';
+                                    $badge = 'primary';
+                                    if($ste['docstatus'] == 1){
+                                        $status = $ste['transfer_type'] == 'For Return' ? 'For Return' : 'Approved';
+                                        if($ste['consignment_status'] == 'Received'){
+                                            $badge = 'success';
+                                            $status = 'Received';
+                                        }
                                     }else{
-                                        $badge = 'primary';
-                                        $status = Auth::user()->user_group == 'Promodiser' ? 'For Approval' : 'To Submit in ERP';
+                                        if ($ste['transfer_type'] == 'For Return') {
+                                            $status = $ste['transfer_type'];
+                                        }else{
+                                            $status = Auth::user()->user_group == 'Promodiser' ? 'For Approval' : 'To Submit in ERP';
+                                        }
                                     }
                                 @endphp
                                 <tr>

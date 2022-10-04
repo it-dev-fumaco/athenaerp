@@ -310,7 +310,7 @@
                     $('#'+target+'-amount').text(amount);
                 }else{
                     $('#'+target+'-amount').text('0');
-                    $(this).val('');
+                    // $(this).val('');
                 }
             });
 
