@@ -185,6 +185,10 @@ class ConsignmentController extends Controller
                 return redirect()->back();
             }
 
+            if($request->price && collect($request->price)->min() <= 0){
+                return redirect()->back();
+            }
+
             $currentDateTime = Carbon::now();
             $no_of_items_updated = 0;
 
@@ -288,8 +292,13 @@ class ConsignmentController extends Controller
                     $items_with_insufficient_stocks[] = $item_code;
                 }
 
+                $bin_update = ['consigned_qty' => (float)$qty];
+                if($price <= 0 && isset($request->price[$item_code])){
+                    $bin_update['consignment_price'] = preg_replace("/[^0-9 .]/", "", $request->price[$item_code]);
+                }
+
                 DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                    ->update(['consigned_qty' => (float)$qty]);
+                    ->update($bin_update);
 
                 // Consignment Sales Report
                 $has_existing_csri = false;
@@ -1826,7 +1835,7 @@ class ConsignmentController extends Controller
                         'modified_by' => Auth::user()->wh_user
                     ];
 
-                    if(isset($request->update_price)){
+                    if(isset($request->update_price) || isset($request->receive_delivery)){
                         $update_values['consignment_price'] = $basic_rate;
                     }
 

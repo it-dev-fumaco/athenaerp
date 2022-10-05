@@ -46,7 +46,7 @@
             });
           </script>
         @endif
-        @if (session()->has('success'))
+        @if (session()->has('success') && isset(session()->get('success')['message']))
           @php
               $received = session()->get('success');
           @endphp
