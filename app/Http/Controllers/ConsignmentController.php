@@ -549,7 +549,9 @@ class ConsignmentController extends Controller
 
         $item_classification = collect($items)->groupBy('item_classification');
 
-        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks', 'item_classification', 'item_count', 'existing_items'));
+        $audit_check = DB::table('tabConsignment Inventory Audit Report')->whereDate('audit_date_from', '<=', Carbon::parse($transaction_date))->whereDate('audit_date_to', '>=', Carbon::parse($transaction_date))->where('branch_warehouse', $branch)->exists();
+
+        return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks', 'item_classification', 'item_count', 'existing_items', 'audit_check'));
     }
 
     public function cancelProductSold($id){
@@ -557,25 +559,53 @@ class ConsignmentController extends Controller
         try {
             $sales_report = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                 ->where('status', '!=', 'Cancelled')->where('csr.name', $id)->get();
-            
-            $branch = isset($sales_report[0]) ? $sales_report[0]->branch_warehouse : null;
-            $items = DB::table('tabBin')->whereIn('item_code', collect($sales_report)->pluck('item_code'))->where('warehouse', $branch)->select('item_code', 'consigned_qty')->get();
+
+            if (!$sales_report) {
+                return redirect()->back()->with('error', 'Sales report not found.');
+            }
+
+            $report_details = isset($sales_report[0]) ? $sales_report[0] : [];
+
+            $items = DB::table('tabBin')->whereIn('item_code', collect($sales_report)->pluck('item_code'))->where('warehouse', $report_details->branch_warehouse)->select('item_code', 'consigned_qty')->get();
             $items = collect($items)->groupBy('item_code');
+
             foreach($sales_report as $item){
-                $item_details = isset($items[$item->item_code]) ? $items[$item->item_code][0] : [];
+                $consigned_qty = isset($items[$item->item_code]) ? $items[$item->item_code][0]->consigned_qty : 0;
                 
-                $new_qty = $item_details->consigned_qty + $item->qty;
-                DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update([
+                $new_qty = $consigned_qty + $item->qty;
+                DB::table('tabBin')->where('warehouse', $report_details->branch_warehouse)->where('item_code', $item->item_code)->update([
                     'consigned_qty' => $new_qty,
                     'modified_by' => Auth::user()->wh_user,
                     'modified' => Carbon::now()->toDateTimeString()
                 ]);
             }
+
             DB::table('tabConsignment Sales Report')->where('name', $id)->update([
                 'status' => 'Cancelled',
                 'modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user
             ]);
+
+            $logs = [
+                'name' => uniqid(),
+                'creation' => Carbon::now()->toDateTimeString(),
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Sales Report of '.$report_details->branch_warehouse.' for the date of '.$report_details->transaction_date.' has been cancelled by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => Carbon::now()->toDateTimeString(),
+                'reference_doctype' => 'Sales Report',
+                'reference_name' => $id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+            ];
+
+            DB::table('tabActivity Log')->insert($logs);
+
             DB::commit();
             return redirect()->back()->with('success', 'Cancelled');
         } catch (Exception $e) {

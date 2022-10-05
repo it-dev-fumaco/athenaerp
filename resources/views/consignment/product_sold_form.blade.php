@@ -167,7 +167,7 @@
                                 <div class="m-3">
                                     <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ $item_count <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
-                                @if ($existing_items)
+                                @if ($existing_items && !$audit_check)
                                     <div class="m-3">
                                         <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#cancelProductSold"><i class="fas fa-remove"></i> Cancel</button>
                                         <!-- Modal -->
