@@ -4761,6 +4761,7 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.tbl_activity_logs', compact('logs'));
     }
 
+    // /view_promodisers
     public function viewPromodisersList() {
         if (!in_array(Auth::user()->user_group, ['Director', 'Consignment Supervisor'])) {
             return redirect('/');
@@ -4769,7 +4770,7 @@ class ConsignmentController extends Controller
         $query = DB::table('tabWarehouse Users as wu')
             ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
             ->where('wu.user_group', 'Promodiser')
-            ->select('wu.wh_user', 'wu.last_login', 'wu.full_name', 'acw.warehouse', 'wu.name')
+            ->select('wu.wh_user', 'wu.last_login', 'wu.full_name', 'acw.warehouse', 'wu.name', 'wu.frappe_userid', 'wu.enabled')
             ->orderBy('wu.wh_user', 'asc')->get();
 
         $list = collect($query)->groupBy('wh_user')->toArray();
@@ -4785,9 +4786,11 @@ class ConsignmentController extends Controller
             }
             
             $result[] = [
+                'id' => $row[0]->frappe_userid,
                 'promodiser_name' => $row[0]->full_name,
                 'stores' => array_column($row, 'warehouse'),
                 'login_status' => $login_status,
+                'enabled' => $row[0]->enabled
             ];
         }
 
@@ -4795,6 +4798,156 @@ class ConsignmentController extends Controller
             ->where('status', 'Approved')->select('branch_warehouse', DB::raw('MIN(transaction_date) as transaction_date'))->groupBy('branch_warehouse')->pluck('transaction_date', 'branch_warehouse')->toArray();
 
         return view('consignment.supervisor.view_promodisers_list', compact('result', 'total_promodisers', 'stores_with_beginning_inventory'));
+    }
+
+    public function addPromodiserForm(){
+        $consignment_stores = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+            ->where('is_group', 0)->where('disabled', 0)->orderBy('warehouse_name', 'asc')->pluck('name');
+
+        $not_included = DB::table('tabWarehouse Users')->whereIn('user_group', ['Promodiser', 'Consignment Supervisor', 'Director'])->pluck('wh_user');
+        $not_included = collect($not_included)
+            ->push('Administrator')
+            ->push('Guest')
+            ->all();
+
+        $users = DB::table('tabUser')->whereNotIn('name', $not_included)->where('enabled', 1)->get();
+
+        return view('consignment.supervisor.add_promodiser', compact('consignment_stores', 'users'));
+    }
+
+    public function addPromodiser(Request $request){
+        DB::beginTransaction();
+        try {
+            $user_details = DB::table('tabUser as u')
+                ->join('tabUser Social Login as s', 'u.name', 's.parent')
+                ->where('u.name', $request->user)->where('u.enabled', 1)
+                ->select('u.name', 'u.enabled', 'u.full_name', 's.userid')
+                ->first();
+
+            if(!$user_details){
+                return redirect()->back()->with('error', 'User not found.');
+            }
+
+            $frappe_userid = $user_details->userid;
+
+            $wh_user = DB::table('tabWarehouse Users')->where('wh_user', $request->user)->first();
+
+            if($wh_user){
+                $frappe_userid = $wh_user->frappe_userid;
+                DB::table('tabAssigned Consignment Warehouse')->where('parent', $frappe_userid)->delete();
+
+                DB::table('tabWarehouse Users')->where('wh_user', $request->user)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'user_group' => 'Promodiser',
+                    'price_list' => 'Consignment Price',
+                    'is_roving_promodiser' => isset($request->roving) ? 1 : 0
+                ]);
+            }else{
+                DB::table('tabWarehouse Users')->insert([
+                    'name' => $user_details->userid,
+                    'creation' => Carbon::now()->toDateTimeString(),
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'wh_user' => $request->user,
+                    'full_name' => $user_details->full_name,
+                    'user_group' => 'Promodiser',
+                    'price_list' => 'Consignment Price',
+                    'frappe_userid' => $user_details->userid,
+                    'is_roving_promodiser' => isset($request->roving) ? 1 : 0
+                ]);
+            }
+
+            $warehouse_details = DB::table('tabWarehouse')->whereIn('name', $request->warehouses)->get();
+            $warehouse_details = collect($warehouse_details)->groupBy('name');
+
+            foreach ($request->warehouses as $i => $warehouse) {
+                DB::table('tabAssigned Consignment Warehouse')->insert([
+                    'name' => uniqid(),
+                    'creation' => Carbon::now()->toDateTimeString(),
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'idx' => $i + 1,
+                    'parent' => $frappe_userid,
+                    'parentfield' => 'consignment_store',
+                    'parenttype' => 'Warehouse Users',
+                    'warehouse' => $warehouse,
+                    'warehouse_name' => isset($warehouse_details[$warehouse]) ? $warehouse_details[$warehouse][0]->warehouse_name : $warehouse,
+                    'roving' => isset($request->roving) ? 1 : 0
+                ]);
+            }
+
+            DB::commit();
+            return redirect('/view_promodisers')->with('success', 'Promodiser Added.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
+        }
+    }
+
+    public function editPromodiserForm($id){
+        $user_details = DB::table('tabWarehouse Users')->where('frappe_userid', $id)->first();
+
+        if(!$user_details){
+            return redirect()->back()->with('error', 'User not found');
+        }
+
+        $assigned_warehouses = DB::table('tabAssigned Consignment Warehouse')->where('parent', $id)->pluck('warehouse');
+
+        $consignment_stores = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+            ->where('is_group', 0)->where('disabled', 0)->orderBy('warehouse_name', 'asc')->pluck('name');
+
+        return view('consignment.supervisor.edit_promodiser', compact('assigned_warehouses', 'user_details', 'consignment_stores', 'id'));
+    }
+
+    public function editPromodiser($id, Request $request){
+        DB::beginTransaction();
+        try {
+            $warehouses = $request->warehouses;
+
+            $assigned_warehouses = DB::table('tabAssigned Consignment Warehouse')->where('parent', $id)->pluck('warehouse');
+
+            $warehouse_arr = DB::table('tabWarehouse')->whereIn('name', $warehouses)->get();
+            $warehouse_arr = collect($warehouse_arr)->groupBy('name');
+
+            $a = array_diff($assigned_warehouses->toArray(), $warehouses);
+            $b = array_diff($warehouses, $assigned_warehouses->toArray());
+            if(count($a) > 0 || count($b) > 0){ // if changes are made to the assigned warehouses
+                DB::table('tabAssigned Consignment Warehouse')->where('parent', $id)->delete();
+
+                foreach($warehouses as $i => $warehouse){
+                    DB::table('tabAssigned Consignment Warehouse')->insert([
+                        'name' => uniqid(),
+                        'creation' => Carbon::now()->toDateTimeString(),
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'parent' => $id,
+                        'parentfield' => 'consignment_store',
+                        'parenttype' => 'Warehouse Users',
+                        'idx' => $i + 1,
+                        'warehouse' => $warehouse,
+                        'warehouse_name' => isset($warehouse_arr[$warehouse]) ? $warehouse_arr[$warehouse][0]->warehouse_name : $warehouse,
+                        'roving' => isset($request->roving) ? 1 : 0
+                    ]);
+                }
+            }
+
+            DB::table('tabWarehouse Users')->where('frappe_userid', $id)->update([
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'is_roving_promodiser' => isset($request->roving) ? 1 : 0,
+                'enabled' => isset($request->enabled) ? 1 : 0
+            ]);
+
+            DB::commit();
+            return redirect('/view_promodisers')->with('success', 'Promodiser details updated.');
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
+        }
     }
 
     public function getAuditDeliveries(Request $request) {
