@@ -245,6 +245,11 @@ class ConsignmentController extends Controller
                 ->where('branch_warehouse', $data['branch_warehouse'])->where('cutoff_period_from', $period_from)
                 ->where('cutoff_period_to', $period_to)->where('status', '!=', 'Cancelled')->first();
 
+            $current_product_sold_items = [];
+            if($csr_existing_record){
+                $current_product_sold_items = DB::table('tabConsignment Sales Report Item')->where('parent', $csr_existing_record->name)->pluck('qty', 'item_code');
+            }
+
             $csr_new_id = null;
             if (!$csr_existing_record) {
                 $csr_latest_id = DB::table('tabConsignment Sales Report')->max('name');
@@ -284,7 +289,10 @@ class ConsignmentController extends Controller
                 $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
                 $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
                 $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
-                $sold_qty = $consigned_qty - (float)$qty;
+
+                $qty_from_current_date_product_sold = isset($current_product_sold_items[$item_code]) ? $current_product_sold_items[$item_code] : 0;
+
+                $sold_qty = ($consigned_qty - (float)$qty) + $qty_from_current_date_product_sold;
                 $amount = ((float)$price * (float)$sold_qty);
                 $iar_amount = ((float)$price * (float)$qty);
 

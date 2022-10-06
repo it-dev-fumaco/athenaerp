@@ -162,7 +162,7 @@
                                                     @else
                                                         <div class="row">
                                                             <div class="p-1 col-1 d-flex flex-row justify-content-center align-items-center">₱</div>
-                                                            <div class="p-1 col-10"><input type="number" min="1" class="form-control" name="price[{{ $row->item_code }}]" required></div>
+                                                            <div class="p-1 col-10"><input type="text" class="form-control text-center price-input" name="price[{{ $row->item_code }}]"  required></div>
                                                         </div>
                                                     @endif
                                                 </td>
@@ -598,6 +598,11 @@
             $(this).prev().toggle();
 
             return false;
+        });
+
+        var input = document.querySelector('.price-input');
+        input.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9.\,]/, '');
         });
     });
 </script>
