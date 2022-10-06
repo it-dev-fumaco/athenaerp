@@ -38,11 +38,14 @@ class LoginController extends Controller
                     
                     if ($user) {
                         // attempt to do the login
-                        if(Auth::loginUsingId($user->frappe_userid)){
-                            DB::table('tabWarehouse Users')->where('name', $user->name)->update(['last_login' => Carbon::now()->toDateTimeString()]);
-
-                            return redirect('/');
                         } 
+                            if(Auth::loginUsingId($user->frappe_userid)){
+                                DB::table('tabWarehouse Users')->where('name', $user->name)->update(['last_login' => Carbon::now()->toDateTimeString()]);
+                                return redirect('/');
+                            } 
+                        }else{
+                            return redirect()->back()->withErrors('<span class="blink_text">Your account is disabled.</span>');
+                        }
                     } else {        
                         // validation not successful, send back to form 
                         return redirect()->back()->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
