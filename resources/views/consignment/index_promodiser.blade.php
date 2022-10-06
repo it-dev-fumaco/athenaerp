@@ -363,7 +363,7 @@
               </div>
             </div>
             <div class="card-body p-0 mt-2">
-              <div class="position-relative mb-4">
+              <div class="position-relative mb-4" id="chart-container">
                 <canvas id="sales-chart" height="200"></canvas>
               </div>
             </div>
@@ -469,6 +469,8 @@
     var intersect = true
 
     $(document).on('change', '#sr-branch-warehouse-select', function(){
+      $('#sales-chart').remove();
+      $('#chart-container').append('<canvas id="sales-chart" height="200"></canvas>');
       loadChart();
     });
 
