@@ -19,28 +19,52 @@
                 <div class="col-6">
                     <h4 class="text-center font-weight-bold m-2 text-uppercase">Inventory Report List</h4>
                 </div>
+                @if (Auth::check() && in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
+                <div class="col-2">
+                    <div class="float-right pt-2">
+                        <a href="/consignment_ledger" class="btn btn-info btn-sm">View Stock Movement</a>
+                    </div>
+                </div>
+                @endif
             </div>
             <div class="row">
                 <div class="col-md-8 offset-md-1">
                     <div class="card card-info card-outline">
                         <div class="card-body p-2">
-                            <h6 class="text-center font-weight-bolder text-uppercase">Inventory Report History</h6>
+                            <div class="d-flex flex-row">
+                                <div class="p-1 col-3">
+                                    <small class="d-block">Recent Period:</small>
+                                    <span class="d-block font-weight-bold text-center">{{ $displayed_data['recent_period'] }}</span>
+                                </div>
+                                <div class="p-1 col-3" style="border-left: 10px solid #2E86C1;">
+                                    <small class="d-block" style="font-size: 8pt;">Stores Submitted</small>
+                                    <h5 class="d-block font-weight-bold m-0">{{ $displayed_data['stores_submitted'] }}</h5>
+                                </div>
+                                <div class="p-1 col-3" style="border-left: 10px solid #E67E22;">
+                                    <small class="d-block" style="font-size: 8pt;">Stores Pending</small>
+                                    <h5 class="d-block font-weight-bold m-0">{{ $displayed_data['stores_pending'] }}</h5>
+                                </div>
+                                <div class="p-1 col-3" style="border-left: 10px solid #27AE60;">
+                                    <small class="d-block">Total Sales</small>
+                                    <h4 class="d-block font-weight-bold m-0">{{ $displayed_data['total_sales'] }}</h4>
+                                </div>
+                            </div>
                             <form id="inventory-audit-history-form" method="GET">
                                 <div class="d-flex flex-row align-items-center mt-2">
                                     <div class="p-1 col-6">
-                                        <select class="form-control inventory-audit-history-filter store" name="store" id="consignment-store-select-history">
+                                        <select class="form-control inventory-audit-history-filter store form-control-sm" name="store" id="consignment-store-select-history">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
                                     <div class="p-1 col-4 col-lg-2">
-                                        <select class="form-control inventory-audit-history-filter year" name="year">
+                                        <select class="form-control inventory-audit-history-filter year form-control-sm" name="year">
                                             @foreach ($select_year as $year)
                                             <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="p-1 col-2">
-                                        <a href="#" class="btn btn-secondary inventory-audit-history-refresh"><i class="fas fa-undo"></i></a>
+                                        <a href="#" class="btn btn-secondary inventory-audit-history-refresh btn-sm"><i class="fas fa-undo"></i></a>
                                     </div>
                                 </div>
                             </form>
@@ -55,12 +79,12 @@
                             <form action="#" id="pending-inventory-audit-filter-form">
                                 <div class="row p-1 mt-1 mb-1">
                                     <div class="col-10">
-                                        <select class="form-control" name="store" id="consignment-store-select">
+                                        <select class="form-control form-control-sm" name="store" id="consignment-store-select">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
                                     <div class="col-2 p-0">
-                                        <a href="#" class="btn btn-secondary consignment-store-refresh m-0"><i class="fas fa-undo"></i></a>
+                                        <a href="#" class="btn btn-secondary consignment-store-refresh m-0 btn-sm"><i class="fas fa-undo"></i></a>
                                     </div>
                                 </div>
                             </form>
@@ -72,6 +96,25 @@
         </div>
 	</div>
 </div>
+
+<style>
+        .select2{
+			width: 100% !important;
+			outline: none !important;
+		}
+		.select2-selection__rendered {
+			line-height: 25px !important;
+			outline: none !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 31px !important;
+			padding-top: 1.5%;
+			outline: none !important;
+		}
+		.select2-selection__arrow {
+			height: 36px !important;
+		}
+</style>
 @endsection
 
 @section('script')

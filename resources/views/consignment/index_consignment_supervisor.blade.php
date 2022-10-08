@@ -21,35 +21,37 @@
                 <div class="col-12 m-0 p-0">
                     <div class="row p-0 m-0">
                         <div class="col-6 col-md-3 p-1">
-                            <a href="/view_sales_report">
-                                <div class="info-box bg-gradient-primary m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive m-0">Sales Report</span>
-                                        <span class="info-box-number font-responsive m-0">{{ number_format($total_item_sold) }}</span>
-                                        <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
+                            <a href="/inventory_audit">
+                                <div class="info-box bg-gradient-info m-0">
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_pending_inventory_audit) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-left col-8">Inventory Report</div>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
                         </div>
                         <div class="col-6 col-md-3 p-1">
-                            <a href="/inventory_audit">
-                                <div class="info-box bg-gradient-info m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive m-0">Inventory Audit</span>
-                                        <span class="info-box-number font-responsive m-0">{{ number_format($total_pending_inventory_audit) }}</span>
-                                        <span class="progress-description font-responsive" style="font-size: 7pt;">{{ $duration }}</span>
+                            <a href="/view_consignment_deliveries">
+                                <div class="info-box bg-gradient-primary m-0">
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($pending_to_receive) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending Item(s)</small></div>
+                                            <div class="p-1 text-left col-8">To Receive</div>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
                         </div>
+                    
                         <div class="col-6 col-md-3 p-1">
                             <a href="/stocks_report/list">
                                 <div class="info-box bg-gradient-warning m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive">Stock Transfers</span>
-                                        <span class="info-box-number font-responsive">{{ number_format($total_stock_transfers) }}</span>
-                                        <div class="progress">
-                                            <div class="progress-bar"></div>
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_stock_transfers) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">For Approval</small></div>
+                                            <div class="p-1 text-left col-8">Stock Transfers</div>
                                         </div>
                                     </div>
                                 </div>
@@ -58,11 +60,10 @@
                         <div class="col-6 col-md-3 p-1">
                             <a href="/beginning_inv_list" style="color: inherit">
                                 <div class="info-box bg-gradient-secondary m-0">
-                                    <div class="info-box-content p-1">
-                                        <span class="info-box-text font-responsive">Stock Adjustments</span>
-                                        <span class="info-box-number font-responsive">{{ number_format($total_stock_adjustments) }}</span>
-                                        <div class="progress">
-                                            <div class="progress-bar"></div>
+                                    <div class="info-box-content p-0">
+                                        <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_stock_adjustments) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-left col-8">Beginning Entries</div>
                                         </div>
                                     </div>
                                 </div>
@@ -189,13 +190,97 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-12">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header p-2">
+                                    <h5>Deliveries Pending to Receive</h5>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="d-flex flex-row align-items-center mt-2">
+                                        <div class="p-1 col-4">
+                                            <select class="form-control" name="store" id="consignment-store-select">
+                                                <option value="">Select Store</option>
+                                            </select>
+                                        </div>
+                                        <div class="p-1">
+                                            <button class="btn btn-primary" type="button" id="to-receive-search"><i class="fas fa-search"></i> Search</button>
+                                        </div>
+                                        <div class="p-1">
+                                            <button type="button" class="btn btn-secondary reload-to-receive-table"><i class="fas fa-undo"></i></button>
+                                        </div>
+                                    </div>
+                                    <div id="pending-to-receive-table" class="overflow-auto"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
+@if (session()->has('error'))
+    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-navy">
+                    <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-info-circle"></i> Error</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #fff;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{ session()->get('error') }}
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+@if (session()->has('success'))
+    @php
+        $received = session()->get('success');
+    @endphp
+    <div class="modal fade" id="receivedDeliveryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-navy">
+                    <h5 class="modal-title" id="exampleModalLabel">
+                        @switch($received['action'])
+                            @case('received')
+                                Item(s) Received
+                                @break
+                            @case('canceled')
+                                Stock Transfer Cancelled
+                                @break
+                            @default
+                                Delivered Item(s)
+                        @endswitch
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" style="color: #fff">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" style="font-size: 10pt;">
+                    <div class="row">
+                        <div class="col-2">
+                            <center>
+                                <p class="text-success text-center mb-0" style="font-size: 4rem;">
+                                    <i class="fas fa-check-circle"></i>
+                                </p>
+                            </center>
+                        </div>
+                        <div class="col-10">
+                            <span>{{ $received['message'] }}</span> <br>
+                            <span>Branch: <b>{{ $received['branch'] }}</b></span> <br>
+                            <span>Total Amount: <b>₱ {{ number_format(collect($received)->sum('amount'), 2) }}</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 <style>
     .custom-navpill .nav-item .active{
         background-color:rgba(58, 112, 170, 0.905);
@@ -295,6 +380,9 @@
 
 @section('script')
 <script>
+    $('#errorModal').modal('show');
+    $('#receivedDeliveryModal').modal('show');
+
     function makesvg(percentage, inner_text=""){
         var abs_percentage = Math.abs(percentage).toString();
         var percentage_str = percentage.toString();
@@ -385,6 +473,41 @@
 
             loadData();
         });
+
+        $(document).on('click', '.reload-to-receive-table', function(e) {
+            e.preventDefault();
+            $('#consignment-store-select').empty().trigger('change');
+            loadPendingToReceive('', 1);
+        });
+
+        $(document).on('click', '#to-receive-search', function (){
+            var warehouse = $('#consignment-store-select').val();
+            warehouse = warehouse ? warehouse : '';
+            loadPendingToReceive(warehouse, 1);
+        });
+
+        $(document).on('click', '#to-receive-pagination a', function(event){
+            event.preventDefault();
+            var warehouse = $('#consignment-store-select').val();
+            warehouse = warehouse ? warehouse : '';
+
+            var page = $(this).attr('href').split('page=')[1];
+            loadPendingToReceive(warehouse, page);
+        });
+
+        loadPendingToReceive('', 1);
+        function loadPendingToReceive(warehouse, page){
+            $.ajax({
+				type: "GET",
+				url: "/view_consignment_deliveries?page=" + page,
+                data: {
+                    store: warehouse
+                },
+				success: function (response) {
+					$('#pending-to-receive-table').html(response);
+				}
+			});
+        }
 
         function loadData() {
             loadDeliveries();

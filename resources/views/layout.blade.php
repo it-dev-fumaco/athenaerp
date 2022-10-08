@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>ERP Inventory - {{ $namePage }}</title>
+	<title>{{ $namePage }} - {{ Auth::check() ? Auth::user()->full_name : null }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -462,6 +462,15 @@
 		}
 	</style>
 	@yield('style')
+	<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M1ZN4YBE16"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-M1ZN4YBE16');
+</script>
 </head>
 <body class="hold-transition layout-top-nav">
 	<div id="loader-wrapper">
@@ -494,6 +503,9 @@
 												<center>
 													<i class="fas fa-user"></i> <span class="d-xl-inline-block">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 												</center>
+											</a>
+											<a href="/user_manual" class="dropdown-item w-100" style="color: #0074CC !important">
+												<center><i class="fas fa-question-circle"></i> <span class="d-xl-inline-block">Help</span></center>
 											</a>
 											<a href="/logout" class="dropdown-item w-100" style="color: #0074CC !important">
 												<center><i class="fas fa-sign-out-alt"></i> <span class="d-xl-inline-block">Sign Out</span></center>
@@ -549,7 +561,7 @@
 						<div class="btn-group" role="group" style="width: 33%;">
 							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
-								<a class="dropdown-item" href="/beginning_inventory_list">Beginning Inventory</a>
+								<a class="dropdown-item" href="/beginning_inv_list">Beginning Inventory</a>
 								<a class="dropdown-item" href="/promodiser/damage_report/form">Damaged Items Entry</a>
 							</div>
 						</div>
@@ -1115,7 +1127,7 @@
 <script src="{{ asset('/updated/plugins/daterangepicker/daterangepicker.js') }}"></script>
 <script src="{{ asset('/updated/plugins/inputmask/jquery.inputmask.min.js') }}"></script>
 <!-- Select2 -->
-<script src="{{ asset('/updated/plugins/select2/js/select2.min.js') }}"></script>
+<script src="{{ asset('/updated/plugins/select2/js/select2.full.js') }}"></script>
 <!-- bootstrap datepicker -->
 <script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
 <!-- iCheck 1.0.1 -->

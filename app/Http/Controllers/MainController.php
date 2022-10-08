@@ -31,9 +31,9 @@ class MainController extends Controller
         $transactionDate = Carbon::parse($transaction_date);
 
         $start_date = Carbon::parse($transaction_date)->subMonth();
-        $end_date = Carbon::parse($transaction_date)->addMonth();
+        $end_date = Carbon::parse($transaction_date)->addMonths(2);
 
-        $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+        $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
 
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
@@ -84,9 +84,9 @@ class MainController extends Controller
                 $currentDateTime = Carbon::now();
 
                 $start_date = Carbon::now()->subMonth();
-                $end_date = Carbon::now()->addMonth();
+                $end_date = Carbon::now()->addMonths(2);
 
-                $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+                $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
 
                 $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
@@ -214,14 +214,11 @@ class MainController extends Controller
 
                 // get incoming / to receive items
                 $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
-
                 $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
 
                 $delivery_report_query = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->when($beginning_inventory_start_date, function ($q) use ($beginning_inventory_start_date){ // do not include ste's of received items
-                        return $q->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date);
-                    })
+                    ->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date)
                     ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
                     ->where('ste.purpose', 'Material Transfer')
                     ->where('ste.docstatus', 1)
@@ -334,9 +331,9 @@ class MainController extends Controller
         $currentDateTime = Carbon::now();
 
         $start_date = Carbon::now()->subMonth();
-        $end_date = Carbon::now()->addMonth();
+        $end_date = Carbon::now()->addMonths(2);
 
-        $period = CarbonPeriod::create($start_date, '1 month' , $end_date);
+        $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
 
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
@@ -392,17 +389,24 @@ class MainController extends Controller
         }
 
         // get total stock transfer
-        $total_stock_transfers = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
-            ->where('purpose', 'Material Transfer')->where('naming_series', 'STEC-')->count();
+        $total_stock_transfers = DB::table('tabStock Entry')->whereDate('delivery_date', '>', '2022-06-25')
+            ->whereIn('transfer_as', ['Store Transfer', 'For Return'])->where('purpose', 'Material Transfer')
+            ->where('docstatus', 0)->count();
+
+        $pending_to_receive = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->whereDate('ste.delivery_date', '>=', '2022-06-25')
+            ->whereIn('ste.transfer_as', ['Consignment', 'For Return', 'Store Transfer'])
+            ->where('ste.purpose', 'Material Transfer')
+            ->where('ste.docstatus', 1)
+            ->where(function($q) {
+                $q->whereNull('sted.consignment_status')
+                ->orwhere('sted.consignment_status', '!=', 'Received');
+            })
+            ->count();
 
         // get total stock adjustments
-        $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->count();
-
-        $total_item_sold = DB::table('tabConsignment Sales Report as csr')
-            ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-            ->where('csri.qty', '>', 0)->where('csr.status', '!=', 'Cancelled')
-            ->whereBetween('csr.transaction_date', [Carbon::parse($duration_from)->format('Y-m-d'), Carbon::parse($duration_to)->format('Y-m-d')])
-            ->groupBy('csri.item_code')->count();
+        $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->where('status', 'For Approval')->count();
 
         $total_pending_inventory_audit = 0;
         // get total pending inventory audit
@@ -430,7 +434,7 @@ class MainController extends Controller
             $end = $second_cutoff;
         }
 
-        $cutoff_date = $this->getCutoffDate($end->endOfDay());
+        $cutoff_date = $this->getCutoffDate(Carbon::now()->endOfDay());
         $period_from = $cutoff_date[0]->addDay();
         $period_to = $cutoff_date[1];
 
@@ -451,14 +455,17 @@ class MainController extends Controller
 
             $start = $start->startOfDay();
 
+            $check = Carbon::parse($start)->between($period_from, $period_to);
             if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::parse($period_to)->startOfDay())) {
                 if ($last_audit_date->endOfDay()->lt($end) && $beginning_inventory_transaction_date) {
-                    $total_pending_inventory_audit++;
+                        if(!$check) {
+                        $total_pending_inventory_audit++;
+                    }
                 }
             }
         }
 
-        $start_date = Carbon::parse('2022-01-25')->startOfDay()->format('Y-m-d');
+        $start_date = Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
         $end_date = Carbon::now();
 
         $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
@@ -505,7 +512,7 @@ class MainController extends Controller
             $sales_report_included_years[] = $i;
         }
 
-        return view('consignment.index_consignment_supervisor', compact('duration', 'total_item_sold', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'sales_report_included_years'));
+        return view('consignment.index_consignment_supervisor', compact('duration', 'pending_to_receive', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'sales_report_included_years'));
     }
 
     public function search_results(Request $request){
@@ -1139,7 +1146,10 @@ class MainController extends Controller
 
     public function get_select_filters(Request $request){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 0)->where('disabled', 0)
-            ->where('category', 'Physical')
+            ->whereIn('category', ['Physical', 'Consigned'])
+            ->when($request->q, function ($q) use ($request){
+                $q->where('name', 'LIKE', '%'.$request->q.'%')->orWhere('warehouse_name', 'LIKE', '%'.$request->q.'%');
+            })->where('disabled', 0)
             ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
         $item_groups = DB::table('tabItem Group')->where('is_group', 0)->where('name','LIKE', '%'.$request->q.'%')
@@ -1232,6 +1242,7 @@ class MainController extends Controller
         return null;
     }
 
+    // /material_issue
     public function view_material_issue(Request $request){
         if(!$request->arr){
             return view('material_issue');
@@ -1294,6 +1305,7 @@ class MainController extends Controller
         return response()->json(['records' => $list]);
     }
 
+    // /material_transfer_for_manufacture
     public function view_material_transfer_for_manufacture(Request $request){
         if(!$request->arr){
             return view('material_transfer_for_manufacture');
@@ -1437,6 +1449,7 @@ class MainController extends Controller
         return response()->json(['records' => $list]);
     }
 
+    // /material_transfer
     public function view_material_transfer(Request $request){
         if(!$request->arr){
             return view('material_transfer');
@@ -1949,6 +1962,7 @@ class MainController extends Controller
         return view('deliveries_modal_content', compact('data', 'is_stock_entry'));
     }
 
+    // /submit_transaction
     public function submit_transaction(Request $request){
         DB::beginTransaction();
         try {
@@ -2019,7 +2033,7 @@ class MainController extends Controller
             }
 
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'status' => $status, 
                 'transfer_qty' => $request->qty, 
                 'qty' => $request->qty, 
@@ -2412,6 +2426,7 @@ class MainController extends Controller
         }
     }
 
+    // /checkout_picking_slip_item
     public function checkout_picking_slip_item(Request $request){
         DB::beginTransaction();
         try {
@@ -2539,7 +2554,7 @@ class MainController extends Controller
 
             $now = Carbon::now();
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'status' => 'Issued',
                 'barcode' => $request->barcode,
                 'date_modified' => $now->toDateTimeString()
@@ -2991,7 +3006,12 @@ class MainController extends Controller
             $attributes[$row->parent][$row->attribute] = $row->attribute_value;
         }
 
-        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input'));
+        $consignment_branches = [];
+        if (Auth::user()->user_group == 'Promodiser') {
+            $consignment_branches = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        }
+
+        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches'));
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -3126,34 +3146,46 @@ class MainController extends Controller
     }
 
     public function get_stock_ledger(Request $request, $item_code){
+        $warehouse_user = [];
+        if($request->wh_user != '' and $request->wh_user != 'null'){
+            $user_qry = DB::table('tabWarehouse Users')->where('full_name', 'LIKE', '%'.$request->wh_user.'%')->orWhere('wh_user', 'LIKE', '%'.$request->wh_user.'%')->first();
+
+            $warehouse_user = $user_qry ? [$user_qry->wh_user, $user_qry->full_name] : [];
+            $warehouse_user = $warehouse_user ? $warehouse_user : [$request->wh_user];
+        }
+
         $logs = DB::table('tabStock Ledger Entry as sle')->where('sle.item_code', $item_code)
             ->select(DB::raw('(SELECT GROUP_CONCAT(name) FROM `tabPacking Slip` where delivery_note = sle.voucher_no) as dr_voucher_no'))
             ->addSelect(DB::raw('
                 (CASE
-                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT date_modified FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
                     WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
-                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.date_modified FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.date_modified, psi.modified) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                 ELSE
                     sle.posting_date
                 END) as ste_date_modified'
             ))
             ->addSelect(DB::raw('
                 (CASE
-                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT session_user FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
-                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.session_user FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.session_user, psi.modified_by) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                ELSE
+                    sle.modified_by
                 END) as ste_session_user'
             ))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) as ste_purpose'))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(sales_order_no) FROM `tabStock Entry` where name = sle.voucher_no) as ste_sales_order'))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(DISTINCT purchase_order) FROM `tabPurchase Receipt Item` where parent = sle.voucher_no and item_code = sle.item_code) as pr_voucher_no'))
             ->addSelect('sle.voucher_type', 'sle.voucher_no', 'sle.warehouse', 'sle.actual_qty', 'sle.qty_after_transaction', 'sle.posting_date')
-            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($request){
-				return $q->where(DB::raw('
+            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($warehouse_user){
+				return $q->whereIn(DB::raw('
                     (CASE
-                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT session_user FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
-                        WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.session_user FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.session_user, psi.modified_by) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
+                    ELSE
+                        sle.modified_by
                     END)'
-                ), $request->wh_user);
+                ), $warehouse_user);
             })
             ->when($request->erp_wh != '' and $request->erp_wh != 'null', function($q) use ($request){
 				return $q->where('sle.warehouse', $request->erp_wh);
@@ -3163,17 +3195,17 @@ class MainController extends Controller
 
 				return $q->whereBetween(DB::raw('
                     (CASE
-                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT date_modified FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
                         WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
                         WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.date_modified FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                     ELSE
                         sle.posting_date
                     END)'
-                ), [$dates[0], $dates[1]]);
+                ), [Carbon::parse($dates[0]), Carbon::parse($dates[1])]);
             })
             ->orderBy('sle.posting_date', 'desc')->orderBy('sle.posting_time', 'desc')
             ->orderBy('sle.name', 'desc')->paginate(20);
-            
+
         $list = [];
         foreach($logs as $row){
             if($row->voucher_type == 'Delivery Note'){
@@ -3233,8 +3265,13 @@ class MainController extends Controller
 
     public function upload_item_image(Request $request){
         // get item removed image file names for delete
+
+        $existing_images = $request->existing_images ? $request->existing_images : [];
         $removed_images = DB::table('tabItem Images')->where('parent', $request->item_code)
-            ->whereNotIn('name', $request->existing_images)->pluck('image_path');
+            ->when($existing_images, function ($q) use ($existing_images){
+                $q->whereNotIn('name', $existing_images);
+            })
+            ->pluck('image_path');
 
         foreach($removed_images as $img) {
             // delete from file directory
@@ -3243,7 +3280,10 @@ class MainController extends Controller
 
         // delete from table item images
         DB::table('tabItem Images')->where('parent', $request->item_code)
-            ->whereNotIn('name', $request->existing_images)->delete();
+            ->when($existing_images, function ($q) use ($existing_images){
+                $q->whereNotIn('name', $existing_images);
+            })
+            ->delete();
 
         $now = Carbon::now();
         if($request->hasFile('item_image')){
@@ -3313,6 +3353,7 @@ class MainController extends Controller
             ->count();
     }
 
+    // /production_to_receive
     public function view_production_to_receive(Request $request){
         if(!$request->arr){
             return view('production_to_receive');
@@ -3322,10 +3363,10 @@ class MainController extends Controller
         $allowed_warehouses = $this->user_allowed_warehouse($user);
         $list = [];
 
-        $q = DB::connection('mysql_mes')->table('production_order AS po')
-            ->whereNotIn('po.status', ['Cancelled'])->whereIn('po.fg_warehouse', $allowed_warehouses)
-            ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')->where('po.produced_qty', '>', 0)
-            ->whereRaw('po.produced_qty > feedback_qty')->select('po.*')->get();
+        $q = DB::connection('mysql_mes')->table('production_order')
+            ->whereNotIn('status', ['Cancelled'])->whereIn('fg_warehouse', $allowed_warehouses)
+            ->where('fg_warehouse', 'P2 - Housing Temporary - FI')->where('produced_qty', '>', 0)
+            ->whereRaw('produced_qty > feedback_qty')->get();
 
         foreach ($q as $row) {
             $parent_warehouse = $this->get_warehouse_parent($row->fg_warehouse);
@@ -4390,6 +4431,7 @@ class MainController extends Controller
         return view('returns');
     }
 
+    // /replacements
     public function replacements(Request $request){
         if(!$request->arr){
             return view('replacement');
@@ -4453,6 +4495,7 @@ class MainController extends Controller
          return response()->json(['records' => $list]);
     }
 
+    // /receipts
     public function receipts(Request $request){
         if(!$request->arr){
            return view('receipt');
@@ -4610,6 +4653,7 @@ class MainController extends Controller
         return response()->json(['picking' => $list]);
     }
 
+    // /picking_slip
     public function view_picking_slip() {
         return view('picking_slip');
     }
@@ -4783,6 +4827,7 @@ class MainController extends Controller
         return view('return_modal_content', compact('data', 'is_stock_entry'));
     }
 
+     // /submit_dr_sales_return
     public function submit_dr_sales_return(Request $request){
         DB::beginTransaction();
         try {
@@ -4815,7 +4860,7 @@ class MainController extends Controller
             }
 
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'item_status' => 'Returned',
                 'barcode_return' => $request->barcode,
                 'date_modified' => Carbon::now()->toDateTimeString()
@@ -4849,6 +4894,7 @@ class MainController extends Controller
         }
     }
     
+    // /create_feedback
     public function create_feedback(Request $request){
         DB::beginTransaction();
 		try {
@@ -5058,7 +5104,7 @@ class MainController extends Controller
 				'batch_no' => null,
 				'valuation_rate' => $rate,
 				'material_request' => null,
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'validate_item_code' => $production_order_details->production_item,
 				't_warehouse_personnel' => null,
 				's_warehouse_personnel' => null,

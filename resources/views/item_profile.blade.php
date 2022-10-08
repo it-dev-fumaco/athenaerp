@@ -43,8 +43,43 @@
                         <a class="nav-link d-block d-md-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
                     </li>
                     @endif
+                    @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Promodiser', 'Director']))
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#consignment-stock-movement">
+                            <span class="d-none d-md-block">Consignment Stock Movement</span>
+                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                        </a>
+                    </li>
+                    @endif
                 </ul>
                 <div class="tab-content">
+                    <div class="container-fluid tab-pane bg-white" id="consignment-stock-movement">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="row">
+                                    <div class="col-4 p-2">
+                                        @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
+                                        <select class="form-control csm-filter" name="store" id="consignment-store-select"></select>
+                                        @else
+                                        @if (count($consignment_branches) > 1)
+                                        <select class="form-control csm-filter" name="store">
+                                            @foreach ($consignment_branches as $store)
+                                            <option value="{{ $store }}">{{ $store }}</option>
+                                            @endforeach
+                                        </select>
+                                        @endif
+                                        @if ((count($consignment_branches) == 1))
+                                        <input type="hidden" class="csm-filter" name="store" value="{{ $consignment_branches[0] }}">
+                                        @endif
+                                        @endif
+                                    </div>
+                                    <div class="col-12">
+                                        <div id="consignment-ledger-content"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="item-info" class="container-fluid tab-pane active bg-white">
                         <div class="row">
                             @php
@@ -824,6 +859,27 @@
                 font-size: 8pt !important;
             }
         }
+
+        .select2{
+			width: 100% !important;
+			outline: none !important;
+            font-size: 9pt;
+		}
+		.select2-selection__rendered {
+			line-height: 18px !important;
+			outline: none !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 29px !important;
+			padding-top: 1.5%;
+			outline: none !important;
+		}
+		.select2-selection__arrow {
+			height: 28px !important;
+		}
+        .myFont{
+            font-size:9pt;
+        }
     </style>
 @endsection
 @section('script')
@@ -963,7 +1019,7 @@
             });
         }
 
-        get_stock_ledger();
+        get_stock_ledger(1);
         function get_stock_ledger(page){
             var item_code = '{{ $item_details->name }}';
             var erp_user = $('#erp-warehouse-user-filter').val();
@@ -1018,6 +1074,7 @@
         });
 
         $("#ath_dates").daterangepicker({
+            autoUpdateInput: false,
             placeholder: 'Select Date Range',
             ranges: {
                 'Today': [moment(), moment()],
@@ -1028,17 +1085,27 @@
                 'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
             },
             locale: {
-                // format: 'YYYY-MM-DD',
                 format: 'YYYY-MMM-DD',
                 separator: " to "
             },
             startDate: moment().subtract(30, 'days'), endDate: moment(),
-            // startDate: '2018-06-01', endDate: moment(),
         });
+
+        $("#ath_dates").on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD'));
+            get_athena_transactions();
+        });
+
+        $("#ath_dates").on('cancel.daterangepicker', function (ev, picker) {
+            $(this).val('');
+            get_athena_transactions();
+        });
+
         $("#ath_dates").val('');
         $("#ath_dates").attr("placeholder","Select Date Range");
 
         $("#erp_dates").daterangepicker({
+            autoUpdateInput: false,
             ranges: {
                 'Today': [moment(), moment()],
                 'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
@@ -1054,31 +1121,22 @@
             startDate: moment().subtract(30, 'days'), endDate: moment(),
         });
 
+        $("#erp_dates").on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD'));
+            get_stock_ledger();
+        });
+
+        $("#erp_dates").on('cancel.daterangepicker', function (ev, picker) {
+            $(this).val('');
+            get_stock_ledger();
+        });
+
         $("#erp_dates").val('');
 		$("#erp_dates").attr("placeholder","Select Date Range");
 
         $('#erpReset').click(function(){
             $('#erp-warehouse-filter').empty();
             $('#erp-warehouse-user-filter').empty();
-            $(function() {
-                $("#erp_dates").daterangepicker({
-                    ranges: {
-                        'Today': [moment(), moment()],
-                        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                        'This Month': [moment().startOf('month'), moment().endOf('month')],
-                        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-                    },
-                    locale: {
-                        format: 'YYYY-MMM-DD',
-                        separator: " to "
-                    },
-                    // startDate: moment().subtract(30, 'days'), endDate: moment(),
-                    startDate: '2018-01-01', endDate: moment(),
-
-                });
-            });
             $("#erp_dates").val('');
             $("#erp_dates").attr("placeholder","Select Date Range");
             get_stock_ledger();
@@ -1090,44 +1148,56 @@
             $('#warehouse-user-filter').empty();
             $('#erp-warehouse-filter').empty();
             $('#erp-warehouse-user-filter').empty();
-            $(function() {
-                $("#ath_dates").daterangepicker({
-                    ranges: {
-                        'Today': [moment(), moment()],
-                        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                        'This Month': [moment().startOf('month'), moment().endOf('month')],
-                        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-                    },
-                    locale: {
-                        format: 'YYYY-MMM-DD',
-                        separator: " to "
-                    },
-                    startDate: moment().subtract(30, 'days'), endDate: moment(),
-                });
-            });
-            $(function() {
-                $("#erp_dates").daterangepicker({
-                    ranges: {
-                        'Today': [moment(), moment()],
-                        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                        'This Month': [moment().startOf('month'), moment().endOf('month')],
-                        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-                    },
-                    locale: {
-                        format: 'YYYY-MMM-DD',
-                        separator: " to "
-                    },
-                    startDate: moment().subtract(30, 'days'), endDate: moment(),
-                });
-            });
             $("#erp_dates").val('');
             $("#erp_dates").attr("placeholder","Select Date Range");
             $("#ath_dates").val('');
             $("#ath_dates").attr("placeholder","Select Date Range");
+        });
+
+        $('#consignment-store-select').select2({
+            dropdownCssClass: "myFont",
+            placeholder: "Select Store",
+            ajax: {
+                url: '/consignment_stores',
+                method: 'GET',
+                dataType: 'json',
+                data: function (data) {
+                    return {
+                        q: data.term // search term
+                    };
+                },
+                processResults: function (response) {
+                    return {
+                        results: response
+                    };
+                },
+                cache: true
+            }
+        });
+
+        $(document).on('change', '.csm-filter', function(e){
+            load();
+        });
+
+        load();
+        function load(page) {
+            var item_code = '{{ $item_details->name }}';
+            var branch_warehouse = $('.csm-filter').eq(0).val();
+
+            $.ajax({
+                type: "GET",
+                url: "/consignment_stock_movement/" + item_code + "?page=" + page,
+                data: {branch_warehouse},
+                success: function (response) {
+                    $('#consignment-ledger-content').html(response);
+                }
+            });
+        }
+
+        $(document).on('click', '#consignment-stock-movement-pagination a', function(event){
+            event.preventDefault();
+            var page = $(this).attr('href').split('page=')[1];
+            load(page);
         });
     </script>
 @endsection

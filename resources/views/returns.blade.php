@@ -198,6 +198,7 @@
 				$(element).removeClass('is-invalid');
 			},
 			submitHandler: function(form) {
+				$('#dr-modal form button').prop('disabled', 'true');
 				$.ajax({
 					type: 'POST',
 					url: $(form).attr('action'),
@@ -207,11 +208,14 @@
 							showNotification("success", response.message, "fa fa-check");
 							angular.element('#anglrCtrl').scope().loadData();
 							$('#dr-modal').modal('hide');
+							$('#dr-modal form button').removeAttr('disabled');
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
+							$('#dr-modal form button').removeAttr('disabled');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
+						$('#dr-modal form button').removeAttr('disabled');
 					}
 				});
 			}

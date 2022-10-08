@@ -38,11 +38,14 @@ class LoginController extends Controller
                     
                     if ($user) {
                         // attempt to do the login
-                        if(Auth::loginUsingId($user->frappe_userid)){
-                            DB::table('tabWarehouse Users')->where('name', $user->name)->update(['last_login' => Carbon::now()->toDateTimeString()]);
-
-                            return redirect('/');
-                        } 
+                        if($user->enabled){
+                            if(Auth::loginUsingId($user->frappe_userid)){
+                                DB::table('tabWarehouse Users')->where('name', $user->name)->update(['last_login' => Carbon::now()->toDateTimeString()]);
+                                return redirect('/');
+                            } 
+                        }else{
+                            return redirect()->back()->withErrors('<span class="blink_text">Your account is disabled.</span>');
+                        }
                     } else {        
                         // validation not successful, send back to form 
                         return redirect()->back()->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
@@ -53,7 +56,8 @@ class LoginController extends Controller
                     ->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
             }
         } catch (adLDAPException $e) {
-            return $e;
+            return redirect()->back()->withInput($request->except('password'))
+                ->withErrors('<span class="blink_text">Cannot connect to LDAP.<br>Please contact your system administrator.</span>');
         }
     }
 

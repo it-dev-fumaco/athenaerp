@@ -10,10 +10,10 @@ Instructions using GUI and Commands
     Setup database connections in .env file
          - ERP (for dev)
             DB_CONNECTION=mysql
-            DB_HOST=10.0.0.191
+            DB_HOST=10.0.49.72
             DB_PORT=3306
             DB_DATABASE=_3f2ec5a818bccb73
-            DB_USERNAME=erp
+            DB_USERNAME=web
             DB_PASSWORD=fumaco
         - MES (for dev)
             DB_CONNECTION_1=mysql
@@ -47,3 +47,5 @@ Instructions to enable LDAP support for PHP
     Find "extension=ldap"
     Remove ";" to uncomment the line
     Save and restart apache
+    
+ Note: Install laravel-webp package for item image uploading

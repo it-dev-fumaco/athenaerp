@@ -99,6 +99,17 @@
             <span class="{{ $item }}">{{ $item }}</span>
         @endforeach
     </div>
+    <div class="m-2">
+        @php
+            if($inv_name) {
+                $transaction_date = $detail ? \Carbon\Carbon::parse($detail->transaction_date)->format('Y-m-d') : \Carbon\Carbon::now()->format('Y-m-d');
+            } else {
+                $transaction_date = \Carbon\Carbon::now()->format('Y-m-d');
+            }
+        @endphp
+        <label for="transaction-date" style="font-size: 16px;">Transaction Date</label>
+        <input type="date" id="transaction-date" name="transaction_date" class="form-control validate" value="{{ $transaction_date }}" required>
+    </div>
     <table class="table table-striped text-left" id="items-table"> 
         <thead>
             <th class="font-responsive text-center p-1 align-middle" style="width: 38%">Item Code</th>
@@ -174,7 +185,7 @@
                                                             <img class="d-block w-100" id="mobile-{{ $item['item_code'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
                                                         </picture>
                                                     </div>
-                                                    <span class='d-none5' id="mobile-{{ $item['item_code'] }}-image-data">0</span>
+                                                    <span class='d-none' id="mobile-{{ $item['item_code'] }}-image-data">0</span>
                                                 </div>
                                                 @if ($img_count > 1)
                                                 <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
@@ -203,6 +214,12 @@
             @endforelse
         </tbody>
     </table>
+
+    <div class="col-12 text-left">
+        <label style="font-size: 9pt;">Remarks</label>
+        <textarea name="remarks" rows="5" class="form-control" placeholder='Remarks' id="remarks" style="font-size: 9pt;">{{ $remarks }}</textarea>
+        <br>
+    </div>
     
     <div class="col-12 text-right">
         <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
@@ -258,6 +275,14 @@
         var branch = '{{ $branch }}';
         var existing_record = '{{ $inv_name ? 1 : 0 }}';
 
+        $(document).on('change', '#transaction-date', function(e){
+            if(existing_record == 1){
+                enable_submit();
+            }
+
+            validate_submit();
+        });
+
         $(document).on('keyup', '.validate', function(){            
             if(existing_record == 1){
                 enable_submit();
@@ -279,6 +304,13 @@
             valid_branch();
         }
 
+        $('#remarks').keyup(function(){
+            if(existing_record == 1){
+                enable_submit();
+            }
+            validate_submit();
+        });
+
         $("#open-add-items-modal").click(function (){
             if($('#branch-warehouse').val() == '' || $('#branch-warehouse').val() == 'null'){
                 $('#null-store-warning').removeClass('d-none');
@@ -299,39 +331,40 @@
 
             $('.validate.stock').each(function(){ // check stocks
                 var item_code = $(this).data('item-code');
-                var stock_value = parseInt($(this).val());
+                var stock_value = parseInt($(this).val().replace(/,/g, ''));
                 var val = 0;
 
                 if($(this).val() != ''){
-                    if($.isNumeric($(this).val())){
+                    if($.isNumeric($(this).val().replace(/,/g, ''))){
                         if(stock_value > 0){ // push in array if user puts value in stocks
                             item_codes.push(item_code);
                         }
                     }else{
-                        incorrect_item_codes.push(item);
+                        incorrect_item_codes.push(item_code);
                     }
                 }
             });
 
             $('.validate.price').each(function(){ // check price
                 var item_code = $(this).data('item-code');
-                var price = parseInt($(this).val());
+                var price = parseInt($(this).val().replace(/,/g, ''));
 
                 if($(this).val() != ''){
-                    if($.isNumeric($(this).val())){
+                    if($.isNumeric($(this).val().replace(/,/g, ''))){
                         if(price > 0){ // push in array if user puts value in stocks
                             item_codes.push(item_code);
                         }
                     }else{
-                        incorrect_item_codes.push(item);
+                        incorrect_item_codes.push(item_code);
                     }
                 }
             });
 
             $.each(item_codes, function (e, item){ // validate stocks and price
-                if($.isNumeric($('#'+item+'-price').val()) && $.isNumeric($('#'+item+'-stock').val())){
-                    var stock = parseInt($('#'+item+'-stock').val());
-                    var price = parseInt($('#'+item+'-price').val());
+                if($.isNumeric($('#'+item+'-price').val().replace(/,/g, '')) && $.isNumeric($('#'+item+'-stock').val().replace(/,/g, ''))){
+                    var stock = parseInt($('#'+item+'-stock').val().replace(/,/g, ''));
+                    var price = parseInt($('#'+item+'-price').val().replace(/,/g, ''));
+                    
                     if(price > 0 && stock > 0){
                         incorrect_item_codes = jQuery.grep(incorrect_item_codes, function(value) {
                             return value != item;
@@ -344,8 +377,8 @@
                 }
             });
 
-            $.each(incorrect_item_codes, function(i, e) {
-                if ($.inArray(e, incorrect_item_codes) == -1) incorrect_item_codes.push(e);
+            incorrect_item_codes = incorrect_item_codes.filter(function(element,index,self){
+                return index === self.indexOf(element); 
             });
 
             if(incorrect_item_codes.length > 0){

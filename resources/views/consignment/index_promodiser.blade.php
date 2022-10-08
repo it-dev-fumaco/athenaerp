@@ -14,8 +14,8 @@
               <div class="modal-content">
                 <div class="modal-header bg-navy">
                   <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-info-circle"></i> Reminder</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="color: #fff">&times;</span>
+                  <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
                 <div class="modal-body" style="font-size: 10pt;">
@@ -46,6 +46,44 @@
             });
           </script>
         @endif
+        @if (session()->has('success') && isset(session()->get('success')['message']))
+          @php
+              $received = session()->get('success');
+          @endphp
+          <div class="modal fade" id="receivedDeliveryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                      <div class="modal-header bg-navy">
+                          <h5 class="modal-title" id="exampleModalLabel">Item(s) Received</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true" style="color: #fff">&times;</span>
+                          </button>
+                      </div>
+                      <div class="modal-body" style="font-size: 10pt;">
+                        <div class="row">
+                          <div class="col-2">
+                            <center>
+                              <p class="text-success text-center mb-0" style="font-size: 4rem;">
+                                <i class="fas fa-check-circle"></i>
+                              </p>
+                            </center>
+                          </div>
+                          <div class="col-10">
+                            <span>{{ $received['message'] }}</span> <br>
+                            <span>Branch: <b>{{ $received['branch'] }}</b></span> <br>
+                            <span>Total Amount: <b>₱ {{ number_format(collect($received)->sum('amount'), 2) }}</b></span>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <script>
+              $(document).ready(function(){
+                  $('#receivedDeliveryModal').modal('show');
+              });
+          </script>
+        @endif
         <div class="col-6 p-1">
           @if (count($assigned_consignment_store) > 1)
           <a href="#" data-toggle="modal" data-target="#select-branch-modal">
@@ -53,10 +91,11 @@
           <a href="/view_calendar_menu/{{ $assigned_consignment_store[0] }}">
           @endif
             <div class="info-box bg-gradient-primary m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Product Sold</span>
-                <span class="info-box-number">{{ number_format($total_item_sold) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $duration }}</span>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_item_sold) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Product Sold <span class="d-block" style="font-size: 6pt;">{{ $duration }}</span></div>
+                </div>
               </div>
             </div>
           </a>
@@ -64,10 +103,11 @@
         <div class="col-6 p-1">
           <a href="/inventory_audit">
             <div class="info-box bg-gradient-info m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Inventory Report</span>
-                <span class="info-box-number">{{ number_format($total_pending_inventory_audit) }}</span>
-                <span class="progress-description" style="font-size: 7pt;">{{ $due }}</span>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_pending_inventory_audit) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Inventory Report <span class="d-block" style="font-size: 7pt;">{{ $due }}</span></div>
+                </div>
               </div>
             </div>
           </a>
@@ -75,11 +115,10 @@
         <div class="col-6 p-1">
           <a href="/stock_transfer/list/Material Transfer">
             <div class="info-box bg-gradient-warning m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Stock Transfer</span>
-                <span class="info-box-number">{{ number_format($total_stock_transfer) }}</span>
-                <div class="progress">
-                  <div class="progress-bar"></div>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_transfer) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Stock Transfer</div>
                 </div>
               </div>
             </div>
@@ -88,11 +127,10 @@
         <div class="col-6 p-1">
           <a href="/beginning_inv_list">
             <div class="info-box bg-gradient-secondary m-0">
-              <div class="info-box-content p-1">
-                <span class="info-box-text" style="font-size: 9pt;">Beginning Inventory</span>
-                <span class="info-box-number">{{ number_format($total_stock_adjustments) }}</span>
-                <div class="progress">
-                  <div class="progress-bar"></div>
+              <div class="info-box-content p-0">
+                <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
+                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_adjustments) }}</div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Beginning Entries</div>
                 </div>
               </div>
             </div>
@@ -325,7 +363,7 @@
               </div>
             </div>
             <div class="card-body p-0 mt-2">
-              <div class="position-relative mb-4">
+              <div class="position-relative mb-4" id="chart-container">
                 <canvas id="sales-chart" height="200"></canvas>
               </div>
             </div>
@@ -390,7 +428,7 @@
             $('#'+item_code+'-amount').text(amount);
         }else{
             $('#'+item_code+'-amount').text('0');
-            $(this).val('');
+            // $(this).val('');
         }
     });
 
@@ -431,6 +469,8 @@
     var intersect = true
 
     $(document).on('change', '#sr-branch-warehouse-select', function(){
+      $('#sales-chart').remove();
+      $('#chart-container').append('<canvas id="sales-chart" height="200"></canvas>');
       loadChart();
     });
 
