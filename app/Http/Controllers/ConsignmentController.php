@@ -3452,7 +3452,6 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $stock_entry = DB::table('tabStock Entry')->where('name', $id)->first();
-
             if(!$stock_entry){
                 return redirect()->back()->with('error', 'Stock Entry does not exist or Stock Entry is already deleted.');
             }
@@ -3473,7 +3472,8 @@ class ConsignmentController extends Controller
             $bin_arr = [];
             foreach($bin as $b){
                 $bin_arr[$b->warehouse][$b->item_code] = [
-                    'consigned_qty' => $b->consigned_qty
+                    'consigned_qty' => $b->consigned_qty,
+                    'actual_qty' => $b->actual_qty,
                 ];
             }
 
@@ -3494,10 +3494,14 @@ class ConsignmentController extends Controller
                     $target_warehouse_qty = $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty;
                     $target_warehouse_qty = $target_warehouse_qty > 0 ? $target_warehouse_qty : 0;
 
+                    $target_warehouse_actual_qty = $bin_arr[$items->t_warehouse][$items->item_code]['actual_qty'] - $items->transfer_qty;
+                    $target_warehouse_actual_qty = $target_warehouse_actual_qty > 0 ? $target_warehouse_actual_qty : 0;
+
                     DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $target_warehouse_qty
+                        'consigned_qty' => $target_warehouse_qty,
+                        'actual_qty' => $target_warehouse_actual_qty,
                     ]);
 
                     // source warehouse
@@ -3505,7 +3509,8 @@ class ConsignmentController extends Controller
                         DB::table('tabBin')->where('warehouse', $items->s_warehouse)->where('item_code', $items->item_code)->update([
                             'modified' => $now->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
-                            'consigned_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty
+                            'consigned_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty,
+                            'actual_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['actual_qty'] + $items->transfer_qty
                         ]);
                     }
                 }
@@ -3517,8 +3522,21 @@ class ConsignmentController extends Controller
                 }
             }
 
-            DB::table('tabStock Entry')->where('name', $id)->delete();
-            DB::table('tabStock Entry Detail')->where('parent', $id)->delete();
+            if ($stock_entry->docstatus == 0) {
+                DB::table('tabStock Entry')->where('name', $id)->delete();
+                DB::table('tabStock Entry Detail')->where('parent', $id)->delete();
+            }
+
+            if ($stock_entry->docstatus == 1) {
+                $values = [
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'docstatus' => 2
+                ];
+
+                DB::table('tabStock Entry')->where('name', $id)->update($values);
+                DB::table('tabStock Entry Detail')->where('parent', $id)->update($values);
+            }
 
             $source_warehouse = $source_warehouse ? $source_warehouse : $stock_entry_detail[0]->s_warehouse;
             $target_warehouse = $target_warehouse ? $target_warehouse : $stock_entry_detail[0]->t_warehouse;
@@ -3544,11 +3562,23 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
+            $is_ste_generated = $this->generateCancelledLedgerEntries($id);
+            if (!$is_ste_generated) {
+                return redirect()->back()->with('error', 'An error occured. Please try agan.');
+            }
+    
+            $is_gl_generated = $this->generateCancelledGlEntries($id);
+            if (!$is_gl_generated) {
+                return redirect()->back()->with('error', 'An error occured. Please try agan.');
+            }
+
             DB::commit();
+
             return redirect()->route('stock_transfers', ['purpose' => $stock_entry->purpose])->with('success', $transaction.' has been cancelled.');
         } catch (Exception $e) {
             DB::rollback();
-            return redirect()->back()->with('error', 'Something went wrong. Please try again later');
+
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later.');
         }
     }
 
@@ -5851,4 +5881,138 @@ class ConsignmentController extends Controller
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
+
+    private function generateCancelledLedgerEntries($stock_entry) {
+        try {
+            $now = Carbon::now();
+            $sle = DB::table('tabStock Ledger Entry')->where('voucher_no', $stock_entry)->get();
+
+            DB::table('tabStock Ledger Entry')->where('voucher_no', $stock_entry)->update(['is_cancelled' => 1]);
+
+            $data = [];
+            foreach ($sle as $r) {
+                $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $r->warehouse)
+                    ->where('item_code', $r->item_code)->first();
+
+                $actual_qty = $valuation_rate = 0;
+                if ($bin_qry) {
+                    $actual_qty = $bin_qry->actual_qty;
+                    $valuation_rate = $bin_qry->valuation_rate;
+                }
+
+                $data[] = [
+                    'name' => 'cn' . uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => $r->docstatus,
+                    'parent' => $r->parent,
+                    'parentfield' => $r->parentfield,
+                    'parenttype' => $r->parenttype,
+                    'idx' => $r->idx,
+                    'serial_no' => $r->serial_no,
+                    'fiscal_year' => $r->fiscal_year,
+                    'voucher_type' => $r->voucher_type,
+                    'posting_time' => $r->posting_time,
+                    'actual_qty' => $r->actual_qty * -1,
+                    'stock_value' => $actual_qty * $valuation_rate,
+                    '_comments' => null,
+                    'dependant_sle_voucher_detail_no' => $r->dependant_sle_voucher_detail_no,
+                    'incoming_rate' => $r->incoming_rate,
+                    'voucher_detail_no' => $r->voucher_detail_no,
+                    'stock_uom' => $r->stock_uom,
+                    'warehouse' => $r->warehouse,
+                    '_liked_by' => null,
+                    'company' => $r->company,
+                    '_assign' => null,
+                    'item_code' => $r->item_code,
+                    'valuation_rate' => $valuation_rate,
+                    'project' => $r->project,
+                    'voucher_no' => $r->voucher_no,
+                    'outgoing_rate' => $r->outgoing_rate,
+                    'is_cancelled' => 1,
+                    'qty_after_transaction' => $actual_qty,
+                    '_user_tags' => null,
+                    'batch_no' => $r->batch_no,
+                    'stock_value_difference' => ($r->actual_qty * $r->valuation_rate) * -1,
+                    'posting_date' => $r->posting_date,
+                ];
+            }
+
+            DB::connection('mysql')->table('tabStock Ledger Entry')->insert($data);
+
+            return ['success' => true, 'message' => 'Stock ledger entries created.'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    private function generateCancelledGlEntries($stock_entry){
+        try {
+            $now = Carbon::now();
+            $sle = DB::table('tabGL Entry')->where('voucher_no', $stock_entry)->get();
+
+            DB::table('tabGL Entry')->where('voucher_no', $stock_entry)->update(['is_cancelled' => 1]);
+
+            $data = [];
+            foreach ($sle as $r) {
+                $data[] = [
+                    'name' => 'ge' . uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => $r->docstatus,
+                    'parent' => $r->parent,
+                    'parentfield' => $r->parentfield,
+                    'parenttype' => $r->parenttype,
+                    'idx' => $r->idx,
+                    'fiscal_year' => $r->fiscal_year,
+                    'voucher_no' => $r->voucher_no,
+                    'cost_center' => $r->cost_center,
+                    'credit' => $r->debit,
+                    'party_type' => $r->party_type,
+                    'transaction_date' => $r->transaction_date,
+                    'debit' => $r->credit,
+                    'party' => $r->party,
+                    '_liked_by' => null,
+                    'company' => $r->company,
+                    '_assign' => null,
+                    'voucher_type' => $r->voucher_type,
+                    '_comments' => null,
+                    'is_advance' => $r->is_advance,
+                    'remarks' => 'On cancellation of ' . $r->voucher_no,
+                    'account_currency' => $r->account_currency,
+                    'debit_in_account_currency' => $r->credit_in_account_currency,
+                    '_user_tags' => null,
+                    'account' => $r->account,
+                    'against_voucher_type' => $r->against_voucher_type,
+                    'against' => $r->against,
+                    'project' => $r->project,
+                    'against_voucher' => $r->against_voucher,
+                    'is_opening' => $r->is_opening,
+                    'posting_date' => $r->posting_date,
+                    'credit_in_account_currency' => $r->debit_in_account_currency,
+                    'total_allocated_amount' => $r->total_allocated_amount,
+                    'is_cancelled' => 1,
+                    'reference_no' => null,
+                    'mode_of_payment' => null,
+                    'order_type' => null,
+                    'po_no' => null,
+                    'reference_date' => null,
+                    'cr_ref_no' => null,
+                    'or_ref_no' => null,
+                    'dr_ref_no' => null,
+                    'pr_ref_no' => null,
+                ];
+            }
+
+            DB::table('tabGL Entry')->insert($data);
+
+            return ['success' => true, 'message' => 'GL Entries created.'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+	}
 }
