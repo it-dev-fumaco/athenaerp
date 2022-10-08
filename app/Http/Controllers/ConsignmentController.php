@@ -3409,6 +3409,10 @@ class ConsignmentController extends Controller
                     return redirect()->back()->with('error', 'An error occured. Please try agan.');
                 }
 
+                $is_gl_generated = $this->generateGlEntries($new_id);
+                if (!$is_gl_generated) {
+                    return redirect()->back()->with('error', 'An error occured. Please try agan.');
+                }
             }
 
             DB::commit();
