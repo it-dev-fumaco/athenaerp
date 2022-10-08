@@ -3247,7 +3247,6 @@ class ConsignmentController extends Controller
                 'transfer_as' => $request->transfer_as == 'Sales Return' ? null : $request->transfer_as,
                 'receive_as' => $request->transfer_as == 'Sales Return' ? $request->transfer_as : null,
                 'qty_repack' => 0,
-                // 'customer_1' => $target_warehouse,
                 'delivery_date' => $now->format('Y-m-d'),
                 'remarks' => 'Generated in AthenaERP. '. $request->remarks,
                 'order_from' => 'Other Reference',
@@ -3312,12 +3311,6 @@ class ConsignmentController extends Controller
                     return redirect()->back()->with('error', 'Please enter transfer qty for '. $item_code);
                 }
 
-                // if($request->transfer_as == 'Sales Return'){
-                //     $max_qty = isset($sold_qty[$item_code]) ? $sold_qty[$item_code]['qty'] : 0;
-                //     if($transfer_qty[$item_code]['transfer_qty'] > $max_qty){
-                //         return redirect()->back()->with('error', 'Sales return qty cannot be more than the total sold qty.');
-                //     }
-                // }else{
                 if($request->transfer_as != 'Sales Return'){
                     if(isset($items[$reference_warehouse][$item_code]) && $transfer_qty[$item_code]['transfer_qty'] > $items[$reference_warehouse][$item_code]['consigned_qty']){
                         return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
@@ -3372,21 +3365,13 @@ class ConsignmentController extends Controller
 
                 DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
 
-                // source warehouse
-                // if($request->transfer_as == 'For Return' && isset($items[$reference_warehouse][$item_code])){
-                //     DB::table('tabBin')->where('warehouse', $reference_warehouse)->where('item_code', $item_code)->update([
-                //         'modified' => $now->toDateTimeString(),
-                //         'modified_by' => Auth::user()->wh_user,
-                //         'consigned_qty' => $items[$reference_warehouse][$item_code]['consigned_qty'] - $transfer_qty[$item_code]['transfer_qty']
-                //     ]);
-                // }
-
                 // target warehouse
                 if(!in_array($request->transfer_as, ['Store Transfer', 'For Return'])){
                     if(isset($items[$target_warehouse][$item_code])){
                         DB::table('tabBin')->where('warehouse', $target_warehouse)->where('item_code', $item_code)->update([
                             'modified' => $now->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
+                            'actual_qty' => $items[$target_warehouse][$item_code]['actual_qty'] + $transfer_qty[$item_code]['transfer_qty'],
                             'consigned_qty' => $items[$target_warehouse][$item_code]['consigned_qty'] + $transfer_qty[$item_code]['transfer_qty']
                         ]);
                     }else{
@@ -3408,6 +3393,7 @@ class ConsignmentController extends Controller
                             'item_code' => $item_code,
                             'stock_uom' => isset($items[$target_warehouse][$item_code]) ? $items[$target_warehouse][$item_code]['uom'] : null,
                             'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
+                            'actual_qty' => $transfer_qty[$item_code]['transfer_qty'],
                             'consigned_qty' => $transfer_qty[$item_code]['transfer_qty'],
                             'consignment_price' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0
                         ]);
@@ -3417,10 +3403,20 @@ class ConsignmentController extends Controller
 
             $purpose = $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
 
+            if($request->transfer_as == 'Sales Return'){
+                return $is_ste_generated = $this->generateLedgerEntries($new_id);
+                if (!$is_ste_generated) {
+                    return redirect()->back()->with('error', 'An error occured. Please try agan.');
+                }
+
+            }
+
             DB::commit();
+
             return redirect()->route('stock_transfers', ['purpose' => $purpose])->with('success', 'Stock transfer request has been submitted.');
         } catch (Exception $e) {
             DB::rollback();
+
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
@@ -5780,6 +5776,62 @@ class ConsignmentController extends Controller
                 $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
                 if (!$existing) {
                     DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stock_ledger_entry);
+                }
+            } else {
+                $t_data = [];
+                foreach ($stock_entry_detail as $row) {
+                    $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
+                        ->where('item_code', $row->item_code)->first();
+
+                    $actual_qty = $valuation_rate = 0;
+                    if ($bin_qry) {
+                        $actual_qty = $bin_qry->actual_qty;
+                        $valuation_rate = $bin_qry->valuation_rate;
+                    }
+
+                    $t_data[] = [
+                        'name' => 'ath' . uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 1,
+                        'parent' => null,
+                        'parentfield' => null,
+                        'parenttype' => null,
+                        'idx' => 0,
+                        'serial_no' => $row->serial_no,
+                        'fiscal_year' => $now->format('Y'),
+                        'voucher_type' => 'Stock Entry',
+                        'posting_time' => $now->format('H:i:s'),
+                        'actual_qty' => $row->qty,
+                        'stock_value' => $actual_qty * $valuation_rate,
+                        '_comments' => null,
+                        'dependant_sle_voucher_detail_no' => null,
+                        'incoming_rate' => $row->basic_rate,
+                        'voucher_detail_no' => $row->name,
+                        'stock_uom' => $row->stock_uom,
+                        'warehouse' => $row->t_warehouse,
+                        '_liked_by' => null,
+                        'company' => 'FUMACO Inc.',
+                        '_assign' => null,
+                        'item_code' => $row->item_code,
+                        'valuation_rate' => $valuation_rate,
+                        'project' => $stock_entry_qry->project,
+                        'voucher_no' => $row->parent,
+                        'outgoing_rate' => 0,
+                        'is_cancelled' => 0,
+                        'qty_after_transaction' => $actual_qty,
+                        '_user_tags' => null,
+                        'batch_no' => $row->batch_no,
+                        'stock_value_difference' => $row->qty * $row->valuation_rate,
+                        'posting_date' => $now->format('Y-m-d'),
+                    ];
+                }
+
+                $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
+                if (!$existing) {
+                    DB::connection('mysql')->table('tabStock Ledger Entry')->insert($t_data);
                 }
             }
 

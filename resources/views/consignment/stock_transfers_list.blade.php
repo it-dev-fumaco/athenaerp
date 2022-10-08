@@ -273,7 +273,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="2"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
+                                    <td colspan="6"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
                                 </tr>
                                 @endforelse
                                 </tbody>
