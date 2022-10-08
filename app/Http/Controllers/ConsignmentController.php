@@ -1801,7 +1801,8 @@ class ConsignmentController extends Controller
             $bin_items = [];
             foreach($bin as $b){
                 $bin_items[$b->warehouse][$b->item_code] = [
-                    'consigned_qty' => $b->consigned_qty
+                    'consigned_qty' => $b->consigned_qty,
+                    'actual_qty' => $b->actual_qty,
                 ];
             }
 
@@ -1843,6 +1844,8 @@ class ConsignmentController extends Controller
                 }else{
                     $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
                 }
+
+                $actual_qty = $bin_items[$branch][$item->item_code]['actual_qty'];
                 
                 // Source Warehouse
                 if(isset($request->receive_delivery) && in_array($wh->transfer_as, ['For Return', 'Store Transfer']) && $wh->purpose != 'Material Receipt'){
@@ -1854,7 +1857,8 @@ class ConsignmentController extends Controller
                     $update_bin = [
                         'modified' => Carbon::now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $src_consigned - $item->transfer_qty
+                        'consigned_qty' => $src_consigned - $item->transfer_qty,
+                        'actual_qty' => $actual_qty - $item->transfer_qty,
                     ];
 
                     if($wh->transfer_as != 'For Return'){
@@ -1867,6 +1871,7 @@ class ConsignmentController extends Controller
                 // Target Warehouse
                 if(isset($bin_items[$branch][$item->item_code])){
                     $consigned_qty = $bin_items[$branch][$item->item_code]['consigned_qty'] + $item->transfer_qty;
+                    $actual_qty = $actual_qty + $item->transfer_qty;
 
                     $update_values = [
                         'modified' => Carbon::now()->toDateTimeString(),
@@ -1879,6 +1884,7 @@ class ConsignmentController extends Controller
 
                     if(isset($request->receive_delivery)){
                         $update_values['consigned_qty'] = $consigned_qty;
+                        $update_values['actual_qty'] = $actual_qty;
                     }
 
                     DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update($update_values);
@@ -1902,6 +1908,7 @@ class ConsignmentController extends Controller
                         'stock_uom' => $item->stock_uom,
                         'valuation_rate' => $basic_rate,
                         'consigned_qty' => isset($request->receive_delivery) ? $item->transfer_qty : 0,
+                        'actual_qty' => isset($request->receive_delivery) ? $item->transfer_qty : 0,
                         'consignment_price' => $basic_rate
                     ]);
                 }
@@ -3404,7 +3411,7 @@ class ConsignmentController extends Controller
             $purpose = $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
 
             if($request->transfer_as == 'Sales Return'){
-                return $is_ste_generated = $this->generateLedgerEntries($new_id);
+                $is_ste_generated = $this->generateLedgerEntries($new_id);
                 if (!$is_ste_generated) {
                     return redirect()->back()->with('error', 'An error occured. Please try agan.');
                 }
