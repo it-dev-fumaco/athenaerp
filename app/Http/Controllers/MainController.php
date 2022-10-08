@@ -77,7 +77,7 @@ class MainController extends Controller
         }
 
         if(Auth::user()->user_group == 'Promodiser'){
-            $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
+            $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->orderBy('warehouse', 'asc')->pluck('warehouse');
             
             $total_pending_inventory_audit = 0;
             if (count($assigned_consignment_store) > 0) {
@@ -5448,6 +5448,7 @@ class MainController extends Controller
         }
     }
 
+    // /consignment_sales/{warehouse}
     public function consignmentSalesReport($warehouse, Request $request) {
         $year = $request->year ? $request->year : Carbon::now()->format('Y');
         $query = DB::table('tabConsignment Sales Report')

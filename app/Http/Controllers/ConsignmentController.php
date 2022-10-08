@@ -1028,7 +1028,7 @@ class ConsignmentController extends Controller
 
     // /inventory_items/{branch}
     public function inventoryItems($branch){
-        $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->orderBy('warehouse', 'asc')->pluck('warehouse');
         $inv_summary = DB::table('tabBin as b')
             ->join('tabItem as i', 'i.name', 'b.item_code')
             ->where('i.disabled', 0)->where('i.is_stock_item', 1)
