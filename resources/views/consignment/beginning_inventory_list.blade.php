@@ -226,9 +226,14 @@
 																						₱ {{ number_format($item['price'], 2) }}
 																						@endif
 																					</div>
-																					<div class="col-3 p-0 {{ $inv['status'] != 'Approved' ? 'd-none' : null }}">
-																						<button type="button" class="btn btn-primary btn-xs allow-edit" data-inv="{{ $inv['name'] }}" data-target="{{ $inv['name'].'-'.$item['item_code'] }}"><i class="fa fa-edit"></i></button>
-																					</div>
+																					@php
+																						$allowed_users = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local'];
+																					@endphp
+																					@if (in_array(Auth::user()->wh_user, $allowed_users) || Auth::user()->user_group == 'Consignment Supervisor')
+																						<div class="col-3 p-0 {{ $inv['status'] != 'Approved' ? 'd-none' : null }}">
+																							<button type="button" class="btn btn-primary btn-xs allow-edit" data-inv="{{ $inv['name'] }}" data-target="{{ $inv['name'].'-'.$item['item_code'] }}"><i class="fa fa-edit"></i></button>
+																						</div>
+																					@endif
 																				</div>
 																			</td>
 																		</tr>
@@ -490,18 +495,19 @@
 			$(document).on('click', '.allow-edit', function (){
 				var target = $(this).data('target');
 				var inventory = $(this).data('inv');
-				// users allowed to edit price
+				// users allowed to edit qty and price
 				var allowed_users = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local']; 
 				var user = '{{ Auth::user()->wh_user }}';
-				$('#' + target + '-qty').addClass('d-none');
-				$('#' + target + '-new-qty').removeClass('d-none');
+				var user_group = '{{ Auth::user()->user_group }}';
+				if(allowed_users.indexOf(user) > -1 || user_group == 'Consignment Supervisor'){
+					$('#' + target + '-qty').addClass('d-none');
+					$('#' + target + '-new-qty').removeClass('d-none');
 
-				if(allowed_users.indexOf(user) > -1){
 					$('#' + target + '-price').addClass('d-none');
 					$('#' + target + '-new-price').removeClass('d-none');
+
+					$('#' + inventory + '-update').removeClass('d-none');
 				}
-				
-				$('#' + inventory + '-update').removeClass('d-none');
 			});
 
 			$(document).on('click', '.update-btn', function (){
