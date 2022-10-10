@@ -20,24 +20,15 @@ class ConsignmentController extends Controller
             $currentDate = Carbon::now();
 
             $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
-            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
 
             $currentMonth = $currentDate->format('m');
             $currentYear = $currentDate->format('Y');
 
             $first_cutoff = Carbon::createFromFormat('m/d/Y', $currentMonth .'/'. $cutoff_1 .'/'. $currentYear)->format('Y-m-d');
-            $second_cutoff = Carbon::createFromFormat('m/d/Y', $currentMonth .'/'. $cutoff_2 .'/'. $currentYear)->format('Y-m-d');
 
             $due_alert = 0;
             if ($first_cutoff > $currentDate->format('Y-m-d')) {
                 $date_difference_in_days = Carbon::parse($first_cutoff)->diffInDays($currentDate->format('Y-m-d'));
-                if ($date_difference_in_days <= 1) {
-                    $due_alert = 1;
-                }
-            }
-
-            if ($second_cutoff > $currentDate->format('Y-m-d')) {
-                $date_difference_in_days = Carbon::parse($second_cutoff)->diffInDays($currentDate->format('Y-m-d'));
                 if ($date_difference_in_days <= 1) {
                     $due_alert = 1;
                 }
@@ -51,15 +42,13 @@ class ConsignmentController extends Controller
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
         if ($sales_report_deadline) {
             $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
-            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
 
             $calendarMonth = $request->month;
             $calendarYear = $request->year;
 
             $first_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_1 .'/'. $calendarYear)->format('F d, Y');
-            $second_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_2 .'/'. $calendarYear)->format('F d, Y');
 
-            return 'Deadline: ' . $first_cutoff . ' & ' . $second_cutoff;
+            return 'Deadline: ' . $first_cutoff;
         }
     }
 
@@ -633,19 +622,14 @@ class ConsignmentController extends Controller
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
         $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
-        $transaction_date = $transactionDate->format('d-m-Y');
+        $transaction_date = $transactionDate->format('Y-m-d');
         
         $cutoff_period = [];
         foreach ($period as $date) {
             $date1 = $date->day($cutoff_1);
             if ($date1 >= $start_date && $date1 <= $end_date) {
-                $cutoff_period[] = $date->format('d-m-Y');
-            }
-            $date2 = $date->day($cutoff_2);
-            if ($date2 >= $start_date && $date2 <= $end_date) {
-                $cutoff_period[] = $date->format('d-m-Y');
+                $cutoff_period[] = $date->format('Y-m-d');
             }
         }
 
@@ -962,7 +946,6 @@ class ConsignmentController extends Controller
             $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
            
             $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
-            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
     
             $cutoff_period = [];
             foreach ($period as $date) {
@@ -970,14 +953,10 @@ class ConsignmentController extends Controller
                 if ($date1 >= $start_date && $date1 <= $end_date) {
                     $cutoff_period[] = $date->format('Y-m-d');
                 }
-                $date2 = $date->day($cutoff_2);
-                if ($date2 >= $start_date && $date2 <= $end_date) {
-                    $cutoff_period[] = $date->format('Y-m-d');
-                }
             }
+
             // set duration from and duration to
             $duration_from = $cutoff_period[0];
-            $duration_to = $cutoff_period[1];
     
             $data[] = [
                 'title' => 'Cutoff',
@@ -986,26 +965,10 @@ class ConsignmentController extends Controller
                 'borderColor' => '#a93226',
                 'allDay' => false,
             ];
-    
-            $data[] = [
-                'title' => 'Cutoff',
-                'start' => $duration_to,
-                'backgroundColor' => '#a93226',
-                'borderColor' => '#a93226',
-                'allDay' => false,
-            ];
 
             $data[] = [
                 'title' => 'Inventory Audit',
                 'start' => $duration_from,
-                'backgroundColor' => '#34495e',
-                'borderColor' => '#34495e',
-                'allDay' => false,
-            ];
-
-            $data[] = [
-                'title' => 'Inventory Audit',
-                'start' => $duration_to,
                 'backgroundColor' => '#34495e',
                 'borderColor' => '#34495e',
                 'allDay' => false,
@@ -3721,17 +3684,11 @@ class ConsignmentController extends Controller
             $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
         
             $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-            $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
             $first_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_1 .'/'. $end->format('Y'))->endOfDay();
-            $second_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_2 .'/'. $end->format('Y'))->endOfDay();
     
             if ($first_cutoff->gt($end)) {
                 $end = $first_cutoff;
-            }
-    
-            if ($second_cutoff->gt($end)) {
-                $end = $second_cutoff;
             }
     
             $cutoff_date = $this->getCutoffDate($end->endOfDay());
@@ -3762,10 +3719,6 @@ class ConsignmentController extends Controller
                     foreach ($period as $date) {
                         $date1 = $date->day($cutoff_1);
                         if ($date1 >= $start && $date1 <= $end) {
-                            $is_late++;
-                        }
-                        $date2 = $date->day($cutoff_2);
-                        if ($date2 >= $start && $date2 <= $end) {
                             $is_late++;
                         }
                     }
@@ -4679,17 +4632,11 @@ class ConsignmentController extends Controller
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
     
         $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
         $first_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_1 .'/'. $end->format('Y'))->endOfDay();
-        $second_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_2 .'/'. $end->format('Y'))->endOfDay();
 
         if ($first_cutoff->gt($end)) {
             $end = $first_cutoff;
-        }
-
-        if ($second_cutoff->gt($end)) {
-            $end = $second_cutoff;
         }
 
         $cutoff_date = $this->getCutoffDate(Carbon::now()->endOfDay());
@@ -4721,10 +4668,6 @@ class ConsignmentController extends Controller
             foreach ($period as $date) {
                 $date1 = $date->day($cutoff_1);
                 if ($date1 >= $start && $date1 <= $end) {
-                    $is_late++;
-                }
-                $date2 = $date->day($cutoff_2);
-                if ($date2 >= $start && $date2 <= $end) {
                     $is_late++;
                 }
             }
