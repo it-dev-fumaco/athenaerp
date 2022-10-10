@@ -1812,16 +1812,22 @@ class ConsignmentController extends Controller
                 
                 // Source Warehouse
                 if(isset($request->receive_delivery) && in_array($wh->transfer_as, ['For Return', 'Store Transfer']) && $wh->purpose != 'Material Receipt'){
-                    $src_consigned = isset($bin_items[$src_branch][$item->item_code]) ? $bin_items[$src_branch][$item->item_code]['consigned_qty'] : 0;
-                    if($src_consigned < $item->transfer_qty){
-                        return redirect()->back()->with('error', 'Not enough qty for '.$item->item_code.'. Qty needed is '.number_format($item->transfer_qty).', available qty is '.number_format($src_consigned).'.');
+                    $src_consigned = $src_actual = 0;
+                    if(isset($bin_items[$src_branch][$item->item_code])){
+                        $src_consigned = $bin_items[$src_branch][$item->item_code]['consigned_qty'];
+                        $src_actual = $bin_items[$src_branch][$item->item_code]['actual_qty'];
+                    }
+
+                    if($src_consigned < $item->transfer_qty || $src_actual < $item->transfer_qty){
+                        $db_qty = $src_consigned < $item->transfer_qty ? $src_consigned : $src_actual;
+                        return redirect()->back()->with('error', 'Not enough qty for '.$item->item_code.'. Qty needed is '.number_format($item->transfer_qty).', available qty is '.number_format($db_qty).'.');
                     }
 
                     $update_bin = [
                         'modified' => Carbon::now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'consigned_qty' => $src_consigned - $item->transfer_qty,
-                        'actual_qty' => $actual_qty - $item->transfer_qty,
+                        'actual_qty' => $src_actual - $item->transfer_qty
                     ];
 
                     if($wh->transfer_as != 'For Return'){
@@ -1993,7 +1999,6 @@ class ConsignmentController extends Controller
             }
 
             DB::commit();
-
             return redirect()->back()->with('success', $received_items);
         } catch (Exception $e) {
             DB::rollback();
