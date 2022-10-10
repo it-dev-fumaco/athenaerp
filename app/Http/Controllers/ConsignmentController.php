@@ -104,7 +104,7 @@ class ConsignmentController extends Controller
                 ->join('tabBin as bin', 'bin.item_code', 'csri.item_code')
                 ->join('tabItem as item', 'item.item_code', 'csri.item_code')
                 ->where('bin.consigned_qty', 0)->where('status', '!=', 'Cancelled')->where('bin.warehouse', $branch)->where('csr.branch_warehouse', $branch)
-                ->select('csri.item_code', 'csri.description', 'csri.price', 'item.item_classification')
+                ->select('csri.item_code', 'csri.description', 'bin.consignment_price as price', 'item.item_classification')
                 ->get();
 
             $items = DB::table('tabBin as b')
