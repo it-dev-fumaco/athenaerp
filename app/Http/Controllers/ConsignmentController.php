@@ -2642,12 +2642,27 @@ class ConsignmentController extends Controller
                     }
                 }
 
+                if($ste->docstatus == 1){
+                    $status = $ste->transfer_as == 'For Return' ? 'For Return' : 'Approved';
+                    if($ste->consignment_status == 'Received'){
+                        $status = 'Received';
+                    }
+                }else if($ste->docstatus == 0){
+                    if ($ste->transfer_as == 'For Return') {
+                        $status = 'For Return';
+                    }else{
+                        $status = 'To Submit in ERP';
+                    }
+                }else{
+                    $status = 'Cancelled';
+                }
+
                 $ste_arr[] = [
                     'name' => $ste->name,
                     'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i A'),
                     'source_warehouse' => $ste->from_warehouse,
                     'target_warehouse' => $ste->to_warehouse,
-                    'status' => $ste->docstatus == 1 ? 'Approved' : 'For Approval',
+                    'status' => $status,
                     'transfer_as' => $ste->transfer_as,
                     'receive_as' => $ste->receive_as,
                     'submitted_by' => $ste->owner,
