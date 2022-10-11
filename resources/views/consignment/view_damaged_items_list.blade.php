@@ -44,7 +44,7 @@
                                             <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
                                                 <div class="row p-2">
                                                     <div class="col-12 col-xl-2 col-lg-2">
-                                                        <input type="text" name="tab1_q" class="form-control" placeholder='Search' style='font-size: 10pt;'/>
+                                                        <input type="text" name="tab1_q" class="form-control" placeholder='Search' style='font-size: 10pt;' value="{{ request('tab1_q') ? request('tab1_q') : null }}"/>
                                                     </div>
                                                     <div class="col-12 mt-2 mt-lg-0 col-xl-2 col-lg-2">
                                                         <select name="tab1_purpose" id='status' class="form-control" style="font-size: 10pt;">
@@ -101,10 +101,14 @@
                                         <tbody>
                                             @forelse ($ste_arr as $ste)
                                             @php
-                                                if($ste['status'] == 'Approved'){
-                                                    $badge = 'success';
+                                                if($ste['status'] != 'Cancelled'){
+                                                    if($ste['status'] == 'Approved'){
+                                                        $badge = 'success';
+                                                    }else{
+                                                        $badge = 'primary';
+                                                    }
                                                 }else{
-                                                    $badge = 'primary';
+                                                    $badge = 'secondary';
                                                 }
 
                                                 $purpose = $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'];
