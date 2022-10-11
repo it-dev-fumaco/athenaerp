@@ -2738,12 +2738,14 @@ class ConsignmentController extends Controller
                     if($ste->consignment_status == 'Received'){
                         $status = 'Received';
                     }
-                }else{
+                }else if($ste->docstatus == 0){
                     if ($ste->transfer_as == 'For Return') {
                         $status = 'For Return';
                     }else{
                         $status = 'To Submit in ERP';
                     }
+                }else{
+                    $status = 'Cancelled';
                 }
 
                 $ste_arr[] = [
