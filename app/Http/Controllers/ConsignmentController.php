@@ -1808,6 +1808,8 @@ class ConsignmentController extends Controller
                     $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
                 }
 
+                $actual_qty = $bin_items[$branch][$item->item_code]['actual_qty'];
+
                 // Source Warehouse
                 if(isset($request->receive_delivery) && in_array($wh->transfer_as, ['For Return', 'Store Transfer']) && $wh->purpose != 'Material Receipt'){
                     $src_consigned = $src_actual = 0;
@@ -5509,7 +5511,7 @@ class ConsignmentController extends Controller
             foreach ($item_transferred as $v) {
                 $date_transferred = Carbon::parse($v->creation)->format('Y-m-d');
                 $result[] = [
-                    'qty' =>  number_format($v->transfer_qty),
+                    'qty' =>  '-'.number_format($v->transfer_qty),
                     'type' => 'Store Transfer',
                     'transaction_date' => $date_transferred,
                     'branch_warehouse' => $v->s_warehouse,
@@ -5532,11 +5534,11 @@ class ConsignmentController extends Controller
                 ->where('sted.item_code', $item_code)
                 ->select('ste.name', 'sted.s_warehouse', 'sted.creation', 'sted.item_code', 'sted.transfer_qty', 'ste.owner')
                 ->orderBy('sted.creation', 'desc')->get();
-    
+
             foreach ($item_returned as $a) {
                 $date_returned = Carbon::parse($a->creation)->format('Y-m-d');
                 $result[] = [
-                    'qty' =>  number_format($a->transfer_qty),
+                    'qty' =>  '-'.number_format($a->transfer_qty),
                     'type' => 'Stocks Returned',
                     'transaction_date' => $date_returned,
                     'branch_warehouse' => $a->s_warehouse,

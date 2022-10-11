@@ -105,8 +105,12 @@ class MainController extends Controller
 
                 $date_now_index = array_search($date_now, $cutoff_period);
                 // set duration from and duration to
-                $duration_from = $cutoff_period[$date_now_index - 1];
                 $duration_to = $cutoff_period[$date_now_index + 1];
+                if($sales_report_deadline->{'2nd_cutoff_date'}){
+                    $duration_from = $cutoff_period[$date_now_index - 1];
+                }else{
+                    $duration_from = Carbon::parse($duration_to)->subMonths(1)->addDays(1)->format('d-m-Y');
+                }
 
                 $duration = Carbon::parse($duration_from)->addDay()->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
@@ -342,8 +346,12 @@ class MainController extends Controller
 
         $date_now_index = array_search($date_now, $cutoff_period);
         // set duration from and duration to
-        $duration_from = $cutoff_period[$date_now_index - 1];
         $duration_to = $cutoff_period[$date_now_index + 1];
+        if($sales_report_deadline->{'2nd_cutoff_date'}){
+            $duration_from = $cutoff_period[$date_now_index - 1];
+        }else{
+            $duration_from = Carbon::parse($duration_to)->subMonths(1)->addDays(1)->format('d-m-Y');
+        }
 
         $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
