@@ -2679,6 +2679,7 @@ class ConsignmentController extends Controller
                 'promodiser' => $item->promodiser,
                 'image' => $img,
                 'webp' => $webp,
+                'item_status' => $item->status,
                 'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i A'),
             ];
         }

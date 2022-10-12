@@ -106,6 +106,15 @@
                                         <tbody>
                                             @forelse ($ste_arr as $ste)
                                             @php
+                                                if($ste['status'] != 'Cancelled'){
+                                                    if($ste['status'] == 'Approved'){
+                                                        $badge = 'success';
+                                                    }else{
+                                                        $badge = 'primary';
+                                                    }
+                                                }else{
+                                                    $badge = 'secondary';
+                                                }
                                                 $purpose = $ste['transfer_as'] ? $ste['transfer_as'] : $ste['receive_as'];
                                                 $badge = 'secondary';
 
@@ -318,11 +327,13 @@
                                         <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%;">Qty</th>
                                         <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Store</th>
                                         <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Damage Description</th>
-                                        <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 5%;">-</th>
                                     </thead>
                                     @forelse ($items_arr as $i => $item)
                                         <tr>
-                                            <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['creation'] }}</td>
+                                            <td class="p-1 text-center align-middle d-none d-xl-table-cell">
+                                                {{ $item['creation'] }}<br/>
+                                                <span class="badge badge-success {{ !$item['item_status'] ? 'd-none' : null }}">{{ $item['item_status'] }}</span>
+                                            </td>
                                             <td class="p-1 text-justify align-middle">
                                                 <div class="d-flex flex-row align-items-center">
                                                     <div class="p-1">
@@ -352,9 +363,6 @@
                                             </td>
                                             <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['store'] }}</td>
                                             <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['damage_description'] }}</td>
-                                            <td class="p-1 text-center align-middle d-none d-xl-table-cell">
-                                                <a href="#" class="btn btn-primary btn-sm"><i class="fas fa-retweet"></i></a>
-                                            </td>
                                         </tr>
                                         @empty
                                         <tr>
