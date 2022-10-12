@@ -1809,7 +1809,7 @@ class ConsignmentController extends Controller
                     $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
                 }
 
-                $actual_qty = $bin_items[$branch][$item->item_code]['actual_qty'];
+                $actual_qty = isset($bin_items[$branch][$item->item_code]['actual_qty']) ? $bin_items[$branch][$item->item_code]['actual_qty'] : 0;
 
                 // Source Warehouse
                 if(isset($request->receive_delivery) && in_array($wh->transfer_as, ['For Return', 'Store Transfer']) && $wh->purpose != 'Material Receipt'){
