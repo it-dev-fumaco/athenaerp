@@ -3232,6 +3232,12 @@ class ConsignmentController extends Controller
                 'reference_no' => '-'
             ];
 
+            if($request->transfer_as == 'Sales Return'){
+                $stock_entry_data['consignment_status'] = 'Received';
+                $stock_entry_data['consignment_date_received'] = Carbon::now()->toDateTimeString();
+                $stock_entry_data['consignment_received_by'] = Auth::user()->wh_user;
+            }
+
             DB::table('tabStock Entry')->insert($stock_entry_data);
 
             $from_msg = $request->transfer_as != 'Sales Return' ?  ' from '.$request->source_warehouse : null;
