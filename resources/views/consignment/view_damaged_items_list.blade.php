@@ -79,7 +79,15 @@
                                                             @endphp 
                                                             <option value="" disabled {{ !request('tab1_status') ? 'selected' : null }}>Select a status</option>
                                                             @foreach ($status as $s)
-                                                            <option value="{{ $s['value'] }}" {{ $s['value'] == request('tab1_status') ? 'selected' : null }}>{{ $s['title'] }}</option>
+                                                            @php
+                                                                $selected = null;
+                                                                if(request('tab1_status') == 'All'){
+                                                                    $selected = $loop->first ? 'selected' : null;
+                                                                }else{
+                                                                    $selected = $s['value'] == request('tab1_status') ? 'selected' : null;
+                                                                }
+                                                            @endphp
+                                                            <option value="{{ $s['value'] }}" {{ $selected }}>{{ $s['title'] }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
