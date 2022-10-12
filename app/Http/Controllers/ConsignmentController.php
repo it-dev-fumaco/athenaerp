@@ -4856,7 +4856,11 @@ class ConsignmentController extends Controller
             ->push('Guest')
             ->all();
 
-        $users = DB::table('tabUser')->whereNotIn('name', $not_included)->where('enabled', 1)->get();
+        $users = DB::table('tabUser as u')
+            ->join('tabUser Social Login as s', 'u.name', 's.parent')
+            ->whereNotIn('u.name', $not_included)->where('enabled', 1)
+            ->select('u.name', 'u.full_name')
+            ->get();
 
         return view('consignment.supervisor.add_promodiser', compact('consignment_stores', 'users'));
     }
@@ -4900,8 +4904,7 @@ class ConsignmentController extends Controller
                     'full_name' => $user_details->full_name,
                     'user_group' => 'Promodiser',
                     'price_list' => 'Consignment Price',
-                    'frappe_userid' => $user_details->userid,
-                    'is_roving_promodiser' => isset($request->roving) ? 1 : 0
+                    'frappe_userid' => $user_details->userid
                 ]);
             }
 
@@ -4975,8 +4978,7 @@ class ConsignmentController extends Controller
                         'parenttype' => 'Warehouse Users',
                         'idx' => $i + 1,
                         'warehouse' => $warehouse,
-                        'warehouse_name' => isset($warehouse_arr[$warehouse]) ? $warehouse_arr[$warehouse][0]->warehouse_name : $warehouse,
-                        'roving' => isset($request->roving) ? 1 : 0
+                        'warehouse_name' => isset($warehouse_arr[$warehouse]) ? $warehouse_arr[$warehouse][0]->warehouse_name : $warehouse
                     ]);
                 }
             }

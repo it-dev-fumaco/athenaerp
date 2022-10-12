@@ -64,13 +64,7 @@
                                             <label for="customCheck1">Active</label>
                                         </div>
                                     </div>
-                                    <div class="col-3">
-                                        <div class="form-group">
-                                            <input type="checkbox" name="roving">
-                                            <label for="customCheck1">Is roving promodiser</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 text-right p-2">
+                                    <div class="col-6 offset-3 text-right p-2">
                                         <button type="button" id="add-warehouse" class="btn btn-primary btn-xs p-2"><i class="fa fa-plus"></i> Add Warehouse</button> <br>
                                         <small class="error-msg d-none" style="color: red">* Please select a warehouse</small>
                                     </div>
@@ -115,6 +109,15 @@
 <style>
     .error-btn{
         border: 1px solid red;
+    }
+    .select2-selection__rendered {
+        line-height: 31px !important;
+        outline: none !important;
+    }
+    .select2-container .select2-selection--single {
+        height: 37px !important;
+        padding-top: 6px;
+        outline: none !important;
     }
 </style>
 @endsection
