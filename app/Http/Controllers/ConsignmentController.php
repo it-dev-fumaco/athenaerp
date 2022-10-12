@@ -280,10 +280,7 @@ class ConsignmentController extends Controller
                 $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
 
                 $qty_from_current_date_product_sold = isset($current_product_sold_items[$item_code]) ? $current_product_sold_items[$item_code] : 0;
-
                 $sold_qty = ($consigned_qty - (float)$qty) + $qty_from_current_date_product_sold;
-                $amount = ((float)$price * (float)$sold_qty);
-                $iar_amount = ((float)$price * (float)$qty);
 
                 if ($consigned_qty < (float)$qty) {
                     $items_with_insufficient_stocks[] = $item_code;
@@ -291,11 +288,14 @@ class ConsignmentController extends Controller
 
                 $bin_update = ['consigned_qty' => (float)$qty];
                 if($price <= 0 && isset($request->price[$item_code])){
-                    $bin_update['consignment_price'] = preg_replace("/[^0-9 .]/", "", $request->price[$item_code]);
+                    $price = preg_replace("/[^0-9 .]/", "", $request->price[$item_code]);
+                    $bin_update['consignment_price'] = $price;
                 }
+                
+                $amount = ((float)$price * (float)$sold_qty);
+                $iar_amount = ((float)$price * (float)$qty);
 
-                DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                    ->update($bin_update);
+                DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update($bin_update);
 
                 // Consignment Sales Report
                 $has_existing_csri = false;
@@ -312,6 +312,7 @@ class ConsignmentController extends Controller
                             'modified' => $currentDateTime->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
                             'qty' => $sold_qty + $csr_existing_child_record->qty,
+                            'price' => $price,
                             'amount' => $amount
                         ]);
 
