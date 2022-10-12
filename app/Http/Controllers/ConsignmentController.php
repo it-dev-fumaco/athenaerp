@@ -4891,8 +4891,7 @@ class ConsignmentController extends Controller
                     'modified' => Carbon::now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'user_group' => 'Promodiser',
-                    'price_list' => 'Consignment Price',
-                    'is_roving_promodiser' => isset($request->roving) ? 1 : 0
+                    'price_list' => 'Consignment Price'
                 ]);
             }else{
                 DB::table('tabWarehouse Users')->insert([
@@ -4924,8 +4923,7 @@ class ConsignmentController extends Controller
                     'parentfield' => 'consignment_store',
                     'parenttype' => 'Warehouse Users',
                     'warehouse' => $warehouse,
-                    'warehouse_name' => isset($warehouse_details[$warehouse]) ? $warehouse_details[$warehouse][0]->warehouse_name : $warehouse,
-                    'roving' => isset($request->roving) ? 1 : 0
+                    'warehouse_name' => isset($warehouse_details[$warehouse]) ? $warehouse_details[$warehouse][0]->warehouse_name : $warehouse
                 ]);
             }
 
@@ -4987,7 +4985,6 @@ class ConsignmentController extends Controller
             DB::table('tabWarehouse Users')->where('frappe_userid', $id)->update([
                 'modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'is_roving_promodiser' => isset($request->roving) ? 1 : 0,
                 'enabled' => isset($request->enabled) ? 1 : 0
             ]);
 
