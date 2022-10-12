@@ -40,15 +40,18 @@
                                 </div>
                                 <table class="table" style="font-size: 8pt;" id="items-table">
                                     <thead>
-                                        <th class="text-center p-1" style="width: 30%;">ITEM CODE</th>
-                                        <th class="text-center p-1" style="width: 40%;">AUDIT QTY</th>
-                                        <th class="text-center p-1" style="width: 15%;">ACTUAL</th>
-                                        <th class="text-center p-1" style="width: 15%;">SOLD</th>
+                                        <tr>
+                                            <th class="text-center p-1" style="width: 30%;">ITEM</th>
+                                            <th class="text-center p-1" style="width: 36%;">AUDIT QTY</th>
+                                            <th class="text-center p-1" style="width: 12%;">ACTUAL</th>
+                                            <th class="text-center p-1" style="width: 12%;">SOLD</th>
+                                            <th class="text-center p-1" style="width: 10%;">PRICE</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
                                         @forelse ($item_classification as $class => $items)
                                             <tr>
-                                                <td colspan=4 class='p-0'>
+                                                <td colspan=5 class='p-0'>
                                                     <div class="bg-navy p-2">
                                                         <span style="font-weight: bold; font-size: 10pt;">{{ $class }}</span>
                                                     </div>
@@ -73,7 +76,7 @@
                                             <tr style="border-bottom: 0 !important;" class="item-row {{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">
                                                 <td class="text-justify p-1 align-middle" style="border-bottom: 10px !important;">
                                                     <div class="d-flex flex-row justify-content-start align-items-center">
-                                                        <div class="p-1 text-left">
+                                                        <div class="p-1 text-left mx-auto">
                                                             <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
                                                             <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
                                                                 <picture>
@@ -83,7 +86,7 @@
                                                                 </picture>
                                                             </a>
                                                         </div>
-                                                        <div class="p-1 m-0">
+                                                        <div class="p-1 m-0 d-none">
                                                             <span class="font-weight-bold">{{ $row->item_code }}</span>
                                                             <div class="d-none">{!! strip_tags($row->description) !!}</div>
                                                         </div>
@@ -135,7 +138,7 @@
                                                                     <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                                 </div>
                                                                 <div class="custom-a p-0">
-                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 60px;" required id="{{ $row->item_code }}" value="{{ $qty }}">
+                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 50px;" required id="{{ $row->item_code }}" value="{{ $qty }}">
                                                                 </div>
                                                                 <div class="input-group-append p-0">
                                                                     <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
@@ -153,10 +156,20 @@
                                                     <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
                                                     <span class="d-none item-price">{{ $row->price }}</span>
                                                 </td>
+                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                                    @if ($row->price > 0)
+                                                        <span class="d-block" style="white-space: nowrap">₱ {{ number_format($row->price, 2) }}</span>
+                                                    @else
+                                                        <div class="row">
+                                                            <div class="p-1 col-1 d-flex flex-row justify-content-center align-items-center">₱</div>
+                                                            <div class="p-1 col-10"><input type="text" class="form-control text-center price-input" name="price[{{ $row->item_code }}]"  required></div>
+                                                        </div>
+                                                    @endif
+                                                </td>
                                             </tr>
                                             <tr class="{{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">
-                                                <td colspan="4" style="border-top: 0 !important;">
-                                                    <span class="d-none">{{ $row->item_code }}</span>
+                                                <td colspan="5" style="border-top: 0 !important;">
+                                                    <span class="font-weight-bold">{{ $row->item_code }}</span>
                                                     <div class="item-description">{!! strip_tags($row->description) !!}</div>
                                                 </td>
                                             </tr>
@@ -480,7 +493,12 @@
             $('#total-qty-sold').text(total_sold_qty.toLocaleString());
             $('#total-sales-amount').text(formatToCurrency(total_sales_amount));
 
-            $('#confirmation-modal').modal('show');
+            var form = $('#inventory-report-entry-form');
+            var reportValidity = form[0].reportValidity();
+
+            if(reportValidity){
+                $('#confirmation-modal').modal('show');
+            }
         });
 
         $('#confirm-inventory-report-btn').click(function(e){
@@ -580,6 +598,11 @@
             $(this).prev().toggle();
 
             return false;
+        });
+
+        var input = document.querySelector('.price-input');
+        input.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9.\,]/, '');
         });
     });
 </script>

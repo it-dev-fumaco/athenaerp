@@ -140,6 +140,10 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/stock_adjustment_form', 'ConsignmentController@viewStockAdjustmentForm');
     Route::post('/adjust_stocks', 'ConsignmentController@adjustStocks');
     Route::get('/cancel_stock_adjustment/{id}', 'ConsignmentController@cancelStockAdjustment');
+    Route::get('/add_promodiser', 'ConsignmentController@addPromodiserForm');
+    Route::post('/add_promodiser_submit', 'ConsignmentController@addPromodiser');
+    Route::get('/edit_promodiser/{id}', 'ConsignmentController@editPromodiserForm');
+    Route::post('/edit_promodiser_submit/{id}', 'ConsignmentController@editPromodiser');
 
     // Promodisers
     Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
@@ -173,6 +177,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/damaged/return/{id}', 'ConsignmentController@returnDamagedItem');
     Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
     Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport'); 
+    Route::get('/product_sold/cancel/{id}', 'ConsignmentController@cancelProductSold'); 
 
     Route::get('/inventory_items/{branch}', 'ConsignmentController@inventoryItems'); 
 

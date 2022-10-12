@@ -61,12 +61,19 @@
                                 <tbody>
                                 @forelse ($ste_arr as $ste)
                                 @php
+                                    $badge = 'primary';
                                     if($ste['docstatus'] == 1){
-                                        $badge = 'success';
-                                        $status = 'Approved';
+                                        $status = $ste['transfer_type'] == 'For Return' ? 'For Return' : 'Approved';
+                                        if($ste['consignment_status'] == 'Received'){
+                                            $badge = 'success';
+                                            $status = 'Received';
+                                        }
                                     }else{
-                                        $badge = 'primary';
-                                        $status = Auth::user()->user_group == 'Promodiser' ? 'For Approval' : 'To Submit in ERP';
+                                        if ($ste['transfer_type'] == 'For Return') {
+                                            $status = $ste['transfer_type'];
+                                        }else{
+                                            $status = Auth::user()->user_group == 'Promodiser' ? 'For Approval' : 'To Submit in ERP';
+                                        }
                                     }
                                 @endphp
                                 <tr>
@@ -116,7 +123,11 @@
                                                         <span class="d-block text-left">{{ $ste['to_warehouse'] }}</span>
                                                         @endif
                                                         <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
-                                                       
+                                                        @if ($ste['transfer_type'] == 'Store Transfer')
+                                                            <div class="callout callout-info text-center">
+                                                                <small><i class="fas fa-info-circle"></i> Stocks will be deducted once the store recipient has received the item.</small>
+                                                            </div>
+                                                        @endif
                                                         <table class="table" style="font-size: 9pt;">
                                                             <thead>
                                                                 <th class="text-center p-1 align-middle">Item Code</th>
@@ -201,31 +212,48 @@
                                                                         <span class="item-description">{!! strip_tags($item['description']) !!}</span>
                                                                     </td>
                                                                 </tr>
+                                                                @if ($purpose == 'Material Receipt')
+                                                                    <tr>
+                                                                        <td class="text-left p-1" colspan=4>
+                                                                            Reason for return: {{ $item['return_reason'] ? $item['return_reason'] : '-' }}
+                                                                        </td>
+                                                                    </tr>
+                                                                @endif
                                                             @endforeach
                                                         </table>
+                                                        <div class="container-fluid text-left p-1" style="font-size: 10pt;">
+                                                            @php
+                                                                $remarks = str_replace('Generated in AthenaERP. ', null, $ste['remarks']);
+                                                            @endphp
+                                                            @if ($remarks)
+                                                                Remarks: {{ $remarks }}
+                                                            @endif
+                                                        </div>
                                                     </div>
-                                                    <div class="text-center m-3 {{ $ste['docstatus'] == 1 ? 'd-none' : null }}">
-                                                        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">Cancel Request</button>
-                                                    </div>
-                                                    <div class="modal fade" id="cancel-{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog modal-dialog-centered" role="document">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header bg-navy">
-                                                                    <span class="modal-title">{{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
-                                                                    <button type="button" class="close text-white" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
-                                                                        <span aria-hidden="true">&times;</span>
-                                                                    </button>
-                                                                </div>
-                                                                <div class="modal-body p-2">
-                                                                    <form></form>
-                                                                    <h6 class="mb-3">Cancel {{ $ste['transfer_type'] }} Request?</h6>
-                                                                    <div class="text-center m-2">
-                                                                        <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary submit-once">Confirm</a>
+                                                    @if ($ste['docstatus'] == 1 || $ste['transfer_type'] == 'Sales Return')
+                                                        <div class="text-center m-3">
+                                                            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal">Cancel {{ $ste['transfer_type'] != 'Sales Return' ? 'Request' : null }}</button>
+                                                        </div>
+                                                        <div class="modal fade" id="cancel-{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header bg-navy">
+                                                                        <span class="modal-title">{{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
+                                                                        <button type="button" class="close text-white" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="modal-body p-2">
+                                                                        <form></form>
+                                                                        <h6 class="mb-3">Cancel {{ $ste['transfer_type'] }} {{ $ste['transfer_type'] != 'Sales Return' ? 'Request' : null }}?</h6>
+                                                                        <div class="text-center m-2">
+                                                                            <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary submit-once">Confirm</a>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -245,7 +273,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="2"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
+                                    <td colspan="6"><span class="d-block text-center text-uppercase text-muted">No record(s) found</span></td>
                                 </tr>
                                 @endforelse
                                 </tbody>

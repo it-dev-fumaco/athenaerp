@@ -46,7 +46,7 @@
             });
           </script>
         @endif
-        @if (session()->has('success'))
+        @if (session()->has('success') && isset(session()->get('success')['message']))
           @php
               $received = session()->get('success');
           @endphp
@@ -363,7 +363,7 @@
               </div>
             </div>
             <div class="card-body p-0 mt-2">
-              <div class="position-relative mb-4">
+              <div class="position-relative mb-4" id="chart-container">
                 <canvas id="sales-chart" height="200"></canvas>
               </div>
             </div>
@@ -428,7 +428,7 @@
             $('#'+item_code+'-amount').text(amount);
         }else{
             $('#'+item_code+'-amount').text('0');
-            $(this).val('');
+            // $(this).val('');
         }
     });
 
@@ -469,6 +469,8 @@
     var intersect = true
 
     $(document).on('change', '#sr-branch-warehouse-select', function(){
+      $('#sales-chart').remove();
+      $('#chart-container').append('<canvas id="sales-chart" height="200"></canvas>');
       loadChart();
     });
 

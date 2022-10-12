@@ -112,7 +112,6 @@
                                                                                     </div>
                                                                                     <div class="col-3" style="display: flex; justify-content: center; align-items: center; height: 44px">
                                                                                         <div class="text-center">
-                                                                                            {{-- <b><span id="stocks-text"></span></b><br><small><span id="uom-text"></span></small> --}}
                                                                                             <div>
                                                                                                 <b><span id="stocks-text"></span></b><br>
                                                                                                 <small><span id="uom-text"></span></small>
@@ -139,6 +138,14 @@
                                                                             </td>
                                                                         </tr>
                                                                     </table>
+                                                                    @php
+                                                                        $sales_return_reason = ['Defective', 'Change Item'];
+                                                                    @endphp
+                                                                    <select id="sales-return-reason" class="form-control d-none">
+                                                                        @foreach ($sales_return_reason as $reason)
+                                                                            <option value="{{ $reason }}">{{ $reason }}</option>
+                                                                        @endforeach
+                                                                    </select>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">
@@ -166,6 +173,10 @@
                                                 </tr>
                                             </tbody>
                                         </table>
+                                    </div>
+
+                                    <div class="container-fluid mt-2">
+                                        <textarea name="remarks" rows="5" class="form-control" placeholder="Remarks" style="font-size: 10pt; font-family: inherit"></textarea>
                                     </div>
 
                                     <div class="container-fluid mt-2 text-center">
@@ -217,6 +228,7 @@
 
                     $('#src-warehouse').prop('required', true);
                     // $('.transfer-text').text('Qty to Transfer');
+                    $('#sales-return-reason').addClass('d-none');
                 }else if($(this).val() == 'For Return'){
                     if($('#source').is(':hidden')){
                         $('#source').slideDown();
@@ -230,6 +242,7 @@
                     // $('.transfer-text').text('Qty to Transfer');
 
                     $('#items-to-return').slideDown();
+                    $('#sales-return-reason').addClass('d-none');
                 }else{ // sales returns
                     $('#wh-for-return').addClass('d-none');
 
@@ -244,6 +257,7 @@
                     if($('#source').is(':visible')){
                         $('#source').slideUp();
                     }
+                    $('#sales-return-reason').removeClass('d-none');
 
                     src = null;
                 }
@@ -262,7 +276,7 @@
 
                 get_received_items(src);
                 reset_placeholders();
-
+                validate_submit();
                 items_array = [];
             });
 
@@ -387,9 +401,13 @@
                     var max = $(this).data('max');
                     var val = $(this).val().replace(/,/g, '');
 
-                    if($.isNumeric(val) && parseInt(val) > 0 && parseInt(val) <= parseInt(max)){
+                    if($.isNumeric(val) && parseInt(val) > 0){
                         $(this).css('border', '1px solid #CED4DA');
                         inputs.push(1);
+                        if($('#transfer-as').val() != 'Sales Return' && parseInt(val) > parseInt(max)){
+                            $(this).css('border', '1px solid red');
+                            inputs.push(0);    
+                        }
                     }else{
                         $(this).css('border', '1px solid red');
                         inputs.push(0);
@@ -402,10 +420,6 @@
                     $('#submit-btn').prop('disabled', false);
                 }else{
                     $('#submit-btn').prop('disabled', true);
-                }
-
-                if($('#transfer-as').val() == 'Sales Return'){
-                    $('#submit-btn').prop('disabled', false);
                 }
             }
 
@@ -516,11 +530,27 @@
                 var stocks = $('#stocks-text').text();
                 var item_code = $('#item-code-text').text();
                 var description = $('#description-text').text();
+                var selected_reason = $("#sales-return-reason").val();
 
                 var existing = $('#items-table').find('.' + item_code).eq(0).length;
                 if (existing) {
                     showNotification("warning", 'Item <b>' + item_code + '</b> already exists in the list.', "fa fa-info");
 					return false;
+                }
+
+                var sales_return_row = '';
+                if($('#transfer-as').val() == 'Sales Return'){
+                    sales_return_row = '<tr class="row-' + item_code + '">' + 
+                        '<td colspan=3 class="text-center p-0">' +
+                            '<div class="d-none">' + item_code + '</div>' + // reference for search
+                            '<div class="d-none">' + description + '</div>' +
+                            '<select class="form-control" name="item[' + item_code + '][reason]" style="font-size: 10pt;">' +
+                                @foreach ($sales_return_reason as $reason)
+                                    '<option value="{{ $reason }}" ' + (selected_reason == '{{ $reason }}' ? 'selected' : '') + '>{{ $reason }}</option>' + 
+                                @endforeach
+                            '</select>' +
+                        '</td>' +
+                    '</tr>';
                 }
 
                 var row = '<tr class="row-' + item_code + ' ' + item_code + '">' +
@@ -566,7 +596,7 @@
                         '<div class="d-none">' + item_code + '</div>' + // reference for search
                         '<div class="item-description">' + description + '</div>' +
                     '</td>' +
-                '</tr>';
+                '</tr>' + sales_return_row;
 
                 if(jQuery.inArray(item_code, items_array) === -1){
                     items_array.push(item_code);

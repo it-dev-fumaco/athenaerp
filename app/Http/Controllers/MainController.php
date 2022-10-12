@@ -38,7 +38,6 @@ class MainController extends Controller
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
         $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
         $transaction_date = $transactionDate->format('d-m-Y');
         
@@ -46,10 +45,6 @@ class MainController extends Controller
         foreach ($period as $date) {
             $date1 = $date->day($cutoff_1);
             if ($date1 >= $start_date && $date1 <= $end_date) {
-                $cutoff_period[] = $date->format('d-m-Y');
-            }
-            $date2 = $date->day($cutoff_2);
-            if ($date2 >= $start_date && $date2 <= $end_date) {
                 $cutoff_period[] = $date->format('d-m-Y');
             }
         }
@@ -77,7 +72,7 @@ class MainController extends Controller
         }
 
         if(Auth::user()->user_group == 'Promodiser'){
-            $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->pluck('warehouse');
+            $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', $user)->orderBy('warehouse', 'asc')->pluck('warehouse');
             
             $total_pending_inventory_audit = 0;
             if (count($assigned_consignment_store) > 0) {
@@ -91,7 +86,6 @@ class MainController extends Controller
                 $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
                 $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-                $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
                 $date_now = $currentDateTime->format('d-m-Y');
                 
@@ -99,10 +93,6 @@ class MainController extends Controller
                 foreach ($period as $date) {
                     $date1 = $date->day($cutoff_1);
                     if ($date1 >= $start_date && $date1 <= $end_date) {
-                        $cutoff_period[] = $date->format('d-m-Y');
-                    }
-                    $date2 = $date->day($cutoff_2);
-                    if ($date2 >= $start_date && $date2 <= $end_date) {
                         $cutoff_period[] = $date->format('d-m-Y');
                     }
                 }
@@ -115,8 +105,12 @@ class MainController extends Controller
 
                 $date_now_index = array_search($date_now, $cutoff_period);
                 // set duration from and duration to
-                $duration_from = $cutoff_period[$date_now_index - 1];
                 $duration_to = $cutoff_period[$date_now_index + 1];
+                if($sales_report_deadline->{'2nd_cutoff_date'}){
+                    $duration_from = $cutoff_period[$date_now_index - 1];
+                }else{
+                    $duration_from = Carbon::parse($duration_to)->subMonths(1)->addDays(1)->format('d-m-Y');
+                }
 
                 $duration = Carbon::parse($duration_from)->addDay()->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
@@ -165,14 +159,9 @@ class MainController extends Controller
                 $end = Carbon::now()->endOfDay();
 
                 $first_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_1 .'/'. $end->format('Y'))->endOfDay();
-                $second_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_2 .'/'. $end->format('Y'))->endOfDay();
     
                 if ($first_cutoff->gt($end)) {
                     $end = $first_cutoff;
-                }
-    
-                if ($second_cutoff->gt($end)) {
-                    $end = $second_cutoff;
                 }
     
                 $cutoff_date = $this->getCutoffDate($end->endOfDay());
@@ -338,7 +327,6 @@ class MainController extends Controller
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
         $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
         $date_now = $currentDateTime->format('d-m-Y');
         
@@ -346,10 +334,6 @@ class MainController extends Controller
         foreach ($period as $date) {
             $date1 = $date->day($cutoff_1);
             if ($date1 >= $start_date && $date1 <= $end_date) {
-                $cutoff_period[] = $date->format('d-m-Y');
-            }
-            $date2 = $date->day($cutoff_2);
-            if ($date2 >= $start_date && $date2 <= $end_date) {
                 $cutoff_period[] = $date->format('d-m-Y');
             }
         }
@@ -362,8 +346,12 @@ class MainController extends Controller
 
         $date_now_index = array_search($date_now, $cutoff_period);
         // set duration from and duration to
-        $duration_from = $cutoff_period[$date_now_index - 1];
         $duration_to = $cutoff_period[$date_now_index + 1];
+        if($sales_report_deadline->{'2nd_cutoff_date'}){
+            $duration_from = $cutoff_period[$date_now_index - 1];
+        }else{
+            $duration_from = Carbon::parse($duration_to)->subMonths(1)->addDays(1)->format('d-m-Y');
+        }
 
         $duration = Carbon::parse($duration_from)->format('M d, Y') . ' - ' . Carbon::parse($duration_to)->format('M d, Y');
 
@@ -424,14 +412,9 @@ class MainController extends Controller
         $end = Carbon::now()->endOfDay();
 
         $first_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_1 .'/'. $end->format('Y'))->endOfDay();
-        $second_cutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') .'/'. $cutoff_2 .'/'. $end->format('Y'))->endOfDay();
 
         if ($first_cutoff->gt($end)) {
             $end = $first_cutoff;
-        }
-
-        if ($second_cutoff->gt($end)) {
-            $end = $second_cutoff;
         }
 
         $cutoff_date = $this->getCutoffDate(Carbon::now()->endOfDay());
@@ -475,17 +458,12 @@ class MainController extends Controller
         $cutoff_filters = [];
         if ($sales_report_deadline) {
             $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
-            $cutoff_2 = $sales_report_deadline->{'2nd_cutoff_date'};
             
             $cutoff_period = [];
             foreach ($period as $date) {
                 $from = $to = null;
                 $date1 = $date->day($cutoff_1);
                 if ($date1 >= $start_date && $date1 <= $end_date) {
-                    $cutoff_period[] = $date->format('Y-m-d');
-                }
-                $date2 = $date->day($cutoff_2);
-                if ($date2 >= $start_date && $date2 <= $end_date) {
                     $cutoff_period[] = $date->format('Y-m-d');
                 }
             }
@@ -1147,6 +1125,9 @@ class MainController extends Controller
     public function get_select_filters(Request $request){
         $warehouses = DB::table('tabWarehouse')->where('is_group', 0)->where('disabled', 0)
             ->whereIn('category', ['Physical', 'Consigned'])
+            ->when($request->q, function ($q) use ($request){
+                $q->where('name', 'LIKE', '%'.$request->q.'%')->orWhere('warehouse_name', 'LIKE', '%'.$request->q.'%');
+            })->where('disabled', 0)
             ->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
         $item_groups = DB::table('tabItem Group')->where('is_group', 0)->where('name','LIKE', '%'.$request->q.'%')
@@ -2030,7 +2011,7 @@ class MainController extends Controller
             }
 
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'status' => $status, 
                 'transfer_qty' => $request->qty, 
                 'qty' => $request->qty, 
@@ -2551,7 +2532,7 @@ class MainController extends Controller
 
             $now = Carbon::now();
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'status' => 'Issued',
                 'barcode' => $request->barcode,
                 'date_modified' => $now->toDateTimeString()
@@ -4857,7 +4838,7 @@ class MainController extends Controller
             }
 
             $values = [
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'item_status' => 'Returned',
                 'barcode_return' => $request->barcode,
                 'date_modified' => Carbon::now()->toDateTimeString()
@@ -5101,7 +5082,7 @@ class MainController extends Controller
 				'batch_no' => null,
 				'valuation_rate' => $rate,
 				'material_request' => null,
-                'session_user' => Auth::user()->full_name,
+                'session_user' => Auth::user()->wh_user,
                 'validate_item_code' => $production_order_details->production_item,
 				't_warehouse_personnel' => null,
 				's_warehouse_personnel' => null,
@@ -5491,6 +5472,7 @@ class MainController extends Controller
         }
     }
 
+    // /consignment_sales/{warehouse}
     public function consignmentSalesReport($warehouse, Request $request) {
         $year = $request->year ? $request->year : Carbon::now()->format('Y');
         $query = DB::table('tabConsignment Sales Report')

@@ -210,7 +210,7 @@
                                             <button type="button" class="btn btn-secondary reload-to-receive-table"><i class="fas fa-undo"></i></button>
                                         </div>
                                     </div>
-                                    <div id="pending-to-receive-table"></div>
+                                    <div id="pending-to-receive-table" class="overflow-auto"></div>
                                 </div>
                             </div>
                         </div>
@@ -220,7 +220,67 @@
         </div>
     </div>
 </div>
-
+@if (session()->has('error'))
+    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-navy">
+                    <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-info-circle"></i> Error</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #fff;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{ session()->get('error') }}
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+@if (session()->has('success'))
+    @php
+        $received = session()->get('success');
+    @endphp
+    <div class="modal fade" id="receivedDeliveryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-navy">
+                    <h5 class="modal-title" id="exampleModalLabel">
+                        @switch($received['action'])
+                            @case('received')
+                                Item(s) Received
+                                @break
+                            @case('canceled')
+                                Stock Transfer Cancelled
+                                @break
+                            @default
+                                Delivered Item(s)
+                        @endswitch
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" style="color: #fff">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" style="font-size: 10pt;">
+                    <div class="row">
+                        <div class="col-2">
+                            <center>
+                                <p class="text-success text-center mb-0" style="font-size: 4rem;">
+                                    <i class="fas fa-check-circle"></i>
+                                </p>
+                            </center>
+                        </div>
+                        <div class="col-10">
+                            <span>{{ $received['message'] }}</span> <br>
+                            <span>Branch: <b>{{ $received['branch'] }}</b></span> <br>
+                            <span>Total Amount: <b>₱ {{ number_format(collect($received)->sum('amount'), 2) }}</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 <style>
     .custom-navpill .nav-item .active{
         background-color:rgba(58, 112, 170, 0.905);
@@ -320,6 +380,9 @@
 
 @section('script')
 <script>
+    $('#errorModal').modal('show');
+    $('#receivedDeliveryModal').modal('show');
+
     function makesvg(percentage, inner_text=""){
         var abs_percentage = Math.abs(percentage).toString();
         var percentage_str = percentage.toString();
