@@ -358,8 +358,10 @@ class MainController extends Controller
         $consignment_branches = DB::table('tabWarehouse Users as wu')
             ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
             ->join('tabWarehouse as w', 'w.name', 'acw.warehouse')
-            ->where('wu.user_group', 'Promodiser')
+            ->where('wu.user_group', 'Promodiser')->where('w.disabled', 0)
+            ->where('is_group', 0)
             ->select('w.warehouse_name', 'w.name', 'w.is_group', 'w.disabled')
+            ->groupBy('w.warehouse_name', 'w.name', 'w.is_group', 'w.disabled')
             ->orderBy('w.warehouse_name', 'asc')->get()->toArray();
 
         $active_consignment_branches = collect($consignment_branches)->where('is_group', 0)->where('disabled', 0);
