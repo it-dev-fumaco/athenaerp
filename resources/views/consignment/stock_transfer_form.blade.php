@@ -139,7 +139,7 @@
                                                                         </tr>
                                                                     </table>
                                                                     @php
-                                                                        $sales_return_reason = ['Defective', 'Change Item'];
+                                                                        $sales_return_reason = ['Defective', 'Item Replaced'];
                                                                     @endphp
                                                                     <select id="sales-return-reason" class="form-control d-none">
                                                                         @foreach ($sales_return_reason as $reason)
