@@ -348,7 +348,7 @@ class MainController extends Controller
         // set duration from and duration to
         $duration_to = $cutoff_period[$date_now_index + 1];
         if($sales_report_deadline->{'2nd_cutoff_date'}){
-            $duration_from = $cutoff_period[$date_now_index - 1];
+            $duration_from = isset($cutoff_period[$date_now_index - 1]) ? $cutoff_period[$date_now_index - 1] : Carbon::now()->subMonths(1)->addDays(1)->format('m-d-Y');
         }else{
             $duration_from = Carbon::parse($duration_to)->subMonths(1)->addDays(1)->format('d-m-Y');
         }
