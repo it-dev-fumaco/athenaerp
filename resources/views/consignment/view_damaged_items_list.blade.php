@@ -31,15 +31,15 @@
                             @endif
                             <ul class="nav nav-pills m-0" role="tablist">
                                 <li class="nav-item">
-                                    <a class="nav-link active font-responsive" data-toggle="tab" href="#stock_transfers">Stock Transfer History</a>
+                                    <a class="nav-link {{ !request('damaged_items') ? 'active' : null }} font-responsive" data-toggle="tab" href="#stock_transfers">Stock Transfer History</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link font-responsive" data-toggle="tab" href="#damaged_items">Damaged Item List</a>
+                                    <a class="nav-link {{ request('damaged_items') ? 'active' : null }} font-responsive" data-toggle="tab" href="#damaged_items">Damaged Item List</a>
                                 </li>
                             </ul>
                             
                             <div class="tab-content">
-                                <div id="stock_transfers" class="tab-pane active">
+                                <div id="stock_transfers" class="tab-pane {{ !request('damaged_items') ? 'active' : null }}">
                                     <!-- Stock Transfers -->
                                     <form action="/stocks_report/list" method="get">
                                         <div id="accordion" class="mt-2">
@@ -297,7 +297,7 @@
                                 <!-- Stock Transfers -->
 
                             <!-- Damaged Items -->
-                            <div id="damaged_items" class="tab-pane">
+                            <div id="damaged_items" class="tab-pane {{ request('damaged_items') ? 'active' : null }}">
                                 <form action="/stocks_report/list" method="GET">
                                     <div id="accordion2" class="mt-2">
                                         <button type="button" class="btn btn-link border-bottom btn-block text-left d-xl-none d-lg-none" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo" style="font-size: 10pt;">
