@@ -57,7 +57,7 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row">
-                                    <div class="col-4 p-2">
+                                    <div class="col-3 p-2">
                                         @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
                                         <select class="form-control csm-filter" name="store" id="consignment-store-select"></select>
                                         @else
@@ -72,6 +72,15 @@
                                         <input type="hidden" class="csm-filter" name="store" value="{{ $consignment_branches[0] }}">
                                         @endif
                                         @endif
+                                    </div>
+                                    <div class="col-3 p-2">
+                                        <input type="text" class="form-control date-range" id="consignment-date-range" name="date_range" style="height: 30px;"> 
+                                    </div>
+                                    <div class="col-3 p-2">
+                                        <select name="user" id="consignment-user-select" class="form-control select2"></select>
+                                    </div>
+                                    <div class="col-3 p-2">
+                                        <button class="btn btn-sm btn-secondary" id="consignment-reset">Reset Filters</button>
                                     </div>
                                     <div class="col-12">
                                         <div id="consignment-ledger-content"></div>
@@ -877,7 +886,7 @@
 		.select2-selection__arrow {
 			height: 28px !important;
 		}
-        .myFont{
+        .date-range, .myFont{
             font-size:9pt;
         }
     </style>
@@ -1183,11 +1192,17 @@
         function load(page) {
             var item_code = '{{ $item_details->name }}';
             var branch_warehouse = $('.csm-filter').eq(0).val();
+            var date_range = $('#consignment-date-range').val();
+            var user = $('#consignment-user-select').val();
 
             $.ajax({
                 type: "GET",
                 url: "/consignment_stock_movement/" + item_code + "?page=" + page,
-                data: {branch_warehouse},
+                data: {
+                    branch_warehouse,
+                    date_range: date_range,
+                    user: user
+                },
                 success: function (response) {
                     $('#consignment-ledger-content').html(response);
                 }
@@ -1198,6 +1213,73 @@
             event.preventDefault();
             var page = $(this).attr('href').split('page=')[1];
             load(page);
+        });
+
+        $(".date-range").daterangepicker({
+            autoUpdateInput: false,
+            placeholder: 'Select Date Range',
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                format: 'YYYY-MMM-DD',
+                separator: " to "
+            },
+            startDate: moment().subtract(30, 'days'), endDate: moment(),
+        });
+
+        $(".date-range").on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD'));
+            load();
+        });
+
+        $(".date-range").on('cancel.daterangepicker', function (ev, picker) {
+            $(this).val('');
+            load();
+        });
+
+        $(".date-range").val('');
+        $(".date-range").attr("placeholder","Select Date Range");
+
+        $('#consignment-user-select').select2({
+            placeholder: "Select a user",
+            ajax: {
+                url: "/consignment_stock_movement/{{ $item_details->name }}?get_users=1",
+                method: 'GET',
+                dataType: 'json',
+                data: function (data) {
+                    return {
+                        q: data.term // search term
+                    };
+                },
+                processResults: function (response) {
+                    return {
+                        results: response
+                    };
+                },
+                cache: true
+            }
+        });
+
+        $(document).on('select2:select', '#consignment-user-select', function(e){
+            load();
+        });
+
+        $(document).on('click', '#consignment-reset', function (){
+            $('#consignment-user-select').empty().trigger('change');
+            $('#consignment-date-range').val('');
+            @if (Auth::user()->user_group == 'Consignment Supervisor')
+                $(".csm-filter").empty().trigger('change');
+            @endif
+            @if (count($consignment_branches) > 1 && Auth::user()->user_group == 'Promodiser')
+                $(".csm-filter").val($(".csm-filter option:first").val());
+            @endif
+            load();
         });
     </script>
 @endsection

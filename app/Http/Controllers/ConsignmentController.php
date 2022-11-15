@@ -5422,6 +5422,10 @@ class ConsignmentController extends Controller
 
     public function consignmentStockMovement($item_code, Request $request) {
         $branch_warehouse = $request->branch_warehouse;
+
+        $dates = $request->date_range ? explode(' to ', $request->date_range) : [];
+        $user = $request->user != 'Select All' ? $request->user : null;
+
         $result = [];
         if ($item_code) {
             $item_opening_stock = DB::table('tabConsignment Beginning Inventory as cb')
@@ -5429,6 +5433,12 @@ class ConsignmentController extends Controller
                 ->where('cb.status', 'Approved')->where('cbi.item_code', $item_code)
                 ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
                     return $q->where('branch_warehouse', $branch_warehouse);
+                })
+                ->when($request->date_range, function ($q) use ($dates){
+                    return $q->whereDate('cb.transaction_date', '>=', Carbon::parse($dates[0])->startOfDay())->whereDate('cb.transaction_date', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, function ($q) use ($user){
+                    return $q->where('cb.owner', $user);
                 })
                 ->select('cbi.item_code', 'cbi.opening_stock', 'cb.transaction_date', 'cb.branch_warehouse', 'cb.name', 'cb.owner')
                 ->orderBy('cb.transaction_date', 'asc')->get();
@@ -5452,11 +5462,17 @@ class ConsignmentController extends Controller
                 ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
                     return $q->where('branch_warehouse', $branch_warehouse);
                 })
+                ->when($request->date_range, function ($q) use ($dates){
+                    return $q->whereDate('csr.transaction_date', '>=', Carbon::parse($dates[0])->startOfDay())->whereDate('csr.transaction_date', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, function ($q) use ($user){
+                    return $q->where('csr.owner', $user);
+                })
                 ->select('csri.item_code', 'csr.transaction_date', 'csri.qty', 'csr.branch_warehouse', 'csr.name', 'csr.owner')
                 ->orderBy('csr.transaction_date', 'asc')->get()->toArray();
     
             foreach ($item_sales_report as $s) {
-                $result[] = [
+                $result[] = [   
                     'qty' => '-'.number_format($s->qty),
                     'type' => 'Product Sold',
                     'transaction_date' => $s->transaction_date,
@@ -5481,6 +5497,12 @@ class ConsignmentController extends Controller
                 })
                 ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
                     return $q->where('sted.t_warehouse', $branch_warehouse);
+                })
+                ->when($request->date_range, function ($q) use ($dates){
+                    return $q->whereDate('sted.consignment_date_received', '>=', Carbon::parse($dates[0])->startOfDay())->whereDate('sted.consignment_date_received', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, function ($q) use ($user){
+                    return $q->where('sted.consignment_received_by', $user);
                 })
                 ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
                 ->where('ste.purpose', 'Material Transfer')
@@ -5510,6 +5532,12 @@ class ConsignmentController extends Controller
                 ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
                     return $q->where('sted.s_warehouse', $branch_warehouse);
                 })
+                ->when($request->date_range, function ($q) use ($dates){
+                    return $q->whereDate('sted.creation', '>=', Carbon::parse($dates[0])->startOfDay())->whereDate('sted.creation', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, function ($q) use ($user){
+                    return $q->where('ste.owner', $user);
+                })
                 ->whereIn('ste.transfer_as', ['Store Transfer'])
                 ->where('ste.purpose', 'Material Transfer')
                 ->where('ste.docstatus', 1)
@@ -5537,6 +5565,12 @@ class ConsignmentController extends Controller
                 ->when($branch_warehouse, function ($q) use ($branch_warehouse){ 
                     return $q->where('sted.s_warehouse', $branch_warehouse);
                 })
+                ->when($request->date_range, function ($q) use ($dates){
+                    return $q->whereDate('sted.creation', '>=', Carbon::parse($dates[0])->startOfDay())->whereDate('sted.creation', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, function ($q) use ($user){
+                    return $q->where('ste.owner', $user);
+                })
                 ->whereIn('ste.transfer_as', ['For Return'])
                 ->where('ste.purpose', 'Material Transfer')
                 ->where('ste.docstatus', 1)
@@ -5555,6 +5589,26 @@ class ConsignmentController extends Controller
                     'owner' => $a->owner
                 ];
             }
+        }
+
+        if($request->get_users == 1){
+            $all[] = [
+                'id' => 'Select All',
+                'text' => 'Select All'
+            ];
+
+            $users = collect($result)->map(function ($q){
+                if($q['owner']){
+                    return [
+                        'id' => $q['owner'],
+                        'text' => $q['owner']
+                    ];
+                }
+            })->filter()->unique();
+
+            $users = collect($all)->merge($users);
+
+            return response()->json($users);
         }
 
         $result = collect($result)->sortBy('transaction_date')->reverse()->toArray();
