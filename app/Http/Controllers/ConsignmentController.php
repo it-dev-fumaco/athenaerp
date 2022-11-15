@@ -4322,7 +4322,8 @@ class ConsignmentController extends Controller
                 'status' => $sa->status,
                 'transaction_date' => $sa->transaction_date.' '.$sa->transaction_time,
                 'items' => $items_array,
-                'has_transactions' => collect($items_array)->pluck('has_transactions')->max()
+                'has_transactions' => collect($items_array)->pluck('has_transactions')->max(),
+                'remarks' => $sa->remarks
             ];
         }
 
@@ -4374,7 +4375,8 @@ class ConsignmentController extends Controller
                 'warehouse' => $request->warehouse,
                 'created_by' => Auth::user()->wh_user,
                 'transaction_date' => $now->toDateString(),
-                'transaction_time' => $now->toTimeString()
+                'transaction_time' => $now->toTimeString(),
+                'remarks' => $request->notes
             ]);
 
             foreach($item_codes as $i => $item_code){

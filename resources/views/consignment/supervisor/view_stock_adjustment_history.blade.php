@@ -41,7 +41,7 @@
                             </div>
                             <div class="modal-body">
                                 <h5 class="text-center font-responsive font-weight-bold m-0">{{ $stock['warehouse'] }}</h5>
-                                <small class="d-block text-center mb-2">{{ $stock['name'] }} | Transaction Date: {{ $stock['transaction_date'] }}</small>
+                                <small class="d-block text-center mb-2">{{ $stock['name'] }} | Transaction Date: {{ Carbon\Carbon::parse($stock['transaction_date'])->format('M d, Y h:i:s A') }}</small>
                                 <div class="row p-0">
                                     <div class="col-4 p-2 font-weight-bold border">Item</div>
                                     <div class="col-4 p-2 font-weight-bold border">Stocks</div>
@@ -88,6 +88,12 @@
                                     </div>
                                 @endforeach
                             </div>
+                            @if ($stock['remarks'])
+                                <div class="container text-left p-2">
+                                    <label>Notes</label><br>
+                                    {{ $stock['remarks'] }}
+                                </div>
+                            @endif
                             @if ($stock['status'] != 'Cancelled')
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $stock['name'] }}-Modal" {{ $stock['has_transactions'] == 1 ? 'disabled' : null }}>Cancel</button>
