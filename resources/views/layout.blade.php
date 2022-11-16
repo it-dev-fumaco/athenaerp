@@ -2133,6 +2133,10 @@
 			$(modal).modal('hide');
 		}
 
+		function open_modal(modal){
+			$(modal).modal('show');
+		}
+
 		function nextImg(item_code){
 			if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { // mobile/tablet
 				var current_img = $('#mobile-'+item_code+'-image-data').text();
