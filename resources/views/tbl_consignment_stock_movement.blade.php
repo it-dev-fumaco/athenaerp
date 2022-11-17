@@ -9,11 +9,19 @@
     </thead>
     <tbody>
         @forelse ($result as $s)
+        @php
+            $text_color = 'success';
+            if(number_format($s['qty']) < 0){
+                $text_color = 'danger';
+            }else if($s['type'] == 'Stock Adjustment'){
+                $text_color = 'secondary';
+            }
+        @endphp
         <tr>
             <td class="p-1 text-center">{{ \Carbon\Carbon::parse($s['transaction_date'])->format('M. d, Y') }}</td>
             <td class="p-1 text-center">{{ $s['branch_warehouse'] }}</td>
             <td class="p-1 text-center">
-                <span class="{{ number_format($s['qty']) < 0 ? 'text-danger' : '' }}">{{ $s['qty'] }}</span>
+                <span class="text-{{ $text_color }}">{{ $s['qty'] }}</span>
             </td>
             <td class="p-1 text-center">{{ $s['type'] }}</td>
             <td class="p-1 text-center">{{ $s['reference'] }}</td>
