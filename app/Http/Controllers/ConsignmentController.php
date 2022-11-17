@@ -1753,10 +1753,10 @@ class ConsignmentController extends Controller
                 return $q->t_warehouse;
             })->unique();
 
-            $wh_warehouses = [$wh->from_warehouse, $wh->to_warehouse];
+            $wh_warehouses = [$wh->from_warehouse, $wh->to_warehouse, $request->target_warehouse];
             $reference_warehouses = collect($source_warehouses)->merge($target_warehouses);
             $reference_warehouses = collect($reference_warehouses)->merge($wh_warehouses)->unique()->toArray();
-            
+
             $item_codes = collect($ste_items)->map(function ($q){
                 return $q->item_code;
             });
@@ -1772,7 +1772,7 @@ class ConsignmentController extends Controller
 
             $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
                 ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                ->whereIn('cb.branch_warehouse', array_filter([$target_warehouses, $wh->to_warehouse]))->whereIn('cb.status', ['For Approval', 'Approved'])
+                ->whereIn('cb.branch_warehouse', array_filter([$target_warehouses, $wh->to_warehouse, $request->target_warehouse]))->whereIn('cb.status', ['For Approval', 'Approved'])
                 ->select('cb.branch_warehouse', 'cbi.item_code', 'cb.name', 'cb.status', 'cbi.opening_stock', 'cbi.price')->get();
             $previous_check = collect($beginning_inventory)->groupBy('item_code');
 
@@ -1797,12 +1797,17 @@ class ConsignmentController extends Controller
             $i = 0;
             $received_items = [];
             foreach($ste_items as $item){
-                $branch =  $wh->to_warehouse ? $wh->to_warehouse : $item->t_warehouse;
                 $src_branch = $wh->from_warehouse ? $wh->from_warehouse : $item->s_warehouse;
+                if($request->target_warehouse){
+                    $branch = $request->target_warehouse;
+                }else{
+                    $branch = $wh->to_warehouse ? $wh->to_warehouse : $item->t_warehouse;
+                }
 
                 if(isset($request->receive_delivery) && !isset($prices[$item->item_code])){
                     return redirect()->back()->with('error', 'Please enter price for all items.');
                 }
+
                 if($wh->transfer_as == 'For Return'){
                     $basic_rate = $item->basic_rate;
                 }else{
@@ -1937,9 +1942,26 @@ class ConsignmentController extends Controller
                 $source_warehouse = isset($source_warehouses[0]) ? $source_warehouses[0] : null;
             }
 
-            $target_warehouse = $wh->to_warehouse ? $wh->to_warehouse : null;
-            if(!$target_warehouse){
-                $target_warehouse = isset($target_warehouses[0]) ? $target_warehouses[0] : null;
+            if($request->target_warehouse){
+                $target_warehouse = $request->target_warehouse;
+
+                DB::table('tabStock Entry')->where('name', $id)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'to_warehouse' => $request->target_warehouse
+                ]);
+
+                DB::table('tabStock Entry Detail')->where('parent', $id)->update([
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    't_warehouse' => $request->target_warehouse,
+                    'target_warehouse_location' => $request->target_warehouse
+                ]);
+            }else{
+                $target_warehouse = $wh->to_warehouse ? $wh->to_warehouse : null;
+                if(!$target_warehouse){
+                    $target_warehouse = isset($target_warehouses[0]) ? $target_warehouses[0] : null;
+                }
             }
 
             $logs = [
@@ -2765,7 +2787,9 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            return view('consignment.view_damaged_items_list', compact('items_arr', 'damaged_items', 'ste_arr', 'stock_entry'));
+            $warehouses = DB::table('tabWarehouse')->where('disabled', 0)->where('is_group', 0)->pluck('name');
+
+            return view('consignment.view_damaged_items_list', compact('items_arr', 'damaged_items', 'ste_arr', 'stock_entry', 'warehouses'));
         }
 
         return view('consignment.damaged_items_list', compact('items_arr'));

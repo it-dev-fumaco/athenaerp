@@ -186,7 +186,17 @@
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Source:</dt>
                                                                                 <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['source_warehouse'] ? $ste['source_warehouse'] : '-' }}</dd>
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Target:</dt>
-                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['target_warehouse'] }}</dd>
+                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">
+                                                                                    @if ($purpose == 'For Return' && $ste['consignment_status'] != 'Received')
+                                                                                        <select class="form-control form-control-sm target-warehouse-selection" data-reference="{{ $ste['name'] }}">
+                                                                                            @foreach ($warehouses as $warehouse)
+                                                                                                <option value="{{ $warehouse }}" {{ $warehouse == $ste['target_warehouse'] ? 'selected' : null }}>{{ $warehouse }}</option>
+                                                                                            @endforeach
+                                                                                        </select>
+                                                                                    @else
+                                                                                        {{ $ste['target_warehouse'] }}
+                                                                                    @endif
+                                                                                </dd>
                                                                             </dl>
                                                                         </div>
                                                                         <div class="pt-0 pr-2 pl-2 pb-0 col-6 text-left m-0">
@@ -199,6 +209,7 @@
                                                                         </div>
                                                                     </div>
                                                                     <form action="/promodiser/receive/{{ $ste['name'] }}" method="get">
+                                                                        <input type="text" class="d-none" name="target_warehouse" id="{{ $ste['name'] }}-target-warehouse" value="{{ $ste['target_warehouse'] }}">
                                                                         <table class="table table-striped" style="font-size: 10pt;">
                                                                             <thead>
                                                                                 <th class="text-center p-2 align-middle" width="50%">Item Code</th>
@@ -582,6 +593,13 @@
             },
             cache: true
         }
+    });
+
+    $('.target-warehouse-selection').select2();
+
+    $(document).on('select2:select', '.target-warehouse-selection', function(e){
+        var reference = $(this).data('reference');
+        $('#' + reference + '-target-warehouse').val($(this).val());
     });
 </script>
 @endsection
