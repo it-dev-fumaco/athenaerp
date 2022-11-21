@@ -4915,7 +4915,7 @@ class ConsignmentController extends Controller
                 'id' => $row[0]->frappe_userid,
                 'promodiser_name' => $row[0]->full_name,
                 'stores' => array_column($row, 'warehouse'),
-                'login_status' => $login_status,
+                'login_status' => $row[0]->last_login ? $login_status : null,
                 'enabled' => $row[0]->enabled
             ];
         }
