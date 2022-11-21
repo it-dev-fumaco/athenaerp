@@ -3190,6 +3190,12 @@ class MainController extends Controller
             ->orderBy('sle.posting_date', 'desc')->orderBy('sle.posting_time', 'desc')
             ->orderBy('sle.name', 'desc')->paginate(20);
 
+        $picking_slips = array_filter(collect($logs->items())->pluck('dr_voucher_no')->toArray());
+
+        $overrided_ps = DB::connection('mysql')->table('tabPacking Slip Item')
+            ->whereIn('parent', $picking_slips)->where('status', 'For Checking')
+            ->distinct()->pluck('parent')->toArray();
+
         $list = [];
         foreach($logs as $row){
             if($row->voucher_type == 'Delivery Note'){
@@ -3206,7 +3212,7 @@ class MainController extends Controller
             }
 
             if($row->voucher_type == 'Delivery Note'){
-                $ref_no = $voucher_no;
+                $ref_no = $row->voucher_no;
             }elseif($row->voucher_type == 'Purchase Receipt'){
                 $voucher_no = $row->pr_voucher_no;
                 $ref_no = $voucher_no;
@@ -3216,6 +3222,11 @@ class MainController extends Controller
                 $ref_no = $voucher_no;
             }else{
                 $ref_no = null;
+            }
+
+            $status = null;
+            if (in_array($voucher_no, $overrided_ps)) {
+                $status = 'Override';
             }
 
             $date_modified = $row->ste_date_modified;
@@ -3235,6 +3246,7 @@ class MainController extends Controller
                 'date_modified' => $date_modified,
                 'session_user' => $session_user,
                 'posting_date' => $row->posting_date,
+                'status' => $status
             ];
         }
 

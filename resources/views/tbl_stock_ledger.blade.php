@@ -16,7 +16,10 @@
     <tbody>
     @forelse ($list as $row)
     <tr>
-        <td class="text-center font-responsive">{{ $row['voucher_no'] }}</td>
+        <td class="text-center font-responsive">
+          <span class="d-block">{{ $row['voucher_no'] }}</span>
+          <span class="badge badge-info">{{ $row['status'] }}</span>
+        </td>
         <td class="d-md-none font-responsive" style="width: 70%">
           <span><b>Warehouse:</b> {{ $row['warehouse'] }}</span><br>
           <span><b>Transaction:</b> {{ $row['transaction'] }}</span><br>
