@@ -10,6 +10,8 @@ use Auth;
 use DB;
 use Storage;
 use Cache;
+use Mail;
+use App\Mail\StockTransfersNotification;
 
 class ConsignmentController extends Controller
 {
@@ -3334,6 +3336,9 @@ class ConsignmentController extends Controller
                 }
             }
 
+            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+            $item_image = collect($item_images)->groupBy('parent');
+
             foreach($item_codes as $i => $item_code){
                 if(!isset($transfer_qty[$item_code])){
                     return redirect()->back()->with('error', 'Please enter transfer qty for '. $item_code);
@@ -3389,6 +3394,15 @@ class ConsignmentController extends Controller
                     'date_modified' => $now->toDateTimeString(),
                     'return_reason' => isset($request->item[$item_code]['reason']) ? $request->item[$item_code]['reason'] : null,
                     'remarks' => 'Generated in AthenaERP'
+                ];
+
+                $items_array_for_email[] = [
+                    'item_code' => $item_code,
+                    'transfer_qty' => $transfer_qty[$item_code]['transfer_qty'],
+                    'uom' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['uom'] : null,
+                    'description' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['description'] : null,
+                    'image' => isset($item_image[$item_code]) ? $item_image[$item_code][0]->image_path : null,
+                    'return_reason' => isset($request->item[$item_code]['reason']) ? $request->item[$item_code]['reason'] : null
                 ];
 
                 if(Auth::user()->user_group == 'Consignment Supervisor'){
@@ -3464,6 +3478,33 @@ class ConsignmentController extends Controller
                 if (!$is_gl_generated) {
                     return redirect()->back()->with('error', 'An error occured. Please try again.');
                 }
+            }
+
+            $ste_details = [
+                'transaction_date' => $stock_entry_data['creation'],
+                'id' => $stock_entry_data['name'],
+                'source_warehouse' => $stock_entry_data['from_warehouse'],
+                'target_warehouse' => $stock_entry_data['to_warehouse'],
+                'purpose' => $stock_entry_data['purpose'],
+                'transfer_as' => $stock_entry_data['transfer_as'],
+                'user' => Auth::user()->wh_user,
+                'docstatus' => $stock_entry_data['docstatus'],
+                'status' => isset($stock_entry_detail['consignment_status']) ? $stock_entry_detail['consignment_status'] : null,
+                'date_received' => isset($stock_entry_detail['consignment_date_received']) ? $stock_entry_detail['consignment_date_received'] : null,
+                'received_by' => isset($stock_entry_detail['consignment_received_by']) ? $stock_entry_detail['consignment_received_by'] : null,
+            ];
+
+            $email_data = [ // data_to_be_inserted_in_mail_template
+                'ste_details' => $ste_details,
+                'items' => $items_array_for_email
+            ];
+
+            $consignment_supervisors = DB::table('tabWarehouse Users')->where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
+
+            if($consignment_supervisors){ // send email alert to supervisors
+                try {
+                    Mail::to($consignment_supervisors)->send(new StockTransfersNotification($email_data));
+                } catch (\Throwable $th) {}
             }
 
             DB::commit();
