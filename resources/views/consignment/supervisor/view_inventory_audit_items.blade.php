@@ -9,23 +9,16 @@
         <div class="container-fluid">
             <div class="row pt-1">
                 <div class="col-md-12">
-                    <div class="row">
-                        <div class="col-2">
-                            <div style="margin-bottom: -43px;">
-                                <a href="/inventory_audit" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
-                            </div>
-                        </div>
-                        <div class="col-10 col-lg-8 p-0">
-                            <h4 class="text-center font-weight-bold m-2 text-uppercase">{{ $store }}</h4>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12 p-0">
-                            <h5 class="text-center font-weight-bold m-2 text-uppercase">Sales & Inventory Report</h5>
-                        </div>
-                    </div>
                     <div class="card card-secondary card-outline">
-                        <div class="card-body p-4">
+                        <div class="card-body p-2">
+                            <div class="row">
+                                <div class="ml-2">
+                                    <a href="/inventory_audit" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
+                                </div>
+                                <div class="container text-center pt-2">
+                                    <h5 class="text-center font-weight-bold text-uppercase">Sales & Inventory Report</h5>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-2">
                                     <div class="d-flex flex-row align-items-center">
@@ -38,25 +31,31 @@
                                 </div>
                                 <div class="col-4">
                                     <div class="d-flex flex-row align-items-end">
+                                        {{-- <span class="text-center font-weight-bold m-2 text-uppercase">{{ $store }}</span> --}}
                                         <div class="p-0 col-12 text-left">
-                                            <p class="m-1 font-details">Period: <span class="font-weight-bold">{{ $duration }}</span></p>
+                                            <h6 class="m-1 font-weight-bold font-details">{{ $store }}</h6>
                                         </div>
                                     </div>
                                     <div class="d-flex flex-row align-items-end">
                                         <div class="p-0 col-12 text-left">
-                                            <small class="m-1 font-details">Promodiser(s): <span class="font-weight-bold">{{ $promodisers }}</span></small>
+                                            <span class="m-1 font-details" style="font-size: 9pt;">Period: <span class="font-weight-bold">{{ $duration }}</span></span>
                                         </div>
                                     </div>
                                     <div class="d-flex flex-row align-items-end">
                                         <div class="p-0 col-12 text-left">
-                                            <small class="m-1 font-details">Date Submitted: <span class="font-weight-bold">{{ \Carbon\Carbon::parse($list[0]->transaction_date)->format('F d, Y') }}</span></small>
+                                            <span class="m-1 font-details" style="font-size: 9pt;">Promodiser(s): <span class="font-weight-bold">{{ $promodisers }}</span></span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-row align-items-end">
+                                        <div class="p-0 col-12 text-left">
+                                            <span class="m-1 font-details" style="font-size: 9pt;">Date Submitted: <span class="font-weight-bold">{{ \Carbon\Carbon::parse($list[0]->transaction_date)->format('F d, Y') }}</span></span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="d-flex flex-row align-items-center">
                                         <div class="pt-3 col-12 text-center">
-                                            <h1 class="m-0 font-details font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('total_value'), 2) }} 
+                                        <h1 class="m-0 font-details font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('total_value'), 2) }} 
                                                 @if (collect($result)->sum('total_value') > 0)
                                                 @if ($sales_increase)
                                                 <i class="fas fa-long-arrow-alt-up text-success"></i>
@@ -79,22 +78,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-flex flex-row justify-content-between mt-3">
-                                <div class="p-1 text-left">
-                                    <h6 class="m-0 font-weight-bolder text-uppercase">Item List</h6>
-                                </div>
-                                <div class="p-1 text-center">
-                                    <p class="m-0 font-details">Total Item(s): <span class="font-weight-bold">{{ count($result) }}</span></p>
-                                </div>
-                            </div>
-                            <div class="tableFixHead">
+                            <div class="tableFixHead mt-2">
                                 <table id="customers">
                                     <thead class="border-top">
                                         <tr>
-                                            <th class="text-center p-1 align-middle text-uppercase" style="width: 30%; font-size: 8pt;" rowspan="2">Item Code</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" style="width: 30%; font-size: 8pt; background-color: #2C3B49 !important; z-index: 9999 !important;" rowspan="2">Item Code</th>
                                             <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Opening</th>
                                             <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Audit Qty</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) + 3 }}" style="width: 44%; font-size: 8pt;">Sold Qty</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) + 3 }}" style="font-size: 8pt; overflow:scroll !important">Sold Qty</th>
                                             <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Received</th>
                                             <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Returned</th>
                                             <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Transferred</th>
@@ -102,7 +93,7 @@
                                         </tr>
                                         <tr>
                                             @foreach ($sales_transaction_dates as $date)
-                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
+                                            <th class="text-center p-1 align-middle" style="font-size: 7pt;">{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
                                             @endforeach
                                             <th class="text-center p-0 align-middle" style="font-size: 8pt;">Total</th>
                                             <th class="text-center p-0 align-middle" style="font-size: 8pt;">Rate</th>
@@ -176,7 +167,7 @@
                                             </td>
                                             @foreach ($sales_transaction_dates as $date)
                                             <td class="text-center p-1 align-middle font-weight-bold">
-                                                <span class="d-block text-success">{{ isset($sales_items[$row['item_code']][$date]) ? $sales_items[$row['item_code']][$date]['qty'] : '' }}</span>
+                                                <span class="d-block text-success" style="font-size: 9pt;">{{ isset($sales_items[$row['item_code']][$date]) ? $sales_items[$row['item_code']][$date]['qty'] : '' }}</span>
                                             </td>
                                             @endforeach
                                             @php
@@ -233,6 +224,11 @@
                                         @endforelse
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="d-flex flex-row mt-3">
+                                <div class="container-fluid p-1 text-right">
+                                    <p class="m-0 font-details">Total Item(s): <span class="font-weight-bold">{{ count($result) }}</span></p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -417,9 +413,11 @@
 </div>
 @endforeach
 <style>
-    table {
-        table-layout: fixed;
-        width: 100%;   
+    th:first-child, td:first-child
+    {
+        position:sticky;
+        left:0px;
+        background-color: #fff;
     }
     .morectnt span {
         display: none;
@@ -430,6 +428,33 @@
     }
     .first{
         width: 70%;
+    }
+
+    .tableFixHead {
+        overflow-y: auto;
+        height: 600px;
+    }
+   
+    table #customers {
+        display: table;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    #customers td, #customers th {
+        border: 1px solid #ddd;
+    }
+
+    #customers tr:nth-child(even){background-color: #f2f2f2;}
+
+    #customers tr:hover {background-color: #ddd;}
+
+    #customers th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: #2C3B49;
+        color: white;
     }
     @media (max-width: 575.98px) {
         #items-table{
@@ -467,31 +492,6 @@
             height: 50px;
         }
     }
-
-    .tableFixHead { overflow-y: auto; height: 600px; }
-   
-   table #customers {
-      display: table;
-      border-collapse: collapse;
-      width: 100%;
-    }
-
-    #customers td, #customers th {
-      border: 1px solid #ddd;
-    }
-
-    #customers tr:nth-child(even){background-color: #f2f2f2;}
-
-    #customers tr:hover {background-color: #ddd;}
-
-    #customers th {
-      padding-top: 12px;
-      padding-bottom: 12px;
-      text-align: left;
-      background-color: #2C3B49;
-      color: white;
-    }
-
 </style>
 @endsection
 
