@@ -56,23 +56,23 @@
                                 </div>
                             @endif
                             <!-- Nav tabs -->
-                            <ul class="nav nav-tabs mt-2" id="tabs" role="tablist" style="font-size: 9pt;">
+                            <ul class="nav nav-tabs mt-2" id="tabs" role="tablist" style="font-size: 8pt;">
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger active"
+                                    <a class="nav-link nav-trigger font-weight-bold active"
                                     data-toggle="tab"
                                     data-target="store-transfer"
                                     data-purpose="Store Transfer"
                                     >Store Transfer</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger"
+                                    <a class="nav-link nav-trigger font-weight-bold"
                                     data-toggle="tab"
                                     data-target="return"
                                     data-purpose="For Return"
-                                    >For Return</a>
+                                    >Return to Plant</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger"
+                                    <a class="nav-link nav-trigger font-weight-bold"
                                     data-toggle="tab"
                                     data-target="sales-return"
                                     data-purpose="Sales Return"
@@ -157,6 +157,8 @@
             list_action = $(this).data('purpose');
 
             loadTable(list_action, table, 1);
+
+            $('.callout').addClass('d-none');
 
             $('.nav-link').removeClass('active');
             $('.tab-pane').removeClass('active');

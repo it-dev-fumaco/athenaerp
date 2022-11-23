@@ -3446,6 +3446,10 @@ class ConsignmentController extends Controller
                 }
             }
 
+            if(isset($request->from_sales_return)){
+                DB::table('tabStock Entry')->where('name', $request->reference_sales_return)->update(['sales_return_reference' => $new_id]);
+            }
+
             $ste_details = [
                 'transaction_date' => $stock_entry_data['creation'],
                 'id' => $stock_entry_data['name'],
@@ -3687,6 +3691,13 @@ class ConsignmentController extends Controller
                 ];
             }
 
+            $returns = [];
+            if($request->purpose == 'Sales Return'){ // get requested returns by Sales Return
+                $reference_returns = collect($stock_transfers->items())->pluck('sales_return_reference');
+                $returns = DB::table('tabStock Entry')->whereIn('name', $reference_returns)->where('docstatus', '<', 2)->select('name', 'consignment_status', 'consignment_date_received')->get();
+                $returns = collect($returns)->groupBy('name');
+            }
+
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
             $item_image = collect($item_images)->groupBy('parent');
 
@@ -3739,12 +3750,12 @@ class ConsignmentController extends Controller
                     'transfer_type' => $ste->transfer_as ? $ste->transfer_as : $ste->receive_as,
                     'date' => $ste->creation,
                     'remarks' => $ste->remarks,
-                    'consignment_status' => $ste->consignment_status
+                    'consignment_status' => $ste->consignment_status,
+                    'sales_return_request_status' => isset($returns[$ste->sales_return_reference]) ? $returns[$ste->sales_return_reference][0]->consignment_status : []
                 ];
             }
 
-            $action = $request->purpose;
-            return view('consignment.stock_transfers_table', compact('stock_transfers', 'ste_arr', 'purpose', 'action'));
+            return view('consignment.stock_transfers_table', compact('stock_transfers', 'ste_arr', 'purpose'));
         }
 
         return view('consignment.stock_transfers_list', compact('purpose'));
