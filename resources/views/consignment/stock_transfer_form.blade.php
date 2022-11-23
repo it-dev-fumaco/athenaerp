@@ -11,7 +11,17 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-secondary card-outline">
                         <div class="card-header text-center">
-                            <h6 class="text-center mt-1 font-weight-bold">Stock Transfer Request</h6>
+                            @switch($action)
+                                @case('For Return')
+                                    <h6 class="text-center mt-1 font-weight-bold">Return to Plant Request</h6>
+                                    @break
+                                @case('Sales Return')
+                                    <h6 class="text-center mt-1 font-weight-bold">Sales Return</h6>
+                                    @break
+                                @default
+                                    <h6 class="text-center mt-1 font-weight-bold">Stock Transfer Request</h6>
+                                    @break
+                            @endswitch
                         </div>
                         <div class="card-header text-center font-weight-bold">
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
@@ -24,54 +34,70 @@
                             @endif
                             <form action="/stock_transfer/submit" method="post">
                                 @csrf
-                                <div class="row p-1" style="font-size: 9pt">
-                                    @php
-                                        $purpose = ['Store Transfer', 'For Return', 'Sales Return'];
-                                    @endphp
-                                    <div class="col-2 pt-2">
-                                        <label for="transfer_as">Purpose</label>
-                                    </div>
-                                    <div class="col-10 pt-1">
-                                        <select name="transfer_as" id='transfer-as' class="form-control" required style="font-size: 9pt">
-                                            <option value="" disabled selected>Select Purpose</option>
-                                            @foreach ($purpose as $p)
-                                                <option value="{{ $p }}">{{ $p }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="row p-1" id="source" style="font-size: 9pt">
-                                    <div class="col-2 pt-2">
-                                        <label for="source_warehouse">From</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
-                                            <option value="" disabled selected>Select Source Warehouse</option>
-                                            @foreach ($assigned_consignment_stores as $store)
-                                                <option value="{{ $store }}">{{ $store }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="row p-1 mt-2" id="target" style="font-size: 9pt; display: none">
-                                    <div class="col-2 pt-2">
-                                        <label for="target_warehouse">To</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <input type="text" name="default_warehouse" id="wh-for-return" class="form-control" value="Fumaco - Plant 2" readonly style="font-size: 10pt">
-                                        <div id="target-warehouse-container">
-                                            <select name="target_warehouse" id="target-warehouse" class="form-control" disabled style="font-size: 9pt"></select>
+                                @switch($action)
+                                    @case('For Return')
+                                        <input type="hidden" name="transfer_as" value="For Return">
+                                        <div class="row p-1" id="source" style="font-size: 9pt">
+                                            <div class="container">
+                                                <label for="source_warehouse">Source Warehouse</label>
+                                                <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
+                                                    <option value="" disabled selected>Select Source Warehouse</option>
+                                                    @foreach ($assigned_consignment_stores as $store)
+                                                        <option value="{{ $store }}">{{ $store }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="row p-1 mt-2" id="items-to-return" style="display: none">
+                                        <div class="row p-1" id="target" style="font-size: 9pt">
+                                            <div class="container">
+                                                <label for="source_warehouse">Target Warehouse</label>
+                                                <input type="text" class="form-control" style="font-size: 9pt;" value="Fumaco - Plant 2" readonly>
+                                                <input type="text" class="form-control d-none" style="font-size: 9pt;" name="default_warehouse" value="Quarantine Warehouse - FI" readonly>
+                                            </div>
+                                        </div>
+                                        @break
+                                    @case('Sales Return')
+                                        <input type="hidden" name="transfer_as" value="Sales Return">
+                                        <input type="hidden" name="default_warehouse" class="form-control" value="Fumaco - Plant 2" readonly style="font-size: 10pt">
+                                        <div class="row p-1" style="font-size: 9pt">
+                                            <div class="container">
+                                                <label for="target-warehouse">Warehouse</label>
+                                                <div id="target-warehouse-container">
+                                                    <select name="target_warehouse" id="target-warehouse" class="form-control" style="font-size: 9pt"></select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @break
+                                    @default
+                                        <input type="hidden" name="transfer_as" value="Store Transfer">
+                                        <div class="row p-1" id="source" style="font-size: 9pt">
+                                            <div class="container">
+                                                <label for="source_warehouse">Source Warehouse</label>
+                                                <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
+                                                    <option value="" disabled selected>Select Source Warehouse</option>
+                                                    @foreach ($assigned_consignment_stores as $store)
+                                                        <option value="{{ $store }}">{{ $store }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row p-1" id="source" style="font-size: 9pt">
+                                            <div class="container">
+                                                <label for="source_warehouse">Target Warehouse</label>
+                                                <select name="target_warehouse" id="target-warehouse" class="form-control" style="font-size: 9pt"></select>
+                                            </div>
+                                        </div>
+                                        @break
+                                @endswitch
+                                <small class="font-italic text-danger d-none warehouse-err" style="font-size: 8pt;">* Please select a warehouse</small>
+                                <div class="row p-1 mt-2" id="items-to-return">
                                     <div class="container-fluid">
                                         <div class="row">
                                             <div class="col-7">
                                                 <input type="text" class="form-control form-control-sm" id="item-search" name="search" autocomplete="off" placeholder="Search"/>
                                             </div>
                                             <div class="col-5">
-                                                <button type="button" class="btn btn-primary w-100" id="open-item-modal" style="font-size: 10pt;" data-toggle="modal" data-target="#add-item-Modal" disabled><i class="fa fa-plus"></i> Add item</button>
+                                                <button type="button" class="btn btn-primary w-100" id="open-item-modal" style="font-size: 10pt;" data-target="#add-item-Modal"><i class="fa fa-plus"></i> Add item</button>
 
                                                 <div class="modal fade" id="add-item-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
@@ -141,7 +167,7 @@
                                                                     @php
                                                                         $sales_return_reason = ['Defective', 'Change Item'];
                                                                     @endphp
-                                                                    <select id="sales-return-reason" class="form-control d-none">
+                                                                    <select id="sales-return-reason" class="form-control {{ request('action') != 'Sales Return' ? 'd-none' : null }}">
                                                                         @foreach ($sales_return_reason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
                                                                         @endforeach
@@ -210,74 +236,40 @@
 @section('script')
     <script>
         $(document).ready(function (){
-            $('#transfer-as').change(function (){
-                $('#target').slideDown();
-                var src = $('#src-warehouse').val();
-                $('.qty-col').text('Stocks');
-                if($(this).val() == 'Store Transfer'){
-                    if($('#source').is(':hidden')){
-                        $('#source').slideDown();
-                    }
-                    $('#wh-for-return').addClass('d-none');
-
-                    $('#target-warehouse-container').removeClass('d-none');
-                    $('#target-warehouse').prop('required', true);
-                    if($('#src-warehouse').val() == ''){
-                        $('#target-warehouse').attr("disabled", true);
-                    }
-
-                    $('#src-warehouse').prop('required', true);
-                    // $('.transfer-text').text('Qty to Transfer');
-                    $('#sales-return-reason').addClass('d-none');
-                }else if($(this).val() == 'For Return'){
-                    if($('#source').is(':hidden')){
-                        $('#source').slideDown();
-                    }
-                    $('#wh-for-return').removeClass('d-none');
-
-                    $('#target-warehouse').prop('required', false);
-                    $('#target-warehouse-container').addClass('d-none');
-
-                    $('#src-warehouse').prop('required', true);
-                    // $('.transfer-text').text('Qty to Transfer');
-
-                    $('#items-to-return').slideDown();
-                    $('#sales-return-reason').addClass('d-none');
-                }else{ // sales returns
-                    $('#wh-for-return').addClass('d-none');
-
-                    $('#target-warehouse-container').removeClass('d-none');
-                    $('#target-warehouse').prop('required', true);
-                    $('#target-warehouse').attr("disabled", false);
-
-                    $('#src-warehouse').prop('required', false);
-                    // $('.transfer-text').text('Qty Returned');
-                    // $('.qty-col').text('Qty Sold');
-
-                    if($('#source').is(':visible')){
-                        $('#source').slideUp();
-                    }
-                    $('#sales-return-reason').removeClass('d-none');
-
-                    src = null;
+            var form_purpose = '{{ $action }}';
+            $(document).on('click', '#open-item-modal', function (){
+                var modal = $(this).data('target');
+                var no_err = true;
+                switch (form_purpose) {
+                    case 'For Return':
+                        if($('#src-warehouse').val() != null && $('#src-warehouse').val() != ''){
+                            no_err = true;
+                        }else{
+                            no_err = false;
+                        }
+                        break;
+                    case 'Sales Return':
+                        if($('#target-warehouse').val() != null && $('#target-warehouse').val() != ''){
+                            no_err = true;
+                        }else{
+                            no_err = false;
+                        }
+                        break;
+                    default:
+                        if($('#src-warehouse').val() != null && $('#src-warehouse').val() != ''
+                        && $('#target-warehouse').val() != null && $('#target-warehouse').val() != ''){
+                            no_err = true;
+                        }else{
+                            no_err = false;
+                        }
+                        break;
                 }
-
-                $("#target-warehouse").empty().trigger('change');
-                $("#received-items").empty().trigger('change');
-
-                $('.items-list').each(function() {
-                    var item_code = $(this).val();
-                    remove_items(item_code);
-                });
-
-                $('#submit-btn').addClass('d-none');
-                $('#placeholder').removeClass('d-none');
-                $('#items-container').addClass('d-none');
-
-                get_received_items(src);
-                reset_placeholders();
-                validate_submit();
-                items_array = [];
+                if(no_err){
+                    open_modal(modal);
+                    $('.warehouse-err').addClass('d-none');
+                }else{
+                    $('.warehouse-err').removeClass('d-none');
+                }
             });
 
             $('#src-warehouse').change(function(){
@@ -313,7 +305,7 @@
                     data: function (data) {
                         return {
                             q: data.term, // search term
-                            assigned_to_me: $('#transfer-as').val() == 'Sales Return' ? 1 : 0
+                            assigned_to_me: form_purpose == 'Sales Return' ? 1 : 0
                         };
                     },
                     processResults: function (response) {
@@ -327,8 +319,8 @@
 
             $(document).on('select2:select', '#target-warehouse', function(e){
                 $('#items-to-return').slideDown();
-                if($('#transfer-as').val() == 'Sales Return'){
-                    var warehouse = e.params.data.text;
+                if(form_purpose == 'Sales Return'){
+                    var warehouse = e.params.data.id;
                     get_received_items(warehouse);
                     
                     $('.items-list').each(function() {
@@ -358,7 +350,7 @@
                             return {
                                 q: data.term, // search term
                                 excluded_items: items_array,
-                                purpose: $('#transfer-as').val()
+                                purpose: form_purpose
                             };
                         },
                         processResults: function (response) {
@@ -404,7 +396,7 @@
                     if($.isNumeric(val) && parseInt(val) > 0){
                         $(this).css('border', '1px solid #CED4DA');
                         inputs.push(1);
-                        if($('#transfer-as').val() != 'Sales Return' && parseInt(val) > parseInt(max)){
+                        if(form_purpose != 'Sales Return' && parseInt(val) > parseInt(max)){
                             $(this).css('border', '1px solid red');
                             inputs.push(0);    
                         }
@@ -469,7 +461,6 @@
 
             // Modal Add/Subtract Controls
             $('table#items-selection-table').on('click', '.qtyplus', function(e){
-                console.log($('#transfer-as').val());
                 // Stop acting like a button
                 e.preventDefault();
                 // Get the field name
@@ -480,7 +471,7 @@
                 // If is not undefined
                 if (!isNaN(currentVal)) {
                     // Increment
-                    if ($('#transfer-as').val() == 'Sales Return') {
+                    if (form_purpose == 'Sales Return') {
                         fieldName.val(currentVal + 1);
                     }else{
                         if(currentVal < max){
@@ -539,7 +530,7 @@
                 }
 
                 var sales_return_row = '';
-                if($('#transfer-as').val() == 'Sales Return'){
+                if(form_purpose == 'Sales Return'){
                     sales_return_row = '<tr class="row-' + item_code + '">' + 
                         '<td colspan=3 class="text-center p-0">' +
                             '<div class="d-none">' + item_code + '</div>' + // reference for search
@@ -639,7 +630,7 @@
                 // If is not undefined
                 if (!isNaN(currentVal)) {
                     // Increment
-                    if ($('#transfer-as').val() == 'Sales Return') {
+                    if (form_purpose == 'Sales Return') {
                         fieldName.val(currentVal + 1);
                     }else{
                         if(currentVal < max){

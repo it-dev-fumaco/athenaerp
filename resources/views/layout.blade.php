@@ -557,20 +557,23 @@
 			<div class="row p-0 m-0 font-responsive">
 				<div class="col-md-12 p-2">
 					<div class="btn-group w-100" role="group" aria-label="Button group with nested dropdown">
-						<a href="/" class="btn btn-default" style="width: 33%;">Home</a>
-						<div class="btn-group" role="group" style="width: 33%;">
-							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Inventory</button>
+						<a href="/" class="btn btn-default" style="width: 32%;">Home</a>
+						<div class="btn-group" role="group" style="width: 36%;">
+							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Transactions</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1">
-								<a class="dropdown-item" href="/beginning_inv_list">Beginning Inventory</a>
-								<a class="dropdown-item" href="/promodiser/damage_report/form">Damaged Items Entry</a>
+								<a class="dropdown-item" href="/beginning_inv_list">Create Beginning Inventory</a>
+								<a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer">Create Store Transfer</a>
+								<a class="dropdown-item" href="/stock_transfer/form?action=For Return">Create Return to Plant</a>
+								<a class="dropdown-item" href="/stock_transfer/form?action=Sales Return">Create Sales Return</a>
+								<a class="dropdown-item" href="/promodiser/damage_report/form">Report Damaged Items</a>
 							</div>
 						</div>
-						<div class="btn-group" role="group" style="width: 33%;">
+						<div class="btn-group" role="group" style="width: 32%;">
 							<button id="btnGroupDrop2" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Report</button>
 							<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop2">
 								<a class="dropdown-item" href="/promodiser/delivery_report/all">Delivery Report</a>
 								<a class="dropdown-item" href="/damage_report/list">Damaged Item Report</a>
-								<a class="dropdown-item" href="/stock_transfer/list/Material Receipt">Sales Returns Report</a>
+								<a class="dropdown-item" href="/stock_transfer/list">Stock Transfers Report</a>
 							</div>
 						</div>
 					</div>
