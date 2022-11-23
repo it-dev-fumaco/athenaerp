@@ -19,7 +19,7 @@
                                     <h6 class="text-center mt-1 font-weight-bold">Sales Return</h6>
                                     @break
                                 @default
-                                    <h6 class="text-center mt-1 font-weight-bold">Stock Transfer Request</h6>
+                                    <h6 class="text-center mt-1 font-weight-bold">Store Transfer Request</h6>
                                     @break
                             @endswitch
                         </div>
