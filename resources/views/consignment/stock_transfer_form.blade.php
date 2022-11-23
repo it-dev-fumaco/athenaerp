@@ -165,9 +165,10 @@
                                                                         </tr>
                                                                     </table>
                                                                     @php
-                                                                        $sales_return_reason = ['Defective', 'Change Item'];
+                                                                        $sales_return_reason = ['Defective', 'Change Item', ($action == 'For Return' ? 'Pull Out' : null)];
+                                                                        $sales_return_reason = array_filter($sales_return_reason);
                                                                     @endphp
-                                                                    <select id="sales-return-reason" class="form-control {{ request('action') != 'Sales Return' ? 'd-none' : null }}">
+                                                                    <select id="sales-return-reason" class="form-control {{ !in_array($action, ['For Return', 'Sales Return']) ? 'd-none' : null }}">
                                                                         @foreach ($sales_return_reason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
                                                                         @endforeach
@@ -530,7 +531,7 @@
                 }
 
                 var sales_return_row = '';
-                if(form_purpose == 'Sales Return'){
+                if($.inArray(form_purpose, ['For Return', 'Sales Return']) !== -1){
                     sales_return_row = '<tr class="row-' + item_code + '">' + 
                         '<td colspan=3 class="text-center p-0">' +
                             '<div class="d-none">' + item_code + '</div>' + // reference for search

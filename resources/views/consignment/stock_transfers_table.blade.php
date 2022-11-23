@@ -177,7 +177,7 @@
                                             <span class="item-description">{!! strip_tags($item['description']) !!}</span>
                                         </td>
                                     </tr>
-                                    @if ($purpose == 'Material Receipt')
+                                    @if (in_array($ste['transfer_type'], ['For Return', 'Sales Return']))
                                         <tr>
                                             <td class="text-left p-1" colspan=4>
                                                 Reason for return: {{ $item['return_reason'] ? $item['return_reason'] : '-' }}
