@@ -46,6 +46,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/material_transfer', 'MainController@view_material_transfer');
     Route::get('/picking_slip', 'MainController@view_picking_slip');
     Route::get('/production_to_receive', 'MainController@view_production_to_receive');
+    Route::get('/recently_received_items', 'MainController@recently_received_items');
 
     // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
     Route::post('/cancel_transaction', 'MainController@cancel_athena_transaction');
