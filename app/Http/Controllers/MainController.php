@@ -725,6 +725,18 @@ class MainController extends Controller
 
         $at_total_issued = collect($at_total_issued)->groupBy('item')->toArray();
 
+        $issued_qty_but_not_submitted = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)->where('sted.status', 'Issued')->whereIn('sted.item_code', $item_codes)->whereIn('ste.from_warehouse', $item_warehouses)
+            ->selectRaw('SUM(sted.qty) as total_issued, sted.item_code, ste.from_warehouse')
+            ->groupBy('sted.item_code', 'ste.from_warehouse')
+            ->get();
+
+        $pending_issued_qty = [];
+        foreach($issued_qty_but_not_submitted as $item){
+            $pending_issued_qty[$item->from_warehouse][$item->item_code] = $item->total_issued;
+        }
+
         $lowLevelStock = DB::table('tabItem Reorder')
             ->whereIn('parent', $item_codes)->whereIn('warehouse', $item_warehouses)
             ->selectRaw('SUM(warehouse_reorder_level) as total_warehouse_reorder_level, CONCAT(parent, "-", warehouse) as item')
@@ -809,6 +821,8 @@ class MainController extends Controller
                 if (array_key_exists($value->item_code . '-' . $value->warehouse, $lowLevelStock)) {
                     $warehouse_reorder_level = $lowLevelStock[$value->item_code . '-' . $value->warehouse][0]->total_warehouse_reorder_level;
                 }
+
+                $reserved_qty = isset($pending_issued_qty[$value->warehouse][$value->item_code]) ? $pending_issued_qty[$value->warehouse][$value->item_code] + $reserved_qty : $reserved_qty;
 
                 $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
                 if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
@@ -2823,6 +2837,7 @@ class MainController extends Controller
         $stock_warehouses = array_column($item_inventory, 'warehouse');
 
         $stock_reserves = [];
+        $issued_qty_but_not_submitted = [];
         if (count($stock_warehouses) > 0) {
             $stock_reserves = StockReservation::where('item_code', $item_code)
                 ->whereIn('warehouse', $stock_warehouses)->whereIn('status', ['Active', 'Partially Issued'])
@@ -2846,12 +2861,23 @@ class MainController extends Controller
                 ->where('psi.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
                 ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
                 ->pluck('qty', 'source_warehouse')->toArray();
+                
+            $issued_qty_but_not_submitted = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.docstatus', 0)->where('sted.status', 'Issued')->where('sted.item_code', $item_code)->whereIn('ste.from_warehouse', $stock_warehouses)
+                ->selectRaw('SUM(sted.qty) as total_issued, ste.from_warehouse')
+                ->groupBy('ste.from_warehouse')
+                ->get();
+            
+            $issued_qty_but_not_submitted = collect($issued_qty_but_not_submitted)->groupBy('from_warehouse');
         }
 
         $site_warehouses = [];
         $consignment_warehouses = [];
         foreach ($item_inventory as $value) {
             $reserved_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['reserved_qty'] : 0;
+            $reserved_qty = isset($issued_qty_but_not_submitted[$value->warehouse]) ? $issued_qty_but_not_submitted[$value->warehouse][0]->total_issued + $reserved_qty : $reserved_qty;
+            
             $consumed_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['consumed_qty'] : 0;
             $ste_issued_qty = array_key_exists($value->warehouse, $ste_issued) ? $ste_issued[$value->warehouse] : 0;
             $at_issued_qty = array_key_exists($value->warehouse, $at_issued) ? $at_issued[$value->warehouse] : 0;
