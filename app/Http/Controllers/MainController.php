@@ -1020,6 +1020,21 @@ class MainController extends Controller
         }
     }
 
+    public function recently_received_items(Request $request){
+        $allowed_warehouses = $this->user_allowed_warehouse(Auth::user()->frappe_userid);
+
+        $list = DB::table('tabPurchase Receipt Item as item')
+            ->join('tabPurchase Receipt as parent', 'parent.name', 'item.parent')
+            ->whereIn('item.warehouse', $allowed_warehouses)->where('item.docstatus', 1)->whereDate('parent.posting_date', '>', Carbon::now()->subDays(7)->startOfDay())
+            ->select('parent.name', 'item.item_code', 'item.description', 'item.image', 'item.warehouse', 'item.qty', 'item.uom', 'item.creation', 'parent.posting_date', 'parent.posting_time', 'parent.owner')
+            ->orderBy('parent.posting_date', 'desc')->paginate(10);
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($list->items())->pluck('item_code'))->get();
+        $item_image = collect($item_images)->groupBy('parent');
+
+        return view('tbl_recently_received_items', compact('item_image', 'list'));
+    }
+
     public function reserved_qty(Request $request){
         $reservedQty = DB::table('tabStock Reservation')->select('item_code', 'warehouse', 'reserve_qty')->get();
 
