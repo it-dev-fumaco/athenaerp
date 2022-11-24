@@ -2008,7 +2008,7 @@ class ConsignmentController extends Controller
             }
 
             if(isset($request->receive_delivery)){
-                $t = $wh->transfer_as != 'For Return' ? 'your store inventory!' : 'Quarantine Warehouse!';
+                $t = $wh->transfer_as != 'For Return' ? 'your store inventory!' : (Auth::user()->user_group == 'Consignment Supervisor' ? $target_warehouse : 'Quarantine Warehouse!');
                 $message = collect($received_items)->sum('qty').' Item(s) is/are successfully received and added to '.$t;
             }
 
