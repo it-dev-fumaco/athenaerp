@@ -379,7 +379,7 @@
                     return opt.text;
                 } else {                    
                     var $opt = $(
-                    '<span><img src="' + optimage + '" width="50px" /> ' + opt.text + '</span>'
+                    '<span style="font-size: 10pt;"><img src="' + optimage + '" width="50px" /> ' + opt.text + '</span>'
                     );
                     return $opt;
                 }
