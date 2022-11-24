@@ -1577,7 +1577,7 @@ class MainController extends Controller
     public function get_mr_sales_return(){
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
-
+        
         $dr_sales_return = DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
             ->where('dn.docstatus', 0)->where('is_return', 1)->whereIn('dni.warehouse', $allowed_warehouses)
             ->select('dni.name as c_name', 'dn.name', 'dni.warehouse', 'dni.item_code', 'dni.description', 'dni.qty', 'dn.reference', 'dni.item_status', 'dn.customer', 'dn.owner', 'dn.creation')
@@ -1589,6 +1589,14 @@ class MainController extends Controller
             ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Receipt')
             ->where('ste.receive_as', 'Sales Return')->whereIn('sted.t_warehouse', $allowed_warehouses)
             ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'For Return', 'Returned') ASC")
+            ->get();
+
+        $consignment_return = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Transfer')
+            ->where('ste.transfer_as', 'For Return')->whereIn('sted.t_warehouse', $allowed_warehouses)->where('ste.naming_series', 'STEC-')
+            ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation', 'sted.consignment_received_by', 'sted.consignment_date_received')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'For Return', 'Returned') ASC")
             ->get();
 
@@ -1631,6 +1639,27 @@ class MainController extends Controller
                 'so_customer_name' => $d->customer,
                 'parent_warehouse' => $this->get_warehouse_parent($d->warehouse),
                 'reference_doc' => 'delivery_note',
+                'transaction_date' => $d->creation
+            ];
+        }
+
+        foreach ($consignment_return as $d) {
+            $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
+
+            $list[] = [
+                'c_name' => $d->stedname,
+                'owner' => $owner,
+                'name' => $d->name,
+                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i A'),
+                't_warehouse' => $d->t_warehouse,
+                'item_code' => $d->item_code,
+                'description' => $d->description,
+                'transfer_qty' => number_format($d->transfer_qty),
+                'sales_order_no' => $d->sales_order_no,
+                'status' => $d->status,
+                'so_customer_name' => $d->s_warehouse,
+                'parent_warehouse' => $this->get_warehouse_parent($d->t_warehouse),
+                'reference_doc' => 'stock_entry',
                 'transaction_date' => $d->creation
             ];
         }
@@ -2229,6 +2258,56 @@ class MainController extends Controller
 
                     DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
                     DB::table('tabStock Entry')->insert($stock_entry_data);
+                }
+
+                // Returns from Consignment Function
+                if($steDetails->transfer_as == 'For Return' && $steDetails->naming_series == 'STEC-'){
+                    $get_qty = DB::table('tabBin')->whereIn('warehouse', [$steDetails->s_warehouse, $steDetails->t_warehouse])->where('item_code', $steDetails->item_code)->select('warehouse', 'item_code', 'actual_qty', 'consigned_qty')->get();
+                    $wh_qty = collect($get_qty)->groupBy('warehouse');
+
+                    // source warehouse
+                    $source_actual_qty = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
+                    $source_consigned = isset($wh_qty[$steDetails->s_warehouse]) ? $wh_qty[$steDetails->s_warehouse][0]->consigned_qty : 0;
+
+                    $source_new_qty = $source_actual_qty - $steDetails->transfer_qty;
+                    $source_new_consigned = $source_consigned - $steDetails->transfer_qty;
+
+                    DB::table('tabBin')->where('warehouse', $steDetails->s_warehouse)->where('item_code', $steDetails->item_code)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'actual_qty' => $source_new_qty,
+                        'consigned_qty' => $source_new_consigned
+                    ]);
+
+                    // target warehouse
+                    $target_actual_qty = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
+                    $target_consigned = isset($wh_qty[$steDetails->t_warehouse]) ? $wh_qty[$steDetails->t_warehouse][0]->consigned_qty : 0;
+
+                    $target_new_qty = $target_actual_qty + $steDetails->transfer_qty;
+                    $target_new_consigned = $target_consigned + $steDetails->transfer_qty;
+
+                    DB::table('tabBin')->where('warehouse', $steDetails->t_warehouse)->where('item_code', $steDetails->item_code)->update([
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'actual_qty' => $target_new_qty,
+                        'consigned_qty' => $target_new_consigned
+                    ]);
+
+                    $consignment_status_update = [
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'docstatus' => 1,
+                        'consignment_status' => 'Received',
+                        'consignment_date_received' => Carbon::now()->toDateTimeString(),
+                        'consignment_received_by' => Auth::user()->wh_user
+                    ];
+
+                    DB::table('tabStock Entry Detail')->where('name', $steDetails->name)->update($consignment_status_update);
+
+                    $checker = DB::table('tabStock Entry Detail')->where('parent', $steDetails->parent)->where('consignment_status', 'To Receive')->exists();
+                    if(!$checker){
+                        DB::table('tabStock Entry')->where('name', $steDetails->parent)->update($consignment_status_update);
+                    }
                 }
             }            
 

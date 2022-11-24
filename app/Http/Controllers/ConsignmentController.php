@@ -1897,13 +1897,19 @@ class ConsignmentController extends Controller
                     'basic_rate' => $basic_rate,
                     'custom_basic_rate' => $basic_rate,
                     'basic_amount' => $basic_rate * $item->transfer_qty,
-                    'custom_basic_amount' => $basic_rate * $item->transfer_qty
+                    'custom_basic_amount' => $basic_rate * $item->transfer_qty,
+                    'status' => 'Issued'
                 ];
 
                 if($item->consignment_status != 'Received' && isset($request->receive_delivery)){
                     $ste_details_update['consignment_status'] = 'Received';
                     $ste_details_update['consignment_date_received'] = Carbon::now()->toDateTimeString();
                     $ste_details_update['consignment_received_by'] = Auth::user()->wh_user;
+                }
+
+                if($request->target_warehouse){
+                    $ste_details_update['t_warehouse'] = $request->target_warehouse;
+                    $ste_details_update['target_warehouse_location'] = $request->target_warehouse;
                 }
 
                 DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
@@ -1944,27 +1950,26 @@ class ConsignmentController extends Controller
                 $source_warehouse = isset($source_warehouses[0]) ? $source_warehouses[0] : null;
             }
 
+            $stock_entry_update = [
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'consignment_status' => 'Received',
+                'consignment_date_received' => Carbon::now()->toDateTimeString(),
+                'consignment_received_by' => Auth::user()->wh_user
+            ];
+
             if($request->target_warehouse){
                 $target_warehouse = $request->target_warehouse;
 
-                DB::table('tabStock Entry')->where('name', $id)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'to_warehouse' => $request->target_warehouse
-                ]);
-
-                DB::table('tabStock Entry Detail')->where('parent', $id)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    't_warehouse' => $request->target_warehouse,
-                    'target_warehouse_location' => $request->target_warehouse
-                ]);
+                $stock_entry_update['to_warehouse'] = $target_warehouse;
             }else{
                 $target_warehouse = $wh->to_warehouse ? $wh->to_warehouse : null;
                 if(!$target_warehouse){
                     $target_warehouse = isset($target_warehouses[0]) ? $target_warehouses[0] : null;
                 }
             }
+
+            DB::table('tabStock Entry')->where('name', $id)->update($stock_entry_update);
 
             $logs = [
                 'name' => uniqid(),
@@ -3353,7 +3358,7 @@ class ConsignmentController extends Controller
                     'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
                     'target_warehouse_location' => $target_warehouse,
                     'source_warehouse_location' => $source_warehouse,
-                    'status' => 'Issued',
+                    'status' => $request->transfer_as == 'For Return' ? 'For Checking' : 'Issued',
                     'return_reference' => $new_id,
                     'session_user' => Auth::user()->full_name,
                     'issued_qty' => $transfer_qty[$item_code]['transfer_qty'],
@@ -3509,6 +3514,7 @@ class ConsignmentController extends Controller
         return view('consignment.stock_transfer_form', compact('assigned_consignment_stores', 'consignment_stores', 'action'));
     }
 
+    // /stock_transfer/cancel/{id}
     public function stockTransferCancel($id){
         DB::beginTransaction();
         try {
@@ -3552,26 +3558,12 @@ class ConsignmentController extends Controller
                     }
 
                     // target warehouse
-                    $target_warehouse_qty = $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty;
-                    $target_warehouse_qty = $target_warehouse_qty > 0 ? $target_warehouse_qty : 0;
-
-                    $target_warehouse_actual_qty = $bin_arr[$items->t_warehouse][$items->item_code]['actual_qty'] - $items->transfer_qty;
-                    $target_warehouse_actual_qty = $target_warehouse_actual_qty > 0 ? $target_warehouse_actual_qty : 0;
-
-                    DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $target_warehouse_qty,
-                        'actual_qty' => $target_warehouse_actual_qty,
-                    ]);
-
-                    // source warehouse
-                    if($stock_entry->purpose == 'Material Transfer'){ // Returns
-                        DB::table('tabBin')->where('warehouse', $items->s_warehouse)->where('item_code', $items->item_code)->update([
+                    if($stock_entry->purpose == 'Material Receipt'){ // Sales Returns
+                        DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
                             'modified' => $now->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
-                            'consigned_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty,
-                            'actual_qty' => $bin_arr[$items->s_warehouse][$items->item_code]['actual_qty'] + $items->transfer_qty
+                            'consigned_qty' => $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty,
+                            'actual_qty' => $bin_arr[$items->t_warehouse][$items->item_code]['actual_qty'] - $items->transfer_qty
                         ]);
                     }
                 }
