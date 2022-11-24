@@ -168,7 +168,7 @@
                                                                         $sales_return_reason = ['Defective', 'Change Item', ($action == 'For Return' ? 'Pull Out' : null)];
                                                                         $sales_return_reason = array_filter($sales_return_reason);
                                                                     @endphp
-                                                                    <select id="sales-return-reason" class="form-control {{ !in_array($action, ['For Return', 'Sales Return']) ? 'd-none' : null }}">
+                                                                    <select id="sales-return-reason" class="form-control {{ !in_array($action, ['For Return', 'Sales Return']) ? 'd-none' : null }}" style="font-size: 10pt;">
                                                                         @foreach ($sales_return_reason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
                                                                         @endforeach
