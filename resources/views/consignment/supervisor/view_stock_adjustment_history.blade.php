@@ -136,3 +136,6 @@
         </tr>
     @endforelse
 </table>
+<div class="float-right" id="stock-adjustment-history-pagination" style="font-size: 10pt;">
+	{{ $stock_adjustments->links() }}
+</div>
