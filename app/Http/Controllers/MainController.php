@@ -1082,8 +1082,11 @@ class MainController extends Controller
 
         if($purpose == 'Material Receipt') {
             $count += DB::table('tabDelivery Note as dn')->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
-                ->where('dn.is_return', 1)->where('dn.docstatus', 0)->whereNotIn('dni.item_status', ['Issued', 'Returned'])
-                ->whereIn('dni.warehouse', $allowed_warehouses)->count();
+                ->where('dn.is_return', 1)->where('dn.docstatus', 0)->whereIn('dni.warehouse', $allowed_warehouses)->count();
+
+            $count += DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.docstatus', 0)->where('ste.purpose', 'Material Transfer')->where('ste.transfer_as', 'For Return')->whereIn('sted.t_warehouse', $allowed_warehouses)->where('ste.naming_series', 'STEC-')->count();
         }
 
         if($purpose == 'Material Transfer') {
