@@ -208,8 +208,15 @@
 											<div class="card card-danger card-outline">
 												<div class="card-header d-flex p-0 justify-content-between">
 													<ul class="nav nav-pills p-2">
-													  <li class="nav-item"><a class="font-responsive nav-link active" href="#tab_1-1" data-toggle="tab"><i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a></li>
-													  <li class="nav-item"><a class="font-responsive nav-link" href="#tab_2-1" data-toggle="tab"><i class="fas fa-list-alt"></i> Stock Movement(s)</a></li>
+													  <li class="nav-item"><a class="font-responsive nav-link active" href="#tab_1-1" data-toggle="tab">
+														<i class="fas fa-exclamation-triangle"></i> Stock Level Alert</a>
+													</li>
+													  <li class="nav-item"><a class="font-responsive nav-link" href="#tab_2-1" data-toggle="tab">
+														<i class="fas fa-list-alt"></i> Stock Movement(s)</a>
+													</li>
+													  <li class="nav-item"><a class="font-responsive nav-link purchase-receipt-trigger" href="#tab_3-1" data-toggle="tab">
+														<i class="fas fa-list-alt"></i> Recently Received Item(s)</a>
+													</li>
 													</ul>
 													@if (in_array(Auth::user()->user_group, ['Manager', 'Director']))
 													<div class="ml-auto p-3">
@@ -219,32 +226,36 @@
 												</div>
 												<div class="card-body p-0">
 													<div class="tab-content">
-													  <div class="tab-pane font-responsive active" id="tab_1-1">
-														<div id="low-level-stock-table"></div>
-													  </div>
-													  
-													  <div class="tab-pane font-responsive" id="tab_2-1">
-														<div id="athena-logs-table"></div>
-														<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
-															@php
-																$month_today = now()->month;
-															@endphp
-															@for ($i = 1; $i < ($month_today + 1); $i++)
-															@if($i == 1)
-															<li class="page-item prev {{ ($month_today == 1) ? 'disabled' : '' }}"><a class="page-link" href="#">«</a></li>
-															@endif
-															<li class="page-item month {{ ($month_today == $i) ? 'active' : '' }}">
-																<a class="page-link" href="#" data-month="{{ $i }}">
-																	<p class="page-month" style="font-size: 0.9rem;">{{ date("M", mktime(0, 0, 0, $i, 1, now()->year)) }}</p>
-																	<p class="page-year" style="font-size: 0.8rem;">{{ now()->year }}</p>
-																</a>
-															</li>
-															@if($i == $month_today)
-															<li class="page-item next {{ ($i == $month_today) ? 'disabled' : '' }}"><a class="page-link" href="#">»</a></li>
-															@endif
-															@endfor
-														</ul>
-													  </div>
+														<div class="tab-pane font-responsive active" id="tab_1-1">
+															<div id="low-level-stock-table"></div>
+														</div>
+														
+														<div class="tab-pane font-responsive" id="tab_2-1">
+															<div id="athena-logs-table"></div>
+															<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
+																@php
+																	$month_today = now()->month;
+																@endphp
+																@for ($i = 1; $i < ($month_today + 1); $i++)
+																@if($i == 1)
+																<li class="page-item prev {{ ($month_today == 1) ? 'disabled' : '' }}"><a class="page-link" href="#">«</a></li>
+																@endif
+																<li class="page-item month {{ ($month_today == $i) ? 'active' : '' }}">
+																	<a class="page-link" href="#" data-month="{{ $i }}">
+																		<p class="page-month" style="font-size: 0.9rem;">{{ date("M", mktime(0, 0, 0, $i, 1, now()->year)) }}</p>
+																		<p class="page-year" style="font-size: 0.8rem;">{{ now()->year }}</p>
+																	</a>
+																</li>
+																@if($i == $month_today)
+																<li class="page-item next {{ ($i == $month_today) ? 'disabled' : '' }}"><a class="page-link" href="#">»</a></li>
+																@endif
+																@endfor
+															</ul>
+														</div>
+
+														<div class="tab-pane font-responsive" id="tab_3-1">
+															<div id="purchase-receipt-table" class="overflow-auto"></div>
+														</div>
 													</div>
 												</div>
 											</div>
@@ -544,7 +555,7 @@
 			}
 
 		$('.filter-inv-accuracy').on('change', function(){
-      monthlyInvAccuracyTbl();
+      	monthlyInvAccuracyTbl();
    });
 
 
@@ -592,6 +603,20 @@
       });
    }
 	});
+
+	$(document).on('click', '.purchase-receipt-trigger', function(){
+		recently_received_items();
+	});
+
+	function recently_received_items(){
+		$.ajax({
+			type: "GET",
+			url: "/recently_received_items",
+			success: function (data) {
+				$('#purchase-receipt-table').html(data);
+			}
+		});
+	}
 </script>
 
 @endsection

@@ -702,11 +702,17 @@
                     }
                 });
             }
+
+            $(document).on('click', '#stock-adjustment-history-pagination a', function(e){
+                e.preventDefault();
+                var page = $(this).attr('href').split('page=')[1];
+                load_stock_adjustment_history(page);
+            });
             
-            function load_stock_adjustment_history(){
+            function load_stock_adjustment_history(page){
                 $.ajax({
                     type: "GET",
-                    url: "/stock_adjustment_history",
+                    url: "/stock_adjustment_history?page=" + page,
                     success: function (response) {
                         $('#stock-adjustments-container').html(response);
                     }
@@ -714,7 +720,7 @@
             }
 
             $(document).on('click', '#stock-adjustment-tab', function (){
-                load_stock_adjustment_history();
+                load_stock_adjustment_history(1);
             });
 
             $('table.items-table').on('click', '.remove-item', function (){

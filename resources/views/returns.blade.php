@@ -124,7 +124,7 @@
 	</div>
 </div>
 <div class="modal fade" id="ste-modal">
-	<form method="POST" action="/submit_transaction">
+	<form method="POST" id="transactions-form" action="/submit_transaction">
 		@csrf
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>
@@ -143,6 +143,10 @@
 			headers: {
 			  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
 			}
+		});
+
+		$(document).on('click', '#btn-check-out', function(){
+			$('#transactions-form').submit();
 		});
 
 		$(document).on('click', '.update-item', function(){

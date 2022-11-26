@@ -74,7 +74,7 @@
                                             @if ($row['login_status'])
                                             {!! $row['login_status'] !!}
                                             @else
-                                            <span class="text-muted">Offline</span>
+                                            <span class="text-muted">-</span>
                                             @endif
                                         </td>
                                         <td class="text-center p-1 align-middle">

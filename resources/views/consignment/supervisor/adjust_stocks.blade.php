@@ -57,6 +57,8 @@
                                         </tbody>
                                     </table>
                                     <br>
+                                    <textarea name="notes" rows="5" class="form-control" placeholder="Notes..."></textarea>
+                                    <br>&nbsp;
                                     <span id="item-count-stock-adjustment" class="counter d-none">0</span>
                                     <button type="submit" class="btn btn-primary w-100 submit-btn">Submit</button>
                                 </div>

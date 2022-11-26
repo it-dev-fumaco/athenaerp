@@ -345,8 +345,7 @@
                         n++;
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        $('#preloader-modal').modal('hide');
-                        alert('An error occured.');
+                        $('#preloader-modal h6').html('Something went wrong. Please contact your system administrator.<br><button type="button" class="btn btn-default mt-3 btn-sm" data-dismiss="modal">Close</button>');
                     }
                 });
             });

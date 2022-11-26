@@ -101,8 +101,8 @@
                                                                                     </div>
                                                                                 </div>
                                                                                 <div class="p-1" id="description-display" style="font-size: 9.5pt !important;"></div>
-                                                                                <div class="p-1" style="font-size: 9.5pt !important;">
-                                                                                    <textarea id="reason-display" class="form-control" placeholder='(Required) Describe the damage...' rows=5></textarea>
+                                                                                <div class="p-1">
+                                                                                    <textarea id="reason-display" class="form-control" placeholder='(Required) Describe the damage...' rows=5 style="font-size: 9.5pt !important;"></textarea>
                                                                                 </div>
                                                                             </td>
                                                                         </tr>
@@ -225,7 +225,7 @@
                     return opt.text;
                 } else {
                     var $opt = $(
-                    '<span><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>'
+                    '<span style="font-size: 10pt;"><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>'
                     );
                     return $opt;
                 }
@@ -468,8 +468,8 @@
                         '<div class="p-1 item-description" style="font-size: 9.5pt !important;">' +
                             description + 
                         '</div>' +
-                        '<div class="p-1" style="font-size: 9.5pt !important;">' +
-                            '<textarea name="reason[' + item_code +']" class="form-control reason" id="reason-' + item_code + '" placeholder="(Required) Describe the damage..." rows="5" required>' + reason + '</textarea>' +
+                        '<div class="p-1">' +
+                            '<textarea name="reason[' + item_code +']" class="form-control reason" id="reason-' + item_code + '" placeholder="(Required) Describe the damage..." rows="5" style="font-size: 9.5pt !important;" required>' + reason + '</textarea>' +
                         '</div>' +
                     '</td>' +
                 '</tr>';

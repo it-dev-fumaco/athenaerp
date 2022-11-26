@@ -57,7 +57,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <form action="/promodiser/receive/{{ $r['name'] }}" method="get">
+                        <form action="/promodiser/receive/{{ $r['name'] }}" id="{{ $r['name'] }}-form" method="get">
                             <h5 class="text-center font-responsive font-weight-bold m-0">{{ $r['warehouse'] }}</h5>
                             <div class="row mt-2 mb-2">
                                 <div class="col-6 pl-5">
@@ -110,7 +110,7 @@
                                                 <div class="col-1 d-flex flex-row justify-content-center align-items-center">
                                                     <span class="w-100 text-right">₱</span></div>
                                                 <div class="col-10">
-                                                    <input type="text" value="{{ number_format($i['price'], 2) }}" name="price[{{ $i['item_code'] }}]" class="form-control text-center price-input" data-target="amount-{{ $target }}" data-qty="{{ number_format($i['transfer_qty']) }}">
+                                                    <input type="text" value="{{ number_format($i['price'], 2) }}" name="price[{{ $i['item_code'] }}]" class="form-control text-center price-input {{ $r['name'] }}-price" data-target="amount-{{ $target }}" data-qty="{{ number_format($i['transfer_qty']) }}">
                                                 </div>
                                             </div>
                                         </td>
@@ -122,7 +122,7 @@
                                 </tbody>
                             </table>
                             <input type="checkbox" name="receive_delivery" class="d-none" checked>
-                            <button type="submit" class="btn btn-primary w-100">Receive</button>
+                            <button type="button" class="btn btn-primary w-100 submit-btn" data-reference="{{ $r['name'] }}">Receive</button>
                         </form>
                     </div>
                 </div>
@@ -152,6 +152,44 @@
             cache: true
         }
     });
+
+    $(document).on('click', '.submit-btn', function (){
+        validate_submit($(this).data('reference'));
+    });
+
+    function validate_submit(reference){
+        var err = 0;
+        
+        $('.' + reference + '-price').each(function (){
+            if($(this).val() == '' || $(this).val() <= 0){
+                $(this).css('border', '1px solid red');
+                err = 1;
+            }else{
+                $(this).css('border', '1px solid #DEE2E6');
+            }
+        });
+        
+        if(err == 1){
+            showNotification("danger", 'Item price cannot be less than or equal to 0.', "fa fa-info");
+        }else{
+            $('#' + reference + '-form').submit();
+        }
+    }
+
+    function showNotification(color, message, icon){
+        $.notify({
+            icon: icon,
+            message: message
+        },{
+            type: color,
+            timer: 500,
+            z_index: 1060,
+            placement: {
+                from: 'top',
+                align: 'center'
+            }
+        });
+    }
 
     $(document).on('keyup', '.price-input', function (){
         var target = $(this).data('target');

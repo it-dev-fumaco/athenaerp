@@ -29,17 +29,25 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <ul class="nav nav-pills m-0" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link {{ !request('damaged_items') ? 'active' : null }} font-responsive" data-toggle="tab" href="#stock_transfers">Stock Transfer History</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {{ request('damaged_items') ? 'active' : null }} font-responsive" data-toggle="tab" href="#damaged_items">Damaged Item List</a>
-                                </li>
-                            </ul>
+                            <div class="row p-2">
+                                <div class="col-10">
+                                    <ul class="nav nav-pills m-0" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active font-responsive" data-toggle="tab" href="#stock_transfers">Stock Transfer History</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link font-responsive" data-toggle="tab" href="#damaged_items">Damaged Item List</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-2 p-2">
+                                    <a href="/stock_return_form" class="btn btn-sm btn-primary w-100"><i class="fas fa-plus"></i> Create Return</a>
+                                </div>
+                            </div>
                             
                             <div class="tab-content">
-                                <div id="stock_transfers" class="tab-pane {{ !request('damaged_items') ? 'active' : null }}">
+                                <!-- Stock Transfers -->
+                                <div id="stock_transfers" class="tab-pane active">
                                     <!-- Stock Transfers -->
                                     <form action="/stocks_report/list" method="get">
                                         <div id="accordion" class="mt-2">
@@ -178,7 +186,17 @@
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Source:</dt>
                                                                                 <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['source_warehouse'] ? $ste['source_warehouse'] : '-' }}</dd>
                                                                                 <dt class="col-12 col-xl-3 col-lg-2 p-1 m-0">Target:</dt>
-                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">{{ $ste['target_warehouse'] }}</dd>
+                                                                                <dd class="col-12 col-xl-9 col-lg-10 p-1 m-0">
+                                                                                    @if ($purpose == 'For Return' && $ste['consignment_status'] != 'Received')
+                                                                                        <select class="form-control form-control-sm target-warehouse-selection" data-reference="{{ $ste['name'] }}">
+                                                                                            @foreach ($warehouses as $warehouse)
+                                                                                                <option value="{{ $warehouse }}" {{ $warehouse == $ste['target_warehouse'] ? 'selected' : null }}>{{ $warehouse }}</option>
+                                                                                            @endforeach
+                                                                                        </select>
+                                                                                    @else
+                                                                                        {{ $ste['target_warehouse'] }}
+                                                                                    @endif
+                                                                                </dd>
                                                                             </dl>
                                                                         </div>
                                                                         <div class="pt-0 pr-2 pl-2 pb-0 col-6 text-left m-0">
@@ -191,6 +209,7 @@
                                                                         </div>
                                                                     </div>
                                                                     <form action="/promodiser/receive/{{ $ste['name'] }}" method="get">
+                                                                        <input type="text" class="d-none" name="target_warehouse" id="{{ $ste['name'] }}-target-warehouse" value="{{ $ste['target_warehouse'] }}">
                                                                         <table class="table table-striped" style="font-size: 10pt;">
                                                                             <thead>
                                                                                 <th class="text-center p-2 align-middle" width="50%">Item Code</th>
@@ -296,99 +315,96 @@
                                 </div>
                                 <!-- Stock Transfers -->
 
-                            <!-- Damaged Items -->
-                            <div id="damaged_items" class="tab-pane {{ request('damaged_items') ? 'active' : null }}">
-                                <form action="/stocks_report/list" method="GET">
-                                    <div id="accordion2" class="mt-2">
-                                        <button type="button" class="btn btn-link border-bottom btn-block text-left d-xl-none d-lg-none" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo" style="font-size: 10pt;">
-                                            <i class="fa fa-filter"></i> Filters
-                                        </button>
-                                    </div>
-                                    
-                                    <div id="collapseTwo" class="collapse" aria-labelledby="headingOne" data-parent="#accordion2">
-                                        <div class="row p-2">
-                                            <div class="col-12 col-xl-4 col-lg-4 mt-2 mt-lg-0">
-                                                <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Search Item" style='font-size: 10pt'/>
-                                            </div>
-                                            <div class="col-12 col-xl-4 col-lg-4 mt-2 mt-lg-0">
-                                                @php
-                                                    $statuses = ['For Approval', 'Approved', 'Cancelled'];
-                                                @endphp
-                                                <select class="form-control" name="store" id="consignment-store-select">
-                                                    <option value="">Select Store</option>
-                                                    @foreach ($statuses as $status)
-                                                    <option value="{{ $status }}">{{ $status }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-xl-2 col-lg-2 mt-2 mt-lg-0">
-                                                <button class="btn btn-primary btn-block"><i class="fas fa-search"></i> Search</button>
+                                <!-- Damaged Items -->
+                                <div id="damaged_items" class="tab-pane">
+                                    <form action="/stocks_report/list" method="GET">
+                                        <div id="accordion2" class="mt-2">
+                                            <button type="button" class="btn btn-link border-bottom btn-block text-left d-xl-none d-lg-none" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo" style="font-size: 10pt;">
+                                                <i class="fa fa-filter"></i> Filters
+                                            </button>
+                                        </div>
+                                        
+                                        <div id="collapseTwo" class="collapse" aria-labelledby="headingOne" data-parent="#accordion2">
+                                            <div class="row p-2">
+                                                <div class="col-12 col-xl-4 col-lg-4 mt-2 mt-lg-0">
+                                                    <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Search Item" style='font-size: 10pt'/>
+                                                </div>
+                                                <div class="col-12 col-xl-4 col-lg-4 mt-2 mt-lg-0">
+                                                    @php
+                                                        $statuses = ['For Approval', 'Approved', 'Cancelled'];
+                                                    @endphp
+                                                    <select class="form-control" name="store" id="consignment-store-select">
+                                                        <option value="">Select Store</option>
+                                                        @foreach ($statuses as $status)
+                                                        <option value="{{ $status }}">{{ $status }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-xl-2 col-lg-2 mt-2 mt-lg-0">
+                                                    <button class="btn btn-primary btn-block"><i class="fas fa-search"></i> Search</button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
 
-                                <table class="table table-striped" style="font-size: 9pt;">
-                                    <thead>
-                                        <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%;">Date</th>
-                                        <th class="text-center p-2 align-middle" style="width: 35%;">Item Description</th>
-                                        <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%;">Qty</th>
-                                        <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Store</th>
-                                        <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Damage Description</th>
-                                    </thead>
-                                    @forelse ($items_arr as $i => $item)
-                                        <tr>
-                                            <td class="p-1 text-center align-middle d-none d-xl-table-cell">
-                                                {{ $item['creation'] }}<br/>
-                                                <span class="badge badge-success {{ !$item['item_status'] ? 'd-none' : null }}">{{ $item['item_status'] }}</span>
-                                            </td>
-                                            <td class="p-1 text-justify align-middle">
-                                                <div class="d-flex flex-row align-items-center">
-                                                    <div class="p-1">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
-                                                            <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                            <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="70">
-                                                        </picture>
+                                    <table class="table table-striped" style="font-size: 9pt;">
+                                        <thead>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%;">Date</th>
+                                            <th class="text-center p-2 align-middle" style="width: 35%;">Item Description</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 10%;">Qty</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Store</th>
+                                            <th class="text-center p-2 align-middle d-none d-xl-table-cell" style="width: 20%;">Damage Description</th>
+                                        </thead>
+                                        @forelse ($items_arr as $i => $item)
+                                            <tr>
+                                                <td class="p-1 text-center align-middle d-none d-xl-table-cell">
+                                                    {{ $item['creation'] }}<br/>
+                                                    <span class="badge badge-success {{ !$item['item_status'] ? 'd-none' : null }}">{{ $item['item_status'] }}</span>
+                                                </td>
+                                                <td class="p-1 text-justify align-middle">
+                                                    <div class="d-flex flex-row align-items-center">
+                                                        <div class="p-1">
+                                                            <picture>
+                                                                <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
+                                                                <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
+                                                                <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="70">
+                                                            </picture>
+                                                        </div>
+                                                        <div class="p-1">
+                                                            <span class="d-block font-weight-bold">{{ $item['item_code'] }}</span>
+                                                            <small class="d-block item-description">{!! strip_tags($item['description']) !!}</small>
+        
+                                                            <small class="d-block mt-2">Created by: <b>{{ $item['promodiser'] }}</b></small>
+                                                        </div>
                                                     </div>
-                                                    <div class="p-1">
-                                                        <span class="d-block font-weight-bold">{{ $item['item_code'] }}</span>
-                                                        <small class="d-block item-description">{!! strip_tags($item['description']) !!}</small>
-    
-                                                        <small class="d-block mt-2">Created by: <b>{{ $item['promodiser'] }}</b></small>
+                                                    <div class="d-block d-xl-none" style="font-size: 9pt;">
+                                                        <b>Damaged Qty: </b>{{ $item['damaged_qty'] }}&nbsp;<small>{{ $item['uom'] }}</small> <br>
+                                                        <b>Store: </b> {{ $item['store'] }} <br>
+                                                        <b>Damage Description: </b> {{ $item['damage_description'] }} <br>
+                                                        <b>Date: </b> {{ $item['creation'] }}
                                                     </div>
-                                                </div>
-                                                <div class="d-block d-xl-none" style="font-size: 9pt;">
-                                                    <b>Damaged Qty: </b>{{ $item['damaged_qty'] }}&nbsp;<small>{{ $item['uom'] }}</small> <br>
-                                                    <b>Store: </b> {{ $item['store'] }} <br>
-                                                    <b>Damage Description: </b> {{ $item['damage_description'] }} <br>
-                                                    <b>Date: </b> {{ $item['creation'] }}
-                                                </div>
-                                            </td>
-                                            <td class="p-1 text-center align-middle d-none d-xl-table-cell">
-                                                <span class="d-block font-weight-bold">{{ $item['damaged_qty'] }}</span>
-                                                <small>{{ $item['uom'] }}</small>
-                                            </td>
-                                            <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['store'] }}</td>
-                                            <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['damage_description'] }}</td>
-                                        </tr>
-                                        @empty
-                                        <tr>
-                                            <td colspan="6" class="text-center">No record(s) found.</td>
-                                        </tr>
-                                    @endforelse
-                                </table>
-                                <div class="float-left m-2">Total: <b>{{ $damaged_items->total() }}</b></div>
-                                <div class="float-right m-2" id="beginning-inventory-list-pagination">{{ $damaged_items->links('pagination::bootstrap-4') }}</div>
-                             
+                                                </td>
+                                                <td class="p-1 text-center align-middle d-none d-xl-table-cell">
+                                                    <span class="d-block font-weight-bold">{{ $item['damaged_qty'] }}</span>
+                                                    <small>{{ $item['uom'] }}</small>
+                                                </td>
+                                                <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['store'] }}</td>
+                                                <td class="p-1 text-center align-middle d-none d-xl-table-cell">{{ $item['damage_description'] }}</td>
+                                            </tr>
+                                            @empty
+                                            <tr>
+                                                <td colspan="6" class="text-center">No record(s) found.</td>
+                                            </tr>
+                                        @endforelse
+                                    </table>
+                                    <div class="float-left m-2">Total: <b>{{ $damaged_items->total() }}</b></div>
+                                    <div class="float-right m-2" id="beginning-inventory-list-pagination">{{ $damaged_items->links('pagination::bootstrap-4') }}</div>
+                                
+                                </div>
+                                <!-- Damaged Items -->
                             </div>
-                            <!-- Damaged Items -->
-                        </div>
                         </div>
                         <!-- Nav tabs -->
-                       
-                      
-                       
                     </div>
                 </div>
             </div>
@@ -577,6 +593,13 @@
             },
             cache: true
         }
+    });
+
+    $('.target-warehouse-selection').select2();
+
+    $(document).on('select2:select', '.target-warehouse-selection', function(e){
+        var reference = $(this).data('reference');
+        $('#' + reference + '-target-warehouse').val($(this).val());
     });
 </script>
 @endsection

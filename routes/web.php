@@ -46,6 +46,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/material_transfer', 'MainController@view_material_transfer');
     Route::get('/picking_slip', 'MainController@view_picking_slip');
     Route::get('/production_to_receive', 'MainController@view_production_to_receive');
+    Route::get('/recently_received_items', 'MainController@recently_received_items');
 
     // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
     Route::post('/cancel_transaction', 'MainController@cancel_athena_transaction');
@@ -153,7 +154,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/submit_inventory_audit_form', 'ConsignmentController@submitInventoryAuditForm');
     Route::get('/stock_transfer/form', 'ConsignmentController@stockTransferForm');
     Route::post('/stock_transfer/submit', 'ConsignmentController@stockTransferSubmit');
-    Route::get('/stock_transfer/list/{purpose}', 'ConsignmentController@stockTransferList')->name('stock_transfers');
+    Route::get('/stock_transfer/list', 'ConsignmentController@stockTransferList')->name('stock_transfers');
     Route::get('/stock_transfer/cancel/{id}', 'ConsignmentController@stockTransferCancel');
     Route::post('/stock_adjust/submit/{id}', 'ConsignmentController@submitStockAdjustment');
     
@@ -176,8 +177,9 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem');
     Route::get('/damaged/return/{id}', 'ConsignmentController@returnDamagedItem');
     Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
-    Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport'); 
-    Route::get('/product_sold/cancel/{id}', 'ConsignmentController@cancelProductSold'); 
+    Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport')->name('stock_report_list');
+    Route::get('/product_sold/cancel/{id}', 'ConsignmentController@cancelProductSold');
+    Route::get('/stock_return_form', 'ConsignmentController@stockReturnForm');
 
     Route::get('/inventory_items/{branch}', 'ConsignmentController@inventoryItems'); 
 

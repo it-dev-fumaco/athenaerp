@@ -113,7 +113,7 @@
           </a>
         </div>
         <div class="col-6 p-1">
-          <a href="/stock_transfer/list/Material Transfer">
+          <a href="/stock_transfer/list">
             <div class="info-box bg-gradient-warning m-0">
               <div class="info-box-content p-0">
                 <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">

@@ -331,6 +331,17 @@ class ItemAttributeController extends Controller
 
             $itemCodes = $request->data['itemCode'];
             $newAttrVals = (isset($request->data['newAttrVal'])) ? $request->data['newAttrVal'] : [];
+
+            if (!is_array($newAttrVals)) {
+                $newAttrVals = array_values(explode('&&&', $newAttrVals));
+                
+            }
+
+            if (!is_array($itemCodes)) {
+                $itemCodes = array_values(explode('&&&', $itemCodes));
+                
+            }
+
             $message = 'Items have been updated.';
             $displayCount = 1;
             $affectedRows = 0;
@@ -352,7 +363,7 @@ class ItemAttributeController extends Controller
                         'attribute' => $request->attributeName,
                         'to_range' => 0,
                         'increment' => 0,
-                        'attribute_value' => $request->data['newAttrVal'][$x]
+                        'attribute_value' => $newAttrVal
                     ];
                 }
     
