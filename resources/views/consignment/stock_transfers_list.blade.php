@@ -11,14 +11,44 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
                         <div class="card-header text-center p-2">
-                            <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">{{ $purpose == 'Material Transfer' ? 'Stock Transfers List' : 'Sales Returns List'}}</span>
+                            <div class="d-flex flex-row align-items-center justify-content-between">
+                                <div class="p-0 col-8 mx-auto text-center" style="display: flex; justify-content: center; align-items: center;">
+                                    <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">{{ $purpose == 'Material Transfer' ? 'Stock Transfers List' : 'Sales Returns List'}}</span>
+                                </div>
+                                @if (Auth::user()->user_group == 'Promodiser')
+                                    <!-- Tablet/Desktop -->
+                                    <div class="dropdown d-none d-md-block">
+                                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Create
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer" style="color: #000 !important">Create Store Transfer</a>
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=For Return" style="color: #000 !important">Create Return to Plant</a>
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=Sales Return" style="color: #000 !important">Create Sales Return</a>
+                                        </div>
+                                    </div>
+                                    <!-- Tablet/Desktop -->
+                                    <!-- Mobile -->
+                                    <div class="dropdown dropleft d-md-none">
+                                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Create
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer" style="color: #000 !important">Create Store Transfer</a>
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=For Return" style="color: #000 !important">Create Return to Plant</a>
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=Sales Return" style="color: #000 !important">Create Sales Return</a>
+                                        </div>
+                                    </div>
+                                    <!-- Mobile -->
+                                @endif
+                            </div>
                         </div>
                         <div class="card-body p-1">
                             <div class="d-flex flex-row align-items-center justify-content-between">
                                 <div class="p-0 col-8 mx-auto text-center">
                                     <span class="font-responsive text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
                                 </div>
-                                @if (Auth::user()->user_group == 'Promodiser')
+                                {{-- @if (Auth::user()->user_group == 'Promodiser')
                                     <!-- Tablet/Desktop -->
                                     <div class="dropdown d-none d-md-block">
                                         <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -33,17 +63,17 @@
                                     <!-- Tablet/Desktop -->
                                     <!-- Mobile -->
                                     <div class="dropdown dropleft d-md-none">
-                                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                             Create
                                         </button>
-                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer">Create Store Transfer</a>
                                             <a class="dropdown-item" href="/stock_transfer/form?action=For Return">Create Return to Plant</a>
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Sales Return">Create Sales Return</a>
                                         </div>
                                     </div>
                                     <!-- Mobile -->
-                                @endif
+                                @endif --}}
                             </div>
                             @if(session()->has('success'))
                                 <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
@@ -56,23 +86,23 @@
                                 </div>
                             @endif
                             <!-- Nav tabs -->
-                            <ul class="nav nav-tabs mt-2" id="tabs" role="tablist" style="font-size: 8pt;">
+                            <ul class="nav nav-pills mt-2" id="tabs" role="tablist" style="font-size: 8pt;">
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger font-weight-bold active p-2"
+                                    <a class="nav-link nav-trigger font-weight-bold active"
                                     data-toggle="tab"
                                     data-target="store-transfer"
                                     data-purpose="Store Transfer"
                                     >Store Transfer</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger font-weight-bold p-2"
+                                    <a class="nav-link nav-trigger font-weight-bold"
                                     data-toggle="tab"
                                     data-target="return"
                                     data-purpose="For Return"
                                     >Return to Plant</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger font-weight-bold p-2"
+                                    <a class="nav-link nav-trigger font-weight-bold"
                                     data-toggle="tab"
                                     data-target="sales-return"
                                     data-purpose="Sales Return"
