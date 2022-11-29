@@ -58,21 +58,21 @@
                             <!-- Nav tabs -->
                             <ul class="nav nav-tabs mt-2" id="tabs" role="tablist" style="font-size: 8pt;">
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger font-weight-bold active"
+                                    <a class="nav-link nav-trigger font-weight-bold active p-2"
                                     data-toggle="tab"
                                     data-target="store-transfer"
                                     data-purpose="Store Transfer"
                                     >Store Transfer</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger font-weight-bold"
+                                    <a class="nav-link nav-trigger font-weight-bold p-2"
                                     data-toggle="tab"
                                     data-target="return"
                                     data-purpose="For Return"
                                     >Return to Plant</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link nav-trigger font-weight-bold"
+                                    <a class="nav-link nav-trigger font-weight-bold p-2"
                                     data-toggle="tab"
                                     data-target="sales-return"
                                     data-purpose="Sales Return"
