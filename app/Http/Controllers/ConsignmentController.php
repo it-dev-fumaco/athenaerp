@@ -149,6 +149,7 @@ class ConsignmentController extends Controller
         return view('consignment.inventory_audit_form', compact('branch', 'transaction_date', 'items', 'item_images', 'item_total_sold', 'duration', 'inventory_audit_from', 'inventory_audit_to', 'consigned_stocks', 'item_classification', 'item_count'));
     }
 
+    // /consignment_stores
     public function consignmentStores(Request $request) {
         if ($request->ajax()) {
             if($request->has('assigned_to_me') && $request->assigned_to_me == 1){ // only get warehouses assigned to the promodiser
@@ -1314,8 +1315,10 @@ class ConsignmentController extends Controller
         $last_record = collect($beginning_inventory->items()) ? collect($beginning_inventory->items())->sortByDesc('creation')->last() : [];
         $earliest_date = $last_record ? Carbon::parse($last_record->creation)->format("Y-M-d") : Carbon::now()->format("Y-M-d");
 
+        $activity_logs_users = DB::table('tabActivity Log')->where('content', 'Consignment Activity Log')->distinct()->pluck('full_name');
+
         if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
-            return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory'));
+            return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory', 'activity_logs_users'));
         }
 
         return view('consignment.beginning_inventory_list', compact('consignment_stores', 'inv_arr', 'beginning_inventory', 'earliest_date'));
@@ -4895,8 +4898,21 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.view_product_sold_items', compact('result', 'store', 'duration', 'list', 'promodisers'));
     }
 
+    // /get_activity_logs
     public function activityLogs(Request $request) {
+        // return $request->all();
+        $dates = $request->date ? explode(' to ', $request->date) : [];
+        
         $logs = DB::table('tabActivity Log')->where('content', 'Consignment Activity Log')
+            ->when($request->warehouse, function($q) use ($request){
+                return $q->where('subject', 'like', '%'.$request->warehouse.'%');
+            })
+            ->when($dates, function ($q) use ($dates){
+                return $q->whereBetween('creation', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]);
+            })
+            ->when($request->user, function ($q) use ($request){
+                return $q->where('full_name', $request->user);
+            })
             ->select('creation', 'subject', 'reference_name', 'full_name')
             ->orderBy('creation', 'desc')->paginate(20);
 

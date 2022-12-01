@@ -601,6 +601,25 @@
                                     <div id="stock-adjustments-container" class="p-2"></div>
                                 </div>
                                 <div class="tab-pane fade" id="inventory-audit-history-content" role="tabpanel" aria-labelledby="inventory-audit-history-tab">
+                                    <div class="row pt-2" style="font-size: 9pt;">
+                                        <div class="col-3">
+                                            <select id="activity-logs-warehouse" class="form-control"></select>
+                                        </div>
+                                        <div class="col-3">
+                                            <input type="text" class="form-control" id="activity-logs-daterange" style="font-size: 9pt;"/>
+                                        </div>
+                                        <div class="col-3">
+                                            <select id="activity-logs-user" class="form-control" style="font-size: 9pt;">
+                                                <option value="" selected disabled>Select a User</option>
+                                                @foreach ($activity_logs_users as $user)
+                                                    <option value="{{ $user }}">{{ $user }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-3">
+                                            <button type="button" class="btn btn-primary" id="refresh-activity-logs"><i class="fa fa-undo"></i></button>
+                                        </div>
+                                    </div>
                                     <div id="activity-logs-el" class="p-2"></div>
                                 </div>
                             </div>
@@ -692,20 +711,110 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            loadActivityLogs();
-            function loadActivityLogs(page) {
+            var warehouse = $('#activity-logs-warehouse').val();
+            var date = $("#activity-logs-daterange").val();
+            var user = $("#activity-logs-user").val();
+            loadActivityLogs(1, warehouse, date, user);
+
+            function loadActivityLogs(page, warehouse, date, user) {
                 $.ajax({
                     type: "GET",
                     url: "/get_activity_logs?page=" + page ,
+                    data: {
+                        warehouse: warehouse,
+                        date: date,
+                        user: user
+                    },
                     success: function (response) {
                         $('#activity-logs-el').html(response);
                     }
                 });
             }
 
+            $('#activity-logs-warehouse').select2({
+                placeholder: 'Select Warehouse',
+
+                ajax: {
+                    url: '/consignment_stores',
+                    method: 'GET',
+                    dataType: 'json',
+                    data: function (data) {
+                        return {
+                            q: data.term, // search term
+                        };
+                    },
+                    processResults: function (response) {
+                        return {
+                            results: response
+                        };
+                    },
+                    cache: true
+                }
+            });
+
+            $(document).on('select2:select', '#activity-logs-warehouse', function(e){
+                var warehouse = e.params.data.id;
+                var user = $("#activity-logs-user").val();
+                var date = $("#activity-logs-daterange").val();
+                
+                loadActivityLogs(1, warehouse, date, user);
+            });
+
+            $(document).on('click', '#activity-logs-pagination a', function(event){
+                event.preventDefault();
+                var user = $("#activity-logs-user").val();
+                var date = $("#activity-logs-daterange").val();
+                var page = $(this).attr('href').split('page=')[1];
+                var warehouse = $('#activity-logs-warehouse').val();
+
+                loadActivityLogs(page, warehouse, date, user);
+            });
+
+            $('#activity-logs-daterange').daterangepicker({
+                autoUpdateInput: false,
+                opens: 'left',
+                locale: {
+                    format: 'YYYY-MMM-DD',
+                    separator: " to "
+                }
+            });
+
+            $("#activity-logs-daterange").on('apply.daterangepicker', function (ev, picker) {
+                var user = $('#activity-logs-user').val();
+                var warehouse = $('#activity-logs-warehouse').val();
+                var date = picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD');
+                $(this).val(date);
+
+                loadActivityLogs(1, warehouse, date, user);
+            });
+
+            $("#activity-logs-daterange").on('cancel.daterangepicker', function (ev, picker) {
+                $(this).val('');
+                var user = $('#activity-logs-user').val();
+
+                loadActivityLogs(1, warehouse, '', user);
+            });
+
+            $(document).on('change', '#activity-logs-user', function(){
+                var user = $(this).val();
+                var date = $("#activity-logs-daterange").val();
+                var warehouse = $('#activity-logs-warehouse').val();
+
+                loadActivityLogs(1, warehouse, date, user);
+            })
+
+            $(document).on('click', '#refresh-activity-logs', function (){
+                $("#activity-logs-daterange").val('');
+                $('#activity-logs-warehouse').empty().trigger('change');
+                $('#activity-logs-user').val($("#activity-logs-user option:first").val());
+
+                loadActivityLogs(1);
+            });
+
             $(document).on('click', '#stock-adjustment-history-pagination a', function(e){
                 e.preventDefault();
                 var page = $(this).attr('href').split('page=')[1];
+
                 load_stock_adjustment_history(page);
             });
             
@@ -793,12 +902,6 @@
                     return $opt;
                 }
             };
-
-            $(document).on('click', '#activity-logs-pagination a', function(event){
-                event.preventDefault();
-                var page = $(this).attr('href').split('page=')[1];
-                loadActivityLogs(page);
-            });
 
             // Change Item Controls
 
