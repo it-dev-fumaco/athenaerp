@@ -606,7 +606,7 @@
                                             <select id="activity-logs-warehouse" class="form-control"></select>
                                         </div>
                                         <div class="col-3">
-                                            <input type="text" class="form-control" id="activity-logs-daterange" style="font-size: 9pt;"/>
+                                            <input type="text" class="form-control" id="activity-logs-daterange" style="font-size: 9pt;" placeholder="Select Date Range"/>
                                         </div>
                                         <div class="col-3">
                                             <select id="activity-logs-user" class="form-control" style="font-size: 9pt;">
@@ -756,7 +756,7 @@
                 var warehouse = e.params.data.id;
                 var user = $("#activity-logs-user").val();
                 var date = $("#activity-logs-daterange").val();
-                
+
                 loadActivityLogs(1, warehouse, date, user);
             });
 
