@@ -172,7 +172,7 @@ class StockReservationController extends Controller
       // Create a new Laravel collection from the array data3
       $itemCollection = collect($pending_arr);
       // Define how many items we want to be visible in each page
-      $perPage = 2;
+      $perPage = 10;
       // Slice the collection to get the items to display in current page
       $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
       // Create our paginator and pass it to the view
