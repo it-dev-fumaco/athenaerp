@@ -1815,6 +1815,12 @@
 				var page = $(this).attr('href').split('page=')[1];
 				get_stock_reservation(page);
 			});
+
+			$(document).on('click', '#pending-arr-pagination a', function(event){
+				event.preventDefault();
+				var page = $(this).attr('href').split('page=')[1];
+				get_stock_reservation(page);
+			});
 			
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();

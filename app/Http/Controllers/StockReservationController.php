@@ -8,6 +8,7 @@ use App\StockReservation;
 use DB;
 use Carbon\Carbon;
 use Auth;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class StockReservationController extends Controller
 {
@@ -130,7 +131,57 @@ class StockReservationController extends Controller
          $q->where('item_code', $item_code)->where('type', 'Consignment')->orderby('valid_until', 'desc');
       })->paginate(10);
 
-      return view('stock_reservation.list', compact('consignmentList', 'webList', 'inhouseList', 'item_code'));
+      $ste_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')->where('item_code', $item_code)->get();
+
+      $at_issued = DB::table('tabAthena Transactions as at')
+         ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+         ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+         ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+         ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('psi.status', 'Issued')->where('at.item_code', $item_code)->where('psi.item_code', $item_code)
+         ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')->get();
+      
+      $pending_arr = [];
+      foreach($ste_issued as $item){
+         $pending_arr[] = [
+            'id' => $item->parent,
+            'warehouse' => $item->s_warehouse,
+            'qty' => $item->qty * 1,
+            'uom' => $item->uom,
+            'owner' => $item->owner,
+            'issued_by' => $item->session_user,
+            'issued_at' => $item->modified,
+            'date' => $item->creation
+         ];
+      }
+
+      foreach ($at_issued as $item) {
+         $pending_arr[] = [
+            'id' => $item->name,
+            'warehouse' => $item->source_warehouse,
+            'qty' => $item->issued_qty * 1,
+            'uom' => $item->stock_uom,
+            'owner' => $item->owner,
+            'issued_by' => $item->session_user,
+            'issued_at' => $item->modified,
+            'date' => $item->creation
+         ];
+      }
+
+      // Get current page form url e.x. &page=1
+      $currentPage = LengthAwarePaginator::resolveCurrentPage();
+      // Create a new Laravel collection from the array data3
+      $itemCollection = collect($pending_arr);
+      // Define how many items we want to be visible in each page
+      $perPage = 2;
+      // Slice the collection to get the items to display in current page
+      $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+      // Create our paginator and pass it to the view
+      $paginatedItems= new LengthAwarePaginator($currentPageItems, count($itemCollection), $perPage);
+      // set url path for generted links
+      $paginatedItems->setPath($request->url());
+      $pending_arr = $paginatedItems;
+
+      return view('stock_reservation.list', compact('consignmentList', 'webList', 'inhouseList', 'item_code', 'pending_arr'));
    }
 
    public function cancel_reservation(Request $request){
