@@ -933,11 +933,11 @@
         }
 
         get_stock_reservation();
-        function get_stock_reservation(page){
+        function get_stock_reservation(tbl, page){
             var item_code = '{{ $item_details->name }}';
             $.ajax({
                 type: 'GET',
-                url: '/get_stock_reservation/' + item_code + '?page=' + page,
+                url: '/get_stock_reservation/' + item_code + '?' + tbl + '=' + page,
                 success: function(response){
                     $('#stock-reservation-table').html(response);
                 }

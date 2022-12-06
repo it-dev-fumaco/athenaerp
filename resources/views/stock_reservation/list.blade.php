@@ -281,14 +281,14 @@
     <tbody>
         @forelse($pending_arr as $row)
             <tr>
-                <td class="text-center">
+                <td class="text-center p-2">
                     <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row['date'])) }}</span>
                 </td>
-                <td class="text-center">{{ $row['id'] }}</td>
-                <td class="text-center">{{ $row['warehouse'] }}</td>
-                <td class="text-center"><b>{{ $row['qty'] * 1 }}</b> {{ $row['uom'] }}</td>
-                <td class="text-center">{{ $row['issued_by'] }}</td>
-                <td class="text-center">{{ Carbon\Carbon::parse($row['issued_at'])->format('M-d-Y h:i A') }}</td>
+                <td class="text-center p-2">{{ $row['id'] }}</td>
+                <td class="text-center p-2">{{ $row['warehouse'] }}</td>
+                <td class="text-center p-2"><b>{{ $row['qty'] * 1 }}</b> {{ $row['uom'] }}</td>
+                <td class="text-center p-2">{{ $row['issued_by'] }}</td>
+                <td class="text-center p-2">{{ Carbon\Carbon::parse($row['issued_at'])->format('M-d-Y h:i A') }}</td>
             </tr>
         @empty
             <tr>

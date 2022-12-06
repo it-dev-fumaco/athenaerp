@@ -121,15 +121,15 @@ class StockReservationController extends Controller
    public function get_stock_reservation(Request $request, $item_code = null){
       $webList = StockReservation::when($item_code, function($q) use ($item_code){
          $q->where('item_code', $item_code)->where('type', 'Website Stocks')->orderby('creation', 'desc');
-      })->paginate(10);
+      })->paginate(10, ['*'], 'tbl_1');
 
       $inhouseList = StockReservation::when($item_code, function($q) use ($item_code){
          $q->where('item_code', $item_code)->where('type', 'In-house')->orderby('valid_until', 'desc');
-      })->paginate(10);
+      })->paginate(10, ['*'], 'tbl_3');
 
       $consignmentList = StockReservation::when($item_code, function($q) use ($item_code){
          $q->where('item_code', $item_code)->where('type', 'Consignment')->orderby('valid_until', 'desc');
-      })->paginate(10);
+      })->paginate(10, ['*'], 'tbl_2');
 
       $ste_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')->where('item_code', $item_code)->get();
 

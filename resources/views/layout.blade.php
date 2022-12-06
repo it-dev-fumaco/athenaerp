@@ -1799,27 +1799,27 @@
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation(page);
+				get_stock_reservation('tbl_1', page);
 			});
 
 			$(document).on('click', '#stock-reservations-pagination-2 a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
 				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation(page);
+				get_stock_reservation('tbl_2', page);
 			});
 
 			$(document).on('click', '#stock-reservations-pagination-3 a', function(event){
 				event.preventDefault();
 				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation(page);
+				var page = $(this).attr('href').split('tbl_3=')[1];
+				get_stock_reservation('tbl_3', page);
 			});
 
 			$(document).on('click', '#pending-arr-pagination a', function(event){
 				event.preventDefault();
 				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation(page);
+				get_stock_reservation('page', page);
 			});
 			
 			$(document).on('click', '.upload-item-image', function(e){
