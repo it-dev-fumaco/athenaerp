@@ -131,14 +131,19 @@ class StockReservationController extends Controller
          $q->where('item_code', $item_code)->where('type', 'Consignment')->orderby('valid_until', 'desc');
       })->paginate(10, ['*'], 'tbl_2');
 
-      $ste_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')->where('item_code', $item_code)->get();
+      $ste_issued = DB::table('tabStock Entry Detail as sted')
+         ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
+         ->where('sted.docstatus', 0)->where('sted.status', 'Issued')->where('sted.item_code', $item_code)->whereNotIn('ste.purpose', ['Manufacture', 'Material Receipt'])
+         ->select('sted.parent', 'sted.s_warehouse', 'sted.qty', 'sted.uom', 'ste.owner', 'sted.session_user', 'sted.modified', 'ste.creation')
+         ->orderBy('sted.modified', 'desc')->get();
 
       $at_issued = DB::table('tabAthena Transactions as at')
          ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
          ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
          ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
          ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('psi.status', 'Issued')->where('at.item_code', $item_code)->where('psi.item_code', $item_code)
-         ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')->get();
+         ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')
+         ->orderBy('psi.modified', 'desc')->get();
       
       $pending_arr = [];
       foreach($ste_issued as $item){

@@ -294,7 +294,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan=8>No result(s) found.</td>
+                <td colspan=8 class="text-center p-2">No result(s) found.</td>
             </tr>
         @endforelse
     </tbody>
