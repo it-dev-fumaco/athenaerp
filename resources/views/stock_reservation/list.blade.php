@@ -272,8 +272,9 @@
         <tr>
             <th class="text-center p-1" style="width: 10%;">Transaction</th>
             <th class="text-center p-1 d-none d-sm-table-cell" style="width: 20%;">Reference</th>
-            <th class="text-center p-1 d-none d-sm-table-cell">Warehouse</th>
             <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10%;">Issued Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell">Warehouse</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10%;">Owner</th>
             <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12%;">Issued by</th>
             <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12%;">Issued at</th>
         </tr>
@@ -285,8 +286,9 @@
                     <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row['date'])) }}</span>
                 </td>
                 <td class="text-center p-2">{{ $row['id'] }}</td>
-                <td class="text-center p-2">{{ $row['warehouse'] }}</td>
                 <td class="text-center p-2"><b>{{ $row['qty'] * 1 }}</b> {{ $row['uom'] }}</td>
+                <td class="text-center p-2">{{ $row['warehouse'] }}</td>
+                <td class="text-center p-2">{{ $row['owner'] }}</td>
                 <td class="text-center p-2">{{ $row['issued_by'] }}</td>
                 <td class="text-center p-2">{{ Carbon\Carbon::parse($row['issued_at'])->format('M-d-Y h:i A') }}</td>
             </tr>
