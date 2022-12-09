@@ -265,3 +265,41 @@
 <div class="box-footer clearfix" id="stock-reservations-pagination-3" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
 	{{ $inhouseList->links() }}
 </div>
+
+<h6 class="font-weight-bold text-uppercase font-responsive"><i class="fas fa-box"></i> Pending to Submit Stock Entries</h6>
+<table class="table table-hover table-bordered table-sm stock-ledger-table-font" style="font-size: 9pt !important;">
+    <thead>
+        <tr>
+            <th class="text-center p-1" style="width: 10%;">Transaction</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 20%;">Reference</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10%;">Issued Qty</th>
+            <th class="text-center p-1 d-none d-sm-table-cell">Warehouse</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 10%;">Owner</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12%;">Issued by</th>
+            <th class="text-center p-1 d-none d-sm-table-cell" style="width: 12%;">Issued at</th>
+        </tr>
+    </thead>
+    <tbody>
+        @forelse($pending_arr as $row)
+            <tr>
+                <td class="text-center p-2">
+                    <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row['date'])) }}</span>
+                </td>
+                <td class="text-center p-2">{{ $row['id'] }}</td>
+                <td class="text-center p-2"><b>{{ $row['qty'] * 1 }}</b> {{ $row['uom'] }}</td>
+                <td class="text-center p-2">{{ $row['warehouse'] }}</td>
+                <td class="text-center p-2">{{ $row['owner'] }}</td>
+                <td class="text-center p-2">{{ $row['issued_by'] }}</td>
+                <td class="text-center p-2">{{ Carbon\Carbon::parse($row['issued_at'])->format('M-d-Y h:i A') }}</td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan=8>No result(s) found.</td>
+            </tr>
+        @endforelse
+    </tbody>
+</table>
+
+<div class="box-footer clearfix" id="pending-arr-pagination" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
+	{{ $pending_arr->links() }}
+</div>
