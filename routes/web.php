@@ -250,3 +250,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/consignment_stock_movement/{item_code}', 'ConsignmentController@consignmentStockMovement');
 });
 
+
+Route::get('/brochure', 'BrochureController@viewForm');
+Route::post('/read_file', 'BrochureController@readExcelFile');
+

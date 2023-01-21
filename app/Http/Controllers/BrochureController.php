@@ -15,8 +15,8 @@ class BrochureController extends Controller
 
     public function readExcelFile(Request $request){
         try {
-            if($request->hasFile('file')){
-				$attached_file = $request->file('file');
+            if($request->hasFile('selected-file')){
+				$attached_file = $request->file('selected-file');
 
 				$allowed_extensions = ['xlsx', 'xls'];
 
@@ -35,9 +35,6 @@ class BrochureController extends Controller
 				$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
 
 				$highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
-
-				// $worksheetInfo = $reader->listWorksheetInfo($attached_file);
-				// $totalRows = $worksheetInfo[0]['totalRows'];
 
 				$headerRowArr = [];
 				for ($col = 1; $col <= $highestColumnIndex; $col++) {
@@ -61,6 +58,7 @@ class BrochureController extends Controller
 					$item_name = $sheet->getCellByColumnAndRow(1, $row)->getValue();
 
 					$content[] = [
+						'id' => Str::slug($item_name, '-'),
 						'project' => $sheet->getCellByColumnAndRow(2, 2)->getValue(),
 						'item_name' => $item_name,
 						'reference' => $sheet->getCellByColumnAndRow(2, $row)->getValue(),
@@ -76,24 +74,6 @@ class BrochureController extends Controller
 				}
 
 				return view('brochure.print_preview', compact('content', 'table_of_contents'));
-
-				// return $aMergeCells = $sheet->getMergeCells();
-
-				return $testArr;
-
-				dd($worksheetInfo);
-
-
-				// Check cell is merged or not
-				// function checkMergedCell($sheet, $cell){
-				// 	foreach ($sheet->getMergeCells() as $cells) {
-				// 		if ($cell->isInRange($cells)) {
-				// 			// Cell is merged!
-				// 			return true;
-				// 		}
-				// 	}
-				// 	return false;
-				// }
 			}
 			
 		} catch (Exception $e) {
