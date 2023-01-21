@@ -17,6 +17,9 @@ Route::post('/login_user', 'LoginController@login');
 Route::get('/update', 'ItemAttributeController@update_login')->name('update_login');
 Route::post('/U_login_user', 'ItemAttributeController@login');
 
+Route::get('/brochure_form', 'BrochureController@viewForm');
+Route::post('/read_file', 'BrochureController@readExcelFile');
+
 Route::group(['middleware' => 'auth'], function(){
     // routes for item attribute updating
     Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
