@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Illuminate\Support\Str;
+use Storage;
 
 class BrochureController extends Controller
 {
@@ -90,9 +91,15 @@ class BrochureController extends Controller
 					];
 				}
 
-				if($request->ajax()){ // ajax
+				if($request->ajax()){
 					return view('brochure.modal_product_list', compact('content', 'project', 'customer', 'headerRowArr'));
 				}
+
+				if(!Storage::disk('public')->exists('/brochures/'.strtoupper($project))){
+					Storage::disk('public')->makeDirectory('/brochures/'.strtoupper($project));
+				}
+
+				$attached_file->move(public_path('storage/brochures/'.strtoupper($project)), $attached_file->getClientOriginalName());
 
 				return view('brochure.print_preview', compact('content', 'table_of_contents'));
 			}
