@@ -160,7 +160,7 @@
                   <button class="btn btn-primary btn-block" type="submit" id="upload-btn">Upload</button>
                 </div>
                 <div class="col-12 pt-3">
-                  <button class="btn btn-info btn-block" type="button" id="download-btn">Download Template</button>
+                  <a href="{{ asset('storage/templates/AthenaERP - Brochure-Import-Template.xlsx') }}" class="btn btn-info btn-block" type="button">Download Template</a>
                 </div>
               </div>
           </div>
