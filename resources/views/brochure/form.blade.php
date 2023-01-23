@@ -90,7 +90,7 @@
     </style>
   </head>
   <body>
-    <form action="/read_file" method="POST" enctype="multipart/form-data">
+    <form action="/read_file" id="excel-form" method="POST" enctype="multipart/form-data">
       @csrf
       <div class="container">
         <div class="card">
@@ -156,8 +156,30 @@
                   <div class="custom-card-subtitle"><small>Files Supported: XLSX, XLS</small></div>  
               </div>
               <div class="row p-0">
-                <div class="col-12 pt-3 d-none">
-                  <button class="btn btn-primary btn-block" type="submit" id="upload-btn">Upload</button>
+                <div id="upload-container" class="col-12 pt-3 d-none">
+                  <button class="btn btn-primary btn-block read-file" type="button" data-target="#product-list-modal">Upload</button>
+
+                  <div class="modal fade" id="product-list-modal">
+                    <div class="modal-dialog" style="min-width: 90% !important">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h4 class="modal-title">
+                            <span id="modal-file-name"></span>
+                          </h4>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </div>
+                        <div class="modal-body overflow-auto" id="generated-product-list-body">
+                        </div>
+                        <div class="modal-footer justify-content-end">
+                          <button type="submit" class="btn btn-primary">Generate Brochure</button>
+                        </div>
+                      </div>
+                      <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                  </div>
                 </div>
                 <div class="col-12 pt-3">
                   <a href="{{ asset('storage/templates/AthenaERP - Brochure-Import-Template.xlsx') }}" class="btn btn-info btn-block" type="button">Download Template</a>
@@ -167,18 +189,57 @@
       </div>
   </div>
 </form>
-
       <!-- jQuery -->
     <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('/updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('/js/angular.min.js') }}"></script>
+    <script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
       <script>
         $(document).ready(function(){
-            $('input[type="file"]').change(function(e){
-                var fileName = e.target.files[0].name;
-                $('#file-name').text(fileName);
-                $('#upload-btn').parent().removeClass('d-none');
+          $('input[type="file"]').change(function(e){
+            var fileName = e.target.files[0].name;
+            $('#file-name').text(fileName);
+            $('#modal-file-name').text(fileName);
+            $('#upload-container').removeClass('d-none');
+          });
+
+          $(document).on('click', '.read-file', function(){
+            var form_data = new FormData($('#excel-form')[0]);
+
+            $.ajax({
+              type: 'post',
+              url: '/read_file',
+              data: form_data,
+              contentType: false,
+              processData: false,
+              success: function(response){
+                if(response.status == 0){
+    							showNotification("danger", response.message, "fa fa-info");
+                }else{
+                  $('#generated-product-list-body').html(response);
+                  $('#product-list-modal').modal('show');
+                }
+              },
+              error: function(jqXHR, textStatus, errorThrown) {}
             });
+          });
+
+          function showNotification(color, message, icon){
+            $.notify({
+              icon: icon,
+              message: message
+            },{
+              type: color,
+              timer: 500,
+              z_index: 1060,
+              placement: {
+                from: 'top',
+                align: 'center'
+              }
+            });
+          }
         });
     </script>
-      </body>
-    </html>
+  </body>
+</html>
     

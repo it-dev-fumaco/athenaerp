@@ -221,8 +221,14 @@
     <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px;">Table of Contents</h3>
     {{-- <hr style="margin: 0 5px 0 5px; padding: 0 !important; border: 1px solid;"> --}}
     <div id="toc-links">
+        @php
+            $a = 1;
+        @endphp
         @foreach ($table_of_contents as $index => $toc)
-        <a href="#{{ $toc['id'] }}">{{ $index + 1 .'. ' . $toc['text'] }}</a>
+            @if (!$toc['id'] && !$toc['text'])
+                @continue
+            @endif
+            <a href="#{{ $toc['id'] }}">{{ $a++ .'. ' . $toc['text'] }}</a>
         @endforeach
     </div>
 </div>
@@ -231,6 +237,9 @@
 
 <div id="print-area">
     @foreach ($content as $row)
+    @if (!collect($row['attrib'])->filter()->values()->all())
+        @continue
+    @endif
     <div class="page-container d-print-none" id="{{ $row['id'] }}" style="margin-left: 280px !important; padding: 15px 0 15px 0 !important; background: #E6E6E6;">
             <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
                 <div class="pdf-content">
