@@ -31,12 +31,12 @@ class BrochureController extends Controller
 			$years = Carbon::now()->diffInYears(Carbon::parse($row[0]->transaction_date));
 
 			$duration = '';
-			if ($seconds < 59) {
-				$duration = $seconds . 's ago';
-			}
-
 			if ($minutes <= 59) {
 				$duration = $minutes . 'm ago';
+			}
+
+			if ($seconds <= 59) {
+				$duration = $seconds . 's ago';
 			}
 
 			if ($hours >= 1) {
