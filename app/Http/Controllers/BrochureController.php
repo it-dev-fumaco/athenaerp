@@ -14,7 +14,56 @@ use Carbon\Carbon;
 class BrochureController extends Controller
 {
     public function viewForm() {
-        return view('brochure.form');
+		$recents = DB::table('tabProduct Brochure Log')
+			->where('transaction_type', 'Upload Excel File')
+			->orderBy('creation', 'desc')->limit(10)->get();
+
+		$recents = $recents->groupby('project');
+
+		$recent_uploads = [];
+		foreach ($recents as $project => $row) {
+
+			$seconds = Carbon::now()->diffInSeconds(Carbon::parse($row[0]->transaction_date));
+			$minutes = Carbon::now()->diffInMinutes(Carbon::parse($row[0]->transaction_date));
+			$hours = Carbon::now()->diffInHours(Carbon::parse($row[0]->transaction_date));
+			$days = Carbon::now()->diffInDays(Carbon::parse($row[0]->transaction_date));
+			$months = Carbon::now()->diffInMonths(Carbon::parse($row[0]->transaction_date));
+			$years = Carbon::now()->diffInYears(Carbon::parse($row[0]->transaction_date));
+
+			$duration = '';
+			if ($seconds < 59) {
+				$duration = $seconds . 's ago';
+			}
+
+			if ($minutes <= 59) {
+				$duration = $minutes . 'm ago';
+			}
+
+			if ($hours >= 1) {
+				$duration = $hours . 'h ago';
+			}
+
+			if ($days >= 1) {
+				$duration = $days . 'd ago';
+			}
+
+			if ($months >= 1) {
+				$duration = $months . 'm ago';
+			}
+
+			if ($years >= 1) {
+				$duration = $years . 'y ago';
+			}
+
+			$recent_uploads[] = [
+				'project' => $project,
+				'filename' => $row[0]->filename,
+				'created_by' => $row[0]->created_by,
+				'duration' => $duration,
+			];
+		}
+
+        return view('brochure.form', compact('recent_uploads'));
     }
 
     public function readExcelFile(Request $request){
