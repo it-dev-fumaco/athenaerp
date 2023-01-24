@@ -37,7 +37,7 @@ class BrochureController extends Controller
 				$headers = $file_contents['headers'];
 				$table_of_contents = $file_contents['table_of_contents'];
 
-				if($request->ajax()){
+				if($request->is_readonly){
 					return view('brochure.modal_product_list', compact('content', 'project', 'customer', 'headers'));
 				}
 
@@ -47,7 +47,7 @@ class BrochureController extends Controller
 
 				$attached_file->move(public_path('storage/brochures/'.strtoupper($project)), $attached_file->getClientOriginalName());
 
-				return redirect('/preview/' . $project . '/' . $file_name . '.' . $file_ext);
+				return response()->json(['status' => 1, 'message' => '/preview/' . $project . '/' . $file_name . '.' . $file_ext]);
 			}
 		} catch (Exception $e) {
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);

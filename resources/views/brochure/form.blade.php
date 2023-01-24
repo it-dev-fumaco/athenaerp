@@ -170,10 +170,15 @@
                             <span aria-hidden="true">&times;</span>
                           </button>
                         </div>
-                        <div class="modal-body overflow-auto" id="generated-product-list-body">
+                        <div class="modal-body overflow-auto" id="generated-product-list-body" style="min-height: 400px;">
+                          <div class="overlay-wrapper">
+                            <div class="overlay">
+                                <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                            </div>
+                          </div>
                         </div>
                         <div class="modal-footer justify-content-end">
-                          <button type="submit" class="btn btn-primary">Generate Brochure</button>
+                          <button type="submit" class="btn btn-primary" id="generate-brochure-btn" value="generate">Generate Brochure</button>
                         </div>
                       </div>
                       <!-- /.modal-content -->
@@ -205,7 +210,16 @@
 
           $(document).on('click', '.read-file', function(){
             var form_data = new FormData($('#excel-form')[0]);
+            form_data.append('is_readonly', true)
 
+            $('#generated-product-list-body').html('<div class="overlay-wrapper">' +
+              '<div class="overlay">' +
+                  '<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
+              '</div>' +
+            '</div>');
+
+            $('#generate-brochure-btn').attr('disabled', true);
+            $('#product-list-modal').modal('show');
             $.ajax({
               type: 'post',
               url: '/read_file',
@@ -217,10 +231,12 @@
     							showNotification("danger", response.message, "fa fa-info");
                 }else{
                   $('#generated-product-list-body').html(response);
-                  $('#product-list-modal').modal('show');
+                  $('#generate-brochure-btn').removeAttr('disabled');
                 }
               },
-              error: function(jqXHR, textStatus, errorThrown) {}
+              error: function(jqXHR, textStatus, errorThrown) {
+                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+              }
             });
           });
 
@@ -238,6 +254,32 @@
               }
             });
           }
+
+          $('#excel-form').submit(function(e) {
+            e.preventDefault();
+
+            $('#generate-brochure-btn').attr('disabled', true).html('<i class="fas fa-sync-alt fa-spin"></i> Generating...');
+
+            $.ajax({
+              type: 'post',
+              url: $(this).attr('action'),
+              data: new FormData(this),
+              contentType: false,
+              processData: false,
+              success: function(response){
+                if(response.status == 0){
+    							showNotification("danger", response.message, "fa fa-info");
+                  $('#generate-brochure-btn').removeAttr('disabled');
+                }else{
+                  window.location.href = response.message;
+                }
+              },
+              error: function(jqXHR, textStatus, errorThrown) {
+                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                $('#generate-brochure-btn').removeAttr('disabled');
+              }
+            });
+          });
         });
     </script>
   </body>
