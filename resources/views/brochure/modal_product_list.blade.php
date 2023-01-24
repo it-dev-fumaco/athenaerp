@@ -4,7 +4,7 @@
     <table class="table table-bordered table-striped table-hovered" id="attrib-table" style="font-size: 9pt;">
         <thead>
             <tr>
-                @foreach ($headerRowArr as $col)
+                @foreach ($headers as $col)
                     @if($col)
                         <th style="white-space: nowrap;">{{ $col }}</th>
                     @endif
@@ -22,7 +22,7 @@
                     }
                 @endphp
                 <tr style="background-color: {{ !$is_empty ? 'rgb(247, 93, 93)' : 'rgba(0,0,0,0)' }}">
-                    @foreach ($headerRowArr as $col)
+                    @foreach ($headers as $col)
                         @if($col)
                             @php
                                 $col_value = '-';

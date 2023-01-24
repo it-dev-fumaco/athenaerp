@@ -10,6 +10,8 @@
         <link rel="stylesheet" href="{{ asset('/updated/icons/font-awesome.min.css') }}">
         {{--  <!-- Font Awesome Icons -->  --}}
         <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
+        {{--  <!-- Theme style -->  --}}
+        <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
 
         <style>
             html {
@@ -39,7 +41,7 @@
                 text-decoration: none;
                 cursor: pointer;
                 display: block;
-                padding: 8px 10px;
+                padding: 6px 10px;
                 color:   #4b6ea6  ;
                 border-bottom: 1px solid#d5d8dc;
             }
@@ -88,27 +90,21 @@
                 height: 100%;
                 text-align: center;
                 background-color: transparent;
+                cursor: pointer;
             }
             .upload-btn-wrapper i {
                 display: block;
                 font-size: 100px;
                 color: #d5d8dc;
                 opacity: 50%;
+                margin-top: 40px !important;
             }
             .upload-btn-wrapper span {
                 display: block;
                 font-size: 18px;
                 color:  #abb2b9 ;
             }
-            .upload-btn-wrapper input[type=file] {
-                font-size: 200px;
-                position: absolute;
-                left: 0;
-                top: 0;
-                cursor: pointer;
-                opacity: 0;
-            }
-            
+
             @media screen {
                 .page-container * {
                     z-index: 0;
@@ -154,6 +150,7 @@
                     right: 28px;
                     top: 2px;
                     font-weight: 500;
+                    line-height: 14px;
                 }
                 .pdf-body {
                     position: absolute;
@@ -211,15 +208,15 @@
         </style>
     </head>
 <body>
- 
+<input type="hidden" id="project" value="{{ $project }}">
+<input type="hidden" id="filename" value="{{ $filename }}">
 <div id="table-of-contents-sidebar">
     <div style="display: block; text-align: center; margin: 20px 0;">
         <a href="/brochure" style="padding: 8px 10px 8px 10px !important; margin: 15px !important; border-radius: 5px; background-color: #f8f9f9; font-size: 20px; border: 1px solid #d6dbdf; color:#d5d8dc; cursor: pointer;">
             <i class="fas fa-home"></i>
         </a>
     </div>
-    <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px;">Table of Contents</h3>
-    {{-- <hr style="margin: 0 5px 0 5px; padding: 0 !important; border: 1px solid;"> --}}
+    <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px; font-size: 20px;">Table of Contents</h3>
     <div id="toc-links">
         @php
             $a = 1;
@@ -236,7 +233,7 @@
 <button id="print-btn"><i class="fas fa-print"></i></button>
 
 <div id="print-area">
-    @foreach ($content as $row)
+    @foreach ($content as $r => $row)
     @if (!collect($row['attrib'])->filter()->values()->all())
         @continue
     @endif
@@ -260,36 +257,49 @@
                         </div>
                         <div style="display: block; padding-top: 5px !important; clear: both; margin-left: -2px !important;">
                             <div style="width: 44%; float: left; padding: 2px !important;">
-                                <div class="upload-image-placeholder">
+                                @if (isset($row['images']['image1']) && $row['images']['image1'])
+                                <img src="{{ asset('/storage/brochures/' . $row['images']['image1']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-01-image">
+                                @else
+                                <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-01-image">
+                                <div class="upload-image-placeholder" id="item-{{ $r }}-01" data-col="Image 1" data-row="{{ $row['row'] }}">
                                     <div class="upload-btn-wrapper">
-                                        <button class="custom-upload-btn">
+                                        <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
-                                            <span>Add Image</span>
-                                        </button>
-                                        <input type="file" name="myfile" />
+                                            <span>(230 x 230 px)<br>Add Image</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <br>
-                                <div class="upload-image-placeholder">
+                                @endif
+                                <br>
+                                @if (isset($row['images']['image2']) && $row['images']['image2'])
+                                <img src="{{ asset('/storage/brochures/' . $row['images']['image2']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-02-image">
+                                @else
+                                <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-02-image">
+                                <div class="upload-image-placeholder {{ isset($row['images']['image1']) && $row['images']['image1'] ? '' : 'd-none' }}" id="item-{{ $r }}-02" data-col="Image 2" data-row="{{ $row['row'] }}">
                                     <div class="upload-btn-wrapper">
-                                        <button class="custom-upload-btn">
+                                        <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
-                                            <span>Add Image</span>
-                                        </button>
-                                        <input type="file" name="myfile" />
+                                            <span>(230 x 230 px)<br>Add Image</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <br>
-                                <div class="upload-image-placeholder">
+                                @endif
+                                 <br>
+                                @if (isset($row['images']['image3']) && $row['images']['image3'])
+                                <img src="{{ asset('/storage/brochures/' . $row['images']['image3']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-03-image">
+                                @else
+                                <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-03-image">
+                                <div class="upload-image-placeholder {{ isset($row['images']['image2']) && $row['images']['image2'] ? '' : 'd-none' }}" id="item-{{ $r }}-03" data-col="Image 3" data-row="{{ $row['row'] }}">
                                     <div class="upload-btn-wrapper">
-                                        <button class="custom-upload-btn">
+                                        <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
-                                            <span>Add Image</span>
-                                        </button>
-                                        <input type="file" name="myfile" />
+                                            <span>(230 x 230 px)<br>Add Image</span>
+                                        </div>
                                     </div>
                                 </div>
-
+                                @endif
                             </div>
                             <div style="width: 54%; float:left;">
                                 <p style="font-weight: bolder;">Fitting Type / Reference:</p>
@@ -302,7 +312,7 @@
                                 @endif
                                 <table border="0" style="border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 30px !important;">
                                     @foreach ($row['attributes'] as $val)
-                                    @if ($val['attribute_value'])
+                                    @if ($val['attribute_value'] && !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']))
                                     <tr>
                                         <td style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $val['attribute_name'] }}</td>
                                         <td style="padding: 5px 0 5px 0 !important;width: 60%;"><strong>{{ $val['attribute_value'] }}</strong></td>
@@ -401,8 +411,63 @@
     @endforeach
 </div>
 
+<div class="modal fade" id="select-file-modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add Image</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="select-item-image-id">
+                {{-- <ul class="nav nav-pills ml-auto p-2">
+                    <li class="nav-item"><a class="nav-link active" href="#tab_1" data-toggle="tab">Upload File</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#tab_2" data-toggle="tab">Select from Media Files</a></li>
+                </ul> --}}
+                <div class="tab-content" style="min-height: 400px;">
+                    <div class="tab-pane active" id="tab_1">
+                        <form id="image-upload-form" method="POST" action="/upload_image" autocomplete="off" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" id="excel-column" name="column">
+                            <input type="hidden" id="excel-row" name="row">
+                            <input type="hidden" id="excel-project" name="project">
+                            <input type="hidden" id="excel-filename" name="filename">
+                            <div class="row mb-5">
+                                <div class="col-8 offset-2">
+                                    <div class="text-center">
+                                        <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3" id="img-preview">
+                                    </div>
+                                    <p class="text-center text-muted">Files Supported: JPEG, JPG, PNG</p>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="browse-file" name="selected-file" accept=".jpg,.jpeg,.png" required>
+                                                <label class="custom-file-label" for="browse-file" id="browse-file-text">Browse File</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <button class="btn btn-primary col-8" type="submit" id="upload-btn" disabled>Upload</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- /.tab-pane -->
+                    {{-- <div class="tab-pane" id="tab_2">
+                        <div id="media-files"></div>
+                    </div> --}}
+                    <!-- /.tab-pane -->
+                </div>
+                <!-- /.tab-content -->
+            </div>
+        </div>
+    </div>
+</div>
 
     <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
+    <!-- Bootstrap 4 -->
+    <script src="{{ asset('/updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script type="text/javascript" src="{{  asset('js/printThis.js') }}"></script>
     
     <script>
@@ -416,8 +481,91 @@
                     importStyle: true,
                 });
             });
+
+            $(document).on('click', '.upload-image-placeholder', function(e) {
+                e.preventDefault();
+
+                $('#select-item-image-id').val($(this).attr('id'));
+                $('#excel-column').val($(this).data('col'));
+                $('#excel-row').val($(this).data('row'));
+                $('#excel-project').val($('#project').val());
+                $('#excel-filename').val($('#filename').val());
+                $('#select-file-modal').modal('show');
+            });
+
+            function get_uploaded_brochure_images() {
+                $.ajax({
+					type: 'GET',
+					url: '/get_uploaded_brochure_images',
+					success: function(response){
+						$('#media-files').html(response);
+					},
+				});
+            }
+
+            $('input[type="file"]').change(function(e){
+                var fileName = e.target.files[0].name;
+                $('#browse-file-text').text(fileName);
+                $('#upload-btn').removeAttr('disabled');
+
+                if (typeof (FileReader) != "undefined") {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#img-preview').attr('src', e.target.result);
+                    }
+                    reader.readAsDataURL($(this)[0].files[0]);
+                } else {
+                    showNotification("danger", "This browser does not support FileReader.", "fa fa-info");
+                }
+            });
+
+            $('#image-upload-form').submit(function(e) {
+                e.preventDefault();
+
+                $.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+                    data:  new FormData(this),
+                    contentType: false,
+                    cache: false,
+                    processData:false,
+					success: function(response){
+                        if(response.status == 0){
+    						showNotification("danger", response.message, "fa fa-info");
+                        }else{
+                            var item_image_id = $('#select-item-image-id').val();
+                            $('#' + item_image_id).remove();
+                            $('#' + item_image_id + '-image').removeClass('d-none').attr('src', $('#img-preview').attr('src'));
+                            $('#' + item_image_id + '-image').parent().find('.upload-image-placeholder').eq(0).removeClass('d-none');
+                           
+                            $('#select-file-modal').modal('hide');
+                        }
+					},
+				});
+            });
+
+            function showNotification(color, message, icon){
+                $.notify({
+                    icon: icon,
+                    message: message
+                },{
+                    type: color,
+                    timer: 500,
+                    z_index: 1060,
+                    placement: {
+                        from: 'top',
+                        align: 'center'
+                    }
+                });
+            }
+
+            $(document).on('hidden.bs.modal', '.modal', function () {
+                $(this).find('form')[0].reset();
+
+                $('#img-preview').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+                $('#browse-file-text').text('Browse File');
+            });
         });
     </script>
-    
   </body>
 </html>
