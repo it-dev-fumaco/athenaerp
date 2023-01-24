@@ -8,6 +8,8 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriterXlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Illuminate\Support\Str;
 use Storage;
+use DB;
+use Carbon\Carbon;
 
 class BrochureController extends Controller
 {
@@ -16,6 +18,7 @@ class BrochureController extends Controller
     }
 
     public function readExcelFile(Request $request){
+		DB::beginTransaction();
         try {
             if($request->hasFile('selected-file')){
 				$attached_file = $request->file('selected-file');
@@ -41,15 +44,36 @@ class BrochureController extends Controller
 					return view('brochure.modal_product_list', compact('content', 'project', 'customer', 'headers'));
 				}
 
+				$transaction_date = Carbon::now()->toDateTimeString();
+
+				DB::table('tabProduct Brochure Log')->insert([
+					'name' => uniqid(),
+					'creation' => $transaction_date,
+					'modified' => $transaction_date,
+					'modified_by' => get_current_user(),
+					'owner' => get_current_user(),
+					'project' => $project,
+					'filename' => $file_name . '.' . $file_ext,
+					'created_by' => get_current_user(),
+					'transaction_date' => $transaction_date,
+					'remarks' => null,
+					'transaction_type' => 'Upload Excel File'
+				]);
+				
+
 				if(!Storage::disk('public')->exists('/brochures/'.strtoupper($project))){
 					Storage::disk('public')->makeDirectory('/brochures/'.strtoupper($project));
 				}
 
 				$attached_file->move(public_path('storage/brochures/'.strtoupper($project)), $attached_file->getClientOriginalName());
 
+				DB::commit();
+
 				return response()->json(['status' => 1, 'message' => '/preview/' . $project . '/' . $file_name . '.' . $file_ext]);
 			}
 		} catch (Exception $e) {
+			DB::rollback();
+
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
         }
 	}
@@ -67,60 +91,84 @@ class BrochureController extends Controller
 	}
 
 	public function uploadImage(Request $request) {
-		if($request->hasFile('selected-file')){
-            $file = $request->file('selected-file');
-			$allowed_extensions = ['jpg', 'jpeg', 'png'];
-
-			$folder = $request->project;
-			$dir = $request->filename;
-
-			$file_ext = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
-			if(!in_array($file_ext, $allowed_extensions)){
-				return response()->json(['status' => 0, 'message' => 'Sorry, only .jpeg, .jpg and .png files are allowed.']);
-			}
-
-			//get filename with extension
-			$filenamewithextension = $file->getClientOriginalName();
-			// //get filename without extension
-			$filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-			//get file extension
-			$extension = $file->getClientOriginalExtension();
-			//filename to store
-			$micro_time = round(microtime(true));
+		DB::beginTransaction();
+		try {
+			if($request->hasFile('selected-file')){
+				$file = $request->file('selected-file');
+				$allowed_extensions = ['jpg', 'jpeg', 'png'];
 	
-			$destinationPath = storage_path('app/public/brochures/');
-
-			$filename = $filename . '.' . $extension;
-
-			$file->move($destinationPath, $filename);
-
-			$excel_file = storage_path('app/public/brochures/'.$folder.'/'. $dir);
-			
-			$reader = new ReaderXlsx();
-			$spreadsheet = $reader->load($excel_file);
-			$sheet = $spreadsheet->getActiveSheet();
-			// Get the highest row and column numbers referenced in the worksheet
-			$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
-			$highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
-
-			$row = $request->row;
-			$column = null;
-			for ($col = 1; $col <= $highestColumnIndex; $col++) {
-				$value = $sheet->getCellByColumnAndRow($col, 4)->getValue();
-				if ($value == $request->column) {
-					$column = $col;
-					break;
+				$folder = $request->project;
+				$dir = $request->filename;
+	
+				$file_ext = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
+				if(!in_array($file_ext, $allowed_extensions)){
+					return response()->json(['status' => 0, 'message' => 'Sorry, only .jpeg, .jpg and .png files are allowed.']);
 				}
+	
+				//get filename with extension
+				$filenamewithextension = $file->getClientOriginalName();
+				// //get filename without extension
+				$filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
+				//get file extension
+				$extension = $file->getClientOriginalExtension();
+				//filename to store
+				$micro_time = round(microtime(true));
+		
+				$destinationPath = storage_path('app/public/brochures/');
+	
+				$filename = $filename . '.' . $extension;
+	
+				$file->move($destinationPath, $filename);
+	
+				$excel_file = storage_path('app/public/brochures/'.$folder.'/'. $dir);
+				
+				$reader = new ReaderXlsx();
+				$spreadsheet = $reader->load($excel_file);
+				$sheet = $spreadsheet->getActiveSheet();
+				// Get the highest row and column numbers referenced in the worksheet
+				$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
+				$highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
+	
+				$row = $request->row;
+				$column = null;
+				for ($col = 1; $col <= $highestColumnIndex; $col++) {
+					$value = $sheet->getCellByColumnAndRow($col, 4)->getValue();
+					if ($value == $request->column) {
+						$column = $col;
+						break;
+					}
+				}
+				
+				$sheet->setCellValueByColumnAndRow($column, $row, $filename);
+	
+				$writer = new WriterXlsx($spreadsheet);
+				$writer->save($excel_file);
+	
+				$transaction_date = Carbon::now()->toDateTimeString();
+				DB::table('tabProduct Brochure Log')->insert([
+					'name' => uniqid(),
+					'creation' => $transaction_date,
+					'modified' => $transaction_date,
+					'modified_by' => get_current_user(),
+					'owner' => get_current_user(),
+					'project' => $folder,
+					'filename' => $filename,
+					'created_by' => get_current_user(),
+					'transaction_date' => $transaction_date,
+					'remarks' => 'For ' . $dir,
+					'transaction_type' => 'Upload Image'
+				]);
+
+				DB::commit();
+	
+				return response()->json(['status' => 1, 'message' => 'Image uploaded.']);
 			}
-			
-			$sheet->setCellValueByColumnAndRow($column, $row, $filename);
+		} catch (Exception $e) {
+			DB::rollback();
 
-			$writer = new WriterXlsx($spreadsheet);
-			$writer->save($excel_file);
-
-			return response()->json(['status' => 1, 'message' => 'Image uploaded.']);
-        }
-
+			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
+		}
+		
 		return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 	}
 
