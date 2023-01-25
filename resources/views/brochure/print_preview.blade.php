@@ -114,6 +114,18 @@
                 font-size: 18px;
                 color:  #abb2b9 ;
             }
+            .upload-btn-wrapper input[type=file] {
+                font-size: 200px;
+                position: absolute;
+                left: 0;
+                top: 0;
+                cursor: pointer;
+                opacity: 0;
+            }
+            .upload-image-placeholder.dragover{
+                border-color:  #abb2b9;
+                color:  #abb2b9;
+            }
 
             @media screen {
                 .page-container * {
@@ -226,7 +238,7 @@
             <i class="fas fa-home"></i>
         </a>
     </div>
-    <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px; font-size: 20px;">Table of Contents</h3>
+    <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px; font-size: 20px;">Product Brochure</h3>
     <div id="toc-links">
         @php
             $a = 1;
@@ -274,12 +286,13 @@
                                 <img src="{{ asset('/storage/brochures/' . $row['images']['image1']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-01-image">
                                 @else
                                 <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-01-image">
-                                <div class="upload-image-placeholder" id="item-{{ $r }}-01" data-col="Image 1" data-row="{{ $row['row'] }}">
+                                <div class="upload-image-placeholder" id="item-{{ $r }}-01">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
                                             <span>(230 x 230 px)<br>Add Image</span>
                                         </div>
+                                        <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-col="Image 1" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-01">
                                     </div>
                                 </div>
                                 <br>
@@ -289,27 +302,29 @@
                                 <img src="{{ asset('/storage/brochures/' . $row['images']['image2']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-02-image">
                                 @else
                                 <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-02-image">
-                                <div class="upload-image-placeholder {{ isset($row['images']['image1']) && $row['images']['image1'] ? '' : 'd-none' }}" id="item-{{ $r }}-02" data-col="Image 2" data-row="{{ $row['row'] }}">
+                                <div class="upload-image-placeholder {{ isset($row['images']['image1']) && $row['images']['image1'] ? '' : 'd-none' }}" id="item-{{ $r }}-02">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
                                             <span>(230 x 230 px)<br>Add Image</span>
                                         </div>
+                                        <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-col="Image 2" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-02">
                                     </div>
                                 </div>
                                 <br>
                                 @endif
-                                 <br>
+                                <br>
                                 @if (isset($row['images']['image3']) && $row['images']['image3'])
                                 <img src="{{ asset('/storage/brochures/' . $row['images']['image3']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-03-image">
                                 @else
                                 <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-03-image">
-                                <div class="upload-image-placeholder {{ isset($row['images']['image2']) && $row['images']['image2'] ? '' : 'd-none' }}" id="item-{{ $r }}-03" data-col="Image 3" data-row="{{ $row['row'] }}">
+                                <div class="upload-image-placeholder {{ isset($row['images']['image2']) && $row['images']['image2'] ? '' : 'd-none' }}" id="item-{{ $r }}-03">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
                                             <span>(230 x 230 px)<br>Add Image</span>
                                         </div>
+                                        <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-col="Image 3" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-03">
                                     </div>
                                 </div>
                                 @endif
@@ -430,52 +445,8 @@
         </div>
         <!-- Print Page -->
     @endforeach
-</div>
-
-<div class="modal fade" id="select-file-modal">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Add Image</h4>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="select-item-image-id">
-                <div class="tab-content" style="min-height: 400px;">
-                    <div class="tab-pane active" id="tab_1">
-                        <form id="image-upload-form" method="POST" action="/upload_image" autocomplete="off" enctype="multipart/form-data">
-                            @csrf
-                            <input type="hidden" id="excel-column" name="column">
-                            <input type="hidden" id="excel-row" name="row">
-                            <input type="hidden" id="excel-project" name="project">
-                            <input type="hidden" id="excel-filename" name="filename">
-                            <div class="row mb-5">
-                                <div class="col-8 offset-2">
-                                    <div class="text-center">
-                                        <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3" id="img-preview">
-                                    </div>
-                                    <p class="text-center text-muted">Files Supported: JPEG, JPG, PNG</p>
-                                    <div class="form-group">
-                                        <div class="input-group">
-                                            <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="browse-file" name="selected-file" accept=".jpg,.jpeg,.png" required>
-                                                <label class="custom-file-label" for="browse-file" id="browse-file-text">Browse File</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="text-center">
-                                        <button class="btn btn-primary col-8" type="submit" id="upload-btn" disabled>Upload</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <!-- /.tab-content -->
-            </div>
-        </div>
     </div>
-</div>
+
 
     <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
     <!-- Bootstrap 4 -->
@@ -494,68 +465,6 @@
                 });
             });
 
-            $(document).on('click', '.upload-image-placeholder', function(e) {
-                e.preventDefault();
-
-                $('#select-item-image-id').val($(this).attr('id'));
-                $('#excel-column').val($(this).data('col'));
-                $('#excel-row').val($(this).data('row'));
-                $('#excel-project').val($('#project').val());
-                $('#excel-filename').val($('#filename').val());
-                $('#select-file-modal').modal('show');
-            });
-
-            function get_uploaded_brochure_images() {
-                $.ajax({
-					type: 'GET',
-					url: '/get_uploaded_brochure_images',
-					success: function(response){
-						$('#media-files').html(response);
-					},
-				});
-            }
-
-            $('input[type="file"]').change(function(e){
-                var fileName = e.target.files[0].name;
-                $('#browse-file-text').text(fileName);
-                $('#upload-btn').removeAttr('disabled');
-
-                if (typeof (FileReader) != "undefined") {
-                    var reader = new FileReader();
-                    reader.onload = function (e) {
-                        $('#img-preview').attr('src', e.target.result);
-                    }
-                    reader.readAsDataURL($(this)[0].files[0]);
-                } else {
-                    showNotification("danger", "This browser does not support FileReader.", "fa fa-info");
-                }
-            });
-
-            $('#image-upload-form').submit(function(e) {
-                e.preventDefault();
-
-                $.ajax({
-					type: 'POST',
-					url: $(this).attr('action'),
-                    data:  new FormData(this),
-                    contentType: false,
-                    cache: false,
-                    processData:false,
-					success: function(response){
-                        if(response.status == 0){
-    						showNotification("danger", response.message, "fa fa-info");
-                        }else{
-                            var item_image_id = $('#select-item-image-id').val();
-                            $('#' + item_image_id).remove();
-                            $('#' + item_image_id + '-image').removeClass('d-none').attr('src', $('#img-preview').attr('src'));
-                            $('#' + item_image_id + '-image').parent().find('.upload-image-placeholder').eq(0).removeClass('d-none');
-                           
-                            $('#select-file-modal').modal('hide');
-                        }
-					},
-				});
-            });
-
             function showNotification(color, message, icon){
                 $.notify({
                     icon: icon,
@@ -571,11 +480,28 @@
                 });
             }
 
-            $(document).on('hidden.bs.modal', '.modal', function () {
-                $(this).find('form')[0].reset();
+            $('.upload-image-placeholder').on('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
 
-                $('#img-preview').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
-                $('#browse-file-text').text('Browse File');
+            $('.upload-image-placeholder').on('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+
+            $('input[type="file"]').change(function() {
+                var details = {
+                    'column': $(this).data('col'),
+                    'row': $(this).data('row'),
+                    'project': $('#project').val(),
+                    'filename': $('#filename').val(),
+                    'item_image_id': $(this).data('item-image-id'),
+                }
+
+                readFile(this, details);
             });
 
             $(document).on('click', '#download-btn', function (){
@@ -598,6 +524,52 @@
 					},
 				});
             });
+            
+            function readFile(input, details) {
+                if (input.files && input.files[0]) {
+                    var formData = new FormData();
+                    formData.append('selected-file', input.files[0]);
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('column', details.column);
+                    formData.append('row', details.row);
+                    formData.append('project', details.project);
+                    formData.append('filename', details.filename);
+                    formData.append('item_image_id', details.item_image_id);
+
+                    if (typeof (FileReader) != "undefined") {
+                    var reader = new FileReader();
+                        reader.onload = function (e) {
+                            $('#' + details.item_image_id + '-image').attr('src', e.target.result);
+                        }
+                        reader.readAsDataURL(input.files[0]);
+                        uploadData(formData);
+                    } else {
+                        showNotification("danger", "This browser does not support FileReader.", "fa fa-info");
+                    }
+                }
+            }
+               
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            function uploadData(formdata){
+                $.ajax({
+                    url: '/upload_image',
+                    type: 'POST',
+                    data: formdata,
+                    contentType: false,
+                    processData: false,
+                    dataType: 'json',
+                    success: function(response){
+                        $('#' + response.data.item_image_id).remove();
+                        $('#' + response.data.item_image_id + '-image').removeClass('d-none');
+                        $('#' + response.data.item_image_id + '-image').parent().find('.upload-image-placeholder').eq(0).removeClass('d-none');
+                    }
+                });
+            }
         });
     </script>
   </body>

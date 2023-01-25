@@ -143,6 +143,7 @@ class BrochureController extends Controller
 		DB::beginTransaction();
 		try {
 			if($request->hasFile('selected-file')){
+				// return $request->all();
 				$file = $request->file('selected-file');
 				$allowed_extensions = ['jpg', 'jpeg', 'png'];
 	
@@ -163,13 +164,13 @@ class BrochureController extends Controller
 				//filename to store
 				$micro_time = round(microtime(true));
 		
-				$destinationPath = storage_path('app/public/brochures/');
+				$destinationPath = storage_path('/app/public/brochures/');
 	
 				$filename = $filename . '.' . $extension;
 	
 				$file->move($destinationPath, $filename);
-	
-				$excel_file = storage_path('app/public/brochures/'.$folder.'/'. $dir);
+
+				$excel_file = storage_path('/app/public/brochures/'.$folder.'/'. $dir);
 				
 				$reader = new ReaderXlsx();
 				$spreadsheet = $reader->load($excel_file);
@@ -209,8 +210,13 @@ class BrochureController extends Controller
 				]);
 
 				DB::commit();
+
+				$data = [
+					'src' => $filename,
+					'item_image_id' => $request->item_image_id
+				];
 	
-				return response()->json(['status' => 1, 'message' => 'Image uploaded.']);
+				return response()->json(['status' => 1, 'message' => 'Image uploaded.', 'data' => $data]);
 			}
 		} catch (Exception $e) {
 			DB::rollback();
