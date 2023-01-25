@@ -334,7 +334,7 @@ class BrochureController extends Controller
 				$series = '-'.(string)$series;
 			}
 
-			$new_filename = Str::slug($project, '-').$series;
+			$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d').$series;
 			$ext = explode('.', $file);
 			$ext = isset($ext[1]) ? $ext[1] : 'xlsx';
 			$new_name = $new_filename.'.'.$ext;
