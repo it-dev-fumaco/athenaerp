@@ -271,7 +271,6 @@
             '</div>');
 
             $('#generate-brochure-btn').attr('disabled', true);
-            $('#product-list-modal').modal('show');
             $.ajax({
               type: 'post',
               url: '/read_file',
@@ -279,11 +278,12 @@
               contentType: false,
               processData: false,
               success: function(response){
-                if(response.status == 0){
-    							showNotification("danger", response.message, "fa fa-info");
-                }else{
+                if(response.status == 1){
                   $('#generated-product-list-body').html(response);
                   $('#generate-brochure-btn').removeAttr('disabled');
+                  $('#product-list-modal').modal('show');
+                }else{
+    							showNotification("danger", response.message, "fa fa-info");
                 }
               },
               error: function(jqXHR, textStatus, errorThrown) {
