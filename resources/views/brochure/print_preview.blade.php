@@ -234,8 +234,8 @@
 <input type="hidden" id="filename" value="{{ $filename }}">
 <div id="table-of-contents-sidebar">
     <div style="display: block; text-align: center; margin: 20px 0;">
-        <a href="/brochure" style="padding: 8px 10px 8px 10px !important; margin: 15px !important; border-radius: 5px; background-color: #f8f9f9; font-size: 20px; border: 1px solid #d6dbdf; color:#d5d8dc; cursor: pointer;">
-            <i class="fas fa-home"></i>
+        <a href="/brochure" style="padding: 8px 10px 8px 10px !important; margin: 15px !important; border-radius: 5px; background-color: #f8f9f9; font-size: 20px; border: 1px solid #d6dbdf; color:#999a9c; cursor: pointer;">
+            <i class="fas fa-arrow-circle-left"></i> Back
         </a>
     </div>
     <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px; font-size: 20px;">Product Brochure</h3>
@@ -524,7 +524,7 @@
 					},
 				});
             });
-            
+
             function readFile(input, details) {
                 if (input.files && input.files[0]) {
                     var formData = new FormData();
