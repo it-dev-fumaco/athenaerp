@@ -232,7 +232,7 @@
                 .d-print-none{
                     display: block;
                 }
-                .print-page{
+                .d-print, .print-page{
                     display: none;
                 }
             }
@@ -240,6 +240,9 @@
                 * { margin: 0 !important; padding: 0 !important; }
                 .d-print-none{
                     display: none;
+                }
+                .d-print{
+                    display: block;
                 }
                 .print-page {
                     display: block;
@@ -500,31 +503,29 @@
                     </table>
                 </div>
             </div>
-            @if ($loop->last)
-                <div class="footer" style="position: fixed; bottom: 0; padding-right: 10px !important;">
-                    <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
-                        <div class="left-container">
-                            <div style="width: 55%; display: inline-block; float: left;">
-                                <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
-                            </div>
-                            <div style="width: 38%; display: inline-block; float: right">
-                                <div class="pdf-footer-company-website" style="font-size: 20px;">www.fumaco.com</div>
-                            </div>
-                        </div>
-                        <div class="right-container" style="font-size: 20px; width: 56% !important;">
-                            <p>Plant: 35 Pleasant View Drive, Bagbaguin, Caloocan City</p>
-                            <p>Sales & Showroom: 420 Ortigas Ave. cor. Xavier St., Greenhills, San Juan City</p>
-                            <p>Tel. No.: (632) 721-0362 to 66</p>
-                            <p>Fax No.: (632) 721-0361</p>
-                            <p>Email Address: sales@fumaco.com</p>
-                        </div>
-                        <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
-                    </div>
-                </div>
-            @endif
         </div>
         <!-- Print Page -->
     @endforeach
+    <div class="footer d-print" style="position: fixed; bottom: 0; padding-right: 10px !important; position: fixed !important; bottom: 0">
+        <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
+            <div class="left-container">
+                <div style="width: 55%; display: inline-block; float: left;">
+                    <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
+                </div>
+                <div style="width: 38%; display: inline-block; float: right">
+                    <div class="pdf-footer-company-website" style="font-size: 20px;">www.fumaco.com</div>
+                </div>
+            </div>
+            <div class="right-container" style="font-size: 20px; width: 56% !important;">
+                <p>Plant: 35 Pleasant View Drive, Bagbaguin, Caloocan City</p>
+                <p>Sales & Showroom: 420 Ortigas Ave. cor. Xavier St., Greenhills, San Juan City</p>
+                <p>Tel. No.: (632) 721-0362 to 66</p>
+                <p>Fax No.: (632) 721-0361</p>
+                <p>Email Address: sales@fumaco.com</p>
+            </div>
+            <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
+        </div>
+    </div>
     </div>
 
 
