@@ -180,7 +180,9 @@
                               </div>
                             </div>
                             <div class="modal-footer justify-content-end">
-                              <button type="submit" class="btn btn-primary" id="generate-brochure-btn" value="generate">Generate Brochure</button>
+                              <button type="submit" class="btn btn-primary" id="generate-brochure-btn" value="generate">
+                                Generate Brochure (<span id="generated-prod-count"></span>)
+                              </button>
                             </div>
                           </div>
                           <!-- /.modal-content -->

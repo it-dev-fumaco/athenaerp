@@ -12,16 +12,23 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $generated_count = 0;
+            @endphp
             @foreach ($content as $row)
                 @php
                     $attributes = isset($row['attrib']) ? $row['attrib'] : [];
 
                     $is_empty = 0;
                     foreach($attributes as $col => $value){
-                        $is_empty = $value ? 1 : 0;
+                        $is_empty = $value ? 0 : 1;
+                    }
+
+                    if(!$is_empty){
+                        $generated_count += 1;
                     }
                 @endphp
-                <tr style="background-color: {{ !$is_empty ? 'rgb(247, 93, 93)' : 'rgba(0,0,0,0)' }}">
+                <tr style="background-color: {{ $is_empty ? 'rgb(247, 93, 93)' : 'rgba(0,0,0,0)' }}">
                     @foreach ($headers as $col)
                         @if($col)
                             @php
@@ -53,3 +60,9 @@
         z-index: 1;
     }
 </style>
+
+<script>
+    $(document).ready(function (){
+        $('#generated-prod-count').text('{{ $generated_count }}');
+    });
+</script>
