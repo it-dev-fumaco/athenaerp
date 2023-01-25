@@ -132,6 +132,37 @@
                 border-color:  #abb2b9;
                 color:  #abb2b9;
             }
+            .img-cont {
+                position: relative;
+                width: 230px;
+            }
+            .custom-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0);
+                transition: background 0.5s ease;
+            }
+            .img-cont:hover .custom-overlay {
+                display: block;
+                background: rgba(196, 196, 196, 0.385);
+            }
+            .custom-hover-button {
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                opacity: 0;
+                transition: opacity .35s ease;
+            }
+            .custom-hover-button button {
+                padding: 5px 8px !important;
+                font-size: 12px;
+            }
+            .img-cont:hover .custom-hover-button {
+                opacity: 1;
+            }
 
             @media screen {
                 .page-container * {
@@ -290,52 +321,95 @@
                         </div>
                         <div style="display: block; padding-top: 5px !important; clear: both; margin-left: -2px !important;">
                             <div style="width: 44%; float: left; padding: 2px !important;">
-                                @if (isset($row['images']['image1']) && $row['images']['image1'])
-                                <img src="{{ asset('/storage/brochures/' . $row['images']['image1']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-01-image">
-                                @else
-                                <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-01-image">
-                                <div class="upload-image-placeholder" id="item-{{ $r }}-01">
+                                @php
+                                    $img1_actual = $img1_temp = null;
+                                    $img1_src = $img2_src = $img3_src = '#';
+                                    if (isset($row['images']['image1']) && $row['images']['image1']) {
+                                        $img1_actual = null;
+                                        $img1_temp = 'd-none';
+                                        $img1_src = asset('/storage/brochures/' . $row['images']['image1']);
+                                    } else {
+                                        $img1_actual = 'd-none';
+                                        $img1_temp = null;
+                                    }
+
+                                    $img2_actual = $img2_temp = null;
+                                    if (isset($row['images']['image2']) && $row['images']['image2']) {
+                                        $img2_actual = null;
+                                        $img2_temp = 'd-none';
+                                        $img2_src = asset('/storage/brochures/' . $row['images']['image2']);
+                                    } else {
+                                        $img2_actual = 'd-none';
+                                        $img2_temp = null;
+                                    }
+
+                                    $img3_actual = $img3_temp = null;
+                                    if (isset($row['images']['image3']) && $row['images']['image3']) {
+                                        $img3_actual = null;
+                                        $img3_temp = 'd-none';
+                                        $img3_src = asset('/storage/brochures/' . $row['images']['image3']);
+                                    } else {
+                                        $img3_actual = 'd-none';
+                                        $img3_temp = null;
+                                    }
+                                @endphp
+                                {{-- 1 --}}
+                                <div class="img-cont {{ $img1_actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-01-actual">
+                                    <img src="{{ $img1_src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-01-image">
+                                    <div class="custom-overlay"></div>
+                                    <div class="custom-hover-button">
+                                        <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 1" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-01">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="upload-image-placeholder {{ $img1_temp }}" id="item-{{ $r }}-01" style="margin-bottom: 20px !important;">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
-                                            <span>(230 x 230 px)<br>Add Image</span>
+                                            <span>(230 x 230 px)<br>Add Image 1</span>
                                         </div>
                                         <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-col="Image 1" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-01">
                                     </div>
                                 </div>
-                                <br>
-                                @endif
-                                <br>
-                                @if (isset($row['images']['image2']) && $row['images']['image2'])
-                                <img src="{{ asset('/storage/brochures/' . $row['images']['image2']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-02-image">
-                                @else
-                                <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-02-image">
-                                <div class="upload-image-placeholder {{ isset($row['images']['image1']) && $row['images']['image1'] ? '' : 'd-none' }}" id="item-{{ $r }}-02">
+                                {{-- 2 --}}
+                                <div class="img-cont {{ $img2_actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-02-actual">
+                                    <img src="{{ $img2_src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-02-image">
+                                    <div class="custom-overlay"></div>
+                                    <div class="custom-hover-button">
+                                        <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 2" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-02">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="upload-image-placeholder {{ $img2_temp }}" id="item-{{ $r }}-02" style="margin-bottom: 20px !important;">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
-                                            <span>(230 x 230 px)<br>Add Image</span>
+                                            <span>(230 x 230 px)<br>Add Image 2</span>
                                         </div>
                                         <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-col="Image 2" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-02">
                                     </div>
                                 </div>
-                                <br>
-                                @endif
-                                <br>
-                                @if (isset($row['images']['image3']) && $row['images']['image3'])
-                                <img src="{{ asset('/storage/brochures/' . $row['images']['image3']) }}" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-03-image">
-                                @else
-                                <img src="{{ asset('/storage/icon/no_img.png') }}" class="d-none" width="230" style="margin-bottom: 20px !important; border: 2px solid;" id="item-{{ $r }}-03-image">
-                                <div class="upload-image-placeholder {{ isset($row['images']['image2']) && $row['images']['image2'] ? '' : 'd-none' }}" id="item-{{ $r }}-03">
+                                {{-- 3 --}}
+                                <div class="img-cont {{ $img3_actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-03-actual">
+                                    <img src="{{ $img3_src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-03-image">
+                                    <div class="custom-overlay"></div>
+                                    <div class="custom-hover-button">
+                                        <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 3" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-03">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="upload-image-placeholder {{ $img3_temp }}" id="item-{{ $r }}-03" style="margin-bottom: 20px !important;">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
-                                            <span>(230 x 230 px)<br>Add Image</span>
+                                            <span>(230 x 230 px)<br>Add Image 3</span>
                                         </div>
                                         <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-col="Image 3" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-03">
                                     </div>
                                 </div>
-                                @endif
                             </div>
                             <div style="width: 54%; float:left;">
                                 <p style="font-weight: bolder;">Fitting Type / Reference:</p>
@@ -463,6 +537,37 @@
     
     <script>
         $(document).ready(function (){
+            $(document).on('click', '.remove-image-btn', function(e) {
+                e.preventDefault();
+
+                var el = $(this);
+                var details = {
+                    'column': $(this).data('col'),
+                    'row': $(this).data('row'),
+                    'project': $('#project').val(),
+                    'filename': $('#filename').val(),
+                    'item_image_id': $(this).data('item-image-id'),
+                    '_token': '{{ csrf_token() }}'
+                }
+
+                $.ajax({
+                    url: '/remove_image',
+                    type: 'POST',
+                    data: details,
+                    success: function(response){
+                        if(response.status == 0){
+                            showNotification("danger", response.message, "fa fa-info");
+                        }else{
+                            $('#' + details.item_image_id + '-actual').addClass('d-none');
+                            $('#' + details.item_image_id).removeClass('d-none');
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                    }
+                });
+            });
+
             $(document).on('click', '#print-btn', function(e){
                 e.preventDefault();
                 $('#print-area').printThis({
@@ -500,7 +605,7 @@
                 $(this).removeClass('dragover');
             });
 
-            $('input[type="file"]').change(function() {
+            $(document).on('change', 'input[type="file"]', function() {
                 var details = {
                     'column': $(this).data('col'),
                     'row': $(this).data('row'),
@@ -545,8 +650,10 @@
                     formData.append('item_image_id', details.item_image_id);
 
                     if (typeof (FileReader) != "undefined") {
-                    var reader = new FileReader();
+                        var reader = new FileReader();
                         reader.onload = function (e) {
+                            $('#' + details.item_image_id + '-actual').removeClass('d-none');
+                            $('#' + details.item_image_id).addClass('d-none');
                             $('#' + details.item_image_id + '-image').attr('src', e.target.result);
                             $('#' + details.item_image_id + '-print-image').attr('src', e.target.result);
                         }
@@ -576,10 +683,9 @@
                         if(response.status == 0){
                             showNotification("danger", response.message, "fa fa-info");
                         }else{
-                            $('#' + response.data.item_image_id).remove();
-                            $('#' + response.data.item_image_id + '-image').removeClass('d-none');
+                            $('#' + details.item_image_id + '-actual').removeClass('d-none');
+                            $('#' + details.item_image_id).addClass('d-none');
                             $('#' + response.data.item_image_id + '-print-image').removeClass('d-none');
-                            $('#' + response.data.item_image_id + '-image').parent().find('.upload-image-placeholder').eq(0).removeClass('d-none');
                         }
                     },
                     error: function(jqXHR, textStatus, errorThrown) {

@@ -252,3 +252,4 @@ Route::post('/read_file', 'BrochureController@readExcelFile');
 Route::post('/upload_image', 'BrochureController@uploadImage');
 Route::get('/preview/{project}/{filename}', 'BrochureController@previewBrochure');
 Route::get('/download/{project}/{filename}', 'BrochureController@downloadBrochure');
+Route::post('/remove_image', 'BrochureController@removeImage');
