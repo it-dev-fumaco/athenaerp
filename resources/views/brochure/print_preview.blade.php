@@ -400,9 +400,7 @@
                             @php
                                 $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? '/storage/brochures/'.$row['images']['image'.$i] : null;
                             @endphp
-                            @if ($img)
-                                <img src="{{ asset($img) }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
-                            @endif
+                            <img id="item-{{ $r }}-0{{ $i }}-print-image" src="{{ asset($img) }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
                         @endfor
                         &nbsp;
                     </div>
@@ -550,6 +548,7 @@
                     var reader = new FileReader();
                         reader.onload = function (e) {
                             $('#' + details.item_image_id + '-image').attr('src', e.target.result);
+                            $('#' + details.item_image_id + '-print-image').attr('src', e.target.result);
                         }
                         reader.readAsDataURL(input.files[0]);
                         uploadData(formData);
@@ -579,6 +578,7 @@
                         }else{
                             $('#' + response.data.item_image_id).remove();
                             $('#' + response.data.item_image_id + '-image').removeClass('d-none');
+                            $('#' + response.data.item_image_id + '-print-image').removeClass('d-none');
                             $('#' + response.data.item_image_id + '-image').parent().find('.upload-image-placeholder').eq(0).removeClass('d-none');
                         }
                     },
