@@ -271,7 +271,6 @@
             '</div>');
 
             $('#generate-brochure-btn').attr('disabled', true);
-            $('#product-list-modal').modal('show');
             $.ajax({
               type: 'post',
               url: '/read_file',
@@ -284,6 +283,7 @@
                 }else{
                   $('#generated-product-list-body').html(response);
                   $('#generate-brochure-btn').removeAttr('disabled');
+                  $('#product-list-modal').modal('show');
                 }
               },
               error: function(jqXHR, textStatus, errorThrown) {
