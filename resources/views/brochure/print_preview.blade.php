@@ -560,6 +560,7 @@
                         }else{
                             $('#' + details.item_image_id + '-actual').addClass('d-none');
                             $('#' + details.item_image_id).removeClass('d-none');
+                            $('#' + details.item_image_id + '-print-image').addClass('d-none');
                         }
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
@@ -683,8 +684,8 @@
                         if(response.status == 0){
                             showNotification("danger", response.message, "fa fa-info");
                         }else{
-                            $('#' + details.item_image_id + '-actual').removeClass('d-none');
-                            $('#' + details.item_image_id).addClass('d-none');
+                            $('#' + response.data.item_image_id + '-actual').removeClass('d-none');
+                            $('#' + response.data.item_image_id).addClass('d-none');
                             $('#' + response.data.item_image_id + '-print-image').removeClass('d-none');
                         }
                     },
