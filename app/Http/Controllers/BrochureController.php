@@ -327,10 +327,17 @@ class BrochureController extends Controller
 			}
 
 			$storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
-			$series = count($storage) > 1 ? count($storage) + 1 : 1;
 
-			$new_name = explode('.', $file);
-			$new_name = isset($new_name[1]) ? $new_name[0].'-'.$series.'.'.$new_name[1] : 'file.xlsx';
+			$series = null;
+			if($storage){
+				$series = count($storage) > 1 ? count($storage) : 1;
+				$series = '-'.(string)$series;
+			}
+
+			$new_filename = Str::slug($project, '-').$series;
+			$ext = explode('.', $file);
+			$ext = isset($ext[1]) ? $ext[1] : 'xlsx';
+			$new_name = $new_filename.'.'.$ext;
 
 			$orig_path = strtoupper($project).'/'.$file;
 
