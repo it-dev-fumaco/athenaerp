@@ -118,7 +118,7 @@ class BrochureController extends Controller
 
 				DB::commit();
 
-				return response()->json(['status' => 1, 'message' => '/preview/' . $project . '/' . $file_name . '.' . $file_ext]);
+				return response()->json(['status' => 1, 'message' => '/preview/' . strtoupper($project) . '/' . $file_name . '.' . $file_ext]);
 			}
 		} catch (Exception $e) {
 			DB::rollback();
@@ -170,7 +170,7 @@ class BrochureController extends Controller
 	
 				$file->move($destinationPath, $filename);
 
-				$excel_file = storage_path('/app/public/brochures/'.$folder.'/'. $dir);
+				$excel_file = storage_path('/app/public/brochures/'.strtoupper($folder).'/'. $dir);
 				
 				$reader = new ReaderXlsx();
 				$spreadsheet = $reader->load($excel_file);
