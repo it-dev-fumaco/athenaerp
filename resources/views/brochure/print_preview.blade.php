@@ -48,13 +48,18 @@
             #toc-links a:hover {
                 background-color:#f4f6f6;
             }
-            #print-btn{
+
+            #btn-container{
                 position: fixed;
                 right: 25px;
                 top: 40px;
+            }
+
+            .btn-ctrl{
                 background-color: #f1f1f1;
                 width: 50px;
                 height: 50px;
+                margin: 10px;
                 padding: 5px 15px 5px 15px;
                 border-radius: 50%;
                 font-size: 20px;
@@ -63,10 +68,15 @@
                 box-shadow: 0 0 10px rgba(0,0,0,0.25), 0 0 10px rgba(0,0,0,0.22);
                 color: #446eac;
             }
-            #print-btn:hover{
+            .btn-ctrl:hover{
                 background-color:   #2980b9  ;
                 transition: .4s;
                 color: #f1f1f1;
+            }
+            .btn-ctrl:focus{
+                outline: none !important;
+                -webkit-box-shadow: none !important;
+                box-shadow: 0 0 10px rgba(0,0,0,0.25), 0 0 10px rgba(0,0,0,0.22) !important;
             }
             .upload-image-placeholder {
                 border: 2px dashed #d5d8dc;
@@ -231,8 +241,8 @@
 </div>
 
 <div id="btn-container">
-    <button class="btn" id="print-btn" style="display: block;"><i class="fas fa-print"></i></button>
-    <button class="btn" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ $project }}"><i class="fa fa-download"></i></button>
+    <button class="btn-ctrl" id="print-btn" style="display: block;"><i class="fas fa-print"></i></button>
+    <button class="btn-ctrl" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ $project }}"><i class="fa fa-download"></i></button>
 </div>
 
 <div id="print-area">
@@ -371,6 +381,7 @@
                                 <img src="{{ asset($img) }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
                             @endif
                         @endfor
+                        &nbsp;
                     </div>
                 </div>
                 <div class="right-container">
@@ -459,11 +470,6 @@
                             </div>
                         </form>
                     </div>
-                    <!-- /.tab-pane -->
-                    {{-- <div class="tab-pane" id="tab_2">
-                        <div id="media-files"></div>
-                    </div> --}}
-                    <!-- /.tab-pane -->
                 </div>
                 <!-- /.tab-content -->
             </div>
@@ -570,6 +576,27 @@
 
                 $('#img-preview').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
                 $('#browse-file-text').text('Browse File');
+            });
+
+            $(document).on('click', '#download-btn', function (){
+                var project = $(this).data('proj');
+                var file = $(this).data('file');
+                $.ajax({
+					type: 'get',
+					url: '/download/' + project + '/' + file,
+					success: function(response){
+                        if(response.success == 1){
+                            var orig_name = (response.name_from_db);
+                            var downloadLink = document.createElement('a');
+                            downloadLink.href = '{{ asset('storage/brochures') }}/' + response.orig_path;
+                            downloadLink.download = response.new_name;
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                        }else{
+    						showNotification("danger", response.message, "fa fa-info");
+                        }
+					},
+				});
             });
         });
     </script>

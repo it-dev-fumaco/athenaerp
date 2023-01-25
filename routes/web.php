@@ -247,9 +247,8 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/consignment_stock_movement/{item_code}', 'ConsignmentController@consignmentStockMovement');
 });
 
-
 Route::get('/brochure', 'BrochureController@viewForm');
 Route::post('/read_file', 'BrochureController@readExcelFile');
 Route::post('/upload_image', 'BrochureController@uploadImage');
 Route::get('/preview/{project}/{filename}', 'BrochureController@previewBrochure');
-
+Route::get('/download/{project}/{filename}', 'BrochureController@downloadBrochure');

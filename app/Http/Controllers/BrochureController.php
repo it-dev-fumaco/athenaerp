@@ -305,4 +305,28 @@ class BrochureController extends Controller
 		];
 	}
 
+	public function downloadBrochure($project, $file){
+		try{
+			if(!Storage::disk('public')->exists('/brochures/'.strtoupper($project).'/'.$file)){ // check if file exists
+				return response()->json(['success' => 0, 'message' => 'File not found']);
+			}
+
+			$storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
+			$series = count($storage) > 1 ? count($storage) + 1 : 1;
+
+			$new_name = explode('.', $file);
+			$new_name = isset($new_name[1]) ? $new_name[0].'-'.$series.'.'.$new_name[1] : 'file.xlsx';
+
+			$orig_path = strtoupper($project).'/'.$file;
+
+			return response()->json([
+				'success' => 1,
+				'new_name' => $new_name,
+				'orig_path' => $orig_path
+			]);
+		}catch (Exception $e){
+			return response()->json(['success' => 0, 'message' => 'Something went wrong. Please try again.']);
+		}
+	}
+
 }
