@@ -95,6 +95,20 @@ class BrochureController extends Controller
 
 				$transaction_date = Carbon::now()->toDateTimeString();
 
+				if(!Storage::disk('public')->exists('/brochures/'.strtoupper($project))){
+					Storage::disk('public')->makeDirectory('/brochures/'.strtoupper($project));
+				}
+
+				$storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
+
+				$series = null;
+				if($storage){
+					$series = count($storage) > 1 ? count($storage) : 1;
+					$series = '-'.(string)$series;
+				}
+
+				$new_filename = Str::slug($project, '-').$series;
+
 				DB::table('tabProduct Brochure Log')->insert([
 					'name' => uniqid(),
 					'creation' => $transaction_date,
@@ -102,23 +116,18 @@ class BrochureController extends Controller
 					'modified_by' => get_current_user(),
 					'owner' => get_current_user(),
 					'project' => $project,
-					'filename' => Str::slug($project, '-') . '.' . $file_ext,
+					'filename' => $new_filename. '.' . $file_ext,
 					'created_by' => get_current_user(),
 					'transaction_date' => $transaction_date,
 					'remarks' => null,
 					'transaction_type' => 'Upload Excel File'
 				]);
 				
-
-				if(!Storage::disk('public')->exists('/brochures/'.strtoupper($project))){
-					Storage::disk('public')->makeDirectory('/brochures/'.strtoupper($project));
-				}
-
-				$attached_file->move(public_path('storage/brochures/'.strtoupper($project)), Str::slug($project, '-') . '.' . $file_ext);
+				$attached_file->move(public_path('storage/brochures/'.strtoupper($project)), $new_filename. '.' . $file_ext);
 
 				DB::commit();
 
-				return response()->json(['status' => 1, 'message' => '/preview/' . strtoupper($project) . '/' . Str::slug($project, '-') . '.' . $file_ext]);
+				return response()->json(['status' => 1, 'message' => '/preview/' . strtoupper($project) . '/' . $new_filename. '.' . $file_ext]);
 			}
 		} catch (Exception $e) {
 			DB::rollback();
