@@ -184,8 +184,8 @@
                 }
                 .print-page {
                     display: block;
-                    width: 8.3in !important;
-                    height: 12.7in !important;
+                    width: 12.3in !important;
+                    height: 18.1in !important;
                 }
                 .header{
                     text-transform: uppercase;
@@ -230,14 +230,17 @@
     </div>
 </div>
 
-<button id="print-btn"><i class="fas fa-print"></i></button>
+<div id="btn-container">
+    <button class="btn" id="print-btn" style="display: block;"><i class="fas fa-print"></i></button>
+    <button class="btn" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ $project }}"><i class="fa fa-download"></i></button>
+</div>
 
 <div id="print-area">
     @foreach ($content as $r => $row)
-    @if (!collect($row['attrib'])->filter()->values()->all())
-        @continue
-    @endif
-    <div class="page-container d-print-none" id="{{ $row['id'] }}" style="margin-left: 280px !important; padding: 15px 0 15px 0 !important; background: #E6E6E6;">
+        @if (!collect($row['attrib'])->filter()->values()->all())
+            @continue
+        @endif
+        <div class="page-container d-print-none" id="{{ $row['id'] }}" style="margin-left: 280px !important; padding: 15px 0 15px 0 !important; background: #E6E6E6;">
             <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
                 <div class="pdf-content">
                     <div class="pdf-body">
@@ -343,38 +346,45 @@
         <div class="print-container print-page">
             <div style="display: block">
                 <div class="left-container">
-                    <div style="width: 300px !important;">
+                    <div style="width: 430px !important;">
                         <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%">
                     </div>
                 </div>
                 <div class="right-container">
-                    <p style="font-size: 20px !important; text-transform: uppercase !important">PROJECT: <b>{{ $row['project'] }}</b></p>
-                    <p style="margin-top: 15px !important;font-size: 20px !important;">LUMINAIRE SPECIFICATION AND INFORMATION</p>
+                    <p style="font-size: 26px !important; text-transform: uppercase !important">PROJECT: <b>{{ $row['project'] }}</b></p>
+                    <p style="margin-top: 15px !important;font-size: 26px !important;">LUMINAIRE SPECIFICATION AND INFORMATION</p>
                 </div>
             </div>
             <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
             <div style="display: block; width: 100%; float: left;">
-                <p style="font-size: 29px; padding: 3px !important; font-weight: bolder; color:#E67E22; border: 2px solid #1C2833">{{ $row['item_name'] }}</p>
+                <p style="font-size: 41px; padding: 3px !important; font-weight: bolder; color:#E67E22; border: 2px solid #1C2833">{{ $row['item_name'] }}</p>
             </div> 
             <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
             <div style="display: block; width: 100%; float: left; margin-bottom: 5px;">
                 <div class="left-container">
-                    <div style="width: 300px !important;">
-                        <img src="{{ asset('/storage/icon/no_img.png') }}" width="100%" style="border: 2px solid #1C2833;">
+                    <div style="width: 420px !important;">
+                        @for ($i = 1; $i <= 3; $i++)
+                            @php
+                                $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? '/storage/brochures/'.$row['images']['image'.$i] : null;
+                            @endphp
+                            @if ($img)
+                                <img src="{{ asset($img) }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
+                            @endif
+                        @endfor
                     </div>
                 </div>
                 <div class="right-container">
-                    <p style="font-weight: bolder; font-size: 21px;">Fitting Type / Reference:</p>
-                    <p style="font-size: 27px; margin-top: 10px !important; font-weight: bolder; color:#E67E22;">{{ $row['reference'] }}</p>
-                    <p style="font-weight: bolder; margin-top: 10px !important; font-size: 21px;">Description:</p>
-                    <p style="font-size: 21px; margin-top: 10px !important;">{{ $row['description'] }}</p>
+                    <p style="font-weight: bolder; font-size: 28px;">Fitting Type / Reference:</p>
+                    <p style="font-size: 35px; margin-top: 20px !important; font-weight: bolder; color:#E67E22;">{{ $row['reference'] }}</p>
+                    <p style="font-weight: bolder; margin-top: 20px !important; font-size: 28px;">Description:</p>
+                    <p style="font-size: 28px; margin-top: 20px !important;">{{ $row['description'] }}</p>
                     @if ($row['location'])
-                    <p style="font-weight: bolder; margin-top: 10px !important; font-size: 21px;">Location:</p>
-                    <p style="font-size: 21px; margin-top: 10px !important;">{{ $row['location'] }}</p>
+                    <p style="font-weight: bolder; margin-top: 20px !important; font-size: 28px;">Location:</p>
+                    <p style="font-size: 28px; margin-top: 20px !important;">{{ $row['location'] }}</p>
                     @endif
-                    <table border="0" style="border-collapse: collapse; width: 100%; font-size: 18px; margin-top: 30px !important;">
+                    <table border="0" style="border-collapse: collapse; width: 100%; font-size: 23px; margin-top: 35px !important;">
                         @foreach ($row['attributes'] as $val)
-                        @if ($val['attribute_value'])
+                        @if ($val['attribute_value'] && !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']))
                         <tr>
                             <td style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $val['attribute_name'] }}</td>
                             <td style="padding: 5px 0 5px 0 !important;width: 60%;"><strong>{{ $val['attribute_value'] }}</strong></td>
@@ -386,16 +396,16 @@
             </div>
             @if ($loop->last)
                 <div class="footer" style="position: fixed; bottom: 0; padding-right: 10px !important;">
-                    <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important">
+                    <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
                         <div class="left-container">
                             <div style="width: 55%; display: inline-block; float: left;">
                                 <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
                             </div>
                             <div style="width: 38%; display: inline-block; float: right">
-                                <div class="pdf-footer-company-website" style="font-size: 16.5px;">www.fumaco.com</div>
+                                <div class="pdf-footer-company-website" style="font-size: 20px;">www.fumaco.com</div>
                             </div>
                         </div>
-                        <div class="right-container" style="font-size: 16.5px;">
+                        <div class="right-container" style="font-size: 20px; width: 56% !important;">
                             <p>Plant: 35 Pleasant View Drive, Bagbaguin, Caloocan City</p>
                             <p>Sales & Showroom: 420 Ortigas Ave. cor. Xavier St., Greenhills, San Juan City</p>
                             <p>Tel. No.: (632) 721-0362 to 66</p>
@@ -420,10 +430,6 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="select-item-image-id">
-                {{-- <ul class="nav nav-pills ml-auto p-2">
-                    <li class="nav-item"><a class="nav-link active" href="#tab_1" data-toggle="tab">Upload File</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#tab_2" data-toggle="tab">Select from Media Files</a></li>
-                </ul> --}}
                 <div class="tab-content" style="min-height: 400px;">
                     <div class="tab-pane active" id="tab_1">
                         <form id="image-upload-form" method="POST" action="/upload_image" autocomplete="off" enctype="multipart/form-data">
