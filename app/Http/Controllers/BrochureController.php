@@ -102,7 +102,7 @@ class BrochureController extends Controller
 					'modified_by' => get_current_user(),
 					'owner' => get_current_user(),
 					'project' => $project,
-					'filename' => $file_name . '.' . $file_ext,
+					'filename' => Str::slug($project, '-') . '.' . $file_ext,
 					'created_by' => get_current_user(),
 					'transaction_date' => $transaction_date,
 					'remarks' => null,
@@ -114,11 +114,11 @@ class BrochureController extends Controller
 					Storage::disk('public')->makeDirectory('/brochures/'.strtoupper($project));
 				}
 
-				$attached_file->move(public_path('storage/brochures/'.strtoupper($project)), $attached_file->getClientOriginalName());
+				$attached_file->move(public_path('storage/brochures/'.strtoupper($project)), Str::slug($project, '-') . '.' . $file_ext);
 
 				DB::commit();
 
-				return response()->json(['status' => 1, 'message' => '/preview/' . strtoupper($project) . '/' . $file_name . '.' . $file_ext]);
+				return response()->json(['status' => 1, 'message' => '/preview/' . strtoupper($project) . '/' . Str::slug($project, '-') . '.' . $file_ext]);
 			}
 		} catch (Exception $e) {
 			DB::rollback();
