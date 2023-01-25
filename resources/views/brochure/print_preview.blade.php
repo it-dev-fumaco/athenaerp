@@ -49,10 +49,16 @@
                 background-color:#f4f6f6;
             }
 
-            #btn-container{
+            #top-btn-container{
                 position: fixed;
                 right: 25px;
                 top: 40px;
+            }
+
+            #bottom-btn-container{
+                position: fixed;
+                right: 25px;
+                bottom: 40px;
             }
 
             .btn-ctrl{
@@ -252,8 +258,10 @@
     </div>
 </div>
 
-<div id="btn-container">
+<div id="top-btn-container">
     <button class="btn-ctrl" id="print-btn" style="display: block;"><i class="fas fa-print"></i></button>
+</div>
+<div id="bottom-btn-container">
     <button class="btn-ctrl" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ $project }}"><i class="fa fa-download"></i></button>
 </div>
 
