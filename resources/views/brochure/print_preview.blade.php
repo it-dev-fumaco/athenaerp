@@ -459,6 +459,8 @@
     <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
     <!-- Bootstrap 4 -->
     <script src="{{ asset('/updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('/js/angular.min.js') }}"></script>
+    <script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
     <script type="text/javascript" src="{{  asset('js/printThis.js') }}"></script>
     
     <script>
@@ -572,9 +574,16 @@
                     processData: false,
                     dataType: 'json',
                     success: function(response){
-                        $('#' + response.data.item_image_id).remove();
-                        $('#' + response.data.item_image_id + '-image').removeClass('d-none');
-                        $('#' + response.data.item_image_id + '-image').parent().find('.upload-image-placeholder').eq(0).removeClass('d-none');
+                        if(response.status == 0){
+                            showNotification("danger", response.message, "fa fa-info");
+                        }else{
+                            $('#' + response.data.item_image_id).remove();
+                            $('#' + response.data.item_image_id + '-image').removeClass('d-none');
+                            $('#' + response.data.item_image_id + '-image').parent().find('.upload-image-placeholder').eq(0).removeClass('d-none');
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
                     }
                 });
             }
