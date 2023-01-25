@@ -107,7 +107,7 @@ class BrochureController extends Controller
 					$series = '-'.(string)$series;
 				}
 
-				$new_filename = Str::slug($project, '-').$series;
+				$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d').$series;
 
 				DB::table('tabProduct Brochure Log')->insert([
 					'name' => uniqid(),
