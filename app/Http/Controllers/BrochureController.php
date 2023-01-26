@@ -139,6 +139,10 @@ class BrochureController extends Controller
 	public function previewBrochure($project, $filename) {
 		$file = storage_path('app/public/brochures/'. $project .'/'. $filename);
 
+		if(!Storage::disk('public')->exists('/brochures/'. $project .'/'. $filename)){
+			return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
+		}
+
 		$file_contents = $this->readFile($file);
 
 		$content = $file_contents['content'];

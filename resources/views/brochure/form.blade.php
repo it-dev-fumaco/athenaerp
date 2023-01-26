@@ -158,6 +158,11 @@
                       <div class="custom-card-subtitle"><small>Files Supported: XLSX, XLS</small></div>  
                   </div>
                   <div class="row p-0">
+                    @if (session()->has('error'))
+                      <div class="mx-auto" style="text-align: center; color: #CE1E09; font-size: 12pt; margin: 8px;">
+                        {{ session()->get('error') }}
+                      </div> 
+                    @endif
                     <div id="upload-container" class="col-12 pt-3 d-none">
                       <button class="btn btn-primary btn-block read-file" type="button" data-target="#product-list-modal">Upload</button>
     
