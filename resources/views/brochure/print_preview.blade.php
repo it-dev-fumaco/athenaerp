@@ -506,7 +506,7 @@
         </div>
         <!-- Print Page -->
     @endforeach
-    <div class="footer d-print" style="position: fixed; bottom: 0; padding-right: 10px !important; position: fixed !important; bottom: 0">
+    <div class="footer d-print" style="position: fixed; bottom: 0; padding-right: 10px !important; position: fixed !important; bottom: 0; width: 100%;">
         <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
             <div class="left-container">
                 <div style="width: 55%; display: inline-block; float: left;">
