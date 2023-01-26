@@ -498,7 +498,7 @@
                     <p style="font-weight: bolder; margin-top: 20px !important; font-size: 28px;">Location:</p>
                     <p style="font-size: 28px; margin-top: 20px !important;">{{ $row['location'] }}</p>
                     @endif
-                    <table border="0" style="border-collapse: collapse; width: 100%; font-size: 23px; margin-top: 35px !important;">
+                    <table border="0" style="border-collapse: collapse; width: 100%; font-size: 20px; margin-top: 35px !important;">
                         @foreach ($row['attributes'] as $val)
                         @if ($val['attribute_value'] && !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']))
                         <tr>
@@ -520,10 +520,10 @@
                     <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
                 </div>
                 <div style="width: 38%; display: inline-block; float: right">
-                    <div class="pdf-footer-company-website" style="font-size: 20px;">www.fumaco.com</div>
+                    <div class="pdf-footer-company-website" style="font-size: 12pt;">www.fumaco.com</div>
                 </div>
             </div>
-            <div class="right-container" style="font-size: 20px; width: 56% !important;">
+            <div class="right-container" style="font-size: 12pt; width: 56% !important;">
                 <p>Plant: 35 Pleasant View Drive, Bagbaguin, Caloocan City</p>
                 <p>Sales & Showroom: 420 Ortigas Ave. cor. Xavier St., Greenhills, San Juan City</p>
                 <p>Tel. No.: (632) 721-0362 to 66</p>
