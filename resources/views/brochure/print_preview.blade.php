@@ -12,16 +12,22 @@
         <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
         {{--  <!-- Theme style -->  --}}
         <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
-
+        {{-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"> --}}
         <style>
             html {
                 scroll-behavior: smooth;
             }
             body {
-                margin: 0 !important; padding: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
             * {
-                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                /* font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; */
+            }
+            @font-face { font-family: 'Poppins'; src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }}); } 
+            *:not(i):not(.fa){
+                font-family: 'Poppins' !important;
+                /* letter-spacing: 0.4px; */
             }
             #table-of-contents-sidebar {
                 position: fixed;
@@ -36,6 +42,7 @@
             }
             #toc-links { 
                 margin: 10px;
+                font-size: 10pt;
             }
             #toc-links a {
                 text-decoration: none;
@@ -192,7 +199,7 @@
                     border-top: 2px solid  #1c2833;
                     text-align: left;
                     color: #1b1a1a;
-                    font-size: 11.5px;
+                    font-size: .6rem;
                 }
                 .pdf-footer-company-logo {
                     position: absolute;
@@ -208,8 +215,8 @@
                     position: absolute;
                     right: 28px;
                     top: 2px;
-                    font-weight: 500;
-                    line-height: 14px;
+                    /* font-weight: 500; */
+                    line-height: 13px;
                 }
                 .pdf-body {
                     position: absolute;
@@ -308,11 +315,11 @@
             <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
                 <div class="pdf-content">
                     <div class="pdf-body">
-                        <div style="display: block; clear: both;">
+                        <div style="disply: block; clear: both; color: #000">
                             <div style="width: 44%; float: left; padding: 2px !important;">
                                 <img src="{{ asset('/storage/fumaco_logo.png') }}" width="230">
                             </div>
-                            <div style="width: 54%; float:left; text-transform: uppercase;">
+                            <div style="width: 54%; float:left; text-transform: uppercase; font-size: 11pt;">
                                 <p>PROJECT: <b>{{ $row['project'] }}</b></p>
                                 <p style="margin-top: 15px !important;">LUMINAIRE SPECIFICATION AND INFORMATION</p>
                             </div>
@@ -414,7 +421,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div style="width: 54%; float:left;">
+                            <div style="width: 54%; float:left; color: #000">
                                 <p style="font-weight: bolder;">Fitting Type / Reference:</p>
                                 <p style="font-size: 22px; margin-top: 10px !important; font-weight: bolder; color:#E67E22;">{{ $row['reference'] }}</p>
                                 <p style="font-weight: bolder; margin-top: 10px !important;">Description:</p>
@@ -423,7 +430,7 @@
                                 <p style="font-weight: bolder; margin-top: 10px !important;">Location:</p>
                                 <p style="font-size: 16px; margin-top: 10px !important;">{{ $row['location'] }}</p>
                                 @endif
-                                <table border="0" style="border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 30px !important;">
+                                <table border="0" style="border-collapse: collapse; width: 100%; font-size: 11.5px; margin-top: 30px !important;">
                                     @foreach ($row['attributes'] as $val)
                                     @if ($val['attribute_value'] && !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']))
                                     <tr>
@@ -482,7 +489,7 @@
                         &nbsp;
                     </div>
                 </div>
-                <div class="right-container">
+                <div class="right-container" style="border: 1px solid red !important">
                     <p style="font-weight: bolder; font-size: 28px;">Fitting Type / Reference:</p>
                     <p style="font-size: 35px; margin-top: 20px !important; font-weight: bolder; color:#E67E22;">{{ $row['reference'] }}</p>
                     <p style="font-weight: bolder; margin-top: 20px !important; font-size: 28px;">Description:</p>
