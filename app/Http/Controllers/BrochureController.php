@@ -72,7 +72,7 @@ class BrochureController extends Controller
             if($request->hasFile('selected-file')){
 				$attached_file = $request->file('selected-file');
 
-				$allowed_extensions = ['xlsx', 'xls'];
+				$allowed_extensions = ['xlsx', 'xls', 'XLSX', 'XLS'];
 
                 $file_name = pathinfo($attached_file->getClientOriginalName(), PATHINFO_FILENAME);
 				$file_ext = pathinfo($attached_file->getClientOriginalName(), PATHINFO_EXTENSION);
@@ -158,7 +158,7 @@ class BrochureController extends Controller
 			if($request->hasFile('selected-file')){
 				// return $request->all();
 				$file = $request->file('selected-file');
-				$allowed_extensions = ['jpg', 'jpeg', 'png'];
+				$allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'];
 	
 				$folder = $request->project;
 				$dir = $request->filename;
