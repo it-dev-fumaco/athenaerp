@@ -40,9 +40,9 @@
                                                 <div class="p-0 text-left">
                                                     <a href="{{ asset('storage/') }}{{ $row['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
                                                         <picture>
-                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
-                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
-                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ str_slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
+                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
+                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
+                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
                                                         </picture>
                                                     </a>
                                                 </div>

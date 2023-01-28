@@ -616,7 +616,7 @@
                                     </div>
                                 </div>
                                 <div class="m-2">
-                                    {{ $co_variants->links() }}
+                                    {{ $co_variants->links('pagination::bootstrap-4') }}
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -646,7 +646,7 @@
                                                         <a href="/get_item_details/{{ $a['item_code'] }}" class="text-dark" style="font-size: 9pt;">
                                                             <div class="p-1 text-justify">
                                                                 <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
-                                                                <small class="font-italic font-responsive" style="font-size: 9pt;">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
+                                                                <small class="font-italic font-responsive" style="font-size: 9pt;">{{ \Illuminate\Support\Str::limit($a['description'], $limit = 78, $end = '...') }}</small>
                                                                 <br>
                                                                 <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                             </div>

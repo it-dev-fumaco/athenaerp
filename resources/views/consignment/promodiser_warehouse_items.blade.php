@@ -64,7 +64,7 @@
                                                             <picture>
                                                                 <source srcset="{{ asset('storage'.$webp) }}" type="image/webp">
                                                                 <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
-                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ str_slug(explode('.', $img)[0], '-') }}" class="w-100">
+                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
                                                             </picture>
                                                         </a>
                                                     </div>

@@ -15,7 +15,7 @@
                     <a href="#" class="view-item-details" data-item-code="{{ $item['item_code'] }}" data-item-classification="{{ $item['item_classification'] }}">
                         <span class="d-block font-weight-bold text-dark item-code">{{ $item['item_code'] }}</span>
                     </a>
-                    <small class="d-block font-italic">{{ str_limit($item['description'], $limit = 25, $end = '...') }}</small>
+                    <small class="d-block font-italic">{{ \Illuminate\Support\Str::limit($item['description'], $limit = 25, $end = '...') }}</small>
                 </div>
                 <div class="col-5 float-right text-center bg-white">
                     <span class="font-italic font-weight-bold text-right">

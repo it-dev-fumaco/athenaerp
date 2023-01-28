@@ -7,7 +7,6 @@ use Closure;
 use Illuminate\Contracts\Queue\Factory as QueueFactory;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Queue\CallQueuedClosure;
-use Illuminate\Queue\SerializableClosure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use JsonSerializable;
@@ -156,23 +155,36 @@ class Batch implements Arrayable, JsonSerializable
     /**
      * Add additional jobs to the batch.
      *
-     * @param  \Illuminate\Support\Collection|array  $jobs
+     * @param  \Illuminate\Support\Enumerable|array  $jobs
      * @return self
      */
     public function add($jobs)
     {
-        $jobs = Collection::wrap($jobs)->map(function ($job) {
-            if ($job instanceof Closure) {
-                $job = CallQueuedClosure::create($job);
-            }
+        $count = 0;
 
-            $job->withBatchId($this->id);
+        $jobs = Collection::wrap($jobs)->map(function ($job) use (&$count) {
+            $job = $job instanceof Closure ? CallQueuedClosure::create($job) : $job;
+
+            if (is_array($job)) {
+                $count += count($job);
+
+                return with($this->prepareBatchedChain($job), function ($chain) {
+                    return $chain->first()
+                            ->allOnQueue($this->options['queue'] ?? null)
+                            ->allOnConnection($this->options['connection'] ?? null)
+                            ->chain($chain->slice(1)->values()->all());
+                });
+            } else {
+                $job->withBatchId($this->id);
+
+                $count++;
+            }
 
             return $job;
         });
 
-        $this->repository->transaction(function () use ($jobs) {
-            $this->repository->incrementTotalJobs($this->id, count($jobs));
+        $this->repository->transaction(function () use ($jobs, $count) {
+            $this->repository->incrementTotalJobs($this->id, $count);
 
             $this->queue->connection($this->options['connection'] ?? null)->bulk(
                 $jobs->all(),
@@ -182,6 +194,21 @@ class Batch implements Arrayable, JsonSerializable
         });
 
         return $this->fresh();
+    }
+
+    /**
+     * Prepare a chain that exists within the jobs being added.
+     *
+     * @param  array  $chain
+     * @return \Illuminate\Support\Collection
+     */
+    protected function prepareBatchedChain(array $chain)
+    {
+        return collect($chain)->map(function ($job) {
+            $job = $job instanceof Closure ? CallQueuedClosure::create($job) : $job;
+
+            return $job->withBatchId($this->id);
+        });
     }
 
     /**
@@ -340,7 +367,7 @@ class Batch implements Arrayable, JsonSerializable
     }
 
     /**
-     * Determine if the batch has "then" callbacks.
+     * Determine if the batch has "finally" callbacks.
      *
      * @return bool
      */
@@ -392,16 +419,20 @@ class Batch implements Arrayable, JsonSerializable
     /**
      * Invoke a batch callback handler.
      *
-     * @param  \Illuminate\Queue\SerializableClosure|callable  $handler
+     * @param  callable  $handler
      * @param  \Illuminate\Bus\Batch  $batch
      * @param  \Throwable|null  $e
      * @return void
      */
     protected function invokeHandlerCallback($handler, Batch $batch, Throwable $e = null)
     {
-        return $handler instanceof SerializableClosure
-                    ? $handler->__invoke($batch, $e)
-                    : call_user_func($handler, $batch, $e);
+        try {
+            return $handler($batch, $e);
+        } catch (Throwable $e) {
+            if (function_exists('report')) {
+                report($e);
+            }
+        }
     }
 
     /**
@@ -431,8 +462,20 @@ class Batch implements Arrayable, JsonSerializable
      *
      * @return array
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return $this->toArray();
+    }
+
+    /**
+     * Dynamically access the batch's "options" via properties.
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        return $this->options[$key] ?? null;
     }
 }

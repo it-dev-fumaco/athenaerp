@@ -11,6 +11,7 @@ use DB;
 use Storage;
 use Cache;
 use Mail;
+use Illuminate\Support\Str;
 use App\Mail\StockTransfersNotification;
 
 class ConsignmentController extends Controller
@@ -2295,7 +2296,7 @@ class ConsignmentController extends Controller
                 'classification' => $item->item_classification,
                 'image' => asset('storage'.$image),
                 'image_webp' => asset('storage'.$image_webp),
-                'alt' => str_slug(explode('.', $image)[0], '-'),
+                'alt' => Str::slug(explode('.', $image)[0], '-'),
                 'uom' => $item->stock_uom
             ];
         }
@@ -2711,6 +2712,7 @@ class ConsignmentController extends Controller
                 'damage_description' => $item->damage_description,
                 'promodiser' => $item->promodiser,
                 'image' => $img,
+                'image_slug' => Str::slug(explode('.', $img)[0], '-'),
                 'webp' => $webp,
                 'item_status' => $item->status,
                 'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i A'),
@@ -2762,6 +2764,7 @@ class ConsignmentController extends Controller
                             'uom' => $item->stock_uom,
                             'consigned_qty' => isset($bin_arr[$ste->from_warehouse][$item->item_code]) ? $bin_arr[$ste->from_warehouse][$item->item_code]['consigned_qty'] : 0,
                             'image' => $img,
+                            'image_slug' => Str::slug(explode('.', $img)[0], '-'),
                             'webp' => $webp
                         ];
                     }
@@ -3144,7 +3147,7 @@ class ConsignmentController extends Controller
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
                 'img' => $img ? asset('storage'.$img) : null,
                 'webp' => $webp ? asset('storage'.$webp) : null,
-                'alt' => str_slug(explode('.', $img)[0], '-')
+                'alt' => Str::slug(explode('.', $img)[0], '-')
             ];
         }
 
@@ -5326,6 +5329,7 @@ class ConsignmentController extends Controller
                 'price' => $s->basic_rate,
                 'amount' => $s->basic_amount,
                 'img' => $img,
+                'img_slug' => $img ? Str::slug(explode('.', $img)[0], '-') : null,
                 'img_webp' => $webp,
                 'stock_uom' => $s->stock_uom,
                 'img_count' => $img_count,
@@ -5610,7 +5614,7 @@ class ConsignmentController extends Controller
                 })
                 ->when($user, function ($q) use ($user){
                     return $q->where(function ($query) use ($user){
-                        return $q->where('sted.consignment_received_by', $user)->orWhere('ste.consignment_received_by', $user)->orWhere('sted.modified_by', $user);
+                        return $query->where('sted.consignment_received_by', $user)->orWhere('ste.consignment_received_by', $user)->orWhere('sted.modified_by', $user);
                     });
                 })
                 ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])

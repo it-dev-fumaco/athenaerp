@@ -114,13 +114,13 @@
     </tbody> 
 </table>
 
-<div class="mt-3 c-store-pagination" data-el="{{ str_slug($warehouse, '-') }}" data-warehouse="{{ $warehouse }}">
+<div class="mt-3 c-store-pagination" data-el="{{ Illuminate\Support\Str::slug($warehouse, '-') }}" data-warehouse="{{ $warehouse }}">
     {{ $consignment_stocks->links() }}
 </div>
 
 <script>
     $(document).ready(function(){
-        $('#item-qty-{{ str_slug($warehouse, "-") }}').text('{{ number_format($consignment_stocks->total(), 0) }}');
-        $('#stock-qty-{{ str_slug($warehouse, "-") }}').text('{{ number_format($total_stocks, 0) }}');
+        $('#item-qty-{{ Illuminate\Support\Str::slug($warehouse, "-") }}').text('{{ number_format($consignment_stocks->total(), 0) }}');
+        $('#stock-qty-{{ Illuminate\Support\Str::slug($warehouse, "-") }}').text('{{ number_format($total_stocks, 0) }}');
     });
 </script>
