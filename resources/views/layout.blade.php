@@ -1104,6 +1104,56 @@
 		</form>
 	</div>
 
+	<div class="modal fade" id="print-brochure-modal">
+		<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
+			<input type="hidden" id="brochure-item-code" name="item_code">
+			<div class="modal-dialog modal-xl">
+		  		<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Print Product Brochure</h5>
+			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div class="row p-0 m-0">
+							<div class="col-6">
+								<div class="form-group">
+									<label for="brochure-project-name">Project Name</label>
+									<input type="text" class="form-control" id="brochure-project-name" name="project">
+								</div>
+								<div class="form-group">
+									<label for="brochure-item-name">Item Name</label>
+									<input type="text" class="form-control" id="brochure-item-name" name="item_name">
+								</div>
+								<div class="form-group">
+									<label for="brochure-description">Description</label>
+									<textarea name="description" id="brochure-description" rows="3" class="form-control"></textarea>
+								</div>
+							</div>
+							<div class="col-6">
+								<div class="form-group">
+									<label for="brochure-customer-name">Customer Name</label>
+									<input type="text" class="form-control" id="brochure-customer-name" name="customer">
+								</div>
+								<div class="form-group">
+									<label for="brochure-reference">Fitting Type / Reference</label>
+									<input type="text" class="form-control" id="brochure-reference" name="reference">
+								</div>
+								<div class="form-group">
+									<label for="brochure-location">Location</label>
+									<textarea name="location" id="brochure-location" rows="2" class="form-control"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> CONFIRM</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
   <!-- Main Footer -->
   <footer class="main-footer font-responsive">
     <!-- To the right -->
@@ -1114,9 +1164,6 @@
     <strong class="copyright">Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
-
-<!-- ./wrapper -->
-
 <!-- REQUIRED SCRIPTS -->
 <!-- jQuery -->
 <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
@@ -1137,13 +1184,11 @@
 <script src="{{ asset('/updated/plugins/iCheck/icheck.min.js') }}"></script>
 <!-- ChartJS -->
 <script src="{{ asset('/updated/plugins/chart.js/Chart.min.js') }}"></script>
-
 <script src="{{ asset('/js/angular.min.js') }}"></script>
 <script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
 <!-- jquery-validation -->
 <script src="{{ asset('/updated/plugins/jquery-validation/jquery.validate.min.js') }}"></script>
 <script src="{{ asset('/updated/plugins/jquery-validation/additional-methods.min.js') }}"></script>
-
 <!-- datepicker -->
 <script type="text/javascript" src="{{ asset('js/datetimepicker/moment.min.js') }}"></script>
 <script type="text/javascript" src="{{ asset('js/datetimepicker/daterangepicker.min.js') }}"></script>
@@ -1153,6 +1198,19 @@
 		document.getElementById('loader-wrapper').removeAttribute('hidden');
 		$(document).ready(function(){
 			$('#loader-wrapper').attr('hidden', true);
+			$(document).on('click', '.print-brochure-btn', function(e) {
+				e.preventDefault();
+				var product_code = $(this).data('item-code');
+				var product_name = $(this).data('item-name');
+				var product_description = $(this).data('item-description');
+
+				$('#brochure-item-code').val(product_code);
+				$('#brochure-item-name').val(product_name);
+				$('#brochure-description').val(product_description);
+
+				$('#print-brochure-modal').modal('show');
+			});
+			
 			$(document).on('click', '.create-mr-btn', function(e){
 				e.preventDefault();
 

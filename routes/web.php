@@ -18,6 +18,8 @@ Route::get('/update', 'ItemAttributeController@update_login')->name('update_logi
 Route::post('/U_login_user', 'ItemAttributeController@login');
 
 Route::group(['middleware' => 'auth'], function(){
+    // standard product brochure printing
+    Route::get('/generate_brochure', 'BrochureController@generateBrochure');
     // routes for item attribute updating
     Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
     Route::get('/search', 'ItemAttributeController@item_attribute_search');

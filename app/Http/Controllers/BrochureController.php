@@ -156,7 +156,6 @@ class BrochureController extends Controller
 		DB::beginTransaction();
 		try {
 			if($request->hasFile('selected-file')){
-				// return $request->all();
 				$file = $request->file('selected-file');
 				$allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'];
 	
@@ -388,5 +387,23 @@ class BrochureController extends Controller
 		}catch (Exception $e){
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 		}
+	}
+
+	public function generateBrochure(Request $request) {
+		$data = $request->all();
+		
+		$attributes = DB::table('tabItem Variant Attribute as variant')
+			->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
+			->where('variant.parent', $data['item_code'])
+			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
+			->orderBy('variant.idx')->get();
+
+		$images = [
+			'image1' => null,
+			'image2' => null,
+			'image3' => null,
+		];
+
+		return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images'));
 	}
 }

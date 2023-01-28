@@ -98,7 +98,7 @@
             <div class="custom-card">
               <div class="custom-card-body">
                 <div class="d-block">
-                  <div class="custom-card-title">Generate Product Brochure</div>
+                  <div class="custom-card-title">Generate Product Brochure Tool</div>
                 </div>
                 <div class="custom-card-subtitle d-block">Upload your file here to start</div>
                 <div class="file-upload">
