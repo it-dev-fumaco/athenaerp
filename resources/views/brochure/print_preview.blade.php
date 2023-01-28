@@ -326,7 +326,7 @@
                         </div>
                         <div style="display: block; padding-top: 5px !important; clear: both;">
                             <div style="border: 2px solid;">
-                                <p style="font-size: 22px; padding: 3px !important; font-weight: bolder; color:#E67E22;">{{ $row['item_name'] }}</p>
+                                <p style="font-size: 14pt; padding: 3px !important; font-weight: bolder; color:#E67E22;">{{ $row['item_name'] }}</p>
                             </div>
                         </div>
                         <div style="display: block; padding-top: 5px !important; clear: both; margin-left: -2px !important;">
@@ -474,7 +474,7 @@
             </div>
             <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
             <div style="display: block; width: 100%; float: left;">
-                <p style="font-size: 41px; padding: 3px !important; font-weight: bolder; color:#E67E22; border: 2px solid #1C2833">{{ $row['item_name'] }}</p>
+                <p style="font-size: 34px; padding: 3px !important; font-weight: bolder; color:#E67E22; border: 2px solid #1C2833">{{ $row['item_name'] }}</p>
             </div> 
             <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
             <div style="display: block; width: 100%; float: left; margin-bottom: 5px;">
@@ -489,7 +489,7 @@
                         &nbsp;
                     </div>
                 </div>
-                <div class="right-container" style="border: 1px solid red !important">
+                <div class="right-container">
                     <p style="font-weight: bolder; font-size: 28px;">Fitting Type / Reference:</p>
                     <p style="font-size: 35px; margin-top: 20px !important; font-weight: bolder; color:#E67E22;">{{ $row['reference'] }}</p>
                     <p style="font-weight: bolder; margin-top: 20px !important; font-size: 28px;">Description:</p>
