@@ -484,7 +484,7 @@
                             @php
                                 $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? '/storage/brochures/'.$row['images']['image'.$i] : null;
                             @endphp
-                            <img id="item-{{ $r }}-0{{ $i }}-print-image" src="{{ asset($img) }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
+                            <img id="item-{{ $r }}-0{{ $i }}-print-image" src="{{ asset($img) }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="padding: .5px !important; border: 2px solid #0C0C0C !important; margin-bottom: 20px !important;">
                         @endfor
                         &nbsp;
                     </div>
@@ -503,7 +503,7 @@
                         @if ($val['attribute_value'] && !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']))
                         <tr>
                             <td style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $val['attribute_name'] }}</td>
-                            <td style="padding: 5px 0 5px 0 !important;width: 60%;"><strong>{{ $val['attribute_value'] }}</strong></td>
+                            <td style="padding: 5px 0 5px 0 !important;width: 60%; color: #000 !important;"><strong>{{ $val['attribute_value'] }}</strong></td>
                         </tr>
                         @endif
                         @endforeach
