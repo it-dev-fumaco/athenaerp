@@ -8,6 +8,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriterXlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Illuminate\Support\Str;
 use Storage;
+use Auth;
 use DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -180,7 +181,7 @@ class BrochureController extends Controller
 		try {
 			if($request->hasFile('selected-file')){
 				$file = $request->file('selected-file');
-				$allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'];
+				$allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
 	
 				$folder = $request->project;
 				$dir = $request->filename;
@@ -421,12 +422,140 @@ class BrochureController extends Controller
 			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
 			->orderBy('variant.idx')->get();
 
-		$images = [
-			'image1' => null,
-			'image2' => null,
-			'image3' => null,
+		$current_item_images = DB::table('tabItem Images')->where('parent', $data['item_code'])->get();
+		$current_images = [];
+		foreach ($current_item_images as $e) {
+			$filename = $e->image_path;
+			if(!Storage::disk('public')->exists('img/' . $filename) && $filename){
+				$filename = explode(".", $filename)[0] . '.webp';
+			}
+
+			$current_images[] = [
+				'filename' => $filename,
+				'filepath' => 'img/' . $filename
+			];	
+		}
+
+		$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])
+			->select('image_filename', 'idx', 'image_path', 'name')->get();
+		$brochure_images = collect($brochure_images)->groupBy('idx')->toArray();
+
+		$images['image1'] = [
+			'id' => isset($brochure_images[1]) ? $brochure_images[1][0]->name : null,
+			'filepath' => isset($brochure_images[1]) ? $brochure_images[1][0]->image_path . $brochure_images[1][0]->image_filename : null,
 		];
 
-		return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images'));
+		$images['image2'] = [
+			'id' => isset($brochure_images[2]) ? $brochure_images[2][0]->name : null,
+			'filepath' => isset($brochure_images[2]) ? $brochure_images[2][0]->image_path . $brochure_images[2][0]->image_filename : null,
+		];
+
+		$images['image3'] = [
+			'id' => isset($brochure_images[3]) ? $brochure_images[3][0]->name : null,
+			'filepath' => isset($brochure_images[3]) ? $brochure_images[3][0]->image_path . $brochure_images[3][0]->image_filename : null,
+		];
+
+		if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image1']['filepath'])) && $images['image1']['filepath']){
+			$images['image1']['filepath'] = explode(".", $images['image1'])[0] . '.webp';
+		}
+
+		if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image2']['filepath'])) && $images['image2']['filepath']){
+			$images['image2']['filepath'] = explode(".", $images['image2'])[0] . '.webp';
+		}
+
+		if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image3']['filepath'])) && $images['image3']['filepath']){
+			$images['image3']['filepath'] = explode(".", $images['image3'])[0] . '.webp';
+		}
+
+		return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'current_images'));
+	}
+
+	public function uploadImageForStandard(Request $request) {
+		DB::beginTransaction();
+		try {
+			$project = $request->project;
+			$item_code = $request->item_code;
+			$transaction_date = Carbon::now()->toDateTimeString();
+			if ($request->existing) {
+				$filename = $request->selected_image;
+				$image_path = 'storage/img/';
+			}
+
+			if($request->hasFile('selected-file')){
+				$file = $request->file('selected-file');
+				$allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
+	
+				$file_ext = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
+				if(!in_array($file_ext, $allowed_extensions)){
+					return response()->json(['status' => 0, 'message' => 'Sorry, only .jpeg, .jpg and .png files are allowed.']);
+				}
+	
+				//get filename with extension
+				$filenamewithextension = $file->getClientOriginalName();
+				// //get filename without extension
+				$filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
+				//get file extension
+				$extension = $file->getClientOriginalExtension();
+				//filename to store
+				$micro_time = round(microtime(true));
+		
+				$destinationPath = storage_path('/app/public/brochures/');
+	
+				$filename = $item_code . '-' . $micro_time . '.' . $extension;
+				$image_path = 'storage/brochures/';
+			}
+
+			$existing_image_idx = DB::table('tabItem Brochure Image')->where('parent', $item_code)->where('idx', $request->image_idx)->first();
+			if ($existing_image_idx) {
+				DB::table('tabItem Brochure Image')->where('name', $existing_image_idx->name)->update([
+					'modified' => $transaction_date,
+					'modified_by' => Auth::user()->wh_user,
+					'idx' => $request->image_idx,
+					'image_filename' => $filename
+				]);
+			} else {
+				DB::table('tabItem Brochure Image')->insert([
+					'name' => uniqid(),
+					'creation' => $transaction_date,
+					'modified' => $transaction_date,
+					'modified_by' => Auth::user()->wh_user,
+					'owner' => Auth::user()->wh_user,
+					'parent' => $item_code,
+					'idx' => $request->image_idx,
+					'image_filename' => $filename,
+					'image_path' => $image_path
+				]);
+			}
+
+			DB::table('tabProduct Brochure Log')->insert([
+				'name' => uniqid(),
+				'creation' => $transaction_date,
+				'modified' => $transaction_date,
+				'modified_by' => Auth::user()->wh_user,
+				'owner' => Auth::user()->wh_user,
+				'project' => $project,
+				'filename' => $filename,
+				'created_by' => Auth::user()->wh_user,
+				'transaction_date' => $transaction_date,
+				'remarks' => 'For ' . $item_code,
+				'transaction_type' => 'Upload Image'
+			]);
+
+			DB::commit();
+
+			if($request->hasFile('selected-file')){
+				$file->move($destinationPath, $filename);
+			}
+
+			$data_src = $image_path . $filename;
+
+			return response()->json(['status' => 1, 'message' => 'Image uploaded.', 'src' => $data_src]);
+		} catch (Exception $e) {
+			DB::rollback();
+
+			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
+		}
+	}
+
 	}
 }

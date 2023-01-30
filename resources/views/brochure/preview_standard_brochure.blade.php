@@ -39,30 +39,31 @@
                                         @php
                                             $img1_actual = $img1_temp = null;
                                             $img1_src = $img2_src = $img3_src = '#';
-                                            if (isset($images['image1']) && $images['image1']) {
+                                            $img1_id = $img2_id = $img3_id = null;
+                                            if (isset($images['image1']['filepath']) && $images['image1']['filepath']) {
                                                 $img1_actual = null;
                                                 $img1_temp = 'd-none';
-                                                $img1_src = asset('/storage/brochures/' . $images['image1']);
+                                                $img1_src = asset($images['image1']['filepath']);
                                             } else {
                                                 $img1_actual = 'd-none';
                                                 $img1_temp = null;
                                             }
 
                                             $img2_actual = $img2_temp = null;
-                                            if (isset($images['image2']) && $images['image2']) {
+                                            if (isset($images['image2']['filepath']) && $images['image2']['filepath']) {
                                                 $img2_actual = null;
                                                 $img2_temp = 'd-none';
-                                                $img2_src = asset('/storage/brochures/' . $images['image2']);
+                                                $img2_src = asset($images['image2']['filepath']);
                                             } else {
                                                 $img2_actual = 'd-none';
                                                 $img2_temp = null;
                                             }
 
                                             $img3_actual = $img3_temp = null;
-                                            if (isset($images['image3']) && $images['image3']) {
+                                            if (isset($images['image3']['filepath']) && $images['image3']['filepath']) {
                                                 $img3_actual = null;
                                                 $img3_temp = 'd-none';
-                                                $img3_src = asset('/storage/brochures/' . $images['image3']);
+                                                $img3_src = asset($images['image3']['filepath']);
                                             } else {
                                                 $img3_actual = 'd-none';
                                                 $img3_temp = null;
@@ -78,13 +79,12 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="upload-image-placeholder {{ $img1_temp }}" id="item-01" style="margin-bottom: 20px !important;">
+                                        <div class="upload-image-placeholder {{ $img1_temp }}" id="item-01" style="margin-bottom: 20px !important;" data-idx="1">
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
                                                     <span>(230 x 230 px)<br>Add Image 1</span>
                                                 </div>
-                                                <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-item-image-id="item-01">
                                             </div>
                                         </div>
                                         {{-- 2 --}}
@@ -97,13 +97,12 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="upload-image-placeholder {{ $img2_temp }}" id="item-02" style="margin-bottom: 20px !important;">
+                                        <div class="upload-image-placeholder {{ $img2_temp }}" id="item-02" style="margin-bottom: 20px !important;" data-idx="2">
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
                                                     <span>(230 x 230 px)<br>Add Image 2</span>
                                                 </div>
-                                                <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-item-image-id="item-02">
                                             </div>
                                         </div>
                                         {{-- 3 --}}
@@ -116,13 +115,12 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="upload-image-placeholder {{ $img3_temp }}" id="item-03" style="margin-bottom: 20px !important;">
+                                        <div class="upload-image-placeholder {{ $img3_temp }}" id="item-03" style="margin-bottom: 20px !important;" data-idx="3">
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
                                                     <span>(230 x 230 px)<br>Add Image 3</span>
                                                 </div>
-                                                <input type="file" class="dropzone" accept=".jpg,.jpeg,.png" data-item-image-id="item-03">
                                             </div>
                                         </div>
                                     </div>
@@ -185,7 +183,7 @@
                             <div style="width: 420px !important;">
                                 @for ($i = 1; $i <= 3; $i++)
                                     @php
-                                        $img = isset($images['image'.$i]) && $images['image'.$i] ? '/storage/brochures/'.$images['image'.$i] : null;
+                                        $img = isset($images['image'.$i]['filepath']) && $images['image'.$i]['filepath'] ? '/storage/brochures/'.$images['image'.$i]['filepath'] : null;
                                     @endphp
                                     <img id="item-0{{ $i }}-print-image" src="{{ asset($img) }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
                                 @endfor
@@ -231,6 +229,87 @@
                             <p>Email Address: sales@fumaco.com</p>
                         </div>
                         <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="select-file-modal">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add Image</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="item-image-container-id">
+                <ul class="nav nav-pills ml-auto p-2">
+                    <li class="nav-item"><a class="nav-link active" href="#tab_1" data-toggle="tab">Upload File</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#tab_2" data-toggle="tab">Select from current images</a></li>
+                </ul>
+                <div class="tab-content" style="min-height: 300px;">
+                    <div class="tab-pane active" id="tab_1">
+                        <form id="image-upload-form" method="POST" action="/upload_image_for_standard_brochure" autocomplete="off" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" id="item-image-order" name="image_idx">
+                            <input type="hidden" name="project" value="{{ $data['project'] }}">
+                            <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
+                            <div class="row mb-5">
+                                <div class="col-4 offset-4">
+                                    <div class="text-center">
+                                        <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3" id="img-preview">
+                                    </div>
+                                    <p class="text-center text-muted">Files Supported: JPEG, JPG, PNG</p>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="browse-file" name="selected-file" accept=".jpg,.jpeg,.png,.webp" required>
+                                                <label class="custom-file-label" for="browse-file" id="browse-file-text" style="overflow: hidden;">Browse File</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <button class="btn btn-primary col-8" type="submit" id="upload-btn" disabled>Upload</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="tab-pane" id="tab_2">
+                        <form id="image-upload-form-1" action="/upload_image_for_standard_brochure" method="POST" autocomplete="off">
+                            @csrf
+                            <input type="hidden" id="item-image-order-1" name="image_idx">
+                            <input type="hidden" name="project" value="{{ $data['project'] }}">
+                            <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
+                            <input type="hidden" name="existing" value="1">
+                            <div class="row p-2 mt-3">
+                                @foreach ($current_images as $cii)
+                                @php
+                                    $img = $cii['filepath'];
+                                    $img_webp = explode('.', $img)[0].'.webp';
+                                @endphp
+                                <div class="col-3">
+                                    <label class="m-0 img-btn d-block">
+                                        <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>
+                                        <div class="c-img rounded">
+                                            <picture>
+                                                <source srcset="{{ asset('storage/'.$img_webp) }}" type="image/webp" alt="{{ $img }}">
+                                                <source srcset="{{ asset('storage/'.$img) }}" type="image/jpeg" alt="{{ $img }}">
+                                                <img src="{{ asset('storage/'.$img) }}" alt="{{ $img }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
+                                            </picture>
+                                        </div>
+                                    </label>
+                                </div>
+                                @endforeach
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-4 offset-4 text-center">
+                                    <button class="btn btn-primary" type="submit">Upload Selected Image</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -354,6 +433,16 @@
     .img-cont:hover .custom-hover-button {
         opacity: 1;
     }
+    .img-btn > input{
+        display:none
+    }
+    .img-btn > .c-img{
+        cursor:pointer;
+        padding: 10px;
+    }
+    .img-btn > input:checked + .c-img{
+        background-color:  #d5d8dc;
+    }
     @media screen {
         .page-container * {
             z-index: 0;
@@ -461,18 +550,99 @@
 <script type="text/javascript" src="{{  asset('js/printThis.js') }}"></script>
 <script>
     $(document).ready(function (){
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        
+        $(document).on('click', '.upload-image-placeholder', function(e) {
+            e.preventDefault();
+            $('#item-image-order').val($(this).data('idx'));
+            $('#item-image-order-1').val($(this).data('idx'));
+            $('#item-image-container-id').val($(this).attr('id'));
+
+            $('#select-file-modal').modal('show');
+        });
+
+        $('#browse-file').change(function(e){
+            var fileName = e.target.files[0].name;
+            $('#browse-file-text').text(fileName);
+            $('#upload-btn').removeAttr('disabled');
+            if (typeof (FileReader) != "undefined") {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#img-preview').attr('src', e.target.result);
+                }
+                reader.readAsDataURL($(this)[0].files[0]);
+            } else {
+                showNotification("danger", "This browser does not support FileReader.", "fa fa-info");
+            }
+        });
+
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            $(this).find('form')[0].reset();
+            $('#img-preview').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+            $('#browse-file-text').text('Browse File');
+        });
+
+        $('#image-upload-form').submit(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data:  new FormData(this),
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function(response){
+                    if(response.status == 0){
+                        showNotification("danger", response.message, "fa fa-info");
+                    }else{
+                        var item_image_id = $('#item-image-container-id').val();
+                        $('#' + item_image_id).addClass('d-none');
+                        $('#' + item_image_id + '-actual').removeClass('d-none');
+                        $('#' + item_image_id + '-image').attr('src', $('#img-preview').attr('src'));
+                        
+                        $('#select-file-modal').modal('hide');
+                    }
+                },
+            });
+        });
+
+        $('#image-upload-form-1').submit(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data:  $(this).serialize(),
+                success: function(response){
+                    if(response.status == 0){
+                        showNotification("danger", response.message, "fa fa-info");
+                    }else{
+                        var item_image_id = $('#item-image-container-id').val();
+                        $('#' + item_image_id).addClass('d-none');
+                        $('#' + item_image_id + '-actual').removeClass('d-none');
+                        $('#' + item_image_id + '-image').attr('src', '{{ asset("") }}' + response.src);
+                        
+                        $('#select-file-modal').modal('hide');
+                    }
+                },
+            });
+        });
+
         $(document).on('click', '.remove-image-btn', function(e) {
             e.preventDefault();
 
             var el = $(this);
             var details = {
-                'column': $(this).data('col'),
-                'row': $(this).data('row'),
-                'project': $('#project').val(),
-                'filename': $('#filename').val(),
+                
                 'item_image_id': $(this).data('item-image-id'),
-                '_token': '{{ csrf_token() }}'
             }
+
+            console.log(details)
 
             // $.ajax({
             //     url: '/remove_image',
@@ -516,86 +686,6 @@
                     align: 'center'
                 }
             });
-        }
-
-        $('.upload-image-placeholder').on('dragover', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).addClass('dragover');
-        });
-
-        $('.upload-image-placeholder').on('dragleave', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).removeClass('dragover');
-        });
-
-        $(document).on('change', 'input[type="file"]', function() {
-            var details = {
-                'column': $(this).data('col'),
-                'row': $(this).data('row'),
-                'project': $('#project').val(),
-                'filename': $('#filename').val(),
-                'item_image_id': $(this).data('item-image-id'),
-            }
-
-            readFile(this, details);
-        });
-
-        function readFile(input, details) {
-            if (input.files && input.files[0]) {
-                var formData = new FormData();
-                formData.append('selected-file', input.files[0]);
-                formData.append('_token', '{{ csrf_token() }}');
-                formData.append('column', details.column);
-                formData.append('row', details.row);
-                formData.append('project', details.project);
-                formData.append('filename', details.filename);
-                formData.append('item_image_id', details.item_image_id);
-
-                if (typeof (FileReader) != "undefined") {
-                    var reader = new FileReader();
-                    reader.onload = function (e) {
-                        $('#' + details.item_image_id + '-actual').removeClass('d-none');
-                        $('#' + details.item_image_id).addClass('d-none');
-                        $('#' + details.item_image_id + '-image').attr('src', e.target.result);
-                        $('#' + details.item_image_id + '-print-image').attr('src', e.target.result);
-                    }
-                    reader.readAsDataURL(input.files[0]);
-                    uploadData(formData);
-                } else {
-                    showNotification("danger", "This browser does not support FileReader.", "fa fa-info");
-                }
-            }
-        }
-           
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
-
-        function uploadData(formdata){
-            // $.ajax({
-            //     url: '/upload_image',
-            //     type: 'POST',
-            //     data: formdata,
-            //     contentType: false,
-            //     processData: false,
-            //     dataType: 'json',
-            //     success: function(response){
-            //         if(response.status == 0){
-            //             showNotification("danger", response.message, "fa fa-info");
-            //         }else{
-            //             $('#' + response.data.item_image_id + '-actual').removeClass('d-none');
-            //             $('#' + response.data.item_image_id).addClass('d-none');
-            //             $('#' + response.data.item_image_id + '-print-image').removeClass('d-none');
-            //         }
-            //     },
-            //     error: function(jqXHR, textStatus, errorThrown) {
-            //         showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-            //     }
-            // });
         }
     });
 </script>

@@ -20,6 +20,8 @@ Route::post('/U_login_user', 'ItemAttributeController@login');
 Route::group(['middleware' => 'auth'], function(){
     // standard product brochure printing
     Route::get('/generate_brochure', 'BrochureController@generateBrochure');
+    Route::post('/upload_image_for_standard_brochure', 'BrochureController@uploadImageForStandard');
+    
     // routes for item attribute updating
     Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
     Route::get('/search', 'ItemAttributeController@item_attribute_search');
