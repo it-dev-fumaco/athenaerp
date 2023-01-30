@@ -44,6 +44,7 @@
                                                 $img1_actual = null;
                                                 $img1_temp = 'd-none';
                                                 $img1_src = asset($images['image1']['filepath']);
+                                                $img1_id = $images['image1']['id'];
                                             } else {
                                                 $img1_actual = 'd-none';
                                                 $img1_temp = null;
@@ -54,6 +55,7 @@
                                                 $img2_actual = null;
                                                 $img2_temp = 'd-none';
                                                 $img2_src = asset($images['image2']['filepath']);
+                                                $img2_id = $images['image2']['id'];
                                             } else {
                                                 $img2_actual = 'd-none';
                                                 $img2_temp = null;
@@ -64,6 +66,7 @@
                                                 $img3_actual = null;
                                                 $img3_temp = 'd-none';
                                                 $img3_src = asset($images['image3']['filepath']);
+                                                $img3_id = $images['image3']['id'];
                                             } else {
                                                 $img3_actual = 'd-none';
                                                 $img3_temp = null;
@@ -74,7 +77,7 @@
                                             <img src="{{ $img1_src }}" width="230" style="border: 2px solid;" id="item-01-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-01">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-01" data-id="{{ $img1_id }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -92,7 +95,7 @@
                                             <img src="{{ $img2_src }}" width="230" style="border: 2px solid;" id="item-02-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-02">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-02" data-id="{{ $img2_id }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -110,7 +113,7 @@
                                             <img src="{{ $img3_src }}" width="230" style="border: 2px solid;" id="item-03-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-03">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-03" data-id="{{ $img3_id }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -638,29 +641,27 @@
 
             var el = $(this);
             var details = {
-                
+                'id': $(this).data('id'),
                 'item_image_id': $(this).data('item-image-id'),
+                '_token': '{{ csrf_token() }}'
             }
 
-            console.log(details)
-
-            // $.ajax({
-            //     url: '/remove_image',
-            //     type: 'POST',
-            //     data: details,
-            //     success: function(response){
-            //         if(response.status == 0){
-            //             showNotification("danger", response.message, "fa fa-info");
-            //         }else{
-            //             $('#' + details.item_image_id + '-actual').addClass('d-none');
-            //             $('#' + details.item_image_id).removeClass('d-none');
-            //             $('#' + details.item_image_id + '-print-image').addClass('d-none');
-            //         }
-            //     },
-            //     error: function(jqXHR, textStatus, errorThrown) {
-            //         showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-            //     }
-            // });
+            $.ajax({
+                url: '/remove_image',
+                type: 'POST',
+                data: details,
+                success: function(response){
+                    if(response.status == 0){
+                        showNotification("danger", response.message, "fa fa-info");
+                    }else{
+                        $('#' + details.item_image_id + '-actual').addClass('d-none');
+                        $('#' + details.item_image_id).removeClass('d-none');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                }
+            });
         });
 
         $(document).on('click', '#print-btn', function(e){

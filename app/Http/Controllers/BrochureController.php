@@ -379,7 +379,16 @@ class BrochureController extends Controller
 	}
 
 	public function removeImage(Request $request) {
+		DB::beginTransaction();
 		try {
+			if ($request->id) {
+				DB::table('tabItem Brochure Image')->where('name', $request->id)->delete();
+
+				DB::commit();
+
+				return response()->json(['status' => 1, 'message' => 'Image removed.']);
+			}
+
 			$folder = $request->project;
 			$dir = $request->filename;
 
@@ -407,8 +416,12 @@ class BrochureController extends Controller
 			$writer = new WriterXlsx($spreadsheet);
 			$writer->save($excel_file);
 
+			DB::commit();
+
 			return response()->json(['status' => 1, 'message' => 'Image removed.']);
 		}catch (Exception $e){
+			DB::rollback();
+
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 		}
 	}
@@ -555,7 +568,5 @@ class BrochureController extends Controller
 
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 		}
-	}
-
 	}
 }

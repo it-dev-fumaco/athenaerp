@@ -1110,7 +1110,7 @@
 			<div class="modal-dialog modal-xl">
 		  		<div class="modal-content">
 					<div class="modal-header">
-						<h5 class="modal-title">Print Product Brochure</h5>
+						<h5 class="modal-title">Input Details</h5>
 			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
 					</div>
 					<div class="modal-body">
@@ -1140,14 +1140,14 @@
 								</div>
 								<div class="form-group">
 									<label for="brochure-location">Location</label>
-									<textarea name="location" id="brochure-location" rows="2" class="form-control"></textarea>
+									<input type="text" class="form-control" id="brochure-location" name="location">
 								</div>
 							</div>
 						</div>
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> CONFIRM</button>
+						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> GENERATE BROCHURE</button>
 					</div>
 				</div>
 			</div>
