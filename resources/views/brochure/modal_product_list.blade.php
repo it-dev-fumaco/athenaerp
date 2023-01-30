@@ -18,11 +18,9 @@
             @foreach ($content as $row)
                 @php
                     $attributes = isset($row['attrib']) ? $row['attrib'] : [];
+                    $checker = isset($row['attributes']) ? collect($row['attributes'])->pluck('attribute_value')->filter()->values()->all() : [];
 
-                    $is_empty = 0;
-                    foreach($attributes as $col => $value){
-                        $is_empty = $value ? 0 : 1;
-                    }
+                    $is_empty = $checker ? 0 : 1;
 
                     if(!$is_empty){
                         $generated_count += 1;

@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Storage;
 use DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BrochureController extends Controller
 {
@@ -136,7 +137,7 @@ class BrochureController extends Controller
         }
 	}
 
-	public function previewBrochure($project, $filename) {
+	public function previewBrochure(Request $request, $project, $filename) {
 		$file = storage_path('app/public/brochures/'. $project .'/'. $filename);
 
 		if(!Storage::disk('public')->exists('/brochures/'. $project .'/'. $filename)){
@@ -145,9 +146,31 @@ class BrochureController extends Controller
 
 		$file_contents = $this->readFile($file);
 
-		$content = $file_contents['content'];
+		$content = collect($file_contents['content'])->map(function ($q){
+			if($q['id'] && collect($q['attributes'])->pluck('attribute_value')->filter()->values()->all()){
+				return $q;
+			}
+		})->filter()->values()->all();
 		$project = $file_contents['project'];
 		$table_of_contents = $file_contents['table_of_contents'];
+
+		if(isset($request->pdf) && $request->pdf){
+			$storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
+
+			$series = null;
+			if($storage){
+				$series = count($storage) > 1 ? count($storage) : 1;
+				$series = '-'.(string)$series;
+			}
+
+			$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d').$series;
+
+			$pdf = Pdf::setOption([
+				'fontDir' => public_path('/font/Poppins'),
+				'fontCache' => public_path('/font/Poppins')
+			])->loadView('brochure.pdf', compact('content', 'table_of_contents', 'project', 'filename'));
+			return $pdf->stream($new_filename.'.pdf');
+		}
 
 		return view('brochure.print_preview', compact('content', 'table_of_contents', 'project', 'filename'));
 	}
