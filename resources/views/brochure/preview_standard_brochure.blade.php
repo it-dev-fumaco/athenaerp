@@ -1,20 +1,14 @@
-@extends('layout', [
-    'namePage' => 'Product Brochure',
-    'activePage' => 'item_profile',
-])
-
-@section('content')
 <div class="container-fluid p-0 m-0">
     <div class="row m-0 p-0">
         <div class="col-md-12 p-0 m-0">
-            <div id="top-btn-container">
+            {{-- <div id="top-btn-container">
                 <button class="btn-ctrl" id="print-btn" style="display: block;"><i class="fas fa-print"></i></button>
-            </div>
-            <div id="top-left-btn-container">
+            </div> --}}
+            {{-- <div id="top-left-btn-container">
                 <a href="get_item_details/{{ $data['item_code'] }}" style="padding: 8px 10px 8px 10px !important; border-radius: 5px; background-color: #f8f9f9; font-size: 20px; border: 1px solid #d6dbdf; color:#999a9c; cursor: pointer;">
                     <i class="fas fa-arrow-circle-left"></i> Back
                 </a>
-            </div>
+            </div> --}}
             <div id="print-area">
                 <div class="page-container d-print-none" style="padding: 15px 0 15px 0 !important; background: #E6E6E6;">
                     <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
@@ -244,13 +238,13 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Add Image</h4>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close close-modal" data-target="#select-file-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="item-image-container-id">
                 <ul class="nav nav-pills ml-auto p-2">
-                    <li class="nav-item"><a class="nav-link active" href="#tab_1" data-toggle="tab">Upload File</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#tab_2" data-toggle="tab">Select from current images</a></li>
+                    <li class="nav-item"><a class="nav-link tab-ctrl active" href="#" data-target="#tab_1" data-toggle="tab" data-parent="#select-file-modal">Upload File</a></li>
+                    <li class="nav-item"><a class="nav-link tab-ctrl" href="#" data-target="#tab_2" data-toggle="tab" data-parent="#select-file-modal">Select from current images</a></li>
                 </ul>
                 <div class="tab-content" style="min-height: 300px;">
                     <div class="tab-pane active" id="tab_1">
@@ -325,9 +319,9 @@
         font-family: 'Poppins' !important;
     }
     #top-btn-container{
-        position: fixed;
+        position: relative;
         right: 25px;
-        top: 60px;
+        top: 120px;
     }
     #top-left-btn-container {
         position: fixed;
@@ -548,9 +542,6 @@
         }
     }
 </style>
-@endsection
-@section('script')
-<script type="text/javascript" src="{{  asset('js/printThis.js') }}"></script>
 <script>
     $(document).ready(function (){
         $.ajaxSetup({
@@ -690,4 +681,3 @@
         }
     });
 </script>
-@endsection

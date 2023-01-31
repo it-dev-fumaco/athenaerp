@@ -169,7 +169,7 @@ class BrochureController extends Controller
 			$pdf = Pdf::setOption([
 				'fontDir' => public_path('/font/Poppins'),
 				'fontCache' => public_path('/font/Poppins')
-			])->loadView('brochure.pdf', compact('content', 'table_of_contents', 'project', 'filename'));
+			])->loadView('brochure.pdf', compact('content', 'project', 'filename'));
 			return $pdf->stream($new_filename.'.pdf');
 		}
 
@@ -428,7 +428,7 @@ class BrochureController extends Controller
 
 	public function generateBrochure(Request $request) {
 		$data = $request->all();
-		
+
 		$attributes = DB::table('tabItem Variant Attribute as variant')
 			->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
 			->where('variant.parent', $data['item_code'])

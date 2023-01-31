@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c
+class ComposerStaticInitdaa086bf3b9ce239a916db2423529e56
 {
     public static $files = array (
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
@@ -32,9 +32,9 @@ class ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c
         'f0906e6318348a765ffb6eb24e0d0938' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Foundation/helpers.php',
         '58571171fd5812e6e447dce228f52f4d' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/helpers.php',
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
-        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
         '9cdd7b9056abc3081735233ba9dd9c7f' => __DIR__ . '/..' . '/facade/flare-client-php/src/helpers.php',
+        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         'ed962a97bd972bc82007176b647d4e36' => __DIR__ . '/..' . '/facade/ignition/src/helpers.php',
     );
@@ -346,8 +346,8 @@ class ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -597,13 +597,13 @@ class ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c
         'App\\LdapClasses\\Collections\\adLDAPUserCollection' => __DIR__ . '/../..' . '/app/LdapClasses/Collections/adLDAPUserCollection.php',
         'App\\LdapClasses\\adLDAP' => __DIR__ . '/../..' . '/app/LdapClasses/adLDAP.php',
         'App\\Mail\\StockTransfersNotification' => __DIR__ . '/../..' . '/app/Mail/StockTransfersNotification.php',
+        'App\\Models\\StockReservation' => __DIR__ . '/../..' . '/app/Models/StockReservation.php',
+        'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\AuthServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AuthServiceProvider.php',
         'App\\Providers\\BroadcastServiceProvider' => __DIR__ . '/../..' . '/app/Providers/BroadcastServiceProvider.php',
         'App\\Providers\\EventServiceProvider' => __DIR__ . '/../..' . '/app/Providers/EventServiceProvider.php',
         'App\\Providers\\RouteServiceProvider' => __DIR__ . '/../..' . '/app/Providers/RouteServiceProvider.php',
-        'App\\StockReservation' => __DIR__ . '/../..' . '/app/StockReservation.php',
-        'App\\User' => __DIR__ . '/../..' . '/app/User.php',
         'Asm89\\Stack\\Cors' => __DIR__ . '/..' . '/asm89/stack-cors/src/Cors.php',
         'Asm89\\Stack\\CorsService' => __DIR__ . '/..' . '/asm89/stack-cors/src/CorsService.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
@@ -6330,10 +6330,10 @@ class ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit11a2c20b3392fd5b8eca68bcc42bd84c::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitdaa086bf3b9ce239a916db2423529e56::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitdaa086bf3b9ce239a916db2423529e56::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitdaa086bf3b9ce239a916db2423529e56::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitdaa086bf3b9ce239a916db2423529e56::$classMap;
 
         }, null, ClassLoader::class);
     }

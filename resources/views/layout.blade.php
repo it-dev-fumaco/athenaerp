@@ -460,6 +460,10 @@
 		.vertically-align-element{
 			display: flex; justify-content: center; align-items: center;
 		}
+
+		.modal{
+			background-color: rgba(0,0,0,0.4);
+		}
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
@@ -1105,54 +1109,83 @@
 	</div>
 
 	<div class="modal fade" id="print-brochure-modal">
-		<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
-			<input type="hidden" id="brochure-item-code" name="item_code">
-			<div class="modal-dialog modal-xl">
-		  		<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">Input Details</h5>
-			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-					<div class="modal-body">
-						<div class="row p-0 m-0">
-							<div class="col-6">
-								<div class="form-group">
-									<label for="brochure-project-name">Project Name</label>
-									<input type="text" class="form-control" id="brochure-project-name" name="project">
+		<div class="modal-dialog" style="max-width: 90% !important">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Preview Brochure</h5>
+					<button type="button" class="close close-modal" data-target="#print-brochure-modal">&times;</button>
+				</div>
+				<div class="modal-body">
+					<div class="row p-0 m-0">
+						<div class="col-4">
+							<ul class="nav nav-pills ml-auto p-2">
+								<li class="nav-item"><a class="nav-link tab-ctrl active" href="#" data-target="#preview_tab_1" data-parent="#print-brochure-modal">Input Details</a></li>
+								<li class="nav-item"><a class="nav-link tab-ctrl" href="#" data-target="#preview_tab_2" data-parent="#print-brochure-modal">Attributes</a></li>
+							</ul>
+							<div class="tab-content">
+								<div class="tab-pane active" id="preview_tab_1">
+									<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
+										<input type="hidden" id="brochure-item-code" name="item_code">
+										<div class="form-group">
+											<label for="brochure-project-name">Project Name</label>
+											<input type="text" class="form-control" id="brochure-project-name" name="project">
+										</div>
+										<div class="form-group">
+											<label for="brochure-item-name">Item Name</label>
+											<input type="text" class="form-control" id="brochure-item-name" name="item_name">
+										</div>
+										<div class="form-group">
+											<label for="brochure-description">Description</label>
+											<textarea name="description" id="brochure-description" rows="3" class="form-control"></textarea>
+										</div>
+										<div class="form-group">
+											<label for="brochure-customer-name">Customer Name</label>
+											<input type="text" class="form-control" id="brochure-customer-name" name="customer">
+										</div>
+										<div class="form-group">
+											<label for="brochure-reference">Fitting Type / Reference</label>
+											<input type="text" class="form-control" id="brochure-reference" name="reference">
+										</div>
+										<div class="form-group">
+											<label for="brochure-location">Location</label>
+											<input type="text" class="form-control" id="brochure-location" name="location">
+										</div>
+									</form>
 								</div>
-								<div class="form-group">
-									<label for="brochure-item-name">Item Name</label>
-									<input type="text" class="form-control" id="brochure-item-name" name="item_name">
-								</div>
-								<div class="form-group">
-									<label for="brochure-description">Description</label>
-									<textarea name="description" id="brochure-description" rows="3" class="form-control"></textarea>
-								</div>
-							</div>
-							<div class="col-6">
-								<div class="form-group">
-									<label for="brochure-customer-name">Customer Name</label>
-									<input type="text" class="form-control" id="brochure-customer-name" name="customer">
-								</div>
-								<div class="form-group">
-									<label for="brochure-reference">Fitting Type / Reference</label>
-									<input type="text" class="form-control" id="brochure-reference" name="reference">
-								</div>
-								<div class="form-group">
-									<label for="brochure-location">Location</label>
-									<input type="text" class="form-control" id="brochure-location" name="location">
+								<div class="tab-pane" id="preview_tab_2">
+									Attributes
 								</div>
 							</div>
 						</div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-						<button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> GENERATE BROCHURE</button>
+						<div id="preview-brochure-container" class="col-8 overflow-auto" style="height: 75vh;"></div>
 					</div>
 				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+					<button type="button" class="btn btn-primary generate-brochure-btn"><i class="fa fa-check"></i> GENERATE BROCHURE</button>
+				</div>
 			</div>
-		</form>
+		</div>
 	</div>
+
+	{{-- <div class="modal fade" id="preview-brochure-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-xlg" role="document" style="max-width: 90% !important">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="exampleModalLabel">Preview</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div id="preview-brochure-container" class="overflow-auto" style="height: 75vh;"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary">Print</button>
+				</div>
+			</div>
+		</div>
+	</div> --}}
 
   <!-- Main Footer -->
   <footer class="main-footer font-responsive">
@@ -1209,7 +1242,69 @@
 				$('#brochure-description').val(product_description);
 
 				$('#print-brochure-modal').modal('show');
+
+				$('#preview-brochure-container').html('<div class="overlay-wrapper">' +
+				'<div class="overlay">' +
+					'<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
+				'</div>' +
+				'</div>');
+
+				// $('#generate-brochure-btn').attr('disabled', true);
+
+				$.ajax({
+					type: 'GET',
+					url: '/generate_brochure',
+					data: $('#generate-brochure-form').serialize(),
+					success: function(response){
+						// $('#generate-brochure-btn').attr('disabled', false);
+						$('#preview-brochure-container').html(response);
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
 			});
+
+			$(document).on('click', '.tab-ctrl', function (e){
+				e.preventDefault();
+				$($(this).data('parent') + ' .tab-pane').removeClass('active');
+				$($(this).data('parent') + ' .tab-ctrl').removeClass('active');
+				$(this).addClass('active');
+				$($(this).data('parent') + ' ' + $(this).data('target')).addClass('active');
+			});
+
+			// $(document).on('click', '.generate-brochure-btn', function (e){
+			// 	e.preventDefault();
+
+			// 	$('#preview-brochure-modal').modal('show');
+			// 	$('#preview-brochure-container').html('<div class="overlay-wrapper">' +
+			// 	'<div class="overlay">' +
+			// 		'<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
+			// 	'</div>' +
+			// 	'</div>');
+
+			// 	$('#generate-brochure-btn').attr('disabled', true);
+
+			// 	$.ajax({
+			// 		type: 'GET',
+			// 		url: '/generate_brochure',
+			// 		data: $('#generate-brochure-form').serialize(),
+			// 		success: function(response){
+			// 			$('#generate-brochure-btn').attr('disabled', false);
+			// 			$('#preview-brochure-container').html(response);
+			// 		},
+			// 		error: function(jqXHR, textStatus, errorThrown) {
+			// 		}
+			// 	});
+			// });
+
+			$(document).on('click', '.close-modal', function (e){
+				e.preventDefault();
+				close_modal($(this).data('target'));
+			});
+
+			function close_modal(modal){
+				$(modal).modal('hide');
+			}
 			
 			$(document).on('click', '.create-mr-btn', function(e){
 				e.preventDefault();
