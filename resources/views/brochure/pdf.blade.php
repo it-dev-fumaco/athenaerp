@@ -134,9 +134,19 @@
                 <div style="width: 240px !important;">
                     @for ($i = 1; $i <= 3; $i++)
                         @php
-                            $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? public_path('storage/brochures/'.$row['images']['image'.$i]) : null;
+                            $img = null;
+                            $img_exists = 0;
+                            if (isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
+                                if (isset($is_standard) && $is_standard) {
+                                    $img = isset($row['images']['image'.$i]['filepath']) ? public_path($row['images']['image'.$i]['filepath']) : null;
+                                    $img_exists = \Storage::disk('public')->exists(str_replace('storage/', null, $row['images']['image'.$i]['filepath'])) ? 1 : 0;
+                                }else{
+                                    $img = public_path('storage/brochures/'.$row['images']['image'.$i]);
+                                    $img_exists = \Storage::disk('public')->exists('brochures/'.$row['images']['image'.$i]) ? 1 : 0;
+                                }
+                            }
                         @endphp
-                        @if ($img && \Storage::disk('public')->exists('brochures/'.$row['images']['image'.$i]))
+                        @if ($img && $img_exists)
                             <img src="{{ $img }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important;">
                         @endif
                     @endfor

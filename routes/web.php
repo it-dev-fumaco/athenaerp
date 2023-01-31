@@ -255,5 +255,6 @@ Route::get('/brochure', 'BrochureController@viewForm')->name('brochure');
 Route::post('/read_file', 'BrochureController@readExcelFile');
 Route::post('/upload_image', 'BrochureController@uploadImage');
 Route::get('/preview/{project}/{filename}', 'BrochureController@previewBrochure');
+Route::get('/preview_standard', 'BrochureController@previewStandardBrochure');
 Route::get('/download/{project}/{filename}', 'BrochureController@downloadBrochure');
 Route::post('/remove_image', 'BrochureController@removeImage');
