@@ -391,32 +391,35 @@ class BrochureController extends Controller
 
 			$folder = $request->project;
 			$dir = $request->filename;
+			$loc = $folder && $dir ? strtoupper($folder).'/'.$dir : null;
 
-			$excel_file = storage_path('/app/public/brochures/'.strtoupper($folder).'/'. $dir);
-					
-			$reader = new ReaderXlsx();
-			$spreadsheet = $reader->load($excel_file);
-			$sheet = $spreadsheet->getActiveSheet();
-			// Get the highest row and column numbers referenced in the worksheet
-			$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
-			$highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
+			if($loc && Storage::disk('public')->exists('brochures/'.$loc)){
+				$excel_file = storage_path('/app/public/brochures/'.$loc);
+						
+				$reader = new ReaderXlsx();
+				$spreadsheet = $reader->load($excel_file);
+				$sheet = $spreadsheet->getActiveSheet();
+				// Get the highest row and column numbers referenced in the worksheet
+				$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
+				$highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
 
-			$row = $request->row;
-			$column = null;
-			for ($col = 1; $col <= $highestColumnIndex; $col++) {
-				$value = $sheet->getCellByColumnAndRow($col, 4)->getValue();
-				if ($value == $request->column) {
-					$column = $col;
-					break;
+				$row = $request->row;
+				$column = null;
+				for ($col = 1; $col <= $highestColumnIndex; $col++) {
+					$value = $sheet->getCellByColumnAndRow($col, 4)->getValue();
+					if ($value == $request->column) {
+						$column = $col;
+						break;
+					}
 				}
+				
+				$sheet->setCellValueByColumnAndRow($column, $row, null);
+
+				$writer = new WriterXlsx($spreadsheet);
+				$writer->save($excel_file);
+
+				DB::commit();
 			}
-			
-			$sheet->setCellValueByColumnAndRow($column, $row, null);
-
-			$writer = new WriterXlsx($spreadsheet);
-			$writer->save($excel_file);
-
-			DB::commit();
 
 			return response()->json(['status' => 1, 'message' => 'Image removed.']);
 		}catch (Exception $e){

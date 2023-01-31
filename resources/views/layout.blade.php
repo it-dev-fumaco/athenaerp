@@ -1112,18 +1112,18 @@
 		<div class="modal-dialog" style="max-width: 90% !important">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">Preview Brochure</h5>
+					<h5 class="modal-title">Preview Brochure - <span id="br-item-code"></span></h5>
 					<button type="button" class="close close-modal" data-target="#print-brochure-modal">&times;</button>
 				</div>
 				<div class="modal-body">
 					<div class="row p-0 m-0">
 						<div class="col-4">
 							<ul class="nav nav-pills ml-auto p-2">
-								<li class="nav-item"><a class="nav-link tab-ctrl active" href="#" data-target="#preview_tab_1" data-parent="#print-brochure-modal">Input Details</a></li>
-								<li class="nav-item"><a class="nav-link tab-ctrl" href="#" data-target="#preview_tab_2" data-parent="#print-brochure-modal">Attributes</a></li>
+								<li class="nav-item"><a class="nav-link print-brochure-tab tab-ctrl active" href="#" data-target="#preview_tab_1" data-tab=".print-brochure-tab">Input Details</a></li>
+								<li class="nav-item"><a class="nav-link print-brochure-tab tab-ctrl" href="#" data-target="#preview_tab_2" data-tab=".print-brochure-tab">Attributes</a></li>
 							</ul>
 							<div class="tab-content">
-								<div class="tab-pane active" id="preview_tab_1">
+								<div class="tab-pane print-brochure-tab active" id="preview_tab_1">
 									<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
 										<input type="hidden" id="brochure-item-code" name="item_code">
 										<div class="form-group">
@@ -1151,13 +1151,16 @@
 											<input type="text" class="form-control" id="brochure-location" name="location">
 										</div>
 									</form>
+									<center>
+										<button type="button" class="btn btn-primary mt-2" id="save-brochure">Preview Changes</button>
+									</center>
 								</div>
-								<div class="tab-pane" id="preview_tab_2">
+								<div class="tab-pane print-brochure-tab" id="preview_tab_2">
 									Attributes
 								</div>
 							</div>
 						</div>
-						<div id="preview-brochure-container" class="col-8 overflow-auto" style="height: 75vh;"></div>
+						<div id="preview-brochure-container" class="col-8 overflow-auto" style="height: auto !important;"></div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -1167,25 +1170,6 @@
 			</div>
 		</div>
 	</div>
-
-	{{-- <div class="modal fade" id="preview-brochure-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-xlg" role="document" style="max-width: 90% !important">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="exampleModalLabel">Preview</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<div class="modal-body">
-					<div id="preview-brochure-container" class="overflow-auto" style="height: 75vh;"></div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-primary">Print</button>
-				</div>
-			</div>
-		</div>
-	</div> --}}
 
   <!-- Main Footer -->
   <footer class="main-footer font-responsive">
@@ -1238,65 +1222,46 @@
 				var product_description = $(this).data('item-description');
 
 				$('#brochure-item-code').val(product_code);
+				$('#br-item-code').text(product_code);
 				$('#brochure-item-name').val(product_name);
 				$('#brochure-description').val(product_description);
 
 				$('#print-brochure-modal').modal('show');
+				generate_brochure();
+			});
 
+			$(document).on('click', '#save-brochure', function (e){
+				e.preventDefault();
+				generate_brochure();
+			});
+
+			function generate_brochure(){
 				$('#preview-brochure-container').html('<div class="overlay-wrapper">' +
-				'<div class="overlay">' +
-					'<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
-				'</div>' +
+					'<div class="overlay">' +
+						'<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
+					'</div>' +
 				'</div>');
-
-				// $('#generate-brochure-btn').attr('disabled', true);
 
 				$.ajax({
 					type: 'GET',
 					url: '/generate_brochure',
 					data: $('#generate-brochure-form').serialize(),
 					success: function(response){
-						// $('#generate-brochure-btn').attr('disabled', false);
 						$('#preview-brochure-container').html(response);
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
 					}
 				});
-			});
+			}
 
 			$(document).on('click', '.tab-ctrl', function (e){
 				e.preventDefault();
-				$($(this).data('parent') + ' .tab-pane').removeClass('active');
-				$($(this).data('parent') + ' .tab-ctrl').removeClass('active');
+				console.log($(this).data('target'));
+				$($(this).data('tab')).removeClass('active');
 				$(this).addClass('active');
-				$($(this).data('parent') + ' ' + $(this).data('target')).addClass('active');
+				$($(this).data('target')).addClass('active');
 			});
-
-			// $(document).on('click', '.generate-brochure-btn', function (e){
-			// 	e.preventDefault();
-
-			// 	$('#preview-brochure-modal').modal('show');
-			// 	$('#preview-brochure-container').html('<div class="overlay-wrapper">' +
-			// 	'<div class="overlay">' +
-			// 		'<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
-			// 	'</div>' +
-			// 	'</div>');
-
-			// 	$('#generate-brochure-btn').attr('disabled', true);
-
-			// 	$.ajax({
-			// 		type: 'GET',
-			// 		url: '/generate_brochure',
-			// 		data: $('#generate-brochure-form').serialize(),
-			// 		success: function(response){
-			// 			$('#generate-brochure-btn').attr('disabled', false);
-			// 			$('#preview-brochure-container').html(response);
-			// 		},
-			// 		error: function(jqXHR, textStatus, errorThrown) {
-			// 		}
-			// 	});
-			// });
-
+			
 			$(document).on('click', '.close-modal', function (e){
 				e.preventDefault();
 				close_modal($(this).data('target'));
@@ -1887,7 +1852,11 @@
 			});
 
 			$('.modal').on("hidden.bs.modal", function () {
-				$(this).find('form')[0].reset();
+				$($(this).find('form')[0]).each(function (i, q){
+					if(q.id != 'generate-brochure-form'){
+						q.reset();
+					}
+				});
 				$('.for-in-house-type').addClass('d-none');
 				$('.for-online-shop-type').addClass('d-none');
 				$('.for-consignment').addClass('d-none');

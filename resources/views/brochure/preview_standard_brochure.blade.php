@@ -243,11 +243,11 @@
             <div class="modal-body">
                 <input type="hidden" id="item-image-container-id">
                 <ul class="nav nav-pills ml-auto p-2">
-                    <li class="nav-item"><a class="nav-link tab-ctrl active" href="#" data-target="#tab_1" data-toggle="tab" data-parent="#select-file-modal">Upload File</a></li>
-                    <li class="nav-item"><a class="nav-link tab-ctrl" href="#" data-target="#tab_2" data-toggle="tab" data-parent="#select-file-modal">Select from current images</a></li>
+                    <li class="nav-item"><a class="nav-link select-file-tab tab-ctrl active" href="#" data-target="#file_tab_1" data-toggle="tab" data-tab=".select-file-tab">Upload File</a></li>
+                    <li class="nav-item"><a class="nav-link select-file-tab tab-ctrl" href="#" data-target="#file_tab_2" data-toggle="tab" data-tab=".select-file-tab">Select from current images</a></li>
                 </ul>
                 <div class="tab-content" style="min-height: 300px;">
-                    <div class="tab-pane active" id="tab_1">
+                    <div class="tab-pane select-file-tab active" id="file_tab_1">
                         <form id="image-upload-form" method="POST" action="/upload_image_for_standard_brochure" autocomplete="off" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" id="item-image-order" name="image_idx">
@@ -274,7 +274,7 @@
                             </div>
                         </form>
                     </div>
-                    <div class="tab-pane" id="tab_2">
+                    <div class="tab-pane select-file-tab" id="file_tab_2">
                         <form id="image-upload-form-1" action="/upload_image_for_standard_brochure" method="POST" autocomplete="off">
                             @csrf
                             <input type="hidden" id="item-image-order-1" name="image_idx">
@@ -575,7 +575,6 @@
         });
 
         $(document).on('hidden.bs.modal', '.modal', function () {
-            $(this).find('form')[0].reset();
             $('#img-preview').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
             $('#browse-file-text').text('Browse File');
         });
