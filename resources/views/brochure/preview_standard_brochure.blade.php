@@ -281,31 +281,40 @@
                             <input type="hidden" name="project" value="{{ $data['project'] }}">
                             <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
                             <input type="hidden" name="existing" value="1">
-                            <div class="row p-2 mt-3">
-                                @foreach ($current_images as $cii)
-                                @php
-                                    $img = $cii['filepath'];
-                                    $img_webp = explode('.', $img)[0].'.webp';
-                                @endphp
-                                <div class="col-3">
-                                    <label class="m-0 img-btn d-block">
-                                        <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>
-                                        <div class="c-img rounded">
-                                            <picture>
-                                                <source srcset="{{ asset('storage/'.$img_webp) }}" type="image/webp" alt="{{ $img }}">
-                                                <source srcset="{{ asset('storage/'.$img) }}" type="image/jpeg" alt="{{ $img }}">
-                                                <img src="{{ asset('storage/'.$img) }}" alt="{{ $img }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
-                                            </picture>
+                            @if ($img_check)
+                                <div class="row p-2 mt-3">
+                                    @foreach ($current_images as $cii)
+                                        @php
+                                            $img = $cii['filepath'];
+                                            $img_webp = explode('.', $img)[0].'.webp';
+                                        @endphp
+                                        <div class="col-3">
+                                            <label class="m-0 img-btn d-block">
+                                                <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>
+                                                <div class="c-img rounded">
+                                                    <picture>
+                                                        <source srcset="{{ asset('storage/'.$img_webp) }}" type="image/webp" alt="{{ $img }}">
+                                                        <source srcset="{{ asset('storage/'.$img) }}" type="image/jpeg" alt="{{ $img }}">
+                                                        <img src="{{ asset('storage/'.$img) }}" alt="{{ $img }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
+                                                    </picture>
+                                                </div>
+                                            </label>
                                         </div>
-                                    </label>
+                                    @endforeach
                                 </div>
-                                @endforeach
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-4 offset-4 text-center">
-                                    <button class="btn btn-primary" type="submit">Upload Selected Image</button>
+
+                                <div class="row mt-3">
+                                    <div class="col-4 offset-4 text-center">
+                                        <button class="btn btn-primary" type="submit">Upload Selected Image</button>
+                                    </div>
                                 </div>
-                            </div>
+                            @else
+                                <div class="row mt-3">
+                                    <div class="col-4 offset-4 text-center">
+                                        No image(s) found.
+                                    </div>
+                                </div>
+                            @endif
                         </form>
                     </div>
                 </div>

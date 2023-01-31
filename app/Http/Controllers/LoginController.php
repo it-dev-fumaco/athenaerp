@@ -23,6 +23,8 @@ class LoginController extends Controller
                 'email' => 'required'
             );
 
+            $email = str_contains($request->email, '@fumaco.local') ? $request->email : $request->email.'@fumaco.local';
+
             $validator = Validator::make($request->all(), $rules);
 
             // if the validator fails, redirect back to the form
@@ -31,11 +33,11 @@ class LoginController extends Controller
                     ->withInput($request->except('password'));
             }else{
                 $adldap = new adLDAP();
-                $authUser = $adldap->user()->authenticate($request->email, $request->password);
+                $authUser = $adldap->user()->authenticate(str_replace('@fumaco.local', null, $email), $request->password);
 
                 if($authUser == true){
-                    $user = DB::table('tabWarehouse Users')->where('wh_user', $request->email . '@fumaco.local')->first();
-                    
+                    $user = DB::table('tabWarehouse Users')->where('wh_user', $email)->first();
+
                     if ($user) {
                         // attempt to do the login
                         if($user->enabled){

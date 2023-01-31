@@ -483,7 +483,47 @@ class BrochureController extends Controller
 			$images['image3']['filepath'] = explode(".", $images['image3'])[0] . '.webp';
 		}
 
-		return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'current_images'));
+		if(isset($request->pdf) && $request->pdf){
+			$new_filename = Str::slug($request->item_name, '-').'-'.Carbon::now()->format('Y-m-d');
+			$project = $request->project;
+			$filename = $request->filename;
+
+			$attrib = [];
+			foreach ($attributes as $att) {
+				$attrib[$att->attribute] = $att->attribute_value;
+				$attributes_arr[] = [
+					'attribute_name' => $att->attr_name ? $att->attr_name : $att->attribute,
+					'attribute_value' => $att->attribute_value
+				];
+			}
+
+			$content[0] = [
+				'id' => Str::slug($request->item_name, '-'),
+				'row' => 1,
+				'project' => $request->project,
+				'item_name' => $request->item_name,
+				'images' => $images,
+				'reference' => $request->reference,
+				'description' => $request->description,
+				'location' => $request->location,
+				'attributes' => $attributes_arr,
+				'attrib' => $attrib
+			];
+
+			$is_standard = true;
+
+			$pdf = Pdf::setOption([
+				'fontDir' => public_path('/font/Poppins'),
+				'fontCache' => public_path('/font/Poppins')
+			])->loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard'));
+			return $pdf->stream($new_filename.'.pdf');
+		}
+
+		$img_check = collect($current_images)->map(function ($q){
+			return Storage::disk('public')->exists($q['filepath']) ? 1 : 0;
+		})->max();
+
+		return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'current_images', 'img_check'));
 	}
 
 	public function uploadImageForStandard(Request $request) {
