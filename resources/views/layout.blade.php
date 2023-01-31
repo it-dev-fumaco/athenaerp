@@ -1113,54 +1113,65 @@
 			<div class="modal-content">
 				<div class="modal-body">
 					<div class="row p-0 m-0">
-						<div class="col-3">
+						<div class="col-4">
 							<div class="pt-2 pb-2 pl-0 pr-0">
 								<h5 class="modal-title">Preview Brochure - <span id="br-item-code"></span></h5>
 							</div>
 							<hr>
-							<ul class="nav nav-pills ml-auto p-2">
-								<li class="nav-item"><a class="nav-link print-brochure-tab tab-ctrl active" href="#" data-target="#preview_tab_1" data-tab=".print-brochure-tab">Input Details</a></li>
-								<li class="nav-item"><a class="nav-link print-brochure-tab tab-ctrl" href="#" data-target="#preview_tab_2" data-tab=".print-brochure-tab">Attributes</a></li>
+							<ul class="nav nav-pills ml-auto p-1">
+								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl active" href="#" data-target="#preview_tab_1" data-tab=".print-brochure-tab">Input Details</a></li>
+								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl" href="#" data-target="#preview_tab_2" data-tab=".print-brochure-tab">Edit Attributes</a></li>
 							</ul>
-							<div class="tab-content">
-								<div class="tab-pane print-brochure-tab active" id="preview_tab_1">
-									<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
-										<input type="hidden" id="brochure-item-code" name="item_code">
-										<div class="form-group">
-											<label for="brochure-project-name">Project Name</label>
-											<input type="text" class="form-control" id="brochure-project-name" name="project">
+							<div class="tab-content" style="font-size: 13px !important;">
+								<div class="tab-pane print-brochure-tab active mt-3" id="preview_tab_1">
+									<div class="row">
+										<div class="col-10 offset-1">
+											<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
+												<input type="hidden" id="brochure-item-code" name="item_code">
+												<div class="form-group">
+													<label for="brochure-project-name">Project Name</label>
+													<input type="text" class="form-control p-2" id="brochure-project-name" name="project" style="font-size: 13px !important;">
+												</div>
+												<div class="form-group">
+													<label for="brochure-customer-name">Customer Name</label>
+													<input type="text" class="form-control p-2" id="brochure-customer-name" name="customer" style="font-size: 13px !important;">
+												</div>
+												<div class="form-group">
+													<label for="brochure-item-name">Item Name</label>
+													<input type="text" class="form-control p-2" id="brochure-item-name" name="item_name" style="font-size: 13px !important;">
+												</div>
+												<div class="form-group">
+													<label for="brochure-description">Description</label>
+													<textarea name="description" id="brochure-description" rows="3" class="form-control p-2" style="font-size: 13px !important;"></textarea>
+												</div>
+												<div class="form-group">
+													<label for="brochure-reference">Fitting Type / Reference</label>
+													<input type="text" class="form-control p-2" id="brochure-reference" name="reference" style="font-size: 13px !important;">
+												</div>
+												<div class="form-group">
+													<label for="brochure-location">Location</label>
+													<input type="text" class="form-control p-2" id="brochure-location" name="location" style="font-size: 13px !important;">
+												</div>
+											</form>
 										</div>
-										<div class="form-group">
-											<label for="brochure-item-name">Item Name</label>
-											<input type="text" class="form-control" id="brochure-item-name" name="item_name">
-										</div>
-										<div class="form-group">
-											<label for="brochure-description">Description</label>
-											<textarea name="description" id="brochure-description" rows="3" class="form-control"></textarea>
-										</div>
-										<div class="form-group">
-											<label for="brochure-customer-name">Customer Name</label>
-											<input type="text" class="form-control" id="brochure-customer-name" name="customer">
-										</div>
-										<div class="form-group">
-											<label for="brochure-reference">Fitting Type / Reference</label>
-											<input type="text" class="form-control" id="brochure-reference" name="reference">
-										</div>
-										<div class="form-group">
-											<label for="brochure-location">Location</label>
-											<input type="text" class="form-control" id="brochure-location" name="location">
-										</div>
-									</form>
-									<center>
-										<button type="button" class="btn btn-primary mt-2" id="save-brochure">Preview Changes</button>
-									</center>
+									</div>
+									<div class="d-flex flex-row justify-content-center mt-3">
+										<button type="button" class="btn btn-primary " id="save-brochure"><i class="fas fa-save"></i> Preview Changes</button>
+									</div>
 								</div>
 								<div class="tab-pane print-brochure-tab" id="preview_tab_2">
-									Attributes
+									<div class="row">
+										<div class="col-10 offset-1 mt-3">
+											<form id="update-brochure-attribute-form" action="/update_brochure_attributes" method="POST" autocomplete="off">
+												@csrf
+												<div id="brochure-item-attribute-div"></div>
+											</form>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
-						<div id="preview-brochure-container" class="col-9 overflow-auto" style="height: auto !important;"></div>
+						<div id="preview-brochure-container" class="col-8 border rounded m-0 p-0" style="min-height: 1000px;"></div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -1229,6 +1240,14 @@
 
 				$('#print-brochure-modal').modal('show');
 				generate_brochure(0);
+
+				$.ajax({
+					type: 'GET',
+					url: '/get_item_attributes/' + product_code,
+					success: function(response){
+						$('#brochure-item-attribute-div').html(response);
+					}
+				});
 			});
 
 			$(document).on('click', '#save-brochure', function (e){
@@ -1269,7 +1288,21 @@
 				$(this).addClass('active');
 				$($(this).data('target')).addClass('active');
 			});
-			
+
+			$(document).on('submit', '#update-brochure-attribute-form', function(e) {
+				e.preventDefault();
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: $(this).serialize(),
+					success: function(response){
+						generate_brochure();
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					}
+				});
+			});
+
 			$(document).on('click', '.close-modal', function (e){
 				e.preventDefault();
 				close_modal($(this).data('target'));

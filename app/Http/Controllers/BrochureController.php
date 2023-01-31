@@ -612,4 +612,40 @@ class BrochureController extends Controller
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 		}
 	}
+
+	public function getItemAttributes($item_code) {
+		$attributes = DB::table('tabItem Variant Attribute as variant')
+			->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
+			->where('variant.parent', $item_code)
+			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
+			->orderBy('variant.idx')->get();
+
+		return view('brochure.manage_item_attributes', compact('attributes'));
+	}
+
+	public function updateBrochureAttributes(Request $request) {
+		DB::beginTransaction();
+		try {
+			$transaction_date = Carbon::now()->toDateTimeString();
+			$request_attributes = $request->attribute;
+			$current_attributes = $request->current_attribute;
+			foreach ($request_attributes as $attribute_name => $new_attribute_name) {
+				if ($current_attributes[$attribute_name] != $new_attribute_name) {
+					DB::table('tabItem Attribute')->where('name', $attribute_name)->update([
+						'attr_name' => $new_attribute_name,
+						'modified' => $transaction_date,
+						'modified_by' => Auth::user()->wh_user,
+					]);
+				}
+			}
+			
+			DB::commit();
+
+			return response()->json(['status' => 1, 'message' => 'Item Attributes updated.']);
+		} catch (Exception $e) {
+			DB::rollback();
+
+			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
+		}
+	}
 }
