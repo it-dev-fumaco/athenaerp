@@ -6,7 +6,6 @@
 	<title>{{ $namePage }} - {{ Auth::check() ? Auth::user()->full_name : null }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
-
 	{{--  <!-- Google Font: Source Sans Pro -->  --}}
 	<link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
 	<link rel="stylesheet" href="{{ asset('/updated/icons/font-awesome.min.css') }}">
@@ -1195,6 +1194,7 @@
 <!-- REQUIRED SCRIPTS -->
 <!-- jQuery -->
 <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 <!-- Bootstrap 4 -->
 <script src="{{ asset('/updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <!-- Ekko Lightbox -->

@@ -436,7 +436,7 @@ class BrochureController extends Controller
 			->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
 			->where('variant.parent', $data['item_code'])
 			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
-			->orderBy('variant.idx')->get();
+			->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 
 		$current_item_images = DB::table('tabItem Images')->where('parent', $data['item_code'])->get();
 		$current_images = [];
@@ -618,9 +618,9 @@ class BrochureController extends Controller
 			->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
 			->where('variant.parent', $item_code)
 			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
-			->orderBy('variant.idx')->get();
+			->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 
-		return view('brochure.manage_item_attributes', compact('attributes'));
+		return view('brochure.manage_item_attributes', compact('attributes', 'item_code'));
 	}
 
 	public function updateBrochureAttributes(Request $request) {
@@ -629,6 +629,7 @@ class BrochureController extends Controller
 			$transaction_date = Carbon::now()->toDateTimeString();
 			$request_attributes = $request->attribute;
 			$current_attributes = $request->current_attribute;
+			$idx = 0;
 			foreach ($request_attributes as $attribute_name => $new_attribute_name) {
 				if ($current_attributes[$attribute_name] != $new_attribute_name) {
 					DB::table('tabItem Attribute')->where('name', $attribute_name)->update([
@@ -638,7 +639,15 @@ class BrochureController extends Controller
 					]);
 				}
 			}
-			
+
+			foreach ($current_attributes as $name => $attribute) {
+				DB::table('tabItem Variant Attribute')->where('parent', $request->item_code)->where('attribute', $attribute)->update([
+					'brochure_idx' => $idx += 1,
+					'modified_by' => Auth::user()->wh_user,
+					'modified' => Carbon::now()->toDateTimeString()
+				]);
+			}
+
 			DB::commit();
 
 			return response()->json(['status' => 1, 'message' => 'Item Attributes updated.']);
