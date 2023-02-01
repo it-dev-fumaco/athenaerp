@@ -1148,6 +1148,15 @@
         $("#erp_dates").val('');
 		$("#erp_dates").attr("placeholder","Select Date Range");
 
+        $(document).on('click', '#athReset', function(){
+            $('#ath-src-warehouse-filter').empty();
+            $('#ath-to-warehouse-filter').empty();
+            $('#warehouse-user-filter').empty();
+            $('#ath_dates').val('');
+            $("#ath_dates").attr("placeholder","Select Date Range");
+            get_athena_transactions();
+        });
+
         $('#erpReset').click(function(){
             $('#erp-warehouse-filter').empty();
             $('#erp-warehouse-user-filter').empty();

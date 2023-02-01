@@ -1686,8 +1686,8 @@
 						$('.for-in-house-type').addClass('d-none');
 						$('.for-online-shop-type').removeClass('d-none');
 						$('.for-consignment').addClass('d-none');
-						$('#select-sales-person-c').prop('required', true);
-						$('#select-project-c').prop('required', true);
+						$('#select-sales-person-c').prop('required', false);
+						$('#select-project-c').prop('required', false);
 						$('#select-branch-warehouse-c').prop('required', false);
 					}
 				}
