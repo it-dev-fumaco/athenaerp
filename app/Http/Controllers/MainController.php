@@ -485,7 +485,7 @@ class MainController extends Controller
                 $from = $to = null;
                 $date1 = $date->day($cutoff_1);
                 if ($date1 >= $start_date && $date1 <= $end_date) {
-                    $cutoff_period[] = $date->format('Y-m-d');
+                    $cutoff_period[] = $date->format('d-m-Y');
                 }
 
                 if($i == 0){
@@ -494,7 +494,7 @@ class MainController extends Controller
                 }
             }
     
-            $cutoff_period[] = $end_date->format('Y-m-d');;
+            $cutoff_period[] = $end_date->format('d-m-Y');
             // sort array with given user-defined function
             usort($cutoff_period, function ($time1, $time2) {
                 return strtotime($time1) - strtotime($time2);
