@@ -631,10 +631,15 @@ class ConsignmentController extends Controller
         $transaction_date = $transactionDate->format('Y-m-d');
         
         $cutoff_period = [];
-        foreach ($period as $date) {
+        foreach ($period as $i => $date) {
             $date1 = $date->day($cutoff_1);
             if ($date1 >= $start_date && $date1 <= $end_date) {
                 $cutoff_period[] = $date->format('Y-m-d');
+            }
+
+            if($i == 0){
+                $feb_cutoff = $cutoff_1 <= 28 ? $cutoff_1 : 28;
+                $cutoff_period[] = $feb_cutoff.'-02-'.Carbon::now()->format('Y');
             }
         }
 
@@ -953,10 +958,15 @@ class ConsignmentController extends Controller
             $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
     
             $cutoff_period = [];
-            foreach ($period as $date) {
+            foreach ($period as $i => $date) {
                 $date1 = $date->day($cutoff_1);
                 if ($date1 >= $start_date && $date1 <= $end_date) {
                     $cutoff_period[] = $date->format('Y-m-d');
+                }
+
+                if($i == 0){
+                    $feb_cutoff = $cutoff_1 <= 28 ? $cutoff_1 : 28;
+                    $cutoff_period[] = $feb_cutoff.'-02-'.Carbon::now()->format('Y');
                 }
             }
 
