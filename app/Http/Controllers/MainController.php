@@ -47,7 +47,6 @@ class MainController extends Controller
             if ($date1 >= $start_date && $date1 <= $end_date) {
                 $cutoff_period[] = $date->format('d-m-Y');
             }
-
             if($i == 0){
                 $feb_cutoff = $cutoff_1 <= 28 ? $cutoff_1 : 28;
                 $cutoff_period[] = $feb_cutoff.'-02-'.Carbon::now()->format('Y');
