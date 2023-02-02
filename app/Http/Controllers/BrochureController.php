@@ -166,10 +166,7 @@ class BrochureController extends Controller
 
 			$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d').$series;
 
-			$pdf = Pdf::setOption([
-				'fontDir' => public_path('/font/Poppins'),
-				'fontCache' => public_path('/font/Poppins')
-			])->loadView('brochure.pdf', compact('content', 'project', 'filename'));
+			$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename'));
 			return $pdf->stream($new_filename.'.pdf');
 		}
 
@@ -512,10 +509,7 @@ class BrochureController extends Controller
 
 			$is_standard = true;
 
-			$pdf = Pdf::setOption([
-				'fontDir' => public_path('/font/Poppins'),
-				'fontCache' => public_path('/font/Poppins')
-			])->loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard'));
+			$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard'));
 			return $pdf->stream($new_filename.'.pdf');
 		}
 
