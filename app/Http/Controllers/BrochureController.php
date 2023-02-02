@@ -472,15 +472,15 @@ class BrochureController extends Controller
 		];
 
 		if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image1']['filepath'])) && $images['image1']['filepath']){
-			$images['image1']['filepath'] = explode(".", $images['image1'])[0] . '.webp';
+			$images['image1']['filepath'] = explode(".", $images['image1']['filepath'])[0] . '.webp';
 		}
 
 		if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image2']['filepath'])) && $images['image2']['filepath']){
-			$images['image2']['filepath'] = explode(".", $images['image2'])[0] . '.webp';
+			$images['image2']['filepath'] = explode(".", $images['image2']['filepath'])[0] . '.webp';
 		}
 
 		if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image3']['filepath'])) && $images['image3']['filepath']){
-			$images['image3']['filepath'] = explode(".", $images['image3'])[0] . '.webp';
+			$images['image3']['filepath'] = explode(".", $images['image3']['filepath'])[0] . '.webp';
 		}
 
 		if(isset($request->pdf) && $request->pdf){

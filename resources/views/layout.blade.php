@@ -1170,12 +1170,8 @@
 								</div>
 							</div>
 						</div>
-						<div id="preview-brochure-container" class="col-8 border rounded m-0 p-0" style="min-height: 1000px;"></div>
+						<div id="preview-brochure-container" class="col-8 rounded m-0 p-0" style="min-height: 1000px;"></div>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-					<button type="button" class="btn btn-primary generate-brochure-btn" data-item-code=""><i class="fa fa-check"></i> GENERATE BROCHURE</button>
 				</div>
 			</div>
 		</div>
