@@ -300,7 +300,7 @@
 </div>
 
 <div id="top-btn-container">
-    <a href="/preview/{{ $project }}/{{ $filename }}?pdf=1" class="btn-ctrl" style="display: block; padding-top: 10px;"><i class="fas fa-print"></i></a>
+    <a target="_blank" href="/preview/{{ $project }}/{{ $filename }}?pdf=1" class="btn-ctrl" style="display: block; padding-top: 10px;"><i class="fas fa-print"></i></a>
 </div>
 <div id="bottom-btn-container">
     <button class="btn-ctrl" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ $project }}"><i class="fa fa-download"></i></button>
