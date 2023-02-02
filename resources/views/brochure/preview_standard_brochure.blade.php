@@ -1,14 +1,10 @@
 <div class="container-fluid p-0 m-0">
     <div class="row m-0 p-0">
         <div class="col-md-12 p-0 m-0">
-            {{-- <div id="top-btn-container">
-                <button class="btn-ctrl" id="print-btn" style="display: block;"><i class="fas fa-print"></i></button>
-            </div> --}}
-            {{-- <div id="top-left-btn-container">
-                <a href="get_item_details/{{ $data['item_code'] }}" style="padding: 8px 10px 8px 10px !important; border-radius: 5px; background-color: #f8f9f9; font-size: 20px; border: 1px solid #d6dbdf; color:#999a9c; cursor: pointer;">
-                    <i class="fas fa-arrow-circle-left"></i> Back
-                </a>
-            </div> --}}
+            <div id="top-btn-container">
+                <button class="btn-ctrl close-modal" data-target="#print-brochure-modal" style="display: block;"><i class="fas fa-remove"></i></button>
+                <button class="btn-ctrl mt-3 generate-brochure-btn" style="display: block;"><i class="fas fa-print"></i></button>
+            </div>
             <div id="print-area">
                 <div class="page-container d-print-none" style="padding: 15px 0 15px 0 !important; background: #E6E6E6;">
                     <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
@@ -328,9 +324,9 @@
         font-family: 'Poppins' !important;
     }
     #top-btn-container{
-        position: relative;
-        right: 25px;
-        top: 120px;
+        position: absolute;
+        right: 10px;
+        top: 10px;
     }
     #top-left-btn-container {
         position: fixed;
@@ -338,7 +334,7 @@
         top: 70px;
     }
     .btn-ctrl{
-        background-color: #f1f1f1;
+        background-color: #fff;
         width: 50px;
         height: 50px;
         margin: 10px;
@@ -660,16 +656,6 @@
                 error: function(jqXHR, textStatus, errorThrown) {
                     showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
                 }
-            });
-        });
-
-        $(document).on('click', '#print-btn', function(e){
-            e.preventDefault();
-            $('#print-area').printThis({
-                copyTagClasses: true,
-                canvas: true,
-                importCSS: true,
-                importStyle: true,
             });
         });
 
