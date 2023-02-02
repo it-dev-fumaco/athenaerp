@@ -1253,7 +1253,7 @@
 
 			function generate_brochure(pdf){
 				if(pdf){
-					window.location.href = '/generate_brochure?pdf=1&' + $('#generate-brochure-form').serialize();
+					window.open('/generate_brochure?pdf=1&' + $('#generate-brochure-form').serialize(), '_blank');
 				}
 
 				$('#preview-brochure-container').html('<div class="overlay-wrapper">' +
