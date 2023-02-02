@@ -73,19 +73,19 @@
         </style>
     </head>
     @php
-        $margin = '1.3in';
-        if(strlen($project) > 34){
+        $margin = '1.2in';
+        if(strlen($project) > 29){
             $rows = (strlen($project) - 34) / 42;
             $rows = (int)$rows < 1 ? 1 : (int)$rows;
 
-            $margin = (1.6 + (.3 * $rows)).'in' ;
+            $margin = (1.3 + (.1 * $rows)).'in' ;
         }
     @endphp
 <body style="border: 1px solid; padding: {{ $margin }} .5in 0 .5in;">
     <header style="height: auto !important;">
-        <table style="width: 100% !important; border-collapse: collapse;">
+        <table style="width: 100% !important; border-collapse: collapse;"> 
             <tr>
-                <td style="width: 43%; padding: 0 !important;">
+                <td style="width: 43%; padding: 0 !important; vertical-align: top !important">
                     <img src="{{ public_path("storage/fumaco_logo.png") }}" alt="" style="width: 230px;">
                 </td>
                 <td style="width: 55%; font-size: 11pt;">
