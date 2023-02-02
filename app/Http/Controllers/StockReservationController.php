@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\StockReservation;
+use App\Models\StockReservation;
 use DB;
 use Carbon\Carbon;
 use Auth;

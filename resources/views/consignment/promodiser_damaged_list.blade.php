@@ -52,7 +52,7 @@
                                                             <picture>
                                                                 <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp" width="40" height="40">
                                                                 <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg" width="40" height="40">
-                                                                <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+                                                                <img src="{{ asset('storage'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
                                                             </picture>
                                                         </a>
                                                     </div>
@@ -94,7 +94,7 @@
                                                                                         <picture>
                                                                                             <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp" width="40" height="40">
                                                                                             <source srcset="{{ asset('storage/'.$item['image']) }}" type="image/jpeg" width="40" height="40">
-                                                                                            <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+                                                                                            <img src="{{ asset('storage'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
                                                                                         </picture>
                                                                                     </a>
                                                                                 </div>

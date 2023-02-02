@@ -230,7 +230,7 @@
                                                                                                     <picture>
                                                                                                         <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
                                                                                                         <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                                                        <img src="{{ asset('storage'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="60" height="60">
+                                                                                                        <img src="{{ asset('storage'.$item['image']) }}" alt="{{ $item['image_slug'] }}" width="60" height="60">
                                                                                                     </picture>
                                                                                                 </a>
                                                                                             </div>
@@ -367,7 +367,7 @@
                                                             <picture>
                                                                 <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
                                                                 <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" width="70">
+                                                                <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['image_slug'] }}" width="70">
                                                             </picture>
                                                         </div>
                                                         <div class="p-1">

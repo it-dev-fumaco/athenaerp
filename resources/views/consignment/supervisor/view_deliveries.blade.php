@@ -146,9 +146,9 @@
                                                                         <div class="p-1 text-left">
                                                                             <a href="{{ asset('storage/') }}{{ $i['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $i['item_code'] }}" data-title="{{ $i['item_code'] }}">
                                                                             <picture>
-                                                                                <source srcset="{{ asset('storage'.$i['img_webp']) }}" type="image/webp" alt="{{ str_slug(explode('.', $i['img'])[0], '-') }}" width="40" height="40">
-                                                                                <source srcset="{{ asset('storage'.$i['img']) }}" type="image/jpeg" alt="{{ str_slug(explode('.', $i['img'])[0], '-') }}" width="40" height="40">
-                                                                                <img src="{{ asset('storage'.$i['img']) }}" alt="{{ str_slug(explode('.', $i['img'])[0], '-') }}" width="40" height="40">
+                                                                                <source srcset="{{ asset('storage'.$i['img_webp']) }}" type="image/webp" alt="{{ $i['img_slug'] }}" width="40" height="40">
+                                                                                <source srcset="{{ asset('storage'.$i['img']) }}" type="image/jpeg" alt="{{ $i['img_slug'] }} width="40" height="40">
+                                                                                <img src="{{ asset('storage'.$i['img']) }}" alt="{{ $i['img_slug'] }} width="40" height="40">
                                                                             </picture>
                                                                             </a>
                                                                         </div>

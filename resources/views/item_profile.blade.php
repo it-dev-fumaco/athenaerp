@@ -165,6 +165,11 @@
                                                 <div class="col-md-12 text-center pt-3">
                                                     <button class="btn btn-primary btn-sm upload-item-image w-100" data-item-code="{{ $item_details->name }}"><i class="fa fa-camera" style="font-size: 20px"></i></button>
                                                 </div>
+                                                <div class="col-md-12 text-center pt-3">
+                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_details->item_name }}" data-item-description="{{ strip_tags($item_details->description) }}">
+                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
+                                                    </button>
+                                                </div>
 
                                                 <div class="modal fade" id="{{ $item_details->name }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
@@ -616,7 +621,7 @@
                                     </div>
                                 </div>
                                 <div class="m-2">
-                                    {{ $co_variants->links() }}
+                                    {{ $co_variants->links('pagination::bootstrap-4') }}
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -646,7 +651,7 @@
                                                         <a href="/get_item_details/{{ $a['item_code'] }}" class="text-dark" style="font-size: 9pt;">
                                                             <div class="p-1 text-justify">
                                                                 <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
-                                                                <small class="font-italic font-responsive" style="font-size: 9pt;">{{ str_limit($a['description'], $limit = 78, $end = '...') }}</small>
+                                                                <small class="font-italic font-responsive" style="font-size: 9pt;">{{ \Illuminate\Support\Str::limit($a['description'], $limit = 78, $end = '...') }}</small>
                                                                 <br>
                                                                 <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                             </div>
@@ -1142,6 +1147,15 @@
 
         $("#erp_dates").val('');
 		$("#erp_dates").attr("placeholder","Select Date Range");
+
+        $(document).on('click', '#athReset', function(){
+            $('#ath-src-warehouse-filter').empty();
+            $('#ath-to-warehouse-filter').empty();
+            $('#warehouse-user-filter').empty();
+            $('#ath_dates').val('');
+            $("#ath_dates").attr("placeholder","Select Date Range");
+            get_athena_transactions();
+        });
 
         $('#erpReset').click(function(){
             $('#erp-warehouse-filter').empty();

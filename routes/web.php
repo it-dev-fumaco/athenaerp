@@ -18,6 +18,13 @@ Route::get('/update', 'ItemAttributeController@update_login')->name('update_logi
 Route::post('/U_login_user', 'ItemAttributeController@login');
 
 Route::group(['middleware' => 'auth'], function(){
+    // standard product brochure printing
+    Route::get('/generate_brochure', 'BrochureController@generateBrochure');
+    Route::post('/upload_image_for_standard_brochure', 'BrochureController@uploadImageForStandard');
+    Route::get('/get_item_attributes/{item_code}', 'BrochureController@getItemAttributes');
+    Route::post('/update_brochure_attributes', 'BrochureController@updateBrochureAttributes');
+    
+    
     // routes for item attribute updating
     Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
     Route::get('/search', 'ItemAttributeController@item_attribute_search');
@@ -251,5 +258,6 @@ Route::get('/brochure', 'BrochureController@viewForm')->name('brochure');
 Route::post('/read_file', 'BrochureController@readExcelFile');
 Route::post('/upload_image', 'BrochureController@uploadImage');
 Route::get('/preview/{project}/{filename}', 'BrochureController@previewBrochure');
+Route::get('/preview_standard', 'BrochureController@previewStandardBrochure');
 Route::get('/download/{project}/{filename}', 'BrochureController@downloadBrochure');
 Route::post('/remove_image', 'BrochureController@removeImage');

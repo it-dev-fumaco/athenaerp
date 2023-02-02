@@ -68,7 +68,7 @@
                                                                                         <picture>
                                                                                             <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
                                                                                             <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                                            <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" class="img-thumbna1il" alt="User Image" width="100%">
+                                                                                            <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" class="img-thumbna1il" alt="User Image" width="100%">
                                                                                         </picture>
                                                                                     </div>
                                                                                     <div class="col-6 col-md-4" style="display: flex; justify-content: center; align-items: center;">
@@ -131,7 +131,7 @@
                                                                                     <picture>
                                                                                         <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
                                                                                         <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                                        <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ str_slug(explode('.', $item['image'])[0], '-') }}" class="img-thumbna1il" alt="User Image" width="100%">
+                                                                                        <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" class="img-thumbna1il" alt="User Image" width="100%">
                                                                                     </picture>
                                                                                 </div>
                                                                                 <div class="col-6 col-md-4" style="display: flex; justify-content: center; align-items: center;">
