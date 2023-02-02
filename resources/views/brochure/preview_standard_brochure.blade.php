@@ -1,9 +1,9 @@
 <div class="container-fluid p-0 m-0">
     <div class="row m-0 p-0">
         <div class="col-md-12 p-0 m-0">
+            <span class="close-modal" data-target="#print-brochure-modal" style="position: absolute; right: 10px; top: 5px; cursor: pointer"><i class="fa fa-remove"></i></span>
             <div id="top-btn-container">
-                <button class="btn-ctrl close-modal" data-target="#print-brochure-modal" style="display: block;"><i class="fas fa-remove"></i></button>
-                <button class="btn-ctrl mt-3 generate-brochure-btn" style="display: block;"><i class="fas fa-print"></i></button>
+                <button class="btn-ctrl generate-brochure-btn" style="display: block;"><i class="fas fa-print"></i></button>
             </div>
             <div id="print-area">
                 <div class="page-container d-print-none" style="padding: 15px 0 15px 0 !important; background: #E6E6E6;">
@@ -325,8 +325,8 @@
     }
     #top-btn-container{
         position: absolute;
-        right: 10px;
-        top: 10px;
+        right: 25px;
+        top: 50px;
     }
     #top-left-btn-container {
         position: fixed;
@@ -335,8 +335,8 @@
     }
     .btn-ctrl{
         background-color: #fff;
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
         margin: 10px;
         padding: 5px 15px 5px 15px;
         border-radius: 50%;
