@@ -87,26 +87,29 @@
                                     <p class="m-0 font-details">Total Item(s): <span class="font-weight-bold">{{ count($result) }}</span></p>
                                 </div>
                             </div>
-                            <div class="tableFixHead">
+                            <div class="tableFixHead table-responsive">
                                 <table id="customers">
                                     <thead class="border-top">
+                                        @php
+                                            $w = (count($sales_transaction_dates)) * 50;
+                                        @endphp
                                         <tr>
-                                            <th class="text-center p-1 align-middle text-uppercase" style="width: 30%; font-size: 8pt;" rowspan="2">Item Code</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Opening</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 5%; font-size: 8pt;">Audit Qty</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) + 3 }}" style="width: 44%; font-size: 8pt;">Sold Qty</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Received</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Returned</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Transferred</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 6%; font-size: 8pt;">Damaged</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" style="width: 500px; font-size: 8pt;" rowspan="2">Item Code</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Opening</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Audit Qty</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) }}" style="width: {{ $w }}px; font-size: 8pt;">Sold Qty</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 80px; font-size: 8pt;">Total</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 120px; font-size: 8pt;">Rate</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 120px; font-size: 8pt;">Amount</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Received</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Returned</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Transferred</th>
+                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Damaged</th>
                                         </tr>
                                         <tr>
                                             @foreach ($sales_transaction_dates as $date)
                                             <th class="text-center p-0 align-middle" style="font-size: 8pt;">{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
                                             @endforeach
-                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">Total</th>
-                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">Rate</th>
-                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody style="font-size: 10pt;">
