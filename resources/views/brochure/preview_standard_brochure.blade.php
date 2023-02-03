@@ -1,12 +1,12 @@
 <div class="container-fluid p-0 m-0">
     <div class="row m-0 p-0">
         <div class="col-md-12 p-0 m-0">
-            <span class="close-modal" data-target="#print-brochure-modal" style="position: absolute; right: 10px; top: 5px; cursor: pointer"><i class="fa fa-remove"></i></span>
-            <div id="top-btn-container">
+            <span class="close-modal" data-target="#print-brochure-modal" style="position: absolute; right: 10px; top: 5px; cursor: pointer;z-index: 10;"><i class="fa fa-remove"></i></span>
+            <div id="top-btn-container" style="z-index: 10;">
                 <button class="btn-ctrl generate-brochure-btn" style="display: block;"><i class="fas fa-print"></i></button>
             </div>
             <div id="print-area">
-                <div class="page-container d-print-none" style="padding: 15px 0 15px 0 !important; background: #E6E6E6;">
+                <div class="page-container overflow-auto d-print-none" style="padding: 15px 0 15px 0 !important; background: #E6E6E6;">
                     <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
                         <div class="pdf-content">
                             <div class="pdf-body">
@@ -133,6 +133,12 @@
                                                 <td style="padding: 5px 0 5px 0 !important;width: 60%;"><strong>{{ $val->attribute_value }}</strong></td>
                                             </tr>
                                             @endforeach
+                                            @if (isset($remarks) && $remarks)
+                                            <tr>
+                                                <td style="padding: 5px 0 5px 0 !important;width: 40%;">Remarks</td>
+                                                <td style="padding: 5px 0 5px 0 !important;width: 60%;"><strong>{{ $remarks }}</strong></td>
+                                            </tr>
+                                            @endif
                                         </table>
                                     </div>
                                 </div>
