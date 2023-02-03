@@ -76,7 +76,8 @@
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
-                                                    <span>(230 x 230 px)<br>Add Image 1</span>
+                                                    <span class="d-block">(230 x 230 px)</span>
+                                                    <small class="d-block text-muted">Click here to select image</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -94,7 +95,8 @@
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
-                                                    <span>(230 x 230 px)<br>Add Image 2</span>
+                                                    <span class="d-block">(230 x 230 px)</span>
+                                                    <small class="d-block text-muted">Click here to select image</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -112,7 +114,8 @@
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
-                                                    <span>(230 x 230 px)<br>Add Image 3</span>
+                                                    <span class="d-block">(230 x 230 px)</span>
+                                                    <small class="d-block text-muted">Click here to select image</small>
                                                 </div>
                                             </div>
                                         </div>

@@ -1120,15 +1120,15 @@
 							</div>
 							<ul class="nav nav-pills ml-auto p-1">
 								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl active" href="#" data-target="#preview_tab_1" data-tab=".print-brochure-tab" style="font-size: 9pt;">Input Details</a></li>
-								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl" href="#" data-target="#preview_tab_2" data-tab=".print-brochure-tab" style="font-size: 9pt;">Edit Attributes</a></li>
+								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl" href="#" data-target="#preview_tab_2" data-tab=".print-brochure-tab" style="font-size: 9pt;">Edit Specification</a></li>
 							</ul>
 							<div class="tab-content" style="font-size: 9pt !important;">
 								<div class="tab-pane print-brochure-tab active mt-3" id="preview_tab_1">
 									<div class="row">
 										<div class="col-10 offset-1">
 											<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
-												<div class="alert alert-info text-center">
-													<small><i class="fas fa-info-circle"></i> You can change the item name and item description.</small>
+												<div class="callout callout-info text-center">
+													<i class="fas fa-info-circle"></i> You can change the item name and item description.
 												</div>
 												<input type="hidden" id="brochure-item-code" name="item_code">
 												<div class="form-group">
@@ -1167,8 +1167,8 @@
 										<div class="col-10 offset-1 mt-3">
 											<form id="update-brochure-attribute-form" action="/update_brochure_attributes" method="POST" autocomplete="off">
 												@csrf
-												<div class="alert alert-info text-center">
-													<small><i class="fas fa-info-circle"></i> Drag and drop attributes to re-order. You can also change the attribute names.</small>
+												<div class="callout callout-info text-center">
+													<i class="fas fa-info-circle"></i> Drag and drop attributes to re-order. You can also change the attribute names without affecting product database.
 												</div>
 												<div id="brochure-item-attribute-div" style="font-size: 9pt;"></div>
 											</form>
