@@ -466,14 +466,16 @@
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-M1ZN4YBE16"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+	@if (env('APP_ENV') != 'local')
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-M1ZN4YBE16"></script>
+	<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
 
-  gtag('config', 'G-M1ZN4YBE16');
-</script>
+	gtag('config', 'G-M1ZN4YBE16');
+	</script>
+	@endif
 </head>
 <body class="hold-transition layout-top-nav">
 	<div id="loader-wrapper">
@@ -1116,46 +1118,48 @@
 							<div class="pt-2 pb-2 pl-0 pr-0">
 								<h5 class="modal-title">Preview Brochure - <span id="br-item-code"></span></h5>
 							</div>
-							<hr>
 							<ul class="nav nav-pills ml-auto p-1">
-								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl active" href="#" data-target="#preview_tab_1" data-tab=".print-brochure-tab">Input Details</a></li>
-								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl" href="#" data-target="#preview_tab_2" data-tab=".print-brochure-tab">Edit Attributes</a></li>
+								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl active" href="#" data-target="#preview_tab_1" data-tab=".print-brochure-tab" style="font-size: 9pt;">Input Details</a></li>
+								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl" href="#" data-target="#preview_tab_2" data-tab=".print-brochure-tab" style="font-size: 9pt;">Edit Attributes</a></li>
 							</ul>
-							<div class="tab-content" style="font-size: 13px !important;">
+							<div class="tab-content" style="font-size: 9pt !important;">
 								<div class="tab-pane print-brochure-tab active mt-3" id="preview_tab_1">
 									<div class="row">
 										<div class="col-10 offset-1">
 											<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
+												<div class="alert alert-info text-center">
+													<small><i class="fas fa-info-circle"></i> You can change the item name and item description.</small>
+												</div>
 												<input type="hidden" id="brochure-item-code" name="item_code">
 												<div class="form-group">
 													<label for="brochure-project-name">Project Name</label>
-													<input type="text" class="form-control p-2" id="brochure-project-name" name="project" style="font-size: 13px !important;">
+													<input type="text" class="form-control p-2" id="brochure-project-name" name="project" placeholder="Enter Project Name" style="font-size: 9pt !important;">
 												</div>
 												<div class="form-group">
 													<label for="brochure-customer-name">Customer Name</label>
-													<input type="text" class="form-control p-2" id="brochure-customer-name" name="customer" style="font-size: 13px !important;">
+													<input type="text" class="form-control p-2" id="brochure-customer-name" name="customer" placeholder="Enter Customer Name" style="font-size: 9pt !important;">
 												</div>
 												<div class="form-group">
 													<label for="brochure-item-name">Item Name</label>
-													<input type="text" class="form-control p-2" id="brochure-item-name" name="item_name" style="font-size: 13px !important;">
+													<input type="text" class="form-control p-2" id="brochure-item-name" name="item_name" placeholder="Enter Item Name" style="font-size: 9pt !important;">
 												</div>
 												<div class="form-group">
 													<label for="brochure-description">Description</label>
-													<textarea name="description" id="brochure-description" rows="3" class="form-control p-2" style="font-size: 13px !important;"></textarea>
+													<textarea name="description" id="brochure-description" rows="3" class="form-control p-2" placeholder="Enter Description" style="font-size: 9pt !important;"></textarea>
 												</div>
 												<div class="form-group">
 													<label for="brochure-reference">Fitting Type / Reference</label>
-													<input type="text" class="form-control p-2" id="brochure-reference" name="reference" style="font-size: 13px !important;">
+													<input type="text" class="form-control p-2" id="brochure-reference" name="reference" placeholder="Enter Fitting Type / Reference" style="font-size: 9pt !important;">
 												</div>
 												<div class="form-group">
 													<label for="brochure-location">Location</label>
-													<input type="text" class="form-control p-2" id="brochure-location" name="location" style="font-size: 13px !important;">
+													<input type="text" class="form-control p-2" id="brochure-location" name="location" placeholder="Enter Location" style="font-size: 9pt !important;">
 												</div>
 											</form>
 										</div>
 									</div>
 									<div class="d-flex flex-row justify-content-center mt-3">
-										<button type="button" class="btn btn-primary " id="save-brochure"><i class="fas fa-save"></i> Preview Changes</button>
+										<button type="button" class="btn btn-primary" id="save-brochure"><i class="fas fa-save"></i> Preview Changes</button>
 									</div>
 								</div>
 								<div class="tab-pane print-brochure-tab" id="preview_tab_2">
@@ -1163,7 +1167,10 @@
 										<div class="col-10 offset-1 mt-3">
 											<form id="update-brochure-attribute-form" action="/update_brochure_attributes" method="POST" autocomplete="off">
 												@csrf
-												<div id="brochure-item-attribute-div"></div>
+												<div class="alert alert-info text-center">
+													<small><i class="fas fa-info-circle"></i> Drag and drop attributes to re-order. You can also change the attribute names.</small>
+												</div>
+												<div id="brochure-item-attribute-div" style="font-size: 9pt;"></div>
 											</form>
 										</div>
 									</div>
@@ -1190,7 +1197,7 @@
 <!-- REQUIRED SCRIPTS -->
 <!-- jQuery -->
 <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script src="{{ asset('/updated/plugins/jquery-ui/jquery-ui.js') }}"></script>
 <!-- Bootstrap 4 -->
 <script src="{{ asset('/updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <!-- Ekko Lightbox -->

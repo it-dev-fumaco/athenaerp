@@ -116,6 +116,9 @@
                                             $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . $item_images[3] : '/icon/no_img.png';
                                             $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                                             $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
+
+                                            $item_brochure_name = $item_details->item_brochure_name ? $item_details->item_brochure_name : $item_details->item_name;
+                                            $item_brochure_description = $item_details->item_brochure_description ? $item_details->item_brochure_description : $item_details->description;
                                         @endphp
                                         <div class="col-md-3 col-lg-2">
                                             <div class="row">
@@ -165,8 +168,8 @@
                                                 <div class="col-md-12 text-center pt-3">
                                                     <button class="btn btn-primary btn-sm upload-item-image w-100" data-item-code="{{ $item_details->name }}"><i class="fa fa-camera" style="font-size: 20px"></i></button>
                                                 </div>
-                                                <div class="col-md-12 text-center pt-3">
-                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_details->item_name }}" data-item-description="{{ strip_tags($item_details->description) }}">
+                                                <div class="d-xl-none col-md-12 text-center pt-3">
+                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ strip_tags($item_brochure_description) }}">
                                                         <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
                                                     </button>
                                                 </div>
@@ -376,9 +379,14 @@
                                     </div>
                                 </div>
                             </div>
-                            @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])) 
                             <div class="d-none d-lg-block col-lg-3">
                                 <div class="box box-solid h-100">
+                                    <div class="d-none d-xl-block col-12 col-xl-6 offset-xl-6 text-center pt-3">
+                                        <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ strip_tags($item_brochure_description) }}">
+                                            <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
+                                        </button>
+                                    </div>
+                                    @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])) 
                                     <div class="box-body table-responsive no-padding h-100" style="display: flex; justify-content: center; align-items: center;">
                                         <p class="mt-2 mb-2 text-center">
                                             @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
@@ -413,9 +421,9 @@
                                             @endif
                                         </p>
                                     </div>
+                                    @endif
                                 </div>
                             </div>
-                            @endif
                             @if (count($co_variants) > 0)
                             <div class="col-12">
                                 <div class="card-header border-bottom-0">

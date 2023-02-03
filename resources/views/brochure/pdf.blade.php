@@ -173,6 +173,12 @@
                             </tr>
                         @endif
                     @endforeach
+                    @if (isset($remarks) && $remarks)
+                        <tr>
+                            <td class="regular-font" style="padding: 5px 0 5px 0 !important;width: 40%;">Remarks</td>
+                            <td class="bold" style="padding: 5px 0 5px 0 !important;width: 60%;">{{ $remarks }}</td>
+                        </tr>
+                    @endif
                 </table>
             </div>
         </div>
