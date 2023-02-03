@@ -5,9 +5,13 @@
                 <div class="col-1" style="display: flex; justify-content: center; align-items: center;">
                     <i class="fas fa-arrows-alt" style="font-size: inherit;"></i>
                 </div>
-                <div class="col-11">
+                <div class="col-10 p-0">
                     <input type="text" class="form-control p-1" name="attribute[{{ $attr->name }}]" value="{{ $attr->attr_name ? $attr->attr_name : $attr->attribute }}" style="font-size: inherit !important;">
                     <input type="hidden" name="current_attribute[{{ $attr->name }}]" value="{{ $attr->attribute }}">
+                </div>
+                <div class="col-1" style="display: flex; justify-content: center; align-items: center;">
+                    <input type="checkbox" class="hidden-attributes" data-attribute="{{ $attr->attribute }}" {{ $attr->hide_in_brochure ? 'checked' : null }}>
+                    <input type="hidden" class="hidden-attrib-val" name="hidden_attributes[]" value="{{ $attr->hide_in_brochure ? $attr->attribute : null }}">
                 </div>
             </div>
         </li>
@@ -26,5 +30,10 @@
 <script>
     $(document).ready(function(){
         $('#sortable').sortable();
+
+        $(document).on('click', '.hidden-attributes', function (){
+            var val = $(this).is(':checked') ? $(this).data('attribute') : '';
+            $(this).next('.hidden-attrib-val').val(val);
+        });
     });
 </script>

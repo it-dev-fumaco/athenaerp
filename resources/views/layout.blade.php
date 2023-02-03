@@ -1176,7 +1176,7 @@
 												<div class="d-flex flex-row">
 													<i class="fas fa-info-circle m-1" style="font-size: 19pt;"></i>
 													<span class="d-inline-block" style="font-size: 8pt;">
-														Drag and drop attributes to re-order. You can also change the attribute names without affecting the original product information.
+														Drag and drop attributes to re-order. You can also change the attribute names without affecting the original product information. You can check the attributes you want to hide.
 													</span>
 												</div>
 											</div>
