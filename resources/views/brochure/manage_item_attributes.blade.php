@@ -10,7 +10,7 @@
                     <input type="hidden" name="current_attribute[{{ $attr->name }}]" value="{{ $attr->attribute }}">
                 </div>
                 <div class="col-1" style="display: flex; justify-content: center; align-items: center;">
-                    <input type="checkbox" class="hidden-attributes" data-attribute="{{ $attr->attribute }}" {{ $attr->hide_in_brochure ? 'checked' : null }}>
+                    <i class="attrib-toggle far fa-eye{{ $attr->hide_in_brochure ? '-slash' : null }}" data-attrib-hidden="{{ $attr->hide_in_brochure ? 1 : 0 }}" data-attribute="{{ $attr->attribute }}" style="font-size: 10pt;"></i>
                     <input type="hidden" class="hidden-attrib-val" name="hidden_attributes[]" value="{{ $attr->hide_in_brochure ? $attr->attribute : null }}">
                 </div>
             </div>
@@ -31,8 +31,16 @@
     $(document).ready(function(){
         $('#sortable').sortable();
 
-        $(document).on('click', '.hidden-attributes', function (){
-            var val = $(this).is(':checked') ? $(this).data('attribute') : '';
+        $(document).on('click', '.attrib-toggle', function (){
+            var val = '';
+            if($(this).data('attrib-hidden') == 1){
+                $(this).removeClass('fa-eye-slash').addClass('fa-eye');
+                $(this).data('attrib-hidden', 0);
+            }else{
+                val = $(this).data('attribute');
+                $(this).removeClass('fa-eye').addClass('fa-eye-slash');
+                $(this).data('attrib-hidden', 1);
+            }
             $(this).next('.hidden-attrib-val').val(val);
         });
     });
