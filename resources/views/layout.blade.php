@@ -1116,7 +1116,7 @@
 					<div class="row p-0 m-0">
 						<div class="col-4">
 							<div class="pt-2 pb-2 pl-0 pr-0">
-								<h5 class="modal-title">Preview Brochure - <span id="br-item-code"></span></h5>
+								<h5 class="modal-title">Generate Brochure - <span id="br-item-code"></span></h5>
 							</div>
 							<ul class="nav nav-pills ml-auto p-1">
 								<li class="nav-item col-6 text-center p-1"><a class="nav-link border print-brochure-tab tab-ctrl active" href="#" data-target="#preview_tab_1" data-tab=".print-brochure-tab" style="font-size: 9pt;">Input Details</a></li>
@@ -1125,11 +1125,18 @@
 							<div class="tab-content" style="font-size: 9pt !important;">
 								<div class="tab-pane print-brochure-tab active mt-3" id="preview_tab_1">
 									<div class="row">
+										<div class="col-12 pl-3 pr-3">
+											<div class="callout callout-info text-center p-2" style="color: #808b96;">
+												<div class="d-flex flex-row">
+													<i class="fas fa-info-circle m-1" style="font-size: 19pt;"></i>
+													<span class="d-inline-block" style="font-size: 8pt;">
+														You can change the item name and item description without affecting the original product information.
+													</span>
+												</div>
+											</div>
+										</div>
 										<div class="col-10 offset-1">
 											<form id="generate-brochure-form" method="GET" action="/generate_brochure" autocomplete="off">
-												<div class="callout callout-info text-center">
-													<i class="fas fa-info-circle"></i> You can change the item name and item description.
-												</div>
 												<input type="hidden" id="brochure-item-code" name="item_code">
 												<div class="form-group">
 													<label for="brochure-project-name">Project Name</label>
@@ -1164,12 +1171,20 @@
 								</div>
 								<div class="tab-pane print-brochure-tab" id="preview_tab_2">
 									<div class="row">
+										<div class="col-12 pl-3 pr-3 mt-2">
+											<div class="callout callout-info text-center p-2" style="color: #808b96;">
+												<div class="d-flex flex-row">
+													<i class="fas fa-info-circle m-1" style="font-size: 19pt;"></i>
+													<span class="d-inline-block" style="font-size: 8pt;">
+														Drag and drop attributes to re-order. You can also change the attribute names without affecting the original product information.
+													</span>
+												</div>
+											</div>
+										</div>
 										<div class="col-10 offset-1 mt-3">
 											<form id="update-brochure-attribute-form" action="/update_brochure_attributes" method="POST" autocomplete="off">
 												@csrf
-												<div class="callout callout-info text-center">
-													<i class="fas fa-info-circle"></i> Drag and drop attributes to re-order. You can also change the attribute names without affecting product database.
-												</div>
+												
 												<div id="brochure-item-attribute-div" style="font-size: 9pt;"></div>
 											</form>
 										</div>
