@@ -300,10 +300,10 @@
 </div>
 
 <div id="top-btn-container">
-    <a target="_blank" href="/preview/{{ $project }}/{{ $filename }}?pdf=1" class="btn-ctrl" style="display: block; padding-top: 10px;"><i class="fas fa-print"></i></a>
+    <a target="_blank" href="/preview/{{ strtoupper($project) }}/{{ $filename }}?pdf=1" class="btn-ctrl" style="display: block; padding-top: 10px;"><i class="fas fa-print"></i></a>
 </div>
 <div id="bottom-btn-container">
-    <button class="btn-ctrl" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ $project }}"><i class="fa fa-download"></i></button>
+    <button class="btn-ctrl" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ strtoupper($project) }}"><i class="fa fa-download"></i></button>
 </div>
 
 <div id="print-area">
