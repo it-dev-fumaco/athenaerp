@@ -112,6 +112,12 @@
                             </table>
                             <div class="m-2">
                                 <span class="d-block font-responsive">Total: <b>{{ count($list) }}</b></span>
+                                @php
+                                    $promodiser = collect($list)->pluck('promodiser')->first();
+                                    $transaction_date = collect($list)->pluck('transaction_date')->first();
+                                    $transaction_date = $transaction_date ? Carbon\Carbon::parse($transaction_date)->format('M d, Y') : null;
+                                @endphp
+                                <span class="d-block font-responsive" style="font-size: 8pt;">{{ $promodiser.' - '.$transaction_date }}</span>
                             </div>
                         </div>
                     </div>

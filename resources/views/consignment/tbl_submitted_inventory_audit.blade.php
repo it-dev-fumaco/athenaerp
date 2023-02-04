@@ -5,7 +5,7 @@
 <div class="d-flex flex-row border-top justify-content-between align-items-center">
     <div class="p-1 font-responsive ml-2 {{ strtolower($row1['status']) == 'late' ? 'text-danger' : '' }}">
        {{ \Carbon\Carbon::parse($row1['audit_date_from'])->format('M. d, Y') }} - {{ \Carbon\Carbon::parse($row1['audit_date_to'])->format('M. d, Y') }}
-       <small class="d-block text-center">{{ $row1['promodiser'] }}</small>
+       <small class="d-block text-center">{{ $row1['promodiser'].' - '.\Carbon\Carbon::parse($row1['date_submitted'])->format('M d, Y') }}</small>
     </div>
     <div class="p-1 font-responsive ml-2 text-nowrap">
         {{ '₱ ' . number_format($row1['total_sales'], 2) }}
