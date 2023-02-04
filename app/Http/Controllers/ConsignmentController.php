@@ -3922,11 +3922,11 @@ class ConsignmentController extends Controller
                     return $q->where('branch_warehouse', $store);
                 })
                 ->when($year, function ($q) use ($year){
-                    return $q->whereYear('audit_date_from', $year);
+                    return $q->whereYear('audit_date_to', $year);
                 })
                 ->whereIn('branch_warehouse', $assigned_consignment_stores)
-                ->select('audit_date_from', 'audit_date_to', 'branch_warehouse', 'status')
-                ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'status')
+                ->select('audit_date_from', 'audit_date_to', 'branch_warehouse', 'status', 'promodiser')
+                ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'status', 'promodiser')
                 ->orderBy('audit_date_from', 'desc')
                 ->paginate(10);
 
@@ -3948,6 +3948,7 @@ class ConsignmentController extends Controller
                     'audit_date_to' => $row->audit_date_to,
                     'status' => $row->status,
                     'total_sales' => $total_sales,
+                    'promodiser' => $row->promodiser
                 ];
             }
 
