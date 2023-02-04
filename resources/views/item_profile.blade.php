@@ -116,9 +116,26 @@
                                             $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . $item_images[3] : '/icon/no_img.png';
                                             $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
                                             $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
+                                           
+                                            if (!$item_details->item_brochure_description) {
+                                                $item_brochure_description = $item_details->description;
+                                                $exploded_description = explode(",", strip_tags($item_brochure_description));
+                                                $item_brochure_description = (isset($exploded_description[0]) ? $exploded_description[0] : '') . (isset($exploded_description[1]) ? ", " . $exploded_description[1] : '');
+                                            } else {
+                                                $item_brochure_description = strip_tags($item_details->item_brochure_description);
+                                            }
 
-                                            $item_brochure_name = $item_details->item_brochure_name ? $item_details->item_brochure_name : $item_details->item_name;
-                                            $item_brochure_description = $item_details->item_brochure_description ? $item_details->item_brochure_description : $item_details->description;
+                                            if (!$item_details->item_brochure_name) {
+                                                $item_brochure_name = $item_details->item_name;
+                                                $exploded_item_name = explode("-", strip_tags($item_brochure_name));
+                                                $exploded_item_name1 = (isset($exploded_item_name[0]) ? $exploded_item_name[0] : '');
+                                                $exploded_item_name2 = (isset($exploded_item_name[1]) ? '-' . $exploded_item_name[1] : '');
+                                                $exploded_item_name3 = (isset($exploded_item_name[2]) ? '-' . $exploded_item_name[2] : '');
+                                                $exploded_item_name4 = (isset($exploded_item_name[3]) ? '-' . $exploded_item_name[3] : '');
+                                                $item_brochure_name = $exploded_item_name1 . $exploded_item_name2 . $exploded_item_name3 . $exploded_item_name4;
+                                            } else {
+                                                $item_brochure_name = strip_tags($item_details->item_brochure_name);
+                                            }
                                         @endphp
                                         <div class="col-md-3 col-lg-2">
                                             <div class="row">
@@ -169,7 +186,7 @@
                                                     <button class="btn btn-primary btn-sm upload-item-image w-100" data-item-code="{{ $item_details->name }}"><i class="fa fa-camera" style="font-size: 20px"></i></button>
                                                 </div>
                                                 <div class="d-xl-none col-md-12 text-center pt-3">
-                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ strip_tags($item_brochure_description) }}">
+                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
                                                         <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
                                                     </button>
                                                 </div>
@@ -382,7 +399,7 @@
                             <div class="d-none d-lg-block col-lg-3">
                                 <div class="box box-solid h-100">
                                     <div class="d-none d-xl-block col-12 col-xl-6 offset-xl-6 text-center pt-3">
-                                        <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ strip_tags($item_brochure_description) }}">
+                                        <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
                                             <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
                                         </button>
                                     </div>
