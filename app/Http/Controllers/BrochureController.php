@@ -434,7 +434,7 @@ class BrochureController extends Controller
 
 			$attributes = DB::table('tabItem Variant Attribute as variant')
 				->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
-				->where('variant.parent', $data['item_code'])
+				->where('variant.parent', $data['item_code'])->where('hide_in_brochure', 0)
 				->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
 				->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 				
@@ -628,7 +628,7 @@ class BrochureController extends Controller
 		$attributes = DB::table('tabItem Variant Attribute as variant')
 			->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
 			->where('variant.parent', $item_code)
-			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
+			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name', 'variant.hide_in_brochure')
 			->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 
 		$remarks = DB::table('tabItem')->where('name', $item_code)->pluck('item_brochure_remarks')->first();
@@ -642,6 +642,7 @@ class BrochureController extends Controller
 			$transaction_date = Carbon::now()->toDateTimeString();
 			$request_attributes = $request->attribute;
 			$current_attributes = $request->current_attribute;
+			$hidden_attributes = collect($request->hidden_attributes)->filter()->values()->all();
 			$idx = 0;
 			foreach ($request_attributes as $attribute_name => $new_attribute_name) {
 				if ($current_attributes[$attribute_name] != $new_attribute_name) {
@@ -656,6 +657,7 @@ class BrochureController extends Controller
 			foreach ($current_attributes as $name => $attribute) {
 				DB::table('tabItem Variant Attribute')->where('parent', $request->item_code)->where('attribute', $attribute)->update([
 					'brochure_idx' => $idx += 1,
+					'hide_in_brochure' => in_array($attribute, $hidden_attributes) ? 1 : 0,
 					'modified_by' => Auth::user()->wh_user,
 					'modified' => Carbon::now()->toDateTimeString()
 				]);

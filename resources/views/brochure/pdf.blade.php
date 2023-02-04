@@ -147,7 +147,7 @@
                             }
                         @endphp
                         @if ($img && $img_exists)
-                            <img src="{{ $img }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important;">
+                            <img src="{{ $img }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
                         @endif
                     @endfor
                     &nbsp;

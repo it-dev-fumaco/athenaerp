@@ -820,7 +820,8 @@ class MainController extends Controller
                     $issued_qty += $at_total_issued[$value->item_code . '-' . $value->warehouse][0]->total_issued;
                 }
 
-                $reserved_qty = ($reserved_qty + $issued_qty) - $consumed_qty;
+                $reserved_qty = $reserved_qty - $consumed_qty;
+                $reserved_qty = $reserved_qty > 0 ? $reserved_qty : 0;
 
                 $actual_qty = $value->actual_qty;
 
@@ -829,7 +830,9 @@ class MainController extends Controller
                     $warehouse_reorder_level = $lowLevelStock[$value->item_code . '-' . $value->warehouse][0]->total_warehouse_reorder_level;
                 }
 
-                $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
+                $issued_reserved_qty = ($reserved_qty + $issued_qty) - $consumed_qty;
+
+                $available_qty = ($actual_qty > $issued_reserved_qty) ? $actual_qty - $issued_reserved_qty : 0;
                 if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                     $consignment_warehouses[] = [
                         'warehouse' => $value->warehouse,
@@ -1430,6 +1433,7 @@ class MainController extends Controller
             }
 
             $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
+            $actual_qty = $actual_qty > 0 ? $actual_qty : 0;
 
             $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
@@ -2839,7 +2843,7 @@ class MainController extends Controller
                 return $q->whereIn('warehouse', $allow_warehouse);
             })
             ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
-            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'stock_uom', 'parent_warehouse')
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
             ->get()->toArray();
 
         $stock_warehouses = array_column($item_inventory, 'warehouse');
@@ -2881,10 +2885,13 @@ class MainController extends Controller
             $at_issued_qty = array_key_exists($value->warehouse, $at_issued) ? $at_issued[$value->warehouse] : 0;
 
             $issued_qty = $at_issued_qty + $ste_issued_qty;
-            $reserved_qty = ($reserved_qty + $issued_qty) - $consumed_qty;
+            $reserved_qty = $reserved_qty - $consumed_qty;
+            $reserved_qty = $reserved_qty > 0 ? $reserved_qty : 0;
+
+            $issued_reserved_qty = ($reserved_qty + $issued_qty) - $consumed_qty;
 
             $actual_qty = $value->actual_qty;
-            $available_qty = ($actual_qty > $reserved_qty) ? $actual_qty - $reserved_qty : 0;
+            $available_qty = ($actual_qty > $issued_reserved_qty) ? $actual_qty - $issued_reserved_qty : 0;
             if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
                 $consignment_warehouses[] = [
                     'warehouse' => $value->warehouse,

@@ -1176,7 +1176,7 @@
 												<div class="d-flex flex-row">
 													<i class="fas fa-info-circle m-1" style="font-size: 19pt;"></i>
 													<span class="d-inline-block" style="font-size: 8pt;">
-														Drag and drop attributes to re-order. You can also change the attribute names without affecting the original product information.
+														Drag and drop attributes to re-order. You can also change and hide the attribute names without affecting the original product information.
 													</span>
 												</div>
 											</div>
@@ -1184,7 +1184,6 @@
 										<div class="col-10 offset-1 mt-3">
 											<form id="update-brochure-attribute-form" action="/update_brochure_attributes" method="POST" autocomplete="off">
 												@csrf
-												
 												<div id="brochure-item-attribute-div" style="font-size: 9pt;"></div>
 											</form>
 										</div>
