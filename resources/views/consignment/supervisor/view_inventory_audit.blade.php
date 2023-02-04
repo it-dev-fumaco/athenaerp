@@ -51,19 +51,27 @@
                             </div>
                             <form id="inventory-audit-history-form" method="GET">
                                 <div class="d-flex flex-row align-items-center mt-2">
-                                    <div class="p-1 col-6">
+                                    <div class="p-1 col-5">
                                         <select class="form-control inventory-audit-history-filter store form-control-sm" name="store" id="consignment-store-select-history">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
-                                    <div class="p-1 col-4 col-lg-2">
+                                    <div class="p-1 col-3 col-lg-3">
                                         <select class="form-control inventory-audit-history-filter year form-control-sm" name="year">
                                             @foreach ($select_year as $year)
                                             <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="p-1 col-2">
+                                    <div class="p-1 col-3 col-lg-3">
+                                        <select class="form-control inventory-audit-history-filter promodiser form-control-sm" name="promodiser">
+                                            <option value="">Select a Promodiser</option>
+                                            @foreach ($promodisers as $promodiser)
+                                                <option value="{{ $promodiser }}">{{ $promodiser }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="p-1 col-1">
                                         <a href="#" class="btn btn-secondary inventory-audit-history-refresh btn-sm"><i class="fas fa-undo"></i></a>
                                     </div>
                                 </div>
@@ -133,6 +141,7 @@
         $(document).on('click', '.inventory-audit-history-refresh', function(e) {
             e.preventDefault();
             $(".inventory-audit-history-filter.store").empty().trigger('change');
+            $(".inventory-audit-history-filter.promodiser").val('').trigger('change');
             $('.inventory-audit-history-filter.year').val('{{ Carbon\Carbon::now()->format("Y") }}').trigger('change');
             loadSubmittedInventoryAudit();
         });

@@ -3903,8 +3903,9 @@ class ConsignmentController extends Controller
             'total_sales' => '₱ ' . number_format($previous_cutoff_sales, 2) 
         ];
 
+        $promodisers = DB::table('tabWarehouse Users')->where('enabled', 1)->where('user_group', 'Promodiser')->pluck('full_name');
 
-        return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year', 'displayed_data'));
+        return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year', 'displayed_data', 'promodisers'));
     }
 
     public function getSubmittedInvAudit(Request $request) {
@@ -3961,7 +3962,10 @@ class ConsignmentController extends Controller
                 return $q->where('branch_warehouse', $store);
             })
             ->when($year, function ($q) use ($year){
-                return $q->whereYear('audit_date_from', $year);
+                return $q->whereYear('audit_date_from', $year)->orWhereYear('audit_date_to', $year);
+            })
+            ->when($request->promodiser, function ($q) use ($request){
+                return $q->where('promodiser', $request->promodiser);
             })
             ->selectRaw('audit_date_from, audit_date_to, branch_warehouse, transaction_date, GROUP_CONCAT(DISTINCT promodiser ORDER BY promodiser ASC SEPARATOR ",") as promodiser')
             ->orderBy('audit_date_to', 'desc')->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'transaction_date')->paginate(25);

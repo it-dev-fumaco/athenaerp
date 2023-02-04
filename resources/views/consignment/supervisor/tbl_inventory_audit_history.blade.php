@@ -29,7 +29,7 @@
         </tr>
         @empty
         <tr>
-            <td colspan="6" class="text-center font-responsive text-uppercase text-muted p-2">No record(s) found</td>
+            <td colspan="8" class="text-center font-responsive text-uppercase text-muted p-2">No record(s) found</td>
         </tr>
         @endforelse
     </tbody>
