@@ -117,7 +117,7 @@
                                     $transaction_date = collect($list)->pluck('transaction_date')->first();
                                     $transaction_date = $transaction_date ? Carbon\Carbon::parse($transaction_date)->format('M d, Y') : null;
                                 @endphp
-                                <span class="d-block font-responsive" style="font-size: 8pt;">{{ $promodiser.' - '.$transaction_date }}</span>
+                                <small class="d-block mt-3">Submitted By: <b>{{ $promodiser.' - '.$transaction_date }}</b></small>
                             </div>
                         </div>
                     </div>
