@@ -293,7 +293,9 @@
                 <div class="text-center mb-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
                     <small class="d-block">Branch / Store</small>
-                    <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
+                    <span class="d-block font-weight-bold mt-3">
+                        {{ session()->get('transaction_date') ? \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') : \Carbon\Carbon::now()->format('F d, Y') }}
+                    </span>
                     <small class="d-block">Transaction Date</small>
                 </div>
                 <div class="d-flex flex-row mt-1 justify-content-between">
