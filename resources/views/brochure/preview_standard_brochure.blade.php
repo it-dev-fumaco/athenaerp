@@ -242,58 +242,69 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Add Image</h4>
+                <h4 class="modal-title">Choose Image</h4>
                 <button type="button" class="close close-modal" data-target="#select-file-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="item-image-container-id">
-                <ul class="nav nav-pills ml-auto p-2">
-                    <li class="nav-item"><a class="nav-link select-file-tab tab-ctrl active" href="#" data-target="#file_tab_1" data-toggle="tab" data-tab=".select-file-tab">Upload File</a></li>
-                    <li class="nav-item"><a class="nav-link select-file-tab tab-ctrl" href="#" data-target="#file_tab_2" data-toggle="tab" data-tab=".select-file-tab">Select from current images</a></li>
-                </ul>
-                <div class="tab-content" style="min-height: 300px;">
-                    <div class="tab-pane select-file-tab active" id="file_tab_1">
-                        <form id="image-upload-form" method="POST" action="/upload_image_for_standard_brochure" autocomplete="off" enctype="multipart/form-data">
-                            @csrf
-                            <input type="hidden" id="item-image-order" name="image_idx">
-                            <input type="hidden" name="project" value="{{ $data['project'] }}">
-                            <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
-                            <div class="row mb-5">
-                                <div class="col-4 offset-4">
-                                    <div class="text-center">
-                                        <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3" id="img-preview">
-                                    </div>
-                                    <p class="text-center text-muted">Files Supported: JPEG, JPG, PNG</p>
-                                    <div class="form-group">
-                                        <div class="input-group">
-                                            <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="browse-file" name="selected-file" accept=".jpg,.jpeg,.png,.webp" required>
-                                                <label class="custom-file-label" for="browse-file" id="browse-file-text" style="overflow: hidden;">Browse File</label>
+                <div class="row p-0 m-0">
+                    <div class="col-4">
+                        <div class="card card-primary">
+                            <div class="card-header pl-3 pr-3 pt-2 pb-2">
+                                <h6 class="m-0 text-uppercase">Upload new Image</h6>
+                            </div>
+                            <form id="image-upload-form" method="POST" action="/upload_image_for_standard_brochure" autocomplete="off" enctype="multipart/form-data">
+                                @csrf
+                                <div class="card-body" style="min-height: 400px;">
+                                    <input type="hidden" id="item-image-order" name="image_idx">
+                                    <input type="hidden" name="project" value="{{ $data['project'] }}">
+                                    <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
+                                    <div class="row">
+                                        <div class="col-12 p-2">
+                                            <small class="d-block text-center text-muted" style="font-size: 10pt;">Files Supported: JPEG, JPG, PNG</small>
+                                            <small class="d-block text-center text-muted" style="font-size: 8pt;">Image Size: (230 x 230 px)</small>
+                                            <div class="form-group mt-2">
+                                                <div class="input-group">
+                                                    <div class="custom-file">
+                                                        <input type="file" class="custom-file-input" id="browse-file" name="selected-file" accept=".jpg,.jpeg,.png,.webp" required>
+                                                        <label class="custom-file-label" for="browse-file" id="browse-file-text" style="overflow: hidden;">Browse File</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="text-center mt-4" style="min-height: 200px;">
+                                                <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="card-footer">
                                     <div class="text-center">
-                                        <button class="btn btn-primary col-8" type="submit" id="upload-btn" disabled>Upload</button>
+                                        <button class="btn btn-primary col-8" type="submit" id="upload-btn" disabled><i class="fas fa-upload"></i> Upload</button>
                                     </div>
                                 </div>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
-                    <div class="tab-pane select-file-tab" id="file_tab_2">
-                        <form id="image-upload-form-1" action="/upload_image_for_standard_brochure" method="POST" autocomplete="off">
-                            @csrf
-                            <input type="hidden" id="item-image-order-1" name="image_idx">
-                            <input type="hidden" name="project" value="{{ $data['project'] }}">
-                            <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
-                            <input type="hidden" name="existing" value="1">
-                            @if ($img_check)
-                                <div class="row p-2 mt-3">
-                                    @foreach ($current_images as $cii)
+                    <div class="col-8">
+                        <div class="card card-info">
+                            <div class="card-header pl-3 pr-3 pt-2 pb-2">
+                                <h6 class="m-0 text-uppercase">Select from existing images</h6>
+                            </div>
+                            <form id="image-upload-form-1" action="/upload_image_for_standard_brochure" method="POST" autocomplete="off">
+                                @csrf
+                            <div class="card-body" style="min-height: 400px;">
+                                    <input type="hidden" id="item-image-order-1" name="image_idx">
+                                    <input type="hidden" name="project" value="{{ $data['project'] }}">
+                                    <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
+                                    <input type="hidden" name="existing" value="1">
+                                    @if ($img_check)
+                                    <div class="row p-2">
+                                        @foreach ($current_images as $cii)
                                         @php
                                             $img = $cii['filepath'];
                                             $img_webp = explode('.', $img)[0].'.webp';
                                         @endphp
-                                        <div class="col-3">
+                                        <div class="col-3 p-0">
                                             <label class="m-0 img-btn d-block">
                                                 <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>
                                                 <div class="c-img rounded">
@@ -305,22 +316,21 @@
                                                 </div>
                                             </label>
                                         </div>
-                                    @endforeach
+                                        @endforeach
+                                    </div>
+                                    @else
+                                    <div class="row mt-3">
+                                        <div class="col-4 offset-4 text-center text-muted text-uppercase">No image(s) found</div>
+                                    </div>
+                                    @endif
                                 </div>
-
-                                <div class="row mt-3">
-                                    <div class="col-4 offset-4 text-center">
-                                        <button class="btn btn-primary" type="submit">Upload Selected Image</button>
+                                <div class="card-footer">
+                                    <div class="text-center">
+                                        <button class="btn btn-primary" type="submit" id="submit-selected-image-brochure" disabled><i class="fas fa-check"></i> Submit Selected Image</button>
                                     </div>
                                 </div>
-                            @else
-                                <div class="row mt-3">
-                                    <div class="col-4 offset-4 text-center">
-                                        No image(s) found.
-                                    </div>
-                                </div>
-                            @endif
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -580,7 +590,7 @@
             if (typeof (FileReader) != "undefined") {
                 var reader = new FileReader();
                 reader.onload = function (e) {
-                    $('#img-preview').attr('src', e.target.result);
+                    $('#img-preview').removeClass('d-none').attr('src', e.target.result);
                 }
                 reader.readAsDataURL($(this)[0].files[0]);
             } else {
@@ -589,8 +599,18 @@
         });
 
         $(document).on('hidden.bs.modal', '.modal', function () {
-            $('#img-preview').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
-            $('#browse-file-text').text('Browse File');
+            $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+            $('#browse-file-text').text('Browse Image');
+            $('#image-upload-form-1')[0].reset();
+            $('#image-upload-form')[0].reset();
+
+            $('#submit-selected-image-brochure').attr('disabled', true);
+            $('#upload-btn').attr('disabled', true);
+        });
+
+        $("input[name=selected_image]:radio").change(function (e) {
+            e.preventDefault();
+            $('#submit-selected-image-brochure').removeAttr('disabled');
         });
 
         $('#image-upload-form').submit(function (e) {
