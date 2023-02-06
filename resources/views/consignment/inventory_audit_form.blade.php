@@ -294,7 +294,7 @@
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
                     <small class="d-block">Branch / Store</small>
                     <span class="d-block font-weight-bold mt-3">
-                        {{ session()->get('transaction_date') ? \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') : Carbon::now()->format('F d, Y') }}
+                        {{ session()->get('transaction_date') ? \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') : \Carbon\Carbon::now()->format('F d, Y') }}
                     </span>
                     <small class="d-block">Transaction Date</small>
                 </div>
