@@ -542,14 +542,14 @@
 						</div>
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
-								<li class="nav-item dropdown col-8 text-right">
+								<li class="nav-item dropdown col-10 text-right">
 									<a class="nav-link text-white" data-toggle="dropdown" href="#">
 										<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
 										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 									</a>
 								</li>
-								<li class="d-none d-lg-block nav-item dropdown text-right">
-									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i> <span class="d-md-none d-lg-none d-xl-inline-block">Sign Out</span></a>
+								<li class="d-none d-lg-block col-2 nav-item dropdown text-right">
+									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i></a>
 								</li>
 							</ul>
 						</div>
