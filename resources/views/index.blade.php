@@ -277,30 +277,30 @@
 														</div>
 														<div class="card-body p-2">
 															<div class="box">
-																<div class="text-center">Monthly Inventory Accuracy: 
-																	<select style="width: 15%;" id="monthly-inv-month" class="filter-inv-accuracy">
-																		<option value="">-</option>
-																		<option value="01" {{ date('m') == '01' ? 'selected' : '' }}>Jan</option>
-																		<option value="02" {{ date('m') == '02' ? 'selected' : '' }}>Feb</option>
-																		<option value="03" {{ date('m') == '03' ? 'selected' : '' }}>Mar</option>
-																		<option value="04" {{ date('m') == '04' ? 'selected' : '' }}>Apr</option>
-																		<option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
-																		<option value="06" {{ date('m') == '06' ? 'selected' : '' }}>Jun</option>
-																		<option value="07" {{ date('m') == '07' ? 'selected' : '' }}>Jul</option>
-																		<option value="08" {{ date('m') == '08' ? 'selected' : '' }}>Aug</option>
-																		<option value="09" {{ date('m') == '09' ? 'selected' : '' }}>Sept</option>
-																		<option value="10" {{ date('m') == '10' ? 'selected' : '' }}>Oct</option>
-																		<option value="11" {{ date('m') == '11' ? 'selected' : '' }}>Nov</option>
-																		<option value="12" {{ date('m') == '12' ? 'selected' : '' }}>Dec</option>
-																	</select>
-																	<select style="width: 15%;" id="monthly-inv-year" class="filter-inv-accuracy">
-																		<option value="2018" {{ date('Y') == 2018 ? 'selected' : '' }}>2018</option>
-																		<option value="2019" {{ date('Y') == 2019 ? 'selected' : '' }}>2019</option>
-																		<option value="2020" {{ date('Y') == 2020 ? 'selected' : '' }}>2020</option>
-																		<option value="2021" {{ date('Y') == 2021 ? 'selected' : '' }}>2021</option>
-																		<option value="2022" {{ date('Y') == 2022 ? 'selected' : '' }}>2022</option>
-																	</select>
-																</div>
+																<form autocomplete="off">
+																	<div class="text-center">Monthly Inventory Accuracy: 
+																		<select style="width: 15%;" id="monthly-inv-month" class="filter-inv-accuracy">
+																			<option value="">-</option>
+																			<option value="01" {{ date('m') == '01' ? 'selected' : '' }}>Jan</option>
+																			<option value="02" {{ date('m') == '02' ? 'selected' : '' }}>Feb</option>
+																			<option value="03" {{ date('m') == '03' ? 'selected' : '' }}>Mar</option>
+																			<option value="04" {{ date('m') == '04' ? 'selected' : '' }}>Apr</option>
+																			<option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
+																			<option value="06" {{ date('m') == '06' ? 'selected' : '' }}>Jun</option>
+																			<option value="07" {{ date('m') == '07' ? 'selected' : '' }}>Jul</option>
+																			<option value="08" {{ date('m') == '08' ? 'selected' : '' }}>Aug</option>
+																			<option value="09" {{ date('m') == '09' ? 'selected' : '' }}>Sept</option>
+																			<option value="10" {{ date('m') == '10' ? 'selected' : '' }}>Oct</option>
+																			<option value="11" {{ date('m') == '11' ? 'selected' : '' }}>Nov</option>
+																			<option value="12" {{ date('m') == '12' ? 'selected' : '' }}>Dec</option>
+																		</select>
+																		<select style="width: 15%;" id="monthly-inv-year" class="filter-inv-accuracy">
+																			@for ($start = 2018; $start <= date('Y'); $start++)
+																			<option value="{{ $start }}" {{ date('Y') == $start ? 'selected' : '' }}>{{ $start }}</option>
+																			@endfor
+																		</select>
+																	</div>
+																</form>
 																<table class="table table-bordered mt-2" id="monthly-inv-chart">
 																	<col style="width: 30%;">
 																	<col style="width: 30%;">
