@@ -3150,6 +3150,40 @@ class MainController extends Controller
         return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches'));
     }
 
+    public function save_package_dimension(Request $request, $item_code){
+        DB::beginTransaction();
+        try {
+            foreach($request->except('_token') as $dimension => $value){
+                if($dimension != 'package_dimension_uom'){
+                    if(!is_numeric($value)){
+                        return response()->json(['success' => 0, 'message' => explode('_', $dimension)[1].' must be a number.']);
+                    }
+
+                    if($value < 0){
+                        return response()->json(['success' => 0, 'message' => explode('_', $dimension)[1].' cannot be less than 0.']);
+                    }
+                }
+            }
+
+            DB::table('tabItem')->where('name', $item_code)->update([
+                'package_weight' => $request->package_weight,
+                'package_length' => $request->package_length,
+                'package_width' => $request->package_width,
+                'package_height' => $request->package_height,
+                'package_dimension_uom' => $request->package_dimension_uom,
+                'modified_by' => Auth::user()->wh_user,
+                'modified' => Carbon::now()->toDateTimeString()
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => 1, 'message' => 'Package dimension saved.']);
+        } catch (\Throwable $th) {
+            // throw $th;
+            DB::rollback();
+            return response()->json(['success' => 0, 'message' => 'An error occured. Please try again later.']);
+        }
+    }
+
     public function get_athena_transactions(Request $request, $item_code){
         $user_group = Auth::user()->user_group;
         $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)

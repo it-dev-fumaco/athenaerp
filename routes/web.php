@@ -86,6 +86,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_stock_ledger/{item_code}', 'MainController@get_stock_ledger');
     Route::get('/form_warehouse_location/{item_code}', 'MainController@form_warehouse_location');
     Route::post('/edit_warehouse_location', 'MainController@edit_warehouse_location');
+    Route::post('/save_package_dimension/{item_code}', 'MainController@save_package_dimension');
 
     Route::get('/print_barcode/{item_code}', 'MainController@print_barcode');
 

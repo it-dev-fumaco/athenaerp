@@ -278,6 +278,61 @@
                                                     @endif
                                                 </p>
                                             </div>
+                                            <div class="box box-solid p-0 ml-3 border border-danger">
+                                                <div class="row">
+                                                    <div class="col-6 border border-danger">
+                                                        Package Dimension
+                                                        <button class="btn btn-sm btn-primary float-right" data-toggle="modal" data-target="#package-dimension-modal" style="font-size: 10pt;">
+                                                            <i class="fa fa-edit"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="col-6 border border-danger">
+                                                        test
+                                                    </div>
+                                                </div>
+                                                <div class="modal fade" id="package-dimension-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="exampleModalLabel">Package Dimension</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="col-8 mx-auto" style="font-size: 9pt;">
+                                                                    <form action="/save_package_dimension/{{ $item_details->name }}" id="package-dimension-form" method="post">
+                                                                        @csrf
+                                                                        <div class="form-group">
+                                                                            <label>Package Weight</label>
+                                                                            <input type="text" name="package_weight" class="form-control" value="{{ $item_details->package_weight }}" required>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label>Package Length</label>
+                                                                            <input type="text" name="package_length" class="form-control" value="{{ $item_details->package_length }}" required>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label>Package Width</label>
+                                                                            <input type="text" name="package_width" class="form-control" value="{{ $item_details->package_width }}" required>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label>Package Height</label>
+                                                                            <input type="text" name="package_height" class="form-control" value="{{ $item_details->package_height }}" required>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label>Package Dimension UoM</label>
+                                                                            <input type="text" name="package_dimension_uom" class="form-control" value="{{ $item_details->package_dimension_uom }}" required>
+                                                                        </div>
+                                                                        <center>
+                                                                            <button type="submit" class="btn btn-primary" style="font-size: 12pt;"><i class="fa fa-save"></i> Save</button>
+                                                                        </center>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                                             </div>
@@ -945,7 +1000,6 @@
 @endsection
 @section('script')
     <script>
-
         $(document).on('submit', '.update-price-form', function(e){
             e.preventDefault();
 
@@ -959,6 +1013,26 @@
                     $('#' + entered_price_computed).text(response.standard_price);
                     $('#' + entered_price_computed + '-min').text(response.min_price);
                     showNotification("success", 'Item price updated.', "fa fa-check");
+                }
+            });
+        });
+
+        $('#package-dimension-form').submit(function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.success) {
+                        showNotification("success", response.message, "fa fa-check");
+                        $('#package-dimension-modal').modal('hide');
+                    }else{
+                        showNotification("danger", response.message, "fa fa-info");
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
                 }
             });
         });

@@ -3491,6 +3491,10 @@ class ConsignmentController extends Controller
             ];
 
             $consignment_supervisors = DB::table('tabWarehouse Users')->where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
+            // For Testing
+            $consignment_supervisors = collect($consignment_supervisors)->push('jave.kulong@fumaco.local');
+            $consignment_supervisors = collect($consignment_supervisors)->all();
+            // For Testing
 
             if($consignment_supervisors){ // send email alert to supervisors
                 try {
@@ -3908,6 +3912,7 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.view_inventory_audit', compact('assigned_consignment_stores', 'select_year', 'displayed_data', 'promodisers'));
     }
 
+    // /submitted_inventory_audit
     public function getSubmittedInvAudit(Request $request) {
         $store = $request->store;
         $year = $request->year;
