@@ -2748,16 +2748,20 @@ class MainController extends Controller
     public function edit_warehouse_location(Request $request){
         DB::beginTransaction();
         try {
-            $locations = $request->location;
-            $warehouses = $request->warehouses;
-            foreach($locations as $key => $location){
-                DB::table('tabBin')->where('warehouse', $warehouses[$key])->where('item_code', $request->item_code)->update(['location' => strtoupper($location)]);
+            $location = $request->location;
+            $warehouse = $request->warehouse;
+
+            if ($warehouse && $location) {
+                DB::table('tabBin')->where('warehouse', $warehouse)->where('item_code', $request->item_code)
+                    ->update(['location' => strtoupper($location)]);
             }
             
             DB::commit();
+
             return redirect()->back()->with('success', 'Warehouse location updated!');
         } catch (Exception $e) {
             DB::rollback();
+
             return redirect()->back()->with('error', 'Error');
         }
     }
