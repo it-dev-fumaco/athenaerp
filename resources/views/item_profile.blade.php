@@ -108,6 +108,10 @@
                                             $img_2 = (array_key_exists(1, $item_images)) ? '/img/' . $item_images[1] : '/icon/no_img.png';
                                             $img_2_webp = (array_key_exists(1, $item_images)) ? '/img/' . explode('.', $item_images[1])[0].'.webp' : '/icon/no_img.webp';
                                             $img_2_alt = (array_key_exists(1, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_2)[0], '-') : null;
+
+                                            $img_2_visible = (array_key_exists(1, $item_images)) ? true : false;
+                                            $img_3_visible = (array_key_exists(2, $item_images)) ? true : false;
+                                            $img_4_visible = (array_key_exists(3, $item_images)) ? true : false;
                                             
                                             $img_3 = (array_key_exists(2, $item_images)) ? '/img/' . $item_images[2] : '/icon/no_img.png';
                                             $img_3_webp = (array_key_exists(2, $item_images)) ? '/img/' . explode('.', $item_images[2])[0].'.webp' : '/icon/no_img.webp';
@@ -137,7 +141,7 @@
                                                 $item_brochure_name = strip_tags($item_details->item_brochure_name);
                                             }
                                         @endphp
-                                        <div class="col-md-3 col-lg-2">
+                                        <div class="col-md-3 col-lg-3 pl-2 pr-2 pb-2 pt-0">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
@@ -148,6 +152,7 @@
                                                         </picture>
                                                     </a>
                                                 </div>
+                                                @if ($img_2_visible)
                                                 <div class="col-4 mt-2">
                                                     <a href="{{ asset('storage/'.$img_2) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                                         <picture>
@@ -157,6 +162,8 @@
                                                         </picture>
                                                     </a>
                                                 </div>
+                                                @endif
+                                                @if ($img_3_visible)
                                                 <div class="col-4 mt-2"> 
                                                     <a href="{{ asset('storage/'.$img_3) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                                         <picture>
@@ -166,6 +173,8 @@
                                                         </picture>
                                                     </a>
                                                 </div>
+                                                @endif
+                                                @if ($img_4_visible)
                                                 <div class="col-4 mt-2">
                                                     <a href="{{ asset('storage'.$img_4) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
                                                         <div class="text-white">
@@ -182,6 +191,7 @@
                                                         </div>
                                                     </a>
                                                 </div>
+                                                @endif
                                                 <div class="col-md-12 text-center pt-3">
                                                     <button class="btn btn-primary btn-sm upload-item-image w-100" data-item-code="{{ $item_details->name }}"><i class="fa fa-camera" style="font-size: 20px"></i></button>
                                                 </div>
@@ -228,7 +238,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-9 col-lg-10">
+                                        <div class="col-md-9 col-lg-9">
                                             <br class="d-block d-md-none"/>
                                             <dl class="ml-3">
                                                 <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
