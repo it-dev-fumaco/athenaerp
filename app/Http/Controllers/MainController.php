@@ -5904,13 +5904,17 @@ class MainController extends Controller
 
                 $imported_files = Storage::disk('public')->files('/export/');
 
-                // Collect .jpg files to save in DB
+                // Collect image files to save in DB
                 $collect_images_arr = collect($imported_files)->map(function ($q){
                     $image = explode('/', $q)[1];
-                    $image_name = explode('-', $image)[1];
-                    if(!in_array(explode('.', $image_name)[1], ['webp', 'WEBP'])){
+
+                    $exploded = explode('.', $image);
+                    $image_name = isset($exploded[0]) ? $exploded[0] : null;
+                    $image_extension = isset($exploded[1]) ? $exploded[1] : null;
+
+                    if(!in_array($image_extension, ['webp', 'WEBP', 'zip', 'ZIP'])){
                         return [
-                            'item_code' => explode('.', $image_name)[0],
+                            'item_code' => isset(explode('-', $image_name)[1]) ? explode('-', $image_name)[1] : null,
                             'image' => $image
                         ];
                     }
@@ -5921,6 +5925,7 @@ class MainController extends Controller
                 });
 
                 $images_arr = collect($collect_images_arr)->groupBy('item_code');
+                $new_images = [];
                 if($images_arr){
                     $item_codes = array_keys($images_arr->toArray());
                     
@@ -5941,10 +5946,10 @@ class MainController extends Controller
                         if(isset($images_arr[$item_code])){
                             foreach($images_arr[$item_code] as $a => $image){
                                 $a = $a + 1;
-                                $jpg = explode('-', $image['image'])[0].$a.'-'.explode('-', $image['image'])[1];
+                                $jpg = explode('-', $image['image'])[0].$a.'-'.str_replace(explode('-', $image['image'])[0].'-', null, $image['image']);
                                 $webp = explode('.', $jpg)[0].'.webp';
         
-                                $new_images = [
+                                $new_images[] = [
                                     'name' => uniqid(),
                                     'creation' => $now->toDateTimeString(),
                                     'modified' => $now->toDateTimeString(),
@@ -5961,17 +5966,16 @@ class MainController extends Controller
                                 if(Storage::disk('public')->exists('/export/'.$image['image']) and !Storage::disk('public')->exists('/img/'.$jpg)){
                                     Storage::disk('public')->move('/export/'.$image['image'], '/img/'.$jpg);
                                 }
-    
+
                                 if(Storage::disk('public')->exists('/export/'.explode('.', $image['image'])[0].'.webp') and !Storage::disk('public')->exists('/img/'.$webp)){
                                     Storage::disk('public')->move('/export/'.explode('.', $image['image'])[0].'.webp', '/img/'.$webp);
                                 }
-
-                                DB::table('tabItem Images')->insert($new_images);
                             }
                         }
                     }
                 }
-        
+
+                DB::table('tabItem Images')->insert($new_images);
                 DB::commit();
                 return redirect()->back()->with('success', 'E-Commerce Image(s) Imported');
             }
