@@ -3158,26 +3158,22 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
             foreach($request->except('_token') as $dimension => $value){
-                if($dimension != 'package_dimension_uom'){
+                if(!in_array($dimension, ['package_dimension_uom'])){
                     if(!is_numeric($value)){
-                        return response()->json(['success' => 0, 'message' => explode('_', $dimension)[1].' must be a number.']);
+                        return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' must be a number.']);
                     }
 
                     if($value < 0){
-                        return response()->json(['success' => 0, 'message' => explode('_', $dimension)[1].' cannot be less than 0.']);
+                        return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' cannot be less than 0.']);
                     }
                 }
             }
 
-            DB::table('tabItem')->where('name', $item_code)->update([
-                'package_weight' => $request->package_weight,
-                'package_length' => $request->package_length,
-                'package_width' => $request->package_width,
-                'package_height' => $request->package_height,
-                'package_dimension_uom' => $request->package_dimension_uom,
-                'modified_by' => Auth::user()->wh_user,
-                'modified' => Carbon::now()->toDateTimeString()
-            ]);
+            $update_arr = $request->except('_token');
+            $update_arr['modified'] = Carbon::now()->toDateTimeString();
+            $update_arr['modified_by'] = Auth::user()->wh_user;
+
+            DB::table('tabItem')->where('name', $item_code)->update($update_arr);
 
             DB::commit();
             return response()->json(['success' => 1, 'message' => 'Package dimension saved.']);

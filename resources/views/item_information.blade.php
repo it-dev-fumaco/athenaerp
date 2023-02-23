@@ -30,6 +30,9 @@
         Length: {{ $length }},
         Width: {{ $width }},
         Thickness: {{ $thickness }}
+        @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+            &nbsp;<i class="fa fa-edit" data-toggle="modal" data-target='#item-information-modal-2' style="color: #0069D9"></i>
+        @endif
     </dd>
 </dl>
 <div class="modal fade" id="item-information-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -43,7 +46,7 @@
             </div>
             <div class="modal-body">
                 <div class="col-8 mx-auto" style="font-size: 9pt;">
-                    <form action="/save_item_information/{{ $item_details->name }}" id="item-information-form" method="post">
+                    <form action="/save_item_information/{{ $item_details->name }}" class="item-information-form" data-modal-container="#item-information-modal" method="post">
                         @csrf
                         <div class="form-group">
                             <label>Package Weight</label>
@@ -74,10 +77,49 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="item-information-modal-2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Edit Product Dimension</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="col-8 mx-auto" style="font-size: 9pt;">
+                    <form action="/save_item_information/{{ $item_details->name }}" class="item-information-form" data-modal-container="#item-information-modal-2" method="post">
+                        @csrf
+                        <div class="form-group">
+                            <label>Weight</label>
+                            <input type="text" name="weight_per_unit" class="form-control" value="{{ $item_details->weight_per_unit ? number_format($item_details->weight_per_unit) : null }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Length</label>
+                            <input type="text" name="length" class="form-control" value="{{ $item_details->length ? number_format($item_details->length) : null }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Width</label>
+                            <input type="text" name="width" class="form-control" value="{{ $item_details->width ? number_format($item_details->width) : null }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Thickness</label>
+                            <input type="text" name="thickness" class="form-control" value="{{ $item_details->thickness ? number_format($item_details->thickness) : null }}" required>
+                        </div>
+                        <center>
+                            <button type="submit" class="btn btn-primary" style="font-size: 12pt;"><i class="fa fa-save"></i> Save</button>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     $(document).ready(function (){
-        $('#item-information-form').submit(function(e){
+        $('.item-information-form').submit(function(e){
             e.preventDefault();
+            var modal = $(this).data('modal-container');
 
             $.ajax({
                 type: 'POST',
@@ -87,7 +129,7 @@
                     if (response.success) {
                         load_item_information();
                         showNotification("success", response.message, "fa fa-check");
-                        $('#item-information-modal').modal('hide');
+                        $(modal).modal('hide');
                     }else{
                         showNotification("danger", response.message, "fa fa-info");
                     }

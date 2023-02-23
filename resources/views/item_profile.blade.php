@@ -969,7 +969,7 @@
                     $('#item-information-container').html(response);
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
-                    showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
+                    showNotification("danger", 'Error in getting product information.', "fa fa-info");
                 }
             });
         }
