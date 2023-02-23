@@ -74,11 +74,12 @@
     </head>
     @php
         $margin = '1.2in';
+        $rows = 1;
         if(strlen($project) > 29){
             $rows = (strlen($project) - 34) / 42;
-            $rows = (int)$rows < 1 ? 1 : (int)$rows;
+            $rows = (int)$rows < 1 ? 1 : (int)$rows + 1.3;
 
-            $margin = (1.3 + (.1 * $rows)).'in' ;
+            $margin = (1.3 + (.13 * $rows)).'in' ;
         }
     @endphp
 <body style="border: 1px solid; padding: {{ $margin }} .5in 0 .5in;">
@@ -89,7 +90,7 @@
                     <img src="{{ public_path("storage/fumaco_logo.png") }}" alt="" style="width: 230px;">
                 </td>
                 <td style="width: 55%; font-size: 11pt;">
-                    <p style="text-transform: uppercase !important; margin: 0; line-height: .75rem">
+                    <p style="text-transform: uppercase !important; margin: 0; line-height: .75rem;">
                         PROJECT: <span class="bold">{{ $project }}</span>
                     </p>
                     <p style="margin-top: 15px !important; margin: 0;">LUMINAIRE SPECIFICATION AND INFORMATION</p>
