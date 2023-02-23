@@ -242,10 +242,6 @@
                                             <br class="d-block d-md-none"/>
                                             <span id="selected-item-code" class="d-none">{{ $item_details->name }}</span>
                                             <div id="item-information-container"></div>
-                                            {{-- <dl class="ml-3">
-                                                <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
-                                                <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
-                                            </dl> --}}
                                             <div class="d-block d-lg-none">
                                                 <p class="mt-2 mb-2 text-center">
                                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 

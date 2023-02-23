@@ -3154,7 +3154,7 @@ class MainController extends Controller
         return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches'));
     }
 
-    public function save_package_dimension(Request $request, $item_code){
+    public function save_item_information(Request $request, $item_code){
         DB::beginTransaction();
         try {
             foreach($request->except('_token') as $dimension => $value){
