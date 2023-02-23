@@ -15,7 +15,7 @@
 <dl class="ml-3">
     <dt style="font-size: 10pt;">Package Dimension</dt>
     <dd style="font-size: 9pt;" class="text-justify mb-2">
-        Net Weight: {{ $package_weight }},
+        Net Weight: {{ $weight_per_unit }},
         Length: {{ $package_length }},
         Width: {{ $package_width }},
         Height: {{ $package_height }}
@@ -48,20 +48,20 @@
                     <form action="/save_item_information/{{ $item_details->name }}" class="item-information-form" data-modal-container="#item-information-modal" method="post">
                         @csrf
                         <div class="form-group">
-                            <label>Package Weight</label>
-                            <input type="text" name="package_weight" id="package_weight" class="form-control" value="{{ $item_details->package_weight }}" required>
+                            <label>Net Weight</label>
+                            <input type="text" name="weight_per_unit" id="weight_per_unit" class="form-control" value="{{ $item_details->weight_per_unit ? number_format($item_details->weight_per_unit) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Length</label>
-                            <input type="text" name="package_length" id="package_length" class="form-control" value="{{ $item_details->package_length }}" required>
+                            <input type="text" name="package_length" id="package_length" class="form-control" value="{{ $item_details->package_length ? number_format($item_details->package_length) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Width</label>
-                            <input type="text" name="package_width" id="package_width" class="form-control" value="{{ $item_details->package_width }}" required>
+                            <input type="text" name="package_width" id="package_width" class="form-control" value="{{ $item_details->package_width ? number_format($item_details->package_width) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Height</label>
-                            <input type="text" name="package_height" id="package_height" class="form-control" value="{{ $item_details->package_height }}" required>
+                            <input type="text" name="package_height" id="package_height" class="form-control" value="{{ $item_details->package_height ? number_format($item_details->package_height) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Dimension UoM</label>
