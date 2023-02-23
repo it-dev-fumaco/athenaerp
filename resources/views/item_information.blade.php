@@ -23,8 +23,7 @@
             &nbsp;<i class="fa fa-edit" data-toggle="modal" data-target='#item-information-modal' style="color: #0069D9"></i>
         @endif
     </dd>
-
-    <dt style="font-size: 10pt;">Product Dimension</dt>
+    {{-- <dt style="font-size: 10pt;">Product Dimension</dt>
     <dd style="font-size: 9pt;" class="text-justify mb-2">
         Weight: {{ $weight_per_unit }},
         Length: {{ $length }},
@@ -33,7 +32,7 @@
         @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
             &nbsp;<i class="fa fa-edit" data-toggle="modal" data-target='#item-information-modal-2' style="color: #0069D9"></i>
         @endif
-    </dd>
+    </dd> --}}
 </dl>
 <div class="modal fade" id="item-information-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -77,7 +76,7 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="item-information-modal-2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+{{-- <div class="modal fade" id="item-information-modal-2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -114,7 +113,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 <script>
     $(document).ready(function (){
         $('.item-information-form').submit(function(e){
