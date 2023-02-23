@@ -240,10 +240,12 @@
                                         </div>
                                         <div class="col-md-9 col-lg-9">
                                             <br class="d-block d-md-none"/>
-                                            <dl class="ml-3">
+                                            <span id="selected-item-code" class="d-none">{{ $item_details->name }}</span>
+                                            <div id="item-information-container"></div>
+                                            {{-- <dl class="ml-3">
                                                 <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
                                                 <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
-                                            </dl>
+                                            </dl> --}}
                                             <div class="d-block d-lg-none">
                                                 <p class="mt-2 mb-2 text-center">
                                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
@@ -277,61 +279,6 @@
                                                         @endif
                                                     @endif
                                                 </p>
-                                            </div>
-                                            <div class="box box-solid p-0 ml-3 border border-danger">
-                                                <div class="row">
-                                                    <div class="col-6 border border-danger">
-                                                        Package Dimension
-                                                        <button class="btn btn-sm btn-primary float-right" data-toggle="modal" data-target="#package-dimension-modal" style="font-size: 10pt;">
-                                                            <i class="fa fa-edit"></i>
-                                                        </button>
-                                                    </div>
-                                                    <div class="col-6 border border-danger">
-                                                        test
-                                                    </div>
-                                                </div>
-                                                <div class="modal fade" id="package-dimension-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog" role="document">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="exampleModalLabel">Package Dimension</h5>
-                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                    <span aria-hidden="true">&times;</span>
-                                                                </button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div class="col-8 mx-auto" style="font-size: 9pt;">
-                                                                    <form action="/save_package_dimension/{{ $item_details->name }}" id="package-dimension-form" method="post">
-                                                                        @csrf
-                                                                        <div class="form-group">
-                                                                            <label>Package Weight</label>
-                                                                            <input type="text" name="package_weight" class="form-control" value="{{ $item_details->package_weight }}" required>
-                                                                        </div>
-                                                                        <div class="form-group">
-                                                                            <label>Package Length</label>
-                                                                            <input type="text" name="package_length" class="form-control" value="{{ $item_details->package_length }}" required>
-                                                                        </div>
-                                                                        <div class="form-group">
-                                                                            <label>Package Width</label>
-                                                                            <input type="text" name="package_width" class="form-control" value="{{ $item_details->package_width }}" required>
-                                                                        </div>
-                                                                        <div class="form-group">
-                                                                            <label>Package Height</label>
-                                                                            <input type="text" name="package_height" class="form-control" value="{{ $item_details->package_height }}" required>
-                                                                        </div>
-                                                                        <div class="form-group">
-                                                                            <label>Package Dimension UoM</label>
-                                                                            <input type="text" name="package_dimension_uom" class="form-control" value="{{ $item_details->package_dimension_uom }}" required>
-                                                                        </div>
-                                                                        <center>
-                                                                            <button type="submit" class="btn btn-primary" style="font-size: 12pt;"><i class="fa fa-save"></i> Save</button>
-                                                                        </center>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
                                             <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
@@ -472,7 +419,7 @@
                                         </button>
                                     </div>
                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])) 
-                                    <div class="box-body table-responsive no-padding h-100" style="display: flex; justify-content: center; align-items: center;">
+                                    <div class="box-body table-responsive no-padding h-50" style="display: flex; justify-content: center; align-items: center;">
                                         <p class="mt-2 mb-2 text-center">
                                             @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                             <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
@@ -1016,26 +963,20 @@
                 }
             });
         });
-
-        $('#package-dimension-form').submit(function(e){
-            e.preventDefault();
-
+        
+        load_item_information();
+        function load_item_information(){
             $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: $(this).serialize(),
+                type: 'GET',
+                url: '/get_item_details/{{ $item_details->name }}',
                 success: function(response){
-                    if (response.success) {
-                        showNotification("success", response.message, "fa fa-check");
-                        $('#package-dimension-modal').modal('hide');
-                    }else{
-                        showNotification("danger", response.message, "fa fa-info");
-                    }
+                    $('#item-information-container').html(response);
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
+                    showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
                 }
             });
-        });
+        }
 
         $('#back-btn').on('click', function(e){
             e.preventDefault();

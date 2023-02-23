@@ -2777,6 +2777,10 @@ class MainController extends Controller
             return response()->json($item_details);
         }
 
+        if($request->ajax()){
+            return view('item_information', compact('item_details'));
+        }
+
         $allow_warehouse = [];
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
         if ($is_promodiser) {
