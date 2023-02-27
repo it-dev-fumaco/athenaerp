@@ -25,7 +25,7 @@
 
                             $price_list_rate = array_key_exists($row->item_code, $price_list_rates) ? '₱ ' . number_format($price_list_rates[$row->item_code][0]->price_list_rate, 2, '.', ',') : '-';
                         @endphp
-                        <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
+                        <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
                             @if(!Storage::disk('public')->exists('/img/'.explode('.', $item_image)[0].'.webp'))
                                 <img class="w-100" src="{{ asset('storage/') }}{{ $img }}">
                             @elseif(!Storage::disk('public')->exists('/img/'.$item_image))
@@ -61,37 +61,6 @@
                         <span class="font-weight-bold"><a href="/get_item_details/{{ $row->item_code }}" style="color: inherit !important" target="_blank">{{ $row->item_code }}</a></span>
                         <span class="d-inline d-sm-none"><br>{{ $row->item_classification.' - '.$row->item_group }}</span>
                         <span class="d-block">{!! strip_tags($row->description) !!}</span>
-                    </div>
-                </div>
-                <div class="modal fade" id="{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                    <div class="modal-dialog" role="document" style="min-width: 55%;">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div id="image-container" class="container-fluid">
-                                    <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                        <div class="carousel-inner">
-                                            <div class="carousel-item active">
-                                                <img class="d-block w-100" id="{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
-                                            </div>
-                                            <span class='d-none' id="{{ $row->item_code }}-image-data">0</span>
-                                        </div>
-                                        <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                            <span class="sr-only">Previous</span>
-                                        </a>
-                                        <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row->item_code }}')" role="button" data-slide="next" style="color: #000 !important">
-                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                            <span class="sr-only">Next</span>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </td>
