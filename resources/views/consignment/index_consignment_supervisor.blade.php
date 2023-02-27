@@ -495,13 +495,59 @@
             loadPendingToReceive(warehouse, page);
         });
 
+        $(document).on('click', '.submit-btn', function (){
+            validate_submit($(this).data('reference'));
+        });
+
+        function validate_submit(reference){
+            var err = 0;
+            
+            $('.' + reference + '-price').each(function (){
+                if($(this).val() == '' || $(this).val() <= 0){
+                    $(this).css('border', '1px solid red');
+                    err = 1;
+                }else{
+                    $(this).css('border', '1px solid #DEE2E6');
+                }
+            });
+            
+            if(err == 1){
+                showNotification("danger", 'Item price cannot be less than or equal to 0.', "fa fa-info");
+            }else{
+                $('#' + reference + '-form').submit();
+            }
+        }
+
+        $(document).on('submit', '.deliveries-form', function (e){
+            e.preventDefault();
+            var modal = $(this).data('modal-container');
+            $.ajax({
+                type: 'GET',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if(response.success){
+                        loadPendingToReceive('', '{{ request()->has("page") ? request()->get("page") : 1 }}');
+                        $(modal).modal('hide');
+                        showNotification("success", response.message, "fa fa-check");
+                    }else{
+                        showNotification("danger", response.message, "fa fa-info");
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
+                }
+            });
+        });
+
         loadPendingToReceive('', 1);
         function loadPendingToReceive(warehouse, page){
             $.ajax({
 				type: "GET",
 				url: "/view_consignment_deliveries?page=" + page,
                 data: {
-                    store: warehouse
+                    store: warehouse,
+                    status: 'To Receive'
                 },
 				success: function (response) {
 					$('#pending-to-receive-table').html(response);
@@ -547,6 +593,21 @@
 				}
 			});
 		}
+
+        function showNotification(color, message, icon){
+            $.notify({
+                icon: icon,
+                message: message
+            },{
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: {
+                    from: 'top',
+                    align: 'center'
+                }
+            });
+        }
     });
 </script>
 @endsection

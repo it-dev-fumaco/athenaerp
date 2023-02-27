@@ -216,92 +216,7 @@ class MainController extends Controller
                 $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
                 $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
 
-                $delivery_report_query = DB::table('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date)
-                    ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
-                    ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.docstatus', 1)
-                    ->whereIn('ste.item_status', ['For Checking', 'Issued'])
-                    ->whereIn('sted.t_warehouse', $assigned_consignment_store)
-                    ->where(function($q) {
-                        $q->whereNull('sted.consignment_status')
-                        ->orWhere('sted.consignment_status', '!=', 'Received');
-                    })
-                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
-                    ->orderBy('ste.creation', 'desc')->get();
-
-                $delivery_report = collect($delivery_report_query)->groupBy('name');
-
-                $item_codes = collect($delivery_report_query)->map(function ($q){
-                    return $q->item_code;
-                });
-
-                $source_warehouses = collect($delivery_report_query)->map(function ($q){
-                    return $q->s_warehouse;
-                });
-        
-                $target_warehouses = collect($delivery_report_query)->map(function ($q){
-                    return $q->t_warehouse;
-                });
-        
-                $warehouses = collect($source_warehouses)->merge($target_warehouses)->unique();
-
-                $item_prices = DB::table('tabBin')->whereIn('warehouse', $warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get();
-                $prices_arr = [];
-
-                foreach($item_prices as $item){
-                    $prices_arr[$item->warehouse][$item->item_code] = [
-                        'price' => $item->consignment_price
-                    ];
-                }
-
-                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-                $item_image = collect($item_images)->groupBy('parent');
-
                 $now = Carbon::now();
-
-                $ste_arr = [];
-                foreach($delivery_report as $ste => $row){
-                    $items_arr = [];
-                    foreach($row as $item){
-                        $ref_warehouse = $row[0]->transfer_as == 'Consignment' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
-                        $items_arr[] = [
-                            'item_code' => $item->item_code,
-                            'description' => $item->description,
-                            'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
-                            'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
-                            'delivered_qty' => $item->transfer_qty,
-                            'stock_uom' => $item->stock_uom,
-                            'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? $prices_arr[$ref_warehouse][$item->item_code]['price'] : 0,
-                            'delivery_status' => $item->consignment_status
-                        ];
-                    }
-
-                    $status_check = collect($items_arr)->map(function($q){
-                        return $q['delivery_status'] ? 1 : 0; // return 1 if status is Received
-                    })->toArray();
-
-                    $delivery_date = Carbon::parse($row[0]->delivery_date);
-                  
-                    if($row[0]->item_status == 'Issued' && $now > $delivery_date){
-                        $status = 'Delivered';
-                    }else{
-                        $status = 'Pending';
-                    }
-
-                    $ste_arr[] = [
-                        'name' => $row[0]->name,
-                        'from' => $row[0]->from_warehouse,
-                        'to_consignment' => $row[0]->t_warehouse,
-                        'status' => $status,
-                        'items' => $items_arr,
-                        'creation' => $row[0]->creation,
-                        'delivery_date' => $row[0]->delivery_date,
-                        'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
-                        'posting_time' => $row[0]->posting_time
-                    ];
-                }
 
                 $branches_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
                     ->whereIn('branch_warehouse', $assigned_consignment_store)->where('status', '!=', 'Cancelled')
@@ -314,7 +229,7 @@ class MainController extends Controller
                     }
                 }
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr', 'branches_with_pending_beginning_inventory', 'due'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'branches_with_pending_beginning_inventory', 'due'));
             }
 
             return redirect('/search_results');
@@ -2021,7 +1936,7 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
             $steDetails = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->child_tbl_id)
-                ->select('se.name as parent_se', 'se.*', 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status')->first();
+                ->select('se.name as parent_se', 'se.*', 'se.owner as requested_by' , 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status')->first();
 
             $now = Carbon::now();
 
@@ -2077,6 +1992,29 @@ class MainController extends Controller
 
             if($request->qty > $remaining_reserved && $request->deduct_reserve == 1){ // For deduct from reserved, if requested qty is more than the reserved qty
                 return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.']);
+            }
+
+            if ($steDetails->purpose == 'Material Transfer' && $steDetails->material_request){
+                $mreq_issued_qty = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+                    ->where('ste.material_request', $steDetails->material_request)->where('sted.item_code', $steDetails->item_code)->where('sted.status', 'Issued')
+                    ->sum('issued_qty');
+
+                $mreq_requested_qty = DB::table('tabMaterial Request as mr')
+                    ->join('tabMaterial Request Item as mri', 'mr.name', 'mri.parent')
+                    ->where('mr.name', $steDetails->material_request)->where('mri.item_code', $steDetails->item_code)->sum('qty');
+
+                if($mreq_issued_qty >= $mreq_requested_qty){
+                    $requested_by = explode('.', str_replace('@fumaco.local', null, $steDetails->requested_by));
+                    $first_name = isset($requested_by[0]) ? '<span style="text-transform: capitalize">'.$requested_by[0].'</span>' : null;
+                    $last_name = isset($requested_by[1]) ? '<span style="text-transform: capitalize">'.$requested_by[1].'</span>' : null;
+
+                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please inform '.$first_name.' '.$last_name]);
+                }
+
+                if($request->qty > ($mreq_requested_qty - $mreq_issued_qty)){
+                    return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than '.($mreq_requested_qty - $mreq_issued_qty).'.']);
+                }
             }
 
             $status = $steDetails->status;
@@ -2725,16 +2663,20 @@ class MainController extends Controller
     public function edit_warehouse_location(Request $request){
         DB::beginTransaction();
         try {
-            $locations = $request->location;
-            $warehouses = $request->warehouses;
-            foreach($locations as $key => $location){
-                DB::table('tabBin')->where('warehouse', $warehouses[$key])->where('item_code', $request->item_code)->update(['location' => strtoupper($location)]);
+            $location = $request->location;
+            $warehouse = $request->warehouse;
+
+            if ($warehouse && $location) {
+                DB::table('tabBin')->where('warehouse', $warehouse)->where('item_code', $request->item_code)
+                    ->update(['location' => strtoupper($location)]);
             }
             
             DB::commit();
+
             return redirect()->back()->with('success', 'Warehouse location updated!');
         } catch (Exception $e) {
             DB::rollback();
+
             return redirect()->back()->with('error', 'Error');
         }
     }
@@ -2748,6 +2690,10 @@ class MainController extends Controller
 
         if($request->json){
             return response()->json($item_details);
+        }
+
+        if($request->ajax()){
+            return view('item_information', compact('item_details'));
         }
 
         $allow_warehouse = [];
@@ -3121,6 +3067,36 @@ class MainController extends Controller
         }
 
         return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches'));
+    }
+
+    public function save_item_information(Request $request, $item_code){
+        DB::beginTransaction();
+        try {
+            foreach($request->except('_token') as $dimension => $value){
+                if(!in_array($dimension, ['package_dimension_uom'])){
+                    if(!is_numeric($value)){
+                        return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' must be a number.']);
+                    }
+
+                    if($value < 0){
+                        return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' cannot be less than 0.']);
+                    }
+                }
+            }
+
+            $update_arr = $request->except('_token');
+            $update_arr['modified'] = Carbon::now()->toDateTimeString();
+            $update_arr['modified_by'] = Auth::user()->wh_user;
+
+            DB::table('tabItem')->where('name', $item_code)->update($update_arr);
+
+            DB::commit();
+            return response()->json(['success' => 1, 'message' => 'Package dimension saved.']);
+        } catch (\Throwable $th) {
+            // throw $th;
+            DB::rollback();
+            return response()->json(['success' => 0, 'message' => 'An error occured. Please try again later.']);
+        }
     }
 
     public function get_athena_transactions(Request $request, $item_code){
@@ -5904,13 +5880,17 @@ class MainController extends Controller
 
                 $imported_files = Storage::disk('public')->files('/export/');
 
-                // Collect .jpg files to save in DB
+                // Collect image files to save in DB
                 $collect_images_arr = collect($imported_files)->map(function ($q){
                     $image = explode('/', $q)[1];
-                    $image_name = explode('-', $image)[1];
-                    if(!in_array(explode('.', $image_name)[1], ['webp', 'WEBP'])){
+
+                    $exploded = explode('.', $image);
+                    $image_name = isset($exploded[0]) ? $exploded[0] : null;
+                    $image_extension = isset($exploded[1]) ? $exploded[1] : null;
+
+                    if(!in_array($image_extension, ['webp', 'WEBP', 'zip', 'ZIP'])){
                         return [
-                            'item_code' => explode('.', $image_name)[0],
+                            'item_code' => isset(explode('-', $image_name)[1]) ? explode('-', $image_name)[1] : null,
                             'image' => $image
                         ];
                     }
@@ -5921,6 +5901,7 @@ class MainController extends Controller
                 });
 
                 $images_arr = collect($collect_images_arr)->groupBy('item_code');
+                $new_images = [];
                 if($images_arr){
                     $item_codes = array_keys($images_arr->toArray());
                     
@@ -5941,10 +5922,10 @@ class MainController extends Controller
                         if(isset($images_arr[$item_code])){
                             foreach($images_arr[$item_code] as $a => $image){
                                 $a = $a + 1;
-                                $jpg = explode('-', $image['image'])[0].$a.'-'.explode('-', $image['image'])[1];
+                                $jpg = explode('-', $image['image'])[0].$a.'-'.str_replace(explode('-', $image['image'])[0].'-', null, $image['image']);
                                 $webp = explode('.', $jpg)[0].'.webp';
         
-                                $new_images = [
+                                $new_images[] = [
                                     'name' => uniqid(),
                                     'creation' => $now->toDateTimeString(),
                                     'modified' => $now->toDateTimeString(),
@@ -5961,17 +5942,16 @@ class MainController extends Controller
                                 if(Storage::disk('public')->exists('/export/'.$image['image']) and !Storage::disk('public')->exists('/img/'.$jpg)){
                                     Storage::disk('public')->move('/export/'.$image['image'], '/img/'.$jpg);
                                 }
-    
+
                                 if(Storage::disk('public')->exists('/export/'.explode('.', $image['image'])[0].'.webp') and !Storage::disk('public')->exists('/img/'.$webp)){
                                     Storage::disk('public')->move('/export/'.explode('.', $image['image'])[0].'.webp', '/img/'.$webp);
                                 }
-
-                                DB::table('tabItem Images')->insert($new_images);
                             }
                         }
                     }
                 }
-        
+
+                DB::table('tabItem Images')->insert($new_images);
                 DB::commit();
                 return redirect()->back()->with('success', 'E-Commerce Image(s) Imported');
             }

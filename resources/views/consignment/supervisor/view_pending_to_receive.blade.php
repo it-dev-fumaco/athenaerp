@@ -57,7 +57,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <form action="/promodiser/receive/{{ $r['name'] }}" id="{{ $r['name'] }}-form" method="get">
+                        <form action="/promodiser/receive/{{ $r['name'] }}" id="{{ $r['name'] }}-form" class="deliveries-form" data-modal-container="#{{ $r['name'] }}-modal" method="get">
                             <h5 class="text-center font-responsive font-weight-bold m-0">{{ $r['warehouse'] }}</h5>
                             <div class="row mt-2 mb-2">
                                 <div class="col-6 pl-5">
@@ -152,45 +152,7 @@
             cache: true
         }
     });
-
-    $(document).on('click', '.submit-btn', function (){
-        validate_submit($(this).data('reference'));
-    });
-
-    function validate_submit(reference){
-        var err = 0;
-        
-        $('.' + reference + '-price').each(function (){
-            if($(this).val() == '' || $(this).val() <= 0){
-                $(this).css('border', '1px solid red');
-                err = 1;
-            }else{
-                $(this).css('border', '1px solid #DEE2E6');
-            }
-        });
-        
-        if(err == 1){
-            showNotification("danger", 'Item price cannot be less than or equal to 0.', "fa fa-info");
-        }else{
-            $('#' + reference + '-form').submit();
-        }
-    }
-
-    function showNotification(color, message, icon){
-        $.notify({
-            icon: icon,
-            message: message
-        },{
-            type: color,
-            timer: 500,
-            z_index: 1060,
-            placement: {
-                from: 'top',
-                align: 'center'
-            }
-        });
-    }
-
+    
     $(document).on('keyup', '.price-input', function (){
         var target = $(this).data('target');
         var price = $(this).val().replace(/,/g, '');
