@@ -1995,10 +1995,6 @@ class MainController extends Controller
             }
 
             if ($steDetails->purpose == 'Material Transfer' && $steDetails->material_request){
-                $requested_by = explode('.', str_replace('@fumaco.local', null, $steDetails->requested_by));
-                $first_name = isset($requested_by[0]) ? '<span style="text-transform: capitalize">'.$requested_by[0].'</span>' : null;
-                $last_name = isset($requested_by[1]) ? '<span style="text-transform: capitalize">'.$requested_by[1].'</span>' : null;
-
                 $mreq_issued_qty = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
                     ->where('ste.material_request', $steDetails->mreq)->where('sted.item_code', $steDetails->item_code)->where('sted.status', 'Issued')
@@ -3442,6 +3438,12 @@ class MainController extends Controller
         }else{
             return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been updated.']);
         }
+    }
+
+    public function load_item_images($item_code){
+        $images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path');
+
+        return view('images_container', compact('images'));
     }
 
     public function count_production_to_receive(){

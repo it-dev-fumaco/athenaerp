@@ -782,6 +782,19 @@
 		</div>
 	</div>
 
+	<!-- Modal -->
+	<div class="modal fade" id="imgModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+				</div>
+				<div class="modal-body">
+					<div id="img-container"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	{{-- <div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="warehouseLocationModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-md" role="document">
 			<div class="modal-content">
@@ -1849,17 +1862,22 @@
 				});
 			});
 
-			$(document).on('click', '[data-toggle="lightbox"]', function(event) {
+			$(document).on('click', '.view-images', function(event) {
                 event.preventDefault();
-				var item_code = $(this).data('title');
-				$('#'+item_code+'-images-modal').modal('show');
+				var item_code = $(this).data('item-code');
+				load_images(item_code);
 			});
 
-			$(document).on('click', '[data-toggle="mobile-lightbox"]', function(event) {
-                event.preventDefault();
-				var item_code = $(this).data('title');
-				$('#mobile-'+item_code+'-images-modal').modal('show');
-			});
+			function load_images(item_code){
+				$.ajax({
+					type: "GET",
+					url: "/load_item_images/" + item_code,
+					success: function (response) {
+						$("#imgModal").modal('show');
+						$('#img-container').html(response);
+					}
+				});
+			}
 
 			$.ajaxSetup({
 				headers: {
@@ -2324,71 +2342,6 @@
 
 		function open_modal(modal){
 			$(modal).modal('show');
-		}
-
-		function nextImg(item_code){
-			if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { // mobile/tablet
-				var current_img = $('#mobile-'+item_code+'-image-data').text();
-			}else{ // desktop
-				var current_img = $('#'+item_code+'-image-data').text();
-			}
-			$.ajax({
-				type: "GET",
-				url: "/search_results_images",
-				data: { 
-					img_key: parseInt(current_img) + 1,
-					item_code: item_code,
-					dir: 'next'
-				},
-				success: function (data) {
-					if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { //mobile/tablet
-						$('#mobile-'+data.item_code+'-image').attr('src', data.orig_image_path);
-						$('#mobile-'+data.item_code+'-webp-image-src').attr('srcset', data.webp_image_path);
-						$('#mobile-'+data.item_code+'-orig-image-src').attr('srcset', data.orig_image_path);
-						$('#mobile-'+data.item_code+'-image').prop('alt', data.alt);
-						$('#mobile-'+data.item_code+'-image-data').text(data.current_img_key);
-					}else{ // desktop
-						$('#'+data.item_code+'-image').attr('src', data.orig_image_path);
-						$('#'+data.item_code+'-webp-image-src').attr('srcset', data.webp_image_path);
-						$('#'+data.item_code+'-orig-image-src').attr('srcset', data.orig_image_path);
-						$('#'+data.item_code+'-image').prop('alt', data.alt);
-						$('#'+data.item_code+'-image-data').text(data.current_img_key);
-					}
-				}
-			});
-		}
-
-		function prevImg(item_code){
-			if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { // mobile/tablet
-				var current_img = $('#mobile-'+item_code+'-image-data').text();
-			}else{ // desktop
-				var current_img = $('#'+item_code+'-image-data').text();
-			}
-			$.ajax({
-				type: "GET",
-				url: "/search_results_images",
-				data: { 
-					img_key: parseInt(current_img) - 1,
-					item_code: item_code,
-					dir: 'prev'
-				},
-				success: function (data) {
-					if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) { //mobile/tablet
-						$('#mobile-'+data.item_code+'-image').attr('src', data.orig_image_path);
-						$('#mobile-'+data.item_code+'-webp-image-src').attr('srcset', data.webp_image_path);
-						$('#mobile-'+data.item_code+'-orig-image-src').attr('srcset', data.orig_image_path);
-						$('#mobile-'+data.item_code+'-image').prop('alt', data.alt);
-						$('#mobile-'+data.item_code+'-image-data').text(data.current_img_key);
-					}else{ // desktop
-						$('#'+data.item_code+'-image').attr('src', data.orig_image_path);
-						$('#'+data.item_code+'-webp-image-src').attr('srcset', data.webp_image_path);
-						$('#'+data.item_code+'-orig-image-src').attr('srcset', data.orig_image_path);
-						$('#'+data.item_code+'-image').prop('alt', data.alt);
-						$('#'+data.item_code+'-image-webp').prop('data', data.webp_image_path);
-						$('#'+data.item_code+'-image-data').text(data.current_img_key);
-					}
-				}
-			});
 		}
 	</script>
 </body>

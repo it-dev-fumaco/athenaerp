@@ -226,7 +226,7 @@
                                                                                         </div>
                                                                                         <div class="d-flex flex-row justify-content-start align-items-center">
                                                                                             <div class="p-2 text-left">
-                                                                                                <a href="{{ asset('storage/') }}{{ $item['image'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
+                                                                                                <a href="{{ asset('storage/') }}{{ $item['image'] }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
                                                                                                     <picture>
                                                                                                         <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
                                                                                                         <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
@@ -237,43 +237,6 @@
                                                                                             <div class="p-2 text-left">
                                                                                                 <b>{!! ''.$item['item_code'] !!}</b>
                                                                                                 <span class="d-none d-xl-inline"> - {!! strip_tags($item['description']) !!}</span>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <div class="modal fade" id="mobile-{{ $item['item_code'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                                                            <div class="modal-dialog modal-dialog-centered" role="document">
-                                                                                                <div class="modal-content">
-                                                                                                    <div class="modal-header">
-                                                                                                        <h5 class="modal-title">{{ $item['item_code'] }}</h5>
-                                                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                                                            <span aria-hidden="true">&times;</span>
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                    <div class="modal-body">
-                                                                                                        <form></form>
-                                                                                                        <div class="container-fluid">
-                                                                                                            <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                                                                <div class="carousel-inner">
-                                                                                                                    <div class="carousel-item active">
-                                                                                                                        <picture>
-                                                                                                                            <source id="mobile-{{ $item['item_code'] }}-webp-image-src" srcset="{{ asset('storage/').$item['webp'] }}" type="image/webp">
-                                                                                                                            <source id="mobile-{{ $item['item_code'] }}-orig-image-src" srcset="{{ asset('storage/').$item['image'] }}" type="image/jpeg">
-                                                                                                                            <img class="d-block w-100" id="mobile-{{ $item['item_code'] }}-image" src="{{ asset('storage/').$item['image'] }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}">
-                                                                                                                        </picture>
-                                                                                                                    </div>
-                                                                                                                    <span class='d-none' id="mobile-{{ $item['item_code'] }}-image-data">0</span>
-                                                                                                                </div>
-                                                                                                                <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item['item_code'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                                                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                                                                    <span class="sr-only">Previous</span>
-                                                                                                                </a>
-                                                                                                                <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $item['item_code'] }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                                                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                                                                    <span class="sr-only">Next</span>
-                                                                                                                </a>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </td>

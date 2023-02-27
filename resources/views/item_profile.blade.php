@@ -144,7 +144,7 @@
                                         <div class="col-md-3 col-lg-3 pl-2 pr-2 pb-2 pt-0">
                                             <div class="row">
                                                 <div class="col-12">
-                                                    <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage/') . $img_1 }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <picture>
                                                             <source srcset="{{ asset('storage'.$img_1_webp) }}" type="image/webp" alt="{{ $img_1_alt }}">
                                                             <source srcset="{{ asset('storage'.$img_1) }}" type="image/jpeg" alt="{{ $img_1_alt }}">
@@ -154,7 +154,7 @@
                                                 </div>
                                                 @if ($img_2_visible)
                                                 <div class="col-4 mt-2">
-                                                    <a href="{{ asset('storage/'.$img_2) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage/'.$img_2) }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <picture>
                                                             <source srcset="{{ asset('storage'.$img_2_webp) }}" type="image/webp" alt="{{ $img_2_alt }}">
                                                             <source srcset="{{ asset('storage'.$img_2) }}" type="image/jpeg" alt="{{ $img_2_alt }}">
@@ -165,7 +165,7 @@
                                                 @endif
                                                 @if ($img_3_visible)
                                                 <div class="col-4 mt-2"> 
-                                                    <a href="{{ asset('storage/'.$img_3) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage/'.$img_3) }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <picture>
                                                             <source srcset="{{ asset('storage'.$img_3_webp) }}" type="image/webp" alt="{{ $img_3_alt }}">
                                                             <source srcset="{{ asset('storage'.$img_3) }}" type="image/jpeg" alt="{{ $img_3_alt }}">
@@ -176,7 +176,7 @@
                                                 @endif
                                                 @if ($img_4_visible)
                                                 <div class="col-4 mt-2">
-                                                    <a href="{{ asset('storage'.$img_4) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage'.$img_4) }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <div class="text-white">
                                                             <picture>
                                                                 <source srcset="{{ asset('storage'.$img_4_webp) }}" type="image/webp" alt="{{ $img_4_alt }}">
@@ -199,42 +199,6 @@
                                                     <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
                                                         <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
                                                     </button>
-                                                </div>
-
-                                                <div class="modal fade" id="{{ $item_details->name }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog" role="document" style="min-width: 55%;">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div id="image-container" class="container-fluid">
-                                                                    <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                        <div class="carousel-inner">
-                                                                            <div class="carousel-item active">
-                                                                                <picture>
-                                                                                    <source id="{{ $item_details->name }}-webp-image-src" srcset="{{ asset('storage/').$img_1_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <source id="{{ $item_details->name }}-orig-image-src" srcset="{{ asset('storage/').$img_1 }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <img class="d-block w-100" id="{{ $item_details->name }}-image" src="{{ asset('storage/').$img_1 }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img_1)[0], '-') }}">
-                                                                                </picture>
-                                                                            </div>
-                                                                            <span class='d-none' id="{{ $item_details->name }}-image-data">0</span>
-                                                                        </div>
-                                                                        <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item_details->name }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Previous</span>
-                                                                        </a>
-                                                                        <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $item_details->name }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Next</span>
-                                                                        </a>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

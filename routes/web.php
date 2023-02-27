@@ -97,6 +97,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/submit_stock_entry/{id}', 'MainController@submit_stock_entry');
 
     Route::post('/upload_item_image', 'MainController@upload_item_image');
+    Route::get('/load_item_images/{item_code}', 'MainController@load_item_images');
 
     Route::post('/update_stock_entry', 'MainController@update_stock_entry');
 
