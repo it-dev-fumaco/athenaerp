@@ -2010,7 +2010,7 @@ class MainController extends Controller
                     ->select('mri.item_code', 'mri.qty')->first();
 
                 if(!$mreq_qry){
-                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please inform '.$first_name.' '.$last_name]);
+                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
                 }
 
                 $mreq_requested_qty = $mreq_qry->qty;
