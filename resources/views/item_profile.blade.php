@@ -192,10 +192,19 @@
                                                     </a>
                                                 </div>
                                                 @endif
-                                                <div class="col-md-12 text-center pt-3">
+                                                {{-- <div class="col-md-12 text-center pt-3">
                                                     <button class="btn btn-primary btn-sm upload-item-image w-100" data-item-code="{{ $item_details->name }}"><i class="fa fa-camera" style="font-size: 20px"></i></button>
-                                                </div>
+                                                </div> --}}
                                                 <div class="d-xl-none col-md-12 text-center pt-3">
+                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
+                                                    </button>
+                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
+                                                    </button>
+                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
+                                                    </button>
                                                     <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
                                                         <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
                                                     </button>
@@ -374,9 +383,69 @@
                             <div class="d-none d-lg-block col-lg-3">
                                 <div class="box box-solid h-100">
                                     <div class="d-none d-xl-block col-12 col-xl-6 offset-xl-6 text-center pt-3">
-                                        <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                        <a class="btn btn-app bg-info w-100 pb-5 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                            <i class="fas fa-print pb-1"></i> Print Brochure
+                                        </a>
+                                        <a class="btn btn-app bg-primary w-100 pb-5 upload-item-image" data-item-code="{{ $item_details->name }}">
+                                            <i class="fas fa-camera pb-1"></i> Upload Image
+                                        </a>
+                                        <a class="btn btn-app bg-secondary w-100 pb-5" data-toggle="modal" data-target="#warehouse-location-modal">
+                                            <i class="fa fa-home pb-1"></i> Warehouse Location
+                                        </a>
+                                        <a class="btn btn-app bg-secondary w-100 pb-5">
+                                            <i class="fa fa-edit pb-1"></i> Package Details
+                                        </a>
+                                        {{-- <button class="btn btn-info btn-sm w-100 print-brochure-btn mb-2" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
                                             <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
                                         </button>
+                                        <button class="btn btn-primary btn-sm upload-item-image w-100 mb-2" data-item-code="{{ $item_details->name }}">
+                                            <i class="fa fa-camera" style="font-size: 15px"></i> Upload Image
+                                        </button>
+                                        <button class="btn btn-info btn-sm w-100 print-brochure-btn mb-2" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                            <i class="fas fa-print" style="font-size: 15px"></i> Warehouse Location
+                                        </button>
+                                        <button class="btn btn-info btn-sm w-100 print-brochure-btn mb-2" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                            <i class="fas fa-print" style="font-size: 15px"></i> Package Details
+                                        </button> --}}
+
+                                        <div class="modal fade" id="warehouse-location-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="exampleModalLabel">{{ $item_details->name }}</h5>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <form action="/edit_warehouse_location" method="POST" autocomplete="off"></form>
+                                                            <div class="border border-danger">
+                                                            <table class="table table-striped table-bordered" style="font-size: 9pt;">
+                                                                <tr>
+                                                                    <th class="p-1">Warehouse</th>
+                                                                    <th class="p-1">Location</th>
+                                                                </tr>
+                                                                @forelse ($site_warehouses as $warehouse)
+                                                                    <tr>
+                                                                        <td class="p-1">
+                                                                            {{ $warehouse['warehouse'] }}
+                                                                        </td>
+                                                                        <td class="p-1"><input type="text" class="form-control" name="location[{{ $warehouse['warehouse'] }}]" value="{{ $warehouse['location'] }}" placeholder="Location" style="font-size: 9pt;"></td>
+                                                                    </tr>
+                                                                @empty
+                                                                    <tr>
+                                                                        <td colspan=2 class="text-center">No Available stock on all warehouse</td>
+                                                                    </tr>
+                                                                @endforelse
+                                                            </table>
+                                                        </div>
+                                                        <div class="text-center m-2">
+                                                            <button type="button" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])) 
                                     <div class="box-body table-responsive no-padding h-50" style="display: flex; justify-content: center; align-items: center;">
