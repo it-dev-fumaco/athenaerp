@@ -216,92 +216,7 @@ class MainController extends Controller
                 $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
                 $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
 
-                $delivery_report_query = DB::table('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->whereDate('ste.delivery_date', '>=', $beginning_inventory_start_date)
-                    ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
-                    ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.docstatus', 1)
-                    ->whereIn('ste.item_status', ['For Checking', 'Issued'])
-                    ->whereIn('sted.t_warehouse', $assigned_consignment_store)
-                    ->where(function($q) {
-                        $q->whereNull('sted.consignment_status')
-                        ->orWhere('sted.consignment_status', '!=', 'Received');
-                    })
-                    ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus')
-                    ->orderBy('ste.creation', 'desc')->get();
-
-                $delivery_report = collect($delivery_report_query)->groupBy('name');
-
-                $item_codes = collect($delivery_report_query)->map(function ($q){
-                    return $q->item_code;
-                });
-
-                $source_warehouses = collect($delivery_report_query)->map(function ($q){
-                    return $q->s_warehouse;
-                });
-        
-                $target_warehouses = collect($delivery_report_query)->map(function ($q){
-                    return $q->t_warehouse;
-                });
-        
-                $warehouses = collect($source_warehouses)->merge($target_warehouses)->unique();
-
-                $item_prices = DB::table('tabBin')->whereIn('warehouse', $warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get();
-                $prices_arr = [];
-
-                foreach($item_prices as $item){
-                    $prices_arr[$item->warehouse][$item->item_code] = [
-                        'price' => $item->consignment_price
-                    ];
-                }
-
-                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-                $item_image = collect($item_images)->groupBy('parent');
-
                 $now = Carbon::now();
-
-                $ste_arr = [];
-                foreach($delivery_report as $ste => $row){
-                    $items_arr = [];
-                    foreach($row as $item){
-                        $ref_warehouse = $row[0]->transfer_as == 'Consignment' ? $row[0]->t_warehouse : $row[0]->s_warehouse;
-                        $items_arr[] = [
-                            'item_code' => $item->item_code,
-                            'description' => $item->description,
-                            'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
-                            'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
-                            'delivered_qty' => $item->transfer_qty,
-                            'stock_uom' => $item->stock_uom,
-                            'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? $prices_arr[$ref_warehouse][$item->item_code]['price'] : 0,
-                            'delivery_status' => $item->consignment_status
-                        ];
-                    }
-
-                    $status_check = collect($items_arr)->map(function($q){
-                        return $q['delivery_status'] ? 1 : 0; // return 1 if status is Received
-                    })->toArray();
-
-                    $delivery_date = Carbon::parse($row[0]->delivery_date);
-                  
-                    if($row[0]->item_status == 'Issued' && $now > $delivery_date){
-                        $status = 'Delivered';
-                    }else{
-                        $status = 'Pending';
-                    }
-
-                    $ste_arr[] = [
-                        'name' => $row[0]->name,
-                        'from' => $row[0]->from_warehouse,
-                        'to_consignment' => $row[0]->t_warehouse,
-                        'status' => $status,
-                        'items' => $items_arr,
-                        'creation' => $row[0]->creation,
-                        'delivery_date' => $row[0]->delivery_date,
-                        'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
-                        'posting_time' => $row[0]->posting_time
-                    ];
-                }
 
                 $branches_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
                     ->whereIn('branch_warehouse', $assigned_consignment_store)->where('status', '!=', 'Cancelled')
@@ -314,7 +229,7 @@ class MainController extends Controller
                     }
                 }
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'ste_arr', 'branches_with_pending_beginning_inventory', 'due'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'duration', 'inventory_summary', 'total_item_sold', 'total_pending_inventory_audit', 'total_stock_transfer', 'total_stock_adjustments', 'branches_with_pending_beginning_inventory', 'due'));
             }
 
             return redirect('/search_results');

@@ -24,30 +24,30 @@
                     </div>
                     <div class="card card-secondary card-outline">
                         <div class="card-body p-2 col-12">
-                            <form method="GET" action="/view_consignment_deliveries">
+                            {{-- <form method="GET" action="/view_consignment_deliveries"> --}}
                                 <div class="d-flex flex-row align-items-center mt-2">
                                     <div class="p-1 col-4">
-                                        <select class="form-control" name="store" id="consignment-store-select">
+                                        <select class="form-control tbl-filter" name="store" id="consignment-store-select">
                                             <option value="">Select Store</option>
                                         </select>
                                     </div>
                                     <div class="p-1 col-2">
-                                        <select class="form-control" name="status">
+                                        <select class="form-control tbl-filter" name="status" id="status">
                                             <option value="">Select Status</option>
                                             <option value="Received" {{ request('status') == 'Received' ? 'selected' : '' }}>Received</option>
                                             <option value="To Receive" {{ request('status') == 'To Receive' ? 'selected' : '' }}>To Receive</option>
                                         </select>
                                     </div>
-                                    <div class="p-1">
+                                    {{-- <div class="p-1">
                                         <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
-                                    </div>
+                                    </div> --}}
                                     <div class="p-1">
-                                        <a href="/view_consignment_deliveries" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
+                                        <button type="button" class="btn btn-secondary remove-filter"><i class="fas fa-undo"></i></button>
                                     </div>
                                 </div>
-                            </form>
-                            <div class="p-2">
-                                <table class="table table-bordered table-striped" style="font-size: 9pt;">
+                            {{-- </form> --}}
+                            <div class="p-2" id="delivery-report-container">
+                                {{-- <table class="table table-bordered table-striped" style="font-size: 9pt;">
                                     <thead class="text-uppercase">
                                         <th class="text-center align-middle">Reference</th>
                                         <th class="text-center align-middle">Branch / Store</th>
@@ -202,7 +202,7 @@
                                         </div>
                                     </div>
                                 </div>  
-                                @endforeach
+                                @endforeach --}}
                             </div>
                         </div>
                     </div>
@@ -304,10 +304,25 @@
             validate_submit($(this).data('reference'));
         });
 
-        function validate_submit(reference){
-            var err = 0;
-            
-            $('.' + reference + '-price').each(function (){
+        $(document).on('click', '.remove-filter', function (e){
+            e.preventDefault();
+            $("#consignment-store-select").empty().trigger('change');
+            $('#status').val('');
+            load_tbl(1);
+        });
+
+        $(document).on('change', '.tbl-filter', function (e){
+            load_tbl(1);
+        });
+
+        $(document).on('click', '#to-receive-pagination a', function(event){
+            event.preventDefault();
+            var page = $(this).attr('href').split('page=')[1];
+            load_tbl(page);
+        });
+
+        $(document).on('click', '.submit-btn', function (){
+            $('.' + $(this).data('reference') + '-price').each(function (){
                 if($(this).val() == '' || $(this).val() <= 0){
                     $(this).css('border', '1px solid red');
                     err = 1;
@@ -319,8 +334,49 @@
             if(err == 1){
                 showNotification("danger", 'Item price cannot be less than or equal to 0.', "fa fa-info");
             }else{
-                $('#' + reference + '-form').submit();
+                $('#' + $(this).data('reference') + '-form').submit();
             }
+        });
+
+        $(document).on('submit', '.deliveries-form', function (e){
+            e.preventDefault();
+            var modal = $(this).data('modal-container');
+            $.ajax({
+                type: 'GET',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if(response.success){
+                        load_tbl('', '{{ request()->has("page") ? request()->get("page") : 1 }}');
+                        $(modal).modal('hide');
+                        showNotification("success", response.message, "fa fa-check");
+                    }else{
+                        showNotification("danger", response.message, "fa fa-check");
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
+                }
+            });
+        });
+
+        load_tbl(1);
+        function load_tbl(page){
+            $.ajax({
+                type: 'GET',
+                url: '/view_consignment_deliveries?page='+page,
+                data: {
+                    page: page,
+                    status: $('#status').val(),
+                    store: $('#consignment-store-select').val()
+                },
+                success: function(response){
+                    $('#delivery-report-container').html(response);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    showNotification("danger", 'Error in getting pending to receive stock entries.', "fa fa-info");
+                }
+            });
         }
 
         function showNotification(color, message, icon){

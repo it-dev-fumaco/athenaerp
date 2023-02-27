@@ -86,7 +86,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_stock_ledger/{item_code}', 'MainController@get_stock_ledger');
     Route::get('/form_warehouse_location/{item_code}', 'MainController@form_warehouse_location');
     Route::post('/edit_warehouse_location', 'MainController@edit_warehouse_location');
-    Route::post('/save_package_dimension/{item_code}', 'MainController@save_package_dimension');
+    Route::post('/save_item_information/{item_code}', 'MainController@save_item_information');
 
     Route::get('/print_barcode/{item_code}', 'MainController@print_barcode');
 
@@ -177,6 +177,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/promodiser/delivery_report/{type}', 'ConsignmentController@promodiserDeliveryReport');
     Route::get('/promodiser/inquire_delivery', 'ConsignmentController@promodiserInquireDelivery');
     Route::get('/promodiser/receive/{id}', 'ConsignmentController@promodiserReceiveDelivery');
+    Route::get('/consignment/pending_to_receive', 'ConsignmentController@pendingToReceive');
     Route::get('/promodiser/cancel/received/{id}', 'ConsignmentController@promodiserCancelReceivedDelivery');
     Route::get('/sales_report_deadline', 'ConsignmentController@salesReportDeadline');
     Route::get('/validate_beginning_inventory', 'ConsignmentController@checkBeginningInventory'); 
