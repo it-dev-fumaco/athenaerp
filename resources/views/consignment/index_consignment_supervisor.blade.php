@@ -531,7 +531,7 @@
                         $(modal).modal('hide');
                         showNotification("success", response.message, "fa fa-check");
                     }else{
-                        showNotification("danger", response.message, "fa fa-check");
+                        showNotification("danger", response.message, "fa fa-info");
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {

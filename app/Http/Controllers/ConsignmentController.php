@@ -3496,10 +3496,6 @@ class ConsignmentController extends Controller
             ];
 
             $consignment_supervisors = DB::table('tabWarehouse Users')->where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
-            // For Testing
-            $consignment_supervisors = collect($consignment_supervisors)->push('jave.kulong@fumaco.local');
-            $consignment_supervisors = collect($consignment_supervisors)->all();
-            // For Testing
 
             if($consignment_supervisors){ // send email alert to supervisors
                 try {

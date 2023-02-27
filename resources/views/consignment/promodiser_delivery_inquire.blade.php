@@ -129,7 +129,7 @@
                         $('#inquire-form').html('<h5 class="p-2">Please enter the STE number</h5>');
                         showNotification("success", response.message, "fa fa-check");
                     }else{
-                        showNotification("danger", response.message, "fa fa-check");
+                        showNotification("danger", response.message, "fa fa-info");
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
