@@ -1936,7 +1936,7 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
             $steDetails = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')->where('sed.name', $request->child_tbl_id)
-                ->select('se.name as parent_se', 'se.*', 'se.owner as requested_by' , 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status')->first();
+                ->select('se.name as parent_se', 'se.*', 'se.owner as requested_by' , 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status', 'se.material_request as mreq')->first();
 
             $now = Carbon::now();
 
@@ -1995,20 +1995,27 @@ class MainController extends Controller
             }
 
             if ($steDetails->purpose == 'Material Transfer' && $steDetails->material_request){
+                $requested_by = explode('.', str_replace('@fumaco.local', null, $steDetails->requested_by));
+                $first_name = isset($requested_by[0]) ? '<span style="text-transform: capitalize">'.$requested_by[0].'</span>' : null;
+                $last_name = isset($requested_by[1]) ? '<span style="text-transform: capitalize">'.$requested_by[1].'</span>' : null;
+
                 $mreq_issued_qty = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
-                    ->where('ste.material_request', $steDetails->material_request)->where('sted.item_code', $steDetails->item_code)->where('sted.status', 'Issued')
+                    ->where('ste.material_request', $steDetails->mreq)->where('sted.item_code', $steDetails->item_code)->where('sted.status', 'Issued')
                     ->sum('issued_qty');
 
-                $mreq_requested_qty = DB::table('tabMaterial Request as mr')
+                $mreq_qry = DB::table('tabMaterial Request as mr')
                     ->join('tabMaterial Request Item as mri', 'mr.name', 'mri.parent')
-                    ->where('mr.name', $steDetails->material_request)->where('mri.item_code', $steDetails->item_code)->sum('qty');
+                    ->where('mr.name', $steDetails->mreq)->where('mri.item_code', $steDetails->item_code)
+                    ->select('mri.item_code', 'mri.qty')->first();
+
+                if(!$mreq_qry){
+                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please inform '.$first_name.' '.$last_name]);
+                }
+
+                $mreq_requested_qty = $mreq_qry->qty;
 
                 if($mreq_issued_qty >= $mreq_requested_qty){
-                    $requested_by = explode('.', str_replace('@fumaco.local', null, $steDetails->requested_by));
-                    $first_name = isset($requested_by[0]) ? '<span style="text-transform: capitalize">'.$requested_by[0].'</span>' : null;
-                    $last_name = isset($requested_by[1]) ? '<span style="text-transform: capitalize">'.$requested_by[1].'</span>' : null;
-
                     return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please inform '.$first_name.' '.$last_name]);
                 }
 
