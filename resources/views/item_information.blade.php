@@ -1,12 +1,12 @@
 @php
-    $package_weight = $item_details->package_weight && $item_details->package_weight > 0 ? number_format($item_details->package_weight).' '.$item_details->weight_uom : '-';
-    $package_length = $item_details->package_length && $item_details->package_length > 0 ? number_format($item_details->package_length).' '.$item_details->package_dimension_uom : '-';
-    $package_width = $item_details->package_width && $item_details->package_width > 0 ? number_format($item_details->package_width).' '.$item_details->package_dimension_uom : '-';
-    $package_height = $item_details->package_height && $item_details->package_height > 0 ? number_format($item_details->package_height).' '.$item_details->package_dimension_uom : '-';
-    $weight_per_unit = $item_details->weight_per_unit && $item_details->weight_per_unit > 0 ? number_format($item_details->weight_per_unit).' '.$item_details->weight_uom : '-';
-    $length = $item_details->length && $item_details->length > 0 ? number_format($item_details->length).' '.$item_details->package_dimension_uom : '-';
-    $width = $item_details->width && $item_details->width > 0 ? number_format($item_details->width).' '.$item_details->package_dimension_uom : '-';
-    $thickness = $item_details->thickness && $item_details->thickness > 0 ? number_format($item_details->thickness).' '.$item_details->package_dimension_uom : '-';
+    $package_weight = $item_details->package_weight && $item_details->package_weight > 0 ? trim($item_details->package_weight).' '.$item_details->weight_uom : '-';
+    $package_length = $item_details->package_length && $item_details->package_length > 0 ? trim($item_details->package_length).' '.$item_details->package_dimension_uom : '-';
+    $package_width = $item_details->package_width && $item_details->package_width > 0 ? trim($item_details->package_width).' '.$item_details->package_dimension_uom : '-';
+    $package_height = $item_details->package_height && $item_details->package_height > 0 ? trim($item_details->package_height).' '.$item_details->package_dimension_uom : '-';
+    $weight_per_unit = $item_details->weight_per_unit && $item_details->weight_per_unit > 0 ? trim($item_details->weight_per_unit).' '.$item_details->weight_uom : '-';
+    $length = $item_details->length && $item_details->length > 0 ? trim($item_details->length).' '.$item_details->package_dimension_uom : '-';
+    $width = $item_details->width && $item_details->width > 0 ? trim($item_details->width).' '.$item_details->package_dimension_uom : '-';
+    $thickness = $item_details->thickness && $item_details->thickness > 0 ? trim($item_details->thickness).' '.$item_details->package_dimension_uom : '-';
 @endphp
 <dl class="ml-3">
     <dt class="responsive-item-code" style="font-size: 14pt;">{{ $item_details->name.' '.$item_details->brand }}</dt>
@@ -49,19 +49,19 @@
                         @csrf
                         <div class="form-group">
                             <label>Net Weight</label>
-                            <input type="text" name="weight_per_unit" id="weight_per_unit" class="form-control" value="{{ $item_details->weight_per_unit ? number_format($item_details->weight_per_unit) : null }}" required>
+                            <input type="text" name="weight_per_unit" id="weight_per_unit" class="form-control" value="{{ $item_details->weight_per_unit ? trim($item_details->weight_per_unit) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Length</label>
-                            <input type="text" name="package_length" id="package_length" class="form-control" value="{{ $item_details->package_length ? number_format($item_details->package_length) : null }}" required>
+                            <input type="text" name="package_length" id="package_length" class="form-control" value="{{ $item_details->package_length ? trim($item_details->package_length) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Width</label>
-                            <input type="text" name="package_width" id="package_width" class="form-control" value="{{ $item_details->package_width ? number_format($item_details->package_width) : null }}" required>
+                            <input type="text" name="package_width" id="package_width" class="form-control" value="{{ $item_details->package_width ? trim($item_details->package_width) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Height</label>
-                            <input type="text" name="package_height" id="package_height" class="form-control" value="{{ $item_details->package_height ? number_format($item_details->package_height) : null }}" required>
+                            <input type="text" name="package_height" id="package_height" class="form-control" value="{{ $item_details->package_height ? trim($item_details->package_height) : null }}" required>
                         </div>
                         <div class="form-group">
                             <label>Package Dimension UoM</label>

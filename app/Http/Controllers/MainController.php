@@ -2010,13 +2010,13 @@ class MainController extends Controller
                     ->select('mri.item_code', 'mri.qty')->first();
 
                 if(!$mreq_qry){
-                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please inform '.$first_name.' '.$last_name]);
+                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
                 }
 
                 $mreq_requested_qty = $mreq_qry->qty;
 
                 if($mreq_issued_qty >= $mreq_requested_qty){
-                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please inform '.$first_name.' '.$last_name]);
+                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
                 }
 
                 if($request->qty > ($mreq_requested_qty - $mreq_issued_qty)){
