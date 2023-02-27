@@ -2961,7 +2961,9 @@ class MainController extends Controller
         }
         
         if(count($item_alternatives) <= 0) {
-            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)
+                ->where('name', '!=', $item_details->name)->limit(100)->orderBy('modified', 'desc')->get();
+                
             foreach($q as $a){
                 $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
         
