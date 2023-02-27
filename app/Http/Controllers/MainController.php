@@ -2016,7 +2016,7 @@ class MainController extends Controller
                 $mreq_requested_qty = $mreq_qry->qty;
 
                 if($mreq_issued_qty >= $mreq_requested_qty){
-                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please inform '.$first_name.' '.$last_name]);
+                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
                 }
 
                 if($request->qty > ($mreq_requested_qty - $mreq_issued_qty)){
