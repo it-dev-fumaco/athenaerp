@@ -2666,21 +2666,22 @@ class MainController extends Controller
     public function edit_warehouse_location(Request $request){
         DB::beginTransaction();
         try {
-            $location = $request->location;
-            $warehouse = $request->warehouse;
+            $locations = $request->location;
 
-            if ($warehouse && $location) {
-                DB::table('tabBin')->where('warehouse', $warehouse)->where('item_code', $request->item_code)
-                    ->update(['location' => strtoupper($location)]);
+            if ($locations) {
+                foreach ($locations as $warehouse => $location) {
+                    DB::table('tabBin')->where('warehouse', $warehouse)->where('item_code', $request->item_code)
+                        ->update(['location' => strtoupper($location)]);
+                }
             }
             
             DB::commit();
 
-            return redirect()->back()->with('success', 'Warehouse location updated!');
+            return response()->json(['status' => 1, 'message' => 'Warehouse location updated.', 'item_code' => $request->item_code]);
         } catch (Exception $e) {
             DB::rollback();
 
-            return redirect()->back()->with('error', 'Error');
+            return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
         }
     }
 
@@ -2696,28 +2697,9 @@ class MainController extends Controller
         }
 
         if($request->ajax()){
-            return view('item_information', compact('item_details'));
-        }
+            $uoms = DB::table('tabUOM')->pluck('name');
 
-        $allow_warehouse = [];
-        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
-        if ($is_promodiser) {
-            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
-                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
-                ->where('w.stock_warehouse', 1)
-                ->pluck('w.name')->toArray();
-
-            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
-                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
-                ->where('w.stock_warehouse', 1)
-                ->pluck('w.name')->toArray();
-
-            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse')->toArray();
-
-            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
-            $allow_warehouse = array_merge($allow_warehouse, $consignment_stores);
+            return view('item_information', compact('item_details', 'uoms'));
         }
 
         $user_department = Auth::user()->department;
@@ -2725,15 +2707,10 @@ class MainController extends Controller
         // get departments allowed to view prices
         $allowed_department = DB::table('tabDeparment with Price Access')->pluck('department')->toArray();
 
-        $item_rate = 0;
+        $item_rate = $minimum_selling_price = $default_price = $last_purchase_rate = $manual_rate = $is_tax_included_in_rate = 0;
         $last_purchase_date = null;
         $website_price = [];
-        $minimum_selling_price = 0;
-        $default_price = 0;
         $avgPurchaseRate = '₱ 0.00';
-        $last_purchase_rate = 0;
-        $manual_rate = 0;
-        $is_tax_included_in_rate = 0;
         if (in_array($user_department, $allowed_department) || in_array($user_group, ['Manager', 'Director'])) {
             $avgPurchaseRate = $this->avgPurchaseRate($item_code);
             $last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
@@ -2786,85 +2763,10 @@ class MainController extends Controller
             $default_price = ($website_price) ? $website_price->price_list_rate : $default_price;
         }
 
-        // get item inventory stock list
-        $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
-            ->when($is_promodiser, function($q) use ($allow_warehouse) {
-                return $q->whereIn('warehouse', $allow_warehouse);
-            })
-            ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
-            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
-            ->get()->toArray();
+        $item_stock_levels = $this->get_item_stock_levels($item_code, $request);
 
-        $stock_warehouses = array_column($item_inventory, 'warehouse');
-
-        $stock_reserves = [];
-        $issued_qty_but_not_submitted = [];
-        if (count($stock_warehouses) > 0) {
-            $stock_reserves = StockReservation::where('item_code', $item_code)
-                ->whereIn('warehouse', $stock_warehouses)->whereIn('status', ['Active', 'Partially Issued'])
-                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, warehouse')
-                ->groupBy('warehouse')->get();
-
-            $stock_reserves = collect($stock_reserves)->groupBy('warehouse')->toArray();
-
-            $ste_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
-                ->where('item_code', $item_code)->whereIn('s_warehouse', $stock_warehouses)
-                ->selectRaw('SUM(qty) as qty, s_warehouse')->groupBy('s_warehouse')
-                ->pluck('qty', 's_warehouse')->toArray();
-
-            $at_issued = DB::table('tabAthena Transactions as at')
-                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
-                ->where('psi.status', 'Issued')->where('at.item_code', $item_code)
-                ->where('psi.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
-                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
-                ->pluck('qty', 'source_warehouse')->toArray();
-        }
-
-        $site_warehouses = [];
-        $consignment_warehouses = [];
-        foreach ($item_inventory as $value) {
-            $reserved_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['reserved_qty'] : 0;
-            
-            $consumed_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['consumed_qty'] : 0;
-            $ste_issued_qty = array_key_exists($value->warehouse, $ste_issued) ? $ste_issued[$value->warehouse] : 0;
-            $at_issued_qty = array_key_exists($value->warehouse, $at_issued) ? $at_issued[$value->warehouse] : 0;
-
-            $issued_qty = $at_issued_qty + $ste_issued_qty;
-            $reserved_qty = $reserved_qty - $consumed_qty;
-            $reserved_qty = $reserved_qty > 0 ? $reserved_qty : 0;
-
-            $issued_reserved_qty = ($reserved_qty + $issued_qty) - $consumed_qty;
-
-            $actual_qty = $value->actual_qty;
-            $available_qty = ($actual_qty > $issued_reserved_qty) ? $actual_qty - $issued_reserved_qty : 0;
-            if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
-                $consignment_warehouses[] = [
-                    'warehouse' => $value->warehouse,
-                    'location' => $value->location,
-                    'reserved_qty' => $reserved_qty,
-                    'actual_qty' => $value->actual_qty,
-                    'available_qty' => $available_qty,
-                    'stock_uom' => $value->stock_uom,
-                ];
-            }else{
-                if(Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == "P2 Consignment Warehouse - FI"){
-                    $available_qty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
-                }
-
-                $site_warehouses[] = [
-                    'warehouse' => $value->warehouse,
-                    'location' => $value->location,
-                    'reserved_qty' => $reserved_qty,
-                    'actual_qty' => $value->actual_qty,
-                    'available_qty' => $available_qty,
-                    'stock_uom' => $value->stock_uom,
-                ];
-            }
-        }
+        $consignment_warehouses = $item_stock_levels['consignment_warehouses'];
+        $site_warehouses = $item_stock_levels['site_warehouses'];
 
         $item_stock_available = collect($consignment_warehouses)->sum('available_qty');
         if($item_stock_available <= 0) {
@@ -3188,7 +3090,6 @@ class MainController extends Controller
     public function cancel_athena_transaction(Request $request){
         DB::beginTransaction();
         try{
-
             $ATstatus_update = [
                 'docstatus' => 2
             ];
@@ -3196,8 +3097,6 @@ class MainController extends Controller
             $SEstatus_update = [
                 'item_status' => 'For Checking'
             ];
-
-            // return $SEstatus_update;
 
             $SEDstatus_update = [
                 'status' => 'For Checking',
@@ -3212,23 +3111,19 @@ class MainController extends Controller
                 'barcode' => "",
                 'date_modified' => null
             ];
-            // return $SEDstatus_update;
 
             $ATcancel = DB::table('tabAthena Transactions')->where('reference_parent', $request->athena_transaction_number)->update($ATstatus_update);
             $SEcancel = DB::table('tabStock Entry')->where('name', $request->athena_transaction_number)->update($SEstatus_update);
             $SEDcancel = DB::table('tabStock Entry Detail')->where('parent', $request->athena_transaction_number)->update($SEDstatus_update);
-
             $PSstatus_update = DB::table('tabPacking Slip')->where('name', $request->athena_transaction_number)->update($SEstatus_update);
             $PSIstatus_update = DB::table('tabPacking Slip Item')->where('name', $request->athena_reference_name)->update($PSIstatus_update);
 
-            // return $SEDcancel;
-
             DB::commit();
+            
             return response()->json(['status' => 1, 'message' => '<b>'. $request->athena_transaction_number . '</b> has been cancelled.', 'item_code' => $request->itemCode ]);
-            // return redirect()->back();
         }catch(Exception $e){
             DB::rollback();
-            // return redirect()->back();
+            
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
         }
     }
@@ -5973,5 +5868,117 @@ class MainController extends Controller
             }
             return redirect()->back()->with('error', 'An error occured. Please try again later.');
         }
+    }
+
+    public function get_item_stock_levels($item_code, Request $request) {
+        $item_details = DB::table('tabItem')->where('name', $item_code)->first();
+        $allow_warehouse = [];
+        $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        if ($is_promodiser) {
+            $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
+                ->pluck('w.name')->toArray();
+
+            $allowed_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
+                ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
+                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('w.stock_warehouse', 1)
+                ->pluck('w.name')->toArray();
+
+            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse')->toArray();
+
+            $allow_warehouse = array_merge($allowed_parent_warehouse_for_promodiser, $allowed_warehouse_for_promodiser);
+            $allow_warehouse = array_merge($allow_warehouse, $consignment_stores);
+        }
+        // get item inventory stock list
+        $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $item_code)
+            ->when($is_promodiser, function($q) use ($allow_warehouse) {
+                return $q->whereIn('warehouse', $allow_warehouse);
+            })
+            ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
+            ->get()->toArray();
+
+        $stock_warehouses = array_column($item_inventory, 'warehouse');
+
+        $stock_reserves = [];
+        $issued_qty_but_not_submitted = [];
+        if (count($stock_warehouses) > 0) {
+            $stock_reserves = StockReservation::where('item_code', $item_code)
+                ->whereIn('warehouse', $stock_warehouses)->whereIn('status', ['Active', 'Partially Issued'])
+                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, warehouse')
+                ->groupBy('warehouse')->get();
+
+            $stock_reserves = collect($stock_reserves)->groupBy('warehouse')->toArray();
+
+            $ste_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+                ->where('item_code', $item_code)->whereIn('s_warehouse', $stock_warehouses)
+                ->selectRaw('SUM(qty) as qty, s_warehouse')->groupBy('s_warehouse')
+                ->pluck('qty', 's_warehouse')->toArray();
+
+            $at_issued = DB::table('tabAthena Transactions as at')
+                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+                ->where('psi.status', 'Issued')->where('at.item_code', $item_code)
+                ->where('psi.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
+                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
+                ->pluck('qty', 'source_warehouse')->toArray();
+        }
+
+        $site_warehouses = [];
+        $consignment_warehouses = [];
+        foreach ($item_inventory as $value) {
+            $reserved_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['reserved_qty'] : 0;
+            
+            $consumed_qty = array_key_exists($value->warehouse, $stock_reserves) ? $stock_reserves[$value->warehouse][0]['consumed_qty'] : 0;
+            $ste_issued_qty = array_key_exists($value->warehouse, $ste_issued) ? $ste_issued[$value->warehouse] : 0;
+            $at_issued_qty = array_key_exists($value->warehouse, $at_issued) ? $at_issued[$value->warehouse] : 0;
+
+            $issued_qty = $at_issued_qty + $ste_issued_qty;
+            $reserved_qty = $reserved_qty - $consumed_qty;
+            $reserved_qty = $reserved_qty > 0 ? $reserved_qty : 0;
+
+            $issued_reserved_qty = ($reserved_qty + $issued_qty) - $consumed_qty;
+
+            $actual_qty = $value->actual_qty;
+            $available_qty = ($actual_qty > $issued_reserved_qty) ? $actual_qty - $issued_reserved_qty : 0;
+            if($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$is_promodiser) {
+                $consignment_warehouses[] = [
+                    'warehouse' => $value->warehouse,
+                    'location' => $value->location,
+                    'reserved_qty' => $reserved_qty,
+                    'actual_qty' => $value->actual_qty,
+                    'available_qty' => $available_qty,
+                    'stock_uom' => $value->stock_uom,
+                ];
+            }else{
+                if(Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == "P2 Consignment Warehouse - FI"){
+                    $available_qty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
+                }
+
+                $site_warehouses[] = [
+                    'warehouse' => $value->warehouse,
+                    'location' => $value->location,
+                    'reserved_qty' => $reserved_qty,
+                    'actual_qty' => $value->actual_qty,
+                    'available_qty' => $available_qty,
+                    'stock_uom' => $value->stock_uom,
+                ];
+            }
+        }
+
+        if ($request->ajax()) {
+            return view('item_stock_level', compact('consignment_warehouses', 'site_warehouses', 'item_details'));
+        }
+
+        return [
+            'consignment_warehouses' => $consignment_warehouses,
+            'site_warehouses' => $site_warehouses
+        ];
     }
 }

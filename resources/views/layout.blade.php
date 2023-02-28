@@ -463,6 +463,10 @@
 		.modal{
 			background-color: rgba(0,0,0,0.4);
 		}
+		.modal-header {
+			background-color:#1F629A;
+			color: #ffffff;
+		}
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
@@ -786,8 +790,6 @@
 	<div class="modal fade" id="imgModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
-				<div class="modal-header">
-				</div>
 				<div class="modal-body">
 					<div id="img-container"></div>
 				</div>
@@ -795,21 +797,21 @@
 		</div>
 	</div>
 
-	{{-- <div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="warehouseLocationModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-md" role="document">
+	<div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="warehouseLocationModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document" style="min-width: 30%;">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="warehouseLocationModalLabel">Update Warehouse Location</h5>
+					<h5 class="modal-title" id="warehouseLocationModalLabel">Edit Warehouse Location</h5>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
 				<div class="modal-body">
-					<div id="warehouse-location" class="container-fluid"></div>
+					<div id="warehouse-location-div" class="container-fluid"></div>
 				</div>
 			</div>
 		</div>
-	</div> --}}
+	</div>
 
 	<!-- Modal -->
 	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -855,7 +857,7 @@
 			<div class="modal-dialog modal-lg" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
-						<h4 class="modal-title">Upload Image</h4>
+						<h4 class="modal-title"><i class="fas fa-upload"></i> Upload Image</h4>
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					</div>
 					<div class="modal-body">
@@ -864,7 +866,7 @@
 								<div class="form-group" id="upload_edit_form">
 									<input type="hidden" name="item_code" class="item-code">
 									<div class="fileUpload btn btn-primary upload-btn mb-3">
-										<span>Browse Image(s)</span>
+										<span><i class="fas fa-folder-open"></i> Browse Image(s)</span>
 										<input type="file" name="item_image[]" class="upload" id="browse-img" multiple />
 									</div>
 									<div class="row">
@@ -875,8 +877,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-						<button type="submit" class="btn btn-primary btn-lg">Upload</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fas fa-times"></i> Close</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-upload"></i> Upload</button>
 					</div>
 				</div>
 			</div>
@@ -2029,6 +2031,26 @@
 				$('#image-preview').attr('src', $(this).data('image'));
 				$('#upload-image-modal').modal('show');
 			});
+
+			$(document).on('click', '.edit-warehouse-location-btn', function(e) {
+				e.preventDefault();
+
+				get_item_wh_location($(this).data('item-code'));
+			});
+
+			function get_item_wh_location(item_code){
+				$.ajax({
+					type: 'GET',
+					url: '/form_warehouse_location/' + item_code,
+					success: function(response){
+						$('#warehouse-location-div').html(response);
+						$('#warehouseLocationModal').modal('show');
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+					}
+				});
+			}
 
 			function get_item_images(item_code){
 				var storage = "{{ asset('storage/img/') }}";
