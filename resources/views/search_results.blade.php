@@ -233,7 +233,7 @@
 																	$img = isset($row['item_image_paths'][0]) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
 																	$img_webp = isset($row['item_image_paths'][0]) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 																@endphp
-																<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
+																<a href="{{ asset('storage/') }}{{ $img }}" data-item-code="{{ $row['name'] }}" class="view-images">
 																	@if(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp'))
 																		<img src="{{ asset('storage/').$img }}" class="img w-100">
 																	@elseif(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.$row['item_image_paths'][0]->image_path))
@@ -246,42 +246,6 @@
 																		</picture>
 																	@endif
 																</a>
-					
-																<div class="modal fade" id="{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-																	<div class="modal-dialog" role="document" style="min-width: 55%;">
-																		<div class="modal-content">
-																			<div class="modal-header">
-																			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-																				<span aria-hidden="true">&times;</span>
-																			</button>
-																			</div>
-																			<div class="modal-body">
-																				<div id="image-container" class="container-fluid">
-																					<div id="carouselExampleControls" class="carousel slide" data-interval="false">
-																						<div class="carousel-inner">
-																							<div class="carousel-item active">
-																								<picture>
-																									<source id="{{ $row['name'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-																									<source id="{{ $row['name'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-																									<img class="d-block w-100" id="{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
-																								</picture>
-																							</div>
-																							<span class='d-none' id="{{ $row['name'] }}-image-data">0</span>
-																						</div>
-																						<a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['name'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-																							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-																							<span class="sr-only">Previous</span>
-																						</a>
-																						<a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['name'] }}')" role="button" data-slide="next" style="color: #000 !important">
-																							<span class="carousel-control-next-icon" aria-hidden="true"></span>
-																							<span class="sr-only">Next</span>
-																						</a>
-																					</div>
-																				</div>
-																			</div>
-																		</div>
-																	</div>
-																</div>
 					
 																<div class="text-center mt-2 mb-1">
 																	<div class="d-flex flex-row">
@@ -442,8 +406,7 @@
 																	$img = isset($row['item_image_paths'][0]) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
 																	$img_webp = isset($row['item_image_paths'][0]) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 																@endphp
-																<a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row['name'] }}" data-title="{{ $row['name'] }}">
-																	{{-- <img src="{{ asset('storage/') .''. $img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="search-img img-responsive hover w-100"> --}}
+																<a href="{{ asset('storage/') }}{{ $img }}" data-item-code="{{ $row['name'] }}" class="view-images">
 																	@if(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp'))
 																		<img src="{{ asset('storage/').$img }}" class="img w-100">
 																	@elseif(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.$row['item_image_paths'][0]->image_path))
@@ -456,45 +419,7 @@
 																		</picture>
 																	@endif
 																</a>
-				
-																<div class="modal fade" id="mobile-{{ $row['name'] }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-																	<div class="modal-dialog" role="document">
-																		<div class="modal-content">
-																			<div class="modal-header">
-																			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-																				<span aria-hidden="true">&times;</span>
-																			</button>
-																			</div>
-																			<div class="modal-body">
-																				<div id="image-container" class="container-fluid">
-																					<div id="carouselExampleControls" class="carousel slide" data-interval="false">
-																						<div class="carousel-inner">
-																							<div class="carousel-item active">
-																								{{-- <img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}"> --}}
-																								<picture>
-																									<source id="mobile-{{ $row['name'] }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-																									<source id="mobile-{{ $row['name'] }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-																									<img class="d-block w-100" id="mobile-{{ $row['name'] }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
-																								</picture>
-																							</div>
-																							<span class='d-none' id="mobile-{{ $row['name'] }}-image-data">0</span>
-																						</div>
-																						<a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row['name'] }}')" role="button" data-slide="prev" style="color: #000 !important">
-																							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-																							<span class="sr-only">Previous</span>
-																						</a>
-																						<a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row['name'] }}')" role="button" data-slide="next" style="color: #000 !important">
-																							<span class="carousel-control-next-icon" aria-hidden="true"></span>
-																							<span class="sr-only">Next</span>
-																						</a>
-																					</div>
-																				</div>
-																			</div>
-																		</div>
-																	</div>
-																</div>
-																
-																{{-- <a href="#" class="view-item-details mt-2 mb-2 d-block" data-item-code="{{ $row['name'] }}" data-item-classification="{{ $row['item_classification'] }}"> --}}
+
 																<a href="/get_item_details/{{ $row['name'] }}">
 																	<div class="btn btn-sm btn-primary w-100">
 																		<i class="fa fa-search font-responsive"></i> <span class="d-inline font-responsive">View</span>

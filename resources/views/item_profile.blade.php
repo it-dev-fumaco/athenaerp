@@ -13,41 +13,41 @@
                 <ul class="nav nav-tabs" id="ip-navs" role="tablist" style="font-size: 10pt;">
                     <li class="nav-item">
                         <a class="nav-link active" data-toggle="tab" href="#item-info">
-                            <span class="d-none d-md-block">Item Info</span>
-                            <i class="fas fa-info d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Item Info</span>
+                            <i class="fas fa-info d-block d-lg-none"></i>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" id="get-athena-transactions" data-toggle="tab" href="#athena-logs">
-                            <span class="d-none d-md-block">Athena Transactions</span>
-                            <i class="fas fa-boxes d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Athena Transactions</span>
+                            <i class="fas fa-boxes d-block d-lg-none"></i>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#history">
-                            <span class="d-none d-md-block">ERP Submitted Transaction Histories</span>
-                            <i class="fas fa-history d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">ERP Submitted Transaction Histories</span>
+                            <i class="fas fa-history d-block d-lg-none"></i>
                         </a>
                     </li>
                     @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#tab_4">
-                            <span class="d-none d-md-block">Stock Reservations</span>
-                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Stock Reservations</span>
+                            <i class="fas fa-warehouse d-block d-lg-none"></i>
                         </a>
                     </li>
                     @endif
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
-                        <a class="nav-link d-none d-md-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
-                        <a class="nav-link d-block d-md-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
+                        <a class="nav-link d-none d-lg-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
+                        <a class="nav-link d-block d-lg-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
                     </li>
                     @endif
                     @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Promodiser', 'Director']))
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#consignment-stock-movement">
-                            <span class="d-none d-md-block">Consignment Stock Movement</span>
-                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Consignment Stock Movement</span>
+                            <i class="fas fa-warehouse d-block d-lg-none"></i>
                         </a>
                     </li>
                     @endif
@@ -91,13 +91,7 @@
                     </div>
                     <div id="item-info" class="container-fluid tab-pane active bg-white">
                         <div class="row">
-                            @php
-                                $mngr_col = null;
-                                if(in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])){
-                                    $mngr_col = 'col-lg-9';
-                                }
-                            @endphp
-                            <div class="col-12 {{ $mngr_col }} col-xl-9">
+                            <div class="col-12 col-lg-9">
                                 <div class="box box-solid mt-2">
                                     <div class="row">
                                         @php
@@ -141,10 +135,34 @@
                                                 $item_brochure_name = strip_tags($item_details->item_brochure_name);
                                             }
                                         @endphp
+                                        <div class="d-md-none mb-2 col-12">
+                                            <div class="dropdown show">
+                                                <a class="btn btn-sm p-1 btn-secondary dropdown-toggle float-right" href="#" role="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="font-size: 9pt;">
+                                                    Menu
+                                                </a>
+                                              
+                                                <div class="dropdown-menu" style="font-size: 9pt;">
+                                                    <a class="print-brochure-btn dropdown-item" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                                        <i class="fas fa-print pb-1"></i> Print Brochure
+                                                    </a>
+                                                    <a class="dropdown-item upload-item-image" href="#" data-item-code="{{ $item_details->name }}">
+                                                        <i class="fas fa-camera pb-1"></i> Upload Image
+                                                    </a>
+                                                    <a class="dropdown-item edit-warehouse-location-btn" href="#" data-item-code="{{ $item_details->name }}">
+                                                        <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                                    </a>
+                                                    @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+                                                        <a class="dropdown-item" href="#" data-toggle="modal" data-target='#item-information-modal'>
+                                                            <i class="fa fa-edit pb-1"></i> Package Details
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="col-md-3 col-lg-3 pl-2 pr-2 pb-2 pt-0">
-                                            <div class="row">
+                                            <div class="row pb-2" style="border-bottom: solid 3px #2E86C1">
                                                 <div class="col-12">
-                                                    <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage/') . $img_1 }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <picture>
                                                             <source srcset="{{ asset('storage'.$img_1_webp) }}" type="image/webp" alt="{{ $img_1_alt }}">
                                                             <source srcset="{{ asset('storage'.$img_1) }}" type="image/jpeg" alt="{{ $img_1_alt }}">
@@ -154,7 +172,7 @@
                                                 </div>
                                                 @if ($img_2_visible)
                                                 <div class="col-4 mt-2">
-                                                    <a href="{{ asset('storage/'.$img_2) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage/'.$img_2) }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <picture>
                                                             <source srcset="{{ asset('storage'.$img_2_webp) }}" type="image/webp" alt="{{ $img_2_alt }}">
                                                             <source srcset="{{ asset('storage'.$img_2) }}" type="image/jpeg" alt="{{ $img_2_alt }}">
@@ -165,7 +183,7 @@
                                                 @endif
                                                 @if ($img_3_visible)
                                                 <div class="col-4 mt-2"> 
-                                                    <a href="{{ asset('storage/'.$img_3) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage/'.$img_3) }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <picture>
                                                             <source srcset="{{ asset('storage'.$img_3_webp) }}" type="image/webp" alt="{{ $img_3_alt }}">
                                                             <source srcset="{{ asset('storage'.$img_3) }}" type="image/jpeg" alt="{{ $img_3_alt }}">
@@ -176,7 +194,7 @@
                                                 @endif
                                                 @if ($img_4_visible)
                                                 <div class="col-4 mt-2">
-                                                    <a href="{{ asset('storage'.$img_4) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                                                    <a href="{{ asset('storage'.$img_4) }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <div class="text-white">
                                                             <picture>
                                                                 <source srcset="{{ asset('storage'.$img_4_webp) }}" type="image/webp" alt="{{ $img_4_alt }}">
@@ -192,58 +210,37 @@
                                                     </a>
                                                 </div>
                                                 @endif
-                                                <div class="col-md-12 text-center pt-3">
-                                                    <button class="btn btn-primary btn-sm upload-item-image w-100" data-item-code="{{ $item_details->name }}"><i class="fa fa-camera" style="font-size: 20px"></i></button>
-                                                </div>
-                                                <div class="d-xl-none col-md-12 text-center pt-3">
-                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
-                                                    </button>
-                                                </div>
-
-                                                <div class="modal fade" id="{{ $item_details->name }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog" role="document" style="min-width: 55%;">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div id="image-container" class="container-fluid">
-                                                                    <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                        <div class="carousel-inner">
-                                                                            <div class="carousel-item active">
-                                                                                <picture>
-                                                                                    <source id="{{ $item_details->name }}-webp-image-src" srcset="{{ asset('storage/').$img_1_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <source id="{{ $item_details->name }}-orig-image-src" srcset="{{ asset('storage/').$img_1 }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                    <img class="d-block w-100" id="{{ $item_details->name }}-image" src="{{ asset('storage/').$img_1 }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img_1)[0], '-') }}">
-                                                                                </picture>
-                                                                            </div>
-                                                                            <span class='d-none' id="{{ $item_details->name }}-image-data">0</span>
-                                                                        </div>
-                                                                        <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $item_details->name }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Previous</span>
-                                                                        </a>
-                                                                        <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $item_details->name }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                            <span class="sr-only">Next</span>
-                                                                        </a>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
                                         </div>
                                         <div class="col-md-9 col-lg-9">
-                                            <br class="d-block d-md-none"/>
-                                            <span id="selected-item-code" class="d-none">{{ $item_details->name }}</span>
-                                            <div id="item-information-container"></div>
-                                            <div class="d-block d-lg-none">
-                                                <p class="mt-2 mb-2 text-center">
+                                            <div class="row">
+                                                <div class="col-12 col-md-8 col-lg-12">
+                                                    <span id="selected-item-code" class="d-none">{{ $item_details->name }}</span>
+                                                    <dl class="ml-3">
+                                                        <dt class="responsive-item-code" style="font-size: 14pt;">{{ $item_details->name.' '.$item_details->brand }}</dt>
+                                                        <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                                                    </dl>
+                                                    <div id="item-information-container"></div>
+                                                </div>
+                                                <div class="d-none d-md-block d-lg-none col-4">
+                                                    <a class="btn btn-app m-2 d-block print-brochure-btn pb-5" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}" style="font-size: 8pt !important">
+                                                        <i class="fas fa-print pb-1"></i> Print Brochure
+                                                    </a>
+                                                    <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                        <i class="fas fa-camera pb-1"></i> Upload Image
+                                                    </a>
+                                                    <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                        <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                                    </a>
+                                                    @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+                                                    <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal' style="font-size: 8pt !important">
+                                                        <i class="fa fa-edit pb-1"></i> Package Details
+                                                    </a> 
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <div class="d-block ml-3">
+                                                <p class="mt-2 mb-2 text-1center">
                                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
                                                     <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
                                                     <span class="d-block responsive-description" style="font-size: 11pt;">Standard Selling Price</span>
@@ -276,180 +273,48 @@
                                                     @endif
                                                 </p>
                                             </div>
+                                            <div class="d-none d-lg-block">
+                                                <div class="card-header border-bottom-0 p-1 ml-3">
+                                                    <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
+                                                </div>
+                                                <div class="box box-solid p-0 ml-3">
+                                                    <div class="box-header with-border">
+                                                        <div class="box-body item-stock-level-div"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 d-block d-lg-none">
                                             <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                                             </div>
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
-                                                    <div class="box-body">
-                                                        <table class="table table-striped table-bordered table-hover responsive-description" style="font-size: 11pt;">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th scope="col" rowspan="2" class="font-responsive text-center p-1 align-middle">Warehouse</th>
-                                                                    <th scope="col" colspan="3" class="font-responsive text-center p-1">Quantity</th>
-                                                                    @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']) and $site_warehouses)
-                                                                    <th scope="col" rowspan="2" class="font-responsive text-center p-1 align-middle" style="width: 5%;">-</th>
-                                                                    @endif
-                                                                </tr>
-                                                                <tr>
-                                                                    <th scope="col" class="font-responsive text-center p-1 text-muted">Reserved</th>
-                                                                    <th scope="col" class="font-responsive text-center p-1">Actual</th>
-                                                                    <th scope="col" class="font-responsive text-center p-1">Available</th>
-                                                                </tr>
-                                                            </thead>
-                                                            @forelse ($site_warehouses as $sw => $stock)
-                                                            <tr>
-                                                                <td class="p-1 font-responsive align-middle">
-                                                                    {{ $stock['warehouse'] }}
-                                                                    @if ($stock['location'])
-                                                                        <small class="text-muted font-italic"> - {{ $stock['location'] }}</small>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="text-center p-1 font-responsive align-middle">
-                                                                    <span class="text-muted">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</span>
-                                                                </td>
-                                                                <td class="text-center p-1 font-responsive align-middle">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
-                                                                <td class="text-center p-1 align-middle">
-                                                                    <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} responsive-description" style="font-size: 10pt;">{{ number_format((float)$stock['available_qty'], 2, '.', '') . ' ' . $stock['stock_uom'] }}</span>
-                                                                </td>
-                                                                @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']) and $site_warehouses)
-                                                                <td class="text-center p-1 align-middle">
-                                                                    <button type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#warehouseLocationModal{{ $sw }}"><i class="fas fa-edit"></i></button>
-
-                                                                    <div class="modal fade" id="warehouseLocationModal{{ $sw }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                                        <div class="modal-dialog" role="document">
-                                                                            <div class="modal-content">
-                                                                                <div class="modal-header">
-                                                                                    <h5 class="modal-title" id="exampleModalLabel">Edit Warehouse Location</h5>
-                                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                                        <span aria-hidden="true">&times;</span>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div class="modal-body">
-                                                                                    <form action="/edit_warehouse_location" method="POST" autocomplete="off">
-                                                                                        @csrf
-                                                                                        <div class="form-group row text-left">
-                                                                                            <label for="location" class="col-12 offset-2 col-form-label">{{ $stock['warehouse'] }}</label>
-                                                                                            <div class="col-8 offset-2">
-                                                                                                <input type="text" name="location" class="form-control" value="{{ $stock['location'] }}" placeholder="Warehouse Location">
-                                                                                                <input type="text" name="warehouse" class="d-none" value="{{ $stock['warehouse'] }}" readonly>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <div class="row">
-                                                                                            <div class="col-4 offset-4 text-center mt-3">
-                                                                                                <input type="text" name="item_code" value="{{ $item_details->name }}" hidden readonly>
-                                                                                                <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Save</button>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </form>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                @endif
-                                                            </tr>
-                                                            @empty
-                                                            <tr>
-                                                                <td colspan="5" class="text-center font-responsive">No Stock(s)</td>
-                                                            </tr>
-                                                            @endforelse
-                                                        </table>
-                                                        @if(count($consignment_warehouses) > 0)
-                                                            <div class="text-center">
-                                                                <a href="#" class="btn btn-primary uppercase p-1 responsive-description" data-toggle="modal" data-target="#vcww{{ $item_details->name }}" style="font-size: 12px;">View Consignment Warehouse</a>
-                                                            </div>
-                        
-                                                            <div class="modal fade" id="vcww{{ $item_details->name }}" tabindex="-1" role="dialog">
-                                                                <div class="modal-dialog modal-xl" role="document">
-                                                                    <div class="modal-content">
-                                                                        <div class="modal-header">
-                                                                            <h4 class="modal-title">{{ $item_details->name }} - Consignment Warehouse(s) </h4>
-                                                                            <button type="button" class="close" onclick="close_modal('#vcww{{ $item_details->name }}')" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                                                        </div>
-                                                                        <form></form>
-                                                                        <div class="modal-body">
-                                                                            <table class="table table-hover m-0">
-                                                                                <col style="width: 70%;">
-                                                                                <col style="width: 30%;">
-                                                                                <tr>
-                                                                                    <th class="text-center responsive-description">Warehouse</th>
-                                                                                    <th class="text-center responsive-description">Available Qty</th>
-                                                                                </tr>
-                                                                                @forelse($consignment_warehouses as $con)
-                                                                                <tr>
-                                                                                    <td class="responsive-description">
-                                                                                        {{ $con['warehouse'] }}
-                                                                                        @if ($con['location'])
-                                                                                            <small class="text-muted font-italic"> - {{ $con['location'] }}</small>
-                                                                                        @endif
-                                                                                    </td>
-                                                                                    <td class="text-center responsive-description"><span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
-                                                                                </tr>
-                                                                                @empty
-                                                                                <tr>
-                                                                                    <td class="text-center font-italic" colspan="3">NO WAREHOUSE ASSIGNED</td>
-                                                                                </tr>
-                                                                                @endforelse
-                                                                            </table>
-                                                                        </div>
-                                                                        <div class="modal-footer">
-                                                                            <button type="button" class="btn btn-default" onclick="close_modal('#vcww{{ $item_details->name }}')">Close</button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endif
-                                                    </div>
+                                                    <div class="box-body item-stock-level-div"></div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-none d-lg-block col-lg-3">
-                                <div class="box box-solid h-100">
-                                    <div class="d-none d-xl-block col-12 col-xl-6 offset-xl-6 text-center pt-3">
-                                        <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                            <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
-                                        </button>
+                            <div class="d-none d-lg-block col-lg-3 pr-2">
+                                <div class="box box-solid h-100 pr-0s">
+                                    <div class="col-sm-12 col-md-12 col-lg-10 offset-lg-2 col-xl-6 offset-xl-6">
+                                        <a class="btn btn-app m-2 d-block print-brochure-btn pb-5" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                            <i class="fas fa-print pb-1"></i> Print Brochure
+                                        </a>
+                                        <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $item_details->name }}">
+                                            <i class="fas fa-camera pb-1"></i> Upload Image
+                                        </a>
+                                        <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $item_details->name }}">
+                                            <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                        </a>
+                                        @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+                                        <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal'>
+                                            <i class="fa fa-edit pb-1"></i> Package Details
+                                        </a> 
+                                        @endif
                                     </div>
-                                    @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0 || in_array($user_group, ['Manager', 'Director'])) 
-                                    <div class="box-body table-responsive no-padding h-50" style="display: flex; justify-content: center; align-items: center;">
-                                        <p class="mt-2 mb-2 text-center">
-                                            @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
-                                            <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
-                                            <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
-                                            @if ($is_tax_included_in_rate)
-                                            <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
-                                            @endif
-                                            @endif
-
-                                            @if (in_array($user_group, ['Manager', 'Director']))
-                                                @if ($default_price > 0)
-                                                <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
-                                                <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
-                                                @if ($is_tax_included_in_rate)
-                                                <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
-                                                @endif
-                                                @endif
-                                                @if ($minimum_selling_price > 0)
-                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
-                                                    <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
-                                                @endif
-                                                @if ($last_purchase_rate > 0)
-                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($last_purchase_rate, 2, '.', ',') }}</span>
-                                                    <span class="d-inline-block" style="font-size: 9pt;">Last Purchase Rate</span>
-                                                    <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $last_purchase_date }}</span>
-                                                @endif
-                                                @if ($avgPurchaseRate > 0)
-                                                <span class="d-block font-weight-bold avg-purchase-rate-div mt-3" style="font-size: 11pt;">{{ $avgPurchaseRate }}</span>
-                                                <span class="d-inline-block" style="font-size: 9pt;">Average Purchase Rate</span>
-                                                @endif
-                                            @endif
-                                        </p>
-                                    </div>
-                                    @endif
                                 </div>
                             </div>
                             @if (count($co_variants) > 0)
@@ -462,7 +327,7 @@
                             <div class="container col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div id="example">
+                                        <div id="example" class="overflow-auto">
                                             <table class="table table-sm table-bordered table-striped variants-table">
                                                 <thead>
                                                     <tr>
@@ -943,6 +808,42 @@
 @endsection
 @section('script')
     <script>
+        get_item_stock_levels('{{ $item_details->name }}');
+        $(document).on('submit', '#edit-warehouse-location-form', function (e) {
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.status) {
+                        $('#warehouseLocationModal').modal('hide');
+
+                        get_item_stock_levels(response.item_code);
+                        showNotification("success", response.message, "fa fa-check");
+                    } else {
+                        showNotification("danger", response.message, "fa fa-info");
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                }
+            });
+        });
+
+        function get_item_stock_levels(item_code) {
+            $.ajax({
+                type: 'GET',
+                url: '/get_item_stock_levels/' + item_code,
+                success: function(response){
+                    $('.item-stock-level-div').html(response);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                }
+            });
+        }
+        
         $(document).on('submit', '.update-price-form', function(e){
             e.preventDefault();
 

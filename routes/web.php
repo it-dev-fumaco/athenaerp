@@ -85,6 +85,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_athena_transactions/{item_code}', 'MainController@get_athena_transactions');
     Route::get('/get_stock_ledger/{item_code}', 'MainController@get_stock_ledger');
     Route::get('/form_warehouse_location/{item_code}', 'MainController@form_warehouse_location');
+    Route::get('/get_item_stock_levels/{item_code}', 'MainController@get_item_stock_levels');
     Route::post('/edit_warehouse_location', 'MainController@edit_warehouse_location');
     Route::post('/save_item_information/{item_code}', 'MainController@save_item_information');
 
@@ -97,6 +98,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/submit_stock_entry/{id}', 'MainController@submit_stock_entry');
 
     Route::post('/upload_item_image', 'MainController@upload_item_image');
+    Route::get('/load_item_images/{item_code}', 'MainController@load_item_images');
 
     Route::post('/update_stock_entry', 'MainController@update_stock_entry');
 

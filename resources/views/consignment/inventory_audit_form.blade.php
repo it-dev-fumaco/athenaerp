@@ -78,7 +78,7 @@
                                                     <div class="d-flex flex-row justify-content-start align-items-center">
                                                         <div class="p-1 text-left mx-auto">
                                                             <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
-                                                            <a href="{{ asset('storage/') }}{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $row->item_code }}" data-title="{{ $row->item_code }}">
+                                                            <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
                                                                 <picture>
                                                                     <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
                                                                     <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
@@ -89,44 +89,6 @@
                                                         <div class="p-1 m-0 d-none">
                                                             <span class="font-weight-bold">{{ $row->item_code }}</span>
                                                             <div class="d-none">{!! strip_tags($row->description) !!}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal fade" id="mobile-{{ $row->item_code }}-images-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog" role="document">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title">{{ $row->item_code }}</h5>
-                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                    <span aria-hidden="true">&times;</span>
-                                                                </button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <div id="image-container" class="container-fluid">
-                                                                        <div id="carouselExampleControls" class="carousel slide" data-interval="false">
-                                                                            <div class="carousel-inner">
-                                                                                <div class="carousel-item active">
-                                                                                    <picture>
-                                                                                        <source id="mobile-{{ $row->item_code }}-webp-image-src" srcset="{{ asset('storage/').$img_webp }}" type="image/webp" class="d-block w-100" style="width: 100% !important;">
-                                                                                        <source id="mobile-{{ $row->item_code }}-orig-image-src" srcset="{{ asset('storage/').$img }}" type="image/jpeg" class="d-block w-100" style="width: 100% !important;">
-                                                                                        <img class="d-block w-100" id="mobile-{{ $row->item_code }}-image" src="{{ asset('storage/').$img }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}">
-                                                                                    </picture>
-                                                                                </div>
-                                                                                <span class='d-none5' id="mobile-{{ $row->item_code }}-image-data">0</span>
-                                                                            </div>
-                                                                            @if ($img_count > 1)
-                                                                            <a class="carousel-control-prev" href="#carouselExampleControls" onclick="prevImg('{{ $row->item_code }}')" role="button" data-slide="prev" style="color: #000 !important">
-                                                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                                                <span class="sr-only">Previous</span>
-                                                                            </a>
-                                                                            <a class="carousel-control-next" href="#carouselExampleControls" onclick="nextImg('{{ $row->item_code }}')" role="button" data-slide="next" style="color: #000 !important">
-                                                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                                                <span class="sr-only">Next</span>
-                                                                            </a>
-                                                                            @endif
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 </td>
