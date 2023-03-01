@@ -13,41 +13,41 @@
                 <ul class="nav nav-tabs" id="ip-navs" role="tablist" style="font-size: 10pt;">
                     <li class="nav-item">
                         <a class="nav-link active" data-toggle="tab" href="#item-info">
-                            <span class="d-none d-md-block">Item Info</span>
-                            <i class="fas fa-info d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Item Info</span>
+                            <i class="fas fa-info d-block d-lg-none"></i>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" id="get-athena-transactions" data-toggle="tab" href="#athena-logs">
-                            <span class="d-none d-md-block">Athena Transactions</span>
-                            <i class="fas fa-boxes d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Athena Transactions</span>
+                            <i class="fas fa-boxes d-block d-lg-none"></i>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#history">
-                            <span class="d-none d-md-block">ERP Submitted Transaction Histories</span>
-                            <i class="fas fa-history d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">ERP Submitted Transaction Histories</span>
+                            <i class="fas fa-history d-block d-lg-none"></i>
                         </a>
                     </li>
                     @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#tab_4">
-                            <span class="d-none d-md-block">Stock Reservations</span>
-                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Stock Reservations</span>
+                            <i class="fas fa-warehouse d-block d-lg-none"></i>
                         </a>
                     </li>
                     @endif
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
-                        <a class="nav-link d-none d-md-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
-                        <a class="nav-link d-block d-md-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
+                        <a class="nav-link d-none d-lg-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
+                        <a class="nav-link d-block d-lg-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
                     </li>
                     @endif
                     @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Promodiser', 'Director']))
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#consignment-stock-movement">
-                            <span class="d-none d-md-block">Consignment Stock Movement</span>
-                            <i class="fas fa-warehouse d-block d-md-none"></i>
+                            <span class="d-none d-lg-block">Consignment Stock Movement</span>
+                            <i class="fas fa-warehouse d-block d-lg-none"></i>
                         </a>
                     </li>
                     @endif
@@ -91,7 +91,7 @@
                     </div>
                     <div id="item-info" class="container-fluid tab-pane active bg-white">
                         <div class="row">
-                            <div class="col-md-12 col-xl-10">
+                            <div class="col-12 col-lg-9">
                                 <div class="box box-solid mt-2">
                                     <div class="row">
                                         @php
@@ -135,8 +135,32 @@
                                                 $item_brochure_name = strip_tags($item_details->item_brochure_name);
                                             }
                                         @endphp
+                                        <div class="d-md-none mb-2 col-12">
+                                            <div class="dropdown show">
+                                                <a class="btn btn-sm p-1 btn-secondary dropdown-toggle float-right" href="#" role="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="font-size: 9pt;">
+                                                    Menu
+                                                </a>
+                                              
+                                                <div class="dropdown-menu" style="font-size: 9pt;">
+                                                    <a class="print-brochure-btn dropdown-item" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                                        <i class="fas fa-print pb-1"></i> Print Brochure
+                                                    </a>
+                                                    <a class="dropdown-item upload-item-image" href="#" data-item-code="{{ $item_details->name }}">
+                                                        <i class="fas fa-camera pb-1"></i> Upload Image
+                                                    </a>
+                                                    <a class="dropdown-item edit-warehouse-location-btn" href="#" data-item-code="{{ $item_details->name }}">
+                                                        <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                                    </a>
+                                                    @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+                                                        <a class="dropdown-item" href="#" data-toggle="modal" data-target='#item-information-modal'>
+                                                            <i class="fa fa-edit pb-1"></i> Package Details
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="col-md-3 col-lg-3 pl-2 pr-2 pb-2 pt-0">
-                                            <div class="row">
+                                            <div class="row pb-2" style="border-bottom: solid 3px #2E86C1">
                                                 <div class="col-12">
                                                     <a href="{{ asset('storage/') . $img_1 }}" class="view-images" data-item-code="{{ $item_details->name }}">
                                                         <picture>
@@ -186,30 +210,35 @@
                                                     </a>
                                                 </div>
                                                 @endif
-                                                <div class="d-xl-none col-md-12 text-center pt-3">
-                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
-                                                    </button>
-                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
-                                                    </button>
-                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
-                                                    </button>
-                                                    <button class="btn btn-info btn-sm w-100 print-brochure-btn" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                                        <i class="fas fa-print" style="font-size: 15px"></i> Print Brochure
-                                                    </button>
-                                                </div>
                                             </div>
                                         </div>
                                         <div class="col-md-9 col-lg-9">
-                                            <br class="d-block d-md-none"/>
-                                            <span id="selected-item-code" class="d-none">{{ $item_details->name }}</span>
-                                            <dl class="ml-3">
-                                                <dt class="responsive-item-code" style="font-size: 14pt;">{{ $item_details->name.' '.$item_details->brand }}</dt>
-                                                <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
-                                            </dl>
-                                            <div id="item-information-container"></div>
+                                            <div class="row">
+                                                <div class="col-12 col-md-8 col-lg-12">
+                                                    <span id="selected-item-code" class="d-none">{{ $item_details->name }}</span>
+                                                    <dl class="ml-3">
+                                                        <dt class="responsive-item-code" style="font-size: 14pt;">{{ $item_details->name.' '.$item_details->brand }}</dt>
+                                                        <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                                                    </dl>
+                                                    <div id="item-information-container"></div>
+                                                </div>
+                                                <div class="d-none d-md-block d-lg-none col-4">
+                                                    <a class="btn btn-app m-2 d-block print-brochure-btn pb-5" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}" style="font-size: 8pt !important">
+                                                        <i class="fas fa-print pb-1"></i> Print Brochure
+                                                    </a>
+                                                    <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                        <i class="fas fa-camera pb-1"></i> Upload Image
+                                                    </a>
+                                                    <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                        <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                                    </a>
+                                                    @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+                                                    <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal' style="font-size: 8pt !important">
+                                                        <i class="fa fa-edit pb-1"></i> Package Details
+                                                    </a> 
+                                                    @endif
+                                                </div>
+                                            </div>
                                             <div class="d-block ml-3">
                                                 <p class="mt-2 mb-2 text-1center">
                                                     @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
@@ -244,21 +273,33 @@
                                                     @endif
                                                 </p>
                                             </div>
+                                            <div class="d-none d-lg-block">
+                                                <div class="card-header border-bottom-0 p-1 ml-3">
+                                                    <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
+                                                </div>
+                                                <div class="box box-solid p-0 ml-3">
+                                                    <div class="box-header with-border">
+                                                        <div class="box-body item-stock-level-div"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 d-block d-lg-none">
                                             <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
                                             </div>
                                             <div class="box box-solid p-0 ml-3">
                                                 <div class="box-header with-border">
-                                                    <div class="box-body" id="item-stock-level-div"></div>
+                                                    <div class="box-body item-stock-level-div"></div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-none d-lg-block col-xl-2 pl-5 pr-2">
-                                <div class="box box-solid h-100 pr-0 pl-5">
-                                    <div class="text-center p-0">
+                            <div class="d-none d-lg-block col-lg-3 pr-2">
+                                <div class="box box-solid h-100 pr-0s">
+                                    <div class="col-sm-12 col-md-12 col-lg-10 offset-lg-2 col-xl-6 offset-xl-6">
                                         <a class="btn btn-app m-2 d-block print-brochure-btn pb-5" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
                                             <i class="fas fa-print pb-1"></i> Print Brochure
                                         </a>
@@ -271,7 +312,7 @@
                                         @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
                                         <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal'>
                                             <i class="fa fa-edit pb-1"></i> Package Details
-                                        </a>
+                                        </a> 
                                         @endif
                                     </div>
                                 </div>
@@ -286,7 +327,7 @@
                             <div class="container col-12 mt-2">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div id="example">
+                                        <div id="example" class="overflow-auto">
                                             <table class="table table-sm table-bordered table-striped variants-table">
                                                 <thead>
                                                     <tr>
@@ -795,7 +836,7 @@
                 type: 'GET',
                 url: '/get_item_stock_levels/' + item_code,
                 success: function(response){
-                    $('#item-stock-level-div').html(response);
+                    $('.item-stock-level-div').html(response);
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
