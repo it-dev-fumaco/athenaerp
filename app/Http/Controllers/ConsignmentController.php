@@ -496,10 +496,10 @@ class ConsignmentController extends Controller
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);
-        } catch (Exception $e) {
+        } catch (\Throwable $th) {
             DB::rollback();
 
-            return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
+            return redirect()->back()->withInput($request->input())->with('error', 'An error occured. Please contact your system administrator.');
         }
     }
 

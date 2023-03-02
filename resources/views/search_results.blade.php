@@ -270,8 +270,17 @@
 																<div class="col-md-12 m-0 text-justify" >
 																	<span class="font-italic item-class" >{{ $row['item_classification'] }}</span><br/>
 																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
-																	@if ($row['part_nos'])
+																	@if ($row['package_dimension'])
+																		<dl class="mt-3 mb-0">
+																			<dt style="font-size: 9pt;" class="text-muted ">Package Dimension</dt>
+																			<dd style="font-size: 8pt;" class="text-muted text-justify pt-1">
+																				{!! $row['package_dimension'] !!}
+																			</dd>
+																		</dl>
+																	@else
 																		<br>
+																	@endif
+																	@if ($row['part_nos'])
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																	@endif
 																	@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
@@ -429,8 +438,17 @@
 															<div class="col-9 col-lg-10 col-xl-9">
 																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
 																<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}</span>
-																@if ($row['part_nos'])
+																@if ($row['package_dimension'])
+																	<dl class="mt-3 mb-0">
+																		<dt style="font-size: 9pt;">Package Dimension</dt>
+																		<dd style="font-size: 8pt;" class="text-justify pt-1">
+																			{!! $row['package_dimension'] !!}
+																		</dd>
+																	</dl>
+																@else
 																	<br>
+																@endif
+																@if ($row['part_nos'])
 																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																@endif
 																@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0) 

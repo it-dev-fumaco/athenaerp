@@ -3,12 +3,9 @@
     $package_length = $item_details->package_length && $item_details->package_length > 0 ? trim($item_details->package_length).' '.$item_details->package_dimension_uom : '-';
     $package_width = $item_details->package_width && $item_details->package_width > 0 ? trim($item_details->package_width).' '.$item_details->package_dimension_uom : '-';
     $package_height = $item_details->package_height && $item_details->package_height > 0 ? trim($item_details->package_height).' '.$item_details->package_dimension_uom : '-';
-    $weight_per_unit = $item_details->weight_per_unit && $item_details->weight_per_unit > 0 ? trim($item_details->weight_per_unit).' '.$item_details->weight_uom : '-';
-    $length = $item_details->length && $item_details->length > 0 ? trim($item_details->length).' '.$item_details->package_dimension_uom : '-';
-    $width = $item_details->width && $item_details->width > 0 ? trim($item_details->width).' '.$item_details->package_dimension_uom : '-';
-    $thickness = $item_details->thickness && $item_details->thickness > 0 ? trim($item_details->thickness).' '.$item_details->package_dimension_uom : '-';
+    $weight_per_unit = $item_details->weight_per_unit && $item_details->weight_per_unit > 0 ? trim((float)$item_details->weight_per_unit).' '.$item_details->weight_uom : '-';
 @endphp
-<dl class="ml-3">
+<dl class="ml-3 {{ $package_weight == '-' && $package_length == '-' && $package_width == '-' && $package_height == '-' && $weight_per_unit == '-' ? 'd-none' : null }}">
     <dt style="font-size: 9pt;">Package Dimension</dt>
     <dd style="font-size: 8pt;" class="text-justify mb-2 pt-1">
         <p class="mb-1">
@@ -29,7 +26,7 @@
                 <form action="/save_item_information/{{ $item_details->name }}" class="item-information-form" data-modal-container="#item-information-modal" method="post" autocomplete="off">
                     @csrf
                     <div class="row" style="font-size: 9pt;">
-                       
+                    
                         <div class="form-group col-6">
                             <label>Package Length</label>
                             <input type="text" name="package_length" id="package_length" placeholder="Length" class="form-control" value="{{ $item_details->package_length ? trim($item_details->package_length) : null }}" required style="font-size: 9pt;">

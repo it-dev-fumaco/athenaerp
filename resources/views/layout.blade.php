@@ -791,7 +791,7 @@
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-body">
-					<div id="img-container"></div>
+					<div id="img-container" style="max-height: 90vh;"></div>
 				</div>
 			</div>
 		</div>

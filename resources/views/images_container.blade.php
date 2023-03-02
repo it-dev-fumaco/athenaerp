@@ -6,31 +6,26 @@
     </ol>
     <div class="carousel-inner">
         @foreach ($images as $image)
-            <div class="carousel-item {{ $loop->first ? 'active' : null }}">
+            <div class="carousel-item {{ $loop->first ? 'active' : null }}" style="max-height: 860px;">
                 @php
                    $webp = explode('.', $image)[0].'.webp'; 
                 @endphp
+                @if (Storage::disk('public')->exists('/img/'.$image))
+                    <a href="{{ asset('storage/img/'.$image) }}" class="btn btn-primary download-img" download="{{ $image }}"><i class="fa fa-download"></i> Download Image</a>
+                @endif
                 <center>
                     @if(!Storage::disk('public')->exists('/img/'.$webp))
-                        <img src="{{ asset('storage/img/'.$image) }}" class="img w-100">
+                        <img src="{{ asset('storage/img/'.$image) }}">
                     @elseif(!Storage::disk('public')->exists('/img/'.$image))
-                        <img src="{{ asset('storage/img/'.$webp) }}" class="img w-100">
+                        <img src="{{ asset('storage/img/'.$webp) }}">
                     @else
                         <picture>
                             <source srcset="{{ asset('storage/img/'.$webp) }}" type="image/webp">
                             <source srcset="{{ asset('storage/img/'.$image) }}" type="image/jpeg">
-                            <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive hover" style="width: 70%;">
+                            <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive hover">
                         </picture>
                     @endif
                 </center>
-                <div class="btn-group pt-2 float-right" role="group" aria-label="Basic example" style="z-index: 9999 !important;">
-                    <a class="btn btn-app bg-primary" href="{{ asset('storage/img/'.$image) }}" style="font-size: 9pt;" download="{{ asset('storage/'.$image) }}">
-                        <i class="fas fa-download pb-1" style="font-size: 10pt;"></i> JPEG
-                    </a>
-                    <a class="btn btn-app bg-primary" href="{{ asset('storage/img/'.$webp) }}" style="font-size: 9pt;" download="{{ asset('storage/'.$webp) }}">
-                        <i class="fas fa-download pb-1" style="font-size: 10pt;"></i> WEBP
-                    </a>
-                </div>
             </div>
         @endforeach
     </div>
@@ -64,5 +59,18 @@
         content: '<';
         font-size: 55px;
         color: rgba(0,0,0,0.4);
+    }
+
+    .download-img{
+        font-size: 9pt;
+        position: absolute;
+        right: 10px !important;
+        top: 10px !important;
+        z-index: 9999 !important
+    }
+
+    #images-control img{
+        width: 100%;
+        object-fit: fill !important;
     }
 </style>

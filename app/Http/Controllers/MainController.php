@@ -455,6 +455,12 @@ class MainController extends Controller
             'tabItem.item_group_level_3 as lvl3',
             'tabItem.item_group_level_4 as lvl4',
             'tabItem.item_group_level_5 as lvl5',
+            'tabItem.weight_per_unit',
+            'tabItem.package_length',
+            'tabItem.package_width',
+            'tabItem.package_height',
+            'tabItem.weight_uom',
+            'tabItem.package_dimension_uom',
             $request->wh ? 'd.default_warehouse' : null
         ];
 
@@ -810,6 +816,19 @@ class MainController extends Controller
 
             $default_price = ($website_price > 0) ? $website_price : $default_price;
 
+            $package_dimension = null;
+            if(
+                $row->weight_per_unit > 0 ||
+                $row->package_length > 0 ||
+                $row->package_width > 0 ||
+                $row->package_height > 0
+            ){
+                $package_dimension = '<span class="text-muted">Net Weight:</span> <b>'.($row->weight_per_unit > 0 ? (float)$row->weight_per_unit.' '.$row->weight_uom : '-' ).'</b>, ';
+                $package_dimension .= '<span class="text-muted">Length:</span> <b>'.($row->package_length > 0 ? (float)$row->package_length.' '.$row->package_dimension_uom : '-' ).'</b>, ';
+                $package_dimension .= '<span class="text-muted">Width:</span>  <b>'.($row->package_width > 0 ? (float)$row->package_width.' '.$row->package_dimension_uom : '-' ).'</b>, ';
+                $package_dimension .= '<span class="text-muted">Height:</span> <b>'.($row->package_height > 0 ? (float)$row->package_height.' '.$row->package_dimension_uom : '-').'</b>';
+            }
+
             $item_list[] = [
                 'name' => $row->item_code,
                 'description' => $row->description,
@@ -821,6 +840,7 @@ class MainController extends Controller
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
                 'default_price' => $default_price,
+                'package_dimension' => $package_dimension
             ];
         }
 
@@ -2985,7 +3005,7 @@ class MainController extends Controller
                         return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' must be a number.']);
                     }
 
-                    if($value < 0){
+                    if((float)$value <= 0){
                         return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' cannot be less than 0.']);
                     }
                 }

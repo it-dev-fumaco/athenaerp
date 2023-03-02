@@ -149,7 +149,7 @@
                                                         <i class="fas fa-camera pb-1"></i> Upload Image
                                                     </a>
                                                     <a class="dropdown-item edit-warehouse-location-btn" href="#" data-item-code="{{ $item_details->name }}">
-                                                        <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                                        <i class="fas fa-warehouse pb-1"></i> Location
                                                     </a>
                                                     @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
                                                         <a class="dropdown-item" href="#" data-toggle="modal" data-target='#item-information-modal'>
@@ -230,7 +230,7 @@
                                                         <i class="fas fa-camera pb-1"></i> Upload Image
                                                     </a>
                                                     <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
-                                                        <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                                        <i class="fas fa-warehouse pb-1"></i> Location
                                                     </a>
                                                     @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
                                                     <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal' style="font-size: 8pt !important">
@@ -307,7 +307,7 @@
                                             <i class="fas fa-camera pb-1"></i> Upload Image
                                         </a>
                                         <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $item_details->name }}">
-                                            <i class="fas fa-warehouse pb-1"></i> Warehouse Location
+                                            <i class="fas fa-warehouse pb-1"></i> Location
                                         </a>
                                         @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
                                         <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal'>
