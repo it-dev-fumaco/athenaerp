@@ -272,8 +272,8 @@
 																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['package_dimension'])
 																		<dl class="mt-3 mb-0">
-																			<dt style="font-size: 9pt;">Package Dimension</dt>
-																			<dd style="font-size: 8pt;" class="text-justify pt-1">
+																			<dt style="font-size: 9pt;" class="text-muted ">Package Dimension</dt>
+																			<dd style="font-size: 8pt;" class="text-muted text-justify pt-1">
 																				{!! $row['package_dimension'] !!}
 																			</dd>
 																		</dl>

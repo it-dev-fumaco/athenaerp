@@ -818,12 +818,12 @@ class MainController extends Controller
 
             $package_dimension = null;
             if(
-                $row->package_weight > 0 ||
+                $row->weight_per_unit > 0 ||
                 $row->package_length > 0 ||
                 $row->package_width > 0 ||
                 $row->package_height > 0
             ){
-                $package_dimension = '<span class="text-muted">Net Weight:</span> <b>'.($row->package_weight > 0 ? (float)$row->package_weight.' '.$row->weight_uom : '-' ).'</b>, ';
+                $package_dimension = '<span class="text-muted">Net Weight:</span> <b>'.($row->weight_per_unit > 0 ? (float)$row->weight_per_unit.' '.$row->weight_uom : '-' ).'</b>, ';
                 $package_dimension .= '<span class="text-muted">Length:</span> <b>'.($row->package_length > 0 ? (float)$row->package_length.' '.$row->package_dimension_uom : '-' ).'</b>, ';
                 $package_dimension .= '<span class="text-muted">Width:</span>  <b>'.($row->package_width > 0 ? (float)$row->package_width.' '.$row->package_dimension_uom : '-' ).'</b>, ';
                 $package_dimension .= '<span class="text-muted">Height:</span> <b>'.($row->package_height > 0 ? (float)$row->package_height.' '.$row->package_dimension_uom : '-').'</b>';
