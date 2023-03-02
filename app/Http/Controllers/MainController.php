@@ -459,9 +459,8 @@ class MainController extends Controller
             'tabItem.package_length',
             'tabItem.package_width',
             'tabItem.package_height',
-            'tabItem.weight_per_unit',
-            'tabItem.package_dimension_uom',
             'tabItem.weight_uom',
+            'tabItem.package_dimension_uom',
             $request->wh ? 'd.default_warehouse' : null
         ];
 
@@ -817,6 +816,19 @@ class MainController extends Controller
 
             $default_price = ($website_price > 0) ? $website_price : $default_price;
 
+            $package_dimension = null;
+            if(
+                $row->package_weight > 0 ||
+                $row->package_length > 0 ||
+                $row->package_width > 0 ||
+                $row->package_height > 0
+            ){
+                $package_dimension = '<span class="text-muted">Net Weight:</span> <b>'.($row->package_weight > 0 ? (float)$row->package_weight.' '.$row->weight_uom : '-' ).'</b>, ';
+                $package_dimension .= '<span class="text-muted">Length:</span> <b>'.($row->package_length > 0 ? (float)$row->package_length.' '.$row->package_dimension_uom : '-' ).'</b>, ';
+                $package_dimension .= '<span class="text-muted">Width:</span>  <b>'.($row->package_width > 0 ? (float)$row->package_width.' '.$row->package_dimension_uom : '-' ).'</b>, ';
+                $package_dimension .= '<span class="text-muted">Height:</span> <b>'.($row->package_height > 0 ? (float)$row->package_height.' '.$row->package_dimension_uom : '-').'</b>';
+            }
+
             $item_list[] = [
                 'name' => $row->item_code,
                 'description' => $row->description,
@@ -828,13 +840,7 @@ class MainController extends Controller
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
                 'default_price' => $default_price,
-                'package_weight' => $row->package_weight,
-                'package_length' => $row->package_length,
-                'package_width' => $row->package_width,
-                'package_height' => $row->package_height,
-                'weight_per_unit' => $row->weight_per_unit,
-                'package_dimension_uom' => $row->package_dimension_uom,
-                'weight_uom' => $row->weight_uom
+                'package_dimension' => $package_dimension
             ];
         }
 

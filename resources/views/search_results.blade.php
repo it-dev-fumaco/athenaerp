@@ -232,12 +232,6 @@
 																@php
 																	$img = isset($row['item_image_paths'][0]) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
 																	$img_webp = isset($row['item_image_paths'][0]) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-
-																	$package_weight = $row['package_weight'] && $row['package_weight'] > 0 ? trim($row['package_weight']).' '.$row['weight_uom'] : '-';
-																	$package_length = $row['package_length'] && $row['package_length'] > 0 ? trim($row['package_length']).' '.$row['package_dimension_uom'] : '-';
-																	$package_width = $row['package_width'] && $row['package_width'] > 0 ? trim($row['package_width']).' '.$row['package_dimension_uom'] : '-';
-																	$package_height = $row['package_height'] && $row['package_height'] > 0 ? trim($row['package_height']).' '.$row['package_dimension_uom'] : '-';
-																	$weight_per_unit = $row['weight_per_unit'] && $row['weight_per_unit'] > 0 ? trim((float)$row['weight_per_unit']).' '.$row['weight_uom'] : '-';
 																@endphp
 																<a href="{{ asset('storage/') }}{{ $img }}" data-item-code="{{ $row['name'] }}" class="view-images">
 																	@if(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp'))
@@ -276,11 +270,11 @@
 																<div class="col-md-12 m-0 text-justify" >
 																	<span class="font-italic item-class" >{{ $row['item_classification'] }}</span><br/>
 																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
-																	@if ($package_weight != '-' && $package_length != '-' && $package_width != '-' && $package_height != '-' && $weight_per_unit != '-')
-																		<dl class="mt-3 mb-0 border border-danger">
+																	@if ($row['package_dimension'])
+																		<dl class="mt-3 mb-0">
 																			<dt style="font-size: 9pt;">Package Dimension</dt>
 																			<dd style="font-size: 8pt;" class="text-justify pt-1">
-																				<span class="text-muted">Net Weight:</span> <b>{{ $weight_per_unit }}</b>, <span class="text-muted">Length:</span> <b>{{ $package_length }}</b>, <span class="text-muted">Width:</span>  <b>{{ $package_width }}</b>, <span class="text-muted">Height:</span> <b>{{ $package_height }}</b> 
+																				{!! $row['package_dimension'] !!}
 																			</dd>
 																		</dl>
 																	@else
@@ -444,18 +438,17 @@
 															<div class="col-9 col-lg-10 col-xl-9">
 																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
 																<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}</span>
-																@if ($package_weight != '-' && $package_length != '-' && $package_width != '-' && $package_height != '-' && $weight_per_unit != '-')
-																	<dl class="mt-3 mb-0 border border-danger">
+																@if ($row['package_dimension'])
+																	<dl class="mt-3 mb-0">
 																		<dt style="font-size: 9pt;">Package Dimension</dt>
 																		<dd style="font-size: 8pt;" class="text-justify pt-1">
-																			<span class="text-muted">Net Weight:</span> <b>{{ $weight_per_unit }}</b>, <span class="text-muted">Length:</span> <b>{{ $package_length }}</b>, <span class="text-muted">Width:</span>  <b>{{ $package_width }}</b>, <span class="text-muted">Height:</span> <b>{{ $package_height }}</b> 
+																			{!! $row['package_dimension'] !!}
 																		</dd>
 																	</dl>
 																@else
 																	<br>
 																@endif
 																@if ($row['part_nos'])
-																	<br>
 																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																@endif
 																@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0) 
