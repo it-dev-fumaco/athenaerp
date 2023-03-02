@@ -292,17 +292,20 @@
                 </button>
             </div>
             <div class="modal-body" style="font-size: 10pt;">
-                <form></form>
-                <p class="text-center mt-0">
-                    <span class="d-block">Insufficient stocks for the following item(s):</span>
-                </p>
-                <div>
-                    <ul>
-                        @foreach (session()->get('item_codes') as $code)
-                            <li>{{ $code }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+                @if(session()->has('item_codes'))
+                    <p class="text-center mt-0">
+                        <span class="d-block">Insufficient stocks for the following item(s):</span>
+                    </p>
+                    <div>
+                        <ul>
+                            @foreach (session()->get('item_codes') as $code)
+                                <li>{{ $code }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @else
+                    <span class="d-block">An error occured. Please refresh the page and try again.</span>
+                @endif
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">
                         <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i> CLOSE</button>
