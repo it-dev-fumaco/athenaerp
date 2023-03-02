@@ -10,6 +10,9 @@
                 @php
                    $webp = explode('.', $image)[0].'.webp'; 
                 @endphp
+                @if (Storage::disk('public')->exists('/img/'.$image))
+                    <a href="{{ asset('storage/img/'.$image) }}" class="btn btn-primary download-img" download="{{ $image }}"><i class="fa fa-download"></i></a>
+                @endif
                 <center>
                     @if(!Storage::disk('public')->exists('/img/'.$webp))
                         <img src="{{ asset('storage/img/'.$image) }}" class="img w-100">
@@ -19,18 +22,10 @@
                         <picture>
                             <source srcset="{{ asset('storage/img/'.$webp) }}" type="image/webp">
                             <source srcset="{{ asset('storage/img/'.$image) }}" type="image/jpeg">
-                            <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive hover" style="width: 70%;">
+                            <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive hover" style="width: 100%;">
                         </picture>
                     @endif
                 </center>
-                <div class="btn-group pt-2 float-right" role="group" aria-label="Basic example" style="z-index: 9999 !important;">
-                    <a class="btn btn-app bg-primary" href="{{ asset('storage/img/'.$image) }}" style="font-size: 9pt;" download="{{ asset('storage/'.$image) }}">
-                        <i class="fas fa-download pb-1" style="font-size: 10pt;"></i> JPEG
-                    </a>
-                    <a class="btn btn-app bg-primary" href="{{ asset('storage/img/'.$webp) }}" style="font-size: 9pt;" download="{{ asset('storage/'.$webp) }}">
-                        <i class="fas fa-download pb-1" style="font-size: 10pt;"></i> WEBP
-                    </a>
-                </div>
             </div>
         @endforeach
     </div>
@@ -64,5 +59,13 @@
         content: '<';
         font-size: 55px;
         color: rgba(0,0,0,0.4);
+    }
+
+    .download-img{
+        font-size: 12pt;
+        position: absolute;
+        right: 10px !important;
+        top: 10px !important;
+        z-index: 9999 !important
     }
 </style>
