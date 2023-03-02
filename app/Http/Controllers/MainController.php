@@ -2983,7 +2983,7 @@ class MainController extends Controller
                         return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' must be a number.']);
                     }
 
-                    if($value < 0){
+                    if((float)$value <= 0){
                         return response()->json(['success' => 0, 'message' => str_replace('_', ' ', $dimension).' cannot be less than 0.']);
                     }
                 }
