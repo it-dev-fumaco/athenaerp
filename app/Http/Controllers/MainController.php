@@ -455,6 +455,13 @@ class MainController extends Controller
             'tabItem.item_group_level_3 as lvl3',
             'tabItem.item_group_level_4 as lvl4',
             'tabItem.item_group_level_5 as lvl5',
+            'tabItem.package_weight',
+            'tabItem.package_length',
+            'tabItem.package_width',
+            'tabItem.package_height',
+            'tabItem.weight_per_unit',
+            'tabItem.package_dimension_uom',
+            'tabItem.weight_uom',
             $request->wh ? 'd.default_warehouse' : null
         ];
 
@@ -821,6 +828,13 @@ class MainController extends Controller
                 'item_inventory' => $site_warehouses,
                 'consignment_warehouses' => $consignment_warehouses,
                 'default_price' => $default_price,
+                'package_weight' => $row->package_weight,
+                'package_length' => $row->package_length,
+                'package_width' => $row->package_width,
+                'package_height' => $row->package_height,
+                'weight_per_unit' => $row->weight_per_unit,
+                'package_dimension_uom' => $row->package_dimension_uom,
+                'weight_uom' => $row->weight_uom
             ];
         }
 

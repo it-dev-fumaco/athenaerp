@@ -11,7 +11,7 @@
                    $webp = explode('.', $image)[0].'.webp'; 
                 @endphp
                 @if (Storage::disk('public')->exists('/img/'.$image))
-                    <a href="{{ asset('storage/img/'.$image) }}" class="btn btn-primary download-img" download="{{ $image }}"><i class="fa fa-download"></i></a>
+                    <a href="{{ asset('storage/img/'.$image) }}" class="btn btn-primary download-img" download="{{ $image }}"><i class="fa fa-download"></i> Download Image</a>
                 @endif
                 <center>
                     @if(!Storage::disk('public')->exists('/img/'.$webp))
@@ -62,7 +62,7 @@
     }
 
     .download-img{
-        font-size: 12pt;
+        font-size: 9pt;
         position: absolute;
         right: 10px !important;
         top: 10px !important;
