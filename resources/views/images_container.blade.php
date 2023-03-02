@@ -6,7 +6,7 @@
     </ol>
     <div class="carousel-inner">
         @foreach ($images as $image)
-            <div class="carousel-item {{ $loop->first ? 'active' : null }}">
+            <div class="carousel-item {{ $loop->first ? 'active' : null }}" style="max-height: 860px;">
                 @php
                    $webp = explode('.', $image)[0].'.webp'; 
                 @endphp
@@ -15,14 +15,14 @@
                 @endif
                 <center>
                     @if(!Storage::disk('public')->exists('/img/'.$webp))
-                        <img src="{{ asset('storage/img/'.$image) }}" class="img w-100">
+                        <img src="{{ asset('storage/img/'.$image) }}">
                     @elseif(!Storage::disk('public')->exists('/img/'.$image))
-                        <img src="{{ asset('storage/img/'.$webp) }}" class="img w-100">
+                        <img src="{{ asset('storage/img/'.$webp) }}">
                     @else
                         <picture>
                             <source srcset="{{ asset('storage/img/'.$webp) }}" type="image/webp">
                             <source srcset="{{ asset('storage/img/'.$image) }}" type="image/jpeg">
-                            <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive hover" style="width: 100%;">
+                            <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive hover">
                         </picture>
                     @endif
                 </center>
@@ -67,5 +67,10 @@
         right: 10px !important;
         top: 10px !important;
         z-index: 9999 !important
+    }
+
+    #images-control img{
+        width: 100%;
+        object-fit: fill !important;
     }
 </style>
