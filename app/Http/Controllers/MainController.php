@@ -455,7 +455,7 @@ class MainController extends Controller
             'tabItem.item_group_level_3 as lvl3',
             'tabItem.item_group_level_4 as lvl4',
             'tabItem.item_group_level_5 as lvl5',
-            'tabItem.package_weight',
+            'tabItem.weight_per_unit',
             'tabItem.package_length',
             'tabItem.package_width',
             'tabItem.package_height',
