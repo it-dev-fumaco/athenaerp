@@ -2017,8 +2017,9 @@ class MainController extends Controller
             if ($steDetails->purpose == 'Material Transfer' && $steDetails->material_request){
                 $mreq_issued_qty = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
-                    ->where('ste.material_request', $steDetails->mreq)->where('sted.item_code', $steDetails->item_code)->where('sted.status', 'Issued')
-                    ->sum('issued_qty');
+                    ->where('ste.material_request', $steDetails->mreq)
+                    ->where('purpose', 'Material Transfer')->where('sted.item_code', $steDetails->item_code)
+                    ->where('sted.status', 'Issued')->where('ste.docstatus', '<', 2)->sum('issued_qty');
 
                 $mreq_qry = DB::table('tabMaterial Request as mr')
                     ->join('tabMaterial Request Item as mri', 'mr.name', 'mri.parent')
