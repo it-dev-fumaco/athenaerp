@@ -149,7 +149,7 @@
                                                             $alt = Illuminate\Support\Str::slug(explode('.', $image)[0], '-');
                                                         @endphp
                                                         <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }}" style="{{ $i > 0 ? 'height: 75px;' : null }}">
-                                                            <a href="{{ asset('storage/'.$image) }}" class="view-images" data-item-code="{{ $item_details->name }}">
+                                                            <a href="{{ asset('storage/'.$image) }}" class="view-images" data-item-code="{{ $item_details->name }}" data-idx="{{ $i }}">
                                                                 <picture>
                                                                     <source srcset="{{ asset('storage'.$webp) }}" type="image/webp">
                                                                     <source srcset="{{ asset('storage'.$image) }}" type="image/jpeg">

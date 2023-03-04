@@ -1867,13 +1867,15 @@
 			$(document).on('click', '.view-images', function(event) {
                 event.preventDefault();
 				var item_code = $(this).data('item-code');
-				load_images(item_code);
+				var idx = typeof $(this).data('idx') !== 'undefined' ? $(this).data('idx') : 0;
+				load_images(item_code, idx);
 			});
 
-			function load_images(item_code){
+			function load_images(item_code, idx){
 				$.ajax({
 					type: "GET",
 					url: "/load_item_images/" + item_code,
+					data: {idx: idx},
 					success: function (response) {
 						$("#imgModal").modal('show');
 						$('#img-container').html(response);

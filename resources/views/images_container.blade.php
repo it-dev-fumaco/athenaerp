@@ -1,12 +1,12 @@
 <div id="images-control" class="carousel slide" data-ride="false">
     <ol class="carousel-indicators d-none">
         @foreach ($images as $i => $image)
-            <li data-slide-to="{{ $i }}" class="{{ $loop->first ? 'active' : null }}"></li>
+            <li data-slide-to="{{ $i }}" class="{{ $selected == $i ? 'active' : null }}"></li>
         @endforeach
     </ol>
     <div class="carousel-inner">
-        @foreach ($images as $image)
-            <div class="carousel-item {{ $loop->first ? 'active' : null }}" style="max-height: 860px;">
+        @foreach ($images as $i => $image)
+            <div class="carousel-item {{ $selected == $i ? 'active' : null }}" style="max-height: 860px;">
                 @php
                    $webp = explode('.', $image->image_path)[0].'.webp'; 
                 @endphp
@@ -26,7 +26,7 @@
                         </picture>
                     @endif
                 </center>
-                <span class="float-right font-italic" style="font-size: 8pt;">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }} - {{ Carbon\Carbon::parse($image->creation)->format('M. d, Y h:i A') }}</span>
+                <span class="float-right font-italic badge badge-success" style="font-size: 8pt; position: absolute; right: 10px !important; bottom: 10px !important; z-index: 9999 !important">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }} - {{ Carbon\Carbon::parse($image->creation)->format('M. d, Y h:i A') }}</span>
             </div>
         @endforeach
     </div>
@@ -73,7 +73,7 @@
     #images-control img{
         flex-shrink:0;
         -webkit-flex-shrink: 0;
-        max-width:70%;
-        max-height:90%;
+        max-width: 100%;
+        max-height: 90vh;
     }
 </style>

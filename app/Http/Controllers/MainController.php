@@ -3355,10 +3355,11 @@ class MainController extends Controller
         }
     }
 
-    public function load_item_images($item_code){
-        $images = DB::table('tabItem Images')->where('parent', $item_code)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->get();
+    public function load_item_images($item_code, Request $request){
+        $images = DB::table('tabItem Images')->where('parent', $item_code)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->orderBy('idx', 'asc')->get();
+        $selected = $request->idx ? $request->idx : 0;
 
-        return view('images_container', compact('images'));
+        return view('images_container', compact('images', 'selected'));
     }
 
     public function count_production_to_receive(){
