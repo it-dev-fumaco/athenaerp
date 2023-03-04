@@ -53,7 +53,7 @@
                             <label>Net Weight</label>
                             <input type="text" name="weight_per_unit" id="weight_per_unit" class="form-control" placeholder="Net Weight" value="{{ $item_details->weight_per_unit ? trim($item_details->weight_per_unit) : null }}" required style="font-size: 9pt;">
                         </div>
-                        <div class="col-4 offset-4 mt-3">
+                        <div class="col-4 offset-8 mt-3">
                             <button type="submit" class="btn btn-block btn-primary"><i class="fa fa-save"></i> Save</button>
                         </div>
                     </div>
