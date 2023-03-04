@@ -8,24 +8,25 @@
         @foreach ($images as $image)
             <div class="carousel-item {{ $loop->first ? 'active' : null }}" style="max-height: 860px;">
                 @php
-                   $webp = explode('.', $image)[0].'.webp'; 
+                   $webp = explode('.', $image->image_path)[0].'.webp'; 
                 @endphp
-                @if (Storage::disk('public')->exists('/img/'.$image))
-                    <a href="{{ asset('storage/img/'.$image) }}" class="btn btn-primary download-img" download="{{ $image }}"><i class="fa fa-download"></i> Download Image</a>
+                @if (Storage::disk('public')->exists('/img/'.$image->image_path))
+                    <a href="{{ asset('storage/img/'.$image->image_path) }}" class="btn btn-primary download-img" download="{{ $image->image_path }}"><i class="fa fa-download"></i> Download Image</a>
                 @endif
                 <center>
                     @if(!Storage::disk('public')->exists('/img/'.$webp))
-                        <img src="{{ asset('storage/img/'.$image) }}">
-                    @elseif(!Storage::disk('public')->exists('/img/'.$image))
+                        <img src="{{ asset('storage/img/'.$image->image_path) }}">
+                    @elseif(!Storage::disk('public')->exists('/img/'.$image->image_path))
                         <img src="{{ asset('storage/img/'.$webp) }}">
                     @else
                         <picture>
                             <source srcset="{{ asset('storage/img/'.$webp) }}" type="image/webp">
-                            <source srcset="{{ asset('storage/img/'.$image) }}" type="image/jpeg">
-                            <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive hover">
+                            <source srcset="{{ asset('storage/img/'.$image->image_path) }}" type="image/jpeg">
+                            <img src="{{ asset('storage/img/'.$image->image_path) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image->image_path)[0], '-') }}" class="img-responsive hover">
                         </picture>
                     @endif
                 </center>
+                <small class="float-right font-italic">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }}</small>
             </div>
         @endforeach
     </div>

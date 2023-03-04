@@ -3356,7 +3356,7 @@ class MainController extends Controller
     }
 
     public function load_item_images($item_code){
-        $images = DB::table('tabItem Images')->where('parent', $item_code)->pluck('image_path');
+        $images = DB::table('tabItem Images')->where('parent', $item_code)->select('image_path', 'owner', 'modified_by')->get();
 
         return view('images_container', compact('images'));
     }
