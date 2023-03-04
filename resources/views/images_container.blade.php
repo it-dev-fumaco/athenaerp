@@ -26,7 +26,7 @@
                         </picture>
                     @endif
                 </center>
-                <small class="float-right font-italic">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }}</small>
+                <span class="float-right font-italic" style="font-size: 8pt;">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }} - {{ Carbon\Carbon::parse($image->creation)->format('M. d, Y h:i A') }}</span>
             </div>
         @endforeach
     </div>
@@ -71,7 +71,9 @@
     }
 
     #images-control img{
-        width: 100%;
-        object-fit: fill !important;
+        flex-shrink:0;
+        -webkit-flex-shrink: 0;
+        max-width:70%;
+        max-height:90%;
     }
 </style>

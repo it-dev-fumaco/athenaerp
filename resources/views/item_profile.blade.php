@@ -95,26 +95,6 @@
                                 <div class="box box-solid mt-2">
                                     <div class="row">
                                         @php
-                                            $img_1 = (array_key_exists(0, $item_images)) ? '/img/' . $item_images[0] : '/icon/no_img.png';
-                                            $img_1_webp = (array_key_exists(0, $item_images)) ? '/img/' . explode('.', $item_images[0])[0].'.webp' : '/icon/no_img.webp';
-                                            $img_1_alt = (array_key_exists(0, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_1)[0], '-') : null;
-                                            
-                                            $img_2 = (array_key_exists(1, $item_images)) ? '/img/' . $item_images[1] : '/icon/no_img.png';
-                                            $img_2_webp = (array_key_exists(1, $item_images)) ? '/img/' . explode('.', $item_images[1])[0].'.webp' : '/icon/no_img.webp';
-                                            $img_2_alt = (array_key_exists(1, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_2)[0], '-') : null;
-
-                                            $img_2_visible = (array_key_exists(1, $item_images)) ? true : false;
-                                            $img_3_visible = (array_key_exists(2, $item_images)) ? true : false;
-                                            $img_4_visible = (array_key_exists(3, $item_images)) ? true : false;
-                                            
-                                            $img_3 = (array_key_exists(2, $item_images)) ? '/img/' . $item_images[2] : '/icon/no_img.png';
-                                            $img_3_webp = (array_key_exists(2, $item_images)) ? '/img/' . explode('.', $item_images[2])[0].'.webp' : '/icon/no_img.webp';
-                                            $img_3_alt = (array_key_exists(2, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_3)[0], '-') : null;
-                                            
-                                            $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . $item_images[3] : '/icon/no_img.png';
-                                            $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
-                                            $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
-                                           
                                             if (!$item_details->item_brochure_description) {
                                                 $item_brochure_description = $item_details->description;
                                                 $exploded_description = explode(",", strip_tags($item_brochure_description));
@@ -161,55 +141,29 @@
                                         </div>
                                         <div class="col-md-3 col-lg-3 pl-2 pr-2 pb-2 pt-0">
                                             <div class="row pb-2" style="border-bottom: solid 3px #2E86C1">
-                                                <div class="col-12">
-                                                    <a href="{{ asset('storage/') . $img_1 }}" class="view-images" data-item-code="{{ $item_details->name }}">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage'.$img_1_webp) }}" type="image/webp" alt="{{ $img_1_alt }}">
-                                                            <source srcset="{{ asset('storage'.$img_1) }}" type="image/jpeg" alt="{{ $img_1_alt }}">
-                                                            <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : '' }}">
-                                                        </picture>
-                                                    </a>
-                                                </div>
-                                                @if ($img_2_visible)
-                                                <div class="col-4 mt-2">
-                                                    <a href="{{ asset('storage/'.$img_2) }}" class="view-images" data-item-code="{{ $item_details->name }}">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage'.$img_2_webp) }}" type="image/webp" alt="{{ $img_2_alt }}">
-                                                            <source srcset="{{ asset('storage'.$img_2) }}" type="image/jpeg" alt="{{ $img_2_alt }}">
-                                                            <img src="{{ asset('storage'.$img_2) }}" alt="{{ $img_2_alt }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                                        </picture>
-                                                    </a>
-                                                </div>
-                                                @endif
-                                                @if ($img_3_visible)
-                                                <div class="col-4 mt-2"> 
-                                                    <a href="{{ asset('storage/'.$img_3) }}" class="view-images" data-item-code="{{ $item_details->name }}">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage'.$img_3_webp) }}" type="image/webp" alt="{{ $img_3_alt }}">
-                                                            <source srcset="{{ asset('storage'.$img_3) }}" type="image/jpeg" alt="{{ $img_3_alt }}">
-                                                            <img src="{{ asset('storage'.$img_3) }}" alt="{{ $img_3_alt }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                                        </picture>
-                                                    </a>
-                                                </div>
-                                                @endif
-                                                @if ($img_4_visible)
-                                                <div class="col-4 mt-2">
-                                                    <a href="{{ asset('storage'.$img_4) }}" class="view-images" data-item-code="{{ $item_details->name }}">
-                                                        <div class="text-white">
-                                                            <picture>
-                                                                <source srcset="{{ asset('storage'.$img_4_webp) }}" type="image/webp" alt="{{ $img_4_alt }}">
-                                                                <source srcset="{{ asset('storage'.$img_4) }}" type="image/jpeg" alt="{{ $img_4_alt }}">
-                                                                <img src="{{ asset('storage'.$img_4) }}" alt="{{ $img_4_alt }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                                            </picture>
-                                                            @if(count($item_images) > 4)
-                                                                <div class="card-img-overlay text-center">
-                                                                    <h5 class="card-title m-1 font-weight-bold">MORE</h5>
-                                                                </div>
-                                                            @endif
+                                                @for($i = 0; $i <= 3; $i++)
+                                                    @isset($item_images[$i])
+                                                        @php
+                                                            $image = '/img/' . $item_images[$i];
+                                                            $webp = explode('.', $image)[0].'.webp';
+                                                            $alt = Illuminate\Support\Str::slug(explode('.', $image)[0], '-');
+                                                        @endphp
+                                                        <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }}" style="{{ $i > 0 ? 'height: 75px;' : null }}">
+                                                            <a href="{{ asset('storage/'.$image) }}" class="view-images" data-item-code="{{ $item_details->name }}">
+                                                                <picture>
+                                                                    <source srcset="{{ asset('storage'.$webp) }}" type="image/webp">
+                                                                    <source srcset="{{ asset('storage'.$image) }}" type="image/jpeg">
+                                                                    <img src="{{ asset('storage'.$image) }}" alt="{{ $alt }}" class="img-responsive hover" style="width: 100%; height: 100%;">
+                                                                </picture>
+                                                                @if($i == 3 && count($item_images) > 4)
+                                                                    <div class="card-img-overlay text-center">
+                                                                        <h5 class="card-title m-1 font-weight-bold" style="color: #fff; text-shadow: 2px 2px 8px #000;">MORE</h5>
+                                                                    </div>
+                                                                @endif
+                                                            </a>
                                                         </div>
-                                                    </a>
-                                                </div>
-                                                @endif
+                                                    @endisset
+                                                @endfor
                                             </div>
                                         </div>
                                         <div class="col-md-9 col-lg-9">
