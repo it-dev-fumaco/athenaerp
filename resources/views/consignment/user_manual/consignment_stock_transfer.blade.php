@@ -38,6 +38,19 @@
                             <div class="d-flex justify-content-center">
                                 <img src="{{ asset('storage/user_manual_img/cs_19.png') }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
+                            <p class="mt-2 mb-2 text-justify"><b>For 'For Return' STE</b></p>
+                            <p class="mt-2 mb-2 text-justify">5. <b>Select Target Warehouse</b> - By default, target warehouse is 'Quarantine Warehouse - FI'.</p>
+                            <div class="d-flex justify-content-center">
+                                <img src="{{ asset('storage/user_manual_img/cs_21.png') }}" style="width: 70%; margin-bottom: 30px;">
+                            </div>
+                            <p class="mt-2 mb-2 text-justify">6. <b>Receive Items</b> – Once verified, click 'Receive' to transfer stocks from the consignment store to the selected warehouse.</p>
+                            <div class="d-flex justify-content-center">
+                                <img src="{{ asset('storage/user_manual_img/cs_20.png') }}" style="width: 70%; margin-bottom: 30px;">
+                            </div>
+                            <h6 class="font-weight-bold text-info text-uppercase">Process Flow</h6>
+                            <div class="d-flex justify-content-center">
+                                <img src="{{ asset('storage/user_manual_img/receiving-of-stocks.png') }}" style="margin-bottom: 30px;">
+                            </div>
                         </div>
                     </div>
                 </div>
