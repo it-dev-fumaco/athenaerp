@@ -467,6 +467,19 @@
 			background-color:#1F629A;
 			color: #ffffff;
 		}
+
+		#imgModal .modal-dialog{
+			text-align: left;
+			max-width: 100%;
+			width: auto !important;
+			display: inline-block;
+		}
+
+		#imgModal .modal-content{
+			background-color: rgba(0,0,0,0) !important;
+			border: none !important;
+			box-shadow: none !important;
+		}
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
@@ -787,11 +800,11 @@
 	</div>
 
 	<!-- Modal -->
-	<div class="modal fade" id="imgModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-lg">
+	<div class="modal fade text-center" id="imgModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-body">
-					<div id="img-container" style="max-height: 90vh;"></div>
+					<div id="img-container" style="max-height: 90vh; background-color: rgba(0,0,0,0) !important;"></div>
 				</div>
 			</div>
 		</div>
@@ -1867,13 +1880,15 @@
 			$(document).on('click', '.view-images', function(event) {
                 event.preventDefault();
 				var item_code = $(this).data('item-code');
-				load_images(item_code);
+				var idx = typeof $(this).data('idx') !== 'undefined' ? $(this).data('idx') : 0;
+				load_images(item_code, idx);
 			});
 
-			function load_images(item_code){
+			function load_images(item_code, idx){
 				$.ajax({
 					type: "GET",
 					url: "/load_item_images/" + item_code,
+					data: {idx: idx},
 					success: function (response) {
 						$("#imgModal").modal('show');
 						$('#img-container').html(response);
