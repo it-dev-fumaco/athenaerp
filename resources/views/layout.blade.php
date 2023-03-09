@@ -891,7 +891,7 @@
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fas fa-times"></i> Close</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-upload"></i> Upload</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> Save</button>
 					</div>
 				</div>
 			</div>
