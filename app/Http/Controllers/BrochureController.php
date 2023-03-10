@@ -426,6 +426,30 @@ class BrochureController extends Controller
 		}
 	}
 
+	public function countBrochures(){
+		$list = [];
+		if(session()->has('brochure_list')){
+			$list = session()->get('brochure_list');
+		}
+
+		return response()->json(['count' => count($list)]);
+	}
+
+	public function addToBrochureList($item_code){
+		if(!session()->has('brochure_list')){
+			session()->put('brochure_list', [$item_code]);
+		}else{
+			$list = session()->get('brochure_list');
+			if(in_array($item_code, $list)){
+				return response()->json(['status' => 0, 'message' => 'Item already added.']);
+			}
+
+			session()->push('brochure_list', $item_code);
+		}
+
+		return response()->json(['status' => 1, 'message' => 'Item added.']);
+	}
+
 	// /generate_brochure
 	public function generateBrochure(Request $request) {
 		DB::beginTransaction();

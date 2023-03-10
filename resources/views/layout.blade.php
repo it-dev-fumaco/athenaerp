@@ -515,9 +515,14 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
+										<a href="#" class="d-inline brochures-icon" style="position: relative;">
+											<i class="fas fa-file-pdf" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
+											<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
+										</a>
+										&nbsp;
+										<a class="d-inline nav-link text-white p-0" data-toggle="dropdown" href="#">
 											<div class="btn-group icon-container mt-2" role="group">
-												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30"><i class="fas fa-caret-down ml-2 mt-1"></i>
+												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30"><i class="fas fa-caret-down ml-2 mt-1"></i>&nbsp;
 											</div>
 										</a>
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
@@ -559,13 +564,16 @@
 						</div>
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
-								<li class="nav-item dropdown col-10 text-right">
-									<a class="nav-link text-white" data-toggle="dropdown" href="#">
-										<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
-										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
+								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
+									<a href="#" class="d-inline brochures-icon" style="position: relative;">
+										<i class="fas fa-file-pdf" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
+										<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
 									</a>
+									&nbsp;
+									<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
+									<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">&nbsp;{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 								</li>
-								<li class="d-none d-lg-block col-2 nav-item dropdown text-right">
+								<li class="d-none d-lg-block col-xl-2 nav-item dropdown text-right">
 									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i></a>
 								</li>
 							</ul>
@@ -1326,6 +1334,45 @@
 			$(document).on('click', '.generate-brochure-btn', function (e){
 				generate_brochure(1);
 			});
+
+			$(document).on('click', '.generate-multiple-brochure', function (e){
+				e.preventDefault();
+				var item_code = $(this).data('item-code');
+				$.ajax({
+					type: 'GET',
+					url: '/add_to_brochure_list/' + item_code,
+					success: function(response){
+						if (response.status) {
+							showNotification("success", response.message, "fa fa-check");
+							count_brochures();
+						} else {
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+					}
+				});
+			});
+
+			count_brochures();
+			function count_brochures(){
+				$.ajax({
+					type: 'GET',
+					url: '/count_brochures',
+					success: function(response){
+						if(parseInt(response.count) > 0){
+							$('.brochures-icon').removeClass('d-none');
+							$('.brochure-arr-count').text(response.count);
+						}else{
+							$('.brochures-icon').addClass('d-none');
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+					}
+				});
+			}
 
 			$(document).on('click', '.tab-ctrl', function (e){
 				e.preventDefault();
