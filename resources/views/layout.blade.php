@@ -515,7 +515,7 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										<a href="#" class="d-inline brochures-icon" style="position: relative;">
+										<a href="#" class="d-none brochures-icon" style="position: relative;">
 											<i class="fas fa-file-pdf" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
 											<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
 										</a>
@@ -565,7 +565,7 @@
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
-									<a href="#" class="d-inline brochures-icon" style="position: relative;">
+									<a href="#" class="d-none brochures-icon" style="position: relative;">
 										<i class="fas fa-file-pdf" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
 										<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
 									</a>
@@ -1362,10 +1362,10 @@
 					url: '/count_brochures',
 					success: function(response){
 						if(parseInt(response.count) > 0){
-							$('.brochures-icon').removeClass('d-none');
+							$('.brochures-icon').removeClass('d-none').addClass('d-inline');
 							$('.brochure-arr-count').text(response.count);
 						}else{
-							$('.brochures-icon').addClass('d-none');
+							$('.brochures-icon').addClass('d-none').removeClass('d-inline');
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {

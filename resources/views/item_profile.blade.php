@@ -122,9 +122,6 @@
                                                 </a>
                                               
                                                 <div class="dropdown-menu" style="font-size: 9pt;">
-                                                    {{-- <a class="print-brochure-btn dropdown-item" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                                        <i class="fas fa-print pb-1"></i> Print Brochure
-                                                    </a> --}}
                                                     <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
                                                         <i class="fas fa-print pb-1"></i> Print Brochure Now
                                                     </a>
