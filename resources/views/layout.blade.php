@@ -515,8 +515,8 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										<a href="#" class="d-none brochures-icon" style="position: relative;">
-											<i class="fas fa-file-pdf" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
+										<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
+											<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
 											<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
 										</a>
 										&nbsp;
@@ -565,8 +565,8 @@
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
-									<a href="#" class="d-none brochures-icon" style="position: relative;">
-										<i class="fas fa-file-pdf" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
+									<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
+										<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
 										<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
 									</a>
 									&nbsp;
@@ -1337,10 +1337,15 @@
 
 			$(document).on('click', '.generate-multiple-brochure', function (e){
 				e.preventDefault();
-				var item_code = $(this).data('item-code');
+				$('#add-to-brochure-form').submit();
+			});
+
+			$(document).on('submit', '#add-to-brochure-form', function (e){
+				e.preventDefault();
 				$.ajax({
 					type: 'GET',
-					url: '/add_to_brochure_list/' + item_code,
+					url: '/add_to_brochure_list',
+					data: $(this).serialize(),
 					success: function(response){
 						if (response.status) {
 							showNotification("success", response.message, "fa fa-check");
@@ -1353,7 +1358,7 @@
 						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
 					}
 				});
-			});
+			})
 
 			count_brochures();
 			function count_brochures(){
@@ -1369,7 +1374,7 @@
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+						// showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
 					}
 				});
 			}
@@ -1400,9 +1405,10 @@
 				close_modal($(this).data('target'));
 			});
 
-			function close_modal(modal){
-				$(modal).modal('hide');
-			}
+			$(document).on('click', '.open-modal', function (e){
+				e.preventDefault();
+				open_modal($(this).data('target'));
+			});
 			
 			$(document).on('click', '.create-mr-btn', function(e){
 				e.preventDefault();

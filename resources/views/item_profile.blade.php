@@ -52,6 +52,11 @@
                     </li>
                     @endif
                 </ul>
+                <div class="d-none">
+                    <form action="/add_to_brochure_list" id="add-to-brochure-form" method="get">
+                        <input type="text" name="item_codes[]" value="{{ $item_details->name }}">
+                    </form>
+                </div>
                 <div class="tab-content">
                     <div class="container-fluid tab-pane bg-white" id="consignment-stock-movement">
                         <div class="row">

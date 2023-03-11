@@ -23,8 +23,10 @@ Route::group(['middleware' => 'auth'], function(){
     Route::post('/upload_image_for_standard_brochure', 'BrochureController@uploadImageForStandard');
     Route::get('/get_item_attributes/{item_code}', 'BrochureController@getItemAttributes');
     Route::post('/update_brochure_attributes', 'BrochureController@updateBrochureAttributes');
-    Route::get('/add_to_brochure_list/{item_code}', 'BrochureController@addToBrochureList');
+    Route::get('/add_to_brochure_list', 'BrochureController@addToBrochureList');
+    Route::get('/remove_from_brochure_list/{item_code}', 'BrochureController@removeFromBrochureList');
     Route::get('/count_brochures', 'BrochureController@countBrochures');
+    Route::get('/generate_multiple_brochures', 'BrochureController@generateMultipleBrochures');
     
     // routes for item attribute updating
     Route::post('/update_attribute', 'ItemAttributeController@item_attribute_update');
