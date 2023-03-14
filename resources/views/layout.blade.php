@@ -1375,6 +1375,15 @@
 						if (response.status) {
 							if(response.show_notif){
 								showNotification("success", response.message, "fa fa-check");
+							}else{
+								$.ajax({
+									type: 'get',
+									url: '/generate_multiple_brochures?preview=1',
+									success: function(response){
+										$('#brochure-preview-container').html(response);
+										$('#brochure-preview-modal').modal('show');
+									}
+								});
 							}
 							count_brochures();
 						} else {

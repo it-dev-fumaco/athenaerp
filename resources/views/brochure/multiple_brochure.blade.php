@@ -166,15 +166,6 @@
             $(document).on('click', '.preview-brochure', function (e){
                 e.preventDefault();
 				$('#add-to-brochure-form').submit();
-
-                $.ajax({
-					type: 'get',
-					url: '/generate_multiple_brochures?preview=1',
-					success: function(response){
-						$('#brochure-preview-container').html(response);
-                        $('#brochure-preview-modal').modal('show');
-					}
-				});
             });
 
             $(document).on('click', '.upload-image-placeholder', function(e) {
