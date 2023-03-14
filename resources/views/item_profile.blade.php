@@ -53,7 +53,8 @@
                     @endif
                 </ul>
                 <div class="d-none">
-                    <form action="/add_to_brochure_list" id="add-to-brochure-form" method="get">
+                    <form action="/add_to_brochure_list" id="add-to-brochure-form" method="post">
+                        @csrf
                         <input type="text" name="item_codes[]" value="{{ $item_details->name }}">
                     </form>
                 </div>

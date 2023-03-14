@@ -5,7 +5,8 @@
 
 @section('content')
 <div class="container-fluid bg-white">
-    <form action="/add_to_brochure_list" id="add-to-brochure-form" method="get">
+    <form action="/add_to_brochure_list" id="add-to-brochure-form" method="post">
+        @csrf
         <input type="checkbox" class="d-none" name="generate_page" checked/>
         <div class="row p-3">
             <div class="col-6">
@@ -167,7 +168,7 @@
 				$('#add-to-brochure-form').submit();
 
                 $.ajax({
-					type: 'GET',
+					type: 'get',
 					url: '/generate_multiple_brochures?preview=1',
 					success: function(response){
 						$('#brochure-preview-container').html(response);
