@@ -158,8 +158,8 @@
                 <div style="min-height: 230px">
                     <span class="bold" style="font-size: 10pt; margin-top: 0 !important">Fitting Type / Reference:</span><br>
                     <span class="bold" style="font-size: 14pt; margin-top: 0 !important; color:#FF611F;">{{ $row['reference'] }}</span><br>
-                    <span class="bold" style="margin-top: 20px !important; font-size: 10pt;">Description:</span><br>
-                    <span style="font-size: 10pt; margin-top: 20px !important;">{{ $row['description'] }}</span><br>
+                    <span class="bold" style="margin-top: 20px !important; font-size: 10pt;">Description:</span>
+                    <span style="font-size: 10pt; margin-top: 10px !important; display: block; line-height: 12px;">{{ $row['description'] }}</span><br>
                     @if ($row['location'])
                         <span class="bold" style="margin-top: 20px !important; font-size: 10pt;">Location:</span><br>
                         <span style="font-size: 10pt; margin-top: 20px !important;">{{ $row['location'] }}</span><br>
@@ -174,10 +174,10 @@
                             </tr>
                         @endif
                     @endforeach
-                    @if (isset($remarks) && $remarks)
+                    @if (isset($row['remarks']) && $row['remarks'])
                         <tr>
                             <td class="regular-font" style="padding: 5px 0 5px 0 !important;width: 40%;">Remarks</td>
-                            <td class="bold" style="padding: 5px 0 5px 0 !important;width: 60%;">{{ $remarks }}</td>
+                            <td class="bold" style="padding: 5px 0 5px 0 !important;width: 60%;">{{ $row['remarks'] }}</td>
                         </tr>
                     @endif
                 </table>

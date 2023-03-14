@@ -480,6 +480,30 @@
 			border: none !important;
 			box-shadow: none !important;
 		}
+		
+		.brochures-icon{
+			transition: .4s !important;
+		}
+
+		.brochure-arr-count{
+			position: absolute;
+			right: 18px;
+			top: -10px;
+		}
+
+		#brochure-list-floater{
+			position: absolute;
+			right: 10px;
+			top: 20px;
+			width: 280px;
+			max-height: 360px;
+			z-index: 999;
+			display: none;
+		}
+
+		.brochures-icon:hover > #brochure-list-floater{
+			display: block;
+		}
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
@@ -565,10 +589,11 @@
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
-									<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
-										<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
-										<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
-									</a>
+									<span class="d-none brochures-icon" style="position: relative;">
+										<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
+										<span class="badge bg-danger brochure-arr-count">0</span>
+										<div id="brochure-list-floater" class="container bg-white border"></div>
+									</span>
 									&nbsp;
 									<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
 									<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">&nbsp;{{ Auth::check() ? Auth::user()->full_name : null }}</span>
@@ -1348,7 +1373,9 @@
 					data: $(this).serialize(),
 					success: function(response){
 						if (response.status) {
-							showNotification("success", response.message, "fa fa-check");
+							if(response.show_notif){
+								showNotification("success", response.message, "fa fa-check");
+							}
 							count_brochures();
 						} else {
 							showNotification("danger", response.message, "fa fa-info");
@@ -1358,7 +1385,11 @@
 						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
 					}
 				});
-			})
+			});
+
+			$(document).on('mouseenter', '.brochures-icon', function (e){
+				count_brochures();
+			});
 
 			count_brochures();
 			function count_brochures(){
@@ -1366,16 +1397,9 @@
 					type: 'GET',
 					url: '/count_brochures',
 					success: function(response){
-						if(parseInt(response.count) > 0){
-							$('.brochures-icon').removeClass('d-none').addClass('d-inline');
-							$('.brochure-arr-count').text(response.count);
-						}else{
-							$('.brochures-icon').addClass('d-none').removeClass('d-inline');
-						}
+						$('#brochure-list-floater').html(response);
 					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						// showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-					}
+					error: function(jqXHR, textStatus, errorThrown) {}
 				});
 			}
 
