@@ -480,6 +480,30 @@
 			border: none !important;
 			box-shadow: none !important;
 		}
+		
+		.brochures-icon{
+			transition: .4s !important;
+		}
+
+		.brochure-arr-count{
+			position: absolute;
+			right: 18px;
+			top: -10px;
+		}
+
+		#brochure-list-floater{
+			position: absolute;
+			right: 10px;
+			top: 20px;
+			width: 280px;
+			max-height: 360px;
+			z-index: 999;
+			display: none;
+		}
+
+		.brochures-icon:hover > #brochure-list-floater{
+			display: block;
+		}
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
@@ -515,9 +539,14 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										<a class="nav-link text-white p-0" data-toggle="dropdown" href="#">
+										<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
+											<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
+											<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
+										</a>
+										&nbsp;
+										<a class="d-inline nav-link text-white p-0" data-toggle="dropdown" href="#">
 											<div class="btn-group icon-container mt-2" role="group">
-												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30"><i class="fas fa-caret-down ml-2 mt-1"></i>
+												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30"><i class="fas fa-caret-down ml-2 mt-1"></i>&nbsp;
 											</div>
 										</a>
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
@@ -559,13 +588,17 @@
 						</div>
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
-								<li class="nav-item dropdown col-10 text-right">
-									<a class="nav-link text-white" data-toggle="dropdown" href="#">
-										<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
-										<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">{{ Auth::check() ? Auth::user()->full_name : null }}</span>
-									</a>
+								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
+									<span class="d-none brochures-icon" style="position: relative;">
+										<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
+										<span class="badge bg-danger brochure-arr-count">0</span>
+										<div id="brochure-list-floater" class="container bg-white border"></div>
+									</span>
+									&nbsp;
+									<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
+									<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">&nbsp;{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 								</li>
-								<li class="d-none d-lg-block col-2 nav-item dropdown text-right">
+								<li class="d-none d-lg-block col-xl-2 nav-item dropdown text-right">
 									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i></a>
 								</li>
 							</ul>
@@ -891,7 +924,7 @@
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fas fa-times"></i> Close</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-upload"></i> Upload</button>
+						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> Save</button>
 					</div>
 				</div>
 			</div>
@@ -1327,6 +1360,49 @@
 				generate_brochure(1);
 			});
 
+			$(document).on('click', '.generate-multiple-brochure', function (e){
+				e.preventDefault();
+				$('#add-to-brochure-form').submit();
+			});
+
+			$(document).on('submit', '#add-to-brochure-form', function (e){
+				e.preventDefault();
+				$.ajax({
+					type: 'GET',
+					url: '/add_to_brochure_list',
+					data: $(this).serialize(),
+					success: function(response){
+						if (response.status) {
+							if(response.show_notif){
+								showNotification("success", response.message, "fa fa-check");
+							}
+							count_brochures();
+						} else {
+							showNotification("danger", response.message, "fa fa-info");
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+					}
+				});
+			});
+
+			$(document).on('mouseenter', '.brochures-icon', function (e){
+				count_brochures();
+			});
+
+			count_brochures();
+			function count_brochures(){
+				$.ajax({
+					type: 'GET',
+					url: '/count_brochures',
+					success: function(response){
+						$('#brochure-list-floater').html(response);
+					},
+					error: function(jqXHR, textStatus, errorThrown) {}
+				});
+			}
+
 			$(document).on('click', '.tab-ctrl', function (e){
 				e.preventDefault();
 				$($(this).data('tab')).removeClass('active');
@@ -1353,9 +1429,10 @@
 				close_modal($(this).data('target'));
 			});
 
-			function close_modal(modal){
-				$(modal).modal('hide');
-			}
+			$(document).on('click', '.open-modal', function (e){
+				e.preventDefault();
+				open_modal($(this).data('target'));
+			});
 			
 			$(document).on('click', '.create-mr-btn', function(e){
 				e.preventDefault();

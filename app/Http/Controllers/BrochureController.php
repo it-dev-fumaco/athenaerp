@@ -426,6 +426,197 @@ class BrochureController extends Controller
 		}
 	}
 
+	public function countBrochures(){
+		$list = [];
+		if(session()->has('brochure_list')){
+			$list = session()->get('brochure_list');
+			$list = isset($list['items']) ? collect($list['items'])->sortBy('idx')->toArray() : [];
+		}
+
+		$items = DB::table('tabItem')->whereIn('name', array_keys($list))->get();
+
+		return view('brochure.brochure_floater', compact('items'));
+	}
+
+	public function addToBrochureList(Request $request){
+		DB::beginTransaction();
+		try {
+			$item_codes = $request->item_codes ? $request->item_codes : [];
+			$fitting_type = $request->fitting_type ? $request->fitting_type : [];
+			$location = $request->location ? $request->location : [];
+
+			$item_brochure_description = $request->description ? $request->description : [];
+			$item_brochure_name = $request->item_name ? $request->item_name : [];
+
+			if($request->project){
+				session()->put('brochure_list.project', $request->project);
+			}
+
+			if($request->customer){
+				session()->put('brochure_list.customer', $request->customer);
+			}
+
+			foreach ($item_codes as $idx => $item_code) {
+				$idx = $idx + 1;
+				$details = [
+					'fitting_type' => isset($fitting_type[$item_code]) ? $fitting_type[$item_code] : null,
+					'location' => isset($location[$item_code]) ? $location[$item_code] : null,
+					'idx' => $idx
+				];
+				
+				session()->put('brochure_list.items.'.$item_code, $details);
+
+				if(isset($item_brochure_description[$item_code]) || isset($item_brochure_name[$item_code])){
+					$update = [
+						'modified' => Carbon::now()->toDateTimeString(),
+						'modified_by' => Auth::user()->wh_user
+					];
+
+					if(isset($item_brochure_description[$item_code])){
+						$update['item_brochure_description'] = $item_brochure_description[$item_code];
+					}
+
+					if(isset($item_brochure_name[$item_code])){
+						$update['item_brochure_name'] = $item_brochure_name[$item_code];
+					}
+
+					DB::table('tabItem')->where('name', $item_code)->update($update);
+				}
+			}
+
+			DB::commit();
+			
+			$show_notif = isset($request->generate_page) ? 0 : 1;
+
+			return response()->json(['status' => 1, 'message' => 'Item added to list.', 'show_notif' => $show_notif]);
+		} catch (\Throwable $th) {
+			// throw $th;
+			return response()->json(['status' => 0, 'message' => 'An error occured. Please try again.']);
+		}
+	}
+
+	public function removeFromBrochureList($item_code){
+		session()->forget('brochure_list.items.'.$item_code);
+	}
+
+	public function generateMultipleBrochures(Request $request){
+		DB::beginTransaction();
+		try {
+			$session = session()->get('brochure_list');
+			$brochure_list = isset($session['items']) ? collect($session['items'])->sortBy('idx')->toArray() : [];
+
+			$project = isset($session['project']) ? $session['project'] : null;
+			$customer = isset($session['customer']) ? $session['customer'] : null;
+
+			$item_details_qry = DB::table('tabItem')->whereIn('name', array_keys($brochure_list))->get();
+			$item_details_group = collect($item_details_qry)->groupBy('name');
+
+			$preview = isset($request->preview) && $request->preview ? 1 : 0;
+			$pdf = isset($request->pdf) && $request->pdf ? 1 : 0;
+
+			$attributes_qry = DB::table('tabItem Variant Attribute as variant')
+				->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
+				->whereIn('variant.parent', array_keys($brochure_list))
+				->when($preview || $pdf, function($q){
+					return $q->where('variant.hide_in_brochure', 0);
+				})
+				->select('variant.parent', 'variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name', 'variant.brochure_idx', 'variant.hide_in_brochure')
+				->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
+			$attribute_group = collect($attributes_qry)->groupBy('parent');
+
+			$current_item_images_qry = DB::table('tabItem Images')->whereIn('parent', array_keys($brochure_list))->get();
+			$current_item_images_group = collect($current_item_images_qry)->groupBy('parent');
+
+			$brochure_images_qry = DB::table('tabItem Brochure Image')->whereIn('parent', array_keys($brochure_list))->select('parent', 'image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx)', 'ASC')->orderBy('idx', 'ASC')->get();
+			$brochure_images_group = collect($brochure_images_qry)->groupBy('parent')->toArray();
+
+			$content = [];
+			foreach($brochure_list as $item_code => $details){
+				if(in_array($item_code, ['project', 'customer'])){
+					continue;
+				}
+
+				$item_details = isset($item_details_group[$item_code]) ? $item_details_group[$item_code][0] : [];
+				$attributes = isset($attribute_group[$item_code]) ? $attribute_group[$item_code] : [];
+				$current_item_images = isset($current_item_images_group[$item_code]) ? $current_item_images_group[$item_code] : [];
+				$brochure_images = isset($brochure_images_group[$item_code]) ? $brochure_images_group[$item_code] : [];
+
+				$item_name = $item_details->item_brochure_name ? $item_details->item_brochure_name : $item_details->item_name;
+				$item_description = $item_details->item_brochure_description ? $item_details->item_brochure_description : $item_details->description;
+
+				$attrib = [];
+				$attributes_arr = [];
+				foreach ($attributes as $att) {
+					$attrib[$att->attribute] = $att->attribute_value;
+					$attributes_arr[] = [
+						'attribute_name' => $att->attr_name ? $att->attr_name : $att->attribute,
+						'attribute_value' => $att->attribute_value
+					];
+				}
+
+				foreach ($current_item_images as $e) {
+					$filename = $e->image_path;
+					if(!Storage::disk('public')->exists('img/' . $filename) && $filename){
+						$filename = explode(".", $filename)[0] . '.webp';
+					}
+	
+					$current_images[] = [
+						'filename' => $filename,
+						'filepath' => 'img/' . $filename
+					];	
+				}
+
+				$images = [];
+				for($i = 0; $i < 3; $i++){
+					$row = $i + 1;
+					$images['image'.$row] = [
+						'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
+						'filepath' => isset($brochure_images[$i]) ? $brochure_images[$i]->image_path . $brochure_images[$i]->image_filename : null,
+					];
+	
+					if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image'.$row]['filepath'])) && $images['image'.$row]['filepath']){
+						$images['image'.$row]['filepath'] = explode(".", $images['image'.$row]['filepath'])[0] . '.webp';
+					}
+				}
+
+				$content[] = [
+					'item_code' => $item_code,
+					'id' => Str::slug($item_name, '-'),
+					'row' => $i + 1,
+					'project' => $project,
+					'item_name' => $item_name,
+					'reference' => $details['fitting_type'],
+					'description' => $item_description,
+					'location' => $details['location'],
+					'current_images' => $current_images,
+					'images' => $images,
+					'attributes' => $attributes_arr,
+					'attrib' => $attrib,
+					'remarks' => $item_details->item_brochure_remarks
+				];
+			}
+
+			if($preview){
+				return view('brochure.preview_loop', compact('content', 'project', 'customer'));
+			}
+
+			if($pdf){
+				$is_standard = true;
+				$filename = Str::slug($project, '-');
+				$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d');
+				$remarks = '';
+
+				$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard', 'remarks'));
+				return $pdf->stream($new_filename.'.pdf');
+			}
+
+			return view('brochure.multiple_brochure', compact('content', 'project', 'customer'));
+		} catch (\Throwable $th) {
+			// throw $th;
+			return redirect()->back()->with('error', 'An error occured. Please try again.');
+		}
+	}
+
 	// /generate_brochure
 	public function generateBrochure(Request $request) {
 		DB::beginTransaction();
@@ -454,35 +645,22 @@ class BrochureController extends Controller
 				];	
 			}
 
-			$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])
-				->select('image_filename', 'idx', 'image_path', 'name')->get();
-			$brochure_images = collect($brochure_images)->groupBy('idx')->toArray();
+			$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx)', 'ASC')->orderBy('idx', 'ASC')->get();
 
-			$images['image1'] = [
-				'id' => isset($brochure_images[1]) ? $brochure_images[1][0]->name : null,
-				'filepath' => isset($brochure_images[1]) ? $brochure_images[1][0]->image_path . $brochure_images[1][0]->image_filename : null,
-			];
+			for($i = 0; $i < 3; $i++){
+				$row = $i + 1;
+				$images['image'.$row] = [
+					'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
+					'filepath' => isset($brochure_images[$i]) ? $brochure_images[$i]->image_path . $brochure_images[$i]->image_filename : null,
+				];
 
-			$images['image2'] = [
-				'id' => isset($brochure_images[2]) ? $brochure_images[2][0]->name : null,
-				'filepath' => isset($brochure_images[2]) ? $brochure_images[2][0]->image_path . $brochure_images[2][0]->image_filename : null,
-			];
-
-			$images['image3'] = [
-				'id' => isset($brochure_images[3]) ? $brochure_images[3][0]->name : null,
-				'filepath' => isset($brochure_images[3]) ? $brochure_images[3][0]->image_path . $brochure_images[3][0]->image_filename : null,
-			];
-
-			if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image1']['filepath'])) && $images['image1']['filepath']){
-				$images['image1']['filepath'] = explode(".", $images['image1']['filepath'])[0] . '.webp';
+				if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image'.$row]['filepath'])) && $images['image'.$row]['filepath']){
+					$images['image'.$row]['filepath'] = explode(".", $images['image'.$row]['filepath'])[0] . '.webp';
+				}
 			}
 
-			if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image2']['filepath'])) && $images['image2']['filepath']){
-				$images['image2']['filepath'] = explode(".", $images['image2']['filepath'])[0] . '.webp';
-			}
-
-			if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image3']['filepath'])) && $images['image3']['filepath']){
-				$images['image3']['filepath'] = explode(".", $images['image3']['filepath'])[0] . '.webp';
+			if(isset($request->get_images) && $request->get_images){
+				return view('brochure.brochure_images', compact('images', 'current_images'));
 			}
 
 			if(isset($request->pdf) && $request->pdf){
@@ -506,7 +684,7 @@ class BrochureController extends Controller
 					'modified_by' => Auth::user()->wh_user
 				]);
 
-				$content[0] = [
+				$content[] = [
 					'id' => Str::slug($request->item_name, '-'),
 					'row' => 1,
 					'project' => $request->project,
@@ -516,7 +694,8 @@ class BrochureController extends Controller
 					'description' => $request->description,
 					'location' => $request->location,
 					'attributes' => $attributes_arr,
-					'attrib' => $attrib
+					'attrib' => $attrib,
+					'remarks' => $remarks
 				];
 
 				$is_standard = true;

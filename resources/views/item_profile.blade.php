@@ -52,6 +52,11 @@
                     </li>
                     @endif
                 </ul>
+                <div class="d-none">
+                    <form action="/add_to_brochure_list" id="add-to-brochure-form" method="get">
+                        <input type="text" name="item_codes[]" value="{{ $item_details->name }}">
+                    </form>
+                </div>
                 <div class="tab-content">
                     <div class="container-fluid tab-pane bg-white" id="consignment-stock-movement">
                         <div class="row">
@@ -122,8 +127,11 @@
                                                 </a>
                                               
                                                 <div class="dropdown-menu" style="font-size: 9pt;">
-                                                    <a class="print-brochure-btn dropdown-item" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                                        <i class="fas fa-print pb-1"></i> Print Brochure
+                                                    <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                                        <i class="fas fa-print pb-1"></i> Print Brochure Now
+                                                    </a>
+                                                    <a class="dropdown-item generate-multiple-brochure" href="#" data-item-code="{{ $item_details->name }}">
+                                                        <i class="fas fa-file-pdf pb-1"></i> Generate Multiple
                                                     </a>
                                                     <a class="dropdown-item upload-item-image" href="#" data-item-code="{{ $item_details->name }}">
                                                         <i class="fas fa-camera pb-1"></i> Upload Image
@@ -177,9 +185,16 @@
                                                     <div id="item-information-container"></div>
                                                 </div>
                                                 <div class="d-none d-md-block d-lg-none col-4">
-                                                    <a class="btn btn-app m-2 d-block print-brochure-btn pb-5" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}" style="font-size: 8pt !important">
-                                                        <i class="fas fa-print pb-1"></i> Print Brochure
-                                                    </a>
+                                                    <div class="dropdown show">
+                                                        <a class="btn btn-app m-2 d-block pb-5 dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fas fa-print pb-1"></i> Generate Brochure
+                                                        </a>
+                                                      
+                                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuLink" style="font-size: 9pt;">
+                                                            <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">Print Now</a>
+                                                            <a class="dropdown-item generate-multiple-brochure" href="#" data-item-code="{{ $item_details->name }}">Generate Multiple</a>
+                                                        </div>
+                                                    </div>
                                                     <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
                                                         <i class="fas fa-camera pb-1"></i> Upload Image
                                                     </a>
@@ -254,9 +269,16 @@
                             <div class="d-none d-lg-block col-lg-3 pr-2">
                                 <div class="box box-solid h-100 pr-0s">
                                     <div class="col-sm-12 col-md-12 col-lg-10 offset-lg-2 col-xl-6 offset-xl-6">
-                                        <a class="btn btn-app m-2 d-block print-brochure-btn pb-5" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
-                                            <i class="fas fa-print pb-1"></i> Print Brochure
-                                        </a>
+                                        <div class="dropdown show">
+                                            <a class="btn btn-app m-2 d-block pb-5 dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i class="fas fa-print pb-1"></i> Generate Brochure
+                                            </a>
+                                          
+                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuLink" style="font-size: 9pt;">
+                                                <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">Print Now</a>
+                                                <a class="dropdown-item generate-multiple-brochure" href="#" data-item-code="{{ $item_details->name }}">Generate Multiple</a>
+                                            </div>
+                                        </div>
                                         <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $item_details->name }}">
                                             <i class="fas fa-camera pb-1"></i> Upload Image
                                         </a>
