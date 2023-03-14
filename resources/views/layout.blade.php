@@ -1368,7 +1368,7 @@
 			$(document).on('submit', '#add-to-brochure-form', function (e){
 				e.preventDefault();
 				$.ajax({
-					type: 'GET',
+					type: 'post',
 					url: '/add_to_brochure_list',
 					data: $(this).serialize(),
 					success: function(response){

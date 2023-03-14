@@ -448,13 +448,11 @@ class BrochureController extends Controller
 			$item_brochure_description = $request->description ? $request->description : [];
 			$item_brochure_name = $request->item_name ? $request->item_name : [];
 
-			if($request->project){
-				session()->put('brochure_list.project', $request->project);
-			}
+			$project = $request->project ? $request->project : null;
+			$customer = $request->customer ? $request->customer : null;
 
-			if($request->customer){
-				session()->put('brochure_list.customer', $request->customer);
-			}
+			session()->put('brochure_list.project', $project);
+			session()->put('brochure_list.customer', $customer);
 
 			foreach ($item_codes as $idx => $item_code) {
 				$idx = $idx + 1;
