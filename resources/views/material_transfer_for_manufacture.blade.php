@@ -159,10 +159,67 @@
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>
 </div>
+
+<div class="modal fade" id="cancel-ste-modal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Cancel Issued Item</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                Cancel issued item <span id="c-item-code"></span>?
+				<div class="d-none">
+					<span id="transaction-name"></span>
+					<span id="transaction-reference"></span>
+				</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-modal" data-target="#cancel-ste-modal">Close</button>
+                <button type="button" class="btn btn-primary cancel-issued-item">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 @section('script')
 <script>
 	$(document).ready(function(){
+		$(document).on('click', '.open-cancel-modal', function (e){
+			e.preventDefault();
+			$('#c-item-code').text($(this).data('item-code'));
+			$('#transaction-name').text($(this).data('name'));
+			$('#transaction-reference').text($(this).data('reference'));
+			open_modal($(this).data('target'));
+		});
+
+		$(document).on('click', '.cancel-issued-item', function (e){
+			e.preventDefault();
+			$.ajax({
+				type: 'GET',
+				url: '/cancel_issued_item',
+				data: {
+					name: $('#transaction-name').text(),
+					reference: $('#transaction-reference').text()
+				},
+				success: function(response){
+					if(response.success){
+						showNotification("success", response.message, "fa fa-check");
+						angular.element('#anglrCtrl').scope().loadData();
+						$('#transaction-name').text('');
+						$('#transaction-reference').text('');
+						close_modal('#cancel-ste-modal');
+						close_modal('#dr-modal');
+						close_modal('#ste-modal');
+					}else{
+						showNotification("danger", response.message, "fa fa-check");
+					}
+				}
+			});
+		});
+
 		$(document).on('click', '#btn-deduct-res', function(e){
 			e.preventDefault();
 			$('#ste-modal input[name="deduct_reserve"]').val(1);

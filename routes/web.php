@@ -60,6 +60,7 @@ Route::group(['middleware' => 'auth'], function(){
 
     // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
     Route::post('/cancel_transaction', 'MainController@cancel_athena_transaction');
+    Route::get('/cancel_issued_item', 'MainController@cancel_issued_item');
 
     // JQUERY
     Route::get('/count_ste_for_issue/{purpose}', 'MainController@count_ste_for_issue');
