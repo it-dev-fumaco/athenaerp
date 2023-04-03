@@ -429,21 +429,27 @@ class BrochureController extends Controller
 	public function countBrochures(){
 		$list = [];
 		if(session()->has('brochure_list')){
-			$list = session()->get('brochure_list');
-			$list = isset($list['items']) ? collect($list['items'])->sortBy('idx')->toArray() : [];
+			$list = session()->get('brochure_list.items');
+			$list = isset($list) ? collect($list)->sortBy('idx')->toArray() : [];
+
+			$item_codes = collect($list)->pluck('item_code');
 		}
 
-		$items = DB::table('tabItem')->whereIn('name', array_keys($list))->get();
+		$item_arr = DB::table('tabItem')->whereIn('name', $item_codes)->get();
+		$item_arr = collect($item_arr)->groupBy('name');
 
-		return view('brochure.brochure_floater', compact('items'));
+		return view('brochure.brochure_floater', compact('item_arr', 'list'));
 	}
 
 	public function addToBrochureList(Request $request){
 		DB::beginTransaction();
 		try {
+			$save = isset($request->save) ? 1 : 0;
 			$item_codes = $request->item_codes ? $request->item_codes : [];
 			$fitting_type = $request->fitting_type ? $request->fitting_type : [];
 			$location = $request->location ? $request->location : [];
+
+			$id_arr = $request->id_arr ? $request->id_arr : [];
 
 			$item_brochure_description = $request->description ? $request->description : [];
 			$item_brochure_name = $request->item_name ? $request->item_name : [];
@@ -451,18 +457,27 @@ class BrochureController extends Controller
 			$project = $request->project ? $request->project : null;
 			$customer = $request->customer ? $request->customer : null;
 
+			$counter = session()->get('brochure_list.items');
+			$counter = isset($counter) ? count($counter) + 1 : 1;
+
 			session()->put('brochure_list.project', $project);
 			session()->put('brochure_list.customer', $customer);
 
 			foreach ($item_codes as $idx => $item_code) {
-				$idx = $idx + 1;
+				if($save){
+					$id = isset($id_arr[$idx]) ? $id_arr[$idx] : $item_code.'-0';
+				}else{
+					$id = $item_code.'-'.$counter;
+				}
+
 				$details = [
-					'fitting_type' => isset($fitting_type[$item_code]) ? $fitting_type[$item_code] : null,
-					'location' => isset($location[$item_code]) ? $location[$item_code] : null,
+					'item_code' => $item_code,
+					'fitting_type' => isset($fitting_type[$id]) ? $fitting_type[$id] : null,
+					'location' => isset($location[$id]) ? $location[$id] : null,
 					'idx' => $idx
 				];
 				
-				session()->put('brochure_list.items.'.$item_code, $details);
+				session()->put('brochure_list.items.'.$id, $details);
 
 				if(isset($item_brochure_description[$item_code]) || isset($item_brochure_name[$item_code])){
 					$update = [
@@ -488,13 +503,13 @@ class BrochureController extends Controller
 
 			return response()->json(['status' => 1, 'message' => 'Item added to list.', 'show_notif' => $show_notif]);
 		} catch (\Throwable $th) {
-			// throw $th;
+			DB::rollback();
 			return response()->json(['status' => 0, 'message' => 'An error occured. Please try again.']);
 		}
 	}
 
-	public function removeFromBrochureList($item_code){
-		session()->forget('brochure_list.items.'.$item_code);
+	public function removeFromBrochureList($key){
+		session()->forget('brochure_list.items.'.$key);
 	}
 
 	public function generateMultipleBrochures(Request $request){
@@ -506,7 +521,9 @@ class BrochureController extends Controller
 			$project = isset($session['project']) ? $session['project'] : null;
 			$customer = isset($session['customer']) ? $session['customer'] : null;
 
-			$item_details_qry = DB::table('tabItem')->whereIn('name', array_keys($brochure_list))->get();
+			$item_codes = collect($brochure_list)->pluck('item_code');
+
+			$item_details_qry = DB::table('tabItem')->whereIn('name', collect($brochure_list)->pluck('item_code'))->get();
 			$item_details_group = collect($item_details_qry)->groupBy('name');
 
 			$preview = isset($request->preview) && $request->preview ? 1 : 0;
@@ -514,7 +531,7 @@ class BrochureController extends Controller
 
 			$attributes_qry = DB::table('tabItem Variant Attribute as variant')
 				->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
-				->whereIn('variant.parent', array_keys($brochure_list))
+				->whereIn('variant.parent', $item_codes)
 				->when($preview || $pdf, function($q){
 					return $q->where('variant.hide_in_brochure', 0);
 				})
@@ -522,17 +539,20 @@ class BrochureController extends Controller
 				->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 			$attribute_group = collect($attributes_qry)->groupBy('parent');
 
-			$current_item_images_qry = DB::table('tabItem Images')->whereIn('parent', array_keys($brochure_list))->get();
+			$current_item_images_qry = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
 			$current_item_images_group = collect($current_item_images_qry)->groupBy('parent');
 
-			$brochure_images_qry = DB::table('tabItem Brochure Image')->whereIn('parent', array_keys($brochure_list))->select('parent', 'image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx)', 'ASC')->orderBy('idx', 'ASC')->get();
+			$brochure_images_qry = DB::table('tabItem Brochure Image')->whereIn('parent', $item_codes)->select('parent', 'image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx)', 'ASC')->orderBy('idx', 'ASC')->get();
 			$brochure_images_group = collect($brochure_images_qry)->groupBy('parent')->toArray();
 
 			$content = [];
-			foreach($brochure_list as $item_code => $details){
-				if(in_array($item_code, ['project', 'customer'])){
+			$no = 1;
+			foreach($brochure_list as $key => $details){
+				if(in_array($key, ['project', 'customer'])){
 					continue;
 				}
+
+				$item_code = $details['item_code'];
 
 				$item_details = isset($item_details_group[$item_code]) ? $item_details_group[$item_code][0] : [];
 				$attributes = isset($attribute_group[$item_code]) ? $attribute_group[$item_code] : [];
@@ -552,6 +572,7 @@ class BrochureController extends Controller
 					];
 				}
 
+				$current_images = [];
 				foreach ($current_item_images as $e) {
 					$filename = $e->image_path;
 					if(!Storage::disk('public')->exists('img/' . $filename) && $filename){
@@ -590,7 +611,9 @@ class BrochureController extends Controller
 					'images' => $images,
 					'attributes' => $attributes_arr,
 					'attrib' => $attrib,
-					'remarks' => $item_details->item_brochure_remarks
+					'remarks' => $item_details->item_brochure_remarks,
+					'key' => $key,
+					'idx' => $no++
 				];
 			}
 

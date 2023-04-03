@@ -8,6 +8,7 @@
     <form action="/add_to_brochure_list" id="add-to-brochure-form" method="post">
         @csrf
         <input type="checkbox" class="d-none" name="generate_page" checked/>
+        <input type="checkbox" class="d-none" name="save" checked/>
         <div class="row p-3">
             <div class="col-6">
                 <table class="table table-bordered">
@@ -42,22 +43,23 @@
                         </thead>
                         <tbody class="sortable"> 
                             @foreach ($content as $i => $item)
-                                <tr id="{{ $item['item_code'] }}">
+                                <tr id="{{ $item['key'] }}">
                                     <td>
                                         <div class="row">
                                             <div class="col-1" style="display: flex; justify-content: center; align-items: center;">
                                                 <i class="fas fa-arrows-alt" style="font-size: inherit;"></i>
                                             </div>
                                             <div class="col-11">
-                                                <input type="text" class="form-control p-1" name="location[{{ $item['item_code'] }}]" value="{{ $item['location'] }}" placeholder="Enter Location">
+                                                <input type="text" class="form-control p-1" name="location[{{ $item['key'] }}]" value="{{ $item['location'] }}" placeholder="Enter Location">
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <input type="text" class="form-control p-1" name="fitting_type[{{ $item['item_code'] }}]" value="{{ $item['reference'] }}" placeholder="Enter Fitting Type">
+                                        <input type="text" class="form-control p-1" name="fitting_type[{{ $item['key'] }}]" value="{{ $item['reference'] }}" placeholder="Enter Fitting Type">
                                     </td>
                                     <td>
                                         <input type="hidden" name="item_codes[]" value="{{ $item['item_code'] }}">
+                                        <input type="hidden" name="id_arr[]" value="{{ $item['key'] }}">
                                         <div class="row">
                                             <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
                                                 <label>{{ $item['item_code'] }}</label>
@@ -76,7 +78,7 @@
                                                 <button type="button" class="btn btn-sm btn-primary w-100 open-attributes-modal" data-item-code="{{ $item['item_code'] }}" style="font-size: 9pt;"><i class="fa fa-edit"></i> Attributes</button>
                                             </div>
                                             <div class="col-2">
-                                                <button type="button" class="btn btn-sm btn-secondary remove-confirmation" data-target="#remove-item-modal" data-item-code="{{ $item['item_code'] }}" style="font-size: 9pt;" data-item-name="{{ $item['item_name'] }}"><i class="fa fa-trash"></i> </button>
+                                                <button type="button" class="btn btn-sm btn-secondary remove-confirmation" data-target="#remove-item-modal" data-item-code="{{ $item['item_code'] }}" style="font-size: 9pt;" data-item-name="{{ $item['item_name'] }}" data-key="{{ $item['key'] }}"><i class="fa fa-trash"></i> </button>
                                             </div>
                                         </div>
                                     </td>
@@ -125,6 +127,7 @@
             </div>
             <div class="modal-body" style="font-size: 12pt;">
                 Remove <b id="remove-name"></b> from the list?
+                <span id="remove-key" class="d-none"></span>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger remove-row">Confirm</button>
@@ -240,21 +243,24 @@
                 e.preventDefault();
                 var item_code = $(this).data('item-code');
                 var item_name = $(this).data('item-name');
+                var key = $(this).data('key');
 
                 $($(this).data('target')).modal('show');
                 $('#remove-item-code').text(item_code);
                 $('#remove-name').text(item_name);
+                $('#remove-key').text(key);
             });
 
             $(document).on('click', '.remove-row', function (e){
                 e.preventDefault();
                 var item_code = $('#remove-item-code').text();
+                var key = $('#remove-key').text();
                 $('.modal').modal('hide');
-                $('#' + item_code).remove();
+                $('#' + key).remove();
 
                 $.ajax({
 					type: 'get',
-					url: '/remove_from_brochure_list/' + item_code,
+					url: '/remove_from_brochure_list/' + key,
 					success: function(response){
                         count_brochures();
 					},

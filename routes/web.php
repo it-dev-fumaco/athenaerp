@@ -24,7 +24,7 @@ Route::group(['middleware' => 'auth'], function(){
     Route::get('/get_item_attributes/{item_code}', 'BrochureController@getItemAttributes');
     Route::post('/update_brochure_attributes', 'BrochureController@updateBrochureAttributes');
     Route::post('/add_to_brochure_list', 'BrochureController@addToBrochureList');
-    Route::get('/remove_from_brochure_list/{item_code}', 'BrochureController@removeFromBrochureList');
+    Route::get('/remove_from_brochure_list/{key}', 'BrochureController@removeFromBrochureList');
     Route::get('/count_brochures', 'BrochureController@countBrochures');
     Route::get('/generate_multiple_brochures', 'BrochureController@generateMultipleBrochures');
     
