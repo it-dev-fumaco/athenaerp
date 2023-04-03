@@ -539,11 +539,13 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
-											<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
-											<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
-										</a>
-										&nbsp;
+										@if (Auth::check() && !in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+											<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
+												<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
+												<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
+											</a>
+											&nbsp;
+										@endif
 										<a class="d-inline nav-link text-white p-0" data-toggle="dropdown" href="#">
 											<div class="btn-group icon-container mt-2" role="group">
 												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30"><i class="fas fa-caret-down ml-2 mt-1"></i>&nbsp;
@@ -589,12 +591,14 @@
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
-									<span class="d-none brochures-icon" style="position: relative;">
-										<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
-										<span class="badge bg-danger brochure-arr-count">0</span>
-										<div id="brochure-list-floater" class="container bg-white border"></div>
-									</span>
-									&nbsp;
+									@if (Auth::check() && !in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+										<span class="d-none brochures-icon" style="position: relative;">
+											<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
+											<span class="badge bg-danger brochure-arr-count">0</span>
+											<div id="brochure-list-floater" class="container bg-white border"></div>
+										</span>
+										&nbsp;
+									@endif
 									<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
 									<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">&nbsp;{{ Auth::check() ? Auth::user()->full_name : null }}</span>
 								</li>
@@ -1400,18 +1404,20 @@
 				count_brochures();
 			});
 
-			count_brochures();
-			function count_brochures(){
-				$.ajax({
-					type: 'GET',
-					url: '/count_brochures',
-					success: function(response){
-						$('#brochure-list-floater').html(response);
-					},
-					error: function(jqXHR, textStatus, errorThrown) {}
-				});
-			}
-
+			@if (Auth::check() && !in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+				count_brochures();
+				function count_brochures(){
+					$.ajax({
+						type: 'GET',
+						url: '/count_brochures',
+						success: function(response){
+							$('#brochure-list-floater').html(response);
+						},
+						error: function(jqXHR, textStatus, errorThrown) {}
+					});
+				}
+			@endif
+			
 			$(document).on('click', '.tab-ctrl', function (e){
 				e.preventDefault();
 				$($(this).data('tab')).removeClass('active');
