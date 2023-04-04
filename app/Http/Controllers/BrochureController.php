@@ -15,57 +15,64 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class BrochureController extends Controller
 {
-    public function viewForm() {
-		$recents = DB::table('tabProduct Brochure Log')
-			->where('transaction_type', 'Upload Excel File')
-			->orderBy('creation', 'desc')->limit(10)->get();
+    public function viewForm(Request $request) {
+		if($request->ajax()){
+			$recents = DB::table('tabProduct Brochure Log')
+				->where('transaction_type', 'Upload Excel File')
+				->when($request->search, function ($q) use ($request){
+					return $q->where('project', 'like', '%'.$request->search.'%')->orWhere('filename', 'like', '%'.$request->search.'%');
+				})
+				->orderBy('creation', 'desc')->limit(10)->get();
 
-		$recents = $recents->groupby('project');
+			$recents = $recents->groupby('project');
 
-		$recent_uploads = [];
-		foreach ($recents as $project => $row) {
+			$recent_uploads = [];
+			foreach ($recents as $project => $row) {
 
-			$seconds = Carbon::now()->diffInSeconds(Carbon::parse($row[0]->transaction_date));
-			$minutes = Carbon::now()->diffInMinutes(Carbon::parse($row[0]->transaction_date));
-			$hours = Carbon::now()->diffInHours(Carbon::parse($row[0]->transaction_date));
-			$days = Carbon::now()->diffInDays(Carbon::parse($row[0]->transaction_date));
-			$months = Carbon::now()->diffInMonths(Carbon::parse($row[0]->transaction_date));
-			$years = Carbon::now()->diffInYears(Carbon::parse($row[0]->transaction_date));
+				$seconds = Carbon::now()->diffInSeconds(Carbon::parse($row[0]->transaction_date));
+				$minutes = Carbon::now()->diffInMinutes(Carbon::parse($row[0]->transaction_date));
+				$hours = Carbon::now()->diffInHours(Carbon::parse($row[0]->transaction_date));
+				$days = Carbon::now()->diffInDays(Carbon::parse($row[0]->transaction_date));
+				$months = Carbon::now()->diffInMonths(Carbon::parse($row[0]->transaction_date));
+				$years = Carbon::now()->diffInYears(Carbon::parse($row[0]->transaction_date));
 
-			$duration = '';
-			if ($minutes <= 59) {
-				$duration = $minutes . 'm ago';
+				$duration = '';
+				if ($minutes <= 59) {
+					$duration = $minutes . 'm ago';
+				}
+
+				if ($seconds <= 59) {
+					$duration = $seconds . 's ago';
+				}
+
+				if ($hours >= 1) {
+					$duration = $hours . 'h ago';
+				}
+
+				if ($days >= 1) {
+					$duration = $days . 'd ago';
+				}
+
+				if ($months >= 1) {
+					$duration = $months . 'm ago';
+				}
+
+				if ($years >= 1) {
+					$duration = $years . 'y ago';
+				}
+
+				$recent_uploads[] = [
+					'project' => $project,
+					'filename' => $row[0]->filename,
+					'created_by' => $row[0]->created_by,
+					'duration' => $duration,
+				];
 			}
 
-			if ($seconds <= 59) {
-				$duration = $seconds . 's ago';
-			}
-
-			if ($hours >= 1) {
-				$duration = $hours . 'h ago';
-			}
-
-			if ($days >= 1) {
-				$duration = $days . 'd ago';
-			}
-
-			if ($months >= 1) {
-				$duration = $months . 'm ago';
-			}
-
-			if ($years >= 1) {
-				$duration = $years . 'y ago';
-			}
-
-			$recent_uploads[] = [
-				'project' => $project,
-				'filename' => $row[0]->filename,
-				'created_by' => $row[0]->created_by,
-				'duration' => $duration,
-			];
+			return view('brochure.history', compact('recent_uploads'));
 		}
 
-        return view('brochure.form', compact('recent_uploads'));
+        return view('brochure.form');
     }
 
     public function readExcelFile(Request $request){
