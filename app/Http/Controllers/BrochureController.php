@@ -434,7 +434,7 @@ class BrochureController extends Controller
 	}
 
 	public function countBrochures(){
-		$list = [];
+		$list = $item_codes = [];
 		if(session()->has('brochure_list')){
 			$list = session()->get('brochure_list.items');
 			$list = isset($list) ? collect($list)->sortBy('idx')->toArray() : [];
