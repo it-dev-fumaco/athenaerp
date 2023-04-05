@@ -3860,7 +3860,7 @@ class ConsignmentController extends Controller
                     }
                 }
 
-                if(!$beginning_inventory_transaction_date) {
+                if(!$beginning_inventory_transaction_date || !$last_inventory_audit_date) {
                     $pending_arr[] = [
                         'store' => $store,
                         'beginning_inventory_date' => $beginning_inventory_transaction_date,
