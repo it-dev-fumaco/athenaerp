@@ -142,7 +142,10 @@
           <div class="card card-secondary card-outline mt-2 mb-2">
             <div class="card-header text-center font-weight-bold p-1 font-responsive">Inventory Summary</div>
             <div class="card-body p-0">
-              <table class="table table-bordered" style="font-size: 8pt;">
+              <div class="p-2">
+                <input type="text" class="form-control" id="store-list-search" placeholder="Search..." style="font-size: 8pt;">
+              </div>
+              <table class="table table-bordered" id="store-list" style="font-size: 8pt;">
                 <thead class="text-uppercase">
                   <th class="text-center p-1 align-middle" style="width: 64%;">Store</th>
                   <th class="text-center p-1 align-middle" style="width: 18%;">Items on Hand</th>
@@ -188,7 +191,7 @@
             <div class="card-header text-center font-weight-bold p-1">
               <span class="d-block">Sales Report</span>
               <div class="form-group pl-2 pr-2 m-1">
-                <select id="sr-branch-warehouse-select" class="form-control form-control-sm {{ count($assigned_consignment_store) > 1 ? '' : 'd-none' }}">
+                <select id="sr-branch-warehouse-select" class="form-control selection form-control-sm {{ count($assigned_consignment_store) > 1 ? '' : 'd-none' }}">
                   @foreach ($assigned_consignment_store as $branch)
                   <option value="{{ $branch }}">{{ $branch }}</option>
                   @endforeach
@@ -250,6 +253,14 @@
 @section('script')
 <script>
   $(document).ready(function (){
+    $('.selection').select2();
+    $("#store-list-search").on("keyup", function() {
+      var value = $(this).val().toLowerCase();
+      $("#store-list tr").filter(function() {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      });
+    });
+        
     load_pending_to_receive(1);
     function load_pending_to_receive(page){
       $.ajax({
