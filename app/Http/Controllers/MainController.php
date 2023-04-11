@@ -16,8 +16,11 @@ use Webp;
 use File;
 use ZipArchive;
 use \Illuminate\Pagination\Paginator;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
 use Carbon\CarbonPeriod;
+
+use Illuminate\Support\Facades\Schema;
 
 class MainController extends Controller
 {
@@ -498,7 +501,7 @@ class MainController extends Controller
             $item_codes_based_on_warehouse_assigned = array_keys(collect($item_codes_based_on_warehouse_assigned)->groupBy('item_code')->toArray());
         }
 
-        $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
+        $items = DB::table('tabItem')->where('tabItem.disabled', 0)
             ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
@@ -529,42 +532,27 @@ class MainController extends Controller
                 return $q->join('tabItem Default as d', 'd.parent', 'tabItem.name')
                     ->where('d.default_warehouse', $request->wh);
             })
-            ->select($select_columns);
+            ->when($request->group, function ($q) use ($request){
+                return $q->where(function ($query) use ($request){
+                    return $query->where('tabItem.item_group', $request->group)
+                        ->orWhere('tabItem.item_group_level_1', $request->group)
+                        ->orWhere('tabItem.item_group_level_2', $request->group)
+                        ->orWhere('tabItem.item_group_level_3', $request->group)
+                        ->orWhere('tabItem.item_group_level_4', $request->group)
+                        ->orWhere('tabItem.item_group_level_5', $request->group);
+                });
+            })->select($select_columns)->orderBy('tabItem.modified', 'desc')->get();
 
-        $itemClassQuery = Clone $itemQ;
-        $itemsQuery = Clone $itemQ;
-        $itemsGroupQuery = Clone $itemQ;
-
-        $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
-        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->get();//->paginate(20);        
-
-        $included_item_groups = [];
-        if($request->group){ // Item Group Filter
-            $items = $items->map(function ($q) use ($request){
-                if(in_array($request->group, [$q->item_group, $q->lvl1, $q->lvl2, $q->lvl3, $q->lvl4, $q->lvl5])){
-                    return $q;
-                }
-            });
-    
-            $items = $items->filter(function ($q){
-                return !is_null($q);
-            });
-    
-            $included_item_groups = $items->groupBy('item_group', 'lvl1', 'lvl2', 'lvl3', 'lvl4', 'lvl5')->toArray();
-        }
-
-        $itemGroups = $itemsGroupQuery
-            ->when($request->group, function ($q) use ($included_item_groups){
-                return $q->whereIn('item_group', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_1', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_2', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_3', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_4', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_5', array_keys($included_item_groups));
-            })
-            ->select('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')
-            ->groupBy('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')
-            ->get()->toArray();
+        $itemGroups = collect($items)->map(function ($q){
+            return [
+                'item_group' => $q->item_group,
+                'item_group_level_1' => $q->lvl1,
+                'item_group_level_2' => $q->lvl2,
+                'item_group_level_3' => $q->lvl3,
+                'item_group_level_4' => $q->lvl4,
+                'item_group_level_5' => $q->lvl5,
+            ];
+        })->unique()->values()->all();
 
         $a = array_column($itemGroups, 'item_group');
         $a1 = array_column($itemGroups, 'item_group_level_1');
@@ -852,7 +840,7 @@ class MainController extends Controller
                     ->orWhere('item_group_name', 'LIKE', '%'.$request->searchString.'%');
             })
             ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
-            ->orderByRaw('LENGTH(order_no)', 'ASC')
+            ->orderByRaw('LENGTH(order_no) ASC')
             ->orderBy('order_no', 'ASC')
             ->get();
 
@@ -885,7 +873,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department'));
+        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department'));
     }
 
     private function breadcrumbs($parent){
@@ -1662,7 +1650,7 @@ class MainController extends Controller
                 'stock_uom' => $data->stock_uom,
             ];
         }else{
-            $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed')
+            $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->where('se.work_order', $id)->first();
 
             $q[] = [

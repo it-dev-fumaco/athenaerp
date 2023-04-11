@@ -13,6 +13,7 @@ use Cache;
 use Mail;
 use Illuminate\Support\Str;
 use App\Mail\StockTransfersNotification;
+use Exception;
 
 class ConsignmentController extends Controller
 {
@@ -1237,7 +1238,6 @@ class ConsignmentController extends Controller
         foreach($beginning_inventory as $inv){
             $items_arr = [];
             $included_items = [];
-            $branch = isset($grouped_beginning_inventory[$inv->name]) ? $grouped_beginning_inventory[$inv->name][0]->branch_warehouse : null;
             
             if(isset($beginning_inventory_items[$inv->name])){
                 foreach($beginning_inventory_items[$inv->name] as $item){
@@ -1250,7 +1250,7 @@ class ConsignmentController extends Controller
                         'parent' => $item->parent,
                         'inv_name' => $inv->name,
                         'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
-                        'img_count' => array_key_exists($item->item_code, $item_image) ? count($item_image[$item->item_code]) : 0,
+                        'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
                         'item_code' => $item->item_code,
                         'item_description' => $item->item_description,
                         'uom' => $item->stock_uom,
@@ -3098,7 +3098,7 @@ class ConsignmentController extends Controller
                     $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
                 });
             })
-            ->where('bin.warehouse', $branch)->get();
+            ->where('bin.warehouse', $branch)->select('bin.*', 'item.*')->get();
 
         $item_codes = collect($items)->map(function ($q) {
             return $q->item_code;
@@ -3496,6 +3496,10 @@ class ConsignmentController extends Controller
             ];
 
             $consignment_supervisors = DB::table('tabWarehouse Users')->where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
+            // For Testing
+            $consignment_supervisors = collect($consignment_supervisors)->push('jave.kulong@fumaco.local');
+            $consignment_supervisors = collect($consignment_supervisors)->all();
+            // For Testing
 
             if($consignment_supervisors){ // send email alert to supervisors
                 try {
@@ -3746,7 +3750,7 @@ class ConsignmentController extends Controller
                             'uom' => $item->stock_uom,
                             'image' => $img,
                             'webp' => $webp,
-                            'img_count' => array_key_exists($item->item_code, $item_image) ? count($item_image[$item->item_code]) : 0,
+                            'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
                             'return_reason' => $item->return_reason
                         ];
                     }

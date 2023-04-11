@@ -9,6 +9,7 @@ use DB;
 use Carbon\Carbon;
 use Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Exception;
 
 class StockReservationController extends Controller
 {

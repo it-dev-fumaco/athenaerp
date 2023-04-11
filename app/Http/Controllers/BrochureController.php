@@ -12,6 +12,7 @@ use Auth;
 use DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Exception;
 
 class BrochureController extends Controller
 {
@@ -543,13 +544,13 @@ class BrochureController extends Controller
 					return $q->where('variant.hide_in_brochure', 0);
 				})
 				->select('variant.parent', 'variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name', 'variant.brochure_idx', 'variant.hide_in_brochure')
-				->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
+				->orderByRaw('LENGTH(variant.brochure_idx) ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 			$attribute_group = collect($attributes_qry)->groupBy('parent');
 
 			$current_item_images_qry = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
 			$current_item_images_group = collect($current_item_images_qry)->groupBy('parent');
 
-			$brochure_images_qry = DB::table('tabItem Brochure Image')->whereIn('parent', $item_codes)->select('parent', 'image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx)', 'ASC')->orderBy('idx', 'ASC')->get();
+			$brochure_images_qry = DB::table('tabItem Brochure Image')->whereIn('parent', $item_codes)->select('parent', 'image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
 			$brochure_images_group = collect($brochure_images_qry)->groupBy('parent')->toArray();
 
 			$content = [];
@@ -655,7 +656,7 @@ class BrochureController extends Controller
 				->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
 				->where('variant.parent', $data['item_code'])->where('hide_in_brochure', 0)
 				->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name')
-				->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
+				->orderByRaw('LENGTH(variant.brochure_idx) ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 				
 			$remarks = DB::table('tabItem')->where('name', $data['item_code'])->pluck('item_brochure_remarks')->first();
 
@@ -673,7 +674,7 @@ class BrochureController extends Controller
 				];	
 			}
 
-			$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx)', 'ASC')->orderBy('idx', 'ASC')->get();
+			$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
 
 			for($i = 0; $i < 3; $i++){
 				$row = $i + 1;
@@ -836,7 +837,7 @@ class BrochureController extends Controller
 			->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')
 			->where('variant.parent', $item_code)
 			->select('variant.attribute', 'variant.attribute_value', 'attr.name', 'attr.attr_name', 'variant.hide_in_brochure')
-			->orderByRaw('LENGTH(variant.brochure_idx)', 'ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
+			->orderByRaw('LENGTH(variant.brochure_idx) ASC')->orderBy('variant.brochure_idx', 'ASC')->orderBy('variant.idx')->get();
 
 		$remarks = DB::table('tabItem')->where('name', $item_code)->pluck('item_brochure_remarks')->first();
 

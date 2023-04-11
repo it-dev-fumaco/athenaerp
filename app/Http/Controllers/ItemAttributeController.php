@@ -11,6 +11,7 @@ use DB;
 use Session;
 use App\LdapClasses\adLDAP;
 use Illuminate\Support\Str;
+use Exception;
 
 class ItemAttributeController extends Controller
 {
