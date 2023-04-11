@@ -23,7 +23,7 @@ class BrochureController extends Controller
 				->when($request->search, function ($q) use ($request){
 					return $q->where('project', 'like', '%'.$request->search.'%')->orWhere('filename', 'like', '%'.$request->search.'%');
 				})
-				->select(DB::raw('MAX(transaction_date) as transaction_date'), 'project', 'filename', DB::raw('MAX(created_by) as created_by'))
+				->select(DB::raw('MAX(transaction_date) as transaction_date'), 'project', 'filename', DB::raw('MIN(created_by) as created_by'))
 				->groupBy('project', 'filename')->orderBy('creation', 'desc')->limit(10)->get();
 
 			$recent_uploads = [];
