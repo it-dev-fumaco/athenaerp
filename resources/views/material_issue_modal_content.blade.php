@@ -83,9 +83,17 @@
     <div class="modal-footer">
         @if($data['stock_reservation'])
         <button type="button" class="btn btn-warning" id="btn-deduct-res"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
-        @else
-        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
         @endif
-        <button type="button" class="btn btn-primary btn-lg" id="btn-check-out"><i class="fa fa-check"></i> CHECK OUT</button>
+        @if (!$data['docstatus'] && $data['status'] == 'Issued')
+            <button type="button" class="btn btn-secondary open-cancel-modal"
+            data-target="#cancel-ste-modal"
+            data-item-code="{{ $data['item_code'] }}"
+            data-name="{{ $data['name'] }}"
+            data-reference="{{ $data['reference'] }}"
+            ><i class="fa fa-ban"></i> CANCEL</button>
+        @else
+            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+            <button type="button" class="btn btn-primary btn-lg" id="btn-check-out"><i class="fa fa-check"></i> CHECK OUT</button>
+        @endif
     </div>
 </div>

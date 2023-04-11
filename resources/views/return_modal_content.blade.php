@@ -65,25 +65,18 @@
     </div>
     <input type="hidden" name="deduct_reserve" value="0">
     <div class="modal-footer">
-        <div class="container-fluid w-100 p-0">
-            <div class="row p-0 w-100">
-                <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
-                    @if (!$data['docstatus'] && $data['status'] == 'Returned')
-                        <button type="button" class="btn btn-secondary btn-sm open-cancel-modal"
-                        data-target="#cancel-ste-modal"
-                        data-item-code="{{ $data['item_code'] }}"
-                        data-name="{{ $data['name'] }}"
-                        data-reference="{{ $data['reference'] }}"
-                        ><i class="fa fa-times"></i> CANCEL</button>
-                    @endif
-                </div>
-                <div class="col-9 p-0 d-flex">
-                    <div class="ml-auto">
-                        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-                        <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK IN</button>
-                    </div>
-                </div>
-            </div>
+        <div class="ml-auto">
+            @if (!$data['docstatus'] && $data['status'] == 'Returned')
+                <button type="button" class="btn btn-secondary btn-sm open-cancel-modal"
+                data-target="#cancel-ste-modal"
+                data-item-code="{{ $data['item_code'] }}"
+                data-name="{{ $data['name'] }}"
+                data-reference="{{ $data['reference'] }}"
+                ><i class="fa fa-ban"></i> CANCEL</button>
+            @else
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+                <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK IN</button>
+            @endif
         </div>
     </div>
 </div>
