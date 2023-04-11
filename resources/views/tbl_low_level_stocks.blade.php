@@ -42,7 +42,7 @@
                         </a>
                     </div>
                     <div class="col-10">
-                        <a href="#" class="view-item-details" data-item-code="{{ $row['item_code'] }}" data-item-classification="{{ $row['item_classification'] }}">
+                        <a href="/get_item_details/{{ $row['item_code'] }}" target="_blank" data-item-classification="{{ $row['item_classification'] }}">
                             <span class="d-block1 font-weight-bold text-dark item-code">{{ $row['item_code'] }}</span>
                             <span class="d-none item-description">{{ $row['description'] }}</span>
                         </a>
