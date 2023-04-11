@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use Storage;
 use Auth;
 use DB;
-use Carbon\Carbon;
+use Carbon\Carbon; 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 
@@ -23,19 +23,17 @@ class BrochureController extends Controller
 				->when($request->search, function ($q) use ($request){
 					return $q->where('project', 'like', '%'.$request->search.'%')->orWhere('filename', 'like', '%'.$request->search.'%');
 				})
-				->orderBy('creation', 'desc')->limit(10)->get();
-
-			$recents = $recents->groupby('project');
+				->select(DB::raw('MAX(transaction_date) as transaction_date'), 'project', 'filename', DB::raw('MAX(created_by) as created_by'))
+				->groupBy('project', 'filename')->orderBy('creation', 'desc')->limit(10)->get();
 
 			$recent_uploads = [];
-			foreach ($recents as $project => $row) {
-
-				$seconds = Carbon::now()->diffInSeconds(Carbon::parse($row[0]->transaction_date));
-				$minutes = Carbon::now()->diffInMinutes(Carbon::parse($row[0]->transaction_date));
-				$hours = Carbon::now()->diffInHours(Carbon::parse($row[0]->transaction_date));
-				$days = Carbon::now()->diffInDays(Carbon::parse($row[0]->transaction_date));
-				$months = Carbon::now()->diffInMonths(Carbon::parse($row[0]->transaction_date));
-				$years = Carbon::now()->diffInYears(Carbon::parse($row[0]->transaction_date));
+			foreach ($recents as $row) {
+				$seconds = Carbon::now()->diffInSeconds(Carbon::parse($row->transaction_date));
+				$minutes = Carbon::now()->diffInMinutes(Carbon::parse($row->transaction_date));
+				$hours = Carbon::now()->diffInHours(Carbon::parse($row->transaction_date));
+				$days = Carbon::now()->diffInDays(Carbon::parse($row->transaction_date));
+				$months = Carbon::now()->diffInMonths(Carbon::parse($row->transaction_date));
+				$years = Carbon::now()->diffInYears(Carbon::parse($row->transaction_date));
 
 				$duration = '';
 				if ($minutes <= 59) {
@@ -63,9 +61,9 @@ class BrochureController extends Controller
 				}
 
 				$recent_uploads[] = [
-					'project' => $project,
-					'filename' => $row[0]->filename,
-					'created_by' => $row[0]->created_by,
+					'project' => $row->project,
+					'filename' => $row->filename,
+					'created_by' => $row->created_by,
 					'duration' => $duration,
 				];
 			}
