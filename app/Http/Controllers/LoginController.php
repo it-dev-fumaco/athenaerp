@@ -23,7 +23,7 @@ class LoginController extends Controller
                 'email' => 'required'
             );
 
-            $email = str_contains($request->email, '@fumaco.local') ? $request->email : $request->email.'@fumaco.local';
+            $email = strpos($request->email, '@fumaco.local') ? $request->email : $request->email.'@fumaco.local';
 
             $validator = Validator::make($request->all(), $rules);
 

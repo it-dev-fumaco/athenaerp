@@ -2,7 +2,7 @@
 <div class="modal-content">
     <div class="modal-header">
         <h5 class="modal-title">Deliveries <small class="badge {{ ($data['status'] == 'For Checking') ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h5>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
     </div>
     <div class="modal-body">
         <div class="row">
@@ -87,12 +87,22 @@
     </div>
     <input type="hidden" name="deduct_reserve" value="0">
     <div class="modal-footer">
-        @if($data['stock_reservation'])
-        <button type="button" class="btn btn-warning" id="btn-deduct-res"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
-        @else
-        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-        @endif
-        <button type="button" class="btn btn-primary btn-lg" id="btn-check-out"><i class="fa fa-check"></i> CHECK OUT</button>
+        <div class="ml-auto">
+            @if($data['stock_reservation'])
+            <button type="button" class="btn btn-warning" id="btn-deduct-res"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
+            @endif
+            @if (!$data['docstatus'] && $data['status'] == 'Issued')
+                <button type="button" class="btn btn-secondary open-cancel-modal"
+                data-target="#cancel-ste-modal"
+                data-item-code="{{ $data['item_code'] }}"
+                data-name="{{ $data['name'] }}"
+                data-reference="{{ $data['reference'] }}"
+                ><i class="fa fa-ban"></i> CANCEL</button>
+            @else
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+                <button type="button" class="btn btn-primary btn-lg" id="btn-check-out"><i class="fa fa-check"></i> CHECK OUT</button>
+            @endif
+        </div>
     </div>
 </div>
 @endif
@@ -226,12 +236,22 @@
         </div>
         <input type="hidden" name="deduct_reserve" value="0">
         <div class="modal-footer">
-            @if($data['stock_reservation'])
-            <button type="button" class="btn btn-warning" id="btn-deduct-res-1"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
-            @else
-            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-            @endif
-            <button type="button" class="btn btn-primary btn-lg" id="btn-check-out-1"><i class="fa fa-check"></i> CHECK OUT</button>
+            <div class="ml-auto">
+                @if($data['stock_reservation'])
+                <button type="button" class="btn btn-warning" id="btn-deduct-res-1"><i class="fa fa-check"></i> DEDUCT FROM RESERVED</button>
+                @endif
+                @if (!$data['docstatus'] && $data['status'] == 'Issued')
+                    <button type="button" class="btn btn-secondary open-cancel-modal"
+                    data-target="#cancel-ste-modal"
+                    data-item-code="{{ $data['item_code'] }}"
+                    data-name="{{ $data['id'] }}"
+                    data-reference="{{ $data['reference'] }}"
+                    ><i class="fa fa-ban"></i> CANCEL</button>
+                @else
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+                    <button type="button" class="btn btn-primary btn-lg" id="btn-check-out-1"><i class="fa fa-check"></i> CHECK OUT</button>
+                @endif
+            </div>
         </div>
     </div>
 @endif

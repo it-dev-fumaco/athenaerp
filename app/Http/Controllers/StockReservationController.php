@@ -9,6 +9,7 @@ use DB;
 use Carbon\Carbon;
 use Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Exception;
 
 class StockReservationController extends Controller
 {
@@ -141,7 +142,7 @@ class StockReservationController extends Controller
          ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
          ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
          ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-         ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('psi.status', 'Issued')->where('at.item_code', $item_code)->where('psi.item_code', $item_code)
+         ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('psi.status', 'Issued')->where('at.item_code', $item_code)->where('psi.item_code', $item_code)->where('at.status', 'Issued')
          ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')
          ->orderBy('psi.modified', 'desc')->get();
       

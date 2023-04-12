@@ -1,7 +1,7 @@
 <div class="modal-content">
     <div class="modal-header">
         <h5 class="modal-title">Sales Return <small class="badge {{ (in_array($data['status'], ['For Return', 'For Checking'])) ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h5>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
     </div>
     <div class="modal-body">
         <div class="row">
@@ -65,8 +65,19 @@
     </div>
     <input type="hidden" name="deduct_reserve" value="0">
     <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-        <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK IN</button>
+        <div class="ml-auto">
+            @if (!$data['docstatus'] && $data['status'] == 'Returned')
+                <button type="button" class="btn btn-secondary btn-sm open-cancel-modal"
+                data-target="#cancel-ste-modal"
+                data-item-code="{{ $data['item_code'] }}"
+                data-name="{{ $data['name'] }}"
+                data-reference="{{ $data['reference'] }}"
+                ><i class="fa fa-ban"></i> CANCEL</button>
+            @else
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
+                <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CHECK IN</button>
+            @endif
+        </div>
     </div>
 </div>
 

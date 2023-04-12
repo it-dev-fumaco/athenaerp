@@ -16,8 +16,11 @@ use Webp;
 use File;
 use ZipArchive;
 use \Illuminate\Pagination\Paginator;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
 use Carbon\CarbonPeriod;
+
+use Illuminate\Support\Facades\Schema;
 
 class MainController extends Controller
 {
@@ -498,7 +501,7 @@ class MainController extends Controller
             $item_codes_based_on_warehouse_assigned = array_keys(collect($item_codes_based_on_warehouse_assigned)->groupBy('item_code')->toArray());
         }
 
-        $itemQ = DB::table('tabItem')->where('tabItem.disabled', 0)
+        $items = DB::table('tabItem')->where('tabItem.disabled', 0)
             ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
@@ -529,42 +532,27 @@ class MainController extends Controller
                 return $q->join('tabItem Default as d', 'd.parent', 'tabItem.name')
                     ->where('d.default_warehouse', $request->wh);
             })
-            ->select($select_columns);
+            ->when($request->group, function ($q) use ($request){
+                return $q->where(function ($query) use ($request){
+                    return $query->where('tabItem.item_group', $request->group)
+                        ->orWhere('tabItem.item_group_level_1', $request->group)
+                        ->orWhere('tabItem.item_group_level_2', $request->group)
+                        ->orWhere('tabItem.item_group_level_3', $request->group)
+                        ->orWhere('tabItem.item_group_level_4', $request->group)
+                        ->orWhere('tabItem.item_group_level_5', $request->group);
+                });
+            })->select($select_columns)->orderBy('tabItem.modified', 'desc')->get();
 
-        $itemClassQuery = Clone $itemQ;
-        $itemsQuery = Clone $itemQ;
-        $itemsGroupQuery = Clone $itemQ;
-
-        $itemClass = $itemClassQuery->select('tabItem.item_classification')->distinct('tabItem.item_classification')->orderby('tabItem.item_classification','asc')->get();
-        $items = $itemsQuery->orderBy('tabItem.modified', 'desc')->get();//->paginate(20);        
-
-        $included_item_groups = [];
-        if($request->group){ // Item Group Filter
-            $items = $items->map(function ($q) use ($request){
-                if(in_array($request->group, [$q->item_group, $q->lvl1, $q->lvl2, $q->lvl3, $q->lvl4, $q->lvl5])){
-                    return $q;
-                }
-            });
-    
-            $items = $items->filter(function ($q){
-                return !is_null($q);
-            });
-    
-            $included_item_groups = $items->groupBy('item_group', 'lvl1', 'lvl2', 'lvl3', 'lvl4', 'lvl5')->toArray();
-        }
-
-        $itemGroups = $itemsGroupQuery
-            ->when($request->group, function ($q) use ($included_item_groups){
-                return $q->whereIn('item_group', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_1', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_2', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_3', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_4', array_keys($included_item_groups))
-                    ->orWhereIn('item_group_level_5', array_keys($included_item_groups));
-            })
-            ->select('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')
-            ->groupBy('item_group', 'item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5')
-            ->get()->toArray();
+        $itemGroups = collect($items)->map(function ($q){
+            return [
+                'item_group' => $q->item_group,
+                'item_group_level_1' => $q->lvl1,
+                'item_group_level_2' => $q->lvl2,
+                'item_group_level_3' => $q->lvl3,
+                'item_group_level_4' => $q->lvl4,
+                'item_group_level_5' => $q->lvl5,
+            ];
+        })->unique()->values()->all();
 
         $a = array_column($itemGroups, 'item_group');
         $a1 = array_column($itemGroups, 'item_group_level_1');
@@ -656,7 +644,7 @@ class MainController extends Controller
             ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
             ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes)
             ->whereIn('psi.item_code', $item_codes)->whereIn('at.source_warehouse', $item_warehouses)
             ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
@@ -852,7 +840,7 @@ class MainController extends Controller
                     ->orWhere('item_group_name', 'LIKE', '%'.$request->searchString.'%');
             })
             ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
-            ->orderByRaw('LENGTH(order_no)', 'ASC')
+            ->orderByRaw('LENGTH(order_no) ASC')
             ->orderBy('order_no', 'ASC')
             ->get();
 
@@ -885,7 +873,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'itemClass', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department'));
+        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department'));
     }
 
     private function breadcrumbs($parent){
@@ -1122,13 +1110,13 @@ class MainController extends Controller
         $brand_filter = DB::table('tabBrand')->where('name', 'LIKE', '%'.$request->q.'%')->selectRaw('name as id, name as text')->orderBy('name', 'asc')->get();
 
         // $WHusers = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->pluck('warehouse_user');
-        $Athena_wh_users = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->where('warehouse_user','LIKE', '%'.$request->q.'%')
+        $Athena_wh_users = DB::table('tabAthena Transactions')->groupBy('warehouse_user')->where('warehouse_user','LIKE', '%'.$request->q.'%')->where('status', 'Issued')
             ->selectRaw('warehouse_user as id, warehouse_user as text')->get();
 
-        $Athena_src_wh = DB::table('tabAthena Transactions')->groupBy('source_warehouse')->where('source_warehouse','LIKE', '%'.$request->q.'%')
+        $Athena_src_wh = DB::table('tabAthena Transactions')->groupBy('source_warehouse')->where('source_warehouse','LIKE', '%'.$request->q.'%')->where('status', 'Issued')
             ->where('source_warehouse', '!=', '')->selectRaw('source_warehouse as id, source_warehouse as text')->get();
 
-        $Athena_to_wh = DB::table('tabAthena Transactions')->groupBy('target_warehouse')->where('target_warehouse','LIKE', '%'.$request->q.'%')
+        $Athena_to_wh = DB::table('tabAthena Transactions')->groupBy('target_warehouse')->where('target_warehouse','LIKE', '%'.$request->q.'%')->where('status', 'Issued')
             ->where('target_warehouse', '!=', '')->selectRaw('target_warehouse as id, target_warehouse as text')->get();
 
         $ERP_wh_users = DB::table('tabStock Entry Detail')->groupBy('session_user')->where('session_user','LIKE', '%'.$request->q.'%')
@@ -1166,7 +1154,7 @@ class MainController extends Controller
             ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
             ->where('psi.status', 'Issued')->where('at.item_code', $item_code)
             ->where('psi.item_code', $item_code)->where('at.source_warehouse', $warehouse)
             ->sum('at.issued_qty');
@@ -1325,7 +1313,7 @@ class MainController extends Controller
             ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
             ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes_arr)
             ->whereIn('psi.item_code', $item_codes_arr)->whereIn('at.source_warehouse', $s_warehouses_arr)
             ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
@@ -1459,7 +1447,7 @@ class MainController extends Controller
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
                 ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
                 ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes)
                 ->whereIn('psi.item_code', $item_codes)->whereIn('at.source_warehouse', $s_warehouses)
                 ->select(DB::raw('CONCAT(at.item_code, REPLACE(at.source_warehouse, " ", "")) as id'), DB::raw('sum(at.issued_qty) as issued_qty'))
@@ -1662,7 +1650,7 @@ class MainController extends Controller
                 'stock_uom' => $data->stock_uom,
             ];
         }else{
-            $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed')
+            $se = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->where('se.work_order', $id)->first();
 
             $q[] = [
@@ -1675,7 +1663,7 @@ class MainController extends Controller
                 'item_code' => $se->item_code,
                 'description' => $se->description,
                 'qty_to_receive' => $se->actual_qty,
-                'feedback_qty' => $data->transfer_qty,
+                'feedback_qty' => $se->transfer_qty,
                 'stock_uom' => $se->stock_uom,
             ];
         }
@@ -1735,7 +1723,7 @@ class MainController extends Controller
 
             DB::commit();
             return redirect()->back();
-        }catch(Exception $e){
+        }catch(\Exception $e){
             DB::rollback();
         }
     }
@@ -1744,7 +1732,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('sted.name', $id)
-            ->select('ste.work_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request', 'ste.issue_as')
+            ->select('ste.work_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request', 'ste.issue_as', 'ste.docstatus')
             ->first();
 
         $ref_no = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
@@ -1793,7 +1781,10 @@ class MainController extends Controller
             'transfer_as' => $q->transfer_as,
             'owner' => $owner,
             'status' => $q->status,
-            'stock_reservation' => $stock_reservation_details
+            'stock_reservation' => $stock_reservation_details,
+            'docstatus' => $q->docstatus,
+            'parent' => $q->parent,
+            'reference' => 'Stock Entry'
         ];
 
         if($q->purpose == 'Material Transfer for Manufacture') {
@@ -1862,7 +1853,7 @@ class MainController extends Controller
             ->where('ps.item_status', 'For Checking')
             ->where('psi.name', $id)
             ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom')
+            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
             ->first();
 
         if(!$q){
@@ -1944,7 +1935,9 @@ class MainController extends Controller
             'product_bundle_items' => $product_bundle_items,
             'dri_name' => $q->dri_name,
             'stock_reservation' => $stock_reservation_details,
-            'uom_conversion' => $uom_conversion
+            'uom_conversion' => $uom_conversion,
+            'reference' => 'Picking Slip',
+            'docstatus' => $q->docstatus
         ];
 
         $is_stock_entry = false;
@@ -2343,7 +2336,7 @@ class MainController extends Controller
             }else{
                 return response()->json(['status' => 1, 'message' => 'Item <b>' . $steDetails->item_code . '</b> has been checked out.']);
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
 
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
@@ -2454,7 +2447,7 @@ class MainController extends Controller
         ];
 
         $existing_log = DB::table('tabAthena Transactions')
-            ->where('reference_name', $q->name)->where('reference_parent', $q->parent)
+            ->where('reference_name', $q->name)->where('reference_parent', $q->parent)->where('status', 'Issued')
             ->exists();
 
         if(!$existing_log){
@@ -2487,7 +2480,7 @@ class MainController extends Controller
             DB::commit();
 
             return $item_status;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
         }
     }
@@ -2503,7 +2496,7 @@ class MainController extends Controller
             }
 
             if(in_array($ps_details->per_item_status, ['Issued', 'Returned'])){
-                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.']);
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $ps_details->per_item_status . '.']);
             }
 
             if($ps_details->ps_status == 1){
@@ -2640,7 +2633,7 @@ class MainController extends Controller
             }
 
             return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been checked out.']);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'error' => 1, 
@@ -2670,7 +2663,7 @@ class MainController extends Controller
             }
 
             DB::commit();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
         }
     }
@@ -2699,7 +2692,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['status' => 1, 'message' => 'Warehouse location updated.', 'item_code' => $request->item_code]);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
 
             return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
@@ -2846,7 +2839,7 @@ class MainController extends Controller
             ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
             ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
             ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
-            ->where('psi.status', 'Issued')
+            ->where('psi.status', 'Issued')->where('at.status', 'Issued')
             ->whereIn('at.item_code', $alternative_item_codes)
             ->whereRaw('psi.item_code = at.item_code')
             ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')->groupBy('at.item_code')
@@ -3044,7 +3037,7 @@ class MainController extends Controller
                 $from = Carbon::parse($dates[0]);
                 $to = Carbon::parse($dates[1])->endOfDay();
                 return $q->whereBetween('transaction_date',[$from, $to]);
-            })
+            })->where('status', 'Issued')
             ->orderBy('transaction_date', 'desc')->paginate(15);
 
         $ste_names = array_column($logs->items(), 'reference_parent');
@@ -3094,7 +3087,6 @@ class MainController extends Controller
                 'reference_name' => $row->reference_name,
                 'item_code' => $row->item_code,
                 'reference_parent' => $row->reference_parent,
-                'item_code' => $row->item_code,
                 'source_warehouse' => $row->source_warehouse,
                 'target_warehouse' => $row->target_warehouse,
                 'reference_type' => $row->purpose,
@@ -3108,6 +3100,103 @@ class MainController extends Controller
         }
 
         return view('tbl_athena_transactions', compact('list', 'logs', 'item_code', 'user_group'));
+    }
+
+    public function cancel_issued_item(Request $request){
+        DB::beginTransaction();
+        try {
+            $now = Carbon::now();
+            switch ($request->reference) {
+                case 'Stock Entry':
+                    $q = DB::table('tabStock Entry Detail as sted')
+                        ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
+                        ->where('sted.name', $request->name)->first();
+
+                    if(!$q){
+                        return response()->json(['success' => 0, 'message' => 'Stock Entry not found.']);
+                    }
+
+                    if($q->status == 'For Checking'){
+                        return response()->json(['success' => 0, 'message' => 'Item already cancelled.']);
+                    }
+
+                    DB::table('tabStock Entry Detail')->where('name', $request->name)->update([
+                        'status' => 'For Checking',
+                        'modified_by' => Auth::user()->wh_user,
+                        'modified' => $now->toDateTimeString()
+                    ]);
+
+                    if($q->item_status == 'Issued'){
+                        DB::table('tabStock Entry')->where('name', $q->name)->update([
+                            'item_status' => 'For Checking',
+                            'modified' => $now->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user
+                        ]);
+                    }
+                    break;
+                case 'Delivery Note':
+                    $q = DB::table('tabDelivery Note as dr')->join('tabDelivery Note Item as dri', 'dri.parent', 'dr.name')
+                        ->where('dr.is_return', 1)->where('dr.docstatus', 0)->where('dri.name', $request->name)
+                        ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner', 'dr.docstatus', 'dri.barcode', 'dri.parent', 'dri.session_user', 'dri.item_status')->first();
+
+                    if(!$q){
+                        return response()->json(['success' => 0, 'message' => 'Delivery Receipt not found.']);
+                    }
+
+                    if($q->item_status == 'For Return'){
+                        return response()->json(['success' => 0, 'message' => 'Item already cancelled.']);
+                    }
+
+                    DB::table('tabDelivery Note Item')->where('name', $request->name)->update([
+                        'item_status' => 'For Return',
+                        'modified_by' => Auth::user()->wh_user,
+                        'modified' => $now->toDateTimeString()
+                    ]);
+                    break;
+                default:
+                    $q = DB::table('tabPacking Slip as ps')
+                        ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                        ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                        ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')->whereRaw(('dri.item_code = psi.item_code'))->where('psi.name', $request->name)
+                        ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom', 'psi.parent')
+                        ->first();
+
+                    if(!$q){
+                        return response()->json(['success' => 0, 'message' => 'Delivery Receipt not found.']);
+                    }
+
+                    if($q->status == 'For Checking'){
+                        return response()->json(['success' => 0, 'message' => 'Item already cancelled.']);
+                    }
+
+                    DB::table('tabPacking Slip Item')->where('name', $request->name)->update([
+                        'status' => 'For Checking',
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user
+                    ]);
+
+                    if($q->item_status == 'Issued'){
+                        DB::table('tabPacking Slip')->where('name', $q->parent)->update([
+                            'item_status' => 'For Checking',
+                            'modified' => $now->toDateTimeString(),
+                            'modified_by' => Auth::user()->wh_user
+                        ]); 
+                    }
+                    break;
+            }
+
+            DB::table('tabAthena Transactions')->where('reference_name', $request->name)->update([
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'status' => 'Cancelled'
+            ]);
+            
+            DB::commit();
+            return response()->json(['success' => 1, 'message' => 'Issued item(s) cancelled.']);
+        } catch (\Throwable $th) {
+            DB::rollback();
+            return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
+        }
     }
 
     public function cancel_athena_transaction(Request $request){
@@ -3144,7 +3233,7 @@ class MainController extends Controller
             DB::commit();
             
             return response()->json(['status' => 1, 'message' => '<b>'. $request->athena_transaction_number . '</b> has been cancelled.', 'item_code' => $request->itemCode ]);
-        }catch(Exception $e){
+        }catch(\Exception $e){
             DB::rollback();
             
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
@@ -3590,7 +3679,7 @@ class MainController extends Controller
             }
 
             return ['success' => true, 'message' => 'Stock ledger entries created.'];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -3725,7 +3814,7 @@ class MainController extends Controller
                 }
             }
             
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(["error" => $e->getMessage(), 'id' => $stock_entry]);
         }
     }
@@ -3813,7 +3902,7 @@ class MainController extends Controller
             DB::table('tabGL Entry')->insert($gl_entry);
 
             return ['success' => true, 'message' => 'GL Entries created.'];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
 	}
@@ -4035,7 +4124,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['success' => 1, 'message' => 'Stock Entry has been created.']);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['success' => 0, 'message' => 'There was a problem creating stock entries.']);
         }
@@ -4207,7 +4296,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['error' => 0, 'modal_title' => 'Item Received', 'modal_message' => 'Item has been received.']);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
 
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => 'There was a problem creating transaction.']);
@@ -4701,13 +4790,13 @@ class MainController extends Controller
         // check in transactions 
         $checkin_transactions = DB::table('tabAthena Transactions')->whereIn('target_warehouse', $allowed_warehouses)
             ->whereNull('source_warehouse')->whereBetween('transaction_date', [$startOfYear, $endOfYear])
-            ->whereMonth('transaction_date', $request->month)
+            ->whereMonth('transaction_date', $request->month)->where('status', 'Issued')
             ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
             ->orderBy('transaction_date', 'desc');
 
         $list = DB::table('tabAthena Transactions')->whereIn('source_warehouse', $allowed_warehouses)
             ->whereBetween('transaction_date', [$startOfYear, $endOfYear])
-            ->whereMonth('transaction_date', $request->month)
+            ->whereMonth('transaction_date', $request->month)->where('status', 'Issued')
             ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
             ->orderBy('transaction_date', 'desc')->union($stock_adjustments_query)->union($checkin_transactions)->orderBy('transaction_date', 'desc')->get();
 
@@ -4800,7 +4889,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['status' => 1, 'message' => 'Material Request for <b>' . $itemDetails->item_code . '</b> has been created.']);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
 
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
@@ -4821,7 +4910,7 @@ class MainController extends Controller
     public function get_dr_return_details($id){
         $q = DB::table('tabDelivery Note as dr')->join('tabDelivery Note Item as dri', 'dri.parent', 'dr.name')
             ->where('dr.is_return', 1)->where('dr.docstatus', 0)->where('dri.name', $id)
-            ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner')->first();
+            ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner', 'dr.docstatus')->first();
 
         $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
         if(!$img){
@@ -4846,8 +4935,10 @@ class MainController extends Controller
             'qty' => abs($q->qty * 1),
             'owner' => $owner,
             'status' => $q->item_status,
+            'reference' => 'Delivery Note',
+            'docstatus' => $q->docstatus
         ];
-        
+
         $is_stock_entry = false;
         return view('return_modal_content', compact('data', 'is_stock_entry'));
     }
@@ -4899,7 +4990,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['status' => 1, 'message' => 'Item <b>' . $driDetails->item_code . '</b> has been returned.']);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
             
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
@@ -5297,7 +5388,7 @@ class MainController extends Controller
 			DB::commit();
 
 			return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.']);
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			DB::rollback();
 			return response()->json(['status' => 0, 'message' => 'There was a problem create stock entry']);
 		}
@@ -5771,7 +5862,7 @@ class MainController extends Controller
             DB::commit();
 
             return redirect()->back()->with('success', 'Item prices has been updated.');
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
 
             return redirect()->back()->with('error', 'There was a problem updating prices. Please try again.');
@@ -5884,7 +5975,7 @@ class MainController extends Controller
                 return redirect()->back()->with('success', 'E-Commerce Image(s) Imported');
             }
             return redirect()->back();
-        }catch(Exception $e){
+        }catch(\Exception $e){
             DB::rollback();
         
             if(Storage::disk('public')->exists('/export/')){
@@ -5947,7 +6038,7 @@ class MainController extends Controller
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
                 ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
                 ->where('psi.status', 'Issued')->where('at.item_code', $item_code)
                 ->where('psi.item_code', $item_code)->whereIn('at.source_warehouse', $stock_warehouses)
                 ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')

@@ -213,20 +213,8 @@
           </div>
           <!-- /.card-header -->
           <div class="card-body p-0">
-            <ul class="products-list product-list-in-card pl-2 pr-2">
-              @forelse ($recent_uploads as $recent)
-              <li class="item pl-2 pr-2">
-                <a href="/preview/{{ strtoupper($recent['project']) }}/{{ $recent['filename'] }}" class="d-block m-0 p-0">{{ $recent['project'] }}</a>
-                <small class="text-muted" style="font-size: 12px;">Filename: {{ $recent['filename'] }}</small>
-                <small class="d-block text-muted" style="font-size: 10px;">{{ $recent['created_by'] }} - {{ $recent['duration'] }}</small>
-              </li>
-              @empty
-              <li class="item pl-2 pr-2">
-                <span class="d-block text-center text-uppercase">No records found</span>
-              </li>
-              @endforelse
-              <!-- /.item -->
-            </ul>
+            <input type="text" class="form-control m-2" id="history-search" placeholder="Search...">
+            <div class="container-fluid" id="history-container"></div>
           </div>
           <!-- /.card-body -->
         </div>
@@ -236,14 +224,14 @@
 <style>
   .recent-sidebar {
     position: fixed;
-                width: 400px;
-                top:0;
-                right: 0;
-                bottom: 0;
-                background: #fff;
-                border-left: 1px solid  #abb2b9 ;
-                overflow-y:auto;
-                overflow-x:hidden;
+    width: 400px;
+    top:0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border-left: 1px solid  #abb2b9 ;
+    overflow-y:auto;
+    overflow-x:hidden;
   }
 </style>
 
@@ -308,6 +296,28 @@
               placement: {
                 from: 'top',
                 align: 'center'
+              }
+            });
+          }
+
+          $(document).on('keyup', '#history-search', function (e){
+            e.preventDefault();
+            load_history();
+          });
+
+          load_history();
+          function load_history(){
+            $.ajax({
+              type: 'get',
+              url: '/brochure',
+              data: {
+                search: $('#history-search').val()
+              },
+              success: function(response){
+                $('#history-container').html(response);
+              },
+              error: function(jqXHR, textStatus, errorThrown) {
+                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
               }
             });
           }
