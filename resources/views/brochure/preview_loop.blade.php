@@ -7,7 +7,7 @@
         <ul id="sortable" class="list-group" style="font-size: 10pt;">
             @foreach ($content as $i => $item)
                 <li class="list-group-item p-1">
-                    <a href="#item-{{ $item['item_code'] }}">{{ $i + 1 }}.&nbsp;<b>{{ $item['item_code'] }}</b> - {{ $item['item_name'] }}</a>
+                    <a href="#item-{{ $item['item_code'].'-'.$i }}">{{ $i + 1 }}.&nbsp;<b>{{ $item['item_code'] }}</b> - {{ $item['item_name'] }}</a>
                 </li>
             @endforeach
         </ul>
@@ -17,7 +17,7 @@
             @php
                 $images = $item['images'];
             @endphp
-            <div id="item-{{ $item['item_code'] }}" class="page-container overflow-auto d-print-none" style="padding: 15px 0 15px 0 !important; background: #E6E6E6;">
+            <div id="item-{{ $item['item_code'].'-'.$i }}" class="page-container overflow-auto d-print-none" style="padding: 15px 0 15px 0 !important; background: #E6E6E6;">
                 <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
                     <div class="pdf-content">
                         <div class="pdf-body">
