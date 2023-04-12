@@ -145,9 +145,9 @@ class BrochureController extends Controller
 	}
 
 	public function previewBrochure(Request $request, $project, $filename) {
-		$file = storage_path('app/public/brochures/'. $project .'/'. $filename);
+		$file = storage_path('app/public/brochures/'. trim($project) .'/'. $filename);
 
-		if(!Storage::disk('public')->exists('/brochures/'. $project .'/'. $filename)){
+		if(!Storage::disk('public')->exists('/brochures/'. trim($project) .'/'. $filename)){
 			return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
 		}
 
@@ -158,7 +158,7 @@ class BrochureController extends Controller
 				return $q;
 			}
 		})->filter()->values()->all();
-		$project = $file_contents['project'];
+		$project = trim($file_contents['project']);
 		$table_of_contents = $file_contents['table_of_contents'];
 
 		if(isset($request->pdf) && $request->pdf){
