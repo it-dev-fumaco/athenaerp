@@ -5310,9 +5310,8 @@ class MainController extends Controller
 			];
 
 			DB::table('tabStock Entry')->insert($stock_entry_data);
-			
-			if($docstatus == 1){
 
+            if($docstatus == 1){
 				$produced_qty = $production_order_details->produced_qty + $request->fg_completed_qty;
 			
 				$production_data = [
@@ -5323,6 +5322,21 @@ class MainController extends Controller
 				];
 
 				DB::table('tabWork Order')->where('name', $production_order)->update($production_data);
+
+                $item_codes = DB::table('tabWork Order Item')->where('parent', $production_order)->pluck('item_code'); 
+                foreach($item_codes as $item_code){
+                    $consumed_qty = DB::table('tabStock Entry as ste')
+                        ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                        ->where('ste.work_order', $production_order)->whereNull('sted.t_warehouse')
+                        ->where('sted.item_code', $item_code)->where('purpose', 'Manufacture')
+                        ->where('ste.docstatus', 1)->sum('qty');
+
+                    DB::table('tabWork Order Item')->where('parent', $production_order)->where('item_code', $item_code)->update([
+                        'consumed_qty' => $consumed_qty,
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user
+                    ]);
+                }
 
 				$this->update_bin($new_id);
 				$this->create_stock_ledger_entry($new_id);
