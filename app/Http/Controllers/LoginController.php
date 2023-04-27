@@ -13,6 +13,10 @@ use App\LdapClasses\adLDAP;
 class LoginController extends Controller
 {
     public function view_login(){
+        if(Auth::check()){
+            return redirect('/');
+        }
+
         return view('login_v2');
     }
 

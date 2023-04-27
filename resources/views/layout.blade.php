@@ -1308,6 +1308,13 @@
 		document.getElementById('loader-wrapper').removeAttribute('hidden');
 		$(document).ready(function(){
 			$('#loader-wrapper').attr('hidden', true);
+			$(document).on('ajaxComplete', function(event, xhr, settings) {
+				if(typeof xhr.status !== 'undefined' && xhr.status == 401){
+					$('#loader-wrapper').attr('hidden', true);
+					showNotification("danger", 'Session Expired. Please refresh the page and login to continue.', "fa fa-info");
+				}
+			});
+
 			$(document).on('click', '.print-brochure-btn', function(e) {
 				e.preventDefault();
 				var product_code = $(this).data('item-code');
