@@ -11,7 +11,7 @@
 |
 */
 
-Route::group(['middleware' => 'sanitation'], function(){
+Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/login', 'LoginController@view_login')->name('login');
     Route::post('/login_user', 'LoginController@login');
 
