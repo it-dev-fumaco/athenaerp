@@ -1355,8 +1355,8 @@ class MainController extends Controller
                 $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse][0]->actual_qty;
             }
 
-            $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
-            $actual_qty = $actual_qty > 0 ? $actual_qty : 0;
+            // $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
+            // $actual_qty = $actual_qty > 0 ? $actual_qty : 0;
 
             $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
@@ -1384,7 +1384,7 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
-                'balance' => $this->get_available_qty($d->item_code, $d->s_warehouse),//$actual_qty,
+                'balance' => $actual_qty,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->work_order,
@@ -4619,7 +4619,7 @@ class MainController extends Controller
                  'qty' => $d->qty,
                  'validate_item_code' => $d->validate_item_code,
                  'status' => $d->status,
-                 'available_qty' => $this->get_available_qty($d->item_code, $d->s_warehouse),//$available_qty,
+                 'available_qty' => $available_qty,
                  'ref_no' => $ref_no,
                  'issue_as' => $d->issue_as,
                  'parent_warehouse' => $parent_warehouse,
