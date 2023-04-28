@@ -1241,7 +1241,7 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
-                'balance' => $balance,
+                'balance' => $this->get_available_qty($d->item_code, $d->s_warehouse),//$balance,
                 'sales_order_no' => $d->sales_order_no,
                 'issue_as' => $d->issue_as,
                 'parent_warehouse' => $parent_warehouse,
@@ -1355,8 +1355,8 @@ class MainController extends Controller
                 $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse][0]->actual_qty;
             }
 
-            $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
-            $actual_qty = $actual_qty > 0 ? $actual_qty : 0;
+            // $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
+            // $actual_qty = $actual_qty > 0 ? $actual_qty : 0;
 
             $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
 
@@ -2058,6 +2058,16 @@ class MainController extends Controller
 
             $status_result = $this->update_pending_ste_item_status();
 
+            // get expected qty BEFORE submission of stock entry (for double checking of stocks after transaction)
+            $expected_qty_in_source = null;
+            if($steDetails->s_warehouse){
+                $current_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
+                $expected_qty_in_source = $current_qty_in_source - $steDetails->transfer_qty;
+            }
+
+            $current_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
+            $expected_qty_in_target = $current_qty_in_target + $steDetails->transfer_qty;
+
             if ($steDetails->purpose == 'Material Transfer for Manufacture') {
                 $cancelled_production_order = DB::table('tabWork Order')
                     ->where('name', $steDetails->work_order)->where('docstatus', 2)->first();
@@ -2324,6 +2334,19 @@ class MainController extends Controller
                 }
 
                 $this->update_reservation_status();
+            }
+
+            // get actual qty AFTER submission of stock entry (for double checking of stocks after transaction)
+            if($steDetails->s_warehouse){
+                $actual_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
+                if(number_format($expected_qty_in_source, 4, '.', '') != number_format($actual_qty_in_source, 4, '.', '')){
+                    return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
+                }
+            }
+            
+            $actual_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
+            if(number_format($expected_qty_in_target, 4, '.', '') != number_format($actual_qty_in_target, 4, '.', '')){
+                return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
             }
         
             DB::commit();
@@ -3703,10 +3726,9 @@ class MainController extends Controller
             $s_data_insert = [];
             $d_data = [];
             foreach($stock_entry_detail as $row){
-               
-                    if($row->s_warehouse){
-                        $bin_qry = DB::table('tabBin')->where('warehouse', $row->s_warehouse)
-                        ->where('item_code', $row->item_code)->first();
+                if($row->s_warehouse){
+                    $bin_qry = DB::table('tabBin')->where('warehouse', $row->s_warehouse)
+                    ->where('item_code', $row->item_code)->first();
                     if (!$bin_qry) {
                                
                         $new_id = $new_id + 1;
