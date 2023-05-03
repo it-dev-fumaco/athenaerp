@@ -1411,7 +1411,7 @@
 				count_brochures();
 			});
 
-			@if (Auth::check() && !in_array(Auth::user()->user_group, ['User', 'Promodiser']))
+			@if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser']))
 				count_brochures();
 				function count_brochures(){
 					$.ajax({
