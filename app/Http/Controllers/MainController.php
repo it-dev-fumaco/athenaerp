@@ -2337,16 +2337,20 @@ class MainController extends Controller
             }
 
             // get actual qty AFTER submission of stock entry (for double checking of stocks after transaction)
-            if($steDetails->s_warehouse){
-                $actual_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
-                if(number_format($expected_qty_in_source, 4, '.', '') != number_format($actual_qty_in_source, 4, '.', '')){
+            $ste_docstatus = DB::table('tabStock Entry')->where('name', $steDetails->parent_se)->pluck('docstatus')->first();
+
+            if($ste_docstatus && $ste_docstatus == 1){
+                if($steDetails->s_warehouse){
+                    $actual_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
+                    if(number_format($expected_qty_in_source, 4, '.', '') != number_format($actual_qty_in_source, 4, '.', '')){
+                        return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
+                    }
+                }
+                
+                $actual_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
+                if(number_format($expected_qty_in_target, 4, '.', '') != number_format($actual_qty_in_target, 4, '.', '')){
                     return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
                 }
-            }
-            
-            $actual_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
-            if(number_format($expected_qty_in_target, 4, '.', '') != number_format($actual_qty_in_target, 4, '.', '')){
-                return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
             }
         
             DB::commit();
