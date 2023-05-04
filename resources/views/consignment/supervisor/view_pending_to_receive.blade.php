@@ -67,7 +67,7 @@
                                 </div>
                                 <div class="col-6 pl-5" >
                                     <p class="m-1 font-details">MREQ No.: <span class="font-weight-bold">{{ $r['mreq_no'] }}</span></p>
-                                    <p class="m-1 font-details">Status: <span class="badge badge-warning" style="font-size: 8pt;">To Receive</span> 
+                                    <p class="m-1 font-details">Status: <span class="badge badge-{{ $r['status'] == 'Received' ? 'success' : 'warning' }}" style="font-size: 8pt;">{{ $r['status'] == 'Received' ? $r['status'] : 'To Receive' }}</span> 
                                     </p>
                                 </div>
                             </div>
@@ -107,11 +107,19 @@
                                         </td>
                                         <td class="text-center p-1 align-middle">
                                             <div class="row">
-                                                <div class="col-1 d-flex flex-row justify-content-center align-items-center">
-                                                    <span class="w-100 text-right">₱</span></div>
-                                                <div class="col-10">
-                                                    <input type="text" value="{{ number_format($i['price'], 2) }}" name="price[{{ $i['item_code'] }}]" class="form-control text-center price-input {{ $r['name'] }}-price" data-target="amount-{{ $target }}" data-qty="{{ number_format($i['transfer_qty']) }}">
-                                                </div>
+                                                @if ($r['status'] == 'Received')
+                                                    <div class="col-6 mx-auto text-center">
+                                                        <span class="font-weight-bold">
+                                                            ₱ {{ number_format($i['price'], 2) }}
+                                                        </span>
+                                                    </div>
+                                                @else
+                                                    <div class="col-1 d-flex flex-row justify-content-center align-items-center">
+                                                        <span class="w-100 text-right">₱</span></div>
+                                                    <div class="col-10">
+                                                        <input type="text" value="{{ number_format($i['price'], 2) }}" name="price[{{ $i['item_code'] }}]" class="form-control text-center price-input {{ $r['name'] }}-price" data-target="amount-{{ $target }}" data-qty="{{ number_format($i['transfer_qty']) }}">
+                                                    </div>  
+                                                @endif
                                             </div>
                                         </td>
                                         <td class="text-center p-1 align-middle">
@@ -121,8 +129,10 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                            <input type="checkbox" name="receive_delivery" class="d-none" checked>
-                            <button type="button" class="btn btn-primary w-100 submit-btn" data-reference="{{ $r['name'] }}">Receive</button>
+                            @if ($r['status'] != 'Received')
+                                <input type="checkbox" name="receive_delivery" class="d-none" checked>
+                                <button type="button" class="btn btn-primary w-100 submit-btn" data-reference="{{ $r['name'] }}">Receive</button>
+                            @endif
                         </form>
                     </div>
                 </div>
