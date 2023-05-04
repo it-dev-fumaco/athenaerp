@@ -5291,8 +5291,8 @@ class ConsignmentController extends Controller
                 ->when($status && $status == 'To Receive', function ($q) use ($status){
                     return $q->whereNull('sted.consignment_status');
                 })
-                ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
-                ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_date_received', 'sted.consignment_received_by', 'ste.material_request')
+                ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', DB::raw('MAX(sted.consignment_date_received) as consignment_date_received'), 'sted.consignment_received_by', 'ste.material_request')
+                ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_received_by', 'ste.material_request')
                 ->orderBy('ste.creation', 'desc')->orderBy('sted.consignment_status', 'desc')->paginate(20);
 
             $mreq_nos = collect($list->items())->pluck('material_request')->toArray();
