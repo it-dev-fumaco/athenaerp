@@ -219,6 +219,10 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         Route::get('/view_consignment_deliveries', 'ConsignmentController@viewDeliveries');
 
+        Route::get('/consignment_import_tool', 'ConsignmentController@import_tool');
+        Route::get('/consignment_select_values', 'ConsignmentController@select_values');
+        Route::get('/read_file', 'ConsignmentController@readFile');
+
         Route::get('/user_manual', function () {
             return view('consignment.user_manual.index');
         });

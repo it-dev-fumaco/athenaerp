@@ -6195,4 +6195,83 @@ class ConsignmentController extends Controller
             return ['success' => false, 'message' => $e->getMessage()];
         }
 	}
+
+    public function import_tool(){
+        return view('consignment.supervisor.Import_tool.index');
+    }
+
+    public function select_values(Request $request){
+        $customer = DB::table('tabCustomer')
+            ->when($request->q, function ($q) use ($request){
+                return $q->where('name', 'like', '%'.$request->q.'%');
+            })->select('name as id', 'name as text')->orderBy('name')->get();
+        $project = DB::table('tabProject')
+            ->when($request->q, function ($q) use ($request){
+                return $q->where('name', 'like', '%'.$request->q.'%');
+            })->select('name as id', 'name as text')->orderBy('name')->get();
+
+        return response()->json([
+            'customer' => $customer,
+            'project' => $project
+        ]);
+    }
+
+    public function readFile(Request $request){
+        try {
+            return $request->all();
+            $path = storage_path(). '/app/'.request()->file('selected-file')->store('tmp');
+
+            $reader = new ReaderXlsx();
+            $spreadsheet = $reader->load($path);
+    
+            $sheet = $spreadsheet->getActiveSheet();
+    
+            foreach ($sheet->getRowIterator() as $row) {
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(true);
+    
+                $sheet_arr = [];
+                foreach($cellIterator as $col => $cell){
+                    // return $column;
+                    switch ($col) {
+                        case 'A':
+                            $column = 'barcode';
+                            break;
+                        case 'B':
+                            $column = 'description';
+                            break;
+                        case 'C':
+                            $column = 'sold';
+                            break;
+                        default:
+                            $column = 'amount';
+                            break;
+                    }
+                    $sheet_arr[$column][] = $cell->getValue();
+                }
+    
+                // return collect($cellIterator);
+            }
+    
+            // return collect($arr);
+            $items = [];
+            foreach($sheet_arr['barcode'] as $i => $a){
+                if(!$i){
+                    continue;
+                }
+    
+                // return $a;
+                $items[$a] = [
+                    'description' => isset($sheet_arr['description'][$i])  ? $sheet_arr['description'][$i] : null,
+                    'sold' => isset($sheet_arr['sold'][$i])  ? $sheet_arr['sold'][$i] : null,
+                    'amount' => isset($sheet_arr['amount'][$i]) ? $sheet_arr['amount'][$i] : null
+                ];
+            }
+    
+            // return $items;
+            return view('consignment.supervisor.Import_tool.tbl', compact('items'));
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
 }
