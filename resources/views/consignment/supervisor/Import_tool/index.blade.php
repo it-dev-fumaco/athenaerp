@@ -253,45 +253,9 @@
             </button>
           </div>
           <div class="modal-body" id="so-container" style="font-size: 9pt;"></div>
-          {{-- <div class="modal-footer">
-            <button type="button" class="btn btn-primary">Save changes</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          </div> --}}
         </div>
       </div>
     </div>
-
-    {{-- <div class="recent-sidebar">
-      <div>
-        <div class="card-header">
-          <h3 class="card-title">Recently Uploads</h3>
-        </div>
-        <!-- /.card-header -->
-        <div class="card-body p-0">
-          <input type="text" class="form-control m-2" id="history-search" placeholder="Search...">
-          <div class="container-fluid" id="history-container"></div>
-        </div>
-        <!-- /.card-body -->
-      </div>
-      <!-- /.card -->
-    </div> --}}
-
-    {{-- <style>
-      .recent-sidebar {
-        position: fixed;
-        width: 400px;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        background: #fff;
-        border-left: 1px solid #abb2b9;
-        overflow-y: auto;
-        overflow-x: hidden;
-      }
-    </style> --}}
-
-
-
   </div>
 
   <!-- jQuery -->
@@ -311,16 +275,6 @@
         $.ajax({
           type: "post",
           url: "/consignment_read_file",
-          // data: {
-          //   _token: '{{ csrf_token() }}',
-          //   customer: $('select[name="customer"]').val(),
-          //   branch: $('select[name="branch"]').val(),
-          //   project: $('select[name="project"]').val(),
-          //   cpo: $('input[name="cpo"]').val(),
-          //   selected_file: $('input[name="selected_file"]').val(),
-          // },
-					// contentType: 'application/json',
-          // dataType:"json",
           data: formData,
           processData: false,
           contentType: false,
@@ -338,40 +292,6 @@
         $('#file-name').text(fileName);
         $('#modal-file-name').text(fileName);
       });
-
-      // $(document).on('submit', '#excel-form', function(e){
-      //   e.preventDefault();
-      //   var form_data = new FormData($(this)[0]);
-      //   form_data.append('is_readonly', true)
-
-      //   // $('#generated-product-list-body').html('<div class="overlay-wrapper">' +
-      //   //   '<div class="overlay">' +
-      //   //       '<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
-      //   //   '</div>' +
-      //   // '</div>');
-
-      //   // $('#generate-brochure-btn').attr('disabled', true);
-      //   $.ajax({
-      //     type: 'get',
-      //     url: '/read_file',
-      //     data: form_data,
-      //     contentType: false,
-      //     processData: false,
-      //     success: function(response){
-      //               // console.log(response);
-      //       $('#preview-modal').modal('show');
-      //       $('#so-container').html(response);
-      //     },
-      //     error: function(jqXHR, textStatus, errorThrown) {
-      //       showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-      //     }
-      //   });
-      // });
-
-      // $(document).on('click', '#submit-form', function (e){
-      //   e.preventDefault();
-      //   $('#preview-modal').modal('show');
-      // });
 
       $('select[name="branch"]').select2({
         dropdownCssClass: "myFont",
@@ -435,134 +355,8 @@
             cache: true
         }
       });
-
-      // $(document).on('change', 'input[name="selected_file"]', function (e){
-      //   e.preventDefault();
-      //   $('#preview-modal').modal('show');
-      // });
-
-      // load_stores();
-      // function load_stores(){
-      //   $.ajax({
-      //     type: "GET",
-      //     url: "/consignment_stores",
-      //     success: function (response) {
-      //       $.each(response, function (i, item) {
-      //         $('#consignment-store-select').append($('<option>', { 
-      //           value: item.value,
-      //           text : item.text 
-      //         }));
-      //       });
-      //     }
-      //   });
-      // }
     });
   </script>
-  {{-- <script>
-    $(document).ready(function(){
-          $('input[type="file"]').change(function(e){
-            var fileName = e.target.files[0].name;
-            $('#file-name').text(fileName);
-            $('#modal-file-name').text(fileName);
-            $('#upload-container').removeClass('d-none');
-          });
-
-          $(document).on('click', '.read-file', function(){
-            var form_data = new FormData($('#excel-form')[0]);
-            form_data.append('is_readonly', true)
-
-            $('#generated-product-list-body').html('<div class="overlay-wrapper">' +
-              '<div class="overlay">' +
-                  '<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
-              '</div>' +
-            '</div>');
-
-            $('#generate-brochure-btn').attr('disabled', true);
-            $.ajax({
-              type: 'post',
-              url: '/read_file',
-              data: form_data,
-              contentType: false,
-              processData: false,
-              success: function(response){
-                if(response.status == 0){
-    							showNotification("danger", response.message, "fa fa-info");
-                }else{
-                  $('#generated-product-list-body').html(response);
-                  $('#generate-brochure-btn').removeAttr('disabled');
-                  $('#product-list-modal').modal('show');
-                }
-              },
-              error: function(jqXHR, textStatus, errorThrown) {
-                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-              }
-            });
-          });
-
-          function showNotification(color, message, icon){
-            $.notify({
-              icon: icon,
-              message: message
-            },{
-              type: color,
-              timer: 500,
-              z_index: 1060,
-              placement: {
-                from: 'top',
-                align: 'center'
-              }
-            });
-          }
-
-          $(document).on('keyup', '#history-search', function (e){
-            e.preventDefault();
-            load_history();
-          });
-
-          load_history();
-          function load_history(){
-            $.ajax({
-              type: 'get',
-              url: '/brochure',
-              data: {
-                search: $('#history-search').val()
-              },
-              success: function(response){
-                $('#history-container').html(response);
-              },
-              error: function(jqXHR, textStatus, errorThrown) {
-                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-              }
-            });
-          }
-
-          $('#excel-form').submit(function(e) {
-            e.preventDefault();
-
-            $('#generate-brochure-btn').attr('disabled', true).html('<i class="fas fa-sync-alt fa-spin"></i> Generating...');
-
-            $.ajax({
-              type: 'post',
-              url: $(this).attr('action'),
-              data: new FormData(this),
-              contentType: false,
-              processData: false,
-              success: function(response){
-                if(response.status == 0){
-    							showNotification("danger", response.message, "fa fa-info");
-                  $('#generate-brochure-btn').removeAttr('disabled');
-                }else{
-                  window.location.href = response.message;
-                }
-              },
-              error: function(jqXHR, textStatus, errorThrown) {
-                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-                $('#generate-brochure-btn').removeAttr('disabled');
-              }
-            });
-          });
-        });
-  </script> --}}
 </body>
 
 </html>
