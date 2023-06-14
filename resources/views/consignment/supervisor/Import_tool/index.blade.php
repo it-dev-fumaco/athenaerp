@@ -233,7 +233,7 @@
                 @endif
                 <div class="col-12 pt-3">
                   <button type="submit" id="submit" class="btn btn-primary btn-block">Submit</button>
-                  <a href="{{ asset('storage/templates/AthenaERP - Brochure-Import-Template.xlsx') }}"
+                  <a href="{{ asset('storage/templates/AthenaERP - Consignment-Sales-Report-Template.xlsx') }}"
                     class="btn btn-info btn-block" type="button">Download Template</a>
                 </div>
               </div>
