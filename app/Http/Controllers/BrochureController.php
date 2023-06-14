@@ -92,7 +92,7 @@ class BrochureController extends Controller
 				$file_contents = $this->readFile($attached_file);
 
 				$content = $file_contents['content'];
-				$project = trim($file_contents['project']);
+				$project = isset($file_contents['project']) && $file_contents['project'] ? trim($file_contents['project']) : '-';
 				$customer = $file_contents['customer'];
 				$headers = $file_contents['headers'];
 				$table_of_contents = $file_contents['table_of_contents'];
@@ -145,38 +145,44 @@ class BrochureController extends Controller
 	}
 
 	public function previewBrochure(Request $request, $project, $filename) {
-		$file = storage_path('app/public/brochures/'. trim($project) .'/'. $filename);
+		try {
+			$file = storage_path('app/public/brochures/'. trim($project) .'/'. $filename);
 
-		if(!Storage::disk('public')->exists('/brochures/'. trim($project) .'/'. $filename)){
-			return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
-		}
-
-		$file_contents = $this->readFile($file);
-
-		$content = collect($file_contents['content'])->map(function ($q){
-			if($q['id'] && collect($q['attributes'])->pluck('attribute_value')->filter()->values()->all()){
-				return $q;
-			}
-		})->filter()->values()->all();
-		$project = trim($file_contents['project']);
-		$table_of_contents = $file_contents['table_of_contents'];
-
-		if(isset($request->pdf) && $request->pdf){
-			$storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
-
-			$series = null;
-			if($storage){
-				$series = count($storage) > 1 ? count($storage) : 1;
-				$series = '-'.(string)$series;
+			if(!Storage::disk('public')->exists('/brochures/'. trim($project) .'/'. $filename)){
+				return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
 			}
 
-			$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d').$series;
+			$file_contents = $this->readFile($file);
 
-			$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename'));
-			return $pdf->stream($new_filename.'.pdf');
+			$content = collect($file_contents['content'])->map(function ($q){
+				if($q['id'] && collect($q['attributes'])->pluck('attribute_value')->filter()->values()->all()){
+					return $q;
+				}
+			})->filter()->values()->all();
+			$project = trim($file_contents['project']);
+			$table_of_contents = $file_contents['table_of_contents'];
+
+			if(isset($request->pdf) && $request->pdf){
+				$storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
+
+				$series = null;
+				if($storage){
+					$series = count($storage) > 1 ? count($storage) : 1;
+					$series = '-'.(string)$series;
+				}
+
+				$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d').$series;
+
+				$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename'));
+				return $pdf->stream($new_filename.'.pdf');
+			}
+
+			return view('brochure.print_preview', compact('content', 'table_of_contents', 'project', 'filename'));
+		} catch (\Throwable $th) {
+			// throw $th;
+			return redirect('brochure')->with('error', 'An error occured. Please try again.');
 		}
-
-		return view('brochure.print_preview', compact('content', 'table_of_contents', 'project', 'filename'));
+		
 	}
 
 	public function uploadImage(Request $request) {
@@ -534,6 +540,10 @@ class BrochureController extends Controller
 
 			$preview = isset($request->preview) && $request->preview ? 1 : 0;
 			$pdf = isset($request->pdf) && $request->pdf ? 1 : 0;
+
+			if($pdf){
+				set_time_limit(300);
+			}
 
 			$attributes_qry = DB::table('tabItem Variant Attribute as variant')
 				->join('tabItem Attribute as attr', 'attr.name', 'variant.attribute')

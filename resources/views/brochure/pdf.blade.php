@@ -79,7 +79,7 @@
             $rows = (strlen($project) - 34) / 42;
             $rows = (int)$rows < 1 ? 1 : (int)$rows + 1.3;
 
-            $margin = (1.3 + (.13 * $rows)).'in' ;
+            $margin = (1.5 + (.13 * $rows)).'in' ;
         }
     @endphp
 <body style="border: 1px solid; padding: {{ $margin }} .5in 0 .5in;">
