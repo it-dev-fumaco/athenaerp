@@ -6290,12 +6290,12 @@ class ConsignmentController extends Controller
                 $items[$item_code] = [
                     'active' => $active,
                     'description' => $description,
-                    'sold' => isset($items[$a]['sold']) ? $items[$a]['sold'] += $sold : $sold,
-                    'amount' => isset($items[$a]['amount']) ? $items[$a]['amount'] += $amount : $amount,
+                    'sold' => isset($items[$item_code]['sold']) ? $items[$item_code]['sold'] += $sold : $sold,
+                    'amount' => isset($items[$item_code]['amount']) ? $items[$item_code]['amount'] += $amount : $amount,
                     'uom' => $uom
                 ];
             }
-    
+
             return view('consignment.supervisor.Import_tool.tbl', compact('items', 'customer', 'project', 'branch', 'customer_purchase_order'));
         } catch (\Throwable $th) {
             throw $th;
