@@ -15,6 +15,10 @@ use Illuminate\Support\Str;
 use App\Mail\StockTransfersNotification;
 use Exception;
 
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriterXlsx;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+
 class ConsignmentController extends Controller
 {
     // /view_calendar_menu/{branch}
@@ -6218,21 +6222,27 @@ class ConsignmentController extends Controller
 
     public function readFile(Request $request){
         try {
-            return $request->all();
-            $path = storage_path(). '/app/'.request()->file('selected-file')->store('tmp');
+            // $customer = DB::table('tabCustomer')->where('name', $request->customer)->pluck('name')->first();
+            // $project = DB::table('tabProject')->where('name', $request->project)->pluck('name')->first();
+
+            $customer = $request->customer;
+            $project = $request->project;
+            $branch = $request->branch;
+            $customer_purchase_order = $request->cpo;
+
+            $path = storage_path(). '/app/'.request()->file('selected_file')->store('tmp');
 
             $reader = new ReaderXlsx();
             $spreadsheet = $reader->load($path);
     
             $sheet = $spreadsheet->getActiveSheet();
-    
+
+            $sheet_arr = [];
             foreach ($sheet->getRowIterator() as $row) {
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(true);
     
-                $sheet_arr = [];
                 foreach($cellIterator as $col => $cell){
-                    // return $column;
                     switch ($col) {
                         case 'A':
                             $column = 'barcode';
@@ -6249,27 +6259,44 @@ class ConsignmentController extends Controller
                     }
                     $sheet_arr[$column][] = $cell->getValue();
                 }
-    
-                // return collect($cellIterator);
             }
-    
-            // return collect($arr);
+
+            $item_details = DB::table('tabItem as i')
+                ->join('tabItem Barcode as b', 'b.parent', 'i.name')
+                ->whereIn('b.barcode', $sheet_arr['barcode'])->where('b.customer', $customer)
+                ->select('b.barcode', 'b.customer', 'i.name', 'i.item_name', 'i.description', 'i.stock_uom')
+                ->get();
+            $item_details = collect($item_details)->groupBy('barcode');
+
             $items = [];
             foreach($sheet_arr['barcode'] as $i => $a){
                 if(!$i){
                     continue;
                 }
-    
-                // return $a;
-                $items[$a] = [
-                    'description' => isset($sheet_arr['description'][$i])  ? $sheet_arr['description'][$i] : null,
-                    'sold' => isset($sheet_arr['sold'][$i])  ? $sheet_arr['sold'][$i] : null,
-                    'amount' => isset($sheet_arr['amount'][$i]) ? $sheet_arr['amount'][$i] : null
+
+                $item_code = $a;
+                $description = isset($sheet_arr['description'][$i])  ? $sheet_arr['description'][$i] : null;
+                $active = 0;
+                $uom = null;
+                if(isset($item_details[$a])){
+                    $item_code = $item_details[$a][0]->name;
+                    $description = $item_details[$a][0]->description;
+                    $active = 1;
+                    $uom = $item_details[$a][0]->stock_uom;
+                }
+
+                $sold = isset($sheet_arr['sold'][$i]) ? $sheet_arr['sold'][$i] : 0;
+                $amount = isset($sheet_arr['amount'][$i]) ? $sheet_arr['amount'][$i] : 0;
+                $items[$item_code] = [
+                    'active' => $active,
+                    'description' => $description,
+                    'sold' => isset($items[$a]['sold']) ? $items[$a]['sold'] += $sold : $sold,
+                    'amount' => isset($items[$a]['amount']) ? $items[$a]['amount'] += $amount : $amount,
+                    'uom' => $uom
                 ];
             }
     
-            // return $items;
-            return view('consignment.supervisor.Import_tool.tbl', compact('items'));
+            return view('consignment.supervisor.Import_tool.tbl', compact('items', 'customer', 'project', 'branch', 'customer_purchase_order'));
         } catch (\Throwable $th) {
             throw $th;
         }

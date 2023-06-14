@@ -120,6 +120,10 @@
 			height: 38px !important;
 		}
 
+    .modal{
+      transition: .4s !important;
+    }
+
     @media (max-width: 600px) {
       .icon {
         width: 50px;
@@ -131,73 +135,8 @@
 <body>
   <div class="row m-0 p-0">
     <div class="container-fluid">
-      <form action="/import_testing" id="excel-form" method="POST" enctype="multipart/form-data">
-        {{-- @csrf --}}
-        {{-- <div class="container-fluid border border-danger">
-          <div class="row">
-            <div class="col-3">
-              <div class="card">
-                <div class="card-header">
-                  test
-                </div>
-                <div class="card-body">
-                  <form action="/import_testing" id="excel-form" method="get" enctype="multipart/form-data">
-                    @csrf
-                    <div class="form-group">
-                      <label>Customer</label>
-                      <select name="customer" class="form-control" required>
-                        <option value="">Select a Customer</option>
-                        @foreach ($customer as $c)
-                        <option value="{{ $c->name }}">{{ $c->name }}</option>
-                        @endforeach
-                      </select>
-                    </div>
-
-                    <div class="form-group">
-                      <label>Branch</label>
-                      <select name="branch" class="form-control" id="consignment-store-select" required>
-                        <option value="">Select a Branch</option>
-                      </select>
-                    </div>
-
-                    <div class="form-group">
-                      <label>Project</label>
-                      <select name="project" class="form-control" required>
-                        <option value="">Select a Project</option>
-                        @foreach ($project as $p)
-                        <option value="{{ $p->name }}">{{ $p->name }}</option>
-                        @endforeach
-                      </select>
-                    </div>
-
-                    <div class="form-group">
-                      <label>Customer Purchase Order</label>
-                      <input name="cpo" type="text" class="form-control" required>
-                    </div>
-
-                    <div class="form-group">
-                      <label>Import</label>
-                      <input class="file-input form-control" type="file" name="selected-file" accept=".xlsx,.xls"
-                        required>
-                    </div>
-
-                    <div class="form-group">
-                      <button type="submit" class="btn btn-sm btn-primary w-100">Submit</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-            <div class="col-9">
-              <div class="container border border-danger">
-                <div class="card">
-                  <div class="card-body" id="so-container" style="font-size: 9pt;">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div> --}}
+      <form action="" id="excel-form" method="POST" enctype="multipart/form-data">
+        @csrf
         <div class="custom-container">
           <div class="custom-card">
             <div class="custom-card-body">
@@ -229,7 +168,8 @@
                 </div>
               </div>
               <div class="file-upload">
-                <input class="file-input" type="file" name="selected-file" accept=".xlsx,.xls" required>
+                {{-- <input class="file-input" type="file" name="selected_file" accept=".xlsx,.xls" required> --}}
+                <input class="file-input" type="file" accept=".xlsx,.xls" required>
                 <svg class="icon" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
                   <g id="Page-1" fill="none" fill-rule="evenodd">
                     <g id="135---Upload-File" fill-rule="nonzero">
@@ -291,42 +231,8 @@
                   {{ session()->get('error') }}
                 </div>
                 @endif
-                <div id="upload-container" class="col-12 pt-3 d-none">
-                  <button class="btn btn-primary btn-block read-file" type="button"
-                    data-target="#product-list-modal">Upload</button>
-
-                  <div class="modal fade" id="product-list-modal">
-                    <div class="modal-dialog" style="min-width: 90% !important">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h4 class="modal-title">
-                            <span id="modal-file-name"></span>
-                          </h4>
-                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                          </button>
-                        </div>
-                        <div class="modal-body overflow-auto" id="generated-product-list-body"
-                          style="min-height: 400px;">
-                          <div class="overlay-wrapper">
-                            <div class="overlay">
-                              <i class="fas fa-3x fa-sync-alt fa-spin"></i>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="modal-footer justify-content-end">
-                          <button type="submit" class="btn btn-primary" id="generate-brochure-btn" value="generate">
-                            Generate Brochure (<span id="generated-prod-count"></span>)
-                          </button>
-                        </div>
-                      </div>
-                      <!-- /.modal-content -->
-                    </div>
-                    <!-- /.modal-dialog -->
-                  </div>
-                </div>
                 <div class="col-12 pt-3">
-                  <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                  <button type="submit" id="submit" class="btn btn-primary btn-block">Submit</button>
                   <a href="{{ asset('storage/templates/AthenaERP - Brochure-Import-Template.xlsx') }}"
                     class="btn btn-info btn-block" type="button">Download Template</a>
                 </div>
@@ -335,6 +241,24 @@
           </div>
         </div>
       </form>
+    </div>
+
+    <div class="modal" id="preview-modal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 id="modal-file-name" class="modal-title">test</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="so-container" style="font-size: 9pt;"></div>
+          {{-- <div class="modal-footer">
+            <button type="button" class="btn btn-primary">Save changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div> --}}
+        </div>
+      </div>
     </div>
 
     {{-- <div class="recent-sidebar">
@@ -352,7 +276,7 @@
       <!-- /.card -->
     </div> --}}
 
-    <style>
+    {{-- <style>
       .recent-sidebar {
         position: fixed;
         width: 400px;
@@ -364,7 +288,7 @@
         overflow-y: auto;
         overflow-x: hidden;
       }
-    </style>
+    </style> --}}
 
 
 
@@ -380,23 +304,74 @@
     $(document).ready(function (){
       $(document).on('submit', '#excel-form', function (e){
         e.preventDefault();
+        var formData = new FormData(this);
+        var file = $('input[type="file"]')[0].files[0];
+        formData.append('selected_file', file);
+        console.log(formData);
         $.ajax({
-          type: "GET",
-          url: "/read_file",
-          data: {
-            _token: '{{ csrf_token() }}',
-            customer: $('select[name="customer"]').val(),
-            branch: $('select[name="branch"]').val(),
-            project: $('select[name="project"]').val(),
-            cpo: $('input[name="cpo"]').val(),
-            selected_file: $('input[name="selected-file"]').val(),
-          },
+          type: "post",
+          url: "/consignment_read_file",
+          // data: {
+          //   _token: '{{ csrf_token() }}',
+          //   customer: $('select[name="customer"]').val(),
+          //   branch: $('select[name="branch"]').val(),
+          //   project: $('select[name="project"]').val(),
+          //   cpo: $('input[name="cpo"]').val(),
+          //   selected_file: $('input[name="selected_file"]').val(),
+          // },
+					// contentType: 'application/json',
+          // dataType:"json",
+          data: formData,
+          processData: false,
+          contentType: false,
+          cache: false,
           success: function (response) {
               console.log(response);
+              $('#preview-modal').modal('show');
               $('#so-container').html(response);
           }
         });
       });
+
+      $(document).on('change', 'input[type="file"]', function(e){
+        var fileName = e.target.files[0].name;
+        $('#file-name').text(fileName);
+        $('#modal-file-name').text(fileName);
+      });
+
+      // $(document).on('submit', '#excel-form', function(e){
+      //   e.preventDefault();
+      //   var form_data = new FormData($(this)[0]);
+      //   form_data.append('is_readonly', true)
+
+      //   // $('#generated-product-list-body').html('<div class="overlay-wrapper">' +
+      //   //   '<div class="overlay">' +
+      //   //       '<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
+      //   //   '</div>' +
+      //   // '</div>');
+
+      //   // $('#generate-brochure-btn').attr('disabled', true);
+      //   $.ajax({
+      //     type: 'get',
+      //     url: '/read_file',
+      //     data: form_data,
+      //     contentType: false,
+      //     processData: false,
+      //     success: function(response){
+      //               // console.log(response);
+      //       $('#preview-modal').modal('show');
+      //       $('#so-container').html(response);
+      //     },
+      //     error: function(jqXHR, textStatus, errorThrown) {
+      //       showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+      //     }
+      //   });
+      // });
+
+      // $(document).on('click', '#submit-form', function (e){
+      //   e.preventDefault();
+      //   $('#preview-modal').modal('show');
+      // });
 
       $('select[name="branch"]').select2({
         dropdownCssClass: "myFont",
@@ -460,6 +435,11 @@
             cache: true
         }
       });
+
+      // $(document).on('change', 'input[name="selected_file"]', function (e){
+      //   e.preventDefault();
+      //   $('#preview-modal').modal('show');
+      // });
 
       // load_stores();
       // function load_stores(){
