@@ -271,7 +271,6 @@
         var formData = new FormData(this);
         var file = $('input[type="file"]')[0].files[0];
         formData.append('selected_file', file);
-        console.log(formData);
         $.ajax({
           type: "post",
           url: "/consignment_read_file",
@@ -280,7 +279,6 @@
           contentType: false,
           cache: false,
           success: function (response) {
-              console.log(response);
               $('#preview-modal').modal('show');
               $('#so-container').html(response);
           }
@@ -354,6 +352,30 @@
             },
             cache: true
         }
+      });
+
+      $(document).on('submit', '#generate-sales-order-form', function(e) {
+        e.preventDefault();
+        $('#generate-sales-order-btn').attr('disabled', true);
+        $('#generate-sales-order-btn').html('<i class="fas fa-spinner fa-spin"></i> Generating');
+
+        $.ajax({
+          type: $(this).attr('method'),
+          url: $(this).attr('action'),
+          data: $(this).serialize(),
+          success: function (response) {
+            $('#cw-alert-message').removeClass('d-none');
+            if (response.status) {
+              $('#cw-alert-message').removeClass('alert-danger').addClass('alert-success');
+              $('#cw-alert-message span').html(response.message);
+            } else {
+              $('#cw-alert-message').removeClass('alert-success').addClass('alert-danger');
+              $('#cw-alert-message span').html(response.message);
+            }
+            $('#generate-sales-order-btn').removeAttr('disabled');
+            $('#generate-sales-order-btn').html('<i class="fas fa-check"></i> Generate Sales Order');
+          }
+        });
       });
     });
   </script>

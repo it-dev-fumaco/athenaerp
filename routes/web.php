@@ -19,6 +19,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::post('/U_login_user', 'ItemAttributeController@login');
 
     Route::group(['middleware' => 'auth'], function(){
+        Route::post('/generate_sales_order', 'ConsignmentController@createSalesOrder');
+
         // standard product brochure printing
         Route::get('/generate_brochure', 'BrochureController@generateBrochure');
         Route::post('/upload_image_for_standard_brochure', 'BrochureController@uploadImageForStandard');
