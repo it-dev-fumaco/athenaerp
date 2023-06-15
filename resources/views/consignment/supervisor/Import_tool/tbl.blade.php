@@ -1,7 +1,53 @@
 @if (!collect($items)->min('active'))
+@php
+    $unassigned_items = collect($items)->where('active', 0);
+@endphp
     <div class="alert alert-warning font-weight-bold text-center w-100" style="font-size: 13px;">
-        <span>Row(s) highlighted in <b>RED</b> are not assigned to any item in ERP. Please assign these barcodes to items in ERP to proceed.</span>
-    </div>   
+        {{-- <span>Row(s) highlighted in <b>RED</b> are not assigned to any item in ERP. Please assign these barcodes to items in ERP to proceed.</span> --}}
+        <span>Row(s) highlighted in <b>RED</b> are not assigned to any item in ERP. <a href="#" class="text-dark text-underline open-modal" data-bs-toggle="modal" data-bs-target="#unassigned-barcodes-modal">Click here assign these barcodes to items in ERP.</a></span>
+    </div>
+
+    <div class="modal fade" id="unassigned-barcodes-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Assign Barcodes to ERP</h5>
+                    <a href="#" class="close-modal" data-bs-target="#unassigned-barcodes-modal" aria-label="Close"><i class="fa fa-remove"></i></a>
+                </div>
+                <form action="" id="unassigned-barcodes-form" method="post">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="row">
+                            <input type="text" class="d-none" name="customer" value="{{ $customer }}">
+                            <table class="table table-bordered">
+                                <col style="width: 40%;">
+                                <col style="width: 60%;">
+                                <tr>
+                                    <th>Barcode</th>
+                                    <th>Item</th>
+                                </tr>
+                                @foreach ($unassigned_items as $item)
+                                    <tr>
+                                        <td>
+                                            <b>{{ $item['barcode'] }}</b><br>
+                                            <span>{{ $item['description'] }}</span>
+                                        </td>
+                                        <td>
+                                            <select name="item[{{ $item['barcode'] }}]" class="form-control item-selection"></select>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close-modal" data-bs-target="#unassigned-barcodes-modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endif
 <div class="alert alert-success font-weight-bold text-center w-100 d-none" style="font-size: 13px;" id="cw-alert-message">
     <span>-</span>
@@ -49,7 +95,8 @@
                     <tr class="{{ !$item['active'] ? 'inactive-item' : null }}">
                         <td class="p-2 text-center align-middle font-weight-bolder">{{ $i++ }}</td>
                         <td class="p-2 align-middle">
-                            <span class="font-weight-bold d-block">{{ $item['item_code'] ? $item['item_code'] : $item['barcode'] }}</span>
+                            <span class="font-weight-bold">{{ $item['item_code'] ? $item['item_code'] : $item['barcode'] }}</span>
+                            <br>
                             {!! $item['description'] !!}
                         </td>
                         <td class="p-2 text-center align-middle">
@@ -99,4 +146,60 @@
     .inactive-item{
         background-color: rgba(220, 53, 69, .5)
     }
+
+    .modal{
+        background-color: rgba(0,0,0,.4)
+    }
 </style>
+
+<script>
+    $(document).on('click', '.open-modal', function (e){
+        e.preventDefault();
+        $($(this).data('bs-target')).modal('show');
+    });
+
+    $(document).on('click', '.close-modal', function (e){
+        e.preventDefault();
+        $($(this).data('bs-target')).modal('hide');
+    });
+
+    $('.item-selection').select2({
+        // templateResult: formatState,
+        // templateSelection: formatState,
+        placeholder: 'Select an Item',
+
+        ajax: {
+            url: '/get_items/{{ $branch }}',
+            method: 'GET',
+            dataType: 'json',
+            data: function (data) {
+                return {
+                    q: data.term
+                };
+            },
+            processResults: function (response) {
+                return {
+                    results: response.items
+                };
+            },
+            cache: true
+        }
+    });
+
+    
+
+    // function formatState (opt) {
+    //     if (!opt.id) {
+    //         return opt.text;
+    //     }
+
+    //     // if(!optimage){
+    //         return opt.id;
+    //     // } else {
+    //     //     var $opt = $(
+    //     //     '<span style="font-size: 10pt; width: 100%">' + opt.text + '</span>'
+    //     //     );
+    //     //     return $opt;
+    //     // }
+    // };
+</script>

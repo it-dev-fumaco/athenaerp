@@ -6395,4 +6395,37 @@ class ConsignmentController extends Controller
 
         return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
     }
+
+    public function assign_barcodes(Request $request){
+        DB::beginTransaction();
+        try {
+            $items = $request->item;
+            foreach($items as $barcode => $item_code){
+                $insert_arr[] = [
+                    'name' => uniqid(),
+                    'creation' => Carbon::now()->toDateTimeString(),
+                    'modified' => Carbon::now()->toDateTimeString(),
+                    'owner' => Auth::user()->wh_user,
+                    'modified_by' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'idx' => 1,
+                    'parent' => $item_code,
+                    'parentfield' => 'barcodes',
+                    'parenttype' => 'Item',
+                    'customer' => $barcode,
+                    'barcode' => $barcode
+                ];
+            }
+
+
+            DB::table('tabItem Barcode')->insert($insert_arr);
+
+            DB::commit();
+            return response()->json(['success' => 1, 'message' => 'Success!']);
+        } catch (\Throwable $th) {
+            DB::rollback();
+            throw $th;
+            return response()->json(['success' => 0, 'message' => 'An error occured Please try again.']);
+        }
+    }
 }

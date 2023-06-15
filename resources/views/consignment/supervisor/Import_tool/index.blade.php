@@ -106,18 +106,22 @@
 			width: 100% !important;
 			outline: none !important;
       font-size: 9pt;
+      word-break: break-all !important;
 		}
 		.select2-selection__rendered {
 			line-height: 30px !important;
 			outline: none !important;
+      word-break: break-all !important;
 		}
 		.select2-container .select2-selection--single {
 			height: 38px !important;
 			padding-top: 1.5%;
 			outline: none !important;
+      word-break: break-all !important;
 		}
 		.select2-selection__arrow {
 			height: 38px !important;
+      word-break: break-all !important;
 		}
 
     .modal{
@@ -352,6 +356,19 @@
             },
             cache: true
         }
+      });
+
+      $(document).on('submit', '#unassigned-barcodes-form', function (e){
+        e.preventDefault();
+        $.ajax({
+            type: "post",
+            url: "/assign_barcodes",
+            data: $(this).serialize(),
+            success: function (response) {
+              // console.log(response);wilcon
+              $('#excel-form').submit();
+            }
+        });
       });
 
       $(document).on('submit', '#generate-sales-order-form', function(e) {
