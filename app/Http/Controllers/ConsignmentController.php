@@ -6412,7 +6412,7 @@ class ConsignmentController extends Controller
                     'parent' => $item_code,
                     'parentfield' => 'barcodes',
                     'parenttype' => 'Item',
-                    'customer' => $barcode,
+                    'customer' => $request->customer,
                     'barcode' => $barcode
                 ];
             }
