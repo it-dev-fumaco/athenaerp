@@ -6267,32 +6267,32 @@ class ConsignmentController extends Controller
             $item_details = collect($item_details)->groupBy('barcode');
 
             $items = [];
-            foreach($sheet_arr['barcode'] as $i => $a){
+            foreach($sheet_arr['barcode'] as $i => $barcode){
                 if(!$i){
                     continue;
                 }
 
-                $item_code = null;
+                $item_code = $erp_description = $uom = null;
                 $description = isset($sheet_arr['description'][$i])  ? $sheet_arr['description'][$i] : null;
                 $active = 0;
-                $uom = null;
-                if(isset($item_details[$a])){
-                    $item_code = $item_details[$a][0]->name;
-                    $description = $item_details[$a][0]->description;
+                if(isset($item_details[$barcode])){
+                    $item_code = $item_details[$barcode][0]->name;
+                    $erp_description = $item_details[$barcode][0]->description;
+                    $uom = $item_details[$barcode][0]->stock_uom;
                     $active = 1;
-                    $uom = $item_details[$a][0]->stock_uom;
                 }
 
                 $sold = isset($sheet_arr['sold'][$i]) ? $sheet_arr['sold'][$i] : 0;
                 $amount = isset($sheet_arr['amount'][$i]) ? $sheet_arr['amount'][$i] : 0;
-                $items[$a] = [
-                    'barcode' => $a,
-                    'item_code' => $item_code,
+                $items[$barcode] = [
+                    'barcode' => $barcode,
                     'active' => $active,
+                    'item_code' => $item_code,
+                    'erp_description' => $erp_description,
                     'description' => $description,
-                    'sold' => isset($items[$item_code]['sold']) ? $items[$item_code]['sold'] += $sold : $sold,
-                    'amount' => isset($items[$item_code]['amount']) ? $items[$item_code]['amount'] += $amount : $amount,
-                    'uom' => $uom
+                    'sold' => isset($items[$barcode]['sold']) ? $items[$barcode]['sold'] += $sold : $sold,
+                    'amount' => isset($items[$barcode]['amount']) ? $items[$barcode]['amount'] += $amount : $amount,
+                    'uom' => $uom,
                 ];
             }
 
@@ -6383,6 +6383,7 @@ class ConsignmentController extends Controller
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
             'Authorization' => 'token ' . $erp_api_key . ':' . $erp_api_secret_key,
             'Accept-Language' => 'en'
         ])->post($erp_api_base_url . '/api/resource/Sales Order', $sales_order_data);
@@ -6401,6 +6402,10 @@ class ConsignmentController extends Controller
         try {
             $items = $request->item;
             foreach($items as $barcode => $item_code){
+                if (!$item_code) {
+                    return response()->json(['status' => 0, 'message' => 'Please select item code for <b>' . $barcode . '</b>.']);
+                }
+                
                 $insert_arr[] = [
                     'name' => uniqid(),
                     'creation' => Carbon::now()->toDateTimeString(),
@@ -6417,15 +6422,15 @@ class ConsignmentController extends Controller
                 ];
             }
 
-
             DB::table('tabItem Barcode')->insert($insert_arr);
 
             DB::commit();
-            return response()->json(['success' => 1, 'message' => 'Success!']);
+
+            return response()->json(['status' => 1, 'message' => 'Success!']);
         } catch (\Throwable $th) {
             DB::rollback();
-            throw $th;
-            return response()->json(['success' => 0, 'message' => 'An error occured Please try again.']);
+            
+            return response()->json(['status' => 0, 'message' => 'An error occured while updating item barcodes. Please contact your system administrator.']);
         }
     }
 }

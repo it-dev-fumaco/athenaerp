@@ -103,7 +103,6 @@
     }
 
     .select2{
-			width: 100% !important;
 			outline: none !important;
       font-size: 9pt;
       word-break: break-all !important;
@@ -172,7 +171,6 @@
                 </div>
               </div>
               <div class="file-upload">
-                {{-- <input class="file-input" type="file" name="selected_file" accept=".xlsx,.xls" required> --}}
                 <input class="file-input" type="file" accept=".xlsx,.xls" required>
                 <svg class="icon" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
                   <g id="Page-1" fill="none" fill-rule="evenodd">
@@ -236,7 +234,7 @@
                 </div>
                 @endif
                 <div class="col-12 pt-3">
-                  <button type="submit" id="submit" class="btn btn-primary btn-block">Submit</button>
+                  <button type="button" id="submit-form-btn" class="btn btn-primary btn-lg btn-block mb-3">Submit</button>
                   <a href="{{ asset('storage/templates/AthenaERP - Consignment-Sales-Report-Template.xlsx') }}"
                     class="btn btn-info btn-block" type="button">Download Template</a>
                 </div>
@@ -247,11 +245,11 @@
       </form>
     </div>
 
-    <div class="modal" id="preview-modal" tabindex="-1" role="dialog">
-      <div class="modal-dialog modal-xl" role="document">
+    <div class="modal fade" id="preview-modal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-xl" role="document" style="min-width: 70%;">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 id="modal-file-name" class="modal-title">test</h5>
+          <div class="modal-header bg-navy">
+            <h5 id="modal-file-name" class="modal-title">-</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -270,6 +268,12 @@
   <script src="{{ asset('/updated/plugins/select2/js/select2.full.js') }}"></script>
   <script>
     $(document).ready(function (){
+      $(document).on('click', '#submit-form-btn', function(e) {
+        e.preventDefault();
+        $('#excel-form').submit();
+        $('#preview-modal').modal('show');
+      });
+
       $(document).on('submit', '#excel-form', function (e){
         e.preventDefault();
         var formData = new FormData(this);
@@ -283,8 +287,7 @@
           contentType: false,
           cache: false,
           success: function (response) {
-              $('#preview-modal').modal('show');
-              $('#so-container').html(response);
+            $('#so-container').html(response);
           }
         });
       });
@@ -361,13 +364,21 @@
       $(document).on('submit', '#unassigned-barcodes-form', function (e){
         e.preventDefault();
         $.ajax({
-            type: "post",
-            url: "/assign_barcodes",
-            data: $(this).serialize(),
-            success: function (response) {
-              // console.log(response);wilcon
-              $('#excel-form').submit();
+          type: "POST",
+          url: "/assign_barcodes",
+          data: $(this).serialize(),
+          success: function (response) {
+            if (response.status) {
+              $('#unassigned-barcodes-modal').modal('hide');
+              setTimeout(function() { 
+                $('#excel-form').submit();
+              }, 1000);
+            } else {
+              $('#cw-alert-message-1').removeClass('d-none');
+              $('#cw-alert-message-1').removeClass('d-none alert-success').addClass('alert-danger');
+              $('#cw-alert-message-1 span').html(response.message);
             }
+          }
         });
       });
 
@@ -389,7 +400,7 @@
               $('#cw-alert-message').removeClass('alert-success').addClass('alert-danger');
               $('#cw-alert-message span').html(response.message);
             }
-            $('#generate-sales-order-btn').removeAttr('disabled');
+            $('#generate-sales-order-btn').removeAttr('disabled').addClass('d-none');
             $('#generate-sales-order-btn').html('<i class="fas fa-check"></i> Generate Sales Order');
           }
         });
