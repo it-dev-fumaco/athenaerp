@@ -43,6 +43,9 @@
                                         <select name="item[{{ $item['barcode'] }}]" class="form-control item-selection" style="width: 300px !important;"></select>
                                     </td>
                                 </tr>
+                                @php
+                                    $n += 1;
+                                @endphp
                                 @endforeach
                             </tbody>
                         </table>

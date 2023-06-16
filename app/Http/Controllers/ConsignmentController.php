@@ -6235,28 +6235,16 @@ class ConsignmentController extends Controller
     
             $sheet = $spreadsheet->getActiveSheet();
 
+            // Get the highest row and column numbers referenced in the worksheet
+            $highestRow = $sheet->getHighestRow(); // e.g. 10
+            $highestColumn = 'D'; // e.g 'F'
+
             $sheet_arr = [];
-            foreach ($sheet->getRowIterator() as $row) {
-                $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(true);
-    
-                foreach($cellIterator as $col => $cell){
-                    switch ($col) {
-                        case 'A':
-                            $column = 'barcode';
-                            break;
-                        case 'B':
-                            $column = 'description';
-                            break;
-                        case 'C':
-                            $column = 'sold';
-                            break;
-                        default:
-                            $column = 'amount';
-                            break;
-                    }
-                    $sheet_arr[$column][] = $cell->getValue();
-                }
+            for ($row = 1; $row <= $highestRow; $row++) {
+                $sheet_arr['barcode'][] = trim($sheet->getCell('A' . $row)->getValue());
+                $sheet_arr['description'][] = trim($sheet->getCell('B' . $row)->getValue());
+                $sheet_arr['sold'][] = (float)$sheet->getCell('C' . $row)->getValue();
+                $sheet_arr['amount'][] = (float)$sheet->getCell('D' . $row)->getValue();
             }
 
             $item_details = DB::table('tabItem as i')
@@ -6272,8 +6260,11 @@ class ConsignmentController extends Controller
                     continue;
                 }
 
+                $explode_barcode = explode(" - ", $barcode);
+                $barcode = trim($explode_barcode[0]);
+
                 $item_code = $erp_description = $uom = null;
-                $description = isset($sheet_arr['description'][$i])  ? $sheet_arr['description'][$i] : null;
+                $description = isset($sheet_arr['description'][$i]) && $sheet_arr['description'][$i] != '' ? $sheet_arr['description'][$i] : (isset($explode_barcode[1]) ? $explode_barcode[1] : null);
                 $active = 0;
                 if(isset($item_details[$barcode])){
                     $item_code = $item_details[$barcode][0]->name;
