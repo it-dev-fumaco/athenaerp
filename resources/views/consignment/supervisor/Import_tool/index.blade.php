@@ -125,6 +125,7 @@
 
     .modal{
       transition: .4s !important;
+      overflow-y: auto;
     }
 
     @media (max-width: 600px) {
