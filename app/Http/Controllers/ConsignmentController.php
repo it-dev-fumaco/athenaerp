@@ -6202,6 +6202,18 @@ class ConsignmentController extends Controller
 	}
 
     public function import_tool(){
+
+        // $data='023611       3308650236112  DELIXI MINIATURE CIRCUIT BREAKER 100 AMPERES 3 POLES';
+
+
+        // $split = array_map(
+        //     function($value) {
+        //         return implode(' ', $value);
+        //     },
+        //     array_chunk(explode(' ', $data), 2)
+        // );
+        
+        // dd($split);
         return view('consignment.supervisor.Import_tool.index');
     }
 
@@ -6249,9 +6261,10 @@ class ConsignmentController extends Controller
 
             $item_details = DB::table('tabItem as i')
                 ->join('tabItem Barcode as b', 'b.parent', 'i.name')
-                ->whereIn('b.barcode', $sheet_arr['barcode'])->where('b.customer', $customer)
+                ->where('b.customer', $customer)
                 ->select('b.barcode', 'b.customer', 'i.name', 'i.item_name', 'i.description', 'i.stock_uom')
                 ->get();
+                
             $item_details = collect($item_details)->groupBy('barcode');
 
             $items = [];
@@ -6260,18 +6273,22 @@ class ConsignmentController extends Controller
                     continue;
                 }
 
-                $explode_barcode = explode(" - ", $barcode);
-                $barcode = trim($explode_barcode[0]);
-
-                $item_code = $erp_description = $uom = null;
-                $description = isset($sheet_arr['description'][$i]) && $sheet_arr['description'][$i] != '' ? $sheet_arr['description'][$i] : (isset($explode_barcode[1]) ? $explode_barcode[1] : null);
                 $active = 0;
-                if(isset($item_details[$barcode])){
-                    $item_code = $item_details[$barcode][0]->name;
-                    $erp_description = $item_details[$barcode][0]->description;
-                    $uom = $item_details[$barcode][0]->stock_uom;
-                    $active = 1;
+                $item_code = $erp_description = $uom = null;
+                $default_description = $barcode;
+                $explode_barcode_column = explode(" ", $barcode);
+                foreach ($explode_barcode_column as $code) {
+                    if(isset($item_details[$code])){
+                        $barcode = trim($code);
+                        $item_code = $item_details[$barcode][0]->name;
+                        $erp_description = $item_details[$barcode][0]->description;
+                        $uom = $item_details[$barcode][0]->stock_uom;
+                        $active = 1;
+                        break;
+                    }
                 }
+
+                $description = isset($sheet_arr['description'][$i]) && $sheet_arr['description'][$i] != '' ? $sheet_arr['description'][$i] : ($active ? $default_description : null);
 
                 $sold = isset($sheet_arr['sold'][$i]) ? $sheet_arr['sold'][$i] : 0;
                 $amount = isset($sheet_arr['amount'][$i]) ? $sheet_arr['amount'][$i] : 0;
