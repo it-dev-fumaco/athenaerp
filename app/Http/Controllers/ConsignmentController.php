@@ -6311,98 +6311,102 @@ class ConsignmentController extends Controller
     }
 
     public function createSalesOrder(Request $request) {
-        $sales_order_item_data = [];
+        try {
+            $sales_order_item_data = [];
 
-        $request_items = $request->items;
-        $request_customer = $request->customer;
-        $request_branch_warehouse = $request->branch_warehouse;
+            $request_items = $request->items;
+            $request_customer = $request->customer;
+            $request_branch_warehouse = $request->branch_warehouse;
 
-        $current_timestamp = Carbon::now();
-        $current_timestamp_string = $current_timestamp->toDateTimeString();
-        $current_user = Auth::user()->full_name;
+            $current_timestamp = Carbon::now();
+            $current_timestamp_string = $current_timestamp->toDateTimeString();
+            $current_user = Auth::user()->full_name;
 
-        // get addresses name in dynamic link based on customer
-        $addresses_name = DB::connection('mysql')->table('tabDynamic Link as dl')->join('tabAddress as a', 'dl.parent', 'a.name')->where('dl.link_doctype', 'Customer')
-            ->where('dl.link_name', $request_customer)->where('a.address_type', 'Shipping')->where('a.disabled', 0)->orderBy('dl.parent', 'asc')->pluck('a.name');
+            // get addresses name in dynamic link based on customer
+            $addresses_name = DB::connection('mysql')->table('tabDynamic Link as dl')->join('tabAddress as a', 'dl.parent', 'a.name')->where('dl.link_doctype', 'Customer')
+                ->where('dl.link_name', $request_customer)->where('a.address_type', 'Shipping')->where('a.disabled', 0)->orderBy('dl.parent', 'asc')->pluck('a.name');
 
-        $shipping_address_name = null;
-        $current_intersect_count = 0;
-        $request_branch_warehouse_arr = explode(" ", $request_branch_warehouse);
-        foreach ($addresses_name as $address) {
-            $address_arr = array_map('trim', explode('-', str_replace(' ', '-', $address)));
-            $intersect_count = count(array_intersect($address_arr, $request_branch_warehouse_arr));
-            if ($intersect_count > $current_intersect_count) {
-                $current_intersect_count = $intersect_count;
-                $shipping_address_name = $address;
-            }
-        }
-
-        $items_classification = DB::connection('mysql')->table('tabItem')
-            ->whereIn('name', array_filter(array_column($request_items, 'item_code')))
-            ->pluck('item_classification', 'name')->toArray();
-        
-        foreach ($request_items as $i => $item) {
-            $row = $i + 1;
-            $item_code = $item['item_code'];
-            if (!$item_code) {
-                return response()->json(['status' => 0, 'message' => 'Unable to find item code for Row #' . $row]);
+            $shipping_address_name = null;
+            $current_intersect_count = 0;
+            $request_branch_warehouse_arr = explode(" ", $request_branch_warehouse);
+            foreach ($addresses_name as $address) {
+                $address_arr = array_map('trim', explode('-', str_replace(' ', '-', $address)));
+                $intersect_count = count(array_intersect($address_arr, $request_branch_warehouse_arr));
+                if ($intersect_count > $current_intersect_count) {
+                    $current_intersect_count = $intersect_count;
+                    $shipping_address_name = $address;
+                }
             }
 
-            $item_classification = array_key_exists($item_code, $items_classification) ? $items_classification[$item_code] : null;
+            $items_classification = DB::connection('mysql')->table('tabItem')
+                ->whereIn('name', array_filter(array_column($request_items, 'item_code')))
+                ->pluck('item_classification', 'name')->toArray();
+            
+            foreach ($request_items as $i => $item) {
+                $row = $i + 1;
+                $item_code = $item['item_code'];
+                if (!$item_code) {
+                    return response()->json(['status' => 0, 'message' => 'Unable to find item code for Row #' . $row]);
+                }
 
-            $sales_order_item_data[] = [
-                "item_code" => $item_code,
-                "delivery_date" => $current_timestamp_string,
-                "qty" => $item['qty'],
-                "rate" => $item['rate'],
-                "warehouse" => $request->branch_warehouse,
-                "item_classification" => $item_classification,
+                $item_classification = array_key_exists($item_code, $items_classification) ? $items_classification[$item_code] : null;
+
+                $sales_order_item_data[] = [
+                    "item_code" => $item_code,
+                    "delivery_date" => $current_timestamp_string,
+                    "qty" => $item['qty'],
+                    "rate" => $item['rate'],
+                    "warehouse" => $request->branch_warehouse,
+                    "item_classification" => $item_classification,
+                ];
+            }
+
+            $sales_taxes[] = [
+                'charge_type' => 'On Net Total',
+                'account_head' => 'Output tax - FI',
+                'description' => 'Output tax',
+                'rate' => 12
             ];
+
+            $sales_order_data = [
+                "customer" => $request->customer,
+                "order_type" => "Sales",
+                "company" => "FUMACO Inc.",
+                "delivery_date" => $current_timestamp_string,
+                "po_no" => $request->po_no,
+                "shipping_address_name" => $shipping_address_name,
+                "disable_rounded_total" => 1,
+                "order_type_1" => "Vatable",
+                "sales_type" => "Sales on Consignment",
+                "sales_person" => "Plant 2",
+                "custom_remarks" => "Generated from AthenaERP Consignment Sales Report Import Tool. Created by: " . $current_user,
+                "branch_warehouse" => $request->branch_warehouse,
+                "project" => $request->project,
+                "items" => $sales_order_item_data,
+                "taxes" => $sales_taxes
+            ];
+
+            $erp_api_key = env('ERP_API_KEY');
+            $erp_api_secret_key = env('ERP_API_SECRET_KEY');
+            $erp_api_base_url = env('ERP_API_BASE_URL');
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'Authorization' => 'token ' . $erp_api_key . ':' . $erp_api_secret_key,
+                'Accept-Language' => 'en'
+            ])->post($erp_api_base_url . '/api/resource/Sales Order', $sales_order_data);
+
+            
+            if ($response->successful()) {
+                $sales_order = $response['data']['name'];
+                return response()->json(['status' => 1, 'message' => 'Sales Order <a href="' . $erp_api_base_url . '/app/sales-order/' . $sales_order . '" target="_blank">' . $sales_order . '</a> has been created.']);
+            }
+
+            return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => 0, 'message' => 'Error: Could not establish connection to ERP. <a href="http://10.0.0.83:8000/login#login" target="_blank">Please login to ERP to continue.</a>']);
         }
-
-        $sales_taxes[] = [
-            'charge_type' => 'On Net Total',
-            'account_head' => 'Output tax - FI',
-            'description' => 'Output tax',
-            'rate' => 12
-        ];
-
-        $sales_order_data = [
-            "customer" => $request->customer,
-            "order_type" => "Sales",
-            "company" => "FUMACO Inc.",
-            "delivery_date" => $current_timestamp_string,
-            "po_no" => $request->po_no,
-            "shipping_address_name" => $shipping_address_name,
-            "disable_rounded_total" => 1,
-            "order_type_1" => "Vatable",
-            "sales_type" => "Sales on Consignment",
-            "sales_person" => "Plant 2",
-            "custom_remarks" => "Generated from AthenaERP Consignment Sales Report Import Tool. Created by: " . $current_user,
-            "branch_warehouse" => $request->branch_warehouse,
-            "project" => $request->project,
-            "items" => $sales_order_item_data,
-            "taxes" => $sales_taxes
-        ];
-
-        $erp_api_key = env('ERP_API_KEY');
-        $erp_api_secret_key = env('ERP_API_SECRET_KEY');
-        $erp_api_base_url = env('ERP_API_BASE_URL');
-
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-            'Authorization' => 'token ' . $erp_api_key . ':' . $erp_api_secret_key,
-            'Accept-Language' => 'en'
-        ])->post($erp_api_base_url . '/api/resource/Sales Order', $sales_order_data);
-
-        
-        if ($response->successful()) {
-            $sales_order = $response['data']['name'];
-            return response()->json(['status' => 1, 'message' => 'Sales Order <a href="' . $erp_api_base_url . '/app/sales-order/' . $sales_order . '" target="_blank">' . $sales_order . '</a> has been created.']);
-        }
-
-        return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
     }
 
     public function assign_barcodes(Request $request){

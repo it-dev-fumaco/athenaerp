@@ -396,12 +396,18 @@
             $('#cw-alert-message').removeClass('d-none');
             if (response.status) {
               $('#cw-alert-message').removeClass('alert-danger').addClass('alert-success');
-              $('#cw-alert-message span').html(response.message);
+              $('#generate-sales-order-btn').addClass('d-none');
             } else {
               $('#cw-alert-message').removeClass('alert-success').addClass('alert-danger');
-              $('#cw-alert-message span').html(response.message);
             }
-            $('#generate-sales-order-btn').removeAttr('disabled').addClass('d-none');
+            $('#generate-sales-order-btn').removeAttr('disabled');
+            $('#cw-alert-message span').html(response.message);
+            $('#generate-sales-order-btn').html('<i class="fas fa-check"></i> Generate Sales Order');
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            $('#cw-alert-message').removeClass('d-none');
+            $('#cw-alert-message').removeClass('alert-success').addClass('alert-danger');
+            $('#generate-sales-order-btn').removeAttr('disabled');
             $('#generate-sales-order-btn').html('<i class="fas fa-check"></i> Generate Sales Order');
           }
         });
