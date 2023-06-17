@@ -6405,7 +6405,7 @@ class ConsignmentController extends Controller
 
             return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
         } catch (\Throwable $th) {
-            return response()->json(['status' => 0, 'message' => 'Error: Could not establish connection to ERP. <a href="http://10.0.0.83:8000/login#login" target="_blank">Please login to ERP to continue.</a>']);
+            return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
         }
     }
 
