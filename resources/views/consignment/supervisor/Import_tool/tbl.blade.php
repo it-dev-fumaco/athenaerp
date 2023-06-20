@@ -7,7 +7,7 @@
         <span class="d-block mt-1">To assign these barcodes to items in ERP, <a href="#" class="text-primary text-underline open-modal" data-bs-toggle="modal" data-bs-target="#unassigned-barcodes-modal">click here.</a></span>
     </div>
     <div class="modal fade" id="unassigned-barcodes-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-lightblue">
                     <h5 class="modal-title" id="exampleModalLabel">Assign Barcodes to ERP</h5>
@@ -25,6 +25,7 @@
                         <table class="table table-bordered w-100">
                             <thead class="text-uppercase font-weight-bold">
                                 <th class="text-center">No.</th>
+                                <th class="text-center">Item Description</th>
                                 <th class="text-center">Barcode</th>
                                 <th class="text-center">ERP Item Code</th>
                             </thead>
@@ -39,8 +40,11 @@
                                         <span class="d-block font-weight-bold">{{ $item['barcode'] }}</span>
                                         <span class="d-block">{{ $item['description'] }}</span>
                                     </td>
+                                    <td class="align-middle" style="width: 400px !important;">
+                                        <textarea name="barcode[]" rows="2" class="form-control" required style="font-size: 12px;">{{ $item['barcode'] }}</textarea>
+                                    </td>
                                     <td class="align-middle" style="width: 300px !important;">
-                                        <select name="item[{{ $item['barcode'] }}]" class="form-control item-selection" style="width: 300px !important;"></select>
+                                        <select name="item_code[]" class="form-control item-selection" style="width: 300px !important;"></select>
                                     </td>
                                 </tr>
                                 @php

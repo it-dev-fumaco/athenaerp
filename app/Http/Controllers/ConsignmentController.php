@@ -6412,9 +6412,10 @@ class ConsignmentController extends Controller
     public function assign_barcodes(Request $request){
         DB::beginTransaction();
         try {
-            $items = $request->item;
-            foreach($items as $barcode => $item_code){
-                if (!$item_code) {
+            $barcodes = $request->barcode;
+            $item_codes = $request->item_code;
+            foreach($barcodes as $b => $barcode){
+                if (!$item_codes[$b]) {
                     return response()->json(['status' => 0, 'message' => 'Please select item code for <b>' . $barcode . '</b>.']);
                 }
                 
@@ -6426,7 +6427,7 @@ class ConsignmentController extends Controller
                     'modified_by' => Auth::user()->wh_user,
                     'docstatus' => 0,
                     'idx' => 1,
-                    'parent' => $item_code,
+                    'parent' => $item_codes[$b],
                     'parentfield' => 'barcodes',
                     'parenttype' => 'Item',
                     'customer' => $request->customer,
