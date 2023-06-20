@@ -6290,6 +6290,10 @@ class ConsignmentController extends Controller
 
                 $description = isset($sheet_arr['description'][$i]) && $sheet_arr['description'][$i] != '' ? $sheet_arr['description'][$i] : ($active ? $default_description : null);
 
+                if(!$description){
+                    continue;
+                }
+
                 $sold = isset($sheet_arr['sold'][$i]) ? $sheet_arr['sold'][$i] : 0;
                 $amount = isset($sheet_arr['amount'][$i]) ? $sheet_arr['amount'][$i] : 0;
                 $items[$barcode] = [
@@ -6412,11 +6416,20 @@ class ConsignmentController extends Controller
     public function assign_barcodes(Request $request){
         DB::beginTransaction();
         try {
+            $assigned_barcodes = DB::table('tabItem as i')
+                ->join('tabItem Barcode as b', 'b.parent', 'i.name')
+                ->whereIn('b.barcode', $request->barcode)->where('b.customer', $request->customer)
+                ->pluck('i.name', 'b.barcode');
+            
             $barcodes = $request->barcode;
             $item_codes = $request->item_code;
             foreach($barcodes as $b => $barcode){
                 if (!$item_codes[$b]) {
                     return response()->json(['status' => 0, 'message' => 'Please select item code for <b>' . $barcode . '</b>.']);
+                }
+
+                if(isset($assigned_barcodes[$barcode])){
+                    return response()->json(['status' => 0, 'message' => 'Barcode <b>'.$barcode.'</b> is already assigned to item <b>'.$assigned_barcodes[$barcode].'</b>']);
                 }
                 
                 $insert_arr[] = [
@@ -6438,10 +6451,10 @@ class ConsignmentController extends Controller
             DB::table('tabItem Barcode')->insert($insert_arr);
 
             DB::commit();
-
             return response()->json(['status' => 1, 'message' => 'Success!']);
         } catch (\Throwable $th) {
             DB::rollback();
+            throw $th;
             
             return response()->json(['status' => 0, 'message' => 'An error occured while updating item barcodes. Please contact your system administrator.']);
         }
