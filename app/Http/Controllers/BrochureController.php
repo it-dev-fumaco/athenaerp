@@ -146,6 +146,7 @@ class BrochureController extends Controller
 
 	public function previewBrochure(Request $request, $project, $filename) {
 		try {
+			ini_set('max_execution_time', '300');
 			$file = storage_path('app/public/brochures/'. trim($project) .'/'. $filename);
 
 			if(!Storage::disk('public')->exists('/brochures/'. trim($project) .'/'. $filename)){
@@ -281,6 +282,10 @@ class BrochureController extends Controller
 		$highestRow = $sheet->getHighestRow(); // e.g. 10
 		$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
 
+		// Get the highest row and column numbers referenced in the worksheet
+		$highestRow = $sheet->getHighestRow(); // e.g. 10
+		$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
+
 		$highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
 
 		$headerRowArr = [];
@@ -290,7 +295,7 @@ class BrochureController extends Controller
 			$headerRowArr[$col] = $value;
 		}
 
-		$content = $table_of_contents = $tbl_modal = [];
+		$content = $table_of_contents = $tbl_modal = $attrib = [];
 		$project = $customer = null;
 		for ($row = 5; $row <= $highestRow; $row++) {
 			$result = $images = [];
@@ -658,6 +663,7 @@ class BrochureController extends Controller
 	public function generateBrochure(Request $request) {
 		DB::beginTransaction();
 		try {
+			ini_set('max_execution_time', '300');
 			$data = $request->all();
 
 			$attributes = DB::table('tabItem Variant Attribute as variant')
