@@ -6442,7 +6442,6 @@ class ConsignmentController extends Controller
             return response()->json(['status' => 1, 'message' => 'Success!']);
         } catch (\Throwable $th) {
             DB::rollback();
-            throw $th;
             
             return response()->json(['status' => 0, 'message' => 'An error occured while updating item barcodes. Please contact your system administrator.']);
         }
