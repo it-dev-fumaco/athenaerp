@@ -129,21 +129,28 @@
         
                                             <div class="tab-content custom-tabcontent">
                                                 <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
-                                                    <div class="d-flex flex-row text-center align-items-center m-0">
-                                                        <div class="p-2">
-                                                            <select class="form-control w-100" id="year-filter">
-                                                                <option value="" disabled>Select Year</option>
-                                                                @foreach ($sales_report_included_years as $year)
-                                                                <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                        <div class="p-2">
-                                                            <div class="form-check text-center text-white">
-                                                                <input class="form-check-input" type="checkbox" id="hide-zero-check" checked>
-                                                                <label class="form-check-label" for="hide-zero-check"> Hide zero values
-                                                                </label>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <div class="d-flex flex-row text-center align-items-center m-0">
+                                                                <div class="p-2">
+                                                                    <select class="form-control w-100" id="year-filter">
+                                                                        <option value="" disabled>Select Year</option>
+                                                                        @foreach ($sales_report_included_years as $year)
+                                                                        <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
+                                                                <div class="p-2">
+                                                                    <div class="form-check text-center text-white">
+                                                                        <input class="form-check-input" type="checkbox" id="hide-zero-check" checked>
+                                                                        <label class="form-check-label" for="hide-zero-check"> Hide zero values
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
                                                             </div>
+                                                        </div>
+                                                        <div class="col-2 offset-4 pr-3 d-flex justify-content-end align-items-center">
+                                                            <a href="/consignment_import_tool" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-external-link-alt"></i> Import Sales Report</a>
                                                         </div>
                                                     </div>
                                                     <div id="beginning-inventory-list-el" class="pl-2 pr-2 pb-2"></div>

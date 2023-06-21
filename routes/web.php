@@ -19,6 +19,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::post('/U_login_user', 'ItemAttributeController@login');
 
     Route::group(['middleware' => 'auth'], function(){
+        Route::post('/generate_sales_order', 'ConsignmentController@createSalesOrder');
+
         // standard product brochure printing
         Route::get('/generate_brochure', 'BrochureController@generateBrochure');
         Route::post('/upload_image_for_standard_brochure', 'BrochureController@uploadImageForStandard');
@@ -218,6 +220,11 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/consignment_dashboard', 'MainController@viewConsignmentDashboard');
 
         Route::get('/view_consignment_deliveries', 'ConsignmentController@viewDeliveries');
+
+        Route::get('/consignment_import_tool', 'ConsignmentController@import_tool');
+        Route::get('/consignment_select_values', 'ConsignmentController@select_values');
+        Route::post('/consignment_read_file', 'ConsignmentController@readFile');
+        Route::post('/assign_barcodes', 'ConsignmentController@assign_barcodes');
 
         Route::get('/user_manual', function () {
             return view('consignment.user_manual.index');

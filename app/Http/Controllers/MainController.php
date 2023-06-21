@@ -2060,13 +2060,16 @@ class MainController extends Controller
 
             // get expected qty BEFORE submission of stock entry (for double checking of stocks after transaction)
             $expected_qty_in_source = null;
-            if($steDetails->s_warehouse){
-                $current_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
-                $expected_qty_in_source = $current_qty_in_source - $steDetails->transfer_qty;
-            }
+            $expected_qty_in_target = null;
+            if($steDetails->s_warehouse != $steDetails->t_warehouse){
+                if($steDetails->s_warehouse){
+                    $current_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
+                    $expected_qty_in_source = $current_qty_in_source - $request->qty;
+                }
 
-            $current_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
-            $expected_qty_in_target = $current_qty_in_target + $steDetails->transfer_qty;
+                $current_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
+                $expected_qty_in_target = $current_qty_in_target + $request->qty;
+            }
 
             if ($steDetails->purpose == 'Material Transfer for Manufacture') {
                 $cancelled_production_order = DB::table('tabWork Order')
@@ -2339,7 +2342,7 @@ class MainController extends Controller
             // get actual qty AFTER submission of stock entry (for double checking of stocks after transaction)
             $ste_docstatus = DB::table('tabStock Entry')->where('name', $steDetails->parent_se)->pluck('docstatus')->first();
 
-            if($ste_docstatus && $ste_docstatus == 1){
+            if($ste_docstatus && $ste_docstatus == 1 && $steDetails->s_warehouse != $steDetails->t_warehouse){
                 if($steDetails->s_warehouse){
                     $actual_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
                     if(number_format($expected_qty_in_source, 4, '.', '') != number_format($actual_qty_in_source, 4, '.', '')){
