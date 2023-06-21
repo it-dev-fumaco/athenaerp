@@ -6202,18 +6202,6 @@ class ConsignmentController extends Controller
 	}
 
     public function import_tool(){
-
-        // $data='023611       3308650236112  DELIXI MINIATURE CIRCUIT BREAKER 100 AMPERES 3 POLES';
-
-
-        // $split = array_map(
-        //     function($value) {
-        //         return implode(' ', $value);
-        //     },
-        //     array_chunk(explode(' ', $data), 2)
-        // );
-        
-        // dd($split);
         return view('consignment.supervisor.Import_tool.index');
     }
 
