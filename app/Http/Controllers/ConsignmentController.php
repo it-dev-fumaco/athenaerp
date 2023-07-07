@@ -486,9 +486,7 @@ class ConsignmentController extends Controller
 
             $item_total_sold = DB::table('tabConsignment Sales Report')
                 ->where('branch_warehouse', $data['branch_warehouse'])->where('status', '!=', 'Cancelled')
-                ->where('cutoff_period_from', $period_from)
-                ->where('cutoff_period_to', $period_to)
-                ->selectRaw('SUM(grand_total) as grand_total, SUM(total_qty_sold) as total_qty_sold, branch_warehouse')
+                ->whereBetween('transaction_date', [$start, $end])->selectRaw('SUM(grand_total) as grand_total, SUM(total_qty_sold) as total_qty_sold, branch_warehouse')
                 ->groupBy('branch_warehouse')->get()->toArray();
 
             $item_total_sold = collect($item_total_sold)->groupBy('branch_warehouse');
@@ -3939,8 +3937,8 @@ class ConsignmentController extends Controller
                     return $q->whereYear('audit_date_to', $year);
                 })
                 ->whereIn('branch_warehouse', $assigned_consignment_stores)
-                ->select('audit_date_from', 'audit_date_to', 'branch_warehouse', 'status', 'promodiser', 'transaction_date', 'cutoff_period_from', 'cutoff_period_to')
-                ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'status', 'promodiser', 'transaction_date', 'cutoff_period_from', 'cutoff_period_to')
+                ->select('audit_date_from', 'audit_date_to', 'branch_warehouse', 'status', 'promodiser', 'transaction_date')
+                ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'status', 'promodiser', 'transaction_date')
                 ->orderBy('audit_date_from', 'desc')
                 ->paginate(10);
 
@@ -3948,16 +3946,12 @@ class ConsignmentController extends Controller
             foreach ($query as $row) {
                 $total_sales = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $row->branch_warehouse)
                     ->where('status', '!=', 'Cancelled')
-                    ->where('cutoff_period_from', $row->cutoff_period_from)
-                    ->where('cutoff_period_to', $row->cutoff_period_to)
-                    ->sum('grand_total');
+                    ->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('grand_total');
 
                 if($total_sales <= 0){
                     $total_sales = DB::table('tabConsignment Sales Report as csr')
                         ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
-                        ->where('csr.branch_warehouse', $row->branch_warehouse)->where('csr.status', '!=', 'Cancelled')
-                        ->where('cutoff_period_from', $row->cutoff_period_from)
-                        ->where('cutoff_period_to', $row->cutoff_period_to)
+                        ->where('csr.branch_warehouse', $row->branch_warehouse)->where('csr.status', '!=', 'Cancelled')->whereBetween('csr.transaction_date', [$row->audit_date_from, $row->audit_date_to])
                         ->select(DB::raw('csri.qty * csri.price as amount'))->sum('amount');
                 }
 
@@ -4024,13 +4018,10 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('error', 'Record not found.');
         }
 
-        $first_record = $list->first();
         $product_sold_query = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('csr.status', '!=', 'Cancelled')
-            ->where('csr.branch_warehouse', $store)
-            ->where('csr.cutoff_period_from', $first_record->cutoff_period_from)
-            ->where('csr.cutoff_period_to', $first_record->cutoff_period_to)
+            ->where('csr.branch_warehouse', $store)->whereBetween('csr.transaction_date', [$from, $to])
             ->selectRaw('SUM(csri.qty) as sold_qty, SUM(csri.amount) as total_value, csri.item_code')
             ->groupBy('csri.item_code')->get();
 
