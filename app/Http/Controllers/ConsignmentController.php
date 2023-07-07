@@ -4512,6 +4512,7 @@ class ConsignmentController extends Controller
                 'remarks' => $request->notes
             ]);
 
+            $logs = $consignment_logs = [];
             foreach($item_codes as $i => $item_code){
                 if(!isset($bin[$item_code]) || !isset($item_details[$item_code])){
                     continue;
@@ -4538,55 +4539,26 @@ class ConsignmentController extends Controller
                 if($original_stock == $new_stock){ // remove if value is unchanged
                     unset($update_array['consigned_qty']);
                 }else{
-                    $logs = [
-                        'name' => uniqid(),
-                        'creation' => $now->toDateTimeString(),
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'idx' => 0,
-                        'subject' => 'Stock Adjustment for '. $request->warehouse.', set '.$item_code.' consigned qty from '.$original_stock.' to '.$new_stock.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
-                        'content' => 'Consignment Activity Log',
-                        'communication_date' => $now->toDateTimeString(),
-                        'reference_doctype' => 'Consignment Stock Adjustment',
-                        'reference_name' => $csa_id,
-                        'reference_owner' => Auth::user()->wh_user,
-                        'user' => Auth::user()->wh_user,
-                        'full_name' => Auth::user()->full_name,
+                    $logs[$request->warehouse][$item_code]['quantity'] = [
+                        'previous' => $original_stock,
+                        'new' => $new_stock
                     ];
-        
-                    DB::table('tabActivity Log')->insert($logs);
                 }
 
                 if($original_price == $new_price){ // remove if value is unchanged
                     unset($update_array['consignment_price']);
                 }else{
-                    $logs = [
-                        'name' => uniqid(),
-                        'creation' => $now->toDateTimeString(),
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'idx' => 0,
-                        'subject' => 'Stock Adjustment for '. $request->warehouse.', set '.$item_code.' price from '.$original_price.' to '.$new_price.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
-                        'content' => 'Consignment Activity Log',
-                        'communication_date' => $now->toDateTimeString(),
-                        'reference_doctype' => 'Consignment Stock Adjustment',
-                        'reference_name' => $csa_id,
-                        'reference_owner' => Auth::user()->wh_user,
-                        'user' => Auth::user()->wh_user,
-                        'full_name' => Auth::user()->full_name,
+                    $logs[$request->warehouse][$item_code]['price'] = [
+                        'previous' => $original_price,
+                        'new' => $new_price
                     ];
-        
-                    DB::table('tabActivity Log')->insert($logs);
                 }
 
                 DB::table('tabBin')->where('warehouse', $request->warehouse)->where('item_code', $item_code)->update($update_array);
 
                 if($original_stock != $new_stock || $original_price != $new_price){
-                    DB::table('tabConsignment Stock Adjustment Items')->insert([
+                    $logs[$request->warehouse][$item_code]['reason'] = $item_remarks;
+                    $consignment_logs[] = [
                         'name' => uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
@@ -4605,9 +4577,30 @@ class ConsignmentController extends Controller
                         'previous_price' => $original_price,
                         'new_price' => $new_price,
                         'remarks' => $item_remarks
-                    ]);
+                    ];
                 }
             }
+
+            DB::table('tabActivity Log')->insert([
+                'name' => uniqid(),
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'subject' => 'Stock Adjustment for '. $request->warehouse.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                'content' => 'Consignment Activity Log',
+                'communication_date' => $now->toDateTimeString(),
+                'reference_doctype' => 'Consignment Stock Adjustment',
+                'reference_name' => $csa_id,
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => Auth::user()->full_name,
+                'data' => json_encode($logs, true)
+            ]);
+
+            DB::table('tabConsignment Stock Adjustment Items')->insert($consignment_logs);
 
             DB::commit();
             session()->flash('success', 'Warehouse Stocks Adjusted.');
