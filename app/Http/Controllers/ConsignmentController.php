@@ -241,9 +241,9 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            $csr_existing_record = DB::table('tabConsignment Sales Report')
-                ->whereBetween('transaction_date', [Carbon::parse($data['audit_date_from'])->addDays(1)->format('Y-m-d'), Carbon::parse($data['audit_date_to'])->format('Y-m-d')])
-                ->where('branch_warehouse', $data['branch_warehouse'])->where('status', '!=', 'Cancelled')->first();
+            $csr_existing_record = DB::table('tabConsignment Sales Report')->where('transaction_date', $data['transaction_date'])
+                ->where('branch_warehouse', $data['branch_warehouse'])->where('cutoff_period_from', $period_from)
+                ->where('cutoff_period_to', $period_to)->where('status', '!=', 'Cancelled')->first();
 
             $current_product_sold_items = [];
             if($csr_existing_record){
