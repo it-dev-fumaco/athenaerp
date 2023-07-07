@@ -3939,8 +3939,8 @@ class ConsignmentController extends Controller
                     return $q->whereYear('audit_date_to', $year);
                 })
                 ->whereIn('branch_warehouse', $assigned_consignment_stores)
-                ->select('audit_date_from', 'audit_date_to', 'branch_warehouse', 'status', 'promodiser', 'transaction_date')
-                ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'status', 'promodiser', 'transaction_date')
+                ->select('audit_date_from', 'audit_date_to', 'branch_warehouse', 'status', 'promodiser', 'transaction_date', 'cutoff_period_from', 'cutoff_period_to')
+                ->groupBy('branch_warehouse', 'audit_date_to', 'audit_date_from', 'status', 'promodiser', 'transaction_date', 'cutoff_period_from', 'cutoff_period_to')
                 ->orderBy('audit_date_from', 'desc')
                 ->paginate(10);
 
@@ -3948,8 +3948,6 @@ class ConsignmentController extends Controller
             foreach ($query as $row) {
                 $total_sales = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $row->branch_warehouse)
                     ->where('status', '!=', 'Cancelled')
-                    // ->where('cutoff_period_from', $row->cutoff_period_from)
-                    // ->where('cutoff_period_to', $row->cutoff_period_to)
                     ->whereBetween('transaction_date', [Carbon::parse($row->audit_date_from)->startOfDay(), Carbon::parse($row->audit_date_to)->endOfDay()])
                     ->sum('grand_total');
 
@@ -3957,8 +3955,6 @@ class ConsignmentController extends Controller
                     $total_sales = DB::table('tabConsignment Sales Report as csr')
                         ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                         ->where('csr.branch_warehouse', $row->branch_warehouse)->where('csr.status', '!=', 'Cancelled')
-                        // ->where('cutoff_period_from', $row->cutoff_period_from)
-                        // ->where('cutoff_period_to', $row->cutoff_period_to)
                         ->whereBetween('csr.transaction_date', [Carbon::parse($row->audit_date_from)->startOfDay(), Carbon::parse($row->audit_date_to)->endOfDay()])
                         ->select(DB::raw('csri.qty * csri.price as amount'))->sum('amount');
                 }
@@ -3994,13 +3990,13 @@ class ConsignmentController extends Controller
         $result = [];
         foreach ($list as $row) {
             $total_sales = DB::table('tabConsignment Sales Report')->where('branch_warehouse', $row->branch_warehouse)
-                ->where('status', '!=', 'Cancelled')->whereBetween('transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('grand_total');
+                ->where('status', '!=', 'Cancelled')->whereBetween('transaction_date', [Carbon::parse($row->audit_date_from)->startOfDay(), Carbon::parse($row->audit_date_to)->endOfDay()])->sum('grand_total');
 
             $total_qty_sold = DB::table('tabConsignment Sales Report as csr')
                 ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                 ->where('csr.status', '!=', 'Cancelled')
                 ->where('csr.branch_warehouse', $row->branch_warehouse)
-                ->whereBetween('csr.transaction_date', [$row->audit_date_from, $row->audit_date_to])->sum('csri.qty');
+                ->whereBetween('csr.transaction_date', [Carbon::parse($row->audit_date_from)->startOfDay(), Carbon::parse($row->audit_date_to)->endOfDay()])->sum('csri.qty');
 
             $result[] = [
                 'transaction_date' => $row->transaction_date,
@@ -4028,13 +4024,22 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('error', 'Record not found.');
         }
 
+        $first_record = collect($list)->first();
+
+        $previous_inventory_audit = DB::table('tabConsignment Inventory Audit Report')
+            ->where('branch_warehouse', $store)->whereDate('transaction_date', '<', $first_record->transaction_date)
+            ->orderBy('transaction_date', 'desc')->first();
+
+        $start = $from;
+        if ($previous_inventory_audit) {
+           $start = Carbon::parse($previous_inventory_audit->transaction_date)->addDays(1)->format('Y-m-d');
+        }
+
         $product_sold_query = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('csr.status', '!=', 'Cancelled')
             ->where('csr.branch_warehouse', $store)
-            // ->where('csr.cutoff_period_from', $first_record->cutoff_period_from)
-            // ->where('csr.cutoff_period_to', $first_record->cutoff_period_to)
-            ->whereBetween('csr.transaction_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()])
+            ->whereBetween('csr.transaction_date', [Carbon::parse($start)->startOfDay(), Carbon::parse($to)->endOfDay()])
             ->selectRaw('SUM(csri.qty) as sold_qty, SUM(csri.amount) as total_value, csri.item_code')
             ->groupBy('csri.item_code')->get();
 
@@ -4049,7 +4054,7 @@ class ConsignmentController extends Controller
         $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
             ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
             ->where('cb.status', 'Approved')->whereIn('cbi.item_code', $item_codes)->where('cb.branch_warehouse', $store)
-            // ->whereDate('cb.transaction_date', '<=', Carbon::parse($to)->endOfDay())
+            ->whereDate('cb.transaction_date', '<=', Carbon::parse($to)->endOfDay())
             ->select('cbi.item_code', 'cb.transaction_date', 'opening_stock')
             ->orderBy('cb.transaction_date', 'desc')->get();
 
@@ -4149,7 +4154,7 @@ class ConsignmentController extends Controller
             $previous_record_link = "/view_inventory_audit_items/". $store ."/".$previous_record->audit_date_from."/".$previous_record->audit_date_to;
 
             $previous_sales_record = DB::table('tabConsignment Sales Report')
-                ->where('branch_warehouse', $store)->whereBetween('transaction_date', [$previous_record->audit_date_from, $previous_record->audit_date_to])
+                ->where('branch_warehouse', $store)->whereBetween('transaction_date', [Carbon::parse($previous_record->audit_date_from)->startOfDay(), Carbon::parse($previous_record->audit_date_to)->endOfDay()])
                 ->sum('grand_total');
 
             $sales_increase = collect($result)->sum('total_value') > $previous_sales_record ? true : false;
@@ -4158,7 +4163,7 @@ class ConsignmentController extends Controller
         $sold_items = DB::table('tabConsignment Sales Report as csr')
             ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('csr.status', '!=', 'Cancelled')->where('csr.branch_warehouse', $store)
-            ->whereBetween('csr.transaction_date', [$from, $to])->where('csri.qty', '>', 0)
+            ->whereBetween('csr.transaction_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()])->where('csri.qty', '>', 0)
             ->selectRaw('csri.qty as sold_qty, csri.amount as total_value, csri.item_code, csri.price, csr.transaction_date')
             ->orderBy('transaction_date', 'asc')->get();
 

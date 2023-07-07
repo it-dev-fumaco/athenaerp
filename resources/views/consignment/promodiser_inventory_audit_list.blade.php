@@ -15,20 +15,20 @@
                             <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Inventory Report List</span>
                         </div>
                         <div class="card-body p-1">
-                            <div class="p-2">
+                            <div class="p-1">
                                 <span class="text-center mt-1 mb-2 d-block font-responsive text-uppercase">Pending for Submission</span>
-                                <div class="p-2">
+                                <div class="p-0 mb-2">
                                     <input type="text" class="form-control" id="pending-for-submission-search" placeholder="Search...">
                                 </div>
                                 <div id="pending-for-submission-container">
                                     @forelse ($pending as $store => $row)
                                         @if(count($row) > 0)
-                                            <div class="row" style="border-bottom: 1px solid #CED4DA;">
+                                            <div class="row p-0 m-0" style="border-bottom: 1px solid #CED4DA;">
                                                 <span class="d-none">{{ $store }}</span>
-                                                <div class="col-9 test">
+                                                <div class="col-9 test p-0">
                                                     <span class="d-block m-2 font-weight-bold font-responsive text-left">{{ $store }}</span>
                                                 </div>
-                                                <div class="col-3 d-flex flex-row justify-content-center align-items-center text-right">
+                                                <div class="col-3 p-0 d-flex flex-row justify-content-center align-items-center text-right">
                                                     @php
                                                         $link = isset($row[0]['beginning_inventory_date']) && !$row[0]['beginning_inventory_date'] ? '/beginning_inventory' : '/view_inventory_audit_form/'.$store.'/'.Carbon\Carbon::now()->format('Y-m-d');
                                                     @endphp
