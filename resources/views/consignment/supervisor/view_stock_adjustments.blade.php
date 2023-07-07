@@ -79,7 +79,7 @@
                                                         </select>
                                                     </div>
                                                     <div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
-                                                        <select name="store" class="form-control filters-font" id="consignment-store-select">
+                                                        <select name="store" class="form-control filters-font consignment-store-select">
                                                             <option value="" disabled {{ !request('store') ? 'selected' : null }}>Select a store</option>
                                                             @foreach ($consignment_stores as $store)
                                                             <option value="{{ $store }}" {{ request('store') == $store ? 'selected' : null }}>{{ $store }}</option>
@@ -556,7 +556,17 @@
                                 </div>
                                 <div class="tab-pane fade" id="stock-adjustment-content" role="tabpanel" aria-labelledby="stock-adjustment-tab" style="font-size: 9pt;">
                                     <div class="row p-2">
-                                        <div class="col-4 offset-8 col-xl-2 offset-xl-10">
+                                        <div class="col-4">
+                                            <div class="row">
+                                                <div class="col-11">
+                                                    <select id="tab2-warehouse" class="form-control consignment-store-select"></select>
+                                                </div>
+                                                <div class="col-1 d-flex justify-content-center align-items-center">
+                                                    <i class="fa fa-undo clear-filters"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 offset-4">
                                             <a href="/stock_adjustment_form" class="btn btn-primary w-100" style="font-size: 9pt;"><i class="fa fa-edit"></i> Edit Stocks</a>
                                         </div>
                                     </div>
@@ -783,7 +793,11 @@
             function load_stock_adjustment_history(page){
                 $.ajax({
                     type: "GET",
-                    url: "/stock_adjustment_history?page=" + page,
+                    url: "/stock_adjustment_history",
+                    data: {
+                        page: page,
+                        branch_warehouse: $('#tab2-warehouse').val()
+                    },
                     success: function (response) {
                         $('#stock-adjustments-container').html(response);
                     }
@@ -1207,7 +1221,7 @@
                 $('#collapseOne').addClass('show');
 			}
 
-            $('#consignment-store-select').select2({
+            $('.consignment-store-select').select2({
                 placeholder: "Select Store",
                 ajax: {
                     url: '/consignment_stores',
@@ -1225,6 +1239,15 @@
                     },
                     cache: true
                 }
+            });
+
+            $(document).on('click', '.clear-filters', function (e){
+                $("#tab2-warehouse").empty().trigger('change')
+            });
+
+            $(document).on('change', '#tab2-warehouse', function (e){
+                e.preventDefault();
+                load_stock_adjustment_history(1);
             });
 
             function showNotification(color, message, icon){

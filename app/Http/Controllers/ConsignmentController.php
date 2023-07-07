@@ -4400,8 +4400,12 @@ class ConsignmentController extends Controller
         }
     }
 
-    public function viewStockAdjustmentHistory(){
-        $stock_adjustments = DB::table('tabConsignment Stock Adjustment')->orderBy('creation', 'desc')->paginate(10);
+    public function viewStockAdjustmentHistory(Request $request){
+        $stock_adjustments = DB::table('tabConsignment Stock Adjustment')
+            ->when($request->branch_warehouse, function ($q) use ($request){
+                return $q->where('warehouse', $request->branch_warehouse);
+            })
+            ->orderBy('creation', 'desc')->paginate(10);
 
         $items_qry = DB::table('tabConsignment Stock Adjustment Items')->whereIn('parent', collect($stock_adjustments->items())->pluck('name'))->get();
         $adjusted_items = collect($items_qry)->groupBy('parent');
