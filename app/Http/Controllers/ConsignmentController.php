@@ -1127,7 +1127,8 @@ class ConsignmentController extends Controller
             ->where('i.disabled', 0)->where('i.is_stock_item', 1)
             ->where('b.warehouse', $branch)
             ->where('consigned_qty', '>', 0)
-            ->select('i.item_code', 'i.description', 'i.stock_uom', 'b.consigned_qty')
+            ->select('i.item_code', 'i.description', 'i.stock_uom', 'b.consigned_qty', 'b.consignment_price')
+            ->orderBy('i.item_code', 'asc')
             ->get()->toArray();
 
         $item_codes = collect($inv_summary)->pluck('item_code');
