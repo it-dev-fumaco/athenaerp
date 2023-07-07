@@ -6,7 +6,7 @@
 @section('content')
 <div class="content">
 	<div class="content-header p-0">
-        <div class="container">
+        <div class="col-11 mx-auto">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
                     <div class="row">
@@ -40,24 +40,30 @@
                                 </div>
 
                                 <div class="row p-2">
-                                    <table id="stock-adjustments-table" class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center" style="width: 40%;">Item</th>
-                                                <th class="text-center" style="width: 30%;">Qty</th>
-                                                <th class="text-center" style="width: 30%;">Price</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr class="empty-row-placeholder">
-                                                <td class="text-center" colspan=3>
-                                                    Select an item to adjust
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <br>
-                                    <textarea name="notes" rows="5" class="form-control" placeholder="Notes..."></textarea>
+                                    <div class="row border w-100" style="font-size: 9pt;">
+                                        <div class="col-8 text-uppercase text-center">
+                                            <div class="row p-0 m-0 w-100">
+                                                <div class="col-8 p-2 text-uppercase text-center">
+                                                    <b>Item Description</b>
+                                                </div>
+                                                <div class="col-2 p-2 text-uppercase text-center">
+                                                    <b>Qty</b>
+                                                </div>
+                                                <div class="col-2 p-2 text-uppercase text-center">
+                                                    <b>Price</b>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 p-2 text-uppercase text-center">
+                                            <b>Reason for Adjustment</b>
+                                        </div>
+                                    </div>
+                                    <div id="stock-adjustments-table" class="container-fluid p-0">
+                                        <div class="container p-3 empty-row-placeholder text-center">
+                                            Select an item to adjust
+                                        </div>
+                                    </div>
+                                    <textarea name="notes" rows="5" class="form-control mt-3" placeholder="Notes..."></textarea>
                                     <br>&nbsp;
                                     <span id="item-count-stock-adjustment" class="counter d-none">0</span>
                                     <button type="submit" class="btn btn-primary w-100 submit-btn">Submit</button>
@@ -170,6 +176,23 @@
         .empty-border{
             border: 1px solid red;
         }
+
+        .select2{
+			width: 100% !important;
+			outline: none !important;
+		}
+		.select2-selection__rendered {
+			line-height: 12px !important;
+			outline: none !important;
+		}
+		.select2-container .select2-selection--single {
+			height: 37px !important;
+			padding-top: 1.2%;
+			outline: none !important;
+		}
+		.select2-selection__arrow {
+			height: 36px !important;
+		}
 
         @media (max-width: 575.98px) {
             .last-row{
@@ -321,6 +344,11 @@
                 $('#stock-adjustment-modal .item-details').removeClass('d-none');
             });
 
+            $('#stock-adjustment-modal').on('hidden.bs.modal', function (e) {
+                $('#stock-adjustment-modal .item-details').addClass('d-none');
+                clear_stock_adjustment_modal_placeholders();
+            });
+
             function clear_stock_adjustment_modal_placeholders(){
                 $('#stock-adjustment-modal .item-code').text('');
                 $('#stock-adjustment-modal .description').text('');
@@ -345,13 +373,6 @@
                 }
             }
 
-            $('#stock-adjustments-table').on('click', '.remove-item', function (){
-                var target = $(this).data('target');
-
-                remove_row('stock-adjustment', target);
-                validate_stock_adjustment();
-            });
-
             $('#stock-adjustment-modal').on('click', '.add-item', function (){
                 var qty = $('#stock-adjustment-modal .qty').text();
                 var uom = $('#stock-adjustment-modal .uom').text();
@@ -367,44 +388,56 @@
 					return false;
                 }
 
-                var row = '<tr id="row-SA-' + item_code + '" class="items ' + item_code + '" data-item-code="' + item_code + '">' +
-                    '<td class="p-0" colspan=5>' +
-                        '<div class="row pl-2 pt-2 p-0">' +
-                            '<div class="col-5">' +
-                                '<div class="row">' +
-                                    '<div class="col-4 col-lg-2 text-center">' +
-                                        '<picture>' +
-                                            '<source srcset="' + webp + '" class="webp-src" type="image/webp">' +
-                                            '<source srcset="' + image + '" class="image-src" type="image/jpeg">' +
-                                            '<img src="' + image + '" class="image" alt="" width="50" height="50">' +
-                                        '</picture>' +
+                var row = '<div class="row border w-100 items ' + item_code + '"  id="row-SA-' + item_code + '" data-item-code="' + item_code + '" style="font-size: 9pt;">' +
+                    '<div class="col-8">' +
+                        '<div class="row p-0 m-0 w-100">' +
+                            '<div class="col-2 d-flex justify-content-center align-items-center text-center">' +
+                                '<picture>' +
+                                    '<source srcset="' + webp + '" class="webp-src" type="image/webp">' +
+                                    '<source srcset="' + image + '" class="image-src" type="image/jpeg">' +
+                                    '<img src="' + image + '" class="image w-75" alt="">' +
+                                '</picture>' +
+                            '</div>' +
+                            '<div class="col-6 d-flex justify-content-center align-items-center text-center">' +
+                                '<div class="row w-100 p-1">' +
+                                    '<b>' + item_code + '</b>' +
+                                    '<input name="item_codes[]" value="' + item_code + '" class="d-none">' +
+                                    '<div class="col-12 p-0 mb-2" style="text-align: justify">' +
+                                        description +
                                     '</div>' +
-                                    '<div class="col-8 col-lg-10" style="display: flex; justify-content: center; align-items: center;">' +
-                                        '<span class="item-code font-weight-bold">' + item_code + '</span> <br>' +
-                                        '<input name="item_codes[]" value="' + item_code + '" class="d-none">' +
-                                    '</div>' +
+                                    '<b class="uom">Stock UoM: ' + uom + '</b>' +
                                 '</div>' +
                             '</div>' +
-                            '<div class="col-3 text-center">' +
-                                '<input type="text" name="item[' + item_code + '][qty]" class="form-control text-center" value="' + qty + '" style="font-size: 9pt;" required>' +
-                                '<span class="uom">' + uom + '</span>' +
+                            '<div class="col-2 d-flex justify-content-center align-items-center">' +
+                                '<div class="text-center">' +
+                                    '<input type="text" class="form-control mb-2 mt-2 text-center" name="item[' + item_code + '][qty]" value="' + qty + '" placeholder="Enter Qty..." required style="font-size: 9pt;">' +
+                                '</div>' +
                             '</div>' +
-                            '<div class="col-4">' +
-                                '<div class="row p-0">' +
-                                    '<div class="col-10" style="display: flex; justify-content: center; align-items: center;">' +
-                                        '₱&nbsp;<input type="text" name="item[' + item_code + '][price]" class="form-control text-center" value="' + price + '" style="font-size: 9pt;" required>' +
-                                    '</div>' +
-                                    '<div class="col-1 p-0 remove-item" data-item-code="' + item_code + '" data-target="SA-' + item_code + '">' +
-                                        '<i class="fa fa-remove" style="font-size: 9pt; color: red;"></i>' +
-                                    '</div>' +
+                            '<div class="col-2 d-flex justify-content-center align-items-center">' +
+                                '<div class="col-1 d-flex justify-content-center align-items-center">' +
+                                    '<span style="font-size: 12pt;">' +
+                                        '₱' +
+                                    '</span>' +
+                                '</div>' +
+                                '<div class="col-11">' +
+                                    '<input type="text" class="form-control mb-2 mt-2 text-center" name="item[' + item_code + '][price]" value="' + price + '" required style="font-size: 9pt;">' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
-                        '<div class="row">' +
-                            '<div class="container item-description">' + description + '</div>' +
+                    '</div>' +
+                    '<div class="col-4 d-flex justify-content-center align-items-center">' +
+                        '<div class="row w-100">' +
+                            '<div class="col-11 p-2">' +
+                                '<textarea name="item[' + item_code + '][remarks]" cols="30" rows="2" class="form-control" placeholder="Enter reason for adjustment..." style="font-size: 9pt; min-height: 100% !important" required></textarea>' +
+                            '</div>' +
+                            '<div class="col-1 d-flex justify-content-center align-items-center">' +
+                                '<a href="#" class="btn btn-secondary remove-item" data-item-code="' + item_code + '" data-target="SA-' + item_code + '">' +
+                                    '<i class="fa fa-remove "style="font-size: 12pt;"></i>' +
+                                '</a>' +
+                            '</div>' +
                         '</div>' +
-                    '</td>' +
-                '</tr>';
+                    '</div>' +
+                '</div>';
 
                 $('#stock-adjustment-modal .item-details').addClass('d-none');
                 $('#item-count-stock-adjustment').text(parseInt($('#item-count-stock-adjustment').text()) + 1);
@@ -414,7 +447,14 @@
                 clear_stock_adjustment_modal_placeholders();
                 validate_stock_adjustment();
 
-                $('#stock-adjustments-table tbody').prepend(row);
+                $('#stock-adjustments-table').prepend(row);
+            });
+
+            $('#stock-adjustments-table').on('click', '.remove-item', function (){
+                var target = $(this).data('target');
+
+                remove_row('stock-adjustment', target);
+                validate_stock_adjustment();
             });
 
             function remove_row(name, target){
