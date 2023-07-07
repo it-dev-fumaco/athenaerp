@@ -31,7 +31,7 @@
                 <span class="d-block d-xl-none badge badge-{{ $stock['status'] == 'Submitted' ? 'success' : 'secondary' }}">{{ $stock['status'] }}</span>
 
                 <div class="modal fade" id="{{ $stock['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                    <div class="modal-dialog " role="document">
+                    <div class="modal-dialog modal-xl" role="document">
                         <div class="modal-content">
                             <div class="modal-header bg-navy">
                                 <h5 class="modal-title" id="exampleModalLabel">Stock Adjustment History</h5>
@@ -42,13 +42,26 @@
                             <div class="modal-body">
                                 <h5 class="text-center font-responsive font-weight-bold m-0">{{ $stock['warehouse'] }}</h5>
                                 <small class="d-block text-center mb-2">{{ $stock['name'] }} | Transaction Date: {{ Carbon\Carbon::parse($stock['transaction_date'])->format('M d, Y h:i:s A') }}</small>
-                                <div class="row p-0">
-                                    <div class="col-4 p-2 font-weight-bold border">Item</div>
-                                    <div class="col-4 p-2 font-weight-bold border">Stocks</div>
-                                    <div class="col-4 p-2 font-weight-bold border">Price</div>
+                                <div class="row border w-100" style="font-size: 9pt;">
+                                    <div class="col-9 text-uppercase text-center">
+                                        <div class="row p-0 m-0 w-100">
+                                            <div class="col-8 p-2 text-uppercase text-center">
+                                                <b>Item Description</b>
+                                            </div>
+                                            <div class="col-2 p-2 text-uppercase text-center">
+                                                <b>Qty</b>
+                                            </div>
+                                            <div class="col-2 p-2 text-uppercase text-center">
+                                                <b>Price</b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-3 p-2 text-uppercase text-center">
+                                        <b>Reason for Adjustment</b>
+                                    </div>
                                 </div>
                                 @foreach ($stock['items'] as $item)
-                                    <div class="row p-0">
+                                    {{-- <div class="row p-0">
                                         <div class="col-4 border p-2 font-weight-bold">
                                             <div class="row">
                                                 <div class="col-5">
@@ -84,6 +97,53 @@
                                         </div>
                                         <div class="col-12 border p-2">
                                             <div class="item-description text-justify">{{ strip_tags($item['item_description']) }}</div>
+                                        </div>
+                                    </div>
+                                    <hr> --}}
+                                    <div class="row border w-100 items ' + item_code + '"  id="row-SA-' + item_code + '" data-item-code="' + item_code + '" style="font-size: 9pt;">
+                                        <div class="col-9">
+                                            <div class="row p-0 m-0 w-100">
+                                                <div class="col-2 d-flex justify-content-center align-items-center text-center">
+                                                    <picture>
+                                                        <source srcset="{{ asset($item['webp']) }}" class="webp-src" type="image/webp">
+                                                        <source srcset="{{ asset($item['image']) }}" class="image-src" type="image/jpeg">
+                                                        <img src="{{ asset($item['image']) }}" class="image w-75" alt="">
+                                                    </picture>
+                                                </div>
+                                                <div class="col-6 d-flex justify-content-center align-items-center text-center">
+                                                    <div class="row w-100 p-1">
+                                                        <b>{{ $item['item_code'] }}</b>
+                                                        <div class="col-12 p-0 mb-2" style="text-align: justify">
+                                                            {{ strip_tags($item['item_description']) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-2 d-flex justify-content-center align-items-center">
+                                                    <div class="text-center">
+                                                        <span><b>{{ number_format($item['new_qty']).' '.$item['uom'] }}</b></span>
+                                                        @if ($item['new_qty'] != $item['previous_qty'])
+                                                            <br>
+                                                            <small>Previous: {{ number_format($item['previous_qty']).' '.$item['uom'] }}</small>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-2 d-flex justify-content-center align-items-center">
+                                                    <div class="text-center">
+                                                        <span><b>₱ {{ number_format($item['new_price'], 2) }}</b></span>
+                                                        <br>
+                                                        @if ($item['new_price'] != $item['previous_price'])
+                                                            <small>Previous: ₱ {{ number_format($item['previous_price'], 2) }}</small>
+                                                        @else
+                                                            <small>Previous: Not Set</small>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3 d-flex justify-content-center align-items-center">
+                                            <div class="text-justify w-100">
+                                                {{ $item['reason'] }}
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach

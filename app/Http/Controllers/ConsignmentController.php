@@ -4447,7 +4447,8 @@ class ConsignmentController extends Controller
                     'previous_price' => $item->previous_price,
                     'new_price' => $item->new_price,
                     'has_transactions' => collect($this->check_item_transactions($item->item_code, $sa->warehouse, $sa->creation, $sa->name))->max(),
-                    'transactions' => $this->check_item_transactions($item->item_code, $sa->warehouse, $sa->creation, $sa->name) 
+                    'transactions' => $this->check_item_transactions($item->item_code, $sa->warehouse, $sa->creation, $sa->name),
+                    'reason' => $item->remarks
                 ];
             }
 
