@@ -4468,7 +4468,8 @@ class ConsignmentController extends Controller
     }
 
     public function viewStockAdjustmentForm(){
-        return view('consignment.supervisor.adjust_stocks');
+        $item = DB::table('tabBin')->join('tabItem', 'tabItem.name', 'tabBin.item_code')->select('tabItem.*')->orderByDesc('tabBin.creation')->first();
+        return view('consignment.supervisor.adjust_stocks', compact('item'));
     }
 
     public function adjustStocks(Request $request){
@@ -4529,6 +4530,8 @@ class ConsignmentController extends Controller
 
                 $price = preg_replace("/[^0-9 .]/", "", $item_details[$item_code]['price']);
                 $new_price = $price ? $price * 1 : 0;
+
+                $item_remarks = isset($item_details[$item_code]['remarks']) ? $item_details[$item_code]['remarks'] : null;
                 
                 $update_array = [
                     'modified' => Carbon::now()->toDateTimeString(),
@@ -4605,7 +4608,8 @@ class ConsignmentController extends Controller
                         'previous_qty' => $original_stock,
                         'new_qty' => $new_stock,
                         'previous_price' => $original_price,
-                        'new_price' => $new_price
+                        'new_price' => $new_price,
+                        'remarks' => $item_remarks
                     ]);
                 }
             }
