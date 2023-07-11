@@ -2011,7 +2011,7 @@ class MainController extends Controller
                 $mreq_issued_qty = DB::table('tabStock Entry as ste')
                     ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
                     ->where('sted.s_warehouse', $steDetails->s_warehouse)->where('sted.t_warehouse', $steDetails->t_warehouse)
-                    ->where('ste.material_request', $steDetails->mreq)
+                    ->where('ste.material_request', $steDetails->mreq)->where('ste.docstatus', 1)
                     ->where('purpose', 'Material Transfer')->where('sted.item_code', $steDetails->item_code)
                     ->where('sted.status', 'Issued')->where('ste.docstatus', '<', 2)->sum('issued_qty');
 

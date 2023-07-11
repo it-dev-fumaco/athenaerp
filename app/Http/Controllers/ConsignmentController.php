@@ -15,10 +15,7 @@ use Illuminate\Support\Str;
 use App\Mail\StockTransfersNotification;
 use Exception;
 use Illuminate\Support\Facades\Http;
-
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriterXlsx;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class ConsignmentController extends Controller
 {
@@ -574,7 +571,6 @@ class ConsignmentController extends Controller
             $grand_total = $total_qty_sold = $total_items = 0;
             $new_id = null;
             if (!$existing_record) {
-                // $latest_id = DB::table('tabConsignment Sales Report')->max('name');
                 $latest_id = DB::table('tabConsignment Sales Report')->orderBy('creation', 'desc')->pluck('name')->first();
                 $latest_id_exploded = explode("-", $latest_id);
                 $new_id = (($latest_id) ? $latest_id_exploded[1] : 0) + 1;
@@ -618,8 +614,6 @@ class ConsignmentController extends Controller
                                 ->with(['old_data' => $data])
                                 ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                         }
-    
-                        // DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
                         
                         $no_of_items_updated++;
                         $amount = ((float)$price * (float)$qty);
@@ -642,7 +636,6 @@ class ConsignmentController extends Controller
                             'qty' => $qty,
                             'price' => (float)$price,
                             'amount' => $amount,
-                            'available_stock_on_transaction' => $consigned_qty
                         ];
                     }
                 }
@@ -684,8 +677,6 @@ class ConsignmentController extends Controller
                                 ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
                         }
 
-                        // DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
-
                         // for update
                         $values = [
                             'modified' => $currentDateTime->toDateTimeString(),
@@ -713,9 +704,7 @@ class ConsignmentController extends Controller
                                     ->with(['old_data' => $data])
                                     ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                             }
-    
-                            // DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
-                            
+
                             $no_of_items_updated++;
                             $grand_total += $amount;
                             $total_qty_sold += $qty;
@@ -736,7 +725,6 @@ class ConsignmentController extends Controller
                                 'qty' => $qty,
                                 'price' => (float)$price,
                                 'amount' => $amount,
-                                'available_stock_on_transaction' => $consigned_qty
                             ];
                         }
                     }

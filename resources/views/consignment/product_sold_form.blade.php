@@ -28,25 +28,26 @@
                             @endif
                             <span id="branch-name" class="font-weight-bolder d-block text-center" style="font-size: 11pt;">{{ $branch }}</span>
                             <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
-                            <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3 m-2" style="font-size: 10pt;">
+                            <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3 mb-2" style="font-size: 10pt;">
                                 <span class="d-block"><i class="fas fa-info-circle"></i> Instructions: Enter your item quantity sold for this date.</span>
                             </div>
                             <form action="/submit_product_sold_form" method="POST" autocomplete="off" id="sales-report-entry-form">
                                 @csrf
                                 <input type="hidden" name="transaction_date" value="{{ $transaction_date }}">
                                 <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
-                                <div class="form-group m-2">
+                                <div class="form-group mb-1">
                                     <input type="text" class="form-control form-control-sm" placeholder="Search Items" id="search-filter">
                                 </div>
-                                <table class="table table-bordered" style="font-size: 8pt;" id="items-table">
+                                <table class="table" style="font-size: 8pt;" id="items-table">
                                     <thead>
-                                        <th class="text-center p-1" style="width: 55%;">ITEM DESCRIPTION</th>
+                                        <th class="text-center p-1" style="width: 30%;">ITEM CODE</th>
+                                        <th class="text-center p-1" style="width: 25%;">PRICE</th>
                                         <th class="text-center p-1" style="width: 45%;">QTY SOLD</th>
                                     </thead>
                                     <tbody>
                                         @forelse ($item_classification as $class => $items)
                                             <tr>
-                                                <td colspan=4 class='p-0'>
+                                                <td colspan="3" class="p-0">
                                                     <div class="bg-navy p-2">
                                                         <span style="font-weight: bold; font-size: 10pt;">{{ $class }}</span>
                                                     </div>
@@ -73,53 +74,58 @@
                                                 }
                                             @endphp
                                             <tr>
-                                                <td class="text-justify p-1 align-middle" colspan="2">
-                                                    <div class="d-flex flex-row justify-content-center align-items-center">
-                                                        <div class="p-1 col-2 text-center">
-                                                            <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
-                                                            <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
+                                                <td class="p-0 align-middle">
+                                                    <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
+                                                    <div class="d-flex flex-row mt-1 align-items-center">
+                                                        <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
                                                             <picture>
-                                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-thumbna1il" alt="User Image" width="40" height="40">
-                                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-thumbna1il" alt="User Image" width="40" height="40">
-                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-thumbna1il" alt="User Image" width="40" height="40">
+                                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" width="40" height="40" alt="img">
+                                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" width="40" height="40" alt="img">
+                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40" alt="img">
                                                             </picture>
                                                         </a>
-                                                        </div>
-                                                        <div class="p-1 col-5 m-0">
-                                                            <span class="font-weight-bold">{{ $row->item_code }}</span>
-                                                        </div>
-                                                        <div class="p-1 col-5">
-                                                            <div class="input-group p-1 justify-content-center">
-                                                                <div class="input-group-prepend p-0">
-                                                                    <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
-                                                                </div>
-                                                                <div class="custom-a p-0">
-                                                                    <input type="text" class="form-control form-control-sm qty item-sold-qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $max }}" data-price="{{ $row->price }}">
-                                                                </div>
-                                                                <div class="input-group-append p-0">
-                                                                    <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
-                                                                </div>
-                                                            </div>
-                                                            <div class="text-center">
-                                                                <small>Available: {{ $consigned_qty }}</small>
-                                                            </div>
-                                                        </div>
+                                                        <span class="font-weight-bold ml-2">{{ $row->item_code }}</span>
                                                     </div>
-                                                    <div class="d-flex flex-row">
-                                                        <div class="p-1 text-justify">
-                                                            <div class="item-description">{!! strip_tags($row->description) !!}</div>
+                                                </td>
+                                                <td class="text-center p-1 align-middle">
+                                                    <div class="font-weight-bold text-nowrap">
+                                                        {{ '₱ ' . number_format($row->price, 2) }}
+                                                     </div>
+                                                </td>
+                                                <td class="p-1">
+                                                    <div class="p-0">
+                                                        <div class="input-group m-0 justify-content-center">
+                                                            <div class="input-group-prepend p-0">
+                                                                <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
+                                                            </div>
+                                                            <div class="custom-a p-0">
+                                                                <input type="text" class="form-control form-control-sm qty item-sold-qty" value="{{ $qty }}" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 80px;" data-max="{{ $max }}" data-price="{{ $row->price }}">
+                                                            </div>
+                                                            <div class="input-group-append p-0">
+                                                                <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-center">
+                                                            <small>Available: {{ $consigned_qty }}</small>
                                                         </div>
                                                     </div>
                                                 </td>
-                                            </tr> 
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3" class="pr-0 pl-0 pt-1 pb-1 border-top-0">
+                                                    <div class="text-justify">
+                                                        <div class="item-description">{!! strip_tags($row->description) !!}</div>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                             @empty
                                             <tr>
-                                                <td class="text-center font-weight-bold" colspan="2">No item(s) found.</td>
+                                                <td class="text-center font-weight-bold" colspan="3">No item(s) found.</td>
                                             </tr> 
                                             @endforelse
                                         @empty
                                         <tr>
-                                            <td class="text-center font-weight-bold" colspan="2">No item(s) found.</td>
+                                            <td class="text-center font-weight-bold" colspan="3">No item(s) found.</td>
                                         </tr> 
                                         @endforelse
                                     </tbody>
