@@ -80,7 +80,7 @@ class ConsignmentController extends Controller
         // get last inventory audit date
 
         $last_inventory_date = DB::table('tabConsignment Inventory Audit Report')
-            ->where('branch_warehouse', $branch)->max('transaction_date');
+            ->where('branch_warehouse', $branch)->max('audit_date_to');
 
         if (!$last_inventory_date) {
             // get beginning inventory date if last inventory date is not null
@@ -91,9 +91,15 @@ class ConsignmentController extends Controller
         $inventory_audit_from = $last_inventory_date;
         $inventory_audit_to = $transaction_date;
 
-        $duration = Carbon::parse($inventory_audit_from)->addDay()->format('F d, Y') . ' - ' . Carbon::parse($inventory_audit_to)->format('F d, Y');
+        $date_from = Carbon::parse($inventory_audit_from);
 
-        $start = Carbon::parse($inventory_audit_from)->addDay()->format('Y-m-d');
+        if($date_from->startOfDay() < Carbon::now()->startOfDay()){
+            $date_from = $date_from->addDay();
+        }
+
+        $duration = $date_from->format('F d, Y') . ' - ' . Carbon::parse($inventory_audit_to)->format('F d, Y');
+
+        $start = $date_from->format('Y-m-d');
         $end = Carbon::parse($inventory_audit_to)->format('Y-m-d');
 
         $existing_items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
@@ -241,57 +247,24 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            $csr_existing_record = DB::table('tabConsignment Sales Report')->where('transaction_date', $data['transaction_date'])
-                ->where('branch_warehouse', $data['branch_warehouse'])->where('cutoff_period_from', $period_from)
-                ->where('cutoff_period_to', $period_to)->where('status', '!=', 'Cancelled')->first();
-
-            $current_product_sold_items = [];
-            if($csr_existing_record){
-                $current_product_sold_items = DB::table('tabConsignment Sales Report Item')->where('parent', $csr_existing_record->name)->pluck('qty', 'item_code');
-            }
-
-            $csr_new_id = null;
-            if (!$csr_existing_record) {
-                $csr_latest_id = DB::table('tabConsignment Sales Report')->orderBy('creation', 'desc')->pluck('name')->first();
-                $csr_latest_id_exploded = explode("-", $csr_latest_id);
-                $csr_new_id = (($csr_latest_id) ? $csr_latest_id_exploded[1] : 0) + 1;
-                $csr_new_id = str_pad($csr_new_id, 7, '0', STR_PAD_LEFT);
-                $csr_new_id = 'CSR-'.$csr_new_id;
-
-                $new_csr_parent_data = [
-                    'name' => $csr_new_id,
-                    'creation' => $currentDateTime->toDateTimeString(),
-                    'modified' => $currentDateTime->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 0,
-                    'parent' => null,
-                    'parentfield' => null,
-                    'parenttype' => null,
-                    'idx' => 0,
-                    'transaction_date' => $data['transaction_date'],
-                    'branch_warehouse' => $data['branch_warehouse'],
-                    'grand_total' => null,
-                    'promodiser' => Auth::user()->full_name,
-                    'status' => $status,
-                    'cutoff_period_from' => $period_from,
-                    'cutoff_period_to' => $period_to,
-                ];
-            }
-
-            $csr_child_parent_name = ($csr_existing_record) ? $csr_existing_record->name : $csr_new_id;
             $iar_child_parent_name = ($iar_existing_record) ? $iar_existing_record->name : $iar_new_id;
 
-            $new_csr_child_data = $new_iar_child_data = $items_with_insufficient_stocks = [];
-            $csr_grand_total = $csr_total_qty_sold = $csr_total_items = 0;
+            $sold_arr = $new_iar_child_data = $items_with_insufficient_stocks = [];
             $iar_grand_total = $iar_total_items = 0;
             foreach ($data['item'] as $item_code => $row) {
                 $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
                 $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
                 $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
 
-                $qty_from_current_date_product_sold = isset($current_product_sold_items[$item_code]) ? $current_product_sold_items[$item_code] : 0;
-                $sold_qty = ($consigned_qty - (float)$qty) + $qty_from_current_date_product_sold;
+                $sold_qty = ($consigned_qty - (float)$qty);
+
+                if($sold_qty){
+                    $sold_arr[] = [
+                        'item' => $item_code,
+                        'sold_qty' => $sold_qty,
+                        'amount' => ((float)$price * (float)$sold_qty)
+                    ];
+                }
 
                 if ($consigned_qty < (float)$qty) {
                     $items_with_insufficient_stocks[] = $item_code;
@@ -303,62 +276,9 @@ class ConsignmentController extends Controller
                     $bin_update['consignment_price'] = $price;
                 }
                 
-                $amount = ((float)$price * (float)$sold_qty);
                 $iar_amount = ((float)$price * (float)$qty);
 
                 DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update($bin_update);
-
-                // Consignment Sales Report
-                $has_existing_csri = false;
-                if ($csr_existing_record) {
-                    $csr_existing_child_record = DB::table('tabConsignment Sales Report Item')
-                        ->where('item_code', $item_code)->where('parent', $csr_existing_record->name)->first();
-
-                    if ($csr_existing_child_record) {
-                        $csr_total_items++;
-                        $csr_grand_total += $amount;
-                        $csr_total_qty_sold += $sold_qty;
-
-                        DB::table('tabConsignment Sales Report Item')->where('name', $csr_existing_child_record->name)->update([
-                            'modified' => $currentDateTime->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'qty' => $sold_qty + $csr_existing_child_record->qty,
-                            'price' => $price,
-                            'amount' => $amount
-                        ]);
-
-                        $has_existing_csri = true;
-                    } else {
-                        $has_existing_csri = false;
-                    }
-                } 
-
-                if (!$has_existing_csri) {
-                    if ($sold_qty > 0) {
-                        $csr_total_items++;
-                        $csr_grand_total += $amount;
-                        $csr_total_qty_sold += $sold_qty;
-
-                        $new_csr_child_data[] = [
-                            'name' => uniqid(),
-                            'creation' => $currentDateTime->toDateTimeString(),
-                            'modified' => $currentDateTime->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'owner' => Auth::user()->wh_user,
-                            'docstatus' => 0,
-                            'parent' => $csr_child_parent_name,
-                            'parentfield' => 'items',
-                            'parenttype' => 'Consignment Sales Report',
-                            'idx' => $no_of_items_updated,
-                            'item_code' => $item_code,
-                            'description' => $row['description'],
-                            'qty' => $sold_qty,
-                            'price' => (float)$price,
-                            'amount' => $amount,
-                            'available_stock_on_transaction' => $consigned_qty
-                        ];
-                    }
-                }
 
                 $has_existing_iari = false;
                 if ($iar_existing_record) {
@@ -369,13 +289,6 @@ class ConsignmentController extends Controller
                         $no_of_items_updated++;
                         $iar_total_items++;
                         $iar_grand_total += $iar_amount;
-
-                        DB::table('tabConsignment Sales Report Item')->where('name', $iar_existing_child_record->name)->update([
-                            'modified' => $currentDateTime->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'qty' => (float)$qty,
-                            'amount' => $iar_amount
-                        ]);
 
                         $has_existing_iari = true;
                     } else {
@@ -417,32 +330,12 @@ class ConsignmentController extends Controller
             }
 
             $reference = null;
-            if (!$csr_existing_record) {
-                $new_csr_parent_data['grand_total'] = $csr_grand_total;
-                $new_csr_parent_data['total_qty_sold'] = $csr_total_qty_sold;
-                $new_csr_parent_data['total_items'] = $csr_total_items;
-
-                DB::table('tabConsignment Sales Report')->insert($new_csr_parent_data);
-                $reference = $csr_existing_record ? $csr_existing_record->name : $csr_new_id;
-            } 
-
             if (!$iar_existing_record) {
                 $new_iar_parent_data['grand_total'] = $iar_grand_total;
                 $new_iar_parent_data['total_items'] = $iar_total_items;
 
                 DB::table('tabConsignment Inventory Audit Report')->insert($new_iar_parent_data);
                 $reference = $iar_existing_record ? $iar_existing_record->name : $iar_new_id;
-            } 
-
-            if ($csr_existing_record) {
-                DB::table('tabConsignment Sales Report')->where('name', $csr_existing_record->name)->update([
-                    'modified' => $currentDateTime->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'grand_total' => $csr_grand_total,
-                    'total_qty_sold' => $csr_total_qty_sold,
-                    'total_items' => $csr_total_items,
-                ]);
-                $reference = $csr_existing_record ? $csr_existing_record->name : $csr_new_id;
             } 
 
             if ($iar_existing_record) {
@@ -457,10 +350,6 @@ class ConsignmentController extends Controller
 
             if (count($new_iar_child_data) > 0) {
                 DB::table('tabConsignment Inventory Audit Report Item')->insert($new_iar_child_data);
-            }
-
-            if (count($new_csr_child_data) > 0) {
-                DB::table('tabConsignment Sales Report Item')->insert($new_csr_child_data);
             }
 
             $logs = [
@@ -483,25 +372,11 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
-            $start = Carbon::parse($data['audit_date_from'])->addDay()->format('Y-m-d');
-            $end = Carbon::parse($data['audit_date_to'])->format('Y-m-d');
-
-            $item_total_sold = DB::table('tabConsignment Sales Report')
-                ->where('branch_warehouse', $data['branch_warehouse'])->where('status', '!=', 'Cancelled')
-                ->whereBetween('transaction_date', [Carbon::parse($start)->startOfDay(), Carbon::parse($end)->endOfDay()])
-                ->selectRaw('SUM(grand_total) as grand_total, SUM(total_qty_sold) as total_qty_sold, branch_warehouse')
-                ->groupBy('branch_warehouse')->get()->toArray();
-
-            $item_total_sold = collect($item_total_sold)->groupBy('branch_warehouse');
-
-            $total_qty_sold = isset($item_total_sold[$data['branch_warehouse']]) ? $item_total_sold[$data['branch_warehouse']][0]->total_qty_sold : 0;
-            $grand_total = isset($item_total_sold[$data['branch_warehouse']]) ? $item_total_sold[$data['branch_warehouse']][0]->grand_total : 0;
-
             DB::commit();
             return redirect()->back()->with([
                 'success' => 'Record successfully updated',
-                'total_qty_sold' => $total_qty_sold,
-                'grand_total' => $grand_total,
+                'total_qty_sold' => $sold_arr ? collect($sold_arr)->sum('sold_qty') : 0,
+                'grand_total' => $sold_arr ? collect($sold_arr)->sum('amount') : 0,
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);

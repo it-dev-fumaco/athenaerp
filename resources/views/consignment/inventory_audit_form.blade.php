@@ -375,14 +375,20 @@
         $('#error-modal').modal('show');
         @endif
 
+        @php
+            $explode_duration = explode(' - ', $duration);
+            $startDate = isset($explode_duration[0]) ? $explode_duration[0] : Carbon\Carbon::now()->format('Y-M-d');
+            $endDate = isset($explode_duration[1]) ? $explode_duration[1] : Carbon\Carbon::now()->format('Y-M-d');
+        @endphp
+
         $("#duration").daterangepicker({
             placeholder: 'Select Duration',
             locale: {
                 format: 'YYYY-MMM-DD',
                 separator: " to "
             },
-            startDate: '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d") }}',
-            endDate: '{{ Carbon\Carbon::parse($transaction_date)->format("Y-M-d") }}',
+            startDate: '{{ Carbon\Carbon::parse($startDate)->format("Y-M-d") }}',
+            endDate: '{{ Carbon\Carbon::parse($endDate)->format("Y-M-d") }}',
         });
 
         $("#duration").on('hide.daterangepicker', function (ev, picker) {
