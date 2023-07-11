@@ -619,8 +619,7 @@ class ConsignmentController extends Controller
                                 ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                         }
     
-                        DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
+                        // DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
                         
                         $no_of_items_updated++;
                         $amount = ((float)$price * (float)$qty);
@@ -685,8 +684,7 @@ class ConsignmentController extends Controller
                                 ->with('error', 'Qty for <b>' . $item_code . '</b> cannot be less than 0.');
                         }
 
-                        DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                            ->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
+                        // DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
 
                         // for update
                         $values = [
@@ -716,8 +714,7 @@ class ConsignmentController extends Controller
                                     ->with('error', 'Insufficient stock for <b>' . $item_code . '</b>.<br>Available quantity is <b>' . number_format($consigned_qty) . '</b>.');
                             }
     
-                            DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])
-                                ->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
+                            // DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update(['consigned_qty' => (float)$consigned_qty - (float)$qty]);
                             
                             $no_of_items_updated++;
                             $grand_total += $amount;
