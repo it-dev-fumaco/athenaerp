@@ -246,6 +246,12 @@ class ConsignmentController extends Controller
 
             $iar_child_parent_name = ($iar_existing_record) ? $iar_existing_record->name : $iar_new_id;
 
+            $activity_log_data['details'] = [
+                'branch_warehouse' => $data['branch_warehouse'],
+                'transaction_date' => $data['transaction_date'],
+                'cutoff_period' => $period_from.' - '.$period_to,
+                'audit_period' => $data['audit_date_from'].' - '.$data['audit_date_to']
+            ];
             $sold_arr = $new_iar_child_data = $items_with_insufficient_stocks = [];
             $iar_grand_total = $iar_total_items = 0;
             foreach ($data['item'] as $item_code => $row) {
@@ -262,6 +268,12 @@ class ConsignmentController extends Controller
                         'amount' => ((float)$price * (float)$sold_qty)
                     ];
                 }
+
+                $activity_log_data[$item_code] = [
+                    'consigned_qty_before_transaction' => (float)$consigned_qty,
+                    'sold_qty' => $sold_qty,
+                    'expected_qty_after_transaction' => (float)$qty
+                ];
 
                 if ($consigned_qty < (float)$qty) {
                     $items_with_insufficient_stocks[] = $item_code;
@@ -349,6 +361,12 @@ class ConsignmentController extends Controller
                 DB::table('tabConsignment Inventory Audit Report Item')->insert($new_iar_child_data);
             }
 
+            // get actual qty
+            $updated_bin = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code');
+            foreach ($updated_bin as $item_code => $actual_qty) {
+                $activity_log_data[$item_code]['actual_qty_after_transaction'] = (float)$actual_qty;
+            }
+
             $logs = [
                 'name' => uniqid(),
                 'creation' => Carbon::now()->toDateTimeString(),
@@ -365,6 +383,7 @@ class ConsignmentController extends Controller
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
+                'data' => json_encode($activity_log_data, true)
             ];
 
             DB::table('tabActivity Log')->insert($logs);
