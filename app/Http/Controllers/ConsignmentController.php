@@ -6337,4 +6337,42 @@ class ConsignmentController extends Controller
             return response()->json(['status' => 0, 'message' => 'An error occured while updating item barcodes. Please contact your system administrator.']);
         }
     }
+
+    public function consignment_branches(Request $request){
+        if($request->ajax()){
+            $branches = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+                ->when($request->search, function ($query) use ($request){
+                    return $query->where(function($q) use ($request) {
+                        $search_str = explode(' ', $request->search);
+                        foreach ($search_str as $str) {
+                            $q->where('name', 'LIKE', "%".$str."%");
+                        }
+
+                        $q->orWhere('name', 'LIKE', "%".$request->search."%");
+                    });
+                })->where('name', '!=', 'Consignment Warehouse - FI')
+                ->select('name')->paginate(20);
+            $items = DB::table('tabItem as i')
+                ->join('tabBin as b', 'i.name', 'b.item_code')
+                ->whereIn('b.warehouse', collect($branches->items())->pluck('name'))->where('i.disabled', 0)
+                ->where(function($q) {
+                    $q->where('b.actual_qty', '>', 0)->orWhere('b.consigned_qty', '>', 0);
+                })
+                ->select('i.item_code', 'i.description', 'i.item_classification', 'b.consigned_qty', 'b.warehouse', 'b.actual_qty', 'b.stock_uom', 'b.consignment_price', DB::raw('b.consigned_qty * b.consignment_price as amount'))
+                ->orderBy('b.warehouse', 'asc')->orderBy('b.actual_qty', 'desc')->get();
+            
+            $images = DB::table('tabItem Images')->whereIn('parent', collect($items)->pluck('item_code'))->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
+            $images = collect($images)->groupBy('parent');
+
+            $items = $items->groupBy('warehouse');
+
+            $promodisers = DB::table('tabWarehouse Users as wu')
+                ->join('tabAssigned Consignment Warehouse as acw', 'acw.parent', 'wu.frappe_userid')
+                ->whereIn('acw.warehouse', collect($branches->items())->pluck('name'))->select('wu.*', 'acw.warehouse')->get()->groupBy('warehouse');
+
+            return view('consignment.supervisor.tbl_branches', compact('branches', 'items', 'images', 'promodisers'));
+        }
+
+        return view('consignment.supervisor.branches');
+    }
 }

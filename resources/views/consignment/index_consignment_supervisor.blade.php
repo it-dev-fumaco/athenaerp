@@ -87,11 +87,13 @@
                                                 </div>
                                                 <div class="p-0 col-2">
                                                     <div class="text-center">
-                                                        <p class="text-center m-0 font-responsive">
-                                                            <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
-                                                            <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
-                                                        </p>
-                                                        <span class="d-block" style="font-size: 9pt;">Active Store</span>
+                                                        <a href="/consignment/branches" style="text-transform: none; text-decoration: none; color: #212545">
+                                                            <p class="text-center m-0 font-responsive">
+                                                                <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
+                                                                <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
+                                                            </p>
+                                                            <span class="d-block" style="font-size: 9pt;">Active Store</span>
+                                                        </a>
                                                     </div>
                                                 </div>
                                                 <div class="p-0 col-2">
