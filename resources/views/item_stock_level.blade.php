@@ -47,11 +47,11 @@
                 <form></form>
                 <div class="modal-body">
                     <table class="table table-hover table-bordered table-striped m-0">
-                        <col style="width: 70%;">
+                        <col style="width: 60%;">
                         <col style="width: 30%;">
                         <thead>
                             <th class="text-center responsive-description p-1 align-middle">Warehouse</th>
-                            <th class="text-center responsive-description p-1 align-middle">Available Qty</th>
+                            <th class="text-center responsive-description p-1 align-middle">Available Qty ({{ collect($consignment_warehouses)->sum('actual_qty') }})</th>
                         </thead>
                         @forelse($consignment_warehouses as $con)
                         <tr>
@@ -62,7 +62,8 @@
                                 @endif
                             </td>
                             <td class="text-center responsive-description">
-                                <span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span></td>
+                                <span class="badge badge-{{ ($con['available_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 15px; margin: 0 auto;">{{ $con['actual_qty'] * 1 . ' ' . $con['stock_uom'] }}</span>
+                            </td>
                         </tr>
                         @empty
                         <tr>

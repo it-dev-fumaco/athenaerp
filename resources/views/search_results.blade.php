@@ -359,8 +359,8 @@
 																						<col style="width: 12%;">
 																						<tr>
 																							<th class="consignment-th p-2 text-center">Warehouse</th>
-																							<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty</th>
-																							<th class="consignment-th p-2 text-center">In Store</th>
+																							<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty<br/>({{ collect($row['consignment_warehouses'])->sum('actual_qty') }})</th>
+																							<th class="consignment-th p-2 text-center">In Store<br/>({{ collect($row['consignment_warehouses'])->sum('consigned_qty') }})</th>
 																						</tr>
 																						@forelse($row['consignment_warehouses'] as $con)
 																							@if ($con['actual_qty'] <= 0 && $con['consigned_qty'] <= 0)
@@ -526,8 +526,8 @@
 																							<col style="width: 12%;">
 																							<tr>
 																								<th class="consignment-th p-2 text-center">Warehouse</th>
-																								<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty</th>
-																								<th class="consignment-th p-2 text-center">In Store</th>
+																								<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty ({{ collect($row['consignment_warehouses'])->sum('actual_qty') }})</th>
+																								<th class="consignment-th p-2 text-center">In Store<br/>({{ collect($row['consignment_warehouses'])->sum('consigned_qty') }})</th>
 																							</tr>
 																							@forelse($row['consignment_warehouses'] as $con)
 																								@if ($con['actual_qty'] <= 0 && $con['consigned_qty'] <= 0)
@@ -637,8 +637,8 @@
 																						<col style="width: 25%;">
 																						<tr>
 																							<th class="consignment-th p-2 text-center">Warehouse</th>
-																							<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available Qty</th>
-																							<th class="consignment-th p-2 text-center">In Store</th>
+																							<th class="consignment-th p-2 text-center text-muted" style="font-size: 9pt;">Available ({{ collect($row['consignment_warehouses'])->sum('actual_qty') }})</th>
+																							<th class="consignment-th p-2 text-center">In Store<br/>({{ collect($row['consignment_warehouses'])->sum('actual_qty') }})</th>
 																						</tr>
 																						@forelse($row['consignment_warehouses'] as $con)
 																							@if ($con['actual_qty'] <= 0 && $con['consigned_qty'] <= 0)
