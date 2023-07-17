@@ -6248,7 +6248,7 @@ class ConsignmentController extends Controller
             }
 
             $item_details = DB::table('tabItem as i')
-                ->join('tabItem Barcode as b', 'b.parent', 'i.name')
+                ->join('tabConsignment Item Barcode as b', 'b.parent', 'i.name')
                 ->where('b.customer', $customer)
                 ->select('b.barcode', 'b.customer', 'i.name', 'i.item_name', 'i.description', 'i.stock_uom')
                 ->get();
@@ -6436,7 +6436,7 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            DB::table('tabItem Barcode')->insert($insert_arr);
+            DB::table('tabConsignment Item Barcode')->insert($insert_arr);
 
             DB::commit();
             return response()->json(['status' => 1, 'message' => 'Success!']);
