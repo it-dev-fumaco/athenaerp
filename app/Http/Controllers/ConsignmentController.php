@@ -6405,7 +6405,7 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try {
             $assigned_barcodes = DB::table('tabItem as i')
-                ->join('tabItem Barcode as b', 'b.parent', 'i.name')
+                ->join('tabConsignment Item Barcode as b', 'b.parent', 'i.name')
                 ->whereIn('b.barcode', $request->barcode)->where('b.customer', $request->customer)
                 ->pluck('i.name', 'b.barcode');
             
