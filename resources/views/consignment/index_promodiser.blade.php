@@ -88,13 +88,13 @@
           @if (count($assigned_consignment_store) > 1)
           <a href="#" data-toggle="modal" data-target="#select-branch-modal">
           @else
-          <a href="/view_calendar_menu/{{ $assigned_consignment_store[0] }}">
+          <a href="/sales_report_list/{{ $assigned_consignment_store[0] }}">
           @endif
             <div class="info-box bg-gradient-primary m-0">
               <div class="info-box-content p-0">
                 <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
                   <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_item_sold) }}</div>
-                  <div class="p-1 text-center" style="font-size: 9pt;">Product Sold <span class="d-block" style="font-size: 6pt;">{{ $duration }}</span></div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Sales Report</div>
                 </div>
               </div>
             </div>
@@ -140,12 +140,39 @@
       <div class="row p-0 m-0">
         <div class="col-md-12 p-1">
           <div class="card card-secondary card-outline mt-2 mb-2">
-            <div class="card-header text-center font-weight-bold p-1 font-responsive">Inventory Summary</div>
+            <div class="card-header text-center font-weight-bold p-1 font-responsive text-uppercase">Inventory Summary</div>
             <div class="card-body p-0">
+              @if (count($assigned_consignment_store) > 1)     
               <div class="p-2">
                 <input type="text" class="form-control" id="store-list-search" placeholder="Search..." style="font-size: 8pt;">
               </div>
-              <table class="table table-bordered" id="store-list" style="font-size: 8pt;">
+              @endif
+              <ul class="list-group list-group-flush mb-2 mt-1" style="font-size: 12px;">
+                @forelse ($assigned_consignment_store as $branch)
+                @php
+                  $items_on_hand = array_key_exists($branch, $inventory_summary) ? $inventory_summary[$branch]['items_on_hand'] : 0;
+                  $total_qty = array_key_exists($branch, $inventory_summary) ? $inventory_summary[$branch]['total_qty'] : 0;
+                @endphp
+                <li class="list-group-item p-0">
+                  <div class="d-flex flex-row align-items-center pb-1 pt-1">
+                    <div class="col-8">
+                      <a href="/inventory_items/{{ $branch }}">{{ $branch }}</a>
+                    </div>
+                    <div class="col-2 text-center">
+                        <span class="d-block font-weight-bold">{{ number_format($items_on_hand) }}</span>
+                        <small class="text-muted">Item(s)</small>
+                    </div>
+                    <div class="col-2 text-center">
+                        <span class="d-block font-weight-bold">{{ number_format($total_qty) }}</span>
+                        <small class="text-muted">Total Qty</small>
+                    </div>
+                  </div>
+                </li>
+                @empty
+                <li class="list-group-item text-center text-muted text-uppercase">No assigned consignment branch</li>
+                @endforelse
+              </ul>
+              <table class="table table-bordered d-none" id="store-list" style="font-size: 8pt;">
                 <thead class="text-uppercase">
                   <th class="text-center p-1 align-middle" style="width: 64%;">Store</th>
                   <th class="text-center p-1 align-middle" style="width: 18%;">Items on Hand</th>
@@ -226,10 +253,10 @@
             @forelse ($assigned_consignment_store as $branch)
             <tr>
               <td class="text-justify p-2 align-middle">
-                <a href="/view_calendar_menu/{{ $branch }}">{{ $branch }}</a>
+                <a href="/sales_report_list/{{ $branch }}">{{ $branch }}</a>
               </td>
               <td class="text-center p-2 align-middle">
-                <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-primary btn-xs"><i class="fas fa-search"></i></a>
+                <a href="/sales_report_list/{{ $branch }}" class="btn btn-primary btn-xs"><i class="fas fa-search"></i></a>
               </td>
             </tr> 
             @empty

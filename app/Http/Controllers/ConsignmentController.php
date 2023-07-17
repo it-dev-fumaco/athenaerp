@@ -19,29 +19,28 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
 class ConsignmentController extends Controller
 {
-    // /view_calendar_menu/{branch}
-    public function viewCalendarMenu($branch){
-        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
-        if ($sales_report_deadline) {
-            $currentDate = Carbon::now();
-
-            $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
-
-            $currentMonth = $currentDate->format('m');
-            $currentYear = $currentDate->format('Y');
-
-            $first_cutoff = Carbon::createFromFormat('m/d/Y', $currentMonth .'/'. $cutoff_1 .'/'. $currentYear)->format('Y-m-d');
-
-            $due_alert = 0;
-            if ($first_cutoff > $currentDate->format('Y-m-d')) {
-                $date_difference_in_days = Carbon::parse($first_cutoff)->diffInDays($currentDate->format('Y-m-d'));
-                if ($date_difference_in_days <= 1) {
-                    $due_alert = 1;
-                }
-            }
+    public function viewSalesReportList($branch, Request $request) {
+        // return $this->consignment_report();
+        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        $currentYear = Carbon::now()->format('Y');
+        $currentMonth = Carbon::now()->format('m');
+       
+        $years = [];
+        for ($i = 2021; $i <= $currentYear; $i++) { 
+            array_push($years, $i);
         }
 
-        return view('consignment.calendar_menu', compact('branch', 'due_alert'));
+        if ($request->ajax()) {
+            $request_year = $request->year;
+            $sales_per_month = DB::table('tabConsignment Sales Report')
+                ->where('branch_warehouse', $branch)->whereYear('transaction_date', $request_year)
+                ->selectRaw('MONTH(transaction_date) as month, SUM(grand_total) as grand_total')
+                ->groupBy('month')->pluck('grand_total', 'month')->toArray();
+
+            return view('consignment.tbl_sales_report', compact('months', 'sales_per_month', 'currentMonth', 'currentYear', 'request_year', 'branch'));
+        }
+
+        return view('consignment.view_sales_report_list', compact('years', 'currentYear', 'branch'));
     }
 
     public function salesReportDeadline(Request $request) {        
@@ -405,6 +404,8 @@ class ConsignmentController extends Controller
 
     // /view_product_sold_form/{branch}/{transaction_date}
     public function viewProductSoldForm($branch, $transaction_date) {
+        $transaction_month = Carbon::parse($transaction_date)->format('m');
+        $transaction_year = Carbon::parse($transaction_date)->format('Y');
         $existing_items = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
             ->where('csr.transaction_date', $transaction_date)->pluck('csr.name')->first();//->exists();
@@ -413,7 +414,8 @@ class ConsignmentController extends Controller
             $items = DB::table('tabConsignment Sales Report as csr')
                 ->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
                 ->join('tabItem as i', 'i.item_code', 'csri.item_code')
-                ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)->where('csr.transaction_date', $transaction_date)
+                ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
+                ->whereMonth('csr.transaction_date', $transaction_month)->whereYear('csr.transaction_date', $transaction_year)
                 ->select('csri.item_code', 'csri.description', 'csri.price', 'i.item_classification')
                 ->get()->toArray();
         } else {
@@ -446,7 +448,7 @@ class ConsignmentController extends Controller
 
         $existing_record = DB::table('tabConsignment Sales Report as csr')->join('tabConsignment Sales Report Item as csri', 'csr.name', 'csri.parent')
             ->where('status', '!=', 'Cancelled')->where('csr.branch_warehouse', $branch)
-            ->where('csr.transaction_date', $transaction_date)->pluck('csri.qty', 'csri.item_code')->toArray();
+            ->whereMonth('csr.transaction_date', $transaction_month)->whereYear('csr.transaction_date', $transaction_year)->pluck('csri.qty', 'csri.item_code')->toArray();
 
         $item_classification = collect($items)->groupBy('item_classification');
 

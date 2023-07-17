@@ -35,23 +35,21 @@
                                     <input type="text" name="audit_date_to" value="{{ $transaction_date }}">
                                 </div>
                                 <div class="form-group m-2">
-                                    <input type="text" class="form-control text-center mb-1" id="duration">
+                                    <input type="text" class="form-control text-center mb-1 d-none" id="duration">
                                     <input type="text" class="form-control" placeholder="Search Items" id="search-filter">
                                 </div>
                                 <table class="table" style="font-size: 8pt;" id="items-table">
                                     <thead>
                                         <tr>
-                                            <th class="text-center p-1" style="width: 30%;">ITEM</th>
-                                            <th class="text-center p-1" style="width: 36%;">AUDIT QTY</th>
-                                            <th class="text-center p-1" style="width: 12%;">ACTUAL</th>
-                                            <th class="text-center p-1" style="width: 12%;">SOLD</th>
-                                            <th class="text-center p-1" style="width: 10%;">PRICE</th>
+                                            <th class="text-center p-1" style="width: 35%;">ITEM CODE</th>
+                                            <th class="text-center p-1" style="width: 30%;">CURRENT QTY</th>
+                                            <th class="text-center p-1" style="width: 35%;">AUDIT QTY</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @forelse ($item_classification as $class => $items)
                                             <tr>
-                                                <td colspan=5 class='p-0'>
+                                                <td colspan="3" class="p-0">
                                                     <div class="bg-navy p-2">
                                                         <span style="font-weight: bold; font-size: 10pt;">{{ $class }}</span>
                                                     </div>
@@ -80,17 +78,21 @@
                                                             <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
                                                             <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
                                                                 <picture>
-                                                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="" width="40" height="40">
+                                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="" width="40" height="40">
                                                                     <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
                                                                 </picture>
                                                             </a>
                                                         </div>
-                                                        <div class="p-1 m-0 d-none">
+                                                        <div class="p-1 m-0">
                                                             <span class="font-weight-bold">{{ $row->item_code }}</span>
                                                             <div class="d-none">{!! strip_tags($row->description) !!}</div>
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                                    <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
+                                                    <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
                                                 </td>
                                                 <td class="text-justify p-0 align-middle" style="border-bottom: 0 !important;">
                                                     <div class="d-flex flex-row justify-content-center align-items-center">
@@ -109,40 +111,21 @@
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                    <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
-                                                    <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                    <span class="d-block item-sold-qty">{{ $sold_qty }}</span>
-                                                    <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
-                                                    <span class="d-none item-price">{{ $row->price }}</span>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                    @if ($row->price > 0)
-                                                        <span class="d-block" style="white-space: nowrap">₱ {{ number_format($row->price, 2) }}</span>
-                                                    @else
-                                                        <div class="row">
-                                                            <div class="p-1 col-1 d-flex flex-row justify-content-center align-items-center">₱</div>
-                                                            <div class="p-1 col-10"><input type="text" class="form-control text-center price-input" name="price[{{ $row->item_code }}]"  required></div>
-                                                        </div>
-                                                    @endif
-                                                </td>
                                             </tr>
                                             <tr class="{{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">
-                                                <td colspan="5" style="border-top: 0 !important;">
-                                                    <span class="font-weight-bold">{{ $row->item_code }}</span>
+                                                <td colspan="3" style="border-top: 0 !important;">
+                                                    <span class="font-weight-bold d-none">{{ $row->item_code }}</span>
                                                     <div class="item-description">{!! strip_tags($row->description) !!}</div>
                                                 </td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
+                                                <td class="text-center font-weight-bold text-uppercase text-muted" colspan="3">No item(s) found</td>
                                             </tr> 
                                             @endforelse
                                         @empty
                                         <tr>
-                                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
+                                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="3">No item(s) found</td>
                                         </tr>
                                         @endforelse
                                     </tbody>

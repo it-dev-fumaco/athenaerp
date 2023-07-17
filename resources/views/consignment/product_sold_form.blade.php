@@ -13,10 +13,10 @@
                         <div class="card-header text-center p-1">
                             <div class="d-flex flex-row align-items-center">
                                 <div class="p-0 col-2 text-left">
-                                    <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
+                                    <a href="/sales_report_list/{{ $branch }}" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
                                 </div>
                                 <div class="p-1 col-8">
-                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Product Sold Entry</span>
+                                    <span class="font-weight-bolder d-block font-responsive text-uppercase">Product Sales Report Entry</span>
                                 </div>
                             </div>
                         </div>
@@ -27,9 +27,9 @@
                             </div>
                             @endif
                             <span id="branch-name" class="font-weight-bolder d-block text-center" style="font-size: 11pt;">{{ $branch }}</span>
-                            <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</h5>
+                            <h5 class="text-center mt-1 font-weight-bolder">{{ \Carbon\Carbon::parse($transaction_date)->format('F Y') }}</h5>
                             <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3 mb-2" style="font-size: 10pt;">
-                                <span class="d-block"><i class="fas fa-info-circle"></i> Instructions: Enter your item quantity sold for this date.</span>
+                                <span class="d-block"><i class="fas fa-info-circle"></i> <b>Instructions:</b> Enter your item quantity sold for this month.</span>
                             </div>
                             <form action="/submit_product_sold_form" method="POST" autocomplete="off" id="sales-report-entry-form">
                                 @csrf
@@ -38,7 +38,7 @@
                                 <div class="form-group mb-1">
                                     <input type="text" class="form-control form-control-sm" placeholder="Search Items" id="search-filter">
                                 </div>
-                                <table class="table" style="font-size: 8pt;" id="items-table">
+                                <table class="table" style="font-size: 11px;" id="items-table">
                                     <thead>
                                         <th class="text-center p-1" style="width: 30%;">ITEM CODE</th>
                                         <th class="text-center p-1" style="width: 25%;">PRICE</th>
@@ -74,14 +74,14 @@
                                                 }
                                             @endphp
                                             <tr>
-                                                <td class="p-0 align-middle">
+                                                <td class="p-1 align-middle">
                                                     <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
                                                     <div class="d-flex flex-row mt-1 align-items-center">
                                                         <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
                                                             <picture>
                                                                 <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" width="40" height="40" alt="img">
                                                                 <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" width="40" height="40" alt="img">
-                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40" alt="img">
+                                                                <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
                                                             </picture>
                                                         </a>
                                                         <span class="font-weight-bold ml-2">{{ $row->item_code }}</span>
@@ -112,8 +112,8 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="3" class="pr-0 pl-0 pt-1 pb-1 border-top-0">
-                                                    <div class="text-justify">
+                                                <td colspan="3" class="p-1 border-top-0">
+                                                    <div class="text-left">
                                                         <div class="item-description">{!! strip_tags($row->description) !!}</div>
                                                     </div>
                                                 </td>
@@ -179,7 +179,7 @@
             <div class="modal-body">
                 <form></form>
                 <p class="text-center mt-0">
-                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your sales report entry for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your sales report entry for the month of <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F Y') }}</u></strong>.</span>
                 </p>
                 <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
@@ -221,7 +221,7 @@
                 <form></form>
                 <p class="text-center mt-0">
                     <span class="d-block">Enter your item quantity sold</span>
-                    <span class="d-block">for this date <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                    <span class="d-block">for the month of <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F Y') }}</u></strong>.</span>
                 </p>
                 <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
@@ -281,19 +281,7 @@
                 @endif
                 <div class="d-flex flex-row justify-content-center">
                     <div class="pt-4">
-                        <a href="/view_calendar_menu/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="far fa-calendar-alt"></i> Return to Calendar</a>
-                    </div>
-                </div>
-                <div class="d-flex flex-row justify-content-between">
-                    <div class="p-2">
-                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
-                            <i class="fas fa-arrow-left"></i> {{ \Carbon\Carbon::parse($transaction_date)->subDay()->format('F d, Y') }}
-                        </a>
-                    </div>
-                    <div class="p-2">
-                        <a href="/view_product_sold_form/{{ $branch }}/{{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('Y-m-d') }}" class="btn btn-primary btn-sm font-responsive">
-                            {{ \Carbon\Carbon::parse($transaction_date)->addDay()->format('F d, Y') }} <i class="fas fa-arrow-right"></i>
-                        </a>
+                        <a href="/sales_report_list/{{ $branch }}" class="btn btn-secondary font-responsive"><i class="fas fa-list"></i> Return to List</a>
                     </div>
                 </div>
                 @endif

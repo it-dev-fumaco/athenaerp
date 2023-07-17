@@ -164,7 +164,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::post('/edit_promodiser_submit/{id}', 'ConsignmentController@editPromodiser');
 
         // Promodisers
-        Route::get('/view_calendar_menu/{branch}', 'ConsignmentController@viewCalendarMenu');
         Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
         Route::get('/view_inventory_audit_form/{branch}/{transaction_date}', 'ConsignmentController@viewInventoryAuditForm');
         Route::post('/submit_product_sold_form', 'ConsignmentController@submitProductSoldForm');
@@ -175,7 +174,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/stock_transfer/cancel/{id}', 'ConsignmentController@stockTransferCancel');
         Route::post('/stock_adjust/submit/{id}', 'ConsignmentController@submitStockAdjustment');
         
-        Route::get('/calendar_data/{branch}', 'ConsignmentController@calendarData');
         Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');
         Route::get('/beginning_inventory_items/{id}', 'ConsignmentController@beginningInvItemsList');
         Route::get('/beginning_inventory/{inv?}', 'ConsignmentController@beginningInventory');
@@ -206,6 +204,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/submitted_inventory_audit', 'ConsignmentController@getSubmittedInvAudit');
         Route::get('/view_inventory_audit_items/{branch}/{from}/{to}', 'ConsignmentController@viewInventoryAuditItems');
         Route::get('/pending_submission_inventory_audit', 'ConsignmentController@getPendingSubmissionInventoryAudit');
+        Route::get('/sales_report_list/{branch}', 'ConsignmentController@viewSalesReportList');        
 
         Route::get('/get_product_sold_list', 'ConsignmentController@productSoldList');
         Route::get('/view_sales_report', 'ConsignmentController@viewSalesReport');
