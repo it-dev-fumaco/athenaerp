@@ -164,9 +164,9 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::post('/edit_promodiser_submit/{id}', 'ConsignmentController@editPromodiser');
 
         // Promodisers
-        Route::get('/view_product_sold_form/{branch}/{transaction_date}', 'ConsignmentController@viewProductSoldForm');
+        Route::get('/view_monthly_sales_form/{branch}/{date}', 'ConsignmentController@viewMonthlySalesForm');
         Route::get('/view_inventory_audit_form/{branch}/{transaction_date}', 'ConsignmentController@viewInventoryAuditForm');
-        Route::post('/submit_product_sold_form', 'ConsignmentController@submitProductSoldForm');
+        Route::post('/submit_monthly_sales_form', 'ConsignmentController@submitMonthlySaleForm');
         Route::post('/submit_inventory_audit_form', 'ConsignmentController@submitInventoryAuditForm');
         Route::get('/stock_transfer/form', 'ConsignmentController@stockTransferForm');
         Route::post('/stock_transfer/submit', 'ConsignmentController@stockTransferSubmit');

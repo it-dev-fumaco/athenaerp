@@ -20,8 +20,10 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 class ConsignmentController extends Controller
 {
     public function viewSalesReportList($branch, Request $request) {
-        // return $this->consignment_report();
-        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        $months = [];
+        for ($m=1; $m<=12; $m++) {
+            $months[] = date('F', mktime(0,0,0,$m, 1, date('Y')));
+        }
         $currentYear = Carbon::now()->format('Y');
         $currentMonth = Carbon::now()->format('m');
        
@@ -31,11 +33,8 @@ class ConsignmentController extends Controller
         }
 
         if ($request->ajax()) {
-            $request_year = $request->year;
-            $sales_per_month = DB::table('tabConsignment Sales Report')
-                ->where('branch_warehouse', $branch)->whereYear('transaction_date', $request_year)
-                ->selectRaw('MONTH(transaction_date) as month, SUM(grand_total) as grand_total')
-                ->groupBy('month')->pluck('grand_total', 'month')->toArray();
+            $request_year = $request->year ? $request->year : $currentYear;
+            $sales_per_month = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $request_year)->where('warehouse', $branch)->get()->groupBy('month');
 
             return view('consignment.tbl_sales_report', compact('months', 'sales_per_month', 'currentMonth', 'currentYear', 'request_year', 'branch'));
         }
@@ -249,7 +248,8 @@ class ConsignmentController extends Controller
                 'branch_warehouse' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date'],
                 'cutoff_period' => $period_from.' - '.$period_to,
-                'audit_period' => $data['audit_date_from'].' - '.$data['audit_date_to']
+                'audit_period' => $data['audit_date_from'].' - '.$data['audit_date_to'],
+                'promodiser' => Auth::user()->full_name
             ];
             $sold_arr = $new_iar_child_data = $items_with_insufficient_stocks = [];
             $iar_grand_total = $iar_total_items = 0;
@@ -387,6 +387,12 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
+            if(!Storage::disk('public')->exists('/inventory_audit_logs')){ // check logs folders
+                Storage::disk('public')->makeDirectory('/inventory_audit_logs');
+            }
+
+            Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_'.$iar_child_parent_name.'.json', json_encode($activity_log_data, true));
+
             DB::commit();
             return redirect()->back()->with([
                 'success' => 'Record successfully updated',
@@ -455,6 +461,84 @@ class ConsignmentController extends Controller
         $audit_check = DB::table('tabConsignment Inventory Audit Report')->whereDate('audit_date_from', '<=', Carbon::parse($transaction_date))->whereDate('audit_date_to', '>=', Carbon::parse($transaction_date))->where('branch_warehouse', $branch)->exists();
 
         return view('consignment.product_sold_form', compact('branch', 'transaction_date', 'items', 'item_images', 'existing_record', 'consigned_stocks', 'item_classification', 'item_count', 'existing_items', 'audit_check'));
+    }
+
+    public function viewMonthlySalesForm($branch, $date){
+        $days = Carbon::parse($date)->daysInMonth;
+        $exploded = explode('-', $date);
+        $month = $exploded[0];
+        $year = $exploded[1];
+
+        $report = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $year)->where('month', $month)->where('warehouse', $branch)->first();
+        $sales_per_day = $report ? collect(json_decode($report->sales_per_day)) : [];
+
+        $data_per_day = [];
+        for($day = 1; $day <= $days; $day++){
+            $details = isset($sales_per_day[$day]) ? collect($sales_per_day[$day]) : [];
+            $amount = isset($details['amount']) ? (float)$details['amount'] : 0;
+            $attendance = isset($details['attendance']) ? $details['attendance'] : 'Present';
+
+            $data_per_day[$day] = [
+                'amount' => $amount,
+                'attendance' => $attendance
+            ];
+        }
+
+        return view('consignment.tbl_sales_report_form', compact('branch', 'data_per_day', 'month', 'year', 'report'));
+    }
+
+    public function submitMonthlySaleForm(Request $request){
+        DB::beginTransaction();
+        try {
+            $now = Carbon::now();
+            $sales_per_day = [];
+            foreach($request->day as $day => $detail){
+                $sales_per_day[$day] = [
+                    'amount' => $detail['amount'],
+                    // 'attendance' => isset($detail['absent']) ? 'Absent' : 'Present'
+                ];
+            }
+
+            $existing_record = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $request->year)->where('month', $request->month)->where('warehouse', $request->branch)->first();
+
+            if($existing_record){
+                DB::table('tabConsignment Monthly Sales Report')->where('name', $existing_record->name)->update([
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'warehouse' => $request->branch,
+                    'month' => $request->month,
+                    'sales_per_day' => json_encode($sales_per_day, true),
+                    'total_amount' => collect($request->day)->sum('amount'),
+                    'remarks' => $request->remarks,
+                    'fiscal_year' => $request->year,
+                    'status' => isset($request->draft) && $request->draft ? 'Draft' : 'Submitted'
+                ]);
+            }else{
+                DB::table('tabConsignment Monthly Sales Report')->insert([
+                    'name' => uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'idx' => 0,
+                    'warehouse' => $request->branch,
+                    'month' => $request->month,
+                    'sales_per_day' => json_encode($sales_per_day, true),
+                    'total_amount' => collect($request->day)->sum('amount'),
+                    'remarks' => $request->remarks,
+                    'fiscal_year' => $request->year,
+                    'status' => isset($request->draft) && $request->draft ? 'Draft' : 'Submitted'
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Sales Report for the month of '.$request->month.' has been added!.');
+        } catch (\Throwable $th) {
+            DB::rollback();
+            //throw $th;
+            return redirect()->back()->with('error', 'An error occured. Please try again');
+        }
     }
 
     public function cancelProductSold($id){
