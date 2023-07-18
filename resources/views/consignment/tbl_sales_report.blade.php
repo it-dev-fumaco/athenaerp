@@ -19,8 +19,6 @@
             $indicator = $sales_per_month[$month][0]->status == 'Draft' ? 'danger' : 'success';
         }
     @endphp
-    @if ($request_year == $currentYear)
-    @if ($index <= $currentMonth)
     <tr>
         <td class="p-2 align-middle text-center">
             <span class="text-{{ $indicator }}">●</span> {{ $month }}
@@ -38,24 +36,6 @@
             @endif
         </td>
     </tr>
-    @endif
-    @else
-    <tr>
-        <td class="p-2 align-middle text-center">{{ $month }}</td>
-        <td class="p-2 text-center align-middle">{{ '₱ ' . number_format($total_per_month, 2) }}</td>
-        <td class="p-2 align-middle text-center">
-            @if ($has_existing_record) 
-            <a href="/view_monthly_sales_form/{{ $branch }}/{{ $request_year }}-{{ $index }}-01" class="btn btn-xs btn-info">
-                <i class="far fa-eye"></i> View
-            </a>
-            @else
-            <a href="/view_monthly_sales_form/{{ $branch }}/{{ $request_year }}-{{ $index }}-01" class="btn btn-xs btn-primary">
-                <i class="fas fa-plus"></i> Create
-            </a>
-            @endif
-        </td>
-    </tr>
-    @endif
     @endforeach
 </table>
 <div class="row" style="font-size: 9pt;">
