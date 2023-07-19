@@ -1366,7 +1366,7 @@ class MainController extends Controller
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
-            ->whereIn('t_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['For Return', 'Internal Transfer'])
+            ->whereIn('t_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['For Return', 'Internal Transfer', 'Pull Out Item'])
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")->union($q1)->get();
 
@@ -1440,7 +1440,7 @@ class MainController extends Controller
 
             $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
 
-            if ($d->transfer_as == 'For Return') {
+            if (in_array($d->transfer_as, ['For Return', 'Pull Out Item'])) {
                 $parent_warehouse = (Arr::exists($parent_warehouses, $d->t_warehouse)) ? $parent_warehouses[$d->t_warehouse] : null; 
             } else {
                 $parent_warehouse = (Arr::exists($parent_warehouses, $d->s_warehouse)) ? $parent_warehouses[$d->s_warehouse] : null; 
