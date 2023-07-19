@@ -256,7 +256,7 @@
                 <a href="/sales_report_list/{{ $branch }}">{{ $branch }}</a>
               </td>
               <td class="text-center p-2 align-middle">
-                <a href="/sales_report_list/{{ $branch }}" class="btn btn-primary btn-xs"><i class="fas fa-search"></i></a>
+                <a href="/sales_report_list/{{ $branch }}" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></a>
               </td>
             </tr> 
             @empty

@@ -1,7 +1,7 @@
 <table class="table table-striped" style="font-size: 13px;">
     <col style="width: 25%;">
-    <col style="width: 40%;">
-    <col style="width: 35%;">
+    <col style="width: 45%;">
+    <col style="width: 30%;">
     <thead>
         <th class="p-1 text-center text-uppercase">Month</th>
         <th class="p-1 text-center text-uppercase">Total Sales</th>
@@ -22,7 +22,7 @@
         }
     @endphp
     <tr>
-        <td class="p-2 align-middle text-center" style="white-space: nowrap">
+        <td class="p-2 align-middle text-left" style="white-space: nowrap">
             <span class="text-{{ $indicator }}">●</span> {{ $month }}
         </td>
         <td class="p-2 text-center align-middle">{{ '₱ ' . number_format($total_per_month, 2) }}</td>
@@ -30,17 +30,17 @@
             <div class="col-12 col-lg-4 mx-auto">
                 @switch($status)
                     @case('Pending')
-                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-primary w-100">
+                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-primary w-1010 p-2">
                             <i class="fas fa-plus"></i> Create
                         </a>
                         @break
                     @case('Draft')
-                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-primary w-100">
-                            <i class="fas fa-edit"></i> Update
+                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-warning w-1100 p-2">
+                            <i class="fas fa-pencil-alt"></i> Update
                         </a>
                         @break
                     @default
-                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-info w-100">
+                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-info w-1100 p-2">
                             <i class="far fa-eye"></i> View
                         </a>
                 @endswitch
@@ -49,14 +49,16 @@
     </tr>
     @endforeach
 </table>
-<div class="row" style="font-size: 9pt;">
-    <div class="col-4">
+<hr class="p-0 m-1">
+<div class="d-flex flex-row justify-content-between p-2 text-muted" style="font-size: 12px;">
+    <div class="font-weight-bold">Legend:</div>
+    <div>
         <span class="text-secondary">●</span> Pending
     </div>
-    <div class="col-4">
+    <div>
         <span class="text-danger">●</span> Draft
     </div>
-    <div class="col-4">
+    <div>
         <span class="text-success">●</span> Submitted
     </div>
 </div>
