@@ -16,7 +16,7 @@
                         <div class="card-header text-center p-1">
                             <div class="d-flex flex-row align-items-center">
                                 <div class="p-0 col-2 text-left">
-                                    <a href="/" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
+                                    <a href="/sales_report_list/{{ $branch }}" class="btn btn-secondary m-0" style="width: 60px;"><i class="fas fa-arrow-left"></i></a>
                                 </div>
                                 <div class="p-1 col-8">
                                     <span class="font-weight-bolder d-block font-responsive text-uppercase">Monthly Sales Report</span>
@@ -44,8 +44,12 @@
                             @endif
                             <form id="sales-report-form" action="/submit_monthly_sales_form" method="post">
                                 @csrf
-                                <h5 class="font-responsive font-weight-bold text-center m-1 text-uppercase d-block" id="branch-name">{{ $branch }}</h5>
-                                <p class="text-center" style="font-size: 9pt">Total Sales for the month of {{ $month }}: <br><b>₱ {{ $report ? number_format($report->total_amount, 2) : 0 }}</b></p>
+                                <h5 class="font-responsive font-weight-bold text-center m-2 text-uppercase d-block" id="branch-name">{{ $branch }}</h5>
+                                @php
+                                    $total_sales = $report ? $report->total_amount : 0;
+                                @endphp
+                                <p class="text-center p-0 m-0" style="font-size: 9pt">Total Sales for the month of <span class="font-weight-bold">{{ $month . ' ' . $year }}</span></p>
+                                <span class="text-center d-block font-weight-bold mb-2" style="font-size: 14px;">₱ {{ number_format($total_sales, 2) }}</span>
                                 <div class="d-none">
                                     <input type="text" name="branch" value="{{ $branch }}" readonly>
                                     <input type="text" name="year" value="{{ $year }}" readonly>
@@ -54,17 +58,17 @@
                                 <table class="table table-striped" style="font-size: 9pt;">
                                     <col style="width: 40%">
                                     <col style="width: 60%">
-                                    <tr>
+                                    <thead class="text-uppercase">
                                         <th class="text-center p-2">Day</th>
                                         <th class="text-center p-2">Amount</th>
-                                    </tr>
+                                    </thead>
                                     @foreach($data_per_day as $day => $data)
                                     <tr>
                                         <td class="text-center">
-                                            <b>{{ $month.'-'.$day }}</b> <br>
-                                            <small class="text-muted">{{ Carbon\Carbon::parse($month.' '.$day.', '.$year)->format('l') }}</small>
+                                            <span class="d-block font-weight-bold">{{ $month.' '.$day }}</span>
+                                            <small class="text-muted font-italic">{{ Carbon\Carbon::parse($month.' '.$day.', '.$year)->format('l') }}</small>
                                         </td>
-                                        <td class="text-center">
+                                        <td class="text-center align-middle">
                                             @if ($submitted)
                                                 <b>₱ {{ number_format($data['amount'], 2) }}</b>
                                             @else
@@ -73,7 +77,6 @@
                                                         <b>₱</b>
                                                     </div>
                                                     <div class="col-11">
-                                                        
                                                         <input type="number" pattern="[0-9]*" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $data['amount'] }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }}>
                                                     </div>
                                                 </div> 
@@ -82,19 +85,20 @@
                                     </tr>
                                     @endforeach
                                 </table>
-                                <div class="row mb-3 p-2">
+                                <hr class="p-1 m-0">
+                                <div class="row m-0 pr-2 pl-2">
                                     <label style="font-size: 9pt;">Remarks</label>
-                                    <textarea name="remarks" cols="30" rows="3" class="form-control" placeholder="Remarks..." style="font-size: 9pt;">
+                                    <textarea name="remarks" cols="30" rows="3" class="form-control mb-3" placeholder="Remarks..." style="font-size: 9pt;">
                                         {{ $report ? $report->remarks : null }}
                                     </textarea>
                                 </div>
                                 @if (!$submitted)
                                     <div class="row d-flex justify-content-center align-items-center p-2">
                                         <div class="col-12 mb-3 mx-auto">
-                                            <button type="button" class="btn btn-secondary btn-sm w-100 save-form" data-draft=1>Save as Draft</button>
+                                            <button type="button" class="btn btn-secondary w-100 save-form" data-draft=1><i class="fas fa-pencil-alt"></i> Save as Draft</button>
                                         </div>
                                         <div class="col-12 mx-auto">
-                                            <button type="button" class="btn btn-primary btn-sm w-100 save-form" data-draft=0>Submit</button>
+                                            <button type="button" class="btn btn-primary w-100 save-form" data-draft=0><i class="fas fa-check"></i> Submit</button>
                                         </div>
                                         <input type="checkbox" name="draft" class="d-none">
                                     </div>

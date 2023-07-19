@@ -1270,7 +1270,7 @@
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong class="copyright">Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong class="copyright">Copyright &copy; 2023 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 <!-- REQUIRED SCRIPTS -->

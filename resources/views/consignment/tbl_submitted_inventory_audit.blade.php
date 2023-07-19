@@ -11,7 +11,7 @@
        <small>{{ $row1['promodiser'].' - '.\Carbon\Carbon::parse($row1['date_submitted'])->format('M d, Y') }}</small>
     </div>
     <div class="p-1 font-responsive">
-        <a href="/view_inventory_audit_items/{{ $store }}/{{ $row1['audit_date_from'] }}/{{ $row1['audit_date_to'] }}" class="btn btn-info btn-sm"><i class="fas fa-search"></i></a>
+        <a href="/view_inventory_audit_items/{{ $store }}/{{ $row1['audit_date_from'] }}/{{ $row1['audit_date_to'] }}" class="btn btn-info btn-sm"><i class="fas fa-eye"></i> View</a>
     </div>
 </div>
 @endforeach
