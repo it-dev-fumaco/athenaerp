@@ -455,6 +455,9 @@ class ConsignmentController extends Controller
             $submission_status = $date_submitted = $submitted_by = null;
             if ($now->gt($cutoff_date) && $status == 'Submitted') {
                 $submission_status = 'Late';
+            }
+
+            if ($status == 'Submitted') {
                 $submitted_by = Auth::user()->wh_user;
                 $date_submitted = $now->toDateTimeString();
             }

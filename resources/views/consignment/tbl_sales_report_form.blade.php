@@ -50,6 +50,29 @@
                                 @endphp
                                 <p class="text-center p-0 m-0" style="font-size: 9pt">Total Sales for the month of <span class="font-weight-bold">{{ $month . ' ' . $year }}</span></p>
                                 <span class="text-center d-block font-weight-bold mb-2" style="font-size: 14px;">₱ {{ number_format($total_sales, 2) }}</span>
+
+                                @if ($report)
+                                    @if ($report->status == 'Submitted')
+                                    <h6 class="text-uppercase text-center"><span class="text-success" style="font-size: 20px;">●</span> Submitted</h6>
+                                    @else
+                                    <h6 class="text-uppercase text-center"><span class="text-danger" style="font-size: 20px;">●</span> Draft</h6>
+                                    @endif
+                                    @else
+                                    <h6 class="text-uppercase text-center"><span class="text-secondary" style="font-size: 20px;">●</span> Pending</h6>
+                                @endif
+                                @if ($submitted)
+                                @php
+                                    $user = ucwords(str_replace('.', ' ', explode('@', $report->submitted_by)[0]));
+                                @endphp
+                                <small class="d-block mb-2 text-center font-italic" style="font-size: 10px;">Submitted by: {{ $user . ' - ' . \Carbon\Carbon::parse($report->date_submitted)->format('Y-m-d h:i A') }}</small>
+                                @else
+                                @if ($report)
+                                @php
+                                    $user = ucwords(str_replace('.', ' ', explode('@', $report->modified_by)[0]));
+                                @endphp
+                                <small class="d-block mb-2 text-center font-italic" style="font-size: 10px;">Last modified by: {{ $user . ' ' . \Carbon\Carbon::parse($report->modified)->format('Y-m-d h:i A') }}</small>
+                                @endif
+                                @endif
                                 <div class="d-none">
                                     <input type="text" name="branch" value="{{ $branch }}" readonly>
                                     <input type="text" name="year" value="{{ $year }}" readonly>
