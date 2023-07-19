@@ -537,7 +537,7 @@ class ConsignmentController extends Controller
             }
 
             DB::commit();
-            return redirect('/sales_report_list/'.$request->branch)->with('success', 'Sales Report for the month of '.$request->month.' has been added!');
+            return redirect('/sales_report_list/'.$request->branch)->with('success', 'Sales Report for the month of '.$request->month.' has been '.$existing_record ? 'Updated!' : 'Added!');
         } catch (\Throwable $th) {
             DB::rollback();
             // throw $th;
