@@ -148,6 +148,10 @@
                                                                         <label class="form-check-label" for="hide-zero-check"> Hide zero values
                                                                         </label>
                                                                     </div>
+                                                                    <div class="form-check text-white">
+                                                                        {{ Carbon\Carbon::now()->subDays(7)->format("Y-M-d") }}
+                                                                        <input type="text" class="form-control date-range">
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -442,6 +446,28 @@
             loadSalesReport();
         });
 
+        $(".date-range").daterangepicker({
+            placeholder: 'Select Duration',
+            locale: {
+                format: 'YYYY-MMM-DD',
+                separator: " to ",
+                startDate: '{{ Carbon\Carbon::now()->subDays(7)->format("Y-M-d") }}',
+                endDate: '{{ Carbon\Carbon::now()->format("Y-M-d") }}',
+            }
+        });
+
+        $(".date-range").on('apply.daterangepicker', function (ev, picker) {
+            var duration = picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD');
+            $(this).val(duration);
+
+            console.log($(this).val());
+
+            // $('#input-values input[name=audit_date_from]').val(picker.startDate.format('YYYY-MM-DD'));
+            // $('#input-values input[name=audit_date_to]').val(picker.endDate.format('YYYY-MM-DD'));
+
+            // $('#confirmation-modal .cutoff-period').text(picker.startDate.format('MMMM D, Y') + ' - ' + picker.endDate.format('MMMM D, Y'));
+        });
+
         loadSalesReport();
         function loadSalesReport() {
             var hidezero = $('#hide-zero-check').is(":checked");
@@ -449,7 +475,7 @@
 
             $.ajax({
                 type: "GET",
-                url: "/sales_report",
+                url: "/consignment_sales_report",
                 data: {hidezero, year},
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
