@@ -5615,6 +5615,9 @@ class MainController extends Controller
 
     // /consignment_sales/{warehouse}
     public function consignmentSalesReport($warehouse, Request $request) {
+        $month_names = [null, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        $month_name_short = [null, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+        $month_now = (int)Carbon::now()->format('m');
         $year = $request->year ? $request->year : Carbon::now()->format('Y');
         $query = DB::table('tabConsignment Monthly Sales Report')
             ->where('status', '!=', 'Cancelled')
@@ -5622,11 +5625,10 @@ class MainController extends Controller
             ->pluck('total_amount', 'month')->toArray();
         
         $result = [];
-        $month_name = [null, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-
-        $month_now = (int)Carbon::now()->format('m');
         for ($i=1; $i <= $month_now; $i++) { 
-            $result[$month_name[$i]] = array_key_exists($i, $query) ? $query[$i] : 0;
+            $month_index = $month_names[$i];
+            $month_i = $month_name_short[$i];
+            $result[$month_i] = array_key_exists($month_index, $query) ? $query[$month_index] : 0;
         }
 
         return [
