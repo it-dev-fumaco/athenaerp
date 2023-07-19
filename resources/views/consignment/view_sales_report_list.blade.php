@@ -34,6 +34,15 @@
                                     </select>
                                 </div>
                             </div>
+                            {{-- @if(session()->has('success')) --}}
+                                <div class="row" style="font-size: 9pt;">
+                                    <div class="col">
+                                        <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
+                                            Sales Report for the month of March has been added!
+                                        </div>
+                                    </div>
+                                </div>
+                            {{-- @endif --}}
                             <div id="sales-report-table" class="mt-2"></div>
                         </div>
                     </div>

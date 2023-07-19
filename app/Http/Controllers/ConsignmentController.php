@@ -492,10 +492,14 @@ class ConsignmentController extends Controller
         try {
             $now = Carbon::now();
             $sales_per_day = [];
+
             foreach($request->day as $day => $detail){
+                $amount = preg_replace("/[^0-9 .]/", "", $detail['amount']);
+                if(!is_numeric($amount)){
+                    return redirect()->back()->with('error', 'Amount should be a number.');
+                }
                 $sales_per_day[$day] = [
-                    'amount' => $detail['amount'],
-                    // 'attendance' => isset($detail['absent']) ? 'Absent' : 'Present'
+                    'amount' => $amount
                 ];
             }
 
@@ -508,7 +512,7 @@ class ConsignmentController extends Controller
                     'warehouse' => $request->branch,
                     'month' => $request->month,
                     'sales_per_day' => json_encode($sales_per_day, true),
-                    'total_amount' => collect($request->day)->sum('amount'),
+                    'total_amount' => collect($sales_per_day)->sum('amount'),
                     'remarks' => $request->remarks,
                     'fiscal_year' => $request->year,
                     'status' => isset($request->draft) && $request->draft ? 'Draft' : 'Submitted'
@@ -525,7 +529,7 @@ class ConsignmentController extends Controller
                     'warehouse' => $request->branch,
                     'month' => $request->month,
                     'sales_per_day' => json_encode($sales_per_day, true),
-                    'total_amount' => collect($request->day)->sum('amount'),
+                    'total_amount' => collect($sales_per_day)->sum('amount'),
                     'remarks' => $request->remarks,
                     'fiscal_year' => $request->year,
                     'status' => isset($request->draft) && $request->draft ? 'Draft' : 'Submitted'
@@ -533,10 +537,10 @@ class ConsignmentController extends Controller
             }
 
             DB::commit();
-            return redirect()->back()->with('success', 'Sales Report for the month of '.$request->month.' has been added!.');
+            return redirect('/sales_report_list/'.$request->branch)->with('success', 'Sales Report for the month of '.$request->month.' has been added!');
         } catch (\Throwable $th) {
             DB::rollback();
-            //throw $th;
+            // throw $th;
             return redirect()->back()->with('error', 'An error occured. Please try again');
         }
     }

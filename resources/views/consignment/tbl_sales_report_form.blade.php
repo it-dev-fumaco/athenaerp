@@ -4,6 +4,9 @@
 ])
 
 @section('content')
+@php
+    $submitted = $report && $report->status == 'Submitted' ? 1 : 0;
+@endphp
 <div class="content">
 	<div class="content-header p-0">
         <div class="container">
@@ -21,15 +24,6 @@
                             </div>
                         </div>
                         <div class="card-body p-1">
-                            @if(session()->has('success'))
-                                <div class="row">
-                                    <div class="col">
-                                        <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
-                                            {!! session()->get('success') !!}
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
                             @if(session()->has('error'))
                                 <div class="row">
                                     <div class="col">
@@ -66,7 +60,7 @@
                                                     <b>₱</b>
                                                 </div>
                                                 <div class="col-11">
-                                                    <input type="text" class="form-control text-center" name="day[{{ $day }}][amount]" value="{{ $data['amount'] }}" style="font-size: 9pt;">
+                                                    <input type="text" class="form-control text-center price-format" name="day[{{ $day }}][amount]" value="{{ number_format($data['amount'], 2) }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }}>
                                                 </div>
                                             </div>
                                         </td>
@@ -79,15 +73,17 @@
                                         {{ $report ? $report->remarks : null }}
                                     </textarea>
                                 </div>
-                                <div class="row d-flex justify-content-center align-items-center p-2">
-                                    <div class="col-12 mb-3 mx-auto">
-                                        <button type="button" class="btn btn-secondary btn-sm w-100 save-form" data-draft=1>Save as Draft</button>
+                                @if (!$submitted)
+                                    <div class="row d-flex justify-content-center align-items-center p-2">
+                                        <div class="col-12 mb-3 mx-auto">
+                                            <button type="button" class="btn btn-secondary btn-sm w-100 save-form" data-draft=1>Save as Draft</button>
+                                        </div>
+                                        <div class="col-12 mx-auto">
+                                            <button type="button" class="btn btn-primary btn-sm w-100 save-form" data-draft=0>Submit</button>
+                                        </div>
+                                        <input type="checkbox" name="draft" class="d-none">
                                     </div>
-                                    <div class="col-12 mx-auto">
-                                        <button type="button" class="btn btn-primary btn-sm w-100 save-form" data-draft=0>Submit</button>
-                                    </div>
-                                    <input type="checkbox" name="draft" class="d-none">
-                                </div>
+                                @endif
                             </form>
                         </div>
                     </div>
@@ -105,6 +101,16 @@
                 e.preventDefault();
                 $('input[name="draft"]').attr('checked', $(this).data('draft') ? true : false);
                 $('#sales-report-form').submit();
+            });
+
+            const formatToCurrency = amount => {
+                return amount.replace(/\d(?=(\d{3})+\.)/g, "$&,");
+            };
+
+            $(document).on('keyup', '.price-format', function (e){
+                e.preventDefault();
+                var val = $(this).val() ? $(this).val().replace(/[^\d.-]/g, '') : 0;
+                $(this).val(parseFloat(val).toLocaleString(window.document.documentElement.lang));
             });
         });
     </script>
