@@ -536,11 +536,11 @@ class ConsignmentController extends Controller
                 ]);
             }
 
-            DB::commit();
-            return redirect('/sales_report_list/'.$request->branch)->with('success', 'Sales Report for the month of '.$request->month.' has been '.$existing_record ? 'Updated!' : 'Added!');
+            // DB::commit();
+            return redirect()->back()->with('success', 'Sales Report for the month of <b>'.$request->month.'</b> has been '.($existing_record ? 'Updated!' : 'Added!'));
         } catch (\Throwable $th) {
             DB::rollback();
-            // throw $th;
+            throw $th;
             return redirect()->back()->with('error', 'An error occured. Please try again');
         }
     }

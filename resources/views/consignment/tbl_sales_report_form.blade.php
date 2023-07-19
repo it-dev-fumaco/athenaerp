@@ -33,9 +33,19 @@
                                     </div>
                                 </div>
                             @endif
+                            @if(session()->has('success'))
+                                <div class="row" style="font-size: 9pt;">
+                                    <div class="col">
+                                        <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
+                                            {!! session()->get('success') !!}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                             <form id="sales-report-form" action="/submit_monthly_sales_form" method="post">
                                 @csrf
                                 <h5 class="font-responsive font-weight-bold text-center m-1 text-uppercase d-block" id="branch-name">{{ $branch }}</h5>
+                                <p class="text-center" style="font-size: 9pt">Total Sales for the month of {{ $month }}: <br><b>₱ {{ $report ? number_format($report->total_amount, 2) : 0 }}</b></p>
                                 <div class="d-none">
                                     <input type="text" name="branch" value="{{ $branch }}" readonly>
                                     <input type="text" name="year" value="{{ $year }}" readonly>
@@ -55,14 +65,19 @@
                                             <small class="text-muted">{{ Carbon\Carbon::parse($month.' '.$day.', '.$year)->format('l') }}</small>
                                         </td>
                                         <td class="text-center">
-                                            <div class="row">
-                                                <div class="col-1 d-flex justify-content-center align-items-center">
-                                                    <b>₱</b>
-                                                </div>
-                                                <div class="col-11">
-                                                    <input type="text" class="form-control text-center price-format" name="day[{{ $day }}][amount]" value="{{ number_format($data['amount'], 2) }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }}>
-                                                </div>
-                                            </div>
+                                            @if ($submitted)
+                                                <b>₱ {{ number_format($data['amount'], 2) }}</b>
+                                            @else
+                                                <div class="row">
+                                                    <div class="col-1 d-flex justify-content-center align-items-center">
+                                                        <b>₱</b>
+                                                    </div>
+                                                    <div class="col-11">
+                                                        
+                                                        <input type="number" pattern="[0-9]*" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $data['amount'] }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }}>
+                                                    </div>
+                                                </div> 
+                                            @endif
                                         </td>
                                     </tr>
                                     @endforeach
@@ -92,6 +107,47 @@
         </div>
 	</div>
 </div>
+
+<div class="modal" tabindex="-1" id="submit-warning" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+            <h6 class="modal-title">Are you sure you want to submit?</h6>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p></p>
+            <div class="alert alert-warning text-center p-3" style="font-size: 9pt;">
+                <b><i class="fa fa-warning"></i> Reminder: Once submitted, sales report cannot be edited.</b>
+            </div>
+            <div class="container mt-2 text-center">
+                <h6><b>{{ $branch }}</b></h6>
+                <p>Sales Report for {{ $month.'-'.$year }}</p>
+                <p>Total Sales: <b id="total-sales"></b></p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary submit-form"><i class="fa fa-check"></i> Submit</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fa fa-remove"></i> Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+@endsection
+
+@section('style')
+    <style>
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        }
+
+        input[type=number] {
+        -moz-appearance: textfield;
+        }
+    </style>
 @endsection
 
 @section('script')
@@ -99,18 +155,26 @@
         $(document).ready(function(){
             $(document).on('click', '.save-form', function (e){
                 e.preventDefault();
-                $('input[name="draft"]').attr('checked', $(this).data('draft') ? true : false);
-                $('#sales-report-form').submit();
+
+                if($(this).data('draft')){
+                    $('input[name="draft"]').attr('checked', true);
+                    $('#sales-report-form').submit();
+                }else{
+                    $('input[name="draft"]').attr('checked', false);
+
+                    var amount = 0;
+                    $('.amount').each(function (i, e){
+                        amount += parseFloat($(this).val());
+                    });
+
+                    $('#total-sales').text('₱ ' + amount.toLocaleString(window.document.documentElement.lang));
+                    $('#submit-warning').modal('show');
+                }
             });
 
-            const formatToCurrency = amount => {
-                return amount.replace(/\d(?=(\d{3})+\.)/g, "$&,");
-            };
-
-            $(document).on('keyup', '.price-format', function (e){
+            $(document).on('click', '.submit-form', function (e){
                 e.preventDefault();
-                var val = $(this).val() ? $(this).val().replace(/[^\d.-]/g, '') : 0;
-                $(this).val(parseFloat(val).toLocaleString(window.document.documentElement.lang));
+                $('#sales-report-form').submit();
             });
         });
     </script>
