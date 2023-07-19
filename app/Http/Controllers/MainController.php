@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use App\Models\StockReservation;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Auth;
@@ -15,12 +14,8 @@ use DB;
 use Webp;
 use File;
 use ZipArchive;
-use \Illuminate\Pagination\Paginator;
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
 use Carbon\CarbonPeriod;
-
-use Illuminate\Support\Facades\Schema;
 
 class MainController extends Controller
 {
@@ -241,11 +236,6 @@ class MainController extends Controller
         $date_now_index = array_search($date_now, $cutoff_period);
         // set duration from and duration to
         $duration_to = $cutoff_period[$date_now_index + 1];
-        // if($sales_report_deadline->{'2nd_cutoff_date'}){
-        //     $duration_from = isset($cutoff_period[$date_now_index - 1]) ? $cutoff_period[$date_now_index - 1] : Carbon::now()->subMonths(1)->addDays(1)->format('m-d-Y');
-        // }else{
-        //     $duration_from = Carbon::parse($duration_to)->subMonths(1)->addDays(1)->format('d-m-Y');
-        // }
 
         $duration_from = Carbon::parse($duration_to)->subMonths(1)->addDays(1)->format('d-m-Y');
 

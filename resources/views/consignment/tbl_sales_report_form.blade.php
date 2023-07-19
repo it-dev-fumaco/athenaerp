@@ -27,7 +27,7 @@
                             @if(session()->has('error'))
                                 <div class="row">
                                     <div class="col">
-                                        <div class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+                                        <div class="alert alert-danger fade show text-center" role="alert">
                                             {!! session()->get('error') !!}
                                         </div>
                                     </div>
@@ -36,7 +36,7 @@
                             @if(session()->has('success'))
                                 <div class="row" style="font-size: 9pt;">
                                     <div class="col">
-                                        <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
+                                        <div class="alert alert-success fade show text-center" role="alert">
                                             {!! session()->get('success') !!}
                                         </div>
                                     </div>
