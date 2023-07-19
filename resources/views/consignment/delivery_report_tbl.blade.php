@@ -1,7 +1,4 @@
 <table class="table" style='font-size: 10pt;'>
-    <thead>
-        <th class="text-center p-1 align-middle">Store</th>
-    </thead>
     <tbody>
         @forelse ($ste_arr as $ste)
         <tr>

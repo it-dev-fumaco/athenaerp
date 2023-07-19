@@ -18,20 +18,20 @@
                     <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
-                <div class="modal-body" style="font-size: 10pt;">
-                  <span>Please enter your beginning inventory for:</span>
-                  <table class="table table-striped mt-2">
+                <div class="modal-body p-1" style="font-size: 10pt;">
+                  <span class="d-block text-center mt-2">Please enter your beginning inventory for the ff:</span>
+                  <table class="table table-striped mt-3">
                     <thead>
                       <tr>
-                        <th class="text-center" style="width: 70%;">Branch</th>
-                        <th class="text-center">-</th>
+                        <th class="text-center p-1 text-uppercase" style="width: 70%;">Branch / Store</th>
+                        <th class="text-center p-1">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       @foreach (($branches_with_pending_beginning_inventory) as $branch)
                         <tr>
-                          <td>{{ $branch }}</td>
-                          <td class="text-center"><a href="/beginning_inventory?branch={{ $branch }}" class="btn btn-primary btn-xs" style="font-size: 9pt"><i class="fa fa-plus"></i> Create</a></td>
+                          <td class="p-1 align-middle">{{ $branch }}</td>
+                          <td class="text-center p-2"><a href="/beginning_inventory?branch={{ $branch }}" class="btn btn-primary btn-xs" style="font-size: 9pt"><i class="fa fa-plus"></i> Create</a></td>
                         </tr>
                       @endforeach
                     </tbody>
@@ -93,8 +93,8 @@
             <div class="info-box bg-gradient-primary m-0">
               <div class="info-box-content p-0">
                 <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_item_sold) }}</div>
-                  <div class="p-1 text-center" style="font-size: 9pt;">Sales Report</div>
+                  <div class="p-1 text-center" style="font-size: 30px !important;"><i class="fas fa-file-invoice"></i></div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Sales Report <span class="d-block" style="font-size: 7pt;">{{ $due }}</span></div>
                 </div>
               </div>
             </div>
@@ -105,7 +105,7 @@
             <div class="info-box bg-gradient-info m-0">
               <div class="info-box-content p-0">
                 <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_pending_inventory_audit) }}</div>
+                  <div class="p-1 text-center" style="font-size: 30px !important;"><i class="fas fa-dolly-flatbed"></i></div>
                   <div class="p-1 text-center" style="font-size: 9pt;">Inventory Report <span class="d-block" style="font-size: 7pt;">{{ $due }}</span></div>
                 </div>
               </div>
@@ -117,8 +117,8 @@
             <div class="info-box bg-gradient-warning m-0">
               <div class="info-box-content p-0">
                 <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_transfer) }}</div>
-                  <div class="p-1 text-center" style="font-size: 9pt;">Stock Transfer</div>
+                  <div class="p-1 text-center" style="font-size: 30px !important;"><i class="fas fa-truck-loading"></i> </div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Stock Transfer <span class="d-block" style="font-size: 7pt;">Pending: {{ number_format($total_stock_transfer) }}</span></div>
                 </div>
               </div>
             </div>
@@ -129,8 +129,8 @@
             <div class="info-box bg-gradient-secondary m-0">
               <div class="info-box-content p-0">
                 <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                  <div class="p-1 text-center" style="font-size: 30px !important;">{{ number_format($total_stock_adjustments) }}</div>
-                  <div class="p-1 text-center" style="font-size: 9pt;">Beginning Entries</div>
+                  <div class="p-1 text-center" style="font-size: 30px !important;"><i class="fas fa-boxes"></i></div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Beginning Entries <span class="d-block" style="font-size: 7pt;">Pending: {{ number_format($total_stock_adjustments) }}</span></div>
                 </div>
               </div>
             </div>
@@ -207,7 +207,7 @@
       <div class="row p-0 m-0">
         <div class="col-md-12 p-1">
           <div class="card card-warning card-outline mt-2 mb-2">
-            <div class="card-header text-center font-weight-bold p-1 font-responsive">To Receive Item(s)</div>
+            <div class="card-header text-center font-weight-bold p-1 font-responsive text-uppercase">To Receive Item(s)</div>
             <div class="card-body p-0" id="pending-to-receive-container"></div>
           </div>
         </div>
@@ -217,8 +217,8 @@
           <div class="card m-0 p-1">
             <div class="card-header text-center font-weight-bold p-1">
               <span class="d-block">Sales Report</span>
-              <div class="form-group pl-2 pr-2 m-1">
-                <select id="sr-branch-warehouse-select" class="form-control selection form-control-sm {{ count($assigned_consignment_store) > 1 ? '' : 'd-none' }}">
+              <div class="form-group pl-2 pr-2 m-1 {{ count($assigned_consignment_store) > 1 ? '' : 'd-none' }}">
+                <select id="sr-branch-warehouse-select" class="form-control selection form-control-sm">
                   @foreach ($assigned_consignment_store as $branch)
                   <option value="{{ $branch }}">{{ $branch }}</option>
                   @endforeach
