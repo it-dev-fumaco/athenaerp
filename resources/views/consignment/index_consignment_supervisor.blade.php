@@ -80,9 +80,6 @@
                                                         <li class="nav-item col-6 p-0">
                                                             <a class="nav-link active font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#pending-content" role="tab" href="#">Sales Report</a>
                                                         </li>
-                                                        <li class="nav-item col-6 p-0">
-                                                            <a class="nav-link font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#audit-report-content" role="tab" href="#">Inventory Audit Report</a>
-                                                        </li>
                                                     </ul>
                                                 </div>
                                                 <div class="p-0 col-2">
@@ -151,42 +148,6 @@
                                                         </div>
                                                     </div>
                                                     <div id="beginning-inventory-list-el" class="p-0"></div>
-                                                </div>
-                                                <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
-                                                    <form method="GET" id="search-audit-form">
-                                                        <div class="row p-2">
-                                                            <div class="col-3">
-                                                                <select name="store" class="form-control" id="consignment-audit-select" required>
-                                                                    <option value="">Select Store</option>
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-3">
-                                                                <select name="cutoff" class="form-control" required>
-                                                                    <option value="">Select Cutoff Date</option>
-                                                                    @foreach ($cutoff_filters as $cf)
-                                                                    <option value="{{ $cf['id'] }}">{{ $cf['cutoff_start'] . ' - ' . $cf['cutoff_end'] }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-3">
-                                                                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
-                                                            </div>
-                                                        </div>
-                                                    </form>
-                                                    <div class="row m-0 pr-2 pl-2 pb-2">
-                                                        <div class="col-md-6 bg-white m-0 p-0" id="deliveries-content">
-                
-                                                        </div>
-                                                        <div class="col-md-6 bg-white m-0 p-0" id="returns-content">
-                                                           
-                                                        </div>
-                                                        <div class="col-md-12 bg-white m-0 p-0">
-                                                            <div id="sales-content">
-                                                                <h5 class="text-center text-uppercase mt-2 p-2 border-bottom font-weight-bolder">Sales</h5>
-                                                                <h6 class="text-center text-uppercase text-muted">Please select Store and Cutoff Period</h6>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -580,7 +541,7 @@
         function loadData() {
             loadDeliveries();
             loadReturns();
-            loadSales();
+            // loadSales();
         }
 
         function loadDeliveries() {
@@ -601,17 +562,6 @@
 				data: $('#search-audit-form').serialize(),
 				success: function (response) {
 					$('#returns-content').html(response);
-				}
-			});
-		}
-
-        function loadSales() {
-			$.ajax({
-				type: "GET",
-				url: "/get_audit_sales",
-				data: $('#search-audit-form').serialize(),
-				success: function (response) {
-					$('#sales-content').html(response);
 				}
 			});
 		}
