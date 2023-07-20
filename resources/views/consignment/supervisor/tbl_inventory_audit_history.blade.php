@@ -3,8 +3,8 @@
         <th class="text-center font-responsive align-middle p-2">Transaction Date</th>
         <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Store</th>
         <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Period</th>
-        <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Total Qty Sold</th>
-        <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Total Sales</th>
+        <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">No. of Item(s)</th>
+        <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Total Qty</th>
         <th class="text-center font-responsive align-middle p-2 d-none d-lg-table-cell">Promodiser</th>
         <th class="text-center font-responsive align-middle p-2">Action</th>
     </thead>
@@ -15,13 +15,13 @@
             <td class="text-left font-responsive align-middle p-1">
                 <span class="d-lg-none">{{ \Carbon\Carbon::parse($row['audit_date_from'])->format('M. d, Y') }} - {{ \Carbon\Carbon::parse($row['audit_date_to'])->format('M. d, Y') }}</span>
                 <span class="d-block">{{ $row['branch_warehouse'] }}</span>
-                <span class="d-block d-lg-none"><b>Total Qty Sold: </b>{{ number_format($row['total_qty_sold']) }}</span>
-                <span class="d-block d-lg-none"><b>Total Sales: </b>{{ '₱ ' . number_format($row['total_sales'], 2) }}</span>
+                <span class="d-block d-lg-none"><b>No. of Item(s): </b>{{ number_format($row['total_items']) }}</span>
+                <span class="d-block d-lg-none"><b>Total Qty: </b>{{ number_format($row['total_item_qty']) }}</span>
                 <span class="d-block d-lg-none">{{ $row['promodiser'] }} - {{ \Carbon\Carbon::parse($row['transaction_date'])->format('F d, Y') }}</span>
             </td>
             <td class="text-center font-responsive align-middle p-1 d-none d-lg-table-cell">{{ \Carbon\Carbon::parse($row['audit_date_from'])->format('M. d, Y') }} - {{ \Carbon\Carbon::parse($row['audit_date_to'])->format('M. d, Y') }}</td>
-            <td class="text-center font-responsive align-middle p-1 d-none d-lg-table-cell">{{ number_format($row['total_qty_sold']) }}</td>
-            <td class="text-center font-responsive align-middle p-1 d-none d-lg-table-cell">{{ '₱ ' . number_format($row['total_sales'], 2) }}</td>
+            <td class="text-center font-responsive align-middle p-1 d-none d-lg-table-cell">{{ number_format($row['total_items']) }}</td>
+            <td class="text-center font-responsive align-middle p-1 d-none d-lg-table-cell">{{ number_format($row['total_item_qty']) }}</td>
             <td class="text-center font-responsive align-middle p-1 d-none d-lg-table-cell">{{ $row['promodiser'] }}</td>
             <td class="text-center font-responsive align-middle p-1">
                 <a href="/view_inventory_audit_items/{{ $row['branch_warehouse'] }}/{{ $row['audit_date_from'] }}/{{ $row['audit_date_to'] }}" class="btn btn-info btn-xs" style="width: 70px;"><i class="fas fa-search"></i></a>

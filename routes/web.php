@@ -194,7 +194,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/damaged/return/{id}', 'ConsignmentController@returnDamagedItem');
         Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
         Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport')->name('stock_report_list');
-        Route::get('/product_sold/cancel/{id}', 'ConsignmentController@cancelProductSold');
         Route::get('/stock_return_form', 'ConsignmentController@stockReturnForm');
 
         Route::get('/inventory_items/{branch}', 'ConsignmentController@inventoryItems'); 
@@ -206,9 +205,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/pending_submission_inventory_audit', 'ConsignmentController@getPendingSubmissionInventoryAudit');
         Route::get('/sales_report_list/{branch}', 'ConsignmentController@viewSalesReportList');        
 
-        Route::get('/get_product_sold_list', 'ConsignmentController@productSoldList');
         Route::get('/view_sales_report', 'ConsignmentController@viewSalesReport');
-        Route::get('/view_product_sold_items/{store}/{from}/{to}', 'ConsignmentController@viewProductSoldItems');
 
         Route::get('/get_activity_logs', 'ConsignmentController@activityLogs');
         Route::get('/view_promodisers', 'ConsignmentController@viewPromodisersList');

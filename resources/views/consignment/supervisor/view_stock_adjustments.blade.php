@@ -473,7 +473,7 @@
                                                                                             </button>
                                                                                         </div>
                                                                                         <div class="modal-body">
-                                                                                            @if ($inv['sold'])
+                                                                                            {{-- @if ($inv['sold']) --}}
                                                                                                 <div class="callout callout-danger text-justify">
                                                                                                     <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records of the following:
                                                                                                 </div>
@@ -484,7 +484,7 @@
                                                                                                             <th class="text-center" style="width: 20%;">Qty</th>
                                                                                                             <th class="text-center" style="width: 20%;">Amount</th>
                                                                                                         </tr>
-                                                                                                        @foreach($inv['sold'] as $item)
+                                                                                                        {{-- @foreach($inv['sold'] as $item)
                                                                                                             <tr>
                                                                                                                 <td class="p-0" colspan=3>
                                                                                                                     <div class="p-0 row">
@@ -518,14 +518,14 @@
                                                                                                                     </div>
                                                                                                                 </td>
                                                                                                             </tr>
-                                                                                                        @endforeach
+                                                                                                        @endforeach --}}
                                                                                                     </table>
                                                                                                 </div>
-                                                                                            @else
+                                                                                            {{-- @else --}}
                                                                                                 <div class="callout callout-danger text-justify">
                                                                                                     <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records.
                                                                                                 </div>
-                                                                                            @endif
+                                                                                            {{-- @endif --}}
                                                                                         </div>
                                                                                         <div class="modal-footer">
                                                                                             <a href="/cancel/approved_beginning_inv/{{ $inv['name'] }}" class="btn btn-primary w-100">Confirm</a>
