@@ -1,4 +1,4 @@
-<table class="table" style="font-size: 10pt;">
+<table class="table" style="font-size: 9pt;">
     <thead class="border-top">
         <th class="text-center p-1 d-none d-lg-table-cell">Reference</th>
         <th class="text-center p-1 d-none d-lg-table-cell">Date</th>
@@ -23,11 +23,8 @@
     @php
         $badge = 'primary';
         if($ste['docstatus'] == 1){
-            $status = $ste['transfer_type'] == 'For Return' ? 'For Return' : 'Approved';
-            if($ste['consignment_status'] == 'Received'){
-                $badge = 'success';
-                $status = 'Received';
-            }
+            $badge = 'success';
+            $status = 'Received';
 
             if($ste['transfer_type'] == 'Sales Return' && $ste['sales_return_request_status'] == 'Received'){
                 $badge = 'secondary';
@@ -56,7 +53,7 @@
         <td class="d-none p-1 d-lg-table-cell">{{ $ste['transfer_type'] == 'For Return' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
         @else {{-- Sales Returns --}}
         <td class="p-1">
-            <div class="d-none d-lg-inline text-center" style="font-size: 8pt;">
+            <div class="d-none d-lg-inline text-center">
                 {{ $ste['to_warehouse'] }}
             </div>
             <div class="d-inline d-lg-none text-left">
