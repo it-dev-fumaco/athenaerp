@@ -24,6 +24,10 @@
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/fullcalendar/main.css') }}">
 	<!-- datepicker -->
 	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
+
+	<link href="{{ asset('/bootstrap-extensions/css/bootstrap-table.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('/bootstrap-extensions/css/bootstrap-table-fixed-columns.min.css') }}" rel="stylesheet">
+
 	<style>
 		* {
 			-webkit-overflow-scrolling: touch !important;
@@ -1302,6 +1306,9 @@
 <!-- datepicker -->
 <script type="text/javascript" src="{{ asset('js/datetimepicker/moment.min.js') }}"></script>
 <script type="text/javascript" src="{{ asset('js/datetimepicker/daterangepicker.min.js') }}"></script>
+
+<script src="{{ asset('/bootstrap-extensions/js/bootstrap-table.min.js') }}"></script>
+<script src="{{ asset('/bootstrap-extensions/js/bootstrap-table-fixed-columns.min.js') }}"></script>
 	@yield('script')
 
 	<script>

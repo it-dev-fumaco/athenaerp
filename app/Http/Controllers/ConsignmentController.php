@@ -1045,9 +1045,12 @@ class ConsignmentController extends Controller
     // }
 
     public function salesReport(Request $request){
+        $exploded_date = explode(' to ', $request->daterange);
+        $request_start_date = isset($exploded_date[0]) ? $exploded_date[0] : Carbon::now()->startOfMonth();
+        $request_end_date = isset($exploded_date[1]) ? $exploded_date[1] : Carbon::now();
 
-        $request_start_date = Carbon::parse('2023-01-01');
-        $request_end_date = Carbon::parse('2023-02-20');
+        $request_start_date = Carbon::parse($request_start_date);
+        $request_end_date = Carbon::parse($request_end_date);
 
         $months_array = [null, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 

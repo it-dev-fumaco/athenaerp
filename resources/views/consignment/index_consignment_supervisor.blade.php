@@ -133,24 +133,15 @@
                                                 <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
                                                     <div class="row">
                                                         <div class="col-6">
-                                                            <div class="d-flex flex-row text-center align-items-center m-0">
-                                                                <div class="p-2">
-                                                                    <select class="form-control w-100" id="year-filter">
-                                                                        <option value="" disabled>Select Year</option>
-                                                                        @foreach ($sales_report_included_years as $year)
-                                                                        <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                <div class="p-2">
-                                                                    <div class="form-check text-center text-white">
-                                                                        <input class="form-check-input" type="checkbox" id="hide-zero-check" checked>
-                                                                        <label class="form-check-label" for="hide-zero-check"> Hide zero values
-                                                                        </label>
-                                                                    </div>
-                                                                    <div class="form-check text-white">
-                                                                        {{ Carbon\Carbon::now()->subDays(7)->format("Y-M-d") }}
-                                                                        <input type="text" class="form-control date-range">
+                                                            <div class="p-1">
+                                                                <div class="col-9 text-white p-2">
+                                                                    <div class="row">
+                                                                        <div class="col-4 d-flex justify-content-center align-items-center">
+                                                                            <label>Select Date Range</label>
+                                                                        </div>
+                                                                        <div class="col-8">
+                                                                            <input type="text" class="form-control date-range">
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -159,7 +150,7 @@
                                                             <a href="/consignment_import_tool" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-external-link-alt"></i> Import Sales Report</a>
                                                         </div>
                                                     </div>
-                                                    <div id="beginning-inventory-list-el" class="pl-2 pr-2 pb-2"></div>
+                                                    <div id="beginning-inventory-list-el" class="p-0"></div>
                                                 </div>
                                                 <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
                                                     <form method="GET" id="search-audit-form">
@@ -448,35 +439,31 @@
 
         $(".date-range").daterangepicker({
             placeholder: 'Select Duration',
+            startDate: moment().startOf('month').format('YYYY-MMM-DD'),
+            endDate: moment().format('YYYY-MMM-DD'),
             locale: {
                 format: 'YYYY-MMM-DD',
                 separator: " to ",
-                startDate: '{{ Carbon\Carbon::now()->subDays(7)->format("Y-M-d") }}',
-                endDate: '{{ Carbon\Carbon::now()->format("Y-M-d") }}',
             }
         });
+
+        console.log(moment().startOf('month').format('YYYY-MMM-DD'));
 
         $(".date-range").on('apply.daterangepicker', function (ev, picker) {
             var duration = picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD');
             $(this).val(duration);
 
-            console.log($(this).val());
-
-            // $('#input-values input[name=audit_date_from]').val(picker.startDate.format('YYYY-MM-DD'));
-            // $('#input-values input[name=audit_date_to]').val(picker.endDate.format('YYYY-MM-DD'));
-
-            // $('#confirmation-modal .cutoff-period').text(picker.startDate.format('MMMM D, Y') + ' - ' + picker.endDate.format('MMMM D, Y'));
+            loadSalesReport();
         });
 
         loadSalesReport();
         function loadSalesReport() {
-            var hidezero = $('#hide-zero-check').is(":checked");
-            var year = $('#year-filter').val();
-
             $.ajax({
                 type: "GET",
                 url: "/consignment_sales_report",
-                data: {hidezero, year},
+                data: {
+                    daterange: $('.date-range').val()
+                },
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
                 }
