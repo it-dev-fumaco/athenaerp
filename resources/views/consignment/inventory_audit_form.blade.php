@@ -159,20 +159,9 @@
                     <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
                     <small class="d-block">Branch / Store</small>
                 </div>
-                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
+                <div class="text-center mb-3 mt-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-3 cutoff-period">{{ $duration }}</span>
                     <small class="d-block">Cut-off Period</small>
-                </div>
-                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase border-bottom">Sales Report Summary</p>
-                <div class="d-flex flex-row mt-1 justify-content-between">
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" id="total-qty-sold" style="font-size: 12pt;">0</span>
-                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
-                    </div>
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" id="total-sales-amount" style="font-size: 12pt;">0</span>
-                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
-                    </div>
                 </div>
                 <div class="row pt-5">
                     <div class="col-6">
@@ -233,7 +222,7 @@
                 </p>
                 <p class="text-center text-uppercase mt-0 font-weight-bold">{{ session()->get('success') }}</p>
                 <hr>
-                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Sales Report Summary</p>
+                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Inventory Audit Report</p>
                 <div class="text-center mb-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
                     <small class="d-block">Branch / Store</small>
@@ -241,16 +230,6 @@
                         {{ session()->get('transaction_date') ? \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') : \Carbon\Carbon::now()->format('F d, Y') }}
                     </span>
                     <small class="d-block">Transaction Date</small>
-                </div>
-                <div class="d-flex flex-row mt-1 justify-content-between">
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ number_format(session()->get('total_qty_sold')) }}</span>
-                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
-                    </div>
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ '₱ ' . number_format(session()->get('grand_total'), 2) }}</span>
-                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
-                    </div>
                 </div>
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">
@@ -428,25 +407,6 @@
 
                 return false;
             }
-
-            var total_sold_qty = total_sales_amount = 0;
-            $('.item-row').each(function() {
-                var item_price = parseFloat($(this).find('.item-price').eq(0).text());
-                var orig_sold_qty = parseInt($(this).find('.orig-item-sold-qty').eq(0).text());
-                var audit_qty = parseInt($(this).find('.item-audit-qty').eq(0).val().replace(/,/g, ''));
-                var orig_consigned_qty = parseInt($(this).find('.orig-item-consigned-qty').eq(0).text());
-                total_sold_qty += orig_sold_qty;
-                total_sales_amount += (orig_sold_qty * item_price);
-
-                var new_item_sold_qty = orig_consigned_qty - audit_qty;
-                if (new_item_sold_qty > -1) {
-                    total_sold_qty += new_item_sold_qty;
-                    total_sales_amount += (new_item_sold_qty * item_price);
-                }
-            });
-
-            $('#total-qty-sold').text(total_sold_qty.toLocaleString());
-            $('#total-sales-amount').text(formatToCurrency(total_sales_amount));
 
             var form = $('#inventory-report-entry-form');
             var reportValidity = form[0].reportValidity();

@@ -24,16 +24,22 @@
                             <h5 class="font-responsive font-weight-bold text-center m-1 text-uppercase d-block">{{ $store }}</h5>
                             <h6 class="text-center mt-2 font-weight-bolder font-responsive">{{ $duration }}</h6>
 
-                            {{-- <span class="d-block text-center font-responsive m-1">Total Sales: <b>{{ '₱ ' . number_format($total_sales, 2) }}</b></span> --}}
                             <table class="table" style="font-size: 8pt;">
                                 <thead class="border-top">
                                     <th class="text-center align-middle p-1" style="width: 33%;">ITEM CODE</th>
-                                    <th class="text-center align-middle p-1" style="width: 26%;">OPENING QTY</th>
-                                    {{-- <th class="text-center align-middle p-1" style="width: 20%;">SOLD</th> --}}
+                                    <th class="text-center align-middle p-1" style="width: 26%;">PREVIOUS QTY</th>
                                     <th class="text-center align-middle p-1" style="width: 21%;">AUDIT QTY</th>
                                 </thead>
                                 <tbody>
-                                    @forelse ($result as $row)
+                                    @foreach ($item_classification as $item_class => $items)
+                                    <tr>
+                                        <td colspan="3" class="p-0">
+                                            <div class="bg-navy p-2">
+                                                <span style="font-weight: bold; font-size: 10pt;">{{ $item_class }}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @forelse ($items as $row)
                                     <tr style="border-bottom: 0 !important;">
                                         <td class="text-justify p-1 align-middle" style="border-bottom: 0 !important;">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
@@ -52,11 +58,8 @@
                                             </div>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                            <span class="d-block">{{ $row['opening_qty'] }}</span>
+                                            <span class="d-block">{{ $row['previous_qty'] }}</span>
                                         </td>
-                                        {{-- <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                            <span class="d-block">{{ $row['sold_qty'] }}</span>
-                                        </td> --}}
                                         <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
                                             <span class="d-block">{{ $row['audit_qty'] }}</span>
                                         </td>
@@ -69,6 +72,7 @@
                                         <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
                                     </tr> 
                                     @endforelse
+                                    @endforeach
                                 </tbody>
                             </table>
                             <div class="m-2">

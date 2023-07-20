@@ -3337,6 +3337,7 @@ class ConsignmentController extends Controller
 
         $list = DB::table('tabConsignment Inventory Audit Report as cia')
             ->join('tabConsignment Inventory Audit Report Item as ciar', 'cia.name', 'ciar.parent')
+            ->join('tabItem as i', 'i.name', 'ciar.item_code')
             ->where('branch_warehouse', $store)->where('audit_date_from', $from)
             ->where('audit_date_to', $to)->get();
 
@@ -3403,8 +3404,6 @@ class ConsignmentController extends Controller
             }
 
             $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
-            // $total_sold = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->sold_qty : 0;
-            // $total_value = array_key_exists($id, $product_sold) ? $product_sold[$id][0]->total_value : 0;
             $opening_qty = array_key_exists($id, $inv_audit) ? $inv_audit[$id][0]->qty : 0;
 
             if (array_key_exists($id, $inv_audit)) {
@@ -3429,20 +3428,22 @@ class ConsignmentController extends Controller
             $result[] = [
                 'item_code' => $id,
                 'description' => $displayed_description,
+                'item_classification' => $row->item_classification,
                 'price' => $row->price,
                 'amount' => $row->amount,
                 'img' => $img,
                 'img_webp' => $webp,
                 'img_count' => $img_count,
-                // 'total_value' => $total_value,
                 'opening_qty' => number_format($opening_qty),
-                // 'sold_qty' => number_format($total_sold),
+                'previous_qty' => number_format($row->available_stock_on_transaction),
                 'audit_qty' => number_format($row->qty)
             ];
         }
 
         if($is_promodiser) {
-            return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'total_sales'));
+            $item_classification = collect($result)->groupBy('item_classification');
+
+            return view('consignment.view_inventory_audit_items', compact('list', 'store', 'duration', 'result', 'item_classification'));
         }
 
         $next_record = DB::table('tabConsignment Inventory Audit Report')
