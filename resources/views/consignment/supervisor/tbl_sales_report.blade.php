@@ -10,7 +10,36 @@
             <b>Total Amount</b>
         </div>
     </div>
-    @foreach ($report as $warehouse => $arr)
+    <div class="row">
+        <div class="col-12">
+            <table class="table" border="1">
+                <thead>
+                    <th>Branch / Store</th>
+                    @foreach ($included_dates as $transaction_date)
+                    <th>{{ $transaction_date }}</th>
+                    @endforeach
+                    <th>Total Sales</th>
+                </thead>
+                <tbody>
+                    @forelse ($warehouses_with_data as $warehouse)
+                    <tr>
+                        <td>{{ $warehouse }}</td>
+                        @foreach ($included_dates as $sale_date)
+                        @php
+                            $sale_amount = isset($report[$warehouse][$sale_date]) ? '₱ ' . number_format($report[$warehouse][$sale_date], 2)  : '--';
+                        @endphp
+                        <td>{{ $sale_amount }}</td>
+                        @endforeach
+                        <td>{{ '₱ ' . number_format(collect($report[$warehouse])->sum(), 2) }}</td>
+                    </tr>
+                    @empty
+                        
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{-- @foreach ($warehouses_with_data as $warehouse => $arr)
     <div class="row border border-danger">
         <div class="col-2 d-flex justify-content-center align-items-center p-2 border border-danger">
             <b>{{ $warehouse }}</b>
@@ -33,5 +62,5 @@
             <b>₱ {{ number_format(collect($arr)->sum('amount'), 2) }}</b>
         </div>
     </div>
-    @endforeach
+    @endforeach --}}
 </div>

@@ -85,7 +85,7 @@
                                         <th class="text-center p-2">Day</th>
                                         <th class="text-center p-2">Amount</th>
                                     </thead>
-                                    @foreach($data_per_day as $day => $data)
+                                    @foreach($sales_per_day as $day => $amount)
                                     <tr>
                                         <td class="text-center">
                                             <span class="d-block font-weight-bold">{{ $month.' '.$day }}</span>
@@ -93,14 +93,14 @@
                                         </td>
                                         <td class="text-center align-middle">
                                             @if ($submitted)
-                                                <b>₱ {{ number_format($data['amount'], 2) }}</b>
+                                                <b>₱ {{ number_format($amount, 2) }}</b>
                                             @else
                                                 <div class="row">
                                                     <div class="col-1 d-flex justify-content-center align-items-center">
                                                         <b>₱</b>
                                                     </div>
                                                     <div class="col-11">
-                                                        <input type="number" pattern="[0-9]*" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $data['amount'] }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }}>
+                                                        <input type="number" pattern="[0-9]*" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $amount }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }}>
                                                     </div>
                                                 </div> 
                                             @endif

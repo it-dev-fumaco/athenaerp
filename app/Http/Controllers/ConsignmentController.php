@@ -409,27 +409,17 @@ class ConsignmentController extends Controller
     }
 
     public function viewMonthlySalesForm($branch, $date){
-        $days = Carbon::parse($date)->daysInMonth;
         $exploded = explode('-', $date);
         $month = $exploded[0];
         $year = $exploded[1];
 
-        $report = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $year)->where('month', $month)->where('warehouse', $branch)->first();
+        $report = DB::table('tabConsignment Monthly Sales Report')
+            ->where('fiscal_year', $year)->where('month', $month)
+            ->where('warehouse', $branch)->first();
+            
         $sales_per_day = $report ? collect(json_decode($report->sales_per_day)) : [];
 
-        $data_per_day = [];
-        for($day = 1; $day <= $days; $day++){
-            $details = isset($sales_per_day[$day]) ? collect($sales_per_day[$day]) : [];
-            $amount = isset($details['amount']) ? (float)$details['amount'] : 0;
-            $attendance = isset($details['attendance']) ? $details['attendance'] : 'Present';
-
-            $data_per_day[$day] = [
-                'amount' => $amount,
-                'attendance' => $attendance
-            ];
-        }
-
-        return view('consignment.tbl_sales_report_form', compact('branch', 'data_per_day', 'month', 'year', 'report'));
+        return view('consignment.tbl_sales_report_form', compact('branch', 'sales_per_day', 'month', 'year', 'report'));
     }
 
     public function submitMonthlySaleForm(Request $request){
@@ -442,9 +432,7 @@ class ConsignmentController extends Controller
                 if(!is_numeric($amount)){
                     return redirect()->back()->with('error', 'Amount should be a number.');
                 }
-                $sales_per_day[$day] = [
-                    'amount' => $amount
-                ];
+                $sales_per_day[$day] = $amount;
             }
 
             $transaction_month = new Carbon('last day of '. $request->month .' ' . $request->year);
@@ -470,7 +458,7 @@ class ConsignmentController extends Controller
                     'warehouse' => $request->branch,
                     'month' => $request->month,
                     'sales_per_day' => json_encode($sales_per_day, true),
-                    'total_amount' => collect($sales_per_day)->sum('amount'),
+                    'total_amount' => collect($sales_per_day)->sum(),
                     'remarks' => $request->remarks,
                     'fiscal_year' => $request->year,
                     'status' => $status,
@@ -490,7 +478,7 @@ class ConsignmentController extends Controller
                     'warehouse' => $request->branch,
                     'month' => $request->month,
                     'sales_per_day' => json_encode($sales_per_day, true),
-                    'total_amount' => collect($sales_per_day)->sum('amount'),
+                    'total_amount' => collect($sales_per_day)->sum(),
                     'remarks' => $request->remarks,
                     'fiscal_year' => $request->year,
                     'status' => $status,
@@ -1057,22 +1045,41 @@ class ConsignmentController extends Controller
     // }
 
     public function salesReport(Request $request){
-        $sales_report = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', 2023)
-            ->orderByRaw("FIELD(month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December') ASC")->get();
+
+        $request_start_date = Carbon::parse('2023-01-01');
+        $request_end_date = Carbon::parse('2023-02-20');
+
+        $months_array = [null, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        $period = CarbonPeriod::create($request_start_date, $request_end_date);
+
+        $included_dates = $included_months = [];
+        foreach ($period as $date) {
+            $included_months[] = $months_array[(int) Carbon::parse($date)->format('m')];
+            $included_dates[] = Carbon::parse($date)->format('Y-m-d');
+        }
+
+        $sales_report = DB::table('tabConsignment Monthly Sales Report')
+            ->whereIn('fiscal_year', [$request_start_date->format('Y'), $request_end_date->format('Y')])
+            ->whereIn('month', $included_months)
+            ->orderByRaw("FIELD(month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December') ASC")
+            ->get();
 
         $report = [];
         foreach($sales_report as $details){
+            $month_index = array_search($details->month, $months_array);
             $sales_per_day = collect(json_decode($details->sales_per_day));
-            foreach($sales_per_day as $day => $sale){
-                $date = $details->month.' '.$day.', 2023';
-                $report[$details->warehouse][] = [
-                    'date' => $date,
-                    'amount' => collect($sale)['amount']
-                ];
+            foreach($sales_per_day as $day => $amount){
+                $sale_date = Carbon::parse($details->fiscal_year . '-' . $month_index . '-' . $day)->format('Y-m-d');
+                if (in_array($sale_date, $included_dates)) {
+                    $report[$details->warehouse][$sale_date] = $amount;
+                }
             }
         }
 
-        return view('consignment.supervisor.tbl_sales_report', compact('report'));
+        $warehouses_with_data = collect($sales_report)->pluck('warehouse');
+
+        return view('consignment.supervisor.tbl_sales_report', compact('report', 'included_dates', 'warehouses_with_data'));
     }
 
     // /inventory_items/{branch}

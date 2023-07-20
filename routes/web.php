@@ -152,7 +152,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         // Consignment Supervisor
         Route::get('/beginning_inv_list', 'ConsignmentController@beginningInventoryApproval');
         Route::post('/approve_beginning_inv/{id}', 'ConsignmentController@approveBeginningInventory');
-        Route::get('/sales_report', 'ConsignmentController@salesReport');
+        Route::get('/consignment_sales_report', 'ConsignmentController@salesReport');
         Route::get('/get_consignment_warehouses', 'ConsignmentController@getConsignmentWarehouses');
         Route::get('/stock_adjustment_history', 'ConsignmentController@viewStockAdjustmentHistory');
         Route::get('/stock_adjustment_form', 'ConsignmentController@viewStockAdjustmentForm');
