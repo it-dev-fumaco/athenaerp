@@ -85,7 +85,10 @@
                                         <th class="text-center p-2">Day</th>
                                         <th class="text-center p-2">Amount</th>
                                     </thead>
-                                    @foreach($sales_per_day as $day => $amount)
+                                    @for($day = 1; $day <= $days; $day++)
+                                    @php
+                                        $amount = isset($sales_per_day[$day]) ? $sales_per_day[$day] : 0;
+                                    @endphp
                                     <tr>
                                         <td class="text-center">
                                             <span class="d-block font-weight-bold">{{ $month.' '.$day }}</span>
@@ -106,7 +109,7 @@
                                             @endif
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    @endfor
                                 </table>
                                 <hr class="p-1 m-0">
                                 <div class="row m-0 pr-2 pl-2">

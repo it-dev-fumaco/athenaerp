@@ -368,8 +368,10 @@ class ConsignmentController extends Controller
             return redirect()->back()->withInput($request->input())->with('error', 'An error occured. Please contact your system administrator.');
         }
     }
-
+    
+    // /view_monthly_sales_form/{branch}/{date}
     public function viewMonthlySalesForm($branch, $date){
+        $days = Carbon::parse($date)->daysInMonth;
         $exploded = explode('-', $date);
         $month = $exploded[0];
         $year = $exploded[1];
@@ -380,7 +382,7 @@ class ConsignmentController extends Controller
             
         $sales_per_day = $report ? collect(json_decode($report->sales_per_day)) : [];
 
-        return view('consignment.tbl_sales_report_form', compact('branch', 'sales_per_day', 'month', 'year', 'report'));
+        return view('consignment.tbl_sales_report_form', compact('branch', 'sales_per_day', 'month', 'year', 'report', 'days'));
     }
 
     public function submitMonthlySaleForm(Request $request){
@@ -2621,11 +2623,11 @@ class ConsignmentController extends Controller
                 // DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
 
                 // source warehouse
-                if($request->transfer_as == 'For Return'){
+                if(in_array($request->transfer_as, ['For Return'])){
                     if(isset($items[$source_warehouse][$item_code])){
                         if($items[$source_warehouse][$item_code]['consigned_qty'] < $transfer_qty[$item_code]['transfer_qty']){
-                                return redirect()->back()->with('error', 'Actual/Consigned Qty cannot be less than the transfered qty');
-                            }
+                            return redirect()->back()->with('error', 'Consigned Qty cannot be less than the transfered qty');
+                        }
 
                         DB::table('tabBin')->where('warehouse', $source_warehouse)->where('item_code', $item_code)->update([
                             'modified' => $now->toDateTimeString(),

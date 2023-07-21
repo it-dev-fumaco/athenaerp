@@ -175,7 +175,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::post('/stock_adjust/submit/{id}', 'ConsignmentController@submitStockAdjustment');
         
         Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');
-        Route::get('/beginning_inventory_items/{id}', 'ConsignmentController@beginningInvItemsList');
         Route::get('/beginning_inventory/{inv?}', 'ConsignmentController@beginningInventory');
         Route::get('/beginning_inv_items/{action}/{branch}/{id?}', 'ConsignmentController@beginningInvItems');
         Route::get('/get_items/{branch}', 'ConsignmentController@getItems');
@@ -211,7 +210,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/view_promodisers', 'ConsignmentController@viewPromodisersList');
         Route::get('/get_audit_deliveries', 'ConsignmentController@getAuditDeliveries');
         Route::get('/get_audit_returns', 'ConsignmentController@getAuditReturns');
-        Route::get('/get_audit_sales', 'ConsignmentController@getAuditSales');
 
         Route::get('/consignment_dashboard', 'MainController@viewConsignmentDashboard');
 

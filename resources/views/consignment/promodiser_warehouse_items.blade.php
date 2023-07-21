@@ -74,9 +74,11 @@
                                         <td class="p-1 align-middle">
                                             <b>{{ $item->item_code }}</b>
                                         </td>
-                                        <td class="text-center p-1">
-                                            <span class="font-weight-bold d-block">{{ number_format($item->consigned_qty) }}</span>
-                                            <small class="text-muted">{{ $item->stock_uom }}</small>
+                                        <td class="text-center p-1 align-middle">
+                                            <p>
+                                                <span class="font-weight-bold d-block">{{ number_format($item->consigned_qty) }}</span>
+                                                <small class="text-muted">{{ $item->stock_uom }}</small>
+                                            </p>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
                                             {{ '₱ ' . number_format($item->consignment_price, 2) }}
