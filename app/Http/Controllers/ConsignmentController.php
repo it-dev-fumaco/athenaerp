@@ -3778,6 +3778,37 @@ class ConsignmentController extends Controller
 
             DB::table('tabConsignment Stock Adjustment Items')->insert($consignment_logs);
 
+            $images = DB::table('tabItem Images')->whereIn('parent', collect($consignment_logs)->pluck('item_code'))->get()->groupBy('parent');
+
+            $promodisers = DB::table('tabAssigned Consignment Warehouse as acw')
+                ->join('tabWarehouse Users as wu', 'wu.frappe_userid', 'acw.parent')
+                ->where('acw.warehouse', $request->warehouse)->pluck('wu.wh_user');
+
+            $promodisers = collect($promodisers)->map(function ($q){
+                return str_replace('.local', '.com', $q);
+            });
+
+            $mail_data = [
+                'warehouse' => $request->warehouse,
+                'images' => $images,
+                'reference_no' => $csa_id,
+                'created_by' => Auth::user()->wh_user,
+                'created_at' => Carbon::now()->format('M d, Y h:i A'),
+                'logs' => $consignment_logs,
+                'notes' => $request->notes
+            ];
+
+            if($promodisers){
+                foreach ($promodisers as $promodiser) {
+                    try {
+                        Mail::send('mail_template.stock_adjustments', $mail_data, function($message) use ($promodiser){
+                            $message->to($promodiser);
+                            $message->subject('AthenaERP - Stock Adjustment');
+                        });
+                    } catch (\Throwable $e) {}
+                }
+            }
+
             DB::commit();
             session()->flash('success', 'Warehouse Stocks Adjusted.');
             return redirect('/beginning_inv_list');
