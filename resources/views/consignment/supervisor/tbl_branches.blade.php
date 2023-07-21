@@ -132,6 +132,9 @@
                                         @endforelse
                                     </div>
                                 </div>
+                                <div class="modal-footer">
+                                    <a href="/consignment/export/{{ $branch->name }}" class="btn btn-primary btn-sm"><i class="fa fa-file"></i> Export</a>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -5428,6 +5428,19 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.branches');
     }
 
+    public function export_to_excel($branch){
+        $items = DB::table('tabItem as i')
+            ->join('tabBin as b', 'i.name', 'b.item_code')
+            ->where('b.warehouse', $branch)->where('i.disabled', 0)
+            ->where(function($q) {
+                $q->where('b.actual_qty', '>', 0)->orWhere('b.consigned_qty', '>', 0);
+            })
+            ->select('i.item_code', 'i.description', 'i.item_classification', 'b.consigned_qty', 'b.warehouse', 'b.actual_qty', 'b.stock_uom', 'b.consignment_price', DB::raw('b.consigned_qty * b.consignment_price as amount'))
+            ->orderBy('b.warehouse', 'asc')->orderBy('b.actual_qty', 'desc')->get();
+
+        return view('consignment.supervisor.export.warehouse_items', compact('branch', 'items'));
+    }
+
     private function getSalesAmount($start, $end, $warehouse) {
         $start = Carbon::parse($start);
         $end = Carbon::parse($end);
