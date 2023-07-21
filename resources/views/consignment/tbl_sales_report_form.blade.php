@@ -124,7 +124,7 @@
                                             <button type="button" class="btn btn-secondary w-100 save-form" data-draft=1><i class="fas fa-pencil-alt"></i> Save as Draft</button>
                                         </div>
                                         <div class="col-12 mx-auto">
-                                            <button type="button" class="btn btn-primary w-100 save-form" data-draft=0><i class="fas fa-check"></i> Submit</button>
+                                            <button type="button" class="btn btn-primary btn-lg w-100 save-form" data-draft=0><i class="fas fa-check"></i> Submit</button>
                                         </div>
                                         <input type="checkbox" name="draft" class="d-none">
                                     </div>
@@ -139,7 +139,7 @@
 </div>
 
 <div class="modal" tabindex="-1" id="submit-warning" role="dialog">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
       <div class="modal-content">
         <div class="modal-header">
             <h6 class="modal-title">Are you sure you want to submit?</h6>
@@ -147,20 +147,20 @@
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
-        <div class="modal-body">
-            <p></p>
+        <div class="modal-body p-2">
             <div class="alert alert-warning text-center p-3" style="font-size: 9pt;">
-                <b><i class="fa fa-warning"></i> Reminder: Once submitted, sales report cannot be edited.</b>
+                <b><i class="fa fa-info"></i> Reminder: Once submitted, sales report cannot be edited.</b>
             </div>
             <div class="container mt-2 text-center">
                 <h6><b>{{ $branch }}</b></h6>
-                <p>Sales Report for {{ $month.'-'.$year }}</p>
+                <p>Sales Report for <b>{{ $month.' '.$year }}</b></p>
                 <p>Total Sales: <b id="total-sales"></b></p>
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-primary submit-form"><i class="fa fa-check"></i> Submit</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fa fa-remove"></i> Close</button>
+        <hr class="p-1 m-1">
+        <div class="d-flex flex-row pt-0 pb-3 pr-3 pl-3">
+            <div class="col-6"><button type="button" class="btn btn-primary submit-form btn-block"><i class="fa fa-check"></i> Submit</button></div>
+            <div class="col-6"><button type="button" class="btn btn-secondary btn-block" data-dismiss="modal"><i class="fa fa-remove"></i> Close</button></div>
         </div>
       </div>
     </div>

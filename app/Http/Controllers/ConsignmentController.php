@@ -395,7 +395,7 @@ class ConsignmentController extends Controller
                 if(!is_numeric($amount)){
                     return redirect()->back()->with('error', 'Amount should be a number.');
                 }
-                $sales_per_day[$day] = $amount;
+                $sales_per_day[$day] = (float) $amount;
             }
 
             $transaction_month = new Carbon('last day of '. $request->month .' ' . $request->year);
