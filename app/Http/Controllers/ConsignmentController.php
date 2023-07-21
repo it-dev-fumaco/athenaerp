@@ -3901,7 +3901,7 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('success', 'Warehouse Stocks Adjusted.');
         } catch (\Throwable $e) {
             DB::rollback();
-            throw $e;
+            
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
