@@ -103,7 +103,7 @@
                                                         <b>₱</b>
                                                     </div>
                                                     <div class="col-11">
-                                                        <input type="number" pattern="[0-9]*" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $amount }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }}>
+                                                        <input type="number" min=0 pattern="[0-9]*" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $amount }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }} required>
                                                     </div>
                                                 </div> 
                                             @endif
@@ -188,7 +188,7 @@
 
                 if($(this).data('draft')){
                     $('input[name="draft"]').attr('checked', true);
-                    $('#sales-report-form').submit();
+                    validate_submit();
                 }else{
                     $('input[name="draft"]').attr('checked', false);
 
@@ -202,9 +202,22 @@
                 }
             });
 
+            $(document).on('focus', "input[type='number']", function() {
+                $(this).select();
+            });
+
+            function validate_submit(){
+                var form = $('#sales-report-form');
+                var reportValidity = form[0].reportValidity();
+
+                if(reportValidity){
+                    form.submit();
+                }
+            }
+
             $(document).on('click', '.submit-form', function (e){
                 e.preventDefault();
-                $('#sales-report-form').submit();
+                validate_submit();
             });
         });
     </script>
