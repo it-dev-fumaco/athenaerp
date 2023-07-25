@@ -173,6 +173,9 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/stock_transfer/list', 'ConsignmentController@stockTransferList')->name('stock_transfers');
         Route::get('/stock_transfer/cancel/{id}', 'ConsignmentController@stockTransferCancel');
         Route::post('/stock_adjust/submit/{id}', 'ConsignmentController@submitStockAdjustment');
+
+        Route::get('/item_return/form', 'ConsignmentController@itemReturnForm');
+        Route::post('/item_return/submit', 'ConsignmentController@itemReturnSubmit');
         
         Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');
         Route::get('/beginning_inventory/{inv?}', 'ConsignmentController@beginningInventory');

@@ -627,7 +627,7 @@
 								<a class="dropdown-item" href="/beginning_inv_list">Create Beginning Inventory</a>
 								<a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer">Create Store Transfer</a>
 								<a class="dropdown-item" href="/stock_transfer/form?action=For Return">Create Return to Plant</a>
-								<a class="dropdown-item" href="/stock_transfer/form?action=Sales Return">Create Sales Return</a>
+								<a class="dropdown-item" href="/item_return/form">Create Item Return</a>
 								<a class="dropdown-item" href="/promodiser/damage_report/form">Report Damaged Items</a>
 							</div>
 						</div>
