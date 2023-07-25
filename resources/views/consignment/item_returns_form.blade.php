@@ -117,10 +117,9 @@
                                                                         </tr>
                                                                     </table>
                                                                     @php
-                                                                        $sales_return_reason = ['Defective', 'Change Item'];
+                                                                        $sales_return_reason = ['Return from Customer', 'Misplaced Item'];
                                                                     @endphp
                                                                     <select id="sales-return-reason" class="form-control" style="font-size: 10pt;">
-                                                                        <option value="">Select a reason</option>
                                                                         @foreach ($sales_return_reason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
                                                                         @endforeach
@@ -323,7 +322,6 @@
                 $('#description-text').text(null);
                 $('#img-src-display').attr('src', null);
                 $('#webp-src-display').attr('src', null);
-                $('#sales-return-reason').val(null);
             }
             
             $(document).on('select2:select', '#received-items', function(e){
