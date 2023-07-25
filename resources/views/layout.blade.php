@@ -625,8 +625,8 @@
 							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="font-size: 11pt !important">Transactions</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1" style="font-size: 10pt !important">
 								<a class="dropdown-item" href="/beginning_inv_list">Create Beginning Inventory</a>
-								<a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer">Create Store Transfer</a>
-								<a class="dropdown-item" href="/stock_transfer/form?action=For Return">Create Return to Plant</a>
+								<a class="dropdown-item" href="/stock_transfer/form?action=For Return">Item Pull Out Request</a>
+								<a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer">Store Transfer Request</a>
 								<a class="dropdown-item" href="/item_return/form">Create Item Return</a>
 								<a class="dropdown-item" href="/promodiser/damage_report/form">Report Damaged Items</a>
 							</div>
