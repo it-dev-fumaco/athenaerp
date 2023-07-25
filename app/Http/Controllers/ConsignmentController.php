@@ -2776,11 +2776,11 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try{
             $items = $request->item;
-            $latest_id = DB::table('tabConsignment Item Returns')->where('name', 'like', '%cir%')->max('name');
+            $latest_id = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%cst%')->max('name');
             $latest_id_exploded = explode("-", $latest_id);
             $new_id = (($latest_id) ? $latest_id_exploded[1] : 0) + 1;
             $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
-            $new_id = 'CIR-'.$new_id;
+            $new_id = 'CST-'.$new_id;
 
             $now = Carbon::now();
 
@@ -2791,7 +2791,7 @@ class ConsignmentController extends Controller
 
             $activity_logs_details['details'] = [
                 'reference' => $new_id,
-                'warehouse' => $request->target_warehouse,
+                'target_warehouse' => $request->target_warehouse,
                 'created_by' => Auth::user()->wh_user
             ];
   
@@ -2815,7 +2815,7 @@ class ConsignmentController extends Controller
                     'owner' => Auth::user()->wh_user,
                     'parent' => $new_id,
                     'parentfield' => 'items',
-                    'parenttype' => 'Consignment Item Returns',
+                    'parenttype' => 'Consignment Stock Entry',
                     'item_code' => $item_code,
                     'item_description' => isset($item_details[$item_code]) ? $item_details[$item_code][0]->description : null,
                     'uom' => isset($item_details[$item_code]) ? $item_details[$item_code][0]->stock_uom : null,
@@ -2838,19 +2838,20 @@ class ConsignmentController extends Controller
                 ]);
             }
 
-            DB::table('tabConsignment Item Returns')->insert([
+            DB::table('tabConsignment Stock Entry')->insert([
                 'name' => $new_id,
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
-                'warehouse' => $request->target_warehouse,
+                'target_warehouse' => $request->target_warehouse,
+                'purpose' => 'Item Return',
                 'transaction_date' => $now->toDateTimeString(),
                 'status' => 'Pending',
                 'remarks' => $request->remarks
             ]);
 
-            DB::table('tabConsignment Item Return Details')->insert($details);
+            DB::table('tabConsignment Stock Entry Detail')->insert($details);
 
             DB::table('tabActivity Log')->insert([
                 'name' => uniqid(),
@@ -2863,7 +2864,7 @@ class ConsignmentController extends Controller
                 'subject' => 'Item Return  to '.$request->target_warehouse.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
-                'reference_doctype' => 'Consignment Item Returns',
+                'reference_doctype' => 'Consignment Stock Entry',
                 'reference_name' => $new_id,
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
