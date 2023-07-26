@@ -1,19 +1,12 @@
-<table class="table" style="font-size: 9pt;">
-    <thead class="border-top">
+<table class="table" style="font-size: 11px;">
+    <thead class="border-top text-uppercase">
         <th class="text-center p-1 d-none d-lg-table-cell">Reference</th>
         <th class="text-center p-1 d-none d-lg-table-cell">Date</th>
-        @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
         <th class="text-center p-1 mobile-first-row">
             <span class="d-none d-lg-inline">From Warehouse</span>
             <span class="d-inline d-lg-none">Details</span>
         </th>
         <th class="text-center p-1 d-none d-lg-table-cell">To Warehouse</th>
-        @else {{-- Sales Returns --}}
-        <th class="text-center p-1 mobile-first-row">
-            <span class="d-none d-lg-inline">Warehouse</span>
-            <span class="d-inline d-lg-none">Details</span>
-        </th>
-        @endif
         <th class="text-center p-1 d-none d-lg-table-cell">Submitted By</th>
         <th class="text-center p-1 d-none d-lg-table-cell">Status</th>
         <th class="text-center p-1">Action</th>
@@ -21,28 +14,23 @@
     <tbody>
     @forelse ($ste_arr as $ste)
     @php
-        $badge = 'primary';
-        if($ste['docstatus'] == 1){
+        $badge = 'secondary';
+        $status = 'Unknown';
+        if ($ste['status'] == 'Pending') {
+            $badge = 'warning';
+            $status = $ste['status'];
+        } elseif ($ste['status'] == 'Completed') {
             $badge = 'success';
-            $status = 'Received';
-
-            if($ste['transfer_type'] == 'Sales Return' && $ste['sales_return_request_status'] == 'Received'){
-                $badge = 'secondary';
-                $status = 'Returned';
-            }
-        }else{
-            if ($ste['transfer_type'] == 'For Return') {
-                $status = $ste['transfer_type'];
-            }else{
-                $status = Auth::user()->user_group == 'Promodiser' ? 'For Approval' : 'To Submit in ERP';
-            }
+            $status = $ste['status'];
+        } else {
+            $badge = 'danger';
+            $status = $ste['status'];
         }
     @endphp
     <tr>
         <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['name'] }}</span></td>
         <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</td>
-        @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
-        <td class="p-1">
+        <td class="p-1 align-middle">
             <div class="d-none d-lg-inline text-center">
                 {{ $ste['from_warehouse'] }}
             </div>
@@ -50,55 +38,37 @@
                 <span class="font-weight-bold">{{ $ste['name'] }}</span>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
             </div>
         </td>
-        <td class="d-none p-1 d-lg-table-cell">{{ $ste['transfer_type'] == 'For Return' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
-        @else {{-- Sales Returns --}}
-        <td class="p-1">
-            <div class="d-none d-lg-inline text-center">
-                {{ $ste['to_warehouse'] }}
-            </div>
-            <div class="d-inline d-lg-none text-left">
-                <span class="font-weight-bold">{{ $ste['name'] }}</span>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
-            </div>
-        </td>
-        @endif
+        <td class="d-none p-1 d-lg-table-cell">{{ $ste['transfer_type'] == 'Pull Out' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
         <td class="text-center p-1 d-none d-lg-table-cell">{{ $ste['owner'] }}</td>
         <td class="text-center p-1 d-none d-lg-table-cell">
             <span class="badge badge-{{ $badge }}">{{ $status }}</span>
         </td>
-        <td class="text-center p-1">
-            <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal" style="font-size: 9pt;">View items</a>
+        <td class="text-center p-1 align-middle">
+            <a href="#" class="btn btn-info btn-xs" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal"><i class="fas fa-eye"></i> View</a>
             <!-- Modal -->
             <div class="modal fade" id="{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header bg-navy">
-                            <h6 class="modal-title"><b>{{ $ste['transfer_type'] }}</b>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></h6>
+                            <h6 class="modal-title"><b>{{ $ste['transfer_type'] == 'Store Transfer' ? 'Store-to-Store Transfer' : 'Item Pull Out' }}</b>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></h6>
                             <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <div class="modal-body">
-                            @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
+                        <div class="modal-body p-2">
                             <span class="d-block text-left"><b>From: </b> {{ $ste['from_warehouse'] }}</span>
                             <span class="d-block text-left"><b>To: </b> {{ $ste['to_warehouse'] }}</span>
-                            @else {{-- Sales Returns --}}
-                            <span class="d-block text-left">{{ $ste['to_warehouse'] }}</span>
-                            @endif
                             <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
                             @if ($ste['transfer_type'] == 'Store Transfer')
-                                <div class="callout callout-info text-center">
-                                    <small><i class="fas fa-info-circle"></i> Stocks will be deducted once the store recipient has received the item.</small>
-                                </div>
+                            <div class="callout callout-info text-center">
+                                <span><i class="fas fa-info-circle"></i> Stocks will be deducted once the store recipient has received the item.</span>
+                            </div>
                             @endif
-                            <table class="table" style="font-size: 9pt;">
-                                <thead>
+                            <table class="table" style="font-size: 11px;">
+                                <thead class="text-uppercase">
                                     <th class="text-center p-1 align-middle">Item Code</th>
-                                    @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
-                                    <th class="text-center p-1 align-middle">Stock Qty</th>
+                                    <th class="text-center p-1 align-middle">Current Qty</th>
                                     <th class="text-center p-1 align-middle">Qty to Transfer</th>
-                                    @else {{-- Sales Returns --}}
-                                    <th class="text-center p-1 align-middle">Return Qty</th>
-                                    @endif
                                 </thead>
                                 @foreach ($ste['items'] as $item)
                                     <tr>
@@ -118,12 +88,10 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
                                         <td class="text-center p-1 align-middle">
                                             <span class="d-block font-weight-bold">{{ $item['consigned_qty'] * 1 }}</span>
                                             <small>{{ $item['uom'] }}</small>
                                         </td>
-                                        @endif
                                         <td class="text-center p-1 align-middle">
                                             <span class="d-block font-weight-bold">{{ $item['transfer_qty'] * 1 }}</span>
                                             <small>{{ $item['uom'] }}</small>
@@ -134,10 +102,10 @@
                                             <span class="item-description">{!! strip_tags($item['description']) !!}</span>
                                         </td>
                                     </tr>
-                                    @if (in_array($ste['transfer_type'], ['For Return', 'Sales Return']))
+                                    @if (in_array($ste['transfer_type'], ['Pull Out']))
                                         <tr>
-                                            <td class="text-left p-1" colspan=4>
-                                                Reason for return: {{ $item['return_reason'] ? $item['return_reason'] : '-' }}
+                                            <td class="border-top-0 text-left p-1" colspan="4">
+                                                Reason: <b>{{ $item['return_reason'] ? $item['return_reason'] : '-' }}</b>
                                             </td>
                                         </tr>
                                     @endif
@@ -151,76 +119,37 @@
                                     Remarks: {{ $remarks }}
                                 @endif
                             </div>
-                        </div>
-                        @if ($ste['transfer_type'] == 'Sales Return' && $ste['sales_return_request_status'] != 'Received')
                             <div class="text-center m-2">
-                                <small class="font-italic {{ $ste['sales_return_request_status'] == 'To Receive' ? 'd-block' : 'd-none' }}">* Return to Plant request has been submitted</small>
-                                <button type="button" class="btn btn-primary w-100" data-toggle="modal" data-target="#return-to-plant-{{ $ste['name'] }}-Modal" {{ $ste['sales_return_request_status'] == 'To Receive' ? 'disabled' : null }}>
-                                    Return to Plant
-                                </button>
-                            </div>
-                            <div class="modal fade" id="return-to-plant-{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-navy">
-                                            <span class="modal-title">{{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
-                                            <button type="button" class="close text-white" onclick="close_modal('#return-to-plant-{{ $ste['name'] }}-Modal')">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="modal-body p-2">
-                                            <form></form>
-                                            <h6 class="mb-3">Return items to Plant 2?</h6>
-                                            <div class="text-center m-2">
-                                                <div class="form-for-return pt-2">
-                                                    <form action="/stock_transfer/submit" method="post">
-                                                        @csrf
-                                                        <div class="d-none">
-                                                            <input type="checkbox" name="from_sales_return" readonly checked>
-                                                            <input type="text" name="transfer_as" value="For Return">
-                                                            <input type="text" name="reference_sales_return" value="{{ $ste['name'] }}">
-                                                            <input type="text" name="source_warehouse" value="{{ $ste['to_warehouse'] }}">
-                                                            <input type="text" name="default_warehouse" value="Quarantine Warehouse - FI">
-                                                            @foreach ($ste['items'] as $items)
-                                                                <input type="text" name="item_code[]" value="{{ $item['item_code'] }}">
-                                                                <input type="text" name="item[{{ $item['item_code'] }}][transfer_qty]" value="{{ $item['transfer_qty'] * 1 }}">
-                                                            @endforeach
-                                                        </div>
-                                                        <button type="submit" class="w-100 btn btn-primary submit-once">Confirm</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                        @if ($ste['docstatus'] == 0 || $ste['transfer_type'] == 'Sales Return')
-                            <div class="text-center m-2">
-                                <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal" {{ $ste['sales_return_request_status'] ? 'disabled' : null }}>
-                                    Cancel {{ $ste['transfer_type'] != 'Sales Return' ? 'Request' : null }}
+                                <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $ste['name'] }}-Modal" {{ in_array($status, ['Completed', 'Cancelled']) ? 'disabled' : null }}>
+                                    <i class="fas fa-ban"></i> Cancel Request
                                 </button>
                             </div>
                             <div class="modal fade" id="cancel-{{ $ste['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header bg-navy">
-                                            <span class="modal-title">{{ $ste['transfer_type'] }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></span>
+                                            <h6 class="modal-title">{{ $ste['transfer_type'] == 'Store Transfer' ? 'Store-to-Store Transfer' : 'Item Pull Out' }}&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span></h6>
                                             <button type="button" class="close text-white" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')">
                                                 <span aria-hidden="true">&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body p-2">
                                             <form></form>
-                                            <h6 class="mb-3">Cancel {{ $ste['transfer_type'] }} {{ $ste['transfer_type'] != 'Sales Return' ? 'Request' : null }}?</h6>
-                                            <div class="text-center m-2">
-                                                <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary w-100 submit-once">Confirm</a>
+                                            <h6 class="m-3">Cancel <b>{{ $ste['transfer_type'] == 'Store Transfer' ? 'Store-to-Store Transfer' : 'Item Pull Out' }}</b> Request?</h6>
+                                            <hr class="m-1 p-1">
+                                            <div class="d-flex flex-row pb-2">
+                                                <div class="text-center col-6">
+                                                    <a href="/stock_transfer/cancel/{{ $ste['name'] }}" class="btn btn-primary btn-block submit-once"><i class="fas fa-check"></i> Confirm</a>
+                                                </div>
+                                                <div class="col-6">
+                                                    <button class="btn btn-secondary btn-block" type="button" onclick="close_modal('#cancel-{{ $ste['name'] }}-Modal')"><i class="fas fa-times"></i> Close</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -229,12 +158,8 @@
     </tr>
     <tr class="d-lg-none">
         <td colspan="2" class="p-1 border-top-0 border-bottom" style="font-size: 8pt;">
-            @if ($purpose == 'Material Transfer') {{-- Stock Transfers and Returns --}}
-                <b>From: </b>{{ $ste['from_warehouse'] }} <br>
-                <b>To: </b>{{ $ste['transfer_type'] == 'For Return' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
-            @else {{-- Sales Returns --}}
-                <b>{{ $ste['to_warehouse'] }}</b> <br>
-            @endif
+            <b>From: </b>{{ $ste['from_warehouse'] }} <br>
+            <b>To: </b>{{ $ste['transfer_type'] == 'Pull Out' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
             <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
         </td>
     </tr>

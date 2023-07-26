@@ -2442,14 +2442,9 @@ class ConsignmentController extends Controller
                 return preg_replace("/[^0-9 .]/", "", $q);
             });
 
-            $source_warehouse = $request->transfer_as == 'Sales Return' ? null : $request->source_warehouse;
-            if(Auth::user()->user_group == 'Promodiser'){
-                $target_warehouse = $request->transfer_as == 'For Return' ? 'Quarantine Warehouse - FI' : $request->target_warehouse;
-            }else{
-                $target_warehouse = $request->target_warehouse;
-            }
-
-            $reference_warehouse = $request->transfer_as == 'Sales Return' ? $request->target_warehouse : $request->source_warehouse; // used to get data from bin
+            $source_warehouse = $request->source_warehouse;
+            $target_warehouse = $request->transfer_as == 'Pull Out' ? 'Quarantine Warehouse - FI' : $request->target_warehouse;
+          
             if(!$item_codes || !$transfer_qty){
                 return redirect()->back()->with('error', 'Please select an item to return');
             }
@@ -2461,7 +2456,10 @@ class ConsignmentController extends Controller
 
             $bin = DB::table('tabBin as bin')->join('tabItem as item', 'item.item_code', 'bin.item_code')
                 ->whereIn('bin.warehouse', array_filter([$source_warehouse, $target_warehouse]))->whereIn('bin.item_code', $item_codes)
-                ->select('item.item_code', 'item.description', 'item.item_name', 'bin.warehouse', 'item.stock_uom', 'bin.actual_qty', 'bin.consigned_qty')->get();
+                ->select('item.item_code', 'item.description', 'item.item_name', 'bin.warehouse', 'item.stock_uom', 'bin.actual_qty', 'bin.consigned_qty', 'bin.consignment_price')
+                ->get();
+
+            $item_codes = collect($bin)->pluck('item_code')->unique();
             
             $items = [];
             foreach($bin as $b){
@@ -2470,31 +2468,16 @@ class ConsignmentController extends Controller
                     'item_name' => $b->item_name,
                     'uom' => $b->stock_uom,
                     'actual_qty' => $b->actual_qty,
-                    'consigned_qty' => $b->consigned_qty
+                    'consigned_qty' => $b->consigned_qty,
+                    'consignment_price' => $b->consignment_price,
                 ];
             }
 
-            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')->where('status', 'Approved')->where('branch_warehouse', $reference_warehouse)->pluck('name');
-            $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $beginning_inventory)->whereIn('item_code', $item_codes)->where('status', 'Approved')->select('item_code', 'price')->get();
-
-            $inventory_prices = [];
-            foreach($inventory_items as $item){
-                $inventory_prices[$item->item_code] = [
-                    'price' => $item->price,
-                    'amount' => isset($transfer_qty[$item->item_code]) ? preg_replace("/[^0-9 .]/", "", $transfer_qty[$item->item_code]['transfer_qty']) * $item->price : $item->price
-                ];
-            }
-
-            $latest_ste = DB::table('tabStock Entry')->where('naming_series', 'STEC-')->max('name');
+            $latest_ste = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%CSTE-%')->max('name');
             $latest_ste_exploded = explode("-", $latest_ste);
             $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
-            $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
-            $new_id = 'STEC-'.$new_id;
-
-            $docstatus = 0;
-            if($request->transfer_as == 'Sales Return' || Auth::user()->user_group == 'Consignment Supervisor'){
-                $docstatus = 1;
-            }
+            $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
+            $new_id = 'CSTE-'.$new_id;
 
             $stock_entry_data = [
                 'name' => $new_id,
@@ -2502,44 +2485,17 @@ class ConsignmentController extends Controller
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
-                'docstatus' => $docstatus,
-                'idx' => 0,
-                'use_multi_level_bom' => 0,
-                'naming_series' => 'STEC-',
-                'posting_time' => $now->format('H:i:s'),
-                'to_warehouse' => $target_warehouse,
-                'title' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
-                'from_warehouse' => $source_warehouse,
-                'set_posting_time' => 0,
-                'from_bom' => 0,
-                'value_difference' => 0,
-                'company' => 'FUMACO Inc.',
-                'total_outgoing_value' => collect($inventory_prices)->sum('amount'),
-                'total_additional_costs' => 0,
-                'total_amount' => collect($inventory_prices)->sum('amount'),
-                'total_incoming_value' => collect($inventory_prices)->sum('amount'),
-                'posting_date' => $now->format('Y-m-d'),
-                'purpose' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
-                'stock_entry_type' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
-                'item_status' => 'Issued',
-                'transfer_as' => $request->transfer_as == 'Sales Return' ? null : $request->transfer_as,
-                'receive_as' => $request->transfer_as == 'Sales Return' ? $request->transfer_as : null,
-                'qty_repack' => 0,
-                'delivery_date' => $now->format('Y-m-d'),
-                'remarks' => 'Generated in AthenaERP. '. $request->remarks,
-                'order_from' => 'Other Reference',
-                'reference_no' => '-'
+                'source_warehouse' => $source_warehouse,
+                'target_warehouse' => $target_warehouse,
+                'purpose' => $request->transfer_as,
+                'transaction_date' => $now->toDateTimeString(),
+                'status' => 'Pending',
+                'remarks' => $request->remarks
             ];
 
-            if($request->transfer_as == 'Sales Return' || Auth::user()->user_group == 'Consignment Supervisor'){
-                $stock_entry_data['consignment_status'] = 'Received';
-                $stock_entry_data['consignment_date_received'] = Carbon::now()->toDateTimeString();
-                $stock_entry_data['consignment_received_by'] = Auth::user()->wh_user;
-            }
+            DB::table('tabConsignment Stock Entry')->insert($stock_entry_data);
 
-            DB::table('tabStock Entry')->insert($stock_entry_data);
-
-            $from_msg = $request->transfer_as != 'Sales Return' ?  ' from '.$request->source_warehouse : null;
+            $from_msg = ' from '.$source_warehouse;
 
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
             $item_image = collect($item_images)->groupBy('parent');
@@ -2549,138 +2505,47 @@ class ConsignmentController extends Controller
                     return redirect()->back()->with('error', 'Please enter transfer qty for '. $item_code);
                 }
 
-                if($request->transfer_as != 'Sales Return'){
-                    if(isset($items[$reference_warehouse][$item_code]) && $transfer_qty[$item_code]['transfer_qty'] > $items[$reference_warehouse][$item_code]['consigned_qty']){
-                        return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
-                    }
+                if(isset($items[$source_warehouse][$item_code]) && $transfer_qty[$item_code]['transfer_qty'] > $items[$source_warehouse][$item_code]['consigned_qty']){
+                    return redirect()->back()->with('error', 'Transfer qty cannot be more than the stock qty.');
                 }
 
+                $item = [];
+                if (isset($items[$source_warehouse][$item_code])) {
+                    $item = $items[$source_warehouse][$item_code];
+                }
+                
                 $stock_entry_detail[] = [
-                    'name' =>  uniqid(),
+                    'name' => uniqid(),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
-                    'docstatus' => $request->transfer_as == 'Sales Return' ? 1 : 0,
                     'parent' => $new_id,
                     'parentfield' => 'items',
-                    'parenttype' => 'Stock Entry',
-                    'idx' => $i + 1,
-                    't_warehouse' => $target_warehouse,
-                    'transfer_qty' => $transfer_qty[$item_code]['transfer_qty'],
-                    'expense_account' => 'Cost of Goods Sold - FI',
-                    'cost_center' => 'Main - FI',
-                    'actual_qty' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['actual_qty'] : 0,
-                    's_warehouse' => $source_warehouse,
-                    'item_name' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['item_name'] : null,
-                    'additional_cost' => 0,
-                    'stock_uom' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['uom'] : null,
-                    'basic_amount' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['amount'] : 0,
-                    'custom_basic_amount' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['amount'] : 0,
-                    'sample_quantity' => 0,
-                    'uom' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['uom'] : null,
-                    'basic_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
-                    'custom_basic_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
-                    'description' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['description'] : null,
-                    'conversion_factor' => 1,
+                    'parenttype' => 'Consignment Stock Entry',
                     'item_code' => $item_code,
-                    'validate_item_code' => $item_code,
-                    'retain_sample' => 0,
-                    'qty' => $transfer_qty[$item_code]['transfer_qty'],
-                    'allow_zero_valuation_rate' => 0,
-                    'amount' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['amount'] : 0,
-                    'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
-                    'target_warehouse_location' => $target_warehouse,
-                    'source_warehouse_location' => $source_warehouse,
-                    'status' => $request->transfer_as == 'For Return' ? 'For Checking' : 'Issued',
-                    'return_reference' => $new_id,
-                    'session_user' => Auth::user()->full_name,
-                    'issued_qty' => $transfer_qty[$item_code]['transfer_qty'],
-                    'date_modified' => $now->toDateTimeString(),
-                    'return_reason' => isset($request->item[$item_code]['reason']) ? $request->item[$item_code]['reason'] : null,
-                    'remarks' => 'Generated in AthenaERP'
+                    'item_description' => $item['description'],
+                    'uom' => $item['uom'],
+                    'qty' => (float)$transfer_qty[$item_code]['transfer_qty'],
+                    'price' => (float)$item['consignment_price'],
+                    'amount' => $item['consignment_price'] * $transfer_qty[$item_code]['transfer_qty'],
+                    'remarks' => 'Generated in AthenaERP',
+                    'reason' => isset($request->item[$item_code]['reason']) ? $request->item[$item_code]['reason'] : null,
                 ];
 
-                $items_array_for_email[] = [
-                    'item_code' => $item_code,
-                    'transfer_qty' => $transfer_qty[$item_code]['transfer_qty'],
-                    'uom' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['uom'] : null,
-                    'description' => isset($items[$reference_warehouse][$item_code]) ? $items[$reference_warehouse][$item_code]['description'] : null,
-                    'image' => isset($item_image[$item_code]) ? $item_image[$item_code][0]->image_path : null,
-                    'return_reason' => isset($request->item[$item_code]['reason']) ? $request->item[$item_code]['reason'] : null
-                ];
-                //     $stock_entry_detail['consignment_status'] = "Received";
-                //     $stock_entry_detail['consignment_date_received'] = Carbon::now()->toDateTimeString();
-                //     $stock_entry_detail['consignment_received_by'] = Auth::user()->wh_user;
-                // }
-
-                // DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
-
-                // source warehouse
-                if(in_array($request->transfer_as, ['For Return'])){
-                    if(isset($items[$source_warehouse][$item_code])){
-                        if($items[$source_warehouse][$item_code]['consigned_qty'] < $transfer_qty[$item_code]['transfer_qty']){
-                            return redirect()->back()->with('error', 'Consigned Qty cannot be less than the transfered qty');
-                        }
-
-                        DB::table('tabBin')->where('warehouse', $source_warehouse)->where('item_code', $item_code)->update([
-                            'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'consigned_qty' => $items[$source_warehouse][$item_code]['consigned_qty'] - $transfer_qty[$item_code]['transfer_qty']
-                        ]);
-                    }
-                }
-
-                // // target warehouse
-                // if(!in_array($request->transfer_as, ['Store Transfer', 'For Return']) || Auth::user()->user_group == 'Consignment Supervisor'){
-                //     if(isset($items[$target_warehouse][$item_code])){
-                //         DB::table('tabBin')->where('warehouse', $target_warehouse)->where('item_code', $item_code)->update([
-                //             'modified' => $now->toDateTimeString(),
-                //             'modified_by' => Auth::user()->wh_user,
-                //             'actual_qty' => $items[$target_warehouse][$item_code]['actual_qty'] + $transfer_qty[$item_code]['transfer_qty'],
-                //             'consigned_qty' => $items[$target_warehouse][$item_code]['consigned_qty'] + $transfer_qty[$item_code]['transfer_qty']
-                //         ]);
-                //     }else{
-                //         $latest_bin = DB::table('tabBin')->where('name', 'like', '%bin/%')->max('name');
-                //         $latest_bin_exploded = explode("/", $latest_bin);
-                //         $bin_id = (($latest_bin) ? $latest_bin_exploded[1] : 0) + 1;
-                //         $bin_id = str_pad($bin_id, 7, '0', STR_PAD_LEFT);
-                //         $bin_id = 'BIN/'.$bin_id;
-
-                //         DB::table('tabBin')->insert([
-                //             'name' => $bin_id,
-                //             'creation' => $now->toDateTimeString(),
-                //             'modified' => $now->toDateTimeString(),
-                //             'modified_by' => Auth::user()->wh_user,
-                //             'owner' => Auth::user()->wh_user,
-                //             'docstatus' => 0,
-                //             'idx' => 0,
-                //             'warehouse' => $target_warehouse,
-                //             'item_code' => $item_code,
-                //             'stock_uom' => isset($items[$target_warehouse][$item_code]) ? $items[$target_warehouse][$item_code]['uom'] : null,
-                //             'valuation_rate' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0,
-                //             'actual_qty' => $transfer_qty[$item_code]['transfer_qty'],
-                //             'consigned_qty' => $transfer_qty[$item_code]['transfer_qty'],
-                //             'consignment_price' => isset($inventory_prices[$item_code]) ? $inventory_prices[$item_code]['price'] : 0
-                //         ]);
-                //     }
-                // }
+                // $items_array_for_email[] = [
+                //     'item_code' => $item_code,
+                //     'transfer_qty' => $transfer_qty[$item_code]['transfer_qty'],
+                //     'uom' => $item['uom'],
+                //     'description' => $item['description'],
+                //     'image' => isset($item_image[$item_code]) ? $item_image[$item_code][0]->image_path : null,
+                //     'return_reason' => isset($request->item[$item_code]['reason']) ? $request->item[$item_code]['reason'] : null
+                // ];
             }
 
-            $purpose = $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
+            DB::table('tabConsignment Stock Entry Detail')->insert($stock_entry_detail);
 
-            if($request->transfer_as == 'Sales Return'){
-                $is_ste_generated = $this->generateLedgerEntries($new_id);
-                if (!$is_ste_generated) {
-                    return redirect()->back()->with('error', 'An error occured. Please try again.');
-                }
-
-                $is_gl_generated = $this->generateGlEntries($new_id);
-                if (!$is_gl_generated) {
-                    return redirect()->back()->with('error', 'An error occured. Please try again.');
-                }
-            }
-            DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
+            $purpose = $request->transfer_as == 'Pull Out' ? 'Pull Out' : 'Store-to-Store Transfer';
 
             $logs = [
                 'name' => uniqid(),
@@ -2690,10 +2555,10 @@ class ConsignmentController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => $request->transfer_as . ' request' .$from_msg. ' to '.$target_warehouse. ' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                'subject' => $purpose . ' request' .$from_msg. ' to '.$target_warehouse. ' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
-                'reference_doctype' => 'Stock Entry',
+                'reference_doctype' => 'Consignment Stock Entry',
                 'reference_name' => $new_id,
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
@@ -2702,28 +2567,24 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
-            if(isset($request->from_sales_return)){
-                DB::table('tabStock Entry')->where('name', $request->reference_sales_return)->update(['sales_return_reference' => $new_id]);
-            }
+            // $ste_details = [
+            //     'transaction_date' => $stock_entry_data['creation'],
+            //     'id' => $stock_entry_data['name'],
+            //     'source_warehouse' => $stock_entry_data['source_warehouse'],
+            //     'target_warehouse' => $stock_entry_data['target_warehouse'],
+            //     'purpose' => $purpose,
+            //     // 'transfer_as' => $stock_entry_data['purpose'],
+            //     'user' => Auth::user()->wh_user,
+            //     // 'docstatus' => $stock_entry_data['docstatus'],
+            //     'status' => $stock_entry_data['status'],
+            //     // 'date_received' => isset($stock_entry_detail['consignment_date_received']) ? $stock_entry_detail['consignment_date_received'] : null,
+            //     // 'received_by' => isset($stock_entry_detail['consignment_received_by']) ? $stock_entry_detail['consignment_received_by'] : null,
+            // ];
 
-            $ste_details = [
-                'transaction_date' => $stock_entry_data['creation'],
-                'id' => $stock_entry_data['name'],
-                'source_warehouse' => $stock_entry_data['from_warehouse'],
-                'target_warehouse' => $stock_entry_data['to_warehouse'],
-                'purpose' => $stock_entry_data['purpose'],
-                'transfer_as' => $stock_entry_data['transfer_as'],
-                'user' => Auth::user()->wh_user,
-                'docstatus' => $stock_entry_data['docstatus'],
-                'status' => isset($stock_entry_detail['consignment_status']) ? $stock_entry_detail['consignment_status'] : null,
-                'date_received' => isset($stock_entry_detail['consignment_date_received']) ? $stock_entry_detail['consignment_date_received'] : null,
-                'received_by' => isset($stock_entry_detail['consignment_received_by']) ? $stock_entry_detail['consignment_received_by'] : null,
-            ];
-
-            $email_data = [ // data_to_be_inserted_in_mail_template
-                'ste_details' => $ste_details,
-                'items' => $items_array_for_email
-            ];
+            // $email_data = [ // data_to_be_inserted_in_mail_template
+            //     'ste_details' => $ste_details,
+            //     'items' => $items_array_for_email
+            // ];
 
             // $consignment_supervisors = DB::table('tabWarehouse Users')->where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
 
@@ -2734,10 +2595,6 @@ class ConsignmentController extends Controller
             // }
 
             DB::commit();
-
-            if(Auth::user()->user_group == 'Consignment Supervisor'){
-                return redirect()->route('stock_report_list');
-            }
 
             return redirect()->route('stock_transfers', ['purpose' => $purpose])->with('success', 'Stock transfer request has been submitted.');
         } catch (Exception $e) {
@@ -2884,85 +2741,25 @@ class ConsignmentController extends Controller
     public function stockTransferCancel($id){
         DB::beginTransaction();
         try {
-            $stock_entry = DB::table('tabStock Entry')->where('name', $id)->first();
-            if(!$stock_entry){
-                return redirect()->back()->with('error', 'Stock Entry does not exist or Stock Entry is already deleted.');
-            }
-
-            $source_warehouse = $stock_entry->from_warehouse;
-            $target_warehouse = $stock_entry->to_warehouse;
-
-            $stock_entry_detail = DB::table('tabStock Entry Detail')->where('parent', $stock_entry->name)->get();
-
-            $item_codes = collect($stock_entry_detail)->map(function ($q){
-                return $q->item_code;
-            });
-
             $now = Carbon::now();
-            
-            $bin = DB::table('tabBin')->whereIn('warehouse', array_filter([$source_warehouse, $target_warehouse]))->whereIn('item_code', $item_codes)->get();
-
-            $bin_arr = [];
-            foreach($bin as $b){
-                $bin_arr[$b->warehouse][$b->item_code] = [
-                    'consigned_qty' => $b->consigned_qty,
-                    'actual_qty' => $b->actual_qty,
-                ];
+            $stock_entry = DB::table('tabConsignment Stock Entry')->where('name', $id)->first();
+            if(!$stock_entry){
+                return redirect()->back()->with('error', 'Record not found.');
             }
 
-            $transaction = $stock_entry->transfer_as;
-            if($stock_entry->transfer_as != 'Store Transfer'){
-                foreach($stock_entry_detail as $items){
-                    if($stock_entry->purpose == 'Material Transfer'){ // Returns
-                        if(!isset($bin_arr[$items->s_warehouse][$items->item_code])){
-                            return redirect()->back()->with('error', 'Items not found.');
-                        }
-
-                        DB::table('tabBin')->where('warehouse', $source_warehouse)->where('item_code', $items->item_code)->update([
-                            'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'consigned_qty' => $bin_arr[$source_warehouse][$items->item_code]['consigned_qty'] + $items->transfer_qty
-                        ]);
-                    }else{ // Sales Returns
-                        if(!isset($bin_arr[$items->t_warehouse][$items->item_code])){
-                            return redirect()->back()->with('error', 'Items not found.');
-                        }
-
-                        DB::table('tabBin')->where('warehouse', $items->t_warehouse)->where('item_code', $items->item_code)->update([
-                            'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'consigned_qty' => $bin_arr[$items->t_warehouse][$items->item_code]['consigned_qty'] - $items->transfer_qty,
-                            'actual_qty' => $bin_arr[$items->t_warehouse][$items->item_code]['actual_qty'] - $items->transfer_qty
-                        ]);
-                    }
-                }
-
-                if($stock_entry->purpose == 'Material Transfer'){
-                    $transaction = $stock_entry->transfer_as == 'Consignment' ? 'Store Transfer' : 'Return to Plant';
-                }else{
-                    $transaction = 'Sales Return';
-                }
+            if ($stock_entry->status == 'Completed') {
+                return redirect()->back()->with('error', 'Unable to cancel. Request is already COMPLETED.');
             }
 
-            if ($stock_entry->docstatus == 0) {
-                DB::table('tabStock Entry')->where('name', $id)->delete();
-                DB::table('tabStock Entry Detail')->where('parent', $id)->delete();
-            }
+            DB::table('tabConsignment Stock Entry')->where('name', $stock_entry->name)->update([
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'status' => 'Cancelled'
+            ]);
 
-            if ($stock_entry->docstatus == 1) {
-                $values = [
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'docstatus' => 2
-                ];
-
-                DB::table('tabStock Entry')->where('name', $id)->update($values);
-                DB::table('tabStock Entry Detail')->where('parent', $id)->update($values);
-            }
-
-            $source_warehouse = $source_warehouse ? $source_warehouse : $stock_entry_detail[0]->s_warehouse;
-            $target_warehouse = $target_warehouse ? $target_warehouse : $stock_entry_detail[0]->t_warehouse;
-            $from_msg = $transaction != 'Sales Return' ? ' from '.$source_warehouse : null;
+            $source_warehouse = $stock_entry->source_warehouse;
+            $target_warehouse = $stock_entry->target_warehouse;
+            $transaction = $stock_entry->purpose;
 
             $logs = [
                 'name' => uniqid(),
@@ -2972,10 +2769,10 @@ class ConsignmentController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => $transaction.' request'.$from_msg.' to '.$target_warehouse.' has been deleted by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
+                'subject' => $transaction.' request from '.$source_warehouse.' to '.$target_warehouse.' has been cancelled by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
-                'reference_doctype' => 'Stock Entry',
+                'reference_doctype' => 'Consignment Stock Entry',
                 'reference_name' => $id,
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
@@ -2983,18 +2780,6 @@ class ConsignmentController extends Controller
             ];
 
             DB::table('tabActivity Log')->insert($logs);
-
-            if($stock_entry->purpose == 'Material Receipt'){ // Sales Returns
-                $is_ste_generated = $this->generateCancelledLedgerEntries($id);
-                if (!$is_ste_generated) {
-                    return redirect()->back()->with('error', 'An error occured. Please try agan.');
-                }
-        
-                $is_gl_generated = $this->generateCancelledGlEntries($id);
-                if (!$is_gl_generated) {
-                    return redirect()->back()->with('error', 'An error occured. Please try agan.');
-                }
-            }
 
             DB::commit();
 
@@ -3008,38 +2793,25 @@ class ConsignmentController extends Controller
 
     // stock_transfer/list
     public function stockTransferList(Request $request){
-        $consignment_stores = [];
+        $purpose = $request->purpose;
 
-        $purpose = $request->purpose == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
-        
-        if(Auth::user()->user_group == 'Promodiser'){
-            $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-        }
+        $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
         if($request->ajax()){
-            $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
-
-            $beginning_inventory_start_date = $beginning_inventory_start ? Carbon::parse($beginning_inventory_start)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
-
-            $stock_transfers = DB::table('tabStock Entry')
-                ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($consignment_stores, $purpose){
-                    return $q->whereIn(($purpose == 'Material Transfer' ? 'from_warehouse' : 'to_warehouse'), $consignment_stores);
-                })
+            $stock_transfers = DB::table('tabConsignment Stock Entry')
+                ->whereIn('source_warehouse', $consignment_stores)
                 ->where('purpose', $purpose)
-                ->where(($request->purpose == 'Sales Return' ? 'receive_as' : 'transfer_as'), $request->purpose)
-                ->whereDate('delivery_date', '>=', $beginning_inventory_start_date)
-                ->where('docstatus', '<', 2)
                 ->orderBy('creation', 'desc')->paginate(10);
 
             $src_warehouses = collect($stock_transfers->items())->map(function ($q){
-                return $q->from_warehouse;
+                return $q->source_warehouse;
             });
 
             $reference_ste = collect($stock_transfers->items())->map(function ($q){
                 return $q->name;
             });
 
-            $stock_transfer_items = DB::table('tabStock Entry Detail')->whereIn('parent', $reference_ste)->get();
+            $stock_transfer_items = DB::table('tabConsignment Stock Entry Detail')->whereIn('parent', $reference_ste)->get();
             $stock_transfer_item = collect($stock_transfer_items)->groupBy('parent');
             
             $item_codes = collect($stock_transfer_items)->map(function ($q){
@@ -3052,13 +2824,6 @@ class ConsignmentController extends Controller
                 $bin_arr[$b->warehouse][$b->item_code] = [
                     'consigned_qty' => $b->consigned_qty
                 ];
-            }
-
-            $returns = [];
-            if($request->purpose == 'Sales Return'){ // get requested returns by Sales Return
-                $reference_returns = collect($stock_transfers->items())->pluck('sales_return_reference');
-                $returns = DB::table('tabStock Entry')->whereIn('name', $reference_returns)->where('docstatus', '<', 2)->select('name', 'consignment_status', 'consignment_date_received')->get();
-                $returns = collect($returns)->groupBy('name');
             }
 
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
@@ -3090,31 +2855,29 @@ class ConsignmentController extends Controller
 
                         $items_arr[] = [
                             'item_code' => $item->item_code,
-                            'description' => $item->description,
-                            'consigned_qty' => isset($bin_arr[$ste->from_warehouse][$item->item_code]) ? $bin_arr[$ste->from_warehouse][$item->item_code]['consigned_qty'] : 0,
-                            'transfer_qty' => $item->transfer_qty,
-                            'uom' => $item->stock_uom,
+                            'description' => $item->item_description,
+                            'consigned_qty' => isset($bin_arr[$ste->source_warehouse][$item->item_code]) ? $bin_arr[$ste->source_warehouse][$item->item_code]['consigned_qty'] : 0,
+                            'transfer_qty' => $item->qty,
+                            'uom' => $item->uom,
                             'image' => $img,
                             'webp' => $webp,
                             'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
-                            'return_reason' => $item->return_reason
+                            'return_reason' => $item->reason
                         ];
                     }
                 }
 
                 $ste_arr[] = [
                     'name' => $ste->name,
-                    'from_warehouse' => $ste->from_warehouse,
-                    'to_warehouse' => $ste->to_warehouse,
-                    'status' => $ste->item_status,
+                    'from_warehouse' => $ste->source_warehouse,
+                    'to_warehouse' => $ste->target_warehouse,
+                    'status' => $ste->status,
                     'items' => $items_arr,
-                    'owner' => $ste->owner,
+                    'owner' => ucwords(str_replace('.', ' ', explode('@', $ste->owner)[0])),
                     'docstatus' => $ste->docstatus,
-                    'transfer_type' => $ste->transfer_as ? $ste->transfer_as : $ste->receive_as,
+                    'transfer_type' => $ste->purpose,
                     'date' => $ste->creation,
                     'remarks' => $ste->remarks,
-                    'consignment_status' => $ste->consignment_status,
-                    'sales_return_request_status' => isset($returns[$ste->sales_return_reference]) ? $returns[$ste->sales_return_reference][0]->consignment_status : []
                 ];
             }
 

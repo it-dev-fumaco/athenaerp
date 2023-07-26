@@ -1,5 +1,5 @@
 @extends('layout', [
-    'namePage' => 'Request Stock Transfer',
+    'namePage' => 'Stock Transfer Request Form',
     'activePage' => 'beginning_inventory',
 ])
 
@@ -9,22 +9,16 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
+                    <div class="card">
+                        <div class="card-header text-center text-uppercase bg-info p-2">
                             @switch($action)
-                                @case('For Return')
-                                    <h6 class="text-center mt-1 font-weight-bold">Return to Plant Request</h6>
-                                    @break
-                                @case('Sales Return')
-                                    <h6 class="text-center mt-1 font-weight-bold">Sales Return</h6>
+                                @case('Pull Out')
+                                    <h6 class="text-center p-1 m-0 font-weight-bold">Item Pull Out Request</h6>
                                     @break
                                 @default
-                                    <h6 class="text-center mt-1 font-weight-bold">Store Transfer Request</h6>
+                                    <h6 class="text-center p-1 m-0 font-weight-bold">Store-to-Store Transfer Request</h6>
                                     @break
                             @endswitch
-                        </div>
-                        <div class="card-header text-center font-weight-bold">
-                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('error'))
@@ -32,11 +26,11 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <form action="/stock_transfer/submit" method="post">
+                            <form action="/stock_transfer/submit" method="POST">
                                 @csrf
                                 @switch($action)
-                                    @case('For Return')
-                                        <input type="hidden" name="transfer_as" value="For Return">
+                                    @case('Pull Out')
+                                        <input type="hidden" name="transfer_as" value="Pull Out">
                                         <div class="row p-1" id="source" style="font-size: 9pt">
                                             <div class="container">
                                                 <label for="source_warehouse">Source Warehouse</label>
@@ -48,23 +42,11 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="row p-1" id="target" style="font-size: 9pt">
+                                        <div class="row p-1 mt-2" id="target" style="font-size: 9pt">
                                             <div class="container">
                                                 <label for="source_warehouse">Target Warehouse</label>
                                                 <input type="text" class="form-control" style="font-size: 9pt;" value="Fumaco - Plant 2" readonly>
                                                 <input type="text" class="form-control d-none" style="font-size: 9pt;" name="default_warehouse" value="Quarantine Warehouse - FI" readonly>
-                                            </div>
-                                        </div>
-                                        @break
-                                    @case('Sales Return')
-                                        <input type="hidden" name="transfer_as" value="Sales Return">
-                                        <input type="hidden" name="default_warehouse" class="form-control" value="Fumaco - Plant 2" readonly style="font-size: 10pt">
-                                        <div class="row p-1" style="font-size: 9pt">
-                                            <div class="container">
-                                                <label for="target-warehouse">Warehouse</label>
-                                                <div id="target-warehouse-container">
-                                                    <select name="target_warehouse" id="target-warehouse" class="form-control" style="font-size: 9pt"></select>
-                                                </div>
                                             </div>
                                         </div>
                                         @break
@@ -81,7 +63,7 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="row p-1" id="source" style="font-size: 9pt">
+                                        <div class="row p-1 mt-2" id="source" style="font-size: 9pt">
                                             <div class="container">
                                                 <label for="source_warehouse">Target Warehouse</label>
                                                 <select name="target_warehouse" id="target-warehouse" class="form-control" style="font-size: 9pt"></select>
@@ -90,93 +72,98 @@
                                         @break
                                 @endswitch
                                 <small class="font-italic text-danger d-none warehouse-err" style="font-size: 8pt;">* Please select a warehouse</small>
-                                <div class="row p-1 mt-2" id="items-to-return">
+                                <div class="row p-1 mt-3" id="items-to-return">
                                     <div class="container-fluid">
                                         <div class="row">
-                                            <div class="col-7">
+                                            <div class="col-12 mb-2">
+                                                @switch($action)
+                                                    @case('Pull Out')
+                                                        <div style="font-size: 14px;" class="font-weight-bold text-uppercase text-center">Item(s) to Pullout</div>
+                                                        @break
+                                                    @default
+                                                        <div style="font-size: 14px;" class="font-weight-bold text-uppercase text-center">Item(s) to Transfer</div>
+                                                        @break
+                                                @endswitch
+                                            </div>
+                                            <div class="col-9">
                                                 <input type="text" class="form-control form-control-sm" id="item-search" name="search" autocomplete="off" placeholder="Search"/>
                                             </div>
-                                            <div class="col-5">
-                                                <button type="button" class="btn btn-primary w-100" id="open-item-modal" style="font-size: 10pt;" data-target="#add-item-Modal"><i class="fa fa-plus"></i> Add item</button>
+                                            <div class="col-3">
+                                                <button type="button" class="btn btn-primary btn-block btn-sm" id="open-item-modal" data-target="#add-item-Modal"><i class="fa fa-plus"></i> Add</button>
 
                                                 <div class="modal fade" id="add-item-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog" role="document">
                                                         <div class="modal-content">
                                                             <div class="modal-header bg-navy">
-                                                                <h5 class="modal-title" id="exampleModalLabel">Add an Item</h5>
-                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                    <span aria-hidden="true" style="color: #fff">&times;</span>
+                                                                <h5 class="modal-title">Add an Item</h5>
+                                                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
-                                                            <div class="modal-body">
-                                                                <select id="received-items" class="form-control" style="font-size: 9pt;"></select>
-                                                                <br><br>
-                                                                <div class="container-fluid d-none" id="items-container">
-                                                                    <table class="table" id='items-selection-table' style="font-size: 10pt;">
-                                                                        <tr>
-                                                                            <th class="text-center" style="width: 40%">Item</th>
-                                                                            <th class="text-center" style="width: 25%"><span class='qty-col'>Stocks</span></th>
-                                                                            <th class="text-center transfer-text">Qty to Transfer</th>
-                                                                        </tr>
-                                                                        <tr>
-                                                                            <td colspan="3">
-                                                                                <div class="row">
-                                                                                    <div class="p-0 col-2 text-center">
-                                                                                        <picture>
-                                                                                            <source srcset="" id='webp-src-display' type="image/webp">
-                                                                                            <source srcset="" id='img-src-display' type="image/jpeg">
-                                                                                            <img src="" alt="" id='img-src' class="img-thumbnailm" alt="User Image" width="40" height="40">
-                                                                                        </picture>
-                                                                                        <div class="d-none">
-                                                                                            <span id="img-text"></span>
-                                                                                            <span id="webp-text"></span>
-                                                                                            <span id="alt-text"></span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div class="p-1 col-3 m-0" style="display: flex; justify-content: center; align-items: center;">
-                                                                                        <span id='item-code-text' class="font-weight-bold"></span>
-                                                                                    </div>
-                                                                                    <div class="col-3" style="display: flex; justify-content: center; align-items: center; height: 44px">
-                                                                                        <div class="text-center">
-                                                                                            <div>
-                                                                                                <b><span id="stocks-text"></span></b><br>
-                                                                                                <small><span id="uom-text"></span></small>
+                                                            <div class="modal-body p-1">
+                                                                <div class="p-2 mb-3">
+                                                                    <select id="received-items" class="form-control" style="font-size: 11px;"></select>
+                                                                </div>
+                                                                <div class="p-0 d-none" id="items-container">
+                                                                    <table class="table" id='items-selection-table' style="font-size: 11px;">
+                                                                        <thead class="text-uppercase">
+                                                                            <th class="text-center" style="width: 30%">Item Code</th>
+                                                                            <th class="text-center" style="width: 35%"><span class='qty-col'>Current Qty</span></th>
+                                                                            <th class="text-center transfer-text" style="width: 35%">Transfer Qty</th>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            <tr>
+                                                                                <td class="text-center p-0">
+                                                                                    <div class="d-flex flex-row justify-content-center align-items-center">
+                                                                                        <div class="p-1 col-4 text-center">
+                                                                                            <picture>
+                                                                                                <source srcset="" id='webp-src-display' type="image/webp">
+                                                                                                <source srcset="" id='img-src-display' type="image/jpeg">
+                                                                                                <img src="" alt="" id='img-src' alt="" width="40" height="40">
+                                                                                            </picture>
+                                                                                            <div class="d-none">
+                                                                                                <span id="img-text"></span>
+                                                                                                <span id="webp-text"></span>
+                                                                                                <span id="alt-text"></span>
                                                                                             </div>
                                                                                         </div>
-                                                                                    </div>
-                                                                                    <div class="col p-0">
-                                                                                        <div class="input-group p-1 ml-3">
-                                                                                            <div class="input-group-prepend p-0">
-                                                                                                <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
-                                                                                            </div>
-                                                                                            <div class="custom-a p-0">
-                                                                                                <input type="text" class="form-control form-control-sm qty" value="0" id="qty-input" data-max="0" style="text-align: center; width: 40px">
-                                                                                            </div>
-                                                                                            <div class="input-group-append p-0">
-                                                                                                <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
-                                                                                            </div>
+                                                                                        <div class="p-1 col-8 m-0">
+                                                                                            <span id='item-code-text' class="font-weight-bold"></span>
                                                                                         </div>
                                                                                     </div>
-                                                                                    <div class="col-12 text-justify">
-                                                                                        <span id="description-text"></span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </td>
-                                                                        </tr>
+                                                                                </td>
+                                                                                <td class="text-center p-0 align-middle">
+                                                                                    <span class="d-block font-weight-bold" id="stocks-text"></span>
+                                                                                    <small id="uom-text"></small>
+                                                                                </td>
+                                                                                <td class="text-center p-2 align-middle">
+                                                                                    <input type="text" class="form-control form-control-sm qty" value="0" id="qty-input" data-max="0" style="text-align: center;">
+                                                                                </td>
+                                                                              
+                                                                            </tr>
+                                                                            <tr class="border-bottom">
+                                                                                <td class="border-top-0 p-1" colspan="3">
+                                                                                    <span id="description-text"></span>
+                                                                                </td>
+                                                                            </tr>
+                                                                        </tbody>
                                                                     </table>
-                                                                    @php
-                                                                        $sales_return_reason = ['Defective', 'Change Item', ($action == 'For Return' ? 'Pull Out' : null)];
-                                                                        $sales_return_reason = array_filter($sales_return_reason);
-                                                                    @endphp
-                                                                    <select id="sales-return-reason" class="form-control {{ !in_array($action, ['For Return', 'Sales Return']) ? 'd-none' : null }}" style="font-size: 10pt;">
-                                                                        @foreach ($sales_return_reason as $reason)
+                                                                    
+                                                                    <div class="mb-2 pr-2 pl-2 pt-0 pb-2 {{ !in_array($action, ['Pull Out']) ? 'd-none' : null }}">
+                                                                        <label for="sales-return-reason" style="font-size: 11px;">Reason <span class="text-danger">*</span></label>
+                                                                        @php
+                                                                            $sales_return_reason = ['Defective', 'Pull Out Item'];
+                                                                        @endphp
+                                                                        <select id="sales-return-reason" class="form-control" style="font-size: 11px;" {{ ($action == 'Pull Out') ? 'required' : '' }}>
+                                                                            @foreach ($sales_return_reason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
-                                                                        @endforeach
-                                                                    </select>
+                                                                            @endforeach
+                                                                        </select>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">
-                                                                <button type="button" id="add-item" class="btn btn-primary w-100" disabled>Add item</button>
+                                                                <button type="button" id="add-item" class="btn btn-primary w-100" disabled><i class="fas fa-plus"></i> Add item</button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -186,28 +173,27 @@
                                     </div>
                                     
                                     <div class="container-fluid mt-2">
-                                        <table class="table" id='items-table' style="font-size: 9pt">
-                                            <thead>
-                                                <tr>
-                                                    <th class="text-center" style="width: 40%">Item</th>
-                                                    <th class="text-center" style="width: 25%"><span class='qty-col'>Stocks</span></th>
-                                                    <th class="text-center transfer-text">Qty to Transfer</th>
-                                                </tr>
+                                        <table class="table" id="items-table" style="font-size: 11px;">
+                                            <thead class="text-uppercase bg-light">
+                                                <th class="text-center p-2" style="width: 35%">Item Code</th>
+                                                <th class="text-center p-2" style="width: 30%"><span class='qty-col'>Current Qty</span></th>
+                                                <th class="text-center p-2 transfer-text" style="width: 30%">Transfer Qty</th>
+                                                <th class="text-center p-2" style="width: 5%">-</th>
                                             </thead>
                                             <tbody>
-                                                <tr id="placeholder">
-                                                    <td colspan=3 class='text-center'>Please Select an Item</td>
+                                                <tr id="placeholder" class="border-bottom">
+                                                    <td colspan="4" class="text-center text-muted text-uppercase">Please Select an Item</td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
 
                                     <div class="container-fluid mt-2">
-                                        <textarea name="remarks" rows="5" class="form-control" placeholder="Remarks" style="font-size: 10pt; font-family: inherit"></textarea>
+                                        <textarea name="remarks" rows="5" class="form-control" placeholder="Remarks" style="font-size: 11px; font-family: inherit"></textarea>
                                     </div>
 
-                                    <div class="container-fluid mt-2 text-center">
-                                        <button type="submit" id="submit-btn" class="btn btn-primary w-100 d-none submit-once">Submit</button>
+                                    <div class="container-fluid mt-3 text-center">
+                                        <button type="submit" id="submit-btn" class="btn btn-primary w-100 d-none submit-once"><i class="fas fa-check"></i> Submit</button>
                                     </div>
 
                                     <span id="counter" class='d-none'>0</span>
@@ -242,7 +228,7 @@
                 var modal = $(this).data('target');
                 var no_err = true;
                 switch (form_purpose) {
-                    case 'For Return':
+                    case 'Pull Out':
                         if($('#src-warehouse').val() != null && $('#src-warehouse').val() != ''){
                             no_err = true;
                         }else{
@@ -426,6 +412,9 @@
 
                 val = val > 0 ? val : 0;
                 $('#counter').text(val);
+                if (val <= 0) {
+                    $('#placeholder').removeClass('d-none');
+                }
             }
 
             function reset_placeholders(){
@@ -461,48 +450,48 @@
             });
 
             // Modal Add/Subtract Controls
-            $('table#items-selection-table').on('click', '.qtyplus', function(e){
-                // Stop acting like a button
-                e.preventDefault();
-                // Get the field name
-                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-                var max = fieldName.data('max');
-                // Get its current value
-                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-                // If is not undefined
-                if (!isNaN(currentVal)) {
-                    // Increment
-                    if (form_purpose == 'Sales Return') {
-                        fieldName.val(currentVal + 1);
-                    }else{
-                        if(currentVal < max){
-                            fieldName.val(currentVal + 1);
-                        }
-                    }
-                } else {
-                    // Otherwise put a 0 there
-                    fieldName.val(0);
-                }
+            // $('table#items-selection-table').on('click', '.qtyplus', function(e){
+            //     // Stop acting like a button
+            //     e.preventDefault();
+            //     // Get the field name
+            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+            //     var max = fieldName.data('max');
+            //     // Get its current value
+            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
+            //     // If is not undefined
+            //     if (!isNaN(currentVal)) {
+            //         // Increment
+            //         if (form_purpose == 'Sales Return') {
+            //             fieldName.val(currentVal + 1);
+            //         }else{
+            //             if(currentVal < max){
+            //                 fieldName.val(currentVal + 1);
+            //             }
+            //         }
+            //     } else {
+            //         // Otherwise put a 0 there
+            //         fieldName.val(0);
+            //     }
 
-            });
+            // });
 
-            $('table#items-selection-table').on('click', '.qtyminus', function(e){
-                // Stop acting like a button
-                e.preventDefault();
-                // Get the field name
-                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-                // Get its current value
-                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-                // If it isn't undefined or its greater than 0
-                if (!isNaN(currentVal) && currentVal > 0) {
-                    // Decrement one
-                    fieldName.val(currentVal - 1);
-                } else {
-                    // Otherwise put a 0 there
-                    fieldName.val(0);
-                }
+            // $('table#items-selection-table').on('click', '.qtyminus', function(e){
+            //     // Stop acting like a button
+            //     e.preventDefault();
+            //     // Get the field name
+            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+            //     // Get its current value
+            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
+            //     // If it isn't undefined or its greater than 0
+            //     if (!isNaN(currentVal) && currentVal > 0) {
+            //         // Decrement one
+            //         fieldName.val(currentVal - 1);
+            //     } else {
+            //         // Otherwise put a 0 there
+            //         fieldName.val(0);
+            //     }
 
-            });
+            // });
             // Modal Add/Subtract Controls
 
             $("#item-search").on("keyup", function() {
@@ -530,13 +519,92 @@
 					return false;
                 }
 
-                var sales_return_row = '';
-                if($.inArray(form_purpose, ['For Return', 'Sales Return']) !== -1){
-                    sales_return_row = '<tr class="row-' + item_code + '">' + 
-                        '<td colspan=3 class="text-center p-0">' +
+                // var row = '<tr class="row-' + item_code + ' ' + item_code + '">' +
+                //     '<td colspan=3 class="text-center p-0">' +
+                //         '<div class="d-none">' + description + '</div>' + // reference for search
+                //         '<div class="row">' +
+                //             '<input name="item_code[]" class="items-list d-none" value="' + item_code + '" id="' + item_code + '" />' +
+                //             '<div class="p-1 col-2 text-center">' +
+                //                 '<picture>' +
+                //                     '<source srcset="' + webp + '" type="image/webp">' +
+                //                     '<source srcset="' + img + '" type="image/jpeg">' +
+                //                     '<img src="' + img + '" alt="' + alt + '" class="img-thumbnail" alt="User Image" width="40" height="40">' +
+                //                 '</picture>' +
+                //             '</div>' +
+                //             '<div class="p-1 col-2 m-0" style="display: flex; justify-content: center; align-items: center;">' +
+                //                 '<span class="font-weight-bold">' + item_code + '</span>' +
+                //             '</div>' +
+                //             '<div class="col-3 offset-1" style="display: flex; justify-content: center; align-items: center; height: 44px">' +
+                //                 '<div><span><b>' + stocks + '</b></span><br/>' +
+                //                 '<small>' + uom + '</small></div>' +
+                //             '</div>' +
+                //             '<div class="col p-0">' +
+                //                 '<div class="input-group p-1 ml-2">' +
+                //                     '<div class="input-group-prepend p-0">' +
+                //                         '<button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
+                //                     '</div>' +
+                //                     '<div class="custom-a p-0">' +
+                //                         '<input type="text" class="form-control form-control-sm validate qty to-return" id="qty-' + item_code + '" value="' + qty + '" data-item-code="' + item_code + '" name="item[' + item_code + '][transfer_qty]" data-max="' + stocks + '" style="text-align: center; width: 40px">' +
+                //                     '</div>' +
+                //                     '<div class="input-group-append p-0">' +
+                //                         '<button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>' +
+                //                     '</div>' +
+                //                 '</div>' +
+                //             '</div>' +
+                //             '<div class="col-1 text-center remove-item" data-item-code="' + item_code + '">' +
+                //                 '<i class="fa fa-remove" style="color: red"></i>' +
+                //             '</div>' +
+                //         '</div>' +
+                //     '</td>' +
+                // '</tr>' +
+                // '<tr class="row-' + item_code + '">' +
+                //     '<td colspan=3 class="text-justify p-2" style="font-size: 10pt;">' +
+                //         '<div class="d-none">' + item_code + '</div>' + // reference for search
+                //         '<div class="item-description">' + description + '</div>' +
+                //     '</td>' +
+                // '</tr>' + sales_return_row;
+
+
+                var row = '<tr class="row-' + item_code + ' ' + item_code + '">'+
+                    '<td class="text-center p-0">'+
+                        '<input type="hidden" name="item_code[]" class="items-list d-none" value="' + item_code + '" id="' + item_code + '">'+
+                        '<div class="d-flex flex-row justify-content-center align-items-center">'+
+                            '<div class="p-1 col-4 text-center">'+
+                                '<picture>'+
+                                    '<source srcset="' + webp + '" type="image/webp">'+
+                                    '<source srcset="' + img + '" type="image/jpeg">'+
+                                    '<img src="' + img + '" alt="' + alt + '" width="40" height="40">'+
+                                '</picture>'+
+                            '</div>'+
+                            '<div class="p-1 col-8 m-0">'+
+                                '<span class="font-weight-bold">' + item_code + '</span>'+
+                            '</div>'+
+                        '</div>'+
+                    '</td>'+
+                    '<td class="text-center p-0 align-middle">'+
+                        '<span class="d-block font-weight-bold">' + stocks + '</span>'+
+                        '<small>' + uom + '</small>'+
+                    '</td>'+
+                    '<td class="text-center p-2 align-middle">'+
+                        '<input type="text" class="form-control form-control-sm validate qty to-return" id="qty-' + item_code + '" value="' + qty + '" data-item-code="' + item_code + '" name="item[' + item_code + '][transfer_qty]" data-max="85" style="text-align: center;">'+
+                    '</td>'+
+                    '<td class="text-center p-0 align-middle">'+
+                        '<a href="#" class="btn btn-danger btn-xs remove-item" data-item-code="' + item_code + '"><i class="fa fa-remove"></i></a>'+
+                   '</td>'+
+                '</tr>'+
+                '<tr class="border-top-0 border-bottom row-' + item_code + ' ' + item_code + '">' +
+                    '<td class="border-top-0 p-1" colspan="4">' + 
+                        description
+                    '</td>' +
+                '</tr>';
+
+                if($.inArray(form_purpose, ['Pull Out']) !== -1){
+                    row += '<tr class="border-top-0 border-bottom  row-' + item_code + '">' + 
+                        '<td colspan="4" class="text-center p-0">' +
                             '<div class="d-none">' + item_code + '</div>' + // reference for search
                             '<div class="d-none">' + description + '</div>' +
-                            '<select class="form-control" name="item[' + item_code + '][reason]" style="font-size: 10pt;">' +
+                            '<label class="d-block text-left mb-0 mt-1">Reason <span class="text-danger">*</span></label>' +
+                            '<select class="form-control mb-2" name="item[' + item_code + '][reason]" style="font-size: 10pt;" required>' +
                                 @foreach ($sales_return_reason as $reason)
                                     '<option value="{{ $reason }}" ' + (selected_reason == '{{ $reason }}' ? 'selected' : '') + '>{{ $reason }}</option>' + 
                                 @endforeach
@@ -544,51 +612,6 @@
                         '</td>' +
                     '</tr>';
                 }
-
-                var row = '<tr class="row-' + item_code + ' ' + item_code + '">' +
-                    '<td colspan=3 class="text-center p-0">' +
-                        '<div class="d-none">' + description + '</div>' + // reference for search
-                        '<div class="row">' +
-                            '<input name="item_code[]" class="items-list d-none" value="' + item_code + '" id="' + item_code + '" />' +
-                            '<div class="p-1 col-2 text-center">' +
-                                '<picture>' +
-                                    '<source srcset="' + webp + '" type="image/webp">' +
-                                    '<source srcset="' + img + '" type="image/jpeg">' +
-                                    '<img src="' + img + '" alt="' + alt + '" class="img-thumbnail" alt="User Image" width="40" height="40">' +
-                                '</picture>' +
-                            '</div>' +
-                            '<div class="p-1 col-2 m-0" style="display: flex; justify-content: center; align-items: center;">' +
-                                '<span class="font-weight-bold">' + item_code + '</span>' +
-                            '</div>' +
-                            '<div class="col-3 offset-1" style="display: flex; justify-content: center; align-items: center; height: 44px">' +
-                                '<div><span><b>' + stocks + '</b></span><br/>' +
-                                '<small>' + uom + '</small></div>' +
-                            '</div>' +
-                            '<div class="col p-0">' +
-                                '<div class="input-group p-1 ml-2">' +
-                                    '<div class="input-group-prepend p-0">' +
-                                        '<button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
-                                    '</div>' +
-                                    '<div class="custom-a p-0">' +
-                                        '<input type="text" class="form-control form-control-sm validate qty to-return" id="qty-' + item_code + '" value="' + qty + '" data-item-code="' + item_code + '" name="item[' + item_code + '][transfer_qty]" data-max="' + stocks + '" style="text-align: center; width: 40px">' +
-                                    '</div>' +
-                                    '<div class="input-group-append p-0">' +
-                                        '<button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>' +
-                                    '</div>' +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="col-1 text-center remove-item" data-item-code="' + item_code + '">' +
-                                '<i class="fa fa-remove" style="color: red"></i>' +
-                            '</div>' +
-                        '</div>' +
-                    '</td>' +
-                '</tr>' +
-                '<tr class="row-' + item_code + '">' +
-                    '<td colspan=3 class="text-justify p-2" style="font-size: 10pt;">' +
-                        '<div class="d-none">' + item_code + '</div>' + // reference for search
-                        '<div class="item-description">' + description + '</div>' +
-                    '</td>' +
-                '</tr>' + sales_return_row;
 
                 if(jQuery.inArray(item_code, items_array) === -1){
                     items_array.push(item_code);
@@ -620,51 +643,51 @@
                 validate_submit();
             });
 
-            $('table#items-table').on('click', '.qtyplus', function(e){
-                // Stop acting like a button
-                e.preventDefault();
-                // Get the field name
-                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-                var max = fieldName.data('max');
-                // Get its current value
-                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-                // If is not undefined
-                if (!isNaN(currentVal)) {
-                    // Increment
-                    if (form_purpose == 'Sales Return') {
-                        fieldName.val(currentVal + 1);
-                    }else{
-                        if(currentVal < max){
-                            fieldName.val(currentVal + 1);
-                        }
-                    }
-                } else {
-                    // Otherwise put a 0 there
-                    fieldName.val(0);
-                }
+            // $('table#items-table').on('click', '.qtyplus', function(e){
+            //     // Stop acting like a button
+            //     e.preventDefault();
+            //     // Get the field name
+            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+            //     var max = fieldName.data('max');
+            //     // Get its current value
+            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
+            //     // If is not undefined
+            //     if (!isNaN(currentVal)) {
+            //         // Increment
+            //         if (form_purpose == 'Sales Return') {
+            //             fieldName.val(currentVal + 1);
+            //         }else{
+            //             if(currentVal < max){
+            //                 fieldName.val(currentVal + 1);
+            //             }
+            //         }
+            //     } else {
+            //         // Otherwise put a 0 there
+            //         fieldName.val(0);
+            //     }
 
-                validate_submit();
-            });
+            //     validate_submit();
+            // });
 
             // This button will decrement the value till 0
-            $('table#items-table').on('click', '.qtyminus', function(e){
-                // Stop acting like a button
-                e.preventDefault();
-                // Get the field name
-                var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-                // Get its current value
-                var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-                // If it isn't undefined or its greater than 0
-                if (!isNaN(currentVal) && currentVal > 0) {
-                    // Decrement one
-                    fieldName.val(currentVal - 1);
-                } else {
-                    // Otherwise put a 0 there
-                    fieldName.val(0);
-                }
+            // $('table#items-table').on('click', '.qtyminus', function(e){
+            //     // Stop acting like a button
+            //     e.preventDefault();
+            //     // Get the field name
+            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
+            //     // Get its current value
+            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
+            //     // If it isn't undefined or its greater than 0
+            //     if (!isNaN(currentVal) && currentVal > 0) {
+            //         // Decrement one
+            //         fieldName.val(currentVal - 1);
+            //     } else {
+            //         // Otherwise put a 0 there
+            //         fieldName.val(0);
+            //     }
 
-                validate_submit();
-            });
+            //     validate_submit();
+            // });
 
             cut_text();
             var showTotalChar = 90, showChar = "Show more", hideChar = "Show less";
