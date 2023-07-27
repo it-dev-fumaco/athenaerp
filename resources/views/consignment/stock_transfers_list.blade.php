@@ -13,7 +13,7 @@
                         <div class="card-header text-center p-2">
                             <div class="d-flex flex-row align-items-center justify-content-between">
                                 <div class="p-0 col-8 mx-auto text-center" style="display: flex; justify-content: center; align-items: center;">
-                                    <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">{{ $purpose == 'Material Transfer' ? 'Stock Transfers List' : 'Sales Returns List'}}</span>
+                                    <span class="font-weight-bolder d-block text-uppercase" style="font-size: 11pt;">Stock Transfers List</span>
                                 </div>
                                 @if (Auth::user()->user_group == 'Promodiser')
                                     <!-- Tablet/Desktop -->
@@ -24,7 +24,7 @@
                                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer" style="color: #000 !important">Store Transfer Request</a>
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Pull Out" style="color: #000 !important">Item Pull Out Request</a>
-                                            <a class="dropdown-item" href="/stock_transfer/form?action=Sales Return" style="color: #000 !important">Create Sales Return</a>
+                                            <a class="dropdown-item" href="/item_return/form" style="color: #000 !important">Item Return Entry</a>
                                         </div>
                                     </div>
                                     <!-- Tablet/Desktop -->
@@ -36,7 +36,7 @@
                                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer" style="color: #000 !important">Store Transfer Request</a>
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Pull Out" style="color: #000 !important">Item Pull Out Request</a>
-                                            <a class="dropdown-item" href="/stock_transfer/form?action=Sales Return" style="color: #000 !important">Create Sales Return</a>
+                                            <a class="dropdown-item" href="/item_return/form" style="color: #000 !important">Item Return Entry</a>
                                         </div>
                                     </div>
                                     <!-- Mobile -->
@@ -74,7 +74,7 @@
                                     <a class="nav-link nav-trigger font-weight-bold"
                                     data-toggle="tab"
                                     data-target="sales-return"
-                                    data-purpose="Sales Return"
+                                    data-purpose="Item Return"
                                     >Item Return</a>
                                 </li>
                             </ul>

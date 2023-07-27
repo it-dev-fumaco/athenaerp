@@ -2633,11 +2633,11 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try{
             $items = $request->item;
-            $latest_id = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%cst%')->max('name');
+            $latest_id = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%cste%')->max('name');
             $latest_id_exploded = explode("-", $latest_id);
             $new_id = (($latest_id) ? $latest_id_exploded[1] : 0) + 1;
             $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
-            $new_id = 'CST-'.$new_id;
+            $new_id = 'CSTE-'.$new_id;
 
             $now = Carbon::now();
 
@@ -2757,6 +2757,23 @@ class ConsignmentController extends Controller
                 'status' => 'Cancelled'
             ]);
 
+            if($stock_entry->purpose == 'Item Return'){
+                $stock_entry_items = DB::table('tabConsignment Stock Entry Detail')->where('parent', $id)->get();
+
+                $items = DB::table('tabBin')->where('warehouse', $stock_entry->target_warehouse)->whereIn('item_code', collect($stock_entry_items)->pluck('item_code'))->get()->groupBy('item_code');
+
+                foreach ($stock_entry_items as $item) {
+                    if(isset($items[$item->item_code]))
+
+                    $item_details = $items[$item->item_code][0];
+                    DB::table('tabBin')->where('name', $item_details->name)->update([
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'consigned_qty' => $item_details->consigned_qty > $item->qty ? $item_details->consigned_qty - $item->qty : 0 
+                    ]);
+                }
+            }
+
             $source_warehouse = $stock_entry->source_warehouse;
             $target_warehouse = $stock_entry->target_warehouse;
             $transaction = $stock_entry->purpose;
@@ -2798,13 +2815,14 @@ class ConsignmentController extends Controller
         $consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
         if($request->ajax()){
+            $ref_warehouse = $purpose == 'Item Return' ? 'target_warehouse' : 'source_warehouse';
             $stock_transfers = DB::table('tabConsignment Stock Entry')
-                ->whereIn('source_warehouse', $consignment_stores)
+                ->whereIn($ref_warehouse, $consignment_stores)
                 ->where('purpose', $purpose)
                 ->orderBy('creation', 'desc')->paginate(10);
 
-            $src_warehouses = collect($stock_transfers->items())->map(function ($q){
-                return $q->source_warehouse;
+            $warehouses = collect($stock_transfers->items())->map(function ($q) use ($ref_warehouse){
+                return $q->$ref_warehouse;
             });
 
             $reference_ste = collect($stock_transfers->items())->map(function ($q){
@@ -2818,7 +2836,7 @@ class ConsignmentController extends Controller
                 return $q->item_code;
             });
 
-            $bin = DB::table('tabBin')->whereIn('warehouse', $src_warehouses)->whereIn('item_code', $item_codes)->get();
+            $bin = DB::table('tabBin')->whereIn('warehouse', $warehouses)->whereIn('item_code', $item_codes)->get();
             $bin_arr = [];
             foreach($bin as $b){
                 $bin_arr[$b->warehouse][$b->item_code] = [
@@ -2856,7 +2874,7 @@ class ConsignmentController extends Controller
                         $items_arr[] = [
                             'item_code' => $item->item_code,
                             'description' => $item->item_description,
-                            'consigned_qty' => isset($bin_arr[$ste->source_warehouse][$item->item_code]) ? $bin_arr[$ste->source_warehouse][$item->item_code]['consigned_qty'] : 0,
+                            'consigned_qty' => isset($bin_arr[$ste->$ref_warehouse][$item->item_code]) ? $bin_arr[$ste->$ref_warehouse][$item->item_code]['consigned_qty'] : 0,
                             'transfer_qty' => $item->qty,
                             'uom' => $item->uom,
                             'image' => $img,

@@ -3,10 +3,12 @@
         <th class="text-center p-1 d-none d-lg-table-cell">Reference</th>
         <th class="text-center p-1 d-none d-lg-table-cell">Date</th>
         <th class="text-center p-1 mobile-first-row">
-            <span class="d-none d-lg-inline">From Warehouse</span>
+            <span class="d-none d-lg-inline">{!! $purpose != 'Item Return' ? 'From&nbsp;' : null !!}Warehouse</span>
             <span class="d-inline d-lg-none">Details</span>
         </th>
-        <th class="text-center p-1 d-none d-lg-table-cell">To Warehouse</th>
+        @if ($purpose != 'Item Return')
+            <th class="text-center p-1 d-none d-lg-table-cell">To Warehouse</th>
+        @endif
         <th class="text-center p-1 d-none d-lg-table-cell">Submitted By</th>
         <th class="text-center p-1 d-none d-lg-table-cell">Status</th>
         <th class="text-center p-1">Action</th>
@@ -32,13 +34,15 @@
         <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</td>
         <td class="p-1 align-middle">
             <div class="d-none d-lg-inline text-center">
-                {{ $ste['from_warehouse'] }}
+                {{ $purpose == 'Item Return' ? $ste['to_warehouse'] : $ste['from_warehouse'] }}
             </div>
             <div class="d-inline d-lg-none text-left">
                 <span class="font-weight-bold">{{ $ste['name'] }}</span>&nbsp;<span class="badge badge-{{ $badge }}">{{ $status }}</span>
             </div>
         </td>
-        <td class="d-none p-1 d-lg-table-cell">{{ $ste['transfer_type'] == 'Pull Out' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
+        @if ($purpose != 'Item Return')
+            <td class="d-none p-1 d-lg-table-cell">{{ $ste['transfer_type'] == 'Pull Out' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }}</td>
+        @endif
         <td class="text-center p-1 d-none d-lg-table-cell">{{ $ste['owner'] }}</td>
         <td class="text-center p-1 d-none d-lg-table-cell">
             <span class="badge badge-{{ $badge }}">{{ $status }}</span>
@@ -56,8 +60,12 @@
                             </button>
                         </div>
                         <div class="modal-body p-2">
-                            <span class="d-block text-left"><b>From: </b> {{ $ste['from_warehouse'] }}</span>
-                            <span class="d-block text-left"><b>To: </b> {{ $ste['to_warehouse'] }}</span>
+                            @if ($purpose == 'Item Return')
+                                <span class="d-block text-left"><b>Warehouse: </b> {{ $ste['to_warehouse'] }}</span>
+                            @else
+                                <span class="d-block text-left"><b>From: </b> {{ $ste['from_warehouse'] }}</span>
+                                <span class="d-block text-left"><b>To: </b> {{ $ste['to_warehouse'] }}</span>
+                            @endif
                             <small class="d-block text-left mb-2">{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
                             @if ($ste['transfer_type'] == 'Store Transfer')
                             <div class="callout callout-info text-center">
@@ -158,9 +166,14 @@
     </tr>
     <tr class="d-lg-none">
         <td colspan="2" class="p-1 border-top-0 border-bottom" style="font-size: 8pt;">
-            <b>From: </b>{{ $ste['from_warehouse'] }} <br>
-            <b>To: </b>{{ $ste['transfer_type'] == 'Pull Out' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
-            <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small>
+            @if ($purpose == 'Item Return')
+                <b>Warehouse: </b>{{ $ste['to_warehouse'] }} <br>
+                <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small> 
+            @else
+                <b>From: </b>{{ $ste['from_warehouse'] }} <br>
+                <b>To: </b>{{ $ste['transfer_type'] == 'Pull Out' ? 'Fumaco - Plant 2' : $ste['to_warehouse'] }} <br>
+                <small>{{ $ste['owner'] }} - {{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</small> 
+            @endif
         </td>
     </tr>
     @empty
