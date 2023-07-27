@@ -163,9 +163,9 @@ class MainController extends Controller
                 $period_to = $cutoff_date[1];
 
                 // get total stock transfer
-                $total_stock_transfer = DB::table('tabStock Entry')->whereIn('transfer_as', ['Consignment', 'For Return'])
-                    ->whereIn('from_warehouse', $assigned_consignment_store)->where('purpose', 'Material Transfer')
-                    ->where('naming_series', 'STEC-')->where('docstatus', 1)->where('consignment_status', 'To Receive')->count();
+                $total_stock_transfer = DB::table('tabConsignment Stock Entry')
+                    ->whereIn('source_warehouse', $assigned_consignment_store)->where('status', 'Pending')
+                    ->count();
 
                 // get total stock adjustments
                 $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->where('status', '!=', 'Approved')->count();
@@ -265,9 +265,8 @@ class MainController extends Controller
         }
 
         // get total stock transfer
-        $total_stock_transfers = DB::table('tabStock Entry')->whereDate('delivery_date', '>', '2022-06-25')
-            ->whereIn('transfer_as', ['Store Transfer', 'For Return'])->where('purpose', 'Material Transfer')
-            ->where('docstatus', 0)->count();
+        $total_stock_transfers = DB::table('tabConsignment Stock Entry')
+            ->where('status', 'Pending')->count();
 
         $pending_to_receive = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')

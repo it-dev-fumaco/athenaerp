@@ -196,7 +196,9 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/damaged/return/{id}', 'ConsignmentController@returnDamagedItem');
         Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
         Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport')->name('stock_report_list');
-        Route::get('/stock_return_form', 'ConsignmentController@stockReturnForm');
+        Route::get('/damaged_items_list', 'ConsignmentController@viewDamagedItemsList');
+        Route::get('/countStockTransfer/{purpose}', 'ConsignmentController@countStockTransfer');
+        Route::post('/generate_stock_transfer_entry', 'ConsignmentController@generateStockTransferEntry');
 
         Route::get('/inventory_items/{branch}', 'ConsignmentController@inventoryItems'); 
 

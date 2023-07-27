@@ -1899,12 +1899,8 @@ class ConsignmentController extends Controller
         }
     }
 
-    // /stocks_report/list
-    public function stockTransferReport(Request $request){
-        $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')
-            ->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-
-        $damaged_items = DB::table('tabConsignment Damaged Item')
+    public function viewDamagedItemsList(Request $request) {
+        $list = DB::table('tabConsignment Damaged Item')
             ->when($request->search, function ($q) use ($request){
                 $q->where('item_code', 'like', '%' . $request->search .'%')
                     ->orWhere('description', 'like', '%' . $request->search .'%');
@@ -1912,63 +1908,18 @@ class ConsignmentController extends Controller
             ->when($request->store, function ($q) use ($request){
                 $q->where('branch_warehouse', $request->store);
             })
-            ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($assigned_consignment_store){
-                $q->whereIn('branch_warehouse', $assigned_consignment_store);
-            })->orderBy('creation', 'desc')->paginate(20, ['*'], 'damaged_items');
+            ->orderBy('creation', 'desc')->paginate(20);
         
-        $item_codes = collect($damaged_items->items())->map(function ($q){
+        $item_codes = collect($list->items())->map(function ($q){
             return $q->item_code;
         });
-
-        $ste_item_codes = [];
-        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
-            $purpose = isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return' ? 'Material Receipt' : 'Material Transfer';
-            $stock_entry = DB::table('tabStock Entry')
-                ->when(!isset($request->tab1_purpose) || $request->tab1_purpose != 'Sales Return', function ($q) use ($request){
-                    $transfer_as = isset($request->tab1_purpose) ? [$request->tab1_purpose] : ['Store Transfer', 'For Return'];
-                    return $q->whereDate('delivery_date', '>', Carbon::parse('2022-06-25')->startOfDay())
-                        ->whereIn('transfer_as', $transfer_as);
-                })
-                ->when(isset($request->tab1_purpose) && $request->tab1_purpose == 'Sales Return', function ($q){
-                    return $q->where('receive_as', 'Sales Return')->whereDate('creation', '>', Carbon::parse('2022-06-25')->startOfDay());
-                })
-                ->where('purpose', $purpose)
-                ->when($request->tab1_q, function ($q) use ($request){
-                    return $q->where('name', 'like', '%'.$request->tab1_q.'%');
-                })
-                ->when($request->source_warehouse, function ($q) use ($request){
-                    return $q->where('from_warehouse', $request->source_warehouse);
-                })
-                ->when($request->target_warehouse, function ($q) use ($request){
-                    return $q->where('to_warehouse', $request->target_warehouse);
-                })
-                ->when($request->tab1_status && $request->tab1_status != 'All', function ($q) use ($request){
-                    return $q->where('docstatus', $request->tab1_status);
-                })
-                ->orderBy('docstatus', 'asc')->orderBy('creation', 'desc')
-                ->paginate(20, ['*'], 'stock_transfers');
-
-            $reference = collect($stock_entry->items())->map(function ($q){
-                return $q->name;
-            });
-
-            $stock_entry_detail = DB::table('tabStock Entry Detail')->whereIn('parent', $reference)->get();
-            $ste_items = collect($stock_entry_detail)->groupBy('parent');
-
-            $ste_item_codes = collect($stock_entry_detail)->map(function ($q){
-                return $q->item_code;
-            });
-
-            $item_codes = collect($item_codes)->merge($ste_item_codes);
-        }
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
         $item_image = collect($item_images)->groupBy('parent');
 
-        $items_arr = [];
-        foreach($damaged_items as $item){
-            $orig_exists = 0;
-            $webp_exists = 0;
+        $result = [];
+        foreach($list as $item){
+            $orig_exists = $webp_exists = 0;
 
             $img = '/icon/no_img.png';
             $webp = '/icon/no_img.webp';
@@ -1986,7 +1937,7 @@ class ConsignmentController extends Controller
                 }
             }
             
-            $items_arr[] = [
+            $result[] = [
                 'item_code' => $item->item_code,
                 'description' => $item->description,
                 'damaged_qty' => ($item->qty * 1),
@@ -2002,102 +1953,264 @@ class ConsignmentController extends Controller
             ];
         }
 
-        if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) {
-            $source_warehouses = collect($stock_entry->items())->map(function ($q){
-                return $q->from_warehouse;
-            })->unique();
-
-            $bin = DB::table('tabBin')->whereIn('warehouse', $source_warehouses)->whereIn('item_code', $ste_item_codes)->get();
-            $bin_arr = [];
-            foreach($bin as $b){
-                $bin_arr[$b->warehouse][$b->item_code] = [
-                    'consigned_qty' => $b->consigned_qty
-                ];
-            }
-
-            $ste_arr = [];
-            foreach($stock_entry as $ste){
-                $items = [];
-                if(isset($ste_items[$ste->name])){
-                    foreach($ste_items[$ste->name] as $item){
-                        $orig_exists = 0;
-                        $webp_exists = 0;
-
-                        $img = '/icon/no_img.png';
-                        $webp = '/icon/no_img.webp';
-
-                        if(isset($item_image[$item->item_code])){
-                            $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                            $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                            $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                            $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                            if($orig_exists == 0 && $webp_exists == 0){
-                                $img = '/icon/no_img.png';
-                                $webp = '/icon/no_img.webp';
-                            }
-                        }
-
-                        $items[] = [
-                            'item_code' => $item->item_code,
-                            'description' => $item->description,
-                            'transfer_qty' => $item->transfer_qty,
-                            'price' => $item->basic_rate,
-                            'uom' => $item->stock_uom,
-                            'consigned_qty' => isset($bin_arr[$ste->from_warehouse][$item->item_code]) ? $bin_arr[$ste->from_warehouse][$item->item_code]['consigned_qty'] : 0,
-                            'image' => $img,
-                            'image_slug' => Str::slug(explode('.', $img)[0], '-'),
-                            'webp' => $webp
-                        ];
-                    }
-                }
-
-                if($ste->docstatus == 1){
-                    $status = $ste->transfer_as == 'For Return' ? 'For Return' : 'Approved';
-                    if($ste->consignment_status == 'Received'){
-                        $status = 'Received';
-                    }
-                }else if($ste->docstatus == 0){
-                    if ($ste->transfer_as == 'For Return') {
-                        $status = 'For Return';
-                    }else{
-                        $status = 'To Submit in ERP';
-                    }
-                }else{
-                    $status = 'Cancelled';
-                }
-
-                $ste_arr[] = [
-                    'name' => $ste->name,
-                    'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i A'),
-                    'source_warehouse' => $ste->from_warehouse,
-                    'target_warehouse' => $ste->to_warehouse,
-                    'docstatus' => $ste->docstatus,
-                    'status' => $status,
-                    'transfer_as' => $ste->transfer_as,
-                    'receive_as' => $ste->receive_as,
-                    'submitted_by' => $ste->owner,
-                    'consignment_status' => $ste->consignment_status,
-                    'items' => $items
-                ];
-            }
-
-            $warehouses = DB::table('tabWarehouse')->where('disabled', 0)->where('is_group', 0)->pluck('name');
-
-            return view('consignment.view_damaged_items_list', compact('items_arr', 'damaged_items', 'ste_arr', 'stock_entry', 'warehouses'));
-        }
-
-        return view('consignment.damaged_items_list', compact('items_arr'));
+        return view('consignment.supervisor.tbl_damaged_items', compact('result', 'list'));
     }
 
-    public function stockReturnForm(){
-        $warehouses = DB::table('tabWarehouse')->where('docstatus', '<', 2)->select('name', 'parent_warehouse')->get();
-        $warehouses_by_parent = collect($warehouses)->groupBy('parent_warehouse');
+    public function countStockTransfer($purpose) {
+        return DB::table('tabConsignment Stock Entry')->where('purpose', $purpose)->where('status', 'Pending')->count();
+    }
 
-        $consignment_warehouses = isset($warehouses_by_parent['P2 Consignment Warehouse - FI']) ? $warehouses_by_parent['P2 Consignment Warehouse - FI'] : [];
+    public function generateStockTransferEntry(Request $request) {
+        DB::beginTransaction();
+        try {
+            $id = $request->cste;
+            $details = DB::table('tabConsignment Stock Entry')->where('name', $id)->first();
+            if (!$details) {
+                return response()->json(['success' => 0, 'message' => 'Record not found.']);
+            }
 
-        return view('consignment.supervisor.stock_return_form', compact('warehouses', 'consignment_warehouses'));
+            if (in_array($details->status, ['Cancelled', 'Completed'])) {
+                return response()->json(['success' => 0, 'message' => 'Stock Transfer is ' . $details->status]);
+            }
+
+            $items = DB::table('tabConsignment Stock Entry Detail')->where('parent', $details->name)->get();
+
+            $item_codes = collect($items)->pluck('item_code')->unique();
+
+            $inventory_amount = collect($items)->sum('amount');
+
+            $bin = DB::table('tabBin as bin')->join('tabItem as item', 'item.item_code', 'bin.item_code')
+                ->where('bin.warehouse', $details->source_warehouse)->whereIn('bin.item_code', $item_codes)
+                ->select('item.item_code', 'item.description', 'item.item_name', 'bin.warehouse', 'item.stock_uom', 'bin.actual_qty', 'bin.consigned_qty', 'bin.consignment_price')
+                ->get();
+
+            $bin_array = [];
+            foreach($bin as $b){
+                $bin_array[$b->warehouse][$b->item_code] = [
+                    'description' => $b->description,
+                    'item_name' => $b->item_name,
+                    'uom' => $b->stock_uom,
+                    'actual_qty' => $b->actual_qty,
+                    'consigned_qty' => $b->consigned_qty,
+                    'consignment_price' => $b->consignment_price,
+                ];
+            }
+
+            $now = Carbon::now();
+
+            $latest_ste = DB::table('tabStock Entry')->where('naming_series', 'STEC-')->max('name');
+            $latest_ste_exploded = explode("-", $latest_ste);
+            $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
+            $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
+            $new_id = 'STEC-'.$new_id;
+
+            $stock_entry_detail = [];
+            foreach ($items as $index => $row) {
+                $stock_entry_detail[] = [
+                    'name' =>  uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'docstatus' => 0,
+                    'parent' => $new_id,
+                    'parentfield' => 'items',
+                    'parenttype' => 'Stock Entry',
+                    'idx' => $index + 1,
+                    't_warehouse' => $details->target_warehouse,
+                    'transfer_qty' => $row->qty,
+                    'expense_account' => 'Cost of Goods Sold - FI',
+                    'cost_center' => 'Main - FI',
+                    'actual_qty' => isset($bin_array[$details->source_warehouse][$row->item_code]) ? $bin_array[$details->source_warehouse][$row->item_code]['actual_qty'] : 0,
+                    's_warehouse' => $details->source_warehouse,
+                    'item_name' => isset($bin_array[$details->source_warehouse][$row->item_code]) ? $bin_array[$details->source_warehouse][$row->item_code]['item_name'] : null,
+                    'additional_cost' => 0,
+                    'stock_uom' => $row->uom,
+                    'basic_amount' => $row->amount,
+                    'custom_basic_amount' => $row->amount,
+                    'sample_quantity' => 0,
+                    'uom' => $row->uom,
+                    'basic_rate' => $row->price,
+                    'custom_basic_rate' => $row->price,
+                    'description' => $row->item_description,
+                    'conversion_factor' => 1,
+                    'item_code' => $row->item_code,
+                    'validate_item_code' => $row->item_code,
+                    'retain_sample' => 0,
+                    'qty' => $row->qty,
+                    'allow_zero_valuation_rate' => 0,
+                    'amount' => $row->amount,
+                    'valuation_rate' => $row->price,
+                    'status' => 'Issued',
+                    'return_reference' => $new_id,
+                    'session_user' => Auth::user()->full_name,
+                    'issued_qty' => $row->qty,
+                    'date_modified' => $now->toDateTimeString(),
+                    'return_reason' => $row->reason,
+                    'remarks' => 'Generated in AthenaERP'
+                ];
+            }
+
+            $stock_entry_data = [
+                'name' => $new_id,
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'docstatus' => 0,
+                'idx' => 0,
+                'use_multi_level_bom' => 0,
+                'naming_series' => 'STEC-',
+                'posting_time' => $now->format('H:i:s'),
+                'to_warehouse' => $details->target_warehouse,
+                'title' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
+                'from_warehouse' => $details->source_warehouse,
+                'set_posting_time' => 0,
+                'from_bom' => 0,
+                'value_difference' => 0,
+                'company' => 'FUMACO Inc.',
+                'total_outgoing_value' => $inventory_amount,
+                'total_additional_costs' => 0,
+                'total_amount' => $inventory_amount,
+                'total_incoming_value' => $inventory_amount,
+                'posting_date' => $now->format('Y-m-d'),
+                'purpose' => 'Material Transfer',
+                'stock_entry_type' => 'Material Transfer',
+                'item_status' => 'Issued',
+                'transfer_as' => $details->purpose == 'Pull Out' ? 'Pull Out Item' : 'Store Transfer',
+                'receive_as' => null,
+                'qty_repack' => 0,
+                'delivery_date' => $now->format('Y-m-d'),
+                'remarks' => 'Generated in AthenaERP. '. $details->remarks,
+                'order_from' => 'Other Reference',
+                'reference_no' => '-',
+            ];
+
+            DB::table('tabStock Entry')->insert($stock_entry_data);
+            DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
+
+            DB::table('tabConsignment Stock Entry')->where('name', $details->name)->update(['references' => $new_id]);
+
+            DB::commit();
+
+            $data = [
+                'stock_entry_name' => $new_id,
+                'link' => 'http://10.0.0.83:8000/app/stock-entry/' . $new_id
+            ];
+
+            return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.', 'data' => $data]);
+        } catch (Exception $th) {
+            DB::rollBack();
+
+            return response()->json(['status' => 0, 'message' => 'An error occured. Please contact your system administrator.']);
+        }
+    }
+
+    // /stocks_report/list
+    public function stockTransferReport(Request $request){
+        if ($request->ajax()) {
+            if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
+                $purpose = $request->purpose;
+                $list = DB::table('tabConsignment Stock Entry')->where('purpose', $purpose)
+                    ->when($request->q, function ($q) use ($request){
+                        return $q->where('name', 'like', '%'.$request->q.'%');
+                    })
+                    ->when($request->source_warehouse, function ($q) use ($request){
+                        return $q->where('source_warehouse', $request->source_warehouse);
+                    })
+                    ->when($request->target_warehouse, function ($q) use ($request){
+                        return $q->where('target_warehouse', $request->target_warehouse);
+                    })
+                    ->when($request->status, function ($q) use ($request){
+                        return $q->where('status', $request->status);
+                    })->orderBy('creation', 'desc')->paginate(20);
+    
+                $references = collect($list->items())->map(function ($q){
+                    return $q->name;
+                });
+    
+                $items = DB::table('tabConsignment Stock Entry Detail')->whereIn('parent', $references)->get();
+                $item_codes = collect($items)->map(function ($q){
+                    return $q->item_code;
+                });
+    
+                $source_warehouses = collect($list->items())->pluck('source_warehouse')->unique();
+    
+                $bin = DB::table('tabBin')->whereIn('warehouse', $source_warehouses)
+                    ->whereIn('item_code', $item_codes)->select('item_code', 'warehouse', 'consigned_qty')->get();
+    
+                $current_stocks = [];
+                foreach($bin as $b){
+                    $current_stocks[$b->warehouse][$b->item_code] = [
+                        'consigned_qty' => $b->consigned_qty
+                    ];
+                }
+    
+                $items = collect($items)->groupBy('parent');
+    
+                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
+                $item_image = collect($item_images)->groupBy('parent');
+    
+                $result = [];
+                foreach($list as $ste){
+                    $items_array = [];
+                    if(isset($items[$ste->name])){
+                        foreach($items[$ste->name] as $item){
+                            $orig_exists = $webp_exists = 0;
+    
+                            $img = '/icon/no_img.png';
+                            $webp = '/icon/no_img.webp';
+    
+                            if(isset($item_image[$item->item_code])){
+                                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
+                                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+    
+                                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
+                                $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
+    
+                                if($orig_exists == 0 && $webp_exists == 0){
+                                    $img = '/icon/no_img.png';
+                                    $webp = '/icon/no_img.webp';
+                                }
+                            }
+    
+                            $items_array[] = [
+                                'item_code' => $item->item_code,
+                                'description' => $item->item_description,
+                                'transfer_qty' => $item->qty,
+                                'price' => $item->price,
+                                'uom' => $item->uom,
+                                'consigned_qty' => isset($current_stocks[$ste->source_warehouse][$item->item_code]) ? $current_stocks[$ste->source_warehouse][$item->item_code]['consigned_qty'] : 0,
+                                'image' => $img,
+                                'image_slug' => Str::slug(explode('.', $img)[0], '-'),
+                                'webp' => $webp
+                            ];
+                        }
+                    }
+    
+                    $result[] = [
+                        'name' => $ste->name,
+                        'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i A'),
+                        'source_warehouse' => $ste->source_warehouse,
+                        'target_warehouse' => $ste->target_warehouse,
+                        'purpose' => $ste->purpose,
+                        'status' => $ste->status,
+                        'submitted_by' => ucwords(str_replace('.', ' ', explode('@', $ste->owner)[0])),
+                        'items' => $items_array,
+                        'references' => $ste->references
+                    ];
+                }
+
+                $cste_references = array_filter(collect($result)->pluck('references')->toArray());
+                $stock_entries = DB::table('tabStock Entry')->whereIn('name', $cste_references)
+                    ->select('docstatus', 'name', 'consignment_status', 'consignment_received_by', 'consignment_date_received')
+                    ->get()->groupBy('name')->toArray();
+            }
+    
+            return view('consignment.supervisor.tbl_stock_transfer', compact('result', 'list', 'purpose', 'stock_entries'));
+        }
+
+        return view('consignment.supervisor.view_stock_transfers');
     }
 
     public function promodiserDamageForm(){
