@@ -2795,10 +2795,10 @@ class ConsignmentController extends Controller
                     'reason' => $value['reason']
                 ];
 
-                $activity_logs_details[$item_code] = [
-                    'previous_consigned_qty' => (float)$consigned_qty,
-                    'new_consigned_qty' => (float)$consigned_qty + (float)$value['qty'],
-                    'returned_qty' => (float)$value['qty']
+                $activity_logs_details[$item_code]['quantity'] = [
+                    'previous' => (float)$consigned_qty,
+                    'new' => (float)$consigned_qty + (float)$value['qty'],
+                    'returned' => (float)$value['qty']
                 ];
 
                 DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $request->target_warehouse)->update([
@@ -4310,24 +4310,20 @@ class ConsignmentController extends Controller
         if($request->ajax()){
             $status = $request->status;
 
-            $list = DB::table('tabStock Entry as ste')
-                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->whereDate('ste.delivery_date', '>=', '2022-06-25')
-                ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
-                ->where('ste.purpose', 'Material Transfer')
-                ->where('ste.docstatus', 1)
+            $list = DB::table('tabStock Entry')
+                ->whereDate('delivery_date', '>=', '2022-06-25')->whereIn('transfer_as', ['Consignment', 'Store Transfer'])->where('purpose', 'Material Transfer')->where('docstatus', 1)
+                ->when($status == 'Received', function ($q){
+                    return $q->where('consignment_status', 'Received');
+                })
+                ->when($status == 'To Receive', function ($q){
+                    return $q->where(function ($query){
+                        $query->whereNull('consignment_status')->orWhere('consignment_status', 'To Receive');
+                    });
+                })
                 ->when($request->store, function ($q) use ($request){
-                    return $q->where('sted.t_warehouse', $request->store);
+                    return $q->where('to_warehouse', $request->store);
                 })
-                ->when($status && $status == 'Received', function ($q) use ($status){
-                    return $q->where('sted.consignment_status', $status);
-                })
-                ->when($status && $status == 'To Receive', function ($q) use ($status){
-                    return $q->whereNull('sted.consignment_status');
-                })
-                ->select('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', DB::raw('MAX(sted.consignment_date_received) as consignment_date_received'), 'sted.consignment_received_by', 'ste.material_request')
-                ->groupBy('ste.name', 'ste.delivery_date', 'sted.t_warehouse', 'sted.consignment_status', 'sted.consignment_received_by', 'ste.material_request')
-                ->orderBy('ste.creation', 'desc')->orderBy('sted.consignment_status', 'desc')->paginate(20);
+                ->orderByRaw("FIELD(consignment_status, '', 'To Receive', 'Received') ASC")->orderBy('creation', 'desc')->paginate(20);
 
             $mreq_nos = collect($list->items())->pluck('material_request')->toArray();
 
@@ -4335,12 +4331,18 @@ class ConsignmentController extends Controller
 
             $stes = collect($list->items())->pluck('name')->toArray();
 
-            $list_items = DB::table('tabStock Entry Detail')
+            $list_items = DB::table('tabStock Entry Detail as p')
                 ->whereIn('parent', $stes)
-                ->select('item_code', 'description', 'transfer_qty', 'stock_uom', 'basic_rate', 'basic_amount', 'parent', 'stock_uom')
+                ->select('item_code', 'description', 'transfer_qty', 'stock_uom', 't_warehouse', 'basic_rate', 'basic_amount', 'parent', 'stock_uom')
                 ->orderBy('idx', 'asc')->get();
 
             $item_codes = collect($list_items)->pluck('item_code')->unique();
+
+            $consignment_prices = DB::table('tabBin')->whereIn('warehouse', collect($list_items)->pluck('t_warehouse')->unique())->whereIn('item_code', $item_codes)->select('item_code', 'warehouse', 'consignment_price')->get();
+            $prices_arr = [];
+            foreach ($consignment_prices as $item) {
+                $prices_arr[$item->warehouse][$item->item_code] = $item->consignment_price;
+            }
 
             $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
             $item_images = collect($item_images)->groupBy('parent')->toArray();
@@ -4351,61 +4353,70 @@ class ConsignmentController extends Controller
                 ->selectRaw('GROUP_CONCAT(DISTINCT full_name) as promodiser, warehouse')
                 ->groupBy('warehouse')->pluck('promodiser', 'warehouse')->toArray();
 
-            $items = [];
-            foreach ($list_items as $s) {
-                $item_code = $s->item_code;
-                $orig_exists = $webp_exists = 0;
-        
-                $img = '/icon/no_img.png';
-                $webp = '/icon/no_img.webp';
-        
-                if(array_key_exists($item_code ,$item_images)){
-                    $orig_exists = Storage::disk('public')->exists('/img/'.$item_images[$item_code][0]->image_path) ? 1 : 0;
-                    $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-        
-                    $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp' : null;
-                    $img = $orig_exists == 1 ? '/img/'.$item_images[$item_code][0]->image_path : null;
-        
-                    if($orig_exists == 0 && $webp_exists == 0){
-                        $img = '/icon/no_img.png';
-                        $webp = '/icon/no_img.webp';
-                    }
-                }
-        
-                $img_count = array_key_exists($item_code, $item_images) ? count($item_images[$item_code]) : 0;
-                
-                $items[] = [
-                    'parent' => $s->parent,
-                    'item_code' => $item_code,
-                    'description' => $s->description,
-                    'price' => $s->basic_rate,
-                    'amount' => $s->basic_amount,
-                    'img' => $img,
-                    'img_slug' => $img ? Str::slug(explode('.', $img)[0], '-') : null,
-                    'img_webp' => $webp,
-                    'stock_uom' => $s->stock_uom,
-                    'img_count' => $img_count,
-                    'transfer_qty' => number_format($s->transfer_qty),
-                ];
-            }
-
-            $list_items = collect($items)->groupBy('parent')->toArray();
+            $list_items = collect($list_items)->groupBy('parent');
 
             $result = [];
-            foreach ($list as $r) {
-                $mreq_created_by = array_key_exists($r->material_request, $mreq_owner) ? $mreq_owner[$r->material_request] : null;
-                $mreq_created_by = ucwords(str_replace('.', ' ', explode('@', $mreq_created_by)[0]));
+            foreach ($list as $stock_entry) {
+                $items = [];
+                $warehouse = $stock_entry->to_warehouse;
+                if(!$warehouse){
+                    $warehouse = isset($list_items[$stock_entry->name]) ? $list_items[$stock_entry->name][0]->t_warehouse : null;
+                }
 
+                if(isset($list_items[$stock_entry->name])){
+                    foreach($list_items[$stock_entry->name] as $item){
+                        $item_code = $item->item_code;
+                        $orig_exists = $webp_exists = 0;
+                
+                        $img = '/icon/no_img.png';
+                        $webp = '/icon/no_img.webp';
+                
+                        if(isset($item_images[$item_code])){
+                            $orig_exists = Storage::disk('public')->exists('/img/'.$item_images[$item_code][0]->image_path) ? 1 : 0;
+                            $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+                
+                            $webp = $webp_exists ? '/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp' : null;
+                            $img = $orig_exists ? '/img/'.$item_images[$item_code][0]->image_path : null;
+                
+                            if(!$orig_exists && !$webp_exists){
+                                $img = '/icon/no_img.png';
+                                $webp = '/icon/no_img.webp';
+                            }
+                        }
+                
+                        $img_count = isset($item_images[$item_code]) ? count($item_images[$item_code]) : 0;
+
+                        $price = isset($prices_arr[$warehouse][$item_code]) ? $prices_arr[$warehouse][$item_code] : 0;
+
+                        $items[] = [
+                            'parent' => $item->parent,
+                            'item_code' => $item_code,
+                            'description' => $item->description,
+                            'price' => $price,
+                            'amount' => $price * $item->transfer_qty,
+                            'img' => $img,
+                            'img_slug' => $img ? Str::slug(explode('.', $img)[0], '-') : null,
+                            'img_webp' => $webp,
+                            'stock_uom' => $item->stock_uom,
+                            'img_count' => $img_count,
+                            'transfer_qty' => number_format($item->transfer_qty),
+                        ];
+                    }
+                }
+
+                $mreq_created_by = isset($mreq_owner[$stock_entry->material_request]) ? $mreq_owner[$stock_entry->material_request] : null;
+                $mreq_created_by = ucwords(str_replace('.', ' ', explode('@', $mreq_created_by)[0]));
+                
                 $result[] = [
-                    'name' => $r->name,
-                    'delivery_date' => Carbon::parse($r->delivery_date)->format('M. d, Y'),
-                    'mreq_no' => $r->material_request ? $r->material_request : '--',
-                    'warehouse' => $r->t_warehouse,
-                    'status' => $r->consignment_status,
-                    'promodiser' => array_key_exists($r->t_warehouse, $assigned_consignment_promodisers) ? $assigned_consignment_promodisers[$r->t_warehouse] : '--',
-                    'received_by' => $r->consignment_status == 'Received' ? $r->consignment_received_by : null,
-                    'date_received' =>  $r->consignment_status == 'Received' ? Carbon::parse($r->consignment_date_received)->format('M. d, Y h:i A') : null,
-                    'items' => array_key_exists($r->name, $list_items) ? $list_items[$r->name] : [],
+                    'name' => $stock_entry->name,
+                    'delivery_date' => Carbon::parse($stock_entry->delivery_date)->format('M. d, Y'),
+                    'mreq_no' => $stock_entry->material_request ? $stock_entry->material_request : '--',
+                    'warehouse' => $warehouse,
+                    'status' => $stock_entry->consignment_status,
+                    'promodiser' => array_key_exists($stock_entry->to_warehouse, $assigned_consignment_promodisers) ? $assigned_consignment_promodisers[$stock_entry->to_warehouse] : '--',
+                    'received_by' => $stock_entry->consignment_status == 'Received' ? $stock_entry->consignment_received_by : null,
+                    'date_received' =>  $stock_entry->consignment_status == 'Received' ? Carbon::parse($stock_entry->consignment_date_received)->format('M. d, Y h:i A') : null,
+                    'items' => $items,
                     'created_by' => $mreq_created_by
                 ];
             }
