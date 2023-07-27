@@ -63,13 +63,15 @@ class UpdateStocks extends Command
         }
 
         foreach($cste_items as $item) {
-            $bin_name = isset($bin_array[$item->source_warehouse][$item->item_code]) ? $bin_array[$item->source_warehouse][$item->item_code]['name'] : null;
-            if ($bin_name) {
-                $current_consigned_qty = isset($bin_array[$item->source_warehouse][$item->item_code]) ? $bin_array[$item->source_warehouse][$item->item_code]['consigned_qty'] : 0;
-                $consigned_qty_after_transaction = $current_consigned_qty -  $item->qty;
-                $consigned_qty_after_transaction = $consigned_qty_after_transaction < 0 ? 0 : $consigned_qty_after_transaction;
-
-                DB::table('tabBin')->where('name', $bin_name)->update(['consigned_qty' => $consigned_qty_after_transaction]);
+            if ($item->purpose == 'Pull Out') {
+                $bin_name = isset($bin_array[$item->source_warehouse][$item->item_code]) ? $bin_array[$item->source_warehouse][$item->item_code]['name'] : null;
+                if ($bin_name) {
+                    $current_consigned_qty = isset($bin_array[$item->source_warehouse][$item->item_code]) ? $bin_array[$item->source_warehouse][$item->item_code]['consigned_qty'] : 0;
+                    $consigned_qty_after_transaction = $current_consigned_qty -  $item->qty;
+                    $consigned_qty_after_transaction = $consigned_qty_after_transaction < 0 ? 0 : $consigned_qty_after_transaction;
+    
+                    DB::table('tabBin')->where('name', $bin_name)->update(['consigned_qty' => $consigned_qty_after_transaction]);
+                }
             }
         }
 
