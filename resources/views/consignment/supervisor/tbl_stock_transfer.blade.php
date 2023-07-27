@@ -65,7 +65,8 @@
                                         </div>
                                     </div>
                                     @endif
-                                    @if ($ste['purpose'] == 'Store Transfer' && $stock_entries[$ste['references']][0]->consignment_status != 'Received')
+                                    @if ($ste['purpose'] == 'Store Transfer')
+                                    @if ($stock_entries[$ste['references']][0]->consignment_status != 'Received')
                                     <div class="row">
                                         <div class="col-8 offset-2">
                                             <div class="callout callout-info text-center mt-2">
@@ -84,6 +85,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    @endif
                                     @endif
                                     @endif
                                     @else
@@ -125,7 +127,9 @@
                                 <table class="table table-bordered" style="font-size: 11px;">
                                     <thead class="text-uppercase">
                                         <th class="text-center p-2 align-middle" style="width: 60%;">Item Code</th>
+                                        @if ($ste['status'] != 'Completed')
                                         <th class="text-center p-2 align-middle" style="width: 20%;">Current Qty</th>
+                                        @endif
                                         <th class="text-center p-2 align-middle" style="width: 20%;">Qty to Transfer</th>
                                     </thead>
                                     <tbody>
@@ -147,10 +151,12 @@
                                                     </div>
                                                 </div>
                                             </td>
+                                            @if ($ste['status'] != 'Completed')
                                             <td class="text-center p-1 align-middle">
                                                 <span class="d-block font-weight-bold">{{ $item['consigned_qty'] * 1 }}</span>
                                                 <small class="text-muted">{{ $item['uom'] }}</small>
                                             </td>
+                                            @endif
                                             <td class="text-center p-1 align-middle">
                                                 <span class="d-block font-weight-bold">{{ $item['transfer_qty'] * 1 }}</span>
                                                 <small class="text-muted">{{ $item['uom'] }}</small>
