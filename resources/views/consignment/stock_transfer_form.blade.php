@@ -12,7 +12,7 @@
                     <div class="card">
                         <div class="card-header text-center text-uppercase bg-info p-2">
                             @switch($action)
-                                @case('Pull Out')
+                                @case('For Return')
                                     <h6 class="text-center p-1 m-0 font-weight-bold">Item Pull Out Request</h6>
                                     @break
                                 @default
@@ -29,7 +29,7 @@
                             <form action="/stock_transfer/submit" method="POST">
                                 @csrf
                                 @switch($action)
-                                    @case('Pull Out')
+                                    @case('For Return')
                                         <input type="hidden" name="transfer_as" value="Pull Out">
                                         <div class="row p-1" id="source" style="font-size: 9pt">
                                             <div class="container">
@@ -77,7 +77,7 @@
                                         <div class="row">
                                             <div class="col-12 mb-2">
                                                 @switch($action)
-                                                    @case('Pull Out')
+                                                    @case('For Return')
                                                         <div style="font-size: 14px;" class="font-weight-bold text-uppercase text-center">Item(s) to Pullout</div>
                                                         @break
                                                     @default
@@ -149,12 +149,12 @@
                                                                         </tbody>
                                                                     </table>
                                                                     
-                                                                    <div class="mb-2 pr-2 pl-2 pt-0 pb-2 {{ !in_array($action, ['Pull Out']) ? 'd-none' : null }}">
+                                                                    <div class="mb-2 pr-2 pl-2 pt-0 pb-2 {{ !in_array($action, ['For Return']) ? 'd-none' : null }}">
                                                                         <label for="sales-return-reason" style="font-size: 11px;">Reason <span class="text-danger">*</span></label>
                                                                         @php
                                                                             $sales_return_reason = ['Defective', 'Pull Out Item'];
                                                                         @endphp
-                                                                        <select id="sales-return-reason" class="form-control" style="font-size: 11px;" {{ ($action == 'Pull Out') ? 'required' : '' }}>
+                                                                        <select id="sales-return-reason" class="form-control" style="font-size: 11px;" {{ ($action == 'For Return') ? 'required' : '' }}>
                                                                             @foreach ($sales_return_reason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
                                                                             @endforeach
@@ -228,7 +228,7 @@
                 var modal = $(this).data('target');
                 var no_err = true;
                 switch (form_purpose) {
-                    case 'Pull Out':
+                    case 'For Return':
                         if($('#src-warehouse').val() != null && $('#src-warehouse').val() != ''){
                             no_err = true;
                         }else{
@@ -598,7 +598,7 @@
                     '</td>' +
                 '</tr>';
 
-                if($.inArray(form_purpose, ['Pull Out']) !== -1){
+                if($.inArray(form_purpose, ['For Return']) !== -1){
                     row += '<tr class="border-top-0 border-bottom  row-' + item_code + '">' + 
                         '<td colspan="4" class="text-center p-0">' +
                             '<div class="d-none">' + item_code + '</div>' + // reference for search
