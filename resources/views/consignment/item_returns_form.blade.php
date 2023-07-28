@@ -117,7 +117,7 @@
                                                                         </tr>
                                                                     </table>
                                                                     @php
-                                                                        $sales_return_reason = ['Return from Customer', 'Misplaced Item'];
+                                                                        $sales_return_reason = ['Return from Customer', 'Misplaced Item', 'Change Item'];
                                                                     @endphp
                                                                     <select id="sales-return-reason" class="form-control" style="font-size: 10pt;">
                                                                         @foreach ($sales_return_reason as $reason)
