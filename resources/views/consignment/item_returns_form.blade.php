@@ -9,12 +9,9 @@
         <div class="container">
             <div class="row pt-1">
                 <div class="col-md-12 p-0 m-0">
-                    <div class="card card-secondary card-outline">
-                        <div class="card-header text-center">
-                            <h6 class="text-center mt-1 font-weight-bold">Item Return</h6>
-                        </div>
-                        <div class="card-header text-center font-weight-bold">
-                            <span class="font-responsive font-weight-bold text-uppercase d-inline-block">{{ \Carbon\Carbon::now()->format('F d, Y') }}</span>
+                    <div class="card">
+                        <div class="card-header text-center text-uppercase bg-info p-2">
+                            <h6 class="text-center p-1 m-0 font-weight-bold">Item Return Request</h6>
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('error'))
