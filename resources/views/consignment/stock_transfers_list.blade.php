@@ -23,7 +23,7 @@
                                         </button>
                                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer" style="color: #000 !important">Store Transfer Request</a>
-                                            <a class="dropdown-item" href="/stock_transfer/form?action=Pull Out" style="color: #000 !important">Item Pull Out Request</a>
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=For Return" style="color: #000 !important">Item Pull Out Request</a>
                                             <a class="dropdown-item" href="/item_return/form" style="color: #000 !important">Item Return Entry</a>
                                         </div>
                                     </div>
@@ -35,7 +35,7 @@
                                         </button>
                                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                                             <a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer" style="color: #000 !important">Store Transfer Request</a>
-                                            <a class="dropdown-item" href="/stock_transfer/form?action=Pull Out" style="color: #000 !important">Item Pull Out Request</a>
+                                            <a class="dropdown-item" href="/stock_transfer/form?action=For Return" style="color: #000 !important">Item Pull Out Request</a>
                                             <a class="dropdown-item" href="/item_return/form" style="color: #000 !important">Item Return Entry</a>
                                         </div>
                                     </div>
@@ -169,7 +169,7 @@
         $(document).on('click', '#transfers-pagination a', function(event){
             event.preventDefault();
             switch (list_action) {
-                case 'Pull Out':
+                case 'For Return':
                     var table = '#return';
                     break;
                 default:
