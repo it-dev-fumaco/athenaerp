@@ -411,6 +411,22 @@ class ConsignmentController extends Controller
             if ($status == 'Submitted') {
                 $submitted_by = Auth::user()->wh_user;
                 $date_submitted = $now->toDateTimeString();
+
+                $email_data = [
+                    'warehouse' => $request->branch,
+                    'month' => $request->month,
+                    'total_amount' => collect($sales_per_day)->sum(),
+                    'remarks' => $request->remarks,
+                    'year' => $request->year,
+                    'status' => $status,
+                    'submission_status' => $submission_status,
+                    'date_submitted' => $date_submitted
+                ];
+
+                Mail::send('mail_template.consignment_sales_report', $email_data, function($message){
+                    $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
+                    $message->subject('AthenaERP - Sales Report');
+                });
             }
 
             $existing_record = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $request->year)->where('month', $request->month)->where('warehouse', $request->branch)->first();
