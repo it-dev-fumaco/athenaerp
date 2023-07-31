@@ -35,23 +35,21 @@
                                     <input type="text" name="audit_date_to" value="{{ $transaction_date }}">
                                 </div>
                                 <div class="form-group m-2">
-                                    <input type="text" class="form-control text-center mb-1" id="duration">
+                                    <input type="text" class="form-control text-center mb-1 d-none" id="duration">
                                     <input type="text" class="form-control" placeholder="Search Items" id="search-filter">
                                 </div>
                                 <table class="table" style="font-size: 8pt;" id="items-table">
                                     <thead>
                                         <tr>
-                                            <th class="text-center p-1" style="width: 30%;">ITEM</th>
-                                            <th class="text-center p-1" style="width: 36%;">AUDIT QTY</th>
-                                            <th class="text-center p-1" style="width: 12%;">ACTUAL</th>
-                                            <th class="text-center p-1" style="width: 12%;">SOLD</th>
-                                            <th class="text-center p-1" style="width: 10%;">PRICE</th>
+                                            <th class="text-center p-1" style="width: 35%;">ITEM CODE</th>
+                                            <th class="text-center p-1" style="width: 30%;">CURRENT QTY</th>
+                                            <th class="text-center p-1" style="width: 35%;">AUDIT QTY</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @forelse ($item_classification as $class => $items)
                                             <tr>
-                                                <td colspan=5 class='p-0'>
+                                                <td colspan="3" class="p-0">
                                                     <div class="bg-navy p-2">
                                                         <span style="font-weight: bold; font-size: 10pt;">{{ $class }}</span>
                                                     </div>
@@ -62,7 +60,6 @@
                                                 $id = $row->item_code;
                                                 $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
                                                 $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-                                                $sold_qty = array_key_exists($row->item_code, $item_total_sold) ? ($item_total_sold[$row->item_code] * 1) : 0;
                                                 $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
 
                                                 $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
@@ -80,17 +77,21 @@
                                                             <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
                                                             <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
                                                                 <picture>
-                                                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="" width="40" height="40">
+                                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="" width="40" height="40">
                                                                     <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
                                                                 </picture>
                                                             </a>
                                                         </div>
-                                                        <div class="p-1 m-0 d-none">
+                                                        <div class="p-1 m-0">
                                                             <span class="font-weight-bold">{{ $row->item_code }}</span>
                                                             <div class="d-none">{!! strip_tags($row->description) !!}</div>
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
+                                                    <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
+                                                    <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
                                                 </td>
                                                 <td class="text-justify p-0 align-middle" style="border-bottom: 0 !important;">
                                                     <div class="d-flex flex-row justify-content-center align-items-center">
@@ -109,40 +110,21 @@
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                    <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
-                                                    <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                    <span class="d-block item-sold-qty">{{ $sold_qty }}</span>
-                                                    <span class="d-none orig-item-sold-qty">{{ $sold_qty }}</span>
-                                                    <span class="d-none item-price">{{ $row->price }}</span>
-                                                </td>
-                                                <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                    @if ($row->price > 0)
-                                                        <span class="d-block" style="white-space: nowrap">₱ {{ number_format($row->price, 2) }}</span>
-                                                    @else
-                                                        <div class="row">
-                                                            <div class="p-1 col-1 d-flex flex-row justify-content-center align-items-center">₱</div>
-                                                            <div class="p-1 col-10"><input type="text" class="form-control text-center price-input" name="price[{{ $row->item_code }}]"  required></div>
-                                                        </div>
-                                                    @endif
-                                                </td>
                                             </tr>
                                             <tr class="{{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">
-                                                <td colspan="5" style="border-top: 0 !important;">
-                                                    <span class="font-weight-bold">{{ $row->item_code }}</span>
+                                                <td colspan="3" style="border-top: 0 !important;">
+                                                    <span class="font-weight-bold d-none">{{ $row->item_code }}</span>
                                                     <div class="item-description">{!! strip_tags($row->description) !!}</div>
                                                 </td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
+                                                <td class="text-center font-weight-bold text-uppercase text-muted" colspan="3">No item(s) found</td>
                                             </tr> 
                                             @endforelse
                                         @empty
                                         <tr>
-                                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="4">No item(s) found</td>
+                                            <td class="text-center font-weight-bold text-uppercase text-muted" colspan="3">No item(s) found</td>
                                         </tr>
                                         @endforelse
                                     </tbody>
@@ -177,20 +159,9 @@
                     <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
                     <small class="d-block">Branch / Store</small>
                 </div>
-                <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
+                <div class="text-center mb-3 mt-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-3 cutoff-period">{{ $duration }}</span>
                     <small class="d-block">Cut-off Period</small>
-                </div>
-                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase border-bottom">Sales Report Summary</p>
-                <div class="d-flex flex-row mt-1 justify-content-between">
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" id="total-qty-sold" style="font-size: 12pt;">0</span>
-                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
-                    </div>
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" id="total-sales-amount" style="font-size: 12pt;">0</span>
-                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
-                    </div>
                 </div>
                 <div class="row pt-5">
                     <div class="col-6">
@@ -251,7 +222,7 @@
                 </p>
                 <p class="text-center text-uppercase mt-0 font-weight-bold">{{ session()->get('success') }}</p>
                 <hr>
-                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Sales Report Summary</p>
+                <p class="text-center mb-0 mt-4 font-weight-bolder text-uppercase">Inventory Audit Report</p>
                 <div class="text-center mb-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bold mt-3">{{ session()->get('branch') }}</span>
                     <small class="d-block">Branch / Store</small>
@@ -259,16 +230,6 @@
                         {{ session()->get('transaction_date') ? \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') : \Carbon\Carbon::now()->format('F d, Y') }}
                     </span>
                     <small class="d-block">Transaction Date</small>
-                </div>
-                <div class="d-flex flex-row mt-1 justify-content-between">
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ number_format(session()->get('total_qty_sold')) }}</span>
-                        <small class="d-block" style="font-size: 7pt;">Total Qty Sold</small>
-                    </div>
-                    <div class="p-1 col-6 text-center">
-                        <span class="d-block font-weight-bolder" style="font-size: 12pt;">{{ '₱ ' . number_format(session()->get('grand_total'), 2) }}</span>
-                    <small class="d-block" style="font-size: 7pt;">Total Sales Amount</small>
-                    </div>
                 </div>
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">
@@ -375,14 +336,20 @@
         $('#error-modal').modal('show');
         @endif
 
+        @php
+            $explode_duration = explode(' - ', $duration);
+            $startDate = isset($explode_duration[0]) ? $explode_duration[0] : Carbon\Carbon::now()->format('Y-M-d');
+            $endDate = isset($explode_duration[1]) ? $explode_duration[1] : Carbon\Carbon::now()->format('Y-M-d');
+        @endphp
+
         $("#duration").daterangepicker({
             placeholder: 'Select Duration',
             locale: {
                 format: 'YYYY-MMM-DD',
                 separator: " to "
             },
-            startDate: '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d") }}',
-            endDate: '{{ Carbon\Carbon::parse($transaction_date)->format("Y-M-d") }}',
+            startDate: '{{ Carbon\Carbon::parse($startDate)->format("Y-M-d") }}',
+            endDate: '{{ Carbon\Carbon::parse($endDate)->format("Y-M-d") }}',
         });
 
         $("#duration").on('hide.daterangepicker', function (ev, picker) {
@@ -440,25 +407,6 @@
 
                 return false;
             }
-
-            var total_sold_qty = total_sales_amount = 0;
-            $('.item-row').each(function() {
-                var item_price = parseFloat($(this).find('.item-price').eq(0).text());
-                var orig_sold_qty = parseInt($(this).find('.orig-item-sold-qty').eq(0).text());
-                var audit_qty = parseInt($(this).find('.item-audit-qty').eq(0).val().replace(/,/g, ''));
-                var orig_consigned_qty = parseInt($(this).find('.orig-item-consigned-qty').eq(0).text());
-                total_sold_qty += orig_sold_qty;
-                total_sales_amount += (orig_sold_qty * item_price);
-
-                var new_item_sold_qty = orig_consigned_qty - audit_qty;
-                if (new_item_sold_qty > -1) {
-                    total_sold_qty += new_item_sold_qty;
-                    total_sales_amount += (new_item_sold_qty * item_price);
-                }
-            });
-
-            $('#total-qty-sold').text(total_sold_qty.toLocaleString());
-            $('#total-sales-amount').text(formatToCurrency(total_sales_amount));
 
             var form = $('#inventory-report-entry-form');
             var reportValidity = form[0].reportValidity();

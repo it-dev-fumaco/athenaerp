@@ -1,7 +1,4 @@
 <table class="table" style='font-size: 10pt;'>
-    <thead>
-        <th class="text-center p-1 align-middle">Store</th>
-    </thead>
     <tbody>
         @forelse ($ste_arr as $ste)
         <tr>
@@ -121,6 +118,7 @@
                                     <button type="submit" class="btn btn-primary w-100 submit-btn submit-once" data-form="#receive-{{ $ste['name'] }}-form" data-modal-container="#{{ $ste['name'] }}-Modal">Receive</button>
                                     @else
                                     <button type="submit" class="btn btn-info w-100" data-form="#receive-{{ $ste['name'] }}-form">Update Prices</button>
+                                    <input type="checkbox" class="d-none" name="update_price" checked readonly>
                                     <button type="button" class="btn btn-secondary w-100 submit-once" data-toggle="modal"
                                         data-target="#cancel-{{ $ste['name'] }}-Modal">
                                         Cancel

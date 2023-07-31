@@ -56,8 +56,8 @@
                                 <div class="col-4">
                                     <div class="d-flex flex-row align-items-center">
                                         <div class="pt-3 col-12 text-center">
-                                            <h1 class="m-0 font-details font-weight-bold">{{ '₱ ' . number_format(collect($result)->sum('total_value'), 2) }} 
-                                                @if (collect($result)->sum('total_value') > 0)
+                                            <h1 class="m-0 font-details font-weight-bold">{{ '₱ ' . number_format($total_sales, 2) }} 
+                                                @if ($total_sales > 0)
                                                 @if ($sales_increase)
                                                 <i class="fas fa-long-arrow-alt-up text-success"></i>
                                                 @else
@@ -89,33 +89,21 @@
                             </div>
                             <div class="tableFixHead table-responsive">
                                 <table id="customers">
-                                    <thead class="border-top">
-                                        @php
-                                            $w = (count($sales_transaction_dates)) * 50;
-                                        @endphp
+                                    <thead class="border-top" style="font-size: 12px;">
                                         <tr>
-                                            <th class="text-center p-1 align-middle text-uppercase" style="width: 500px; font-size: 8pt;" rowspan="2">Item Code</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Opening</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Audit Qty</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" colspan="{{ count($sales_transaction_dates) }}" style="width: {{ $w }}px; font-size: 8pt;">Sold Qty</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 80px; font-size: 8pt;">Total</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 120px; font-size: 8pt;">Rate</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 120px; font-size: 8pt;">Amount</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Received</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Returned</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Transferred</th>
-                                            <th class="text-center p-1 align-middle text-uppercase" rowspan="2" style="width: 100px; font-size: 8pt;">Damaged</th>
-                                        </tr>
-                                        <tr>
-                                            @foreach ($sales_transaction_dates as $date)
-                                            <th class="text-center p-0 align-middle" style="font-size: 8pt;">{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
-                                            @endforeach
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 500px;">Item Code</th>
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Opening</th>
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Audit Qty</th>
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Received</th>
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Returned</th>
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Transferred</th>
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Damaged</th>
                                         </tr>
                                     </thead>
-                                    <tbody style="font-size: 10pt;">
+                                    <tbody style="font-size: 13px;">
                                         @forelse ($result as $row)
                                         <tr>
-                                            <td class="text-justify p-1 align-middle">
+                                            <td class="text-justify p-2 align-middle">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-0 text-left">
                                                         <a href="{{ asset('storage/') }}{{ $row['img'] }}" class="view-images" data-item-code="{{ $row['item_code'] }}">
@@ -127,7 +115,7 @@
                                                         </a>
                                                     </div>
                                                     <div class="pl-2 m-0">
-                                                        <small class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</small>
+                                                        <span class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -136,23 +124,6 @@
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
                                                 <span class="d-block">{{ $row['audit_qty'] }}</span>
-                                            </td>
-                                            @foreach ($sales_transaction_dates as $date)
-                                            <td class="text-center p-1 align-middle font-weight-bold">
-                                                <span class="d-block text-success">{{ isset($sales_items[$row['item_code']][$date]) ? $sales_items[$row['item_code']][$date]['qty'] : '' }}</span>
-                                            </td>
-                                            @endforeach
-                                            @php
-                                                $total_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('qty') : '-';
-                                                $total_amount_sold = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->sum('amount') : 0;
-                                                $sold_item_price = isset($sales_items[$row['item_code']]) ? collect($sales_items[$row['item_code']])->pluck('price')->first() : 0;
-                                            @endphp
-                                            <td class="text-center p-1 align-middle font-weight-bold">{{ $total_sold }}</td>
-                                            <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
-                                                <span class="d-block">{{ '₱ ' . number_format($sold_item_price, 2) }}</span>
-                                            </td>
-                                            <td class="text-center p-1 align-middle font-weight-bold text-nowrap">
-                                                <span class="d-block">{{ '₱ ' . number_format($total_amount_sold, 2) }}</span>
                                             </td>
                                             @php
                                                 $total_received = isset($received_items[$row['item_code']]) ? collect($received_items[$row['item_code']])->sum('qty') : '-';

@@ -23,74 +23,82 @@
                                 </span>
                             @endif
                         </div>
-                        <div class="card-body p-3">
-                            <div class="col-12">
+                        <div class="card-body p-1 border">
+                            <div class="col-12 p-0">
                                 <input type="text" class="form-control mb-2" id="item-search" name="search" placeholder="Search" style="font-size: 9pt"/>
                             </div>
-                            <table class="table table-striped" id='items-table' style="font-size: 10pt;">
-                                <thead class="border-top">
+                            <table class="table" id='items-table' style="font-size: 13px;">
+                                <col style="width: 18%;">
+                                <col style="width: 25%;">
+                                <col style="width: 30%;">
+                                <col style="width: 27%;">
+                                <thead class="border-top text-uppercase" style="font-size: 12px;">
                                     <tr>
-                                        <th class="text-center align-middle p-1" style="width: 55%">Item Description</th>
+                                        <th class="text-center align-middle p-1" colspan="2">Item Code</th>
                                         <th class="text-center align-middle p-1">Available Qty</th>
+                                        <th class="text-center align-middle p-1">Price</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @forelse ($inv_summary as $item)
-                                        @php
-                                            $orig_exists = 0;
-                                            $webp_exists = 0;
+                                @forelse ($inv_summary as $item)
+                                @php
+                                    $orig_exists = 0;
+                                    $webp_exists = 0;
 
+                                    $img = '/icon/no_img.png';
+                                    $webp = '/icon/no_img.webp';
+
+                                    if(isset($item_image[$item->item_code])){
+                                        $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
+                                        $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
+
+                                        $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
+                                        $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
+
+                                        if($orig_exists == 0 && $webp_exists == 0){
                                             $img = '/icon/no_img.png';
                                             $webp = '/icon/no_img.webp';
-
-                                            if(isset($item_image[$item->item_code])){
-                                                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                                                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                                                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                                                $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                                                if($orig_exists == 0 && $webp_exists == 0){
-                                                    $img = '/icon/no_img.png';
-                                                    $webp = '/icon/no_img.webp';
-                                                }
-                                            }
-                                        @endphp
-                                        <tr>
-                                            <td class='p-1' colspan=2>
-                                                <div class="row">
-                                                    <div class="col-2">
-                                                        <a href="{{ asset('storage/').$img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item->item_code }}" data-title="{{ $item->item_code }}">
-                                                            <picture>
-                                                                <source srcset="{{ asset('storage'.$webp) }}" type="image/webp">
-                                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
-                                                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
-                                                            </picture>
-                                                        </a>
-                                                    </div>
-                                                    <div class="col-3" style="display: flex; justify-content: center; align-items: center;">
-                                                        <b>{{ $item->item_code }}</b>
-                                                    </div>
-                                                    <div class="col-4 offset-2" style="display: flex; justify-content: center; align-items: center;">
-                                                        <div class="text-center">
-                                                            <b>{{ number_format($item->consigned_qty) }}</b><br>
-                                                            <small>{{ $item->stock_uom }}</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="row p-2 text-justify">
-                                                    <div class="item-description" style="font-size: 10pt;">{!! strip_tags($item->description) !!}</div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan=2 class="text-center">
-                                                No item(s) found. 
-                                            </td>
-                                        </tr>
-                                    @endforelse
+                                        }
+                                    }
+                                @endphp
+                                <tbody>
+                                    <tr>
+                                        <td class="p-1 align-middle" rowspan="2">
+                                            <a href="{{ asset('storage/').$img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item->item_code }}" data-title="{{ $item->item_code }}">
+                                                <picture>
+                                                    <source srcset="{{ asset('storage'.$webp) }}" type="image/webp">
+                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
+                                                    <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
+                                                </picture>
+                                            </a>
+                                        </td>
+                                        <td class="p-1 align-middle">
+                                            <b>{{ $item->item_code }}</b>
+                                        </td>
+                                        <td class="text-center p-1 align-middle">
+                                            <p>
+                                                <span class="font-weight-bold d-block">{{ number_format($item->consigned_qty) }}</span>
+                                                <small class="text-muted">{{ $item->stock_uom }}</small>
+                                            </p>
+                                        </td>
+                                        <td class="text-center p-1 align-middle font-weight-bold">
+                                            {{ '₱ ' . number_format($item->consignment_price, 2) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3" class="p-1">
+                                            <div class="text-justify">
+                                                <div class="item-description" style="font-size: 12px; letter-spacing: 0;">{!! strip_tags($item->description) !!}</div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
+                                @empty
+                                <tr>
+                                    <td colspan="4" class="p-3 text-center text-uppercase text-muted">
+                                        No item(s) found. 
+                                    </td>
+                                </tr>
+                                @endforelse
                             </table>
                         </div>
                     </div>
@@ -109,6 +117,16 @@
         }
         .morectnt span {
             display: none;
+        }
+
+        tbody:nth-child(odd) {
+            background-color: #E5E7E9;
+            border: 1px solid #dee2e6;
+        }
+
+        tbody:nth-child(even) {
+            background-color:#F8F9F9;
+            border: 1px solid #dee2e6;
         }
     </style>
 @endsection

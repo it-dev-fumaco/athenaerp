@@ -80,18 +80,17 @@
                                                         <li class="nav-item col-6 p-0">
                                                             <a class="nav-link active font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#pending-content" role="tab" href="#">Sales Report</a>
                                                         </li>
-                                                        <li class="nav-item col-6 p-0">
-                                                            <a class="nav-link font-responsive text-center rounded-0" style="height: 60px; padding-top: 15px;" data-toggle="pill" href="#audit-report-content" role="tab" href="#">Inventory Audit Report</a>
-                                                        </li>
                                                     </ul>
                                                 </div>
                                                 <div class="p-0 col-2">
                                                     <div class="text-center">
-                                                        <p class="text-center m-0 font-responsive">
-                                                            <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
-                                                            <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
-                                                        </p>
-                                                        <span class="d-block" style="font-size: 9pt;">Active Store</span>
+                                                        <a href="/consignment/branches" style="text-transform: none; text-decoration: none; color: #212545">
+                                                            <p class="text-center m-0 font-responsive">
+                                                                <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
+                                                                <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
+                                                            </p>
+                                                            <span class="d-block" style="font-size: 9pt;">Active Store</span>
+                                                        </a>
                                                     </div>
                                                 </div>
                                                 <div class="p-0 col-2">
@@ -131,20 +130,15 @@
                                                 <div class="tab-pane fade show active" id="pending-content" role="tabpanel" aria-labelledby="pending-tab">
                                                     <div class="row">
                                                         <div class="col-6">
-                                                            <div class="d-flex flex-row text-center align-items-center m-0">
-                                                                <div class="p-2">
-                                                                    <select class="form-control w-100" id="year-filter">
-                                                                        <option value="" disabled>Select Year</option>
-                                                                        @foreach ($sales_report_included_years as $year)
-                                                                        <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                <div class="p-2">
-                                                                    <div class="form-check text-center text-white">
-                                                                        <input class="form-check-input" type="checkbox" id="hide-zero-check" checked>
-                                                                        <label class="form-check-label" for="hide-zero-check"> Hide zero values
-                                                                        </label>
+                                                            <div class="p-1">
+                                                                <div class="col-9 text-white p-2">
+                                                                    <div class="row">
+                                                                        <div class="col-4 d-flex justify-content-center align-items-center">
+                                                                            <label>Select Date Range</label>
+                                                                        </div>
+                                                                        <div class="col-8">
+                                                                            <input type="text" class="form-control date-range">
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -153,43 +147,7 @@
                                                             <a href="/consignment_import_tool" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-external-link-alt"></i> Import Sales Report</a>
                                                         </div>
                                                     </div>
-                                                    <div id="beginning-inventory-list-el" class="pl-2 pr-2 pb-2"></div>
-                                                </div>
-                                                <div class="tab-pane fade" id="audit-report-content" role="tabpanel" aria-labelledby="audit-report-tab">
-                                                    <form method="GET" id="search-audit-form">
-                                                        <div class="row p-2">
-                                                            <div class="col-3">
-                                                                <select name="store" class="form-control" id="consignment-audit-select" required>
-                                                                    <option value="">Select Store</option>
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-3">
-                                                                <select name="cutoff" class="form-control" required>
-                                                                    <option value="">Select Cutoff Date</option>
-                                                                    @foreach ($cutoff_filters as $cf)
-                                                                    <option value="{{ $cf['id'] }}">{{ $cf['cutoff_start'] . ' - ' . $cf['cutoff_end'] }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-3">
-                                                                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
-                                                            </div>
-                                                        </div>
-                                                    </form>
-                                                    <div class="row m-0 pr-2 pl-2 pb-2">
-                                                        <div class="col-md-6 bg-white m-0 p-0" id="deliveries-content">
-                
-                                                        </div>
-                                                        <div class="col-md-6 bg-white m-0 p-0" id="returns-content">
-                                                           
-                                                        </div>
-                                                        <div class="col-md-12 bg-white m-0 p-0">
-                                                            <div id="sales-content">
-                                                                <h5 class="text-center text-uppercase mt-2 p-2 border-bottom font-weight-bolder">Sales</h5>
-                                                                <h6 class="text-center text-uppercase text-muted">Please select Store and Cutoff Period</h6>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <div id="beginning-inventory-list-el" class="p-0"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -440,15 +398,33 @@
             loadSalesReport();
         });
 
+        $(".date-range").daterangepicker({
+            placeholder: 'Select Duration',
+            startDate: moment().startOf('month').format('YYYY-MMM-DD'),
+            endDate: moment().format('YYYY-MMM-DD'),
+            locale: {
+                format: 'YYYY-MMM-DD',
+                separator: " to ",
+            }
+        });
+
+        console.log(moment().startOf('month').format('YYYY-MMM-DD'));
+
+        $(".date-range").on('apply.daterangepicker', function (ev, picker) {
+            var duration = picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD');
+            $(this).val(duration);
+
+            loadSalesReport();
+        });
+
         loadSalesReport();
         function loadSalesReport() {
-            var hidezero = $('#hide-zero-check').is(":checked");
-            var year = $('#year-filter').val();
-
             $.ajax({
                 type: "GET",
-                url: "/sales_report",
-                data: {hidezero, year},
+                url: "/consignment_sales_report",
+                data: {
+                    daterange: $('.date-range').val()
+                },
                 success: function (data) {
                     $('#beginning-inventory-list-el').html(data);
                 }
@@ -565,7 +541,7 @@
         function loadData() {
             loadDeliveries();
             loadReturns();
-            loadSales();
+            // loadSales();
         }
 
         function loadDeliveries() {
@@ -586,17 +562,6 @@
 				data: $('#search-audit-form').serialize(),
 				success: function (response) {
 					$('#returns-content').html(response);
-				}
-			});
-		}
-
-        function loadSales() {
-			$.ajax({
-				type: "GET",
-				url: "/get_audit_sales",
-				data: $('#search-audit-form').serialize(),
-				success: function (response) {
-					$('#sales-content').html(response);
 				}
 			});
 		}

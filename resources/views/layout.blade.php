@@ -24,6 +24,10 @@
 	<link rel="stylesheet" href="{{ asset('/updated/plugins/fullcalendar/main.css') }}">
 	<!-- datepicker -->
 	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
+
+	<link href="{{ asset('/bootstrap-extensions/css/bootstrap-table.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('/bootstrap-extensions/css/bootstrap-table-fixed-columns.min.css') }}" rel="stylesheet">
+
 	<style>
 		* {
 			-webkit-overflow-scrolling: touch !important;
@@ -621,9 +625,9 @@
 							<button id="btnGroupDrop" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="font-size: 11pt !important">Transactions</button>
 							<div class="dropdown-menu dropdown-menu-center" aria-labelledby="btnGroupDrop1" style="font-size: 10pt !important">
 								<a class="dropdown-item" href="/beginning_inv_list">Create Beginning Inventory</a>
-								<a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer">Create Store Transfer</a>
-								<a class="dropdown-item" href="/stock_transfer/form?action=For Return">Create Return to Plant</a>
-								<a class="dropdown-item" href="/stock_transfer/form?action=Sales Return">Create Sales Return</a>
+								<a class="dropdown-item" href="/stock_transfer/form?action=For Return">Item Pull Out Request</a>
+								<a class="dropdown-item" href="/stock_transfer/form?action=Store Transfer">Store Transfer Request</a>
+								<a class="dropdown-item" href="/item_return/form">Create Item Return</a>
 								<a class="dropdown-item" href="/promodiser/damage_report/form">Report Damaged Items</a>
 							</div>
 						</div>
@@ -1270,7 +1274,7 @@
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong class="copyright">Copyright &copy; 2021 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong class="copyright">Copyright &copy; 2023 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 <!-- REQUIRED SCRIPTS -->
@@ -1302,6 +1306,9 @@
 <!-- datepicker -->
 <script type="text/javascript" src="{{ asset('js/datetimepicker/moment.min.js') }}"></script>
 <script type="text/javascript" src="{{ asset('js/datetimepicker/daterangepicker.min.js') }}"></script>
+
+<script src="{{ asset('/bootstrap-extensions/js/bootstrap-table.min.js') }}"></script>
+<script src="{{ asset('/bootstrap-extensions/js/bootstrap-table-fixed-columns.min.js') }}"></script>
 	@yield('script')
 
 	<script>
