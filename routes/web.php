@@ -233,8 +233,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/user_manual/beginning_inventory', function () {
             return view('consignment.user_manual.beginning_inventory');
         });
-        Route::get('/user_manual/product_sold_entry', function () {
-            return view('consignment.user_manual.product_sold');
+        Route::get('/user_manual/sales_report_entry', function () {
+            return view('consignment.user_manual.sales_report');
         });
         Route::get('/user_manual/stock_transfer', function () {
             return view('consignment.user_manual.stock_transfer');

@@ -16,7 +16,7 @@
                             <h6 class="font-weight-bold text-info text-uppercase">Promodiser</h6>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item p-2"><a href="/user_manual/beginning_inventory"><i class="fas fa-angle-right"></i> Beginning Inventory</a></li>
-                                <li class="list-group-item p-2"><a href="/user_manual/product_sold_entry"><i class="fas fa-angle-right"></i> Product Sold Entry</a></li>
+                                <li class="list-group-item p-2"><a href="/user_manual/sales_report_entry"><i class="fas fa-angle-right"></i> Sales Report Entry</a></li>
                                 <li class="list-group-item p-2"><a href="/user_manual/stock_transfer"><i class="fas fa-angle-right"></i> Stock Transfer</a></li>
                                 <li class="list-group-item p-2"><a href="/user_manual/damaged_items"><i class="fas fa-angle-right"></i> Damaged Item Report</a></li>
                                 <li class="list-group-item p-2"><a href="/user_manual/stock_receiving"><i class="fas fa-angle-right"></i> Receive Incoming Deliveries</a></li>
