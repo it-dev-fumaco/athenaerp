@@ -33,13 +33,16 @@
                                 <div class="col-12">
                                     <ul class="nav nav-pills m-0" role="tablist">
                                         <li class="nav-item mr-1 border rounded">
-                                            <a class="nav-link active font-responsive" data-toggle="tab" href="#stock_transfers">Stock-to-Store Transfer <span class="badge badge-warning" id="store-transfer-count">0</span></a>
+                                            <a class="nav-link active font-responsive" data-purpose='Store Transfer' data-toggle="tab" href="#stock_transfers">Stock-to-Store Transfer <span class="badge badge-warning" id="store-transfer-count">0</span></a>
                                         </li>
                                         <li class="nav-item mr-1 border rounded">
-                                            <a class="nav-link font-responsive" data-toggle="tab" href="#pull-out">Item Pull Out <span class="badge badge-warning" id="pullout-count">0</span></a>
+                                            <a class="nav-link font-responsive" data-purpose='Pull Out' data-toggle="tab" href="#pull-out">Item Pull Out <span class="badge badge-warning" id="pullout-count">0</span></a>
                                         </li>
                                         <li class="nav-item mr-1 border rounded">
-                                            <a class="nav-link font-responsive" data-toggle="tab" href="#damaged_items">Damaged Item List</a>
+                                            <a class="nav-link font-responsive" data-purpose='Item Return' data-toggle="tab" href="#item-return">Item Return <span class="badge badge-warning" id="return-count">0</span></a>
+                                        </li>
+                                        <li class="nav-item mr-1 border rounded">
+                                            <a class="nav-link font-responsive" data-purpose='Damaged Items' data-toggle="tab" href="#damaged_items">Damaged Item List</a>
                                         </li>
                                     </ul>
                                 </div>
@@ -99,8 +102,8 @@
                                 </div>
                                 <!-- Stock Transfers -->
 
-                                 <!-- Pull Out -->
-                                 <div id="pull-out" class="tab-pane">
+                                <!-- Pull Out -->
+                                <div id="pull-out" class="tab-pane">
                                     <!-- Stock Transfers -->
                                     <form id="pull-out-filter">
                                         <div id="accordion" class="mt-2">
@@ -114,9 +117,6 @@
                                                     </div>
                                                     <div class="col-3">
                                                         <select name="source_warehouse" id="source-warehouse-pull-out" class="form-control"></select>
-                                                    </div>
-                                                    <div class="col-3">
-                                                        <select name="target_warehouse" id="target-warehouse-pull-out" class="form-control"></select>
                                                     </div>
                                                     <div class="col-2">
                                                         <select name="status" class="form-control" style="font-size: 12px;">
@@ -143,6 +143,47 @@
                                     <div id="pull-out-div" class="p-1"></div>
                                 </div>
                                 <!-- Pull Out -->
+
+                                <!-- Item Return -->
+                                <div id="item-return" class="tab-pane">
+                                    <form id="item-return-filter">
+                                        <div id="accordion2" class="mt-2">
+                                            <button type="button" class="btn btn-link border-bottom btn-block text-left d-xl-none d-lg-none" data-toggle="collapse" data-target="#collapseFour" aria-expanded="true" aria-controls="collapseThree" style="font-size: 12px;">
+                                                <i class="fa fa-filter"></i> Filters
+                                            </button>
+                                            <div id="collapseFour" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+                                                <div class="row p-2">
+                                                    <div class="col-3">
+                                                        <input type="text" name="q" class="form-control" placeholder='Search' style='font-size: 12px;'/>
+                                                    </div>
+                                                    <div class="col-3">
+                                                        <select name="target_warehouse" id="target-warehouse-item-return" class="form-control"></select>
+                                                    </div>
+                                                    <div class="col-2">
+                                                        <select name="status" class="form-control" style="font-size: 12px;">
+                                                            @foreach ($status as $s)
+                                                            @php
+                                                                $selected = null;
+                                                                if(request('tab1_status') == 'All'){
+                                                                    $selected = $loop->first ? 'selected' : null;
+                                                                }else{
+                                                                    $selected = $s['value'] == request('tab1_status') ? 'selected' : null;
+                                                                }
+                                                            @endphp
+                                                            <option value="{{ $s['value'] }}" {{ $selected }}>{{ $s['title'] }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-1">
+                                                        <button type="submit" class="btn btn-info btn-block"><i class="fas fa-search"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <div id="item-return-div" class="p-1"></div>
+                                </div>
+                                <!-- Item Return -->
 
                                 <!-- Damaged Items -->
                                 <div id="damaged_items" class="tab-pane">
@@ -257,12 +298,17 @@
     
     $('#stock-transfer-filter').submit(function (e) {
         e.preventDefault();
-        load_stock_transfer();
+        load_stock_transfer('Store Transfer', 1);
     });
 
     $('#pull-out-filter').submit(function (e) {
-        e.preventDefault();
-        load_pullout();
+        e.preventDefault()
+        load_stock_transfer('Pull Out', 1);
+    });
+
+    $('#item-return-filter').submit(function (e) {
+        e.preventDefault()
+        load_stock_transfer('Item Return', 1);
     });
 
     $('#damaged-items-filter').submit(function (e) {
@@ -270,29 +316,28 @@
         load_damaged_items();
     });
 
-    load_stock_transfer();
-    function load_stock_transfer(page){
+    load_stock_transfer('Store Transfer', 1);
+    function load_stock_transfer(purpose, page){
+        switch (purpose) {
+            case 'Pull Out':
+                var div = '#pull-out-div';
+                var filter = '#pull-out-filter';
+                break;
+            case 'Item Return':
+                var div = '#item-return-div';
+                var filter = '#item-return-filter';
+                break;
+            default:
+                var div = '#stock-transfer-div';
+                var filter = '#stock-transfer-filter';
+                break;
+        }
         $.ajax({
             type: 'GET',
-            url: '/stocks_report/list?purpose=Store Transfer&page=' + page,
-            data: $('#stock-transfer-filter').serialize(),
+            url: '/stocks_report/list?purpose=' + purpose + '&page=' + page,
+            data: $(filter).serialize(),
             success: function(response){
-                $('#stock-transfer-div').html(response);
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                showNotification("danger", 'An error occured. Please contact your system administrator.', "fa fa-info");
-            }
-        });
-    }
-
-    load_pullout();
-    function load_pullout(page){
-        $.ajax({
-            type: 'GET',
-            url: '/stocks_report/list?purpose=Pull Out&page=' + page,
-            data: $('#pull-out-filter').serialize(),
-            success: function(response){
-                $('#pull-out-div').html(response);
+                $(div).html(response);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 showNotification("danger", 'An error occured. Please contact your system administrator.', "fa fa-info");
@@ -315,16 +360,11 @@
         });
     }
 
-    $(document).on('click', '#pullout-pagination a', function(event){
+    $(document).on('click', '#consignment-stock-entry-pagination a', function(event){
         event.preventDefault();
         var page = $(this).attr('href').split('page=')[1];
-        load_pullout(page);
-    });
-
-    $(document).on('click', '#stock-transfer-pagination a', function(event){
-        event.preventDefault();
-        var page = $(this).attr('href').split('page=')[1];
-        load_stock_transfer(page);
+        var purpose = $(this).data('consignment-purpose');
+        load_stock_transfer(purpose, page);
     });
 
     $(document).on('click', '#damaged-items-pagination a', function(event){
@@ -333,8 +373,14 @@
         load_damaged_items(page);
     });
 
+    $(document).on('click', '.nav-link', function (e){
+        var purpose = $(this).data('purpose');
+        load_stock_transfer(purpose, 1);
+    });
+
     countStockTransfer('Store Transfer', '#store-transfer-count');
     countStockTransfer('Pull Out', '#pullout-count');
+    countStockTransfer('Item Return', '#return-count');
     function countStockTransfer(purpose, el){
         $.ajax({
             type: 'GET',
@@ -466,6 +512,27 @@
     });
 
     $('#target-warehouse').select2({
+        placeholder: 'Target Warehouse',
+        allowClear: true,
+        ajax: {
+            url: '/consignment_stores',
+            method: 'GET',
+            dataType: 'json',
+            data: function (data) {
+                return {
+                    q: data.term // search term
+                };
+            },
+            processResults: function (response) {
+                return {
+                    results: response
+                };
+            },
+            cache: true
+        }
+    });
+
+    $('#target-warehouse-item-return').select2({
         placeholder: 'Target Warehouse',
         allowClear: true,
         ajax: {
