@@ -103,7 +103,7 @@
                                                         <b>₱</b>
                                                     </div>
                                                     <div class="col-11">
-                                                        <input type="number" min=0 pattern="[0-9]*" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $amount }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }} required>
+                                                        <input type="number" min=0 pattern="[0-9]*" step=".01" inputmode="numeric" class="form-control text-center amount" name="day[{{ $day }}][amount]" value="{{ $amount }}" style="font-size: 9pt;" {{ $submitted ? 'disabled' : null }} required>
                                                     </div>
                                                 </div> 
                                             @endif
