@@ -3273,8 +3273,13 @@ class ConsignmentController extends Controller
         $list = DB::table('tabConsignment Inventory Audit Report as cia')
             ->join('tabConsignment Inventory Audit Report Item as ciar', 'cia.name', 'ciar.parent')
             ->join('tabItem as i', 'i.name', 'ciar.item_code')
-            ->where('branch_warehouse', $store)->where('audit_date_from', $from)
-            ->where('audit_date_to', $to)->get();
+            ->where('branch_warehouse', $store)->where('audit_date_from', $from)->where('audit_date_to', $to)
+            ->select('cia.name as inventory_audit_id', 'cia.*', 'i.*', 'ciar.*')
+            ->get();
+
+        $activity_logs = DB::table('tabActivity Log')->whereIn('reference_name', collect($list)->pluck('inventory_audit_id'))->select('reference_name', 'data')->orderBy('creation', 'desc')->first();
+
+        $activity_logs_data = collect(json_decode($activity_logs->data));
 
         if (count($list) <= 0) {
             return redirect()->back()->with('error', 'Record not found.');
@@ -3319,7 +3324,7 @@ class ConsignmentController extends Controller
         $result = [];
         foreach ($list as $row) {
             $id = $row->item_code;
-            
+
             $orig_exists = $webp_exists = 0;
 
             $img = '/icon/no_img.png';
@@ -3371,7 +3376,8 @@ class ConsignmentController extends Controller
                 'img_count' => $img_count,
                 'opening_qty' => number_format($opening_qty),
                 'previous_qty' => number_format($row->available_stock_on_transaction),
-                'audit_qty' => number_format($row->qty)
+                'audit_qty' => number_format($row->qty),
+                'sold_qty' => isset($activity_logs_data[$row->item_code]) ? collect($activity_logs_data[$row->item_code])['sold_qty'] : 0
             ];
         }
 

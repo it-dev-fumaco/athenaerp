@@ -94,6 +94,7 @@
                                             <th class="text-center p-2 align-middle text-uppercase" style="width: 500px;">Item Code</th>
                                             <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Opening</th>
                                             <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Audit Qty</th>
+                                            <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Sold</th>
                                             <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Received</th>
                                             <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Returned</th>
                                             <th class="text-center p-2 align-middle text-uppercase" style="width: 100px;">Transferred</th>
@@ -131,6 +132,9 @@
                                                 $total_transferred = isset($transferred_items[$row['item_code']]) ? collect($transferred_items[$row['item_code']])->sum('qty') : '-';
                                                 $total_damaged = isset($damaged_item_list[$row['item_code']]) ? collect($damaged_item_list[$row['item_code']])->sum('qty') : '-';
                                             @endphp
+                                            <td class="text-center p-1 align-middle">
+                                                <b>{{ number_format($row['sold_qty']) }}</b>
+                                            </td>
                                             <td class="text-center p-1 align-middle">
                                                 @if ($total_received != '-')
                                                 <a href="#" data-toggle="modal" data-target="#received-{{ $row['item_code'] }}-modal">
