@@ -352,13 +352,15 @@ class ConsignmentController extends Controller
                 Storage::disk('public')->makeDirectory('/inventory_audit_logs');
             }
 
-            $email_data = collect($activity_log_data['details'])->merge(['reference' => $reference])->toArray();
+            try {
+                $email_data = collect($activity_log_data['details'])->merge(['reference' => $reference])->toArray();
 
-            Mail::send('mail_template.consignment_inventory_audit', $email_data, function($message){
-                $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
-                $message->subject('AthenaERP - Inventory Audit Report');
-            });
-
+                Mail::send('mail_template.consignment_inventory_audit', $email_data, function($message){
+                    $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
+                    $message->subject('AthenaERP - Inventory Audit Report');
+                });
+            } catch (\Throwable $th) {}
+            
 
             Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_'.$iar_child_parent_name.'.json', json_encode($activity_log_data, true));
 
