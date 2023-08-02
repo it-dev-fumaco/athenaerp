@@ -174,7 +174,7 @@ class ConsignmentController extends Controller
             $new_iar_parent_data = $new_csr_parent_data = [];
             $iar_new_id = null;
             if (!$iar_existing_record) {
-                $iar_latest_id = DB::table('tabConsignment Inventory Audit Report')->orderBy('creation', 'desc')->pluck('name')->first();
+                $iar_latest_id = DB::table('tabConsignment Inventory Audit Report')->max('name');
                 $iar_latest_id_exploded = explode("-", $iar_latest_id);
                 $iar_new_id = (($iar_latest_id) ? $iar_latest_id_exploded[1] : 0) + 1;
                 $iar_new_id = str_pad($iar_new_id, 7, '0', STR_PAD_LEFT);
