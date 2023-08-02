@@ -16,12 +16,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        // $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
-        $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+        // $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
         // $schedule->command('inspire')->hourly();
         $schedule->command('update:pullout')->everyMinute();
-        $schedule->command('email:hr')->monthlyOn($cutoff_1, '8:00');
+        // $schedule->command('email:hr')->monthlyOn($cutoff_1, '8:00');
     }
 
     /**
