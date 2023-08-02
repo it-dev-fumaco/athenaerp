@@ -372,8 +372,15 @@ class ConsignmentController extends Controller
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);
-        } catch (\Throwable $th) {
+        } catch (Exception $th) {
             DB::rollback();
+
+            $err_log = [
+                'line' => $th->getLine(),
+                'message' => $th->getMessage()
+            ];
+
+            Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_ERROR.json', json_encode($err_log, true));
 
             return redirect()->back()->withInput($request->input())->with('error', 'An error occured. Please contact your system administrator.');
         }
