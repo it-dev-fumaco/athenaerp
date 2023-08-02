@@ -352,6 +352,16 @@ class ConsignmentController extends Controller
                 Storage::disk('public')->makeDirectory('/inventory_audit_logs');
             }
 
+            try {
+                $email_data = collect($activity_log_data['details'])->merge(['reference' => $reference])->toArray();
+
+                Mail::send('mail_template.consignment_inventory_audit', $email_data, function($message){
+                    $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
+                    $message->subject('AthenaERP - Inventory Audit Report');
+                });
+            } catch (\Throwable $th) {}
+            
+
             Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_'.$iar_child_parent_name.'.json', json_encode($activity_log_data, true));
 
             DB::commit();
@@ -362,8 +372,15 @@ class ConsignmentController extends Controller
                 'branch' => $data['branch_warehouse'],
                 'transaction_date' => $data['transaction_date']
             ]);
-        } catch (\Throwable $th) {
+        } catch (Exception $th) {
             DB::rollback();
+
+            $err_log = [
+                'line' => $th->getLine(),
+                'message' => $th->getMessage()
+            ];
+
+            Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_ERROR.json', json_encode($err_log, true));
 
             return redirect()->back()->withInput($request->input())->with('error', 'An error occured. Please contact your system administrator.');
         }
@@ -409,24 +426,26 @@ class ConsignmentController extends Controller
             }
 
             if ($status == 'Submitted') {
-                $submitted_by = Auth::user()->wh_user;
-                $date_submitted = $now->toDateTimeString();
+                try {
+                    $submitted_by = Auth::user()->wh_user;
+                    $date_submitted = $now->toDateTimeString();
 
-                $email_data = [
-                    'warehouse' => $request->branch,
-                    'month' => $request->month,
-                    'total_amount' => collect($sales_per_day)->sum(),
-                    'remarks' => $request->remarks,
-                    'year' => $request->year,
-                    'status' => $status,
-                    'submission_status' => $submission_status,
-                    'date_submitted' => $date_submitted
-                ];
+                    $email_data = [
+                        'warehouse' => $request->branch,
+                        'month' => $request->month,
+                        'total_amount' => collect($sales_per_day)->sum(),
+                        'remarks' => $request->remarks,
+                        'year' => $request->year,
+                        'status' => $status,
+                        'submission_status' => $submission_status,
+                        'date_submitted' => $date_submitted
+                    ];
 
-                Mail::send('mail_template.consignment_sales_report', $email_data, function($message){
-                    $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
-                    $message->subject('AthenaERP - Sales Report');
-                });
+                    Mail::send('mail_template.consignment_sales_report', $email_data, function($message){
+                        $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
+                        $message->subject('AthenaERP - Sales Report');
+                    });
+                } catch (\Throwable $th) {}
             }
 
             $existing_record = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $request->year)->where('month', $request->month)->where('warehouse', $request->branch)->first();

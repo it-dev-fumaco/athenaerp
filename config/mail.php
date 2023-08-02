@@ -45,6 +45,17 @@ return [
             'auth_mode' => null,
         ],
 
+        'local_mail' => [
+            'transport' => 'smtp',
+            'host' => env('LOCAL_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('LOCAL_MAIL_PORT', 587),
+            'encryption' => env('LOCAL_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('LOCAL_MAIL_USERNAME'),
+            'password' => env('LOCAL_MAIL_PASSWORD'),
+            'timeout' => null,
+            'auth_mode' => null,
+        ],
+        
         'ses' => [
             'transport' => 'ses',
         ],
