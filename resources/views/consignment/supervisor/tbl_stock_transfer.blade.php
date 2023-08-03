@@ -15,12 +15,26 @@
         @forelse ($result as $ste)
         @php
             $badge = 'secondary';
-            if($ste['status'] == 'Pending'){
-                $badge = 'warning';
-            }elseif ($ste['status'] == 'Completed'){
-                $badge = 'success';
-            } else {
-                $badge = 'danger';
+            if ($purpose == 'Item Return'){
+                $status = $ste['status'] == 'Cancelled' ? $ste['status'] : 'Completed';
+            }else{
+                $status = $ste['status'];
+            }
+                    
+            if ($purpose == 'Item Return') {
+                if (in_array($status, ['Completed', 'Pending'])){
+                    $badge = 'success';
+                } else {
+                    $badge = 'danger';
+                }
+            }else{
+                if($status == 'Pending'){
+                    $badge = 'warning';
+                }elseif ($status == 'Completed'){
+                    $badge = 'success';
+                } else {
+                    $badge = 'danger';
+                }
             }
         @endphp
         <tr>
@@ -36,7 +50,9 @@
             @endif
             <td class="text-center p-2 align-middle">{{ $ste['submitted_by'] }}</td>
             <td class="text-center p-2 align-middle">
-                <span class="badge badge-{{ $badge }}" style="font-size: 10px;">{{ $ste['status'] }}</span>
+                <span class="badge badge-{{ $badge }}" style="font-size: 10px;">
+                    {{ $status }}
+                </span>
             </td>
             <td class="text-center p-2 align-middle">
                 <a href="#" data-toggle="modal" data-target="#{{ $ste['name'] }}-Modal" class="btn btn-info btn-xs"><i class="fas fa-eye"></i> View</a>
@@ -45,13 +61,15 @@
                     <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
                             <div class="modal-header bg-navy">
-                                <h6 class="modal-title">{{ $ste['purpose'] .' - '. $ste['name'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $ste['status'] }}</span></h6>
+                                <h6 class="modal-title">
+                                    {{ $ste['purpose'] .' - '. $ste['name'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $status }}</span>
+                                </h6>
                                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
                             <div class="modal-body">
-                                @if (!in_array($ste['status'], ['Cancelled', 'Completed']) && $purpose != 'Item Return')
+                                @if (!in_array($status, ['Cancelled', 'Completed']) && $purpose != 'Item Return')
                                     @if (array_key_exists($ste['references'], $stock_entries))
                                         @if ($stock_entries[$ste['references']][0]->docstatus == 0)
                                             <div class="row">
@@ -112,8 +130,8 @@
                                             </div>
                                         </div>
                                     @endif
+                                    <hr class="mt-3 p-2 mb-0">
                                 @endif
-                                <hr class="mt-3 p-2 mb-0">
                                 <div class="row pb-0 mb-3">
                                     <div class="pt-0 pr-2 pl-2 pb-0 col-6 text-left m-0">
                                         @if ($purpose == 'Item Return')
@@ -142,7 +160,7 @@
                                 <table class="table table-bordered" style="font-size: 11px;">
                                     <thead class="text-uppercase">
                                         <th class="text-center p-2 align-middle" style="width: 60%;">Item Code</th>
-                                        @if ($ste['status'] != 'Completed')
+                                        @if ($status != 'Completed')
                                         <th class="text-center p-2 align-middle" style="width: 20%;">Current Qty</th>
                                         @endif
                                         <th class="text-center p-2 align-middle" style="width: 20%;">Qty to Transfer</th>
@@ -166,7 +184,7 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            @if ($ste['status'] != 'Completed')
+                                            @if ($status != 'Completed')
                                             <td class="text-center p-1 align-middle">
                                                 <span class="d-block font-weight-bold">{{ $item['consigned_qty'] * 1 }}</span>
                                                 <small class="text-muted">{{ $item['uom'] }}</small>

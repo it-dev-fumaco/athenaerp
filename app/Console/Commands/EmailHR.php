@@ -44,8 +44,9 @@ class EmailHR extends Command
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
         $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
+        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
 
-        if($cutoff_1 == Carbon::now()->format('d')){
+        if(in_array(Carbon::now()->format('d'), [$cutoff_1, $cutoff_2])){
             $transaction_date = Carbon::now()->startOfMonth();
             $start_date = Carbon::parse($transaction_date)->subMonth();
             $end_date = Carbon::parse($transaction_date)->addMonths(2);
