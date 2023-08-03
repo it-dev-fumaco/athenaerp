@@ -2468,7 +2468,7 @@
 			});
 		});
 
-		$('.submit-once').click(function(){
+		$(document).on('click', '.submit-once', function(){
 			if(!$(this).hasClass('submitted')){
 				$(this).addClass('submitted');
 			}else{
