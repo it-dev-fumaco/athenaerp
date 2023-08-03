@@ -1132,6 +1132,10 @@ class ConsignmentController extends Controller
                 return response()->json(['success' => 0, 'message' => $id.' not found.']);
             }
 
+            if($wh->consignment_status == 'Received'){
+                return response()->json(['success' => 0, 'message' => $id.' already received.']);
+            }
+
             $invalid_prices = [];
             foreach($request->price as $p){
                 $price = preg_replace("/[^0-9 .]/", "", $p);
@@ -1426,6 +1430,7 @@ class ConsignmentController extends Controller
             $received_items['action'] = 'received';
 
             DB::commit();
+
             return response()->json(['success' => 1, 'message' => $message]);
         } catch (\Throwable $e) {
             DB::rollback();

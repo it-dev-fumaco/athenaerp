@@ -304,6 +304,7 @@
 
     $(document).on('submit', '.receive-form', function (e){
         e.preventDefault();
+        $('.submit-btn').addClass('submitted').prop('disabled', true);
         var modal = $(this).data('modal-container');
 
         $.ajax({
@@ -318,9 +319,11 @@
                 }else{
                     showNotification("danger", response.message, "fa fa-info");
                 }
+                $('.submit-btn').removeClass('submitted').prop('disabled', false);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
+                $('.submit-btn').removeClass('submitted').prop('disabled', false);
             }
         });
     });
