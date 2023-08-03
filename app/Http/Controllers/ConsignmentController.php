@@ -375,12 +375,22 @@ class ConsignmentController extends Controller
         } catch (Exception $th) {
             DB::rollback();
 
-            $err_log = [
+            $log = $data = [];
+
+            $now = Carbon::now();
+            if(Storage::disk('local')->exists('public/inventory_audit_logs/'.$now->format('Y-m-d').'_ERROR.json')){
+                $data = json_decode(file_get_contents(storage_path('/app/public/inventory_audit_logs/'.$now->format('Y-m-d').'_ERROR.json')), true);
+            }
+
+            $log[Carbon::now()->format('H:i:s')] = [
+                'file' => $th->getFile(),
                 'line' => $th->getLine(),
                 'message' => $th->getMessage()
             ];
 
-            Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_ERROR.json', json_encode($err_log, true));
+            $log = collect($data)->mergeRecursive($log)->sortKeysDesc();
+
+            Storage::disk('local')->put('public/inventory_audit_logs/'.$now->format('Y-m-d').'_ERROR.json', json_encode($log));
 
             return redirect()->back()->withInput($request->input())->with('error', 'An error occured. Please contact your system administrator.');
         }
