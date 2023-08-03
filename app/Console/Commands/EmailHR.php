@@ -115,8 +115,6 @@ class EmailHR extends Command
                 $message->to('hr@fumaco.local');
                 $message->subject('AthenaERP - Promodisers Monthly Report');
             });
-            
-            return 1;
         }
     }
 }
