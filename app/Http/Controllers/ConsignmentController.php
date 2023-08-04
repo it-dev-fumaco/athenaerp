@@ -1132,7 +1132,7 @@ class ConsignmentController extends Controller
                 return response()->json(['success' => 0, 'message' => $id.' not found.']);
             }
 
-            if($wh->consignment_status == 'Received'){
+            if($wh->consignment_status == 'Received' && isset($request->receive_delivery)){
                 return response()->json(['success' => 0, 'message' => $id.' already received.']);
             }
 
