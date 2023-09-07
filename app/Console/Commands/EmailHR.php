@@ -86,7 +86,7 @@ class EmailHR extends Command
                 ->get();
 
             $report_details = DB::table('tabConsignment Inventory Audit Report')
-                ->select('owner', 'promodiser', 'branch_warehouse', DB::raw('max(audit_date_from) as last_audit'))
+                ->select('owner', 'promodiser', 'branch_warehouse', DB::raw('max(transaction_date) as last_audit'))
                 ->groupBy('owner', 'promodiser', 'branch_warehouse')
                 ->get();
 
