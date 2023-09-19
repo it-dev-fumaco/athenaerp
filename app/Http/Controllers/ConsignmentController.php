@@ -2633,10 +2633,10 @@ class ConsignmentController extends Controller
                     'consignment_price' => $b->consignment_price,
                 ];
             }
-
+          
             $new_id = 'CSTE-'.uniqid();
             $new_title = $this->generateConsignmentID('tabConsignment Stock Entry', 'CSTE', 8);
-
+          
             $stock_entry_data = [
                 'name' => $new_id,
                 'title' => $new_title,

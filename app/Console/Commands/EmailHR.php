@@ -86,7 +86,7 @@ class EmailHR extends Command
                 ->get();
 
             $report_details = DB::table('tabConsignment Inventory Audit Report')
-                ->select('owner', 'promodiser', 'branch_warehouse', DB::raw('max(audit_date_from) as last_audit'))
+                ->select('owner', 'promodiser', 'branch_warehouse', DB::raw('max(transaction_date) as last_audit'))
                 ->groupBy('owner', 'promodiser', 'branch_warehouse')
                 ->get();
 
@@ -111,10 +111,15 @@ class EmailHR extends Command
                 'cutoff_dates' => Carbon::parse($period_from)->format('F d, Y').' - '.Carbon::parse($period_to)->format('F d, Y')
             ];
 
-            Mail::mailer('local_mail')->send('mail_template.hr_promodiser_report', $email_data, function($message){
-                $message->to('hr@fumaco.local');
-                $message->subject('AthenaERP - Promodisers Monthly Report');
-            });
+            $receivers = ['hr@fumaco.local', 'consignment@fumaco.local'];
+            foreach ($receivers as $receiver) {
+                try {
+                    Mail::mailer('local_mail')->send('mail_template.hr_promodiser_report', $email_data, function($message) use ($receiver){
+                        $message->to($receiver);
+                        $message->subject('AthenaERP - Promodisers Monthly Report');
+                    });
+                } catch (\Throwable $th) {}
+            }
         }
     }
 }

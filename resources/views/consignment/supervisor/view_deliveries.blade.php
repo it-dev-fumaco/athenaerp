@@ -138,10 +138,6 @@
             }
         });
 
-        $(document).on('click', '.submit-btn', function (){
-            validate_submit($(this).data('reference'));
-        });
-
         $(document).on('click', '.remove-filter', function (e){
             e.preventDefault();
             $("#consignment-store-select").empty().trigger('change');
@@ -160,6 +156,7 @@
         });
 
         $(document).on('click', '.submit-btn', function (){
+            var err = 0;
             $('.' + $(this).data('reference') + '-price').each(function (){
                 if($(this).val() == '' || $(this).val() <= 0){
                     $(this).css('border', '1px solid red');
