@@ -7,27 +7,31 @@
             <table style="border: 1px solid black;border-collapse: collapse; font-size: 10pt;">
                 <thead>
                     <tr style="text-align:center">
-                        <th style="border: 1px solid black !important; width: 40% !important;">Promodiser</th>
-                        <th style="border: 1px solid black !important; width: 60% !important;">Assigned Consignment Warehouse</th>
+                        <th style="border: 1px solid black !important; width: 33% !important;">Promodiser</th>
+                        <th style="border: 1px solid black !important; width: 33% !important;">Assigned Consignment Warehouse</th>
+                        <th style="border: 1px solid black !important; width: 33% !important;">Last Submission</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($users as $user => $details)
+                        @php
+                            $i = 1;
+                        @endphp
                         <tr>
-                            <td style="border: 1px solid black !important;text-align:justify; width: 40% !important;">
-                                {{ $user }} <br>
-                                <small>Last Submission: {{ collect($details)->max('last_audit') ? Carbon\Carbon::parse(collect($details)->max('last_audit'))->format('M. d, Y') : '-' }}</small> 
-                            </td>
-                            <td style="border: 1px solid black !important;text-align:justify; width: 60% !important;">
-                                <ul>
-                                    @foreach ($details as $detail)
-                                    <li>
-                                        {{ $detail['warehouse'] }}
-                                    </li>
-                                    @endforeach
-                                </ul>
-                            </td>
+                            <th rowspan={{ count($details) * 2 }} style="border: 1px solid black !important; width: 33% !important;">
+                                {{ $user }}
+                            </th>
                         </tr>
+                            @foreach ($details as $detail)
+                                <tr>
+                                    <td style="border: 1px solid black !important;text-align:justify; width: 33% !important;">
+                                        {{ $detail['warehouse'] }}
+                                    </td>
+                                    <td style="border: 1px solid black !important;text-align:justify; width: 33% !important;">
+                                        {{ $detail['last_audit'] }}
+                                    </td>
+                                <tr>
+                            @endforeach
                     @empty
                         <tr>
                             <td colspan=2 style="text-align: center">

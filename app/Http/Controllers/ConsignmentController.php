@@ -2636,7 +2636,8 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            $latest_ste = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%CSTE-%')->max('name');
+            // $latest_ste = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%CSTE-%')->max('name');
+            $latest_ste = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%CSTE-%')->orderBy('creation', 'desc')->pluck('name')->first();
             $latest_ste_exploded = explode("-", $latest_ste);
             $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
             $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
@@ -2760,7 +2761,7 @@ class ConsignmentController extends Controller
             DB::commit();
 
             return redirect()->route('stock_transfers', ['purpose' => $purpose])->with('success', 'Stock transfer request has been submitted.');
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollback();
 
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
