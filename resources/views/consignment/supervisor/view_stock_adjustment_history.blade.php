@@ -13,7 +13,7 @@
     @forelse ($stock_adjustments_array as $stock)
         <tr>
             <td class="text-justify text-xl-center">
-                <b>{{ $stock['name'] }}</b>
+                <b>{{ $stock['title'] ? $stock['title'] : $stock['name'] }}</b>
                 <div class="d-block d-xl-none text-left">
                     <span>{{ $stock['warehouse'] }}</span> <br>
                     <span><b>Created by:</b> {{ $stock['created_by'] }}</span> <br>
@@ -41,7 +41,7 @@
                             </div>
                             <div class="modal-body">
                                 <h5 class="text-center font-responsive font-weight-bold m-0">{{ $stock['warehouse'] }}</h5>
-                                <small class="d-block text-center mb-2">{{ $stock['name'] }} | Transaction Date: {{ Carbon\Carbon::parse($stock['transaction_date'])->format('M d, Y h:i:s A') }}</small>
+                                <small class="d-block text-center mb-2">{{ $stock['title'] ? $stock['title'] : $stock['name'] }} | Transaction Date: {{ Carbon\Carbon::parse($stock['transaction_date'])->format('M d, Y h:i:s A') }}</small>
                                 <div class="row border w-100" style="font-size: 9pt;">
                                     <div class="col-9 text-uppercase text-center">
                                         <div class="row p-0 m-0 w-100">

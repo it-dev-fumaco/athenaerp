@@ -1753,15 +1753,13 @@ class ConsignmentController extends Controller
 
             $item_count = 0;
             if(!$request->inv_name){ // If beginning inventory record does not exist
-                $latest_inv = DB::table('tabConsignment Beginning Inventory')->where('name', 'like', '%inv%')->max('name');
-                $latest_inv_exploded = explode("-", $latest_inv);
-                $inv_id = (($latest_inv) ? $latest_inv_exploded[1] : 0) + 1;
-                $inv_id = str_pad($inv_id, 6, '0', STR_PAD_LEFT);
-                $inv_id = 'INV-'.$inv_id;
+                $inv_id = 'INV-'.uniqid();
+                $new_title = $this->generateConsignmentID('tabConsignment Beginning Inventory', 'INV', 6);
     
                 $values = [
                     'docstatus' => 0,
                     'name' => $inv_id,
+                    'title' => $new_title,
                     'idx' => 0,
                     'status' => 'For Approval',
                     'branch_warehouse' => $branch,
@@ -2635,16 +2633,13 @@ class ConsignmentController extends Controller
                     'consignment_price' => $b->consignment_price,
                 ];
             }
-
-            // $latest_ste = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%CSTE-%')->max('name');
-            $latest_ste = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%CSTE-%')->orderBy('creation', 'desc')->pluck('name')->first();
-            $latest_ste_exploded = explode("-", $latest_ste);
-            $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
-            $new_id = str_pad($new_id, 8, '0', STR_PAD_LEFT);
-            $new_id = 'CSTE-'.$new_id;
-
+          
+            $new_id = 'CSTE-'.uniqid();
+            $new_title = $this->generateConsignmentID('tabConsignment Stock Entry', 'CSTE', 8);
+          
             $stock_entry_data = [
                 'name' => $new_id,
+                'title' => $new_title,
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
@@ -2797,11 +2792,9 @@ class ConsignmentController extends Controller
         DB::beginTransaction();
         try{
             $items = $request->item;
-            $latest_id = DB::table('tabConsignment Stock Entry')->where('name', 'like', '%cste%')->max('name');
-            $latest_id_exploded = explode("-", $latest_id);
-            $new_id = (($latest_id) ? $latest_id_exploded[1] : 0) + 1;
-            $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
-            $new_id = 'CSTE-'.$new_id;
+
+            $new_id = 'CSTE-'.uniqid();
+            $new_title = $this->generateConsignmentID('tabConsignment Stock Entry', 'CSTE', 8);
 
             $now = Carbon::now();
 
@@ -2861,6 +2854,7 @@ class ConsignmentController extends Controller
 
             DB::table('tabConsignment Stock Entry')->insert([
                 'name' => $new_id,
+                'title' => $new_title,
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
@@ -3051,6 +3045,7 @@ class ConsignmentController extends Controller
 
                 $ste_arr[] = [
                     'name' => $ste->name,
+                    'title' => $ste->title,
                     'from_warehouse' => $ste->source_warehouse,
                     'to_warehouse' => $ste->target_warehouse,
                     'status' => $ste->status,
@@ -3684,6 +3679,7 @@ class ConsignmentController extends Controller
 
             $stock_adjustments_array[] = [
                 'name' => $sa->name,
+                'title' => $sa->title,
                 'warehouse' => $sa->warehouse,
                 'created_by' => $sa->created_by,
                 'creation' => $sa->creation,
@@ -3728,14 +3724,12 @@ class ConsignmentController extends Controller
 
             $now = Carbon::now();
 
-            $latest_csa = DB::table('tabConsignment Stock Adjustment')->where('name', 'like', '%csa%')->max('name');
-            $latest_csa_exploded = explode("-", $latest_csa);
-            $csa_id = (($latest_csa) ? $latest_csa_exploded[1] : 0) + 1;
-            $csa_id = str_pad($csa_id, 6, '0', STR_PAD_LEFT);
-            $csa_id = 'CSA-'.$csa_id;
+            $csa_id = 'CSA-'.uniqid();
+            $new_title = $this->generateConsignmentID('tabConsignment Stock Adjustment', 'CSA', 6);
 
             DB::table('tabConsignment Stock Adjustment')->insert([
                 'name' => $csa_id,
+                'title' => $new_title,
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
@@ -5579,5 +5573,26 @@ class ConsignmentController extends Controller
         }
 
         return $sales_amount;
+    }
+
+    public function generateConsignmentID($table, $series, $count){
+        $latest_record = DB::table($table)->orderBy('creation', 'desc')->first();
+
+        $latest_id = 0;
+        if($latest_record){
+            if(!$latest_record->title){
+                $last_serial_name = DB::table($table)->where('name', 'like', '%'.strtolower($series).'-000%')->orderBy('creation', 'desc')->pluck('name')->first();
+    
+                $latest_id = $last_serial_name ? explode('-', $last_serial_name)[1] : 0;
+            }else{
+                $latest_id = $latest_record->title ? explode('-', $latest_record->title)[1] : 0;
+            }
+        }
+
+        $new_id = $latest_id + 1;
+        $new_id = str_pad($new_id, $count, 0, STR_PAD_LEFT);
+        $new_id = strtoupper($series).'-'.$new_id;
+
+        return $new_id;
     }
 }

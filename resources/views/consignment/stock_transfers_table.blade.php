@@ -30,7 +30,7 @@
         }
     @endphp
     <tr>
-        <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['name'] }}</span></td>
+        <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['title'] ? $ste['title'] : $ste['name'] }}</span></td>
         <td class="text-center p-1 d-none d-lg-table-cell">{{ Carbon\Carbon::parse($ste['date'])->format('M d, Y - h:i a') }}</td>
         <td class="p-1 align-middle">
             <div class="d-none d-lg-inline text-center">

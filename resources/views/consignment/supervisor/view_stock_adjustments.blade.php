@@ -636,7 +636,9 @@
             var warehouse = $('#activity-logs-warehouse').val();
             var date = $("#activity-logs-daterange").val();
             var user = $("#activity-logs-user").val();
-            loadActivityLogs(1, warehouse, date, user);
+            $(document).on('click', '#inventory-audit-history-tab', () => {
+                loadActivityLogs(1, warehouse, date, user);
+            })
 
             function loadActivityLogs(page, warehouse, date, user) {
                 $.ajax({
