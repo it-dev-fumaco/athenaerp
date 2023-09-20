@@ -11,6 +11,23 @@ use App\Http\Middleware\CheckConnectionMiddleware;
 | contains the "web" middleware group. Now create something great!
 |
 */
+Route::get('/import_test', 'TestingEnvironmentController@import_testing');  # FOR TESTING
+Route::get('/local', 'TestingEnvironmentController@local_login'); # FOR TESTING
+Route::get('/janedoe', 'TestingEnvironmentController@jane_doe_login'); # FOR TESTING
+Route::get('/consignment_stock_adjustments', 'TestingEnvironmentController@consignment_stock_adjustments'); # FOR TESTING
+Route::get('/delivery_report', 'TestingEnvironmentController@delivery_report'); # FOR TESTING
+Route::get('/revert_audit', 'TestingEnvironmentController@revertAudit'); # FOR TESTING
+Route::get('/consignment_report', 'TestingEnvironmentController@consignment_report'); # FOR TESTING
+Route::get('/consignment_item_report', 'TestingEnvironmentController@consignment_item_report'); # FOR TESTING
+Route::get('/saveToJSON', 'TestingEnvironmentController@saveToJSON'); # FOR TESTING
+Route::get('/testing', 'TestingEnvironmentController@testing'); # FOR TESTING
+Route::get('/test_mail', 'TestingEnvironmentController@mail'); # FOR TESTING
+Route::get('/export_excel', 'TestingEnvironmentController@export_excel'); # FOR TESTING
+Route::get('/general_testing', 'TestingEnvironmentController@general_testing'); # FOR TESTING
+Route::get('/hr_report', 'TestingEnvironmentController@hr_report'); # FOR TESTING
+Route::get('/logs_file', 'TestingEnvironmentController@logs_file'); # FOR TESTING
+Route::get('/array_test', 'TestingEnvironmentController@array_test'); # FOR TESTING
+Route::get('/ping_test', 'TestingEnvironmentController@ping_test'); # FOR TESTING
 
 Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/login', 'LoginController@view_login')->name('login');
@@ -175,54 +192,39 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         // Consignment Supervisor
         Route::get('/beginning_inv_list', 'ConsignmentController@beginningInventoryApproval');
-        // Route::post('/approve_beginning_inv/{id}', 'ConsignmentController@approveBeginningInventory');
         Route::get('/consignment_sales_report', 'ConsignmentController@salesReport');
         Route::get('/get_consignment_warehouses', 'ConsignmentController@getConsignmentWarehouses');
         Route::get('/stock_adjustment_history', 'ConsignmentController@viewStockAdjustmentHistory');
         Route::get('/stock_adjustment_form', 'ConsignmentController@viewStockAdjustmentForm');
-        // Route::post('/adjust_stocks', 'ConsignmentController@adjustStocks');
-        // Route::get('/cancel_stock_adjustment/{id}', 'ConsignmentController@cancelStockAdjustment');
         Route::get('/add_promodiser', 'ConsignmentController@addPromodiserForm');
-        // Route::post('/add_promodiser_submit', 'ConsignmentController@addPromodiser');
         Route::get('/edit_promodiser/{id}', 'ConsignmentController@editPromodiserForm');
-        // Route::post('/edit_promodiser_submit/{id}', 'ConsignmentController@editPromodiser');
 
         // Promodisers
         Route::get('/view_monthly_sales_form/{branch}/{date}', 'ConsignmentController@viewMonthlySalesForm');
         Route::get('/view_inventory_audit_form/{branch}/{transaction_date}', 'ConsignmentController@viewInventoryAuditForm');
-        // Route::post('/submit_monthly_sales_form', 'ConsignmentController@submitMonthlySaleForm');
-        // Route::post('/submit_inventory_audit_form', 'ConsignmentController@submitInventoryAuditForm');
         Route::get('/stock_transfer/form', 'ConsignmentController@stockTransferForm');
-        // Route::post('/stock_transfer/submit', 'ConsignmentController@stockTransferSubmit');
         Route::get('/stock_transfer/list', 'ConsignmentController@stockTransferList')->name('stock_transfers');
         Route::get('/stock_transfer/cancel/{id}', 'ConsignmentController@stockTransferCancel');
-        // Route::post('/stock_adjust/submit/{id}', 'ConsignmentController@submitStockAdjustment');
 
         Route::get('/item_return/form', 'ConsignmentController@itemReturnForm');
-        // Route::post('/item_return/submit', 'ConsignmentController@itemReturnSubmit');
         
         Route::get('/beginning_inventory_list', 'ConsignmentController@beginningInventoryList');
         Route::get('/beginning_inventory/{inv?}', 'ConsignmentController@beginningInventory');
         Route::get('/beginning_inv_items/{action}/{branch}/{id?}', 'ConsignmentController@beginningInvItems');
         Route::get('/get_items/{branch}', 'ConsignmentController@getItems');
         Route::get('/cancel/approved_beginning_inv/{id}', 'ConsignmentController@cancelApprovedBeginningInventory');
-        // Route::post('/save_beginning_inventory', 'ConsignmentController@saveBeginningInventory');
         Route::get('/promodiser/delivery_report/{type}', 'ConsignmentController@promodiserDeliveryReport');
         Route::get('/promodiser/inquire_delivery', 'ConsignmentController@promodiserInquireDelivery');
-        // Route::get('/promodiser/receive/{id}', 'ConsignmentController@promodiserReceiveDelivery')->middleware('checkConnection');
         Route::get('/consignment/pending_to_receive', 'ConsignmentController@pendingToReceive');
-        // Route::get('/promodiser/cancel/received/{id}', 'ConsignmentController@promodiserCancelReceivedDelivery');
         Route::get('/sales_report_deadline', 'ConsignmentController@salesReportDeadline');
         Route::get('/validate_beginning_inventory', 'ConsignmentController@checkBeginningInventory'); 
         Route::get('/promodiser/damage_report/form', 'ConsignmentController@promodiserDamageForm'); 
         Route::get('/damage_report/list', 'ConsignmentController@damagedItems'); 
-        // Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem');
         Route::get('/damaged/return/{id}', 'ConsignmentController@returnDamagedItem');
         Route::get('/beginning_inv/get_received_items/{branch}', 'ConsignmentController@getReceivedItems'); 
         Route::get('/stocks_report/list', 'ConsignmentController@stockTransferReport')->name('stock_report_list');
         Route::get('/damaged_items_list', 'ConsignmentController@viewDamagedItemsList');
         Route::get('/countStockTransfer/{purpose}', 'ConsignmentController@countStockTransfer');
-        // Route::post('/generate_stock_transfer_entry', 'ConsignmentController@generateStockTransferEntry');
 
         Route::get('/inventory_items/{branch}', 'ConsignmentController@inventoryItems'); 
 
