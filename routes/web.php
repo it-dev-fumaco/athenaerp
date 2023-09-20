@@ -248,10 +248,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         Route::get('/consignment_import_tool', 'ConsignmentController@import_tool');
         Route::get('/consignment_select_values', 'ConsignmentController@select_values');
-        // Route::post('/consignment_read_file', 'ConsignmentController@readFile');
         Route::get('/consignment/branches', 'ConsignmentController@consignment_branches');
         Route::get('/consignment/export/{branch}', 'ConsignmentController@export_to_excel');
-        // Route::post('/assign_barcodes', 'ConsignmentController@assign_barcodes');
 
         Route::get('/user_manual', function () {
             return view('consignment.user_manual.index');
