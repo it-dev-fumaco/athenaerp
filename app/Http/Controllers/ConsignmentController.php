@@ -1009,7 +1009,7 @@ class ConsignmentController extends Controller
             ->when($type == 'pending_to_receive', function ($query){
                 return $query->whereNull('ste.consignment_status');
             })
-            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received', 'sted.consignment_received_by')
+            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'ste.consignment_date_received', 'ste.consignment_received_by')
             ->orderBy('ste.creation', 'desc')->orderByRaw("FIELD(sted.consignment_status, '', 'Received') ASC")->get();
 
         $delivery_report_q = collect($delivery_report)->groupBy('name');
