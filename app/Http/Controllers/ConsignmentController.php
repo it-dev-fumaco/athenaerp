@@ -1012,7 +1012,7 @@ class ConsignmentController extends Controller
                 });
             })
             ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received', 'sted.consignment_received_by')
-            ->orderBy('ste.creation', 'desc')->orderByRaw("FIELD(sted.consignment_status, '', 'Received') ASC")->limit(10)->get();
+            ->orderBy('ste.creation', 'desc')->orderByRaw("FIELD(sted.consignment_status, '', 'Received') ASC")->get();
 
         $delivery_report_q = collect($delivery_report)->groupBy('name');
 
@@ -1207,6 +1207,7 @@ class ConsignmentController extends Controller
             
             $i = 0;
             $received_items = $expected_qty_after_transaction = $actual_qty_after_transaction = [];
+
             foreach($ste_items as $item){
                 $src_branch = $wh->from_warehouse ? $wh->from_warehouse : $item->s_warehouse;
                 if($request->target_warehouse){
@@ -1216,7 +1217,7 @@ class ConsignmentController extends Controller
                 }
 
                 if(isset($request->receive_delivery) && !isset($prices[$item->item_code])){
-                    return response()->json(['success' => 0, 'Please enter price for all items.']);
+                    return response()->json(['success' => 0, 'message' => 'Please enter price for all items.']);
                 }
 
                 if($wh->transfer_as == 'For Return'){
