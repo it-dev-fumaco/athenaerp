@@ -136,6 +136,7 @@ class ConsignmentController extends Controller
     public function submitInventoryAuditForm(Request $request) {
         $data = $request->all();
         DB::beginTransaction();
+
         try {
             $cutoff_date = $this->getCutoffDate($data['transaction_date']);
             $period_from = $cutoff_date[0];
@@ -1075,10 +1076,10 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'creation' => $row[0]->creation,
                 'delivery_date' => $row[0]->delivery_date,
-                'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
+                'delivery_status' => $row[0]->consignment_status == 'Received' ? 1 : 0, // check if there are still items to receive
                 'posting_time' => $row[0]->posting_time,
-                'date_received' => min($status_check) == 1 ? collect($items_arr)->min('date_received') : null,
-                'received_by' => collect($items_arr)->pluck('received_by')->first()
+                'date_received' => $row[0]->consignment_status == 'Received' ? $row[0]->consignment_date_received : null,
+                'received_by' => $row[0]->consignment_status == 'Received' ? $row[0]->consignment_received_by : null
             ];
         }
 
