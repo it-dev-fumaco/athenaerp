@@ -83,7 +83,7 @@ class ConsignmentController extends Controller
                 ->where('status', 'Approved')->where('branch_warehouse', $branch)->max('transaction_date');
         }
 
-        $inventory_audit_from = $last_inventory_date;
+        $inventory_audit_from = $last_inventory_date ? $last_inventory_date : Carbon::now()->format('Y-m-d'); 
         $inventory_audit_to = $transaction_date;
 
         $date_from = Carbon::parse($inventory_audit_from);
@@ -144,11 +144,11 @@ class ConsignmentController extends Controller
             // If user submits without qty input
             $null_qty_items = collect($data['item'])->where('qty', null);
             if(count($null_qty_items) > 0){
-                return redirect()->back();
+                return redirect()->back()->withInput($request->all())->with('error', 'Please enter the qty of all items.');
             }
 
             if($request->price && collect($request->price)->min() <= 0){
-                return redirect()->back();
+                return redirect()->back()->withInput($request->all())->with('error', 'Price cannot be less than or equal to 0');
             }
 
             $currentDateTime = Carbon::now();
@@ -1007,12 +1007,12 @@ class ConsignmentController extends Controller
             ->whereIn('ste.item_status', ['For Checking', 'Issued'])
             ->whereIn('sted.t_warehouse', $assigned_consignment_store)
             ->when($type == 'pending_to_receive', function ($query){
-                return $query->where(function($q) {
-                    $q->whereNull('sted.consignment_status')->orWhere('sted.consignment_status', '!=', 'Received');
+                return $query->where(function($q){
+                    return $q->whereNull('ste.consignment_status')->orWhere('ste.consignment_status', 'To Receive');
                 });
             })
-            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received', 'sted.consignment_received_by')
-            ->orderBy('ste.creation', 'desc')->orderByRaw("FIELD(sted.consignment_status, '', 'Received') ASC")->limit(10)->get();
+            ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'ste.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'ste.consignment_date_received', 'ste.consignment_received_by')
+            ->orderBy('ste.creation', 'desc')->orderByRaw("FIELD(ste.consignment_status, '', 'Received') ASC")->get();
 
         $delivery_report_q = collect($delivery_report)->groupBy('name');
 
@@ -1207,6 +1207,7 @@ class ConsignmentController extends Controller
             
             $i = 0;
             $received_items = $expected_qty_after_transaction = $actual_qty_after_transaction = [];
+
             foreach($ste_items as $item){
                 $src_branch = $wh->from_warehouse ? $wh->from_warehouse : $item->s_warehouse;
                 if($request->target_warehouse){
@@ -1216,7 +1217,7 @@ class ConsignmentController extends Controller
                 }
 
                 if(isset($request->receive_delivery) && !isset($prices[$item->item_code])){
-                    return response()->json(['success' => 0, 'Please enter price for all items.']);
+                    return response()->json(['success' => 0, 'message' => 'Please enter price for all items.']);
                 }
 
                 if($wh->transfer_as == 'For Return'){

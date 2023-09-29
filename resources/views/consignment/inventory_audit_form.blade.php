@@ -265,7 +265,7 @@
                         </ul>
                     </div>
                 @else
-                    <span class="d-block">An error occured. Please refresh the page and try again.</span>
+                    <span class="d-block">{{ session()->get('error') }}.</span>
                 @endif
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">
