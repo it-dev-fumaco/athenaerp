@@ -75,7 +75,7 @@
                                             <div class="row">
                                                 <div class="col-8 offset-2">
                                                     <div class="callout callout-warning text-center mt-2">
-                                                        <i class="fas fa-info-circle"></i> A <b>DRAFT</b> Stock Entry has been created. <br> To submit the stock entry, please login to ERP and click <a class="text-dark" href="http://10.0.0.83:8000/app/stock-entry/{{ $ste['references'] }}">here</a>.
+                                                        <i class="fas fa-info-circle"></i> A <b>DRAFT</b> Stock Entry has been created. <br> To submit the stock entry, please login to ERP and click <a class="text-dark" target="_blank" href="http://10.0.0.83:8000/app/stock-entry/{{ $ste['references'] }}">here</a>.
                                                         <span class="d-block mt-3">Reference Stock Entry: <b>{{ $ste['references'] }}</b></span>
                                                     </div>
                                                 </div>
