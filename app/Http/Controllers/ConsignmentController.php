@@ -136,6 +136,7 @@ class ConsignmentController extends Controller
     public function submitInventoryAuditForm(Request $request) {
         $data = $request->all();
         DB::beginTransaction();
+
         try {
             $cutoff_date = $this->getCutoffDate($data['transaction_date']);
             $period_from = $cutoff_date[0];
@@ -162,26 +163,18 @@ class ConsignmentController extends Controller
             $period_from = Carbon::parse($cutoff_date[0])->format('Y-m-d');
             $period_to = Carbon::parse($cutoff_date[1])->format('Y-m-d');
 
-            $consigned_stocks = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
-                ->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code')->toArray();
-
-            $item_prices = DB::table('tabBin')->where('warehouse', $data['branch_warehouse'])
-                ->whereIn('item_code', array_keys($data['item']))->pluck('consignment_price', 'item_code')->toArray();
-
             $iar_existing_record = DB::table('tabConsignment Inventory Audit Report')->where('transaction_date', $data['transaction_date'])
                 ->where('branch_warehouse', $data['branch_warehouse'])->first();
 
-            $new_iar_parent_data = $new_csr_parent_data = [];
+            $new_iar_parent_data = [];
             $iar_new_id = null;
             if (!$iar_existing_record) {
-                $iar_latest_id = DB::table('tabConsignment Inventory Audit Report')->max('name');
-                $iar_latest_id_exploded = explode("-", $iar_latest_id);
-                $iar_new_id = (($iar_latest_id) ? $iar_latest_id_exploded[1] : 0) + 1;
-                $iar_new_id = str_pad($iar_new_id, 7, '0', STR_PAD_LEFT);
-                $iar_new_id = 'IAR-'.$iar_new_id;
+                $iar_new_id = 'IAR-'.uniqid();
+                $iar_title = $this->generateConsignmentID('tabConsignment Inventory Audit Report', 'IAR', 7);
 
                 $new_iar_parent_data = [
                     'name' => $iar_new_id,
+                    'title' => $iar_title,
                     'creation' => $currentDateTime->toDateTimeString(),
                     'modified' => $currentDateTime->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
@@ -214,10 +207,24 @@ class ConsignmentController extends Controller
             ];
             $sold_arr = $new_iar_child_data = $items_with_insufficient_stocks = [];
             $iar_grand_total = $iar_total_items = 0;
-            foreach ($data['item'] as $item_code => $row) {
-                $qty = preg_replace("/[^0-9 .]/", "", $row['qty']);
-                $consigned_qty = array_key_exists($item_code, $consigned_stocks) ? $consigned_stocks[$item_code] : 0;
-                $price = array_key_exists($item_code, $item_prices) ? $item_prices[$item_code] : 0;
+
+            $bin_items = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
+                ->where('warehouse', $data['branch_warehouse'])->select('consigned_qty', 'item_code', 'consignment_price', 'name')->get();
+
+            foreach ($bin_items as $row) {
+                $item_code = $row->item_code;
+                $qty = 0;
+                if (isset($data['item'][$item_code]['qty'])) {
+                    $qty = preg_replace("/[^0-9 .]/", "", $data['item'][$item_code]['qty']);
+                }
+
+                $item_description = null;
+                if (isset($data['item'][$item_code]['description'])) {
+                    $item_description = $data['item'][$item_code]['description'];
+                }
+
+                $consigned_qty = $row->consigned_qty;
+                $price = $row->consignment_price;
 
                 $sold_qty = ($consigned_qty - (float)$qty);
 
@@ -247,7 +254,7 @@ class ConsignmentController extends Controller
                 
                 $iar_amount = ((float)$price * (float)$qty);
 
-                DB::table('tabBin')->where('item_code', $item_code)->where('warehouse', $data['branch_warehouse'])->update($bin_update);
+                DB::table('tabBin')->where('name', $row->name)->update($bin_update);
 
                 $has_existing_iari = false;
                 if ($iar_existing_record) {
@@ -282,7 +289,7 @@ class ConsignmentController extends Controller
                         'parenttype' => 'Consignment Inventory Audit Report',
                         'idx' => $no_of_items_updated,
                         'item_code' => $item_code,
-                        'description' => $row['description'],
+                        'description' => $item_description,
                         'qty' => (float)$qty,
                         'price' => (float)$price,
                         'amount' => $iar_amount,
@@ -1075,10 +1082,10 @@ class ConsignmentController extends Controller
                 'items' => $items_arr,
                 'creation' => $row[0]->creation,
                 'delivery_date' => $row[0]->delivery_date,
-                'delivery_status' => min($status_check) == 0 ? 0 : 1, // check if there are still items to receive
+                'delivery_status' => $row[0]->consignment_status == 'Received' ? 1 : 0, // check if there are still items to receive
                 'posting_time' => $row[0]->posting_time,
-                'date_received' => min($status_check) == 1 ? collect($items_arr)->min('date_received') : null,
-                'received_by' => collect($items_arr)->pluck('received_by')->first()
+                'date_received' => $row[0]->consignment_status == 'Received' ? $row[0]->consignment_date_received : null,
+                'received_by' => $row[0]->consignment_status == 'Received' ? $row[0]->consignment_received_by : null
             ];
         }
 
