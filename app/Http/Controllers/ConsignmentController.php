@@ -166,17 +166,15 @@ class ConsignmentController extends Controller
             $iar_existing_record = DB::table('tabConsignment Inventory Audit Report')->where('transaction_date', $data['transaction_date'])
                 ->where('branch_warehouse', $data['branch_warehouse'])->first();
 
-            $new_iar_parent_data = $new_csr_parent_data = [];
+            $new_iar_parent_data = [];
             $iar_new_id = null;
             if (!$iar_existing_record) {
-                $iar_latest_id = DB::table('tabConsignment Inventory Audit Report')->max('name');
-                $iar_latest_id_exploded = explode("-", $iar_latest_id);
-                $iar_new_id = (($iar_latest_id) ? $iar_latest_id_exploded[1] : 0) + 1;
-                $iar_new_id = str_pad($iar_new_id, 7, '0', STR_PAD_LEFT);
-                $iar_new_id = 'IAR-'.$iar_new_id;
+                $iar_new_id = 'IAR-'.uniqid();
+                $iar_title = $this->generateConsignmentID('tabConsignment Inventory Audit Report', 'IAR', 7);
 
                 $new_iar_parent_data = [
                     'name' => $iar_new_id,
+                    'title' => $iar_title,
                     'creation' => $currentDateTime->toDateTimeString(),
                     'modified' => $currentDateTime->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
