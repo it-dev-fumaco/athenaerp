@@ -166,15 +166,20 @@ class ConsignmentController extends Controller
             $iar_existing_record = DB::table('tabConsignment Inventory Audit Report')->where('transaction_date', $data['transaction_date'])
                 ->where('branch_warehouse', $data['branch_warehouse'])->first();
 
-            $new_iar_parent_data = [];
-            $iar_new_id = null;
+            $new_iar_parent_data = $new_csr_parent_data = [];
+            $iar_new_id = $new_title = null;
             if (!$iar_existing_record) {
+                // $iar_latest_id = DB::table('tabConsignment Inventory Audit Report')->max('name');
+                // $iar_latest_id_exploded = explode("-", $iar_latest_id);
+                // $iar_new_id = (($iar_latest_id) ? $iar_latest_id_exploded[1] : 0) + 1;
+                // $iar_new_id = str_pad($iar_new_id, 7, '0', STR_PAD_LEFT);
+                // $iar_new_id = 'IAR-'.$iar_new_id;
                 $iar_new_id = 'IAR-'.uniqid();
-                $iar_title = $this->generateConsignmentID('tabConsignment Inventory Audit Report', 'IAR', 7);
+                $new_title = $this->generateConsignmentID('tabConsignment Inventory Audit Report', 'IAR', 7);
 
                 $new_iar_parent_data = [
                     'name' => $iar_new_id,
-                    'title' => $iar_title,
+                    'title' => $new_title,
                     'creation' => $currentDateTime->toDateTimeString(),
                     'modified' => $currentDateTime->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
@@ -310,6 +315,14 @@ class ConsignmentController extends Controller
                 $new_iar_parent_data['grand_total'] = $iar_grand_total;
                 $new_iar_parent_data['total_items'] = $iar_total_items;
 
+                $iar_checker = DB::table('tabConsignment Inventory Audit Report')->where('owner', Auth::user()->wh_user)
+                    ->where(function ($q) use ($new_title){
+                        return $q->where('name', $new_title)->orWhere('title', $new_title);
+                    })->exists();
+                if($iar_checker){
+                    return redirect('/inventory_audit')->with('error', 'Inventory audit report has already been submitted!');
+                }
+            
                 DB::table('tabConsignment Inventory Audit Report')->insert($new_iar_parent_data);
                 $reference = $iar_existing_record ? $iar_existing_record->name : $iar_new_id;
             } 
@@ -368,7 +381,6 @@ class ConsignmentController extends Controller
                 });
             } catch (\Throwable $th) {}
             
-
             Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_'.$iar_child_parent_name.'.json', json_encode($activity_log_data, true));
 
             DB::commit();

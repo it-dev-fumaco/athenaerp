@@ -418,6 +418,7 @@
 
         $('#confirm-inventory-report-btn').click(function(e){
             e.preventDefault();
+            $(this).prop('disabled', true)
             $('#inventory-report-entry-form').submit();
         });
 
