@@ -634,7 +634,7 @@ class ConsignmentController extends Controller
 
         $consignment_stores = [];
         $status = $request->status ? $request->status : 'All';
-        if(Auth::user()->user_group == 'Consignment Supervisor'){
+        if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
             $status = $request->status ? $request->status : 'For Approval';
 
             $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
@@ -1418,7 +1418,7 @@ class ConsignmentController extends Controller
             }
 
             if(isset($request->receive_delivery)){
-                $t = $wh->transfer_as != 'For Return' ? 'your store inventory!' : (Auth::user()->user_group == 'Consignment Supervisor' ? $target_warehouse : 'Quarantine Warehouse!');
+                $t = $wh->transfer_as != 'For Return' ? 'your store inventory!' : (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) ? $target_warehouse : 'Quarantine Warehouse!');
                 $message = collect($received_items)->sum('qty').' Item(s) is/are successfully received and added to '.$t;
             }
 

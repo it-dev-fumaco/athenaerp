@@ -69,7 +69,7 @@
                                                                         $selected = 'selected';
                                                                     }
                                                                 }else{
-                                                                    if(Auth::user()->user_group == 'Consignment Supervisor'){
+                                                                    if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
                                                                         $selected = $status == 'For Approval' ? 'selected' : null;
                                                                     }
                                                                 }
@@ -117,7 +117,7 @@
                                                     $badge = 'secondary';
                                                 }
 
-                                                $modal_form = Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
+                                                $modal_form = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
                                             @endphp
                                             <tr>
                                                 <td class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">
@@ -172,7 +172,7 @@
                                                                                 </dl>
                                                                             </div>
                                                                             <div class="pt-0 pr-2 pl-2 pb-2 col-12 col-lg-4 col-xl-4 text-left">
-                                                                                @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
+                                                                                @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval')
                                                                                 @php
                                                                                     $status_selection = [
                                                                                         ['title' => 'Approve', 'value' => 'Approved'],
@@ -338,7 +338,7 @@
                                                                                             <small id="{{ $target }}-uom">{{ $item['uom'] }}</small>
                                                                                         </td>
                                                                                         <td class="text-center p-1 align-middle">
-                                                                                            @if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
+                                                                                            @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval')
                                                                                                 ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" id="item-price-{{ $target }}" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
                                                                                                 <input id="item-qty-{{ $target }}" type="text" class="d-none" name="qty[{{ $item['item_code'] }}][]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
                                                                                             @elseif ($inv['status'] == 'Approved')
