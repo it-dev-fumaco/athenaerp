@@ -3287,7 +3287,7 @@ class ConsignmentController extends Controller
 
         $activity_logs = DB::table('tabActivity Log')->whereIn('reference_name', collect($list)->pluck('inventory_audit_id'))->select('reference_name', 'data')->orderBy('creation', 'desc')->first();
 
-        $activity_logs_data = collect(json_decode($activity_logs->data));
+        $activity_logs_data = $activity_logs ? collect(json_decode($activity_logs->data)) : [];
 
         if (count($list) <= 0) {
             return redirect()->back()->with('error', 'Record not found.');
