@@ -11,14 +11,6 @@ use App\Http\Middleware\CheckConnectionMiddleware;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::get('/import_test', 'TestingEnvironmentController@import_testing');  # FOR TESTING
-Route::get('/local', 'TestingEnvironmentController@local_login'); # FOR TESTING
-Route::get('/janedoe', 'TestingEnvironmentController@jane_doe_login'); # FOR TESTING
-Route::get('/consignment_stock_adjustments', 'TestingEnvironmentController@consignment_stock_adjustments'); # FOR TESTING
-Route::get('/delivery_report', 'TestingEnvironmentController@delivery_report'); # FOR TESTING
-Route::get('/revert_audit', 'TestingEnvironmentController@revertAudit'); # FOR TESTING
-Route::get('/consignment_report', 'TestingEnvironmentController@consignment_report'); # FOR TESTING
-Route::get('/consignment_item_report', 'TestingEnvironmentController@consignment_item_report'); # FOR TESTING
 
 Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/login', 'LoginController@view_login')->name('login');
