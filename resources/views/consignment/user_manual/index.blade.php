@@ -23,7 +23,7 @@
                                 <li class="list-group-item p-2"><a href="/user_manual/inventory_audit"><i class="fas fa-angle-right"></i> Inventory Audit</a></li>
                             </ul>
                             @endif
-                            @if (Auth::user()->user_group == 'Consignment Supervisor')
+                            @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
                             <h6 class="font-weight-bold text-info text-uppercase">Consignment Supervisor</h6>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item p-2"><a href="/user_manual/consignment_dashboard"><i class="fas fa-angle-right"></i> Dashboard</a></li>

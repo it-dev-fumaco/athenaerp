@@ -80,7 +80,7 @@
 											$badge = 'secondary';
 										}
 
-										$modal_form = Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
+										$modal_form = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
 									@endphp
 									<tr>
 										<td class="p-2 text-center align-middle d-none d-lg-table-cell">
@@ -176,7 +176,7 @@
 																			<td class="text-center p-1 align-middle">
 																				<div class="row p-0">
 																					<div class="col-9 p-0" style="white-space: nowrap">
-																						@if (Auth::user()->user_group == 'Consignment Supervisor' && $inv['status'] == 'For Approval')
+																						@if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval')
 																						₱ <input type="text" name="price[{{ $item['item_code'] }}][]" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
 																						@elseif ($inv['status'] == 'Approved')
 																						<input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
@@ -189,7 +189,7 @@
 																					@php
 																						$allowed_users = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local'];
 																					@endphp
-																					@if (in_array(Auth::user()->wh_user, $allowed_users) || Auth::user()->user_group == 'Consignment Supervisor')
+																					@if (in_array(Auth::user()->wh_user, $allowed_users) || in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
 																						<div class="col-3 p-0 {{ $inv['status'] != 'Approved' ? 'd-none' : null }}">
 																							<button type="button" class="btn btn-primary btn-xs allow-edit" data-inv="{{ $inv['name'] }}" data-target="{{ $inv['name'].'-'.$item['item_code'] }}"><i class="fa fa-edit"></i></button>
 																						</div>
@@ -456,10 +456,11 @@
 				var target = $(this).data('target');
 				var inventory = $(this).data('inv');
 				// users allowed to edit qty and price
-				var allowed_users = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local']; 
+				var allowed_users = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local'];
+				var allowed_user_group = ['Director', 'Consignment Supervisor'];
 				var user = '{{ Auth::user()->wh_user }}';
 				var user_group = '{{ Auth::user()->user_group }}';
-				if(allowed_users.indexOf(user) > -1 || user_group == 'Consignment Supervisor'){
+				if(allowed_users.indexOf(user) > -1 || allowed_user_group.indexOf(user_group) > -1){
 					$('#' + target + '-qty').addClass('d-none');
 					$('#' + target + '-new-qty').removeClass('d-none');
 

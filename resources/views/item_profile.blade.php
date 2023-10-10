@@ -1223,7 +1223,7 @@
         $(document).on('click', '#consignment-reset', function (){
             $('#consignment-user-select').empty().trigger('change');
             $('#consignment-date-range').val('');
-            @if (Auth::user()->user_group == 'Consignment Supervisor')
+            @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
                 $(".csm-filter").empty().trigger('change');
             @endif
             @if (count($consignment_branches) > 1 && Auth::user()->user_group == 'Promodiser')
