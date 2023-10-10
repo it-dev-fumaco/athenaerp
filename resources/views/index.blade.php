@@ -89,15 +89,15 @@
 											</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
-												<a href="/receipts" class="text-dark">
+												<a href="/feedbacked_in_transit" class="text-dark">
 												<div class="info-box bg-purple p-0">
 													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-boxes"></i></span>
 													<div class="info-box-content pt-1 pb-1">
-														<span class="info-box-text font-weight-bold text-uppercase">PO Receipts</span>
+														<span class="info-box-text font-weight-bold text-uppercase">Items in Transit</span>
 														<div class="d-flex flex-row flex-wrap">
 															<div class="p-0 align-middle align-self-center w-100">
 																<h3 class="custom-font m-0 p-1">
-																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-purchase-receipts">-</span>
+																	<span class="ml-3" style="font: Arial; font-weight: 900;" id="p-in-transit">-</span>
 																</h3>
 																<h5 class="mb-1">
 																	<small class="pr-2 pl-2">Pending</small>
@@ -405,7 +405,7 @@
 					dataType: 'json',
 					contentType: 'application/json',
 					success: function (data) {
-						$('#p-purchase-receipts').text(data.p_purchase_receipts);
+						$('#p-in-transit').text(data.goods_in_transit);
 						$('#p-replacements').text(data.p_replacements);
 					}
 				});

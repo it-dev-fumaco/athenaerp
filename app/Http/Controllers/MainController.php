@@ -4325,17 +4325,22 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $purchase_orders = DB::table('tabPurchase Receipt as pr')
-            ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')->where('pr.docstatus', 0)
-            ->whereIn('pri.warehouse', $allowed_warehouses)
-            ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])->count();
+        $goods_in_transit = DB::table('tabSales Order as so')
+            ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
+            ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
+            ->whereRaw('wo.production_item = soi.item_code')
+            ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
+            ->whereRaw('soi.delivered_qty < soi.qty')
+            ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
+            ->whereBetween('wo.creation', [Carbon::now()->subDays(7), Carbon::now()])
+            ->count();
 
         $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('se.purpose', 'Material Issue')
             ->where('se.issue_as', 'Customer Replacement')->count();
 
         return [
-            'p_purchase_receipts' => $purchase_orders,
+            'goods_in_transit' => $goods_in_transit,
             'p_replacements' => $pending_stock_entries,
         ];
     }
@@ -4588,50 +4593,60 @@ class MainController extends Controller
          return response()->json(['records' => $list]);
     }
 
-    // /receipts
-    public function receipts(Request $request){
+    public function feedbacked_in_transit(Request $request){
         if(!$request->arr){
-           return view('receipt');
+           return view('goods_in_transit');
         }
         
+        $list = [];
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $q = DB::table('tabPurchase Receipt as pr')
-            ->join('tabPurchase Receipt Item as pri', 'pr.name', 'pri.parent')->where('pr.docstatus', 0)
-            ->whereIn('pri.warehouse', $allowed_warehouses)
-            ->whereBetween('pr.creation', [Carbon::now()->subDays(7), Carbon::now()])
-            ->select('pri.parent', 'pri.name', 'pri.warehouse', 'pri.item_code', 'pri.description', 'pri.uom', 'pri.qty', 'pri.owner', 'pr.creation', 'pr.purchase_order')
-            ->get();
+        if(in_array('Goods in Transit - FI', collect($allowed_warehouses)->toArray())){
+            $q = DB::table('tabSales Order as so')
+                ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
+                ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
+                ->whereRaw('wo.production_item = soi.item_code')
+                ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
+                ->whereRaw('soi.delivered_qty < soi.qty')
+                ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
+                ->select('so.name as so_name', 'wo.sales_order as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom')
+                ->limit(20)
+                ->orderBy('so.creation', 'desc')
+                ->get();
 
-        $list = [];
-        foreach ($q as $d) {
-            $available_qty = $this->get_available_qty($d->item_code, $d->warehouse);
+            $mes_feedback_logs = DB::connection('mysql_mes')->table('feedbacked_logs')->whereIn('production_order', collect($q)->pluck('name'))->where('status', 'Submitted')
+                ->select('production_order', DB::raw('CONCAT(transaction_date, " ", transaction_time) as feedback_date'), 'feedbacked_qty')->orderByDesc('last_modified_at')->get()->groupBy('production_order');
+            $owners = DB::table('tabUser')->whereIn('email', collect($q)->pluck('owner'))->pluck('full_name', 'email');
 
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-            $part_nos = implode(', ', $part_nos->toArray());
+            foreach ($q as $d) {
+                $available_qty = $this->get_available_qty($d->item_code, 'Goods in Transit - FI');
+                $feedback_date = Carbon::parse($d->modified)->format('M. d, Y - h:i A');
+                $feedback_qty = 0;
+                if(isset($mes_feedback_logs[$d->name])){
+                    $feedback_details = $mes_feedback_logs[$d->name][0];
+                    $feedback_date = Carbon::parse($feedback_details->feedback_date)->format('M. d, Y - h:i A');
+                    $feedback_qty = $feedback_details->feedbacked_qty;
+                }
 
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
+                $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
+                $part_nos = implode(', ', $part_nos->toArray());
 
-            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
+                $owner = isset($owners[$d->owner]) ? $owners[$d->owner] : $d->owner;
 
-            $list[] = [
-                'item_code' => $d->item_code,
-                'description' => $d->description,
-                'warehouse' => $d->warehouse,
-                'uom' => $d->uom,
-                'name' => $d->name,
-                'owner' => $owner,
-                'parent' => $d->parent,
-                'part_nos' => $part_nos,
-                'qty' => $d->qty,
-                'status' => 'To Receive',
-                'available_qty' => $available_qty,
-                'ref_no' => $d->purchase_order,
-                'parent_warehouse' => $parent_warehouse,
-                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
-            ];
+                $list[] = [
+                    'item_code' => $d->item_code,
+                    'description' => strip_tags($d->description),
+                    'uom' => $d->uom,
+                    'name' => $d->name, // work/production order number
+                    'reference' => $d->so_name, // sales_order
+                    'owner' => $owner,
+                    'qty' => $d->qty,
+                    'available_qty' => $available_qty,
+                    'feedback_qty' => $feedback_qty,
+                    'feedback_date' => $feedback_date
+                ];
+            }
         }
         
         return response()->json(['records' => $list]);
