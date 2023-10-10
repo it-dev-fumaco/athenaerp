@@ -4602,7 +4602,7 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        if(in_array('Goods in Transit - FI', collect($allowed_warehouses)->toArray())){
+        if(in_array('Goods In Transit - FI', collect($allowed_warehouses)->toArray())){
             $q = DB::table('tabSales Order as so')
                 ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
                 ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
@@ -4611,7 +4611,6 @@ class MainController extends Controller
                 ->whereRaw('soi.delivered_qty < soi.qty')
                 ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
                 ->select('so.name as so_name', 'wo.sales_order as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom')
-                ->limit(20)
                 ->orderBy('so.creation', 'desc')
                 ->get();
 
