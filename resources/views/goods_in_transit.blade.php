@@ -45,8 +45,9 @@
 											<th scope="col" class="text-center w-100 d-lg-none">Details</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Reference Number</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Feedback Date</th>
-											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 55%">Item Description</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 40%">Item Description</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Qty</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Action</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -78,7 +79,7 @@
 														<p><b>Created by:</b> @{{ x.owner }}</p>
 												
 
-														<p><b>Available Stock:</b> <span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span></p>
+														<p><b>Stocks in Transit:</b> <span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span></p>
 													</div>
 												</div>
 											</td>
@@ -93,9 +94,13 @@
 												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Created by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
-												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
+												<p><span style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>  <span>@{{ x.uom }}</span></p>
+												<span class="d-block mt-2" style="font-size: 10pt;">Stocks in Transit:</span>
 												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span>
+											</td>
+											<td class="text-center d-none d-lg-table-cell">
+												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" ng-if="x.status === 'For Checking'">
+												<img src="dist/img/check.png" class="img-circle" ng-if="x.status === 'Received'">
 											</td>
 										</tr>
 									</tbody>
@@ -108,21 +113,126 @@
 		</div>
 	</div>
 </div>
+
+<div class="modal fade" id="ste-modal">
+	<form method="POST" action="/receive/in_transit">
+		@csrf
+		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+	</form>
+</div>
+
 @endsection
 
 @section('script')
 <script>
 	var app = angular.module('myApp', []);
+	$.ajaxSetup({
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		}
+	});
+
+	const showNotification = (color, message, icon) => {
+		$.notify({
+			icon: icon,
+			message: message
+		},{
+			type: color,
+			timer: 500,
+			z_index: 1060,
+			placement: {
+			from: 'top',
+			align: 'center'
+			}
+		});
+	}
+
+	$(document).on('click', '.update-item', function(){
+		var id = $(this).data('id');
+		$.ajax({
+			type: 'GET',
+			url: '/get_ste_details/' + id,
+			success: (response) => {
+				$('#ste-modal').modal('show');
+				$('#ste-modal .modal-dialog').html(response);
+			},
+			error: (e) => {
+				showNotification("danger", e.responseJSON.message, "fa fa-info");
+			}
+		});
+	});
+
+	$(document).on('click', '#btn-check-out', function(e){
+		e.preventDefault();
+		$('#ste-modal form').submit();
+	});
+
 	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
-		$scope.loadData = function(){
+		$scope.loadData = () => {
 			$scope.custom_loading_spinner = true;
-			$http.get("/feedbacked_in_transit?arr=1").then(function (response) {
+			$http.get("/feedbacked_in_transit?arr=1").then((response) => {
 				$scope.mi = response.data.records;
 				$scope.custom_loading_spinner = false;
+			}).catch((error) => {
+				showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
 			});
 		}
 		
 		$scope.loadData();
+
+		$('#ste-modal form').validate({
+			rules: {
+				barcode: {
+					required: true,
+				},
+				qty: {
+					required: true,
+				},
+			},
+			messages: {
+				barcode: {
+					required: "Please enter barcode",
+				},
+				qty: {
+					required: "Please enter quantity",
+				},
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.form-group').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			},
+			submitHandler: function(form) {
+				$('#btn-check-out').prop('disabled', 'true');
+				const sted_id = $('input[name="child_tbl_id"]').val()
+				$.ajax({
+					type: 'POST',
+					url: '/receive/' + sted_id,
+					data: $(form).serialize(),
+					success: (response) => {
+						if (response.success) {
+							showNotification("success", response.message, "fa fa-check");
+							$scope.loadData();
+							$('#ste-modal').modal('hide');
+							$('#btn-check-out').removeAttr('disabled');
+						}else{
+							showNotification("danger", response.message, "fa fa-info");
+							$('#btn-check-out').removeAttr('disabled');
+						}
+					},
+					error: (jqXHR, textStatus, errorThrown) => {
+						showNotification("danger", errorThrown, "fa fa-info");
+						$('#btn-check-out').removeAttr('disabled');
+					}
+				});
+			}
+		});
 	});
 </script>
 @endsection

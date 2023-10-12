@@ -64,6 +64,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/production_to_receive', 'MainController@view_production_to_receive');
         Route::get('/feedbacked_in_transit', 'MainController@feedbacked_in_transit');
         Route::get('/recently_received_items', 'MainController@recently_received_items');
+        Route::post('/receive/{id}', 'MainController@receive_stocks');
 
         // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
         Route::post('/cancel_transaction', 'MainController@cancel_athena_transaction');

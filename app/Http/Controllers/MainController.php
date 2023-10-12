@@ -1677,6 +1677,7 @@ class MainController extends Controller
         }
     }
 
+    // /get_ste_details/{id}
     public function get_ste_details($id, Request $request){
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
@@ -1694,7 +1695,9 @@ class MainController extends Controller
             $img = $img ? $img : null;
         }
 
-        $available_qty = $this->get_available_qty($q->item_code, $q->s_warehouse);
+        $s_warehouse = $q->purpose == 'Manufacture' ? 'Goods In Transit - FI' : $q->s_warehouse;
+
+        $available_qty = $this->get_available_qty($q->item_code, $s_warehouse);
     
         $stock_reservation_details = [];
         $so_details = DB::table('tabSales Order')->where('name', $ref_no)->first();
@@ -1735,6 +1738,10 @@ class MainController extends Controller
             'parent' => $q->parent,
             'reference' => 'Stock Entry'
         ];
+
+        if($q->purpose == 'Manufacture'){
+            return view('goods_in_transit_modal_content', compact('data'));
+        }
 
         if($q->purpose == 'Material Transfer for Manufacture') {
             return view('production_withdrawals_modal_content', compact('data'));
@@ -4614,8 +4621,16 @@ class MainController extends Controller
                 ->orderBy('so.creation', 'desc')
                 ->get();
 
-            $mes_feedback_logs = DB::connection('mysql_mes')->table('feedbacked_logs')->whereIn('production_order', collect($q)->pluck('name'))->where('status', 'Submitted')
+            $production_orders = collect($q)->pluck('name');
+
+            $mes_feedback_logs = DB::connection('mysql_mes')->table('feedbacked_logs')->whereIn('production_order', $production_orders)->where('status', 'Submitted')
                 ->select('production_order', DB::raw('CONCAT(transaction_date, " ", transaction_time) as feedback_date'), 'feedbacked_qty')->orderByDesc('last_modified_at')->get()->groupBy('production_order');
+
+            $stock_entries = DB::table('tabStock Entry as p')
+                ->join('tabStock Entry Detail as c', 'c.parent', 'p.name')
+                ->where('p.purpose', 'Manufacture')->where('p.docstatus', 1)->where('p.company', 'FUMACO Inc.')->whereIn('p.work_order', $production_orders)
+                ->select('c.name as sted_name', 'p.*', 'c.*')->get()->groupBy(['work_order', 'item_code']);
+
             $owners = DB::table('tabUser')->whereIn('email', collect($q)->pluck('owner'))->pluck('full_name', 'email');
 
             foreach ($q as $d) {
@@ -4626,6 +4641,13 @@ class MainController extends Controller
                     $feedback_details = $mes_feedback_logs[$d->name][0];
                     $feedback_date = Carbon::parse($feedback_details->feedback_date)->format('M. d, Y - h:i A');
                     $feedback_qty = $feedback_details->feedbacked_qty;
+                }
+
+                $sted_name = $sted_status = null;
+                if(isset($stock_entries[$d->name][$d->item_code])){
+                    $stock_entry_details = $stock_entries[$d->name][$d->item_code][0];
+                    $sted_name = $stock_entry_details->sted_name;
+                    $sted_status = $stock_entry_details->status;
                 }
 
                 $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
@@ -4643,12 +4665,32 @@ class MainController extends Controller
                     'qty' => $d->qty,
                     'available_qty' => $available_qty,
                     'feedback_qty' => $feedback_qty,
-                    'feedback_date' => $feedback_date
+                    'feedback_date' => $feedback_date,
+                    'status' => $sted_status,
+                    'sted_name' => $sted_name
                 ];
             }
         }
         
         return response()->json(['records' => $list]);
+    }
+
+    public function receive_stocks($id, Request $request){
+        DB::beginTransaction();
+        try {
+            DB::table('tabStock Entry Detail')->where('name', $id)->update([
+                'status' => 'Received',
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => 1, 'message' => 'Stocks Received!']);
+        } catch (\Throwable $th) {
+            //throw $th;
+            DB::rollback();
+            return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
+        }
     }
 
     public function get_available_qty($item_code, $warehouse){

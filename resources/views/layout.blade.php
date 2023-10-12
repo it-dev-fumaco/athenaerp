@@ -665,7 +665,7 @@
 						<i class="fas fa-exchange-alt"></i> <span class="d-none d-lg-inline">Transfer</span>
 					</a>
 					<a class="btn btn-app bg-purple" href="/feedbacked_in_transit">
-						<i class="fas fa-boxes"></i> <span class="d-none d-lg-inline">Items in Transit</span>
+						<i class="fas fa-boxes"></i> <span class="d-none d-lg-inline">In Transit</span>
 					</a>
 					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">
 						<i class="fas fa-tasks"></i> <span class="d-none d-lg-inline">Withdrawals</span>
@@ -1314,6 +1314,11 @@
 	<script>
 		document.getElementById('loader-wrapper').removeAttribute('hidden');
 		$(document).ready(function(){
+			// DO NOT COMMIT
+			@if (env('DB_HOST') == '10.0.0.73')
+				showNotification("info", 'Reminder: Currently connected to Live DB.', "fa fa-info");
+			@endif
+			// DO NOT COMMIT
 			$('#loader-wrapper').attr('hidden', true);
 			$(document).on('ajaxComplete', function(event, xhr, settings) {
 				if(typeof xhr.status !== 'undefined' && xhr.status == 401){
