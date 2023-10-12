@@ -55,14 +55,20 @@
 										<tr ng-repeat="x in mi_filtered = (mi | filter: fltr)">
 											<td class="text-center">
 												<div class="row">
-													<div class="col-6 col-lg-12">
+													<div class="col-6 col-md-4 col-xl-12">
 														<h6 class="font-weight-bold mt-1">@{{ x.reference }}</h6>
 														<span class="mt-1">@{{ x.name }}</span>
 													</div>
-													<div class="col-6 d-flex d-lg-none justify-content-center align-items-center">
+													<div class="col-6 col-md-4 d-flex d-lg-none justify-content-center align-items-center">
 														<div>
 															<h6 class="font-weight-bold">@{{ x.qty | number:2 }}</h6>
 															<span>@{{ x.uom }}</span>
+														</div>
+													</div>
+													<div class="d-none d-md-block d-lg-none col-4">
+														<div class="w-25 mx-auto">
+															<img src="dist/img/icon.png" class="img-circle w-75 update-item checkout" data-id="@{{ x.sted_name }}" ng-if="x.status === 'For Checking'">
+															<img src="dist/img/check.png" class="img-circle w-75" ng-if="x.status === 'Received'">
 														</div>
 													</div>
 												</div>
