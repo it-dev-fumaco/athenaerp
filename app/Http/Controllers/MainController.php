@@ -4643,11 +4643,15 @@ class MainController extends Controller
                     $feedback_qty = $feedback_details->feedbacked_qty;
                 }
 
-                $sted_name = $sted_status = null;
+                $sted_name = $sted_status = $duration_in_transit = $date_confirmed = null;
                 if(isset($stock_entries[$d->name][$d->item_code])){
                     $stock_entry_details = $stock_entries[$d->name][$d->item_code][0];
                     $sted_name = $stock_entry_details->sted_name;
                     $sted_status = $stock_entry_details->status;
+                    if($sted_status == 'Received'){
+                        $date_confirmed = Carbon::parse($stock_entry_details->date_modified);
+                        $duration_in_transit = Carbon::parse($date_confirmed)->diff(Carbon::now())->days;
+                    }
                 }
 
                 $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
@@ -4666,6 +4670,8 @@ class MainController extends Controller
                     'available_qty' => $available_qty,
                     'feedback_qty' => $feedback_qty,
                     'feedback_date' => $feedback_date,
+                    'duration_in_transit' => $duration_in_transit,
+                    'date_confirmed' => $date_confirmed->format('M. d, Y - h:i A'),
                     'status' => $sted_status,
                     'sted_name' => $sted_name
                 ];
@@ -4681,6 +4687,7 @@ class MainController extends Controller
             DB::table('tabStock Entry Detail')->where('name', $id)->update([
                 'status' => 'Received',
                 'modified' => Carbon::now()->toDateTimeString(),
+                'date_modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user
             ]);
 

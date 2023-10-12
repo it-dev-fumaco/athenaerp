@@ -39,19 +39,20 @@
 						</div>
 						<div class="card-body p-0">
 							<div class="table-responsive p-0">
-								<table class="table table-hover dashboard-table" style="font-size: 10pt;">
+								<table class="table table-hover dashboard-table font-responsive" style="font-size: 10pt;">
 									<thead>
 										<tr>
 											<th scope="col" class="text-center w-100 d-lg-none">Details</th>
-											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Reference Number</th>
-											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Feedback Date</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Reference Number</th>
+											<th scope="col" class="text-center d-none d-xl-table-cell" style="width: 15%">Feedback Date</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Duration in Transit</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 40%">Item Description</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Qty</th>
-											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Action</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Action</th>
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="x in mi_filtered = (mi | filter:searchText | filter: fltr)">
+										<tr ng-repeat="x in mi_filtered = (mi | filter: fltr)">
 											<td class="text-center">
 												<div class="row">
 													<div class="col-6 col-lg-12">
@@ -76,15 +77,29 @@
 														<span>@{{ x.description }}</span>
 													</div>
 													<div class="text-left mt-2">
-														<p><b>Created by:</b> @{{ x.owner }}</p>
-												
-
-														<p><b>Stocks in Transit:</b> <span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span></p>
+														<div class="row">
+															<div class="col-6">
+																<span><b>Created by:</b> @{{ x.owner }}</span><br>
+																<span><b>Stocks in Transit:</b> <span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span></span>
+															</div>
+															<div class="col-6" ng-if="x.status === 'Received'">
+																<span><b>Duration in Transit: </b>@{{ x.duration_in_transit + ' Day(s)' }}</span><br>
+																<span><b>Date Received: </b>@{{ x.date_confirmed }}</span>
+															</div>
+														</div>
 													</div>
 												</div>
 											</td>
-											<td class="text-center d-none d-lg-table-cell">
+											<td class="text-center d-none d-xl-table-cell">
 												<span class="d-block font-weight-bold">@{{ x.feedback_date }}</span>
+											</td>
+											<td class="text-center d-none d-lg-table-cell">
+												<div ng-if="x.status === 'Received'">
+													<b style="font-size: 12pt;">@{{ x.duration_in_transit + ' Day(s)' }}</b>
+													<br><br>
+													<span>Date Received:</span><br>
+													<small><b>@{{ x.date_confirmed }}</b></small>
+												</div>
 											</td>
 											<td class="text-justify d-none d-lg-table-cell">
 												<div class="d-block font-weight-bold">
@@ -120,6 +135,17 @@
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>
 </div>
+
+<style>
+	@media (max-width: 1199.98px) or
+	(max-width: 767.98px) or
+	(max-width: 575.98px) or
+	(max-width: 369.98px){
+		.font-responsive{
+			font-size: 9pt !important
+		}
+	}
+</style>
 
 @endsection
 
