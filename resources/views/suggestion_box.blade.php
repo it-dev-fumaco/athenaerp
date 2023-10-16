@@ -6,10 +6,12 @@
     @endphp
     <div class="search-row row w-100 p-2" style="border-bottom: 1px solid #ccc;">
       <div class="text-center pl-2" style="width: 60px !important;">
-        @if(!Storage::disk('public')->exists('/img/'.explode('.', $item->item_image_path)[0].'.webp'))
-          <img src="{{ asset('storage/').$img }}" class="img w-100">
-        @elseif(!Storage::disk('public')->exists('/img/'.$item->item_image_path))
-          <img src="{{ asset('storage/').$img_webp }}" class="img w-100">
+        @if(!Storage::disk('public')->exists('/img'.$img_webp) && Storage::disk('public')->exists('/img'.$img))
+          <img src="{{ asset('storage'.$img) }}" class="img w-100">
+        @elseif(!Storage::disk('public')->exists('/img'.$img) && Storage::disk('public')->exists('/img'.$img_webp))
+          <img src="{{ asset('storage'.$img_webp) }}" class="img w-100">
+        @elseif(!Storage::disk('public')->exists('/img'.$img) && !Storage::disk('public')->exists('/img'.$img_webp))
+          <img src="{{ asset('storage/icon/no_img.webp') }}" class="img w-100">
         @else
           <picture>
             <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" style=" height: 60px;" class="w-100">
@@ -20,7 +22,7 @@
       </div>
       <div class="col-8 col-md-10 col-lg-9 col-xl-10 text-truncate">
         <span style="font-size: 10pt;"><b>{{ $item->name }}</b></span>
-        <br><span style="font-size: 10pt;">{{ $item->description }}</span>
+        <br><span style="font-size: 10pt;">{{ strip_tags($item->description) }}</span>
       </div>
       <div class="col">
         <a class="btn btn-default" href="/get_item_details/{{ $item->name }}">
