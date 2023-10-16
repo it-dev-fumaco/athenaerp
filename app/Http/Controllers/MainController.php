@@ -4624,7 +4624,7 @@ class MainController extends Controller
             $production_orders = collect($q)->pluck('name');
 
             $mes_feedback_logs = DB::connection('mysql_mes')->table('feedbacked_logs')->whereIn('production_order', $production_orders)->where('status', 'Submitted')
-                ->select('production_order', DB::raw('CONCAT(transaction_date, " ", transaction_time) as feedback_date'), 'feedbacked_qty')->orderByDesc('last_modified_at')->get()->groupBy('production_order');
+                ->select('production_order', DB::raw('CONCAT(transaction_date, " ", transaction_time) as feedback_date'), 'feedbacked_qty', 'created_by')->orderByDesc('last_modified_at')->get()->groupBy('production_order');
 
             $stock_entries = DB::table('tabStock Entry as p')
                 ->join('tabStock Entry Detail as c', 'c.parent', 'p.name')
@@ -4637,10 +4637,12 @@ class MainController extends Controller
                 $available_qty = $this->get_available_qty($d->item_code, 'Goods in Transit - FI');
                 $feedback_date = Carbon::parse($d->modified)->format('M. d, Y - h:i A');
                 $feedback_qty = 0;
+                $feedback_by = null;
                 if(isset($mes_feedback_logs[$d->name])){
                     $feedback_details = $mes_feedback_logs[$d->name][0];
                     $feedback_date = Carbon::parse($feedback_details->feedback_date)->format('M. d, Y - h:i A');
                     $feedback_qty = $feedback_details->feedbacked_qty;
+                    $feedback_by = $feedback_details->created_by;
                 }
 
                 $sted_name = $sted_status = $duration_in_transit = $date_confirmed = null;
@@ -4650,7 +4652,7 @@ class MainController extends Controller
                     $sted_status = $stock_entry_details->status;
                     if($sted_status == 'Received'){
                         $date_confirmed = Carbon::parse($stock_entry_details->date_modified);
-                        $duration_in_transit = Carbon::parse($date_confirmed)->diff(Carbon::now())->days;
+                        $duration_in_transit = Carbon::parse($date_confirmed)->diff(Carbon::now())->days.' Day(s)';
                     }
                 }
 
@@ -4670,8 +4672,9 @@ class MainController extends Controller
                     'available_qty' => $available_qty,
                     'feedback_qty' => $feedback_qty,
                     'feedback_date' => $feedback_date,
+                    'feedback_by' => $feedback_by,
                     'duration_in_transit' => $duration_in_transit,
-                    'date_confirmed' => $date_confirmed->format('M. d, Y - h:i A'),
+                    'date_confirmed' => $date_confirmed ? $date_confirmed->format('M. d, Y - h:i A') : null,
                     'status' => $sted_status,
                     'sted_name' => $sted_name
                 ];
@@ -4681,7 +4684,8 @@ class MainController extends Controller
         return response()->json(['records' => $list]);
     }
 
-    public function receive_stocks($id, Request $request){
+    // /in_transit/receive
+    public function receive_transit_stocks($id){
         DB::beginTransaction();
         try {
             DB::table('tabStock Entry Detail')->where('name', $id)->update([

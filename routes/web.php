@@ -62,9 +62,12 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/material_transfer', 'MainController@view_material_transfer');
         Route::get('/picking_slip', 'MainController@view_picking_slip');
         Route::get('/production_to_receive', 'MainController@view_production_to_receive');
-        Route::get('/feedbacked_in_transit', 'MainController@feedbacked_in_transit');
         Route::get('/recently_received_items', 'MainController@recently_received_items');
-        Route::post('/receive/{id}', 'MainController@receive_stocks');
+
+        Route::prefix('/in_transit')->group(function(){
+            Route::get('/', 'MainController@feedbacked_in_transit');
+            Route::post('/receive/{id}', 'MainController@receive_transit_stocks');
+        });
 
         // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
         Route::post('/cancel_transaction', 'MainController@cancel_athena_transaction');

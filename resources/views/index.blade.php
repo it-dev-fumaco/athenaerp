@@ -89,7 +89,7 @@
 											</a>
 											</div>
 											<div class="col-md-6 col-xl-5 col-lg-6 pr-4 pl-4">
-												<a href="/feedbacked_in_transit" class="text-dark">
+												<a href="/in_transit" class="text-dark">
 												<div class="info-box bg-purple p-0">
 													<span class="info-box-icon" style="width: 30%; background: rgba(0,0,0,0.2);"><i class="fas fa-boxes"></i></span>
 													<div class="info-box-content pt-1 pb-1">

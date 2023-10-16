@@ -664,7 +664,7 @@
 					<a class="btn btn-app bg-gray-dark" href="/material_transfer">
 						<i class="fas fa-exchange-alt"></i> <span class="d-none d-lg-inline">Transfer</span>
 					</a>
-					<a class="btn btn-app bg-purple" href="/feedbacked_in_transit">
+					<a class="btn btn-app bg-purple" href="/in_transit">
 						<i class="fas fa-boxes"></i> <span class="d-none d-lg-inline">In Transit</span>
 					</a>
 					<a class="btn btn-app bg-olive" href="/material_transfer_for_manufacture">

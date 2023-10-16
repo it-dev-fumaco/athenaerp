@@ -44,7 +44,7 @@
 										<tr>
 											<th scope="col" class="text-center w-100 d-lg-none">Details</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Reference Number</th>
-											<th scope="col" class="text-center d-none d-xl-table-cell" style="width: 15%">Feedback Date</th>
+											<th scope="col" class="text-center d-none d-xl-table-cell" style="width: 15%">Feedback Details</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Duration in Transit</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 40%">Item Description</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Qty</th>
@@ -55,7 +55,7 @@
 										<tr ng-repeat="x in mi_filtered = (mi | filter: fltr)">
 											<td class="text-center">
 												<div class="row">
-													<div class="col-6 col-md-4 col-xl-12">
+													<div class="col-6 col-md-4 col-lg-12">
 														<h6 class="font-weight-bold mt-1">@{{ x.reference }}</h6>
 														<span class="mt-1">@{{ x.name }}</span>
 													</div>
@@ -98,13 +98,14 @@
 											</td>
 											<td class="text-center d-none d-xl-table-cell">
 												<span class="d-block font-weight-bold">@{{ x.feedback_date }}</span>
+												<span class="d-block" style="font-size: 8pt;">@{{ x.feedback_by }}</span>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
 												<div ng-if="x.status === 'Received'">
-													<b style="font-size: 12pt;">@{{ x.duration_in_transit + ' Day(s)' }}</b>
+													<b style="font-size: 12pt;">@{{ x.duration_in_transit }}</b>
 													<br><br>
 													<span>Date Received:</span><br>
-													<small><b>@{{ x.date_confirmed }}</b></small>
+													<span style="font-size: 7pt"><b>@{{ x.date_confirmed }}</b></span>
 												</div>
 											</td>
 											<td class="text-justify d-none d-lg-table-cell">
@@ -121,7 +122,12 @@
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
 												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" ng-if="x.status === 'For Checking'">
-												<img src="dist/img/check.png" class="img-circle" ng-if="x.status === 'Received'">
+												<img src="dist/img/check.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" ng-if="x.status === 'Received'">
+											</td>
+										</tr>
+										<tr ng-hide="mi.length">
+											<td colspan=7 class="text-center">
+												<p class="p-2">No result(s) found.</p>
 											</td>
 										</tr>
 									</tbody>
@@ -135,12 +141,7 @@
 	</div>
 </div>
 
-<div class="modal fade" id="ste-modal">
-	<form method="POST" action="/receive/in_transit">
-		@csrf
-		<div class="modal-dialog" style="min-width: 35% !important;"></div>
-	</form>
-</div>
+<div class="modal fade" id="ste-modal"></div>
 
 <style>
 	@media (max-width: 1199.98px) or
@@ -185,8 +186,8 @@
 			type: 'GET',
 			url: '/get_ste_details/' + id,
 			success: (response) => {
+				$('#ste-modal').html(response);
 				$('#ste-modal').modal('show');
-				$('#ste-modal .modal-dialog').html(response);
 			},
 			error: (e) => {
 				showNotification("danger", e.responseJSON.message, "fa fa-info");
@@ -196,13 +197,19 @@
 
 	$(document).on('click', '#btn-check-out', function(e){
 		e.preventDefault();
-		$('#ste-modal form').submit();
+
+		var form = $('#ste-modal form');
+		var reportValidity = form[0].reportValidity();
+
+		if(reportValidity){
+			$('#ste-modal form').submit();
+		}
 	});
 
 	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
 		$scope.loadData = () => {
 			$scope.custom_loading_spinner = true;
-			$http.get("/feedbacked_in_transit?arr=1").then((response) => {
+			$http.get("/in_transit?arr=1").then((response) => {
 				$scope.mi = response.data.records;
 				$scope.custom_loading_spinner = false;
 			}).catch((error) => {
@@ -212,59 +219,29 @@
 		
 		$scope.loadData();
 
-		$('#ste-modal form').validate({
-			rules: {
-				barcode: {
-					required: true,
-				},
-				qty: {
-					required: true,
-				},
-			},
-			messages: {
-				barcode: {
-					required: "Please enter barcode",
-				},
-				qty: {
-					required: "Please enter quantity",
-				},
-			},
-			errorElement: 'span',
-			errorPlacement: function (error, element) {
-				error.addClass('invalid-feedback');
-				element.closest('.form-group').append(error);
-			},
-			highlight: function (element, errorClass, validClass) {
-				$(element).addClass('is-invalid');
-			},
-			unhighlight: function (element, errorClass, validClass) {
-				$(element).removeClass('is-invalid');
-			},
-			submitHandler: function(form) {
-				$('#btn-check-out').prop('disabled', 'true');
-				const sted_id = $('input[name="child_tbl_id"]').val()
-				$.ajax({
-					type: 'POST',
-					url: '/receive/' + sted_id,
-					data: $(form).serialize(),
-					success: (response) => {
-						if (response.success) {
-							showNotification("success", response.message, "fa fa-check");
-							$scope.loadData();
-							$('#ste-modal').modal('hide');
-							$('#btn-check-out').removeAttr('disabled');
-						}else{
-							showNotification("danger", response.message, "fa fa-info");
-							$('#btn-check-out').removeAttr('disabled');
-						}
-					},
-					error: (jqXHR, textStatus, errorThrown) => {
-						showNotification("danger", errorThrown, "fa fa-info");
-						$('#btn-check-out').removeAttr('disabled');
+		$(document).on('submit', '#ste-modal form', function (e){
+			e.preventDefault()
+			const form = $(this)
+			$.ajax({
+				type: 'POST',
+				url: form.attr('action'),
+				data: form.serialize(),
+				success: (response) => {
+					if (response.success) {
+						showNotification("success", response.message, "fa fa-check")
+						$scope.loadData()
+						$('#ste-modal').modal('hide')
+					}else{
+						showNotification("danger", response.message, "fa fa-info")
 					}
-				});
-			}
-		});
+					$('#btn-check-out').removeAttr('disabled')
+				},
+				error: (jqXHR, textStatus, errorThrown) => {
+					showNotification("danger", errorThrown, "fa fa-info")
+					$('#btn-check-out').removeAttr('disabled')
+				}
+			});
+		})
 	});
 </script>
 @endsection
