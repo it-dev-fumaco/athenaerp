@@ -70,6 +70,10 @@
 															<img src="dist/img/icon.png" class="img-circle w-75 update-item checkout" data-id="@{{ x.sted_name }}" ng-if="x.status === 'For Checking'">
 															<img src="dist/img/check.png" class="img-circle w-75" ng-if="x.status === 'Received'">
 														</div>
+														<div class="w-100" ng-if="x.status === 'Issued'">
+															<span class="font-weight-bold" style="font-size: 12pt;">@{{ x.reference_to_fg }}</span> <br>
+															<span class="badge badge-warning">To Receive</span>
+														</div>
 													</div>
 												</div>
 												
