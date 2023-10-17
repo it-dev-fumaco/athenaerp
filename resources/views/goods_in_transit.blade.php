@@ -1,5 +1,5 @@
 @extends('layout', [
-	'namePage' => 'Items in Transit',
+	'namePage' => 'In Transit',
     'activePage' => 'goods_in_transit',
 	'nameDesc' => 'Feedbacked'
 ])
@@ -101,7 +101,7 @@
 												<span class="d-block" style="font-size: 8pt;">@{{ x.feedback_by }}</span>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<div ng-if="x.status === 'Received'">
+												<div ng-if="['Received', 'Issued'].includes(x.status)">
 													<b style="font-size: 12pt;">@{{ x.duration_in_transit }}</b>
 													<br><br>
 													<span>Date Received:</span><br>
@@ -116,13 +116,17 @@
 												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Created by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<p><span style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>  <span>@{{ x.uom }}</span></p>
+												<p><span style="font-size: 14pt;">@{{ x.qty | number:2 }}</span> <span>@{{ x.uom }}</span></p>
 												<span class="d-block mt-2" style="font-size: 10pt;">Stocks in Transit:</span>
 												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" ng-if="x.status === 'For Checking'">
-												<img src="dist/img/check.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" ng-if="x.status === 'Received'">
+												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'For Checking'">
+												<img src="dist/img/check.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'Received'">
+												<div ng-if="x.status === 'Issued'">
+													<span class="font-weight-bold" style="font-size: 12pt;">@{{ x.reference_to_fg }}</span> <br>
+													<span class="badge badge-warning">To Receive</span>
+												</div>
 											</td>
 										</tr>
 										<tr ng-hide="mi.length">
@@ -181,12 +185,13 @@
 	}
 
 	$(document).on('click', '.update-item', function(){
-		var id = $(this).data('id');
+		const btn = $(this)
 		$.ajax({
 			type: 'GET',
-			url: '/get_ste_details/' + id,
+			url: '/get_ste_details/' + btn.data('id'),
 			success: (response) => {
 				$('#ste-modal').html(response);
+				$('#ref-no').val(btn.data('ref-no'))
 				$('#ste-modal').modal('show');
 			},
 			error: (e) => {

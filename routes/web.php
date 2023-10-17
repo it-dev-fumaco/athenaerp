@@ -67,6 +67,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::prefix('/in_transit')->group(function(){
             Route::get('/', 'MainController@feedbacked_in_transit');
             Route::post('/receive/{id}', 'MainController@receive_transit_stocks');
+            Route::post('/transfer/{id}', 'MainController@transfer_transit_stocks');
         });
 
         // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');

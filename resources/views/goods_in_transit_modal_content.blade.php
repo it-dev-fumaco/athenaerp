@@ -25,9 +25,9 @@
                                 @endif
                             </h5>
                         </div>
-                        <div class="d-nones">
+                        <div class="d-none">
                             <input name="child_tbl_id" value="{{ $data['name'] }}">
-                            <input name="reference" value="{{ $data['status'] == 'Received' ? $data['ref_no'] : null }}">
+                            <input id="ref-no" name="ref_no" value="">
                         </div>
                         <div class="box-body" style="font-size: 12pt;">
                             <div class="row">

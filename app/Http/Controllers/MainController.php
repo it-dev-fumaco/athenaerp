@@ -14,11 +14,20 @@ use DB;
 use Webp;
 use File;
 use ZipArchive;
+use Illuminate\Support\Facades\Http;
 
 use Carbon\CarbonPeriod;
 
 class MainController extends Controller
 {
+    public function get_api_headers(){
+        return [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'token '.env('ERP_API_KEY').':'.env('ERP_API_SECRET_KEY'),
+            'Accept-Language' => 'en'
+        ];
+    }
+
     public function allowed_parent_warehouses(){
         $user = Auth::user()->frappe_userid;
         return DB::table('tabWarehouse Access')
@@ -1684,6 +1693,10 @@ class MainController extends Controller
             ->where('sted.name', $id)
             ->select('ste.work_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request', 'ste.issue_as', 'ste.docstatus')
             ->first();
+
+        if(!$q){
+            throw new \ErrorException('Stock Entry not found.');
+        }
 
         $ref_no = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
 
@@ -4610,6 +4623,17 @@ class MainController extends Controller
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
         if(in_array('Goods In Transit - FI', collect($allowed_warehouses)->toArray())){
+            // Get List of Transfered from In Transit to Finished Goods
+            $stes_to_fg = DB::table('tabStock Entry')->where('docstatus', '<', 2)->where('company', 'FUMACO Inc.')->where('from_warehouse', 'Goods in Transit - FI')->where('to_warehouse', 'Finished Goods - FI')->where('purpose', 'Material Transfer')->get()->groupBy('docstatus');
+
+            $transferred_to_fg = isset($stes_to_fg[1]) ? collect($stes_to_fg[1])->pluck('name')->unique() : [];
+            $draft_fg = [];
+            if(isset($stes_to_fg[0])){
+                $draft_fg = collect($stes_to_fg[0])->groupBy('reference_no')->map(function ($q){
+                    return $q[0];
+                });
+            }
+
             $q = DB::table('tabSales Order as so')
                 ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
                 ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
@@ -4617,8 +4641,11 @@ class MainController extends Controller
                 ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
                 ->whereRaw('soi.delivered_qty < soi.qty')
                 ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
+                ->when($transferred_to_fg, function ($q) use ($transferred_to_fg){
+                    return $q->whereNotIn('soi.name', $transferred_to_fg);
+                })
                 ->select('so.name as so_name', 'wo.sales_order as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom')
-                ->orderBy('so.creation', 'desc')
+                ->orderBy('wo.modified')
                 ->get();
 
             $production_orders = collect($q)->pluck('name');
@@ -4650,7 +4677,7 @@ class MainController extends Controller
                     $stock_entry_details = $stock_entries[$d->name][$d->item_code][0];
                     $sted_name = $stock_entry_details->sted_name;
                     $sted_status = $stock_entry_details->status;
-                    if($sted_status == 'Received'){
+                    if(in_array($sted_status, ['Received', 'Issued'])){
                         $date_confirmed = Carbon::parse($stock_entry_details->date_modified);
                         $duration_in_transit = Carbon::parse($date_confirmed)->diff(Carbon::now())->days.' Day(s)';
                     }
@@ -4676,7 +4703,9 @@ class MainController extends Controller
                     'duration_in_transit' => $duration_in_transit,
                     'date_confirmed' => $date_confirmed ? $date_confirmed->format('M. d, Y - h:i A') : null,
                     'status' => $sted_status,
-                    'sted_name' => $sted_name
+                    'sted_name' => $sted_name,
+                    'soi_name' => $d->soi_name,
+                    'reference_to_fg' => $sted_status == 'Issued' && isset($draft_fg[$d->soi_name]) ? $draft_fg[$d->soi_name]->name : null
                 ];
             }
         }
@@ -4699,6 +4728,67 @@ class MainController extends Controller
             return response()->json(['success' => 1, 'message' => 'Stocks Received!']);
         } catch (\Throwable $th) {
             //throw $th;
+            DB::rollback();
+            return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
+        }
+    }
+
+    // /in_transit/transfer
+    public function transfer_transit_stocks($id, Request $request){
+        DB::beginTransaction();
+        try {
+            $headers = $this->get_api_headers();
+
+            $stock_entry_detail = Http::withHeaders($headers)
+                ->get(env('ERP_API_BASE_URL').'/api/resource/Stock Entry Detail/'.$id);
+
+            if($stock_entry_detail->getStatusCode() != 200){
+                return response()->json(['success' => 0, 'message' => 'Stock Entry not found.']);
+            }
+
+            $data = json_decode($stock_entry_detail->getBody(), true);
+            $stock_entry_detail = $data['data'];
+
+            $response = Http::withHeaders($headers)
+                ->post(env('ERP_API_BASE_URL').'/api/resource/Stock Entry', [
+                    'doctype' => 'Stock Entry',
+                    'purpose' => 'Material Transfer',
+                    'stock_entry_type' => 'Material Transfer',
+                    'docstatus' => 0,
+                    'item_status' => 'For Checking',
+                    'company' => 'FUMACO Inc.',
+                    'order_from' => 'Other Reference',
+                    'transfer_as' => 'Internal Transfer',
+                    'reference_no' => $request->ref_no,
+                    'from_warehouse' => 'Goods in Transit - FI',
+                    'to_warehouse' => 'Finished Goods - FI',
+                    'owner' => Auth::user()->wh_user,
+                    'items' => [
+                        [
+                            'item_code' => $stock_entry_detail['item_code'],
+                            'qty' => $stock_entry_detail['qty'],
+                            'transfer_qty' => $stock_entry_detail['transfer_qty'],
+                            's_warehouse' => 'Goods in Transit - FI',
+                            't_warehouse' => 'Finished Goods - FI'
+                        ]
+                    ]
+                ]);
+
+            if($response->getStatusCode() != 200){
+                return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
+            }
+
+            DB::table('tabStock Entry Detail')->where('name', $id)->update([
+                'status' => 'Issued',
+                'modified' => Carbon::now()->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user
+            ]);
+
+            DB::commit();
+
+            return response()->json(['success' => 1, 'message' => 'Stock Entry created!']);
+        } catch (\Throwable $th) {
+            // throw $th;
             DB::rollback();
             return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
         }
