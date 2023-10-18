@@ -114,7 +114,10 @@
 											</td>
 											<td class="text-justify d-none d-lg-table-cell">
 												<div class="d-block font-weight-bold">
-													<span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span>
+													<span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span> 
+													<span class="badge badge-warning" style="font-size: 8pt;" ng-if="x.status === 'For Checking'">For Checking</span>
+													<span class="badge badge-success" style="font-size: 8pt;" ng-if="x.status === 'Received'">Received</span>
+													<span class="badge badge-primary" style="font-size: 8pt;" ng-if="x.status === 'Issued'">Transferred</span>
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
 												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Created by:</b> @{{ x.owner }}</small>
@@ -129,7 +132,6 @@
 												<img src="dist/img/check.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'Received'">
 												<div ng-if="x.status === 'Issued'">
 													<span class="font-weight-bold" style="font-size: 12pt;">@{{ x.reference_to_fg }}</span> <br>
-													<span class="badge badge-warning">To Receive</span>
 												</div>
 											</td>
 										</tr>
