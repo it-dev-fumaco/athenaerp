@@ -4721,7 +4721,8 @@ class MainController extends Controller
                 'status' => 'Received',
                 'modified' => Carbon::now()->toDateTimeString(),
                 'date_modified' => Carbon::now()->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user
+                'modified_by' => Auth::user()->wh_user,
+                'session_user' => Auth::user()->wh_user
             ]);
 
             DB::commit();
