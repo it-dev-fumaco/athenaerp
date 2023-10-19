@@ -4345,15 +4345,17 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $goods_in_transit = DB::table('tabSales Order as so')
-            ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
-            ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
-            ->whereRaw('wo.production_item = soi.item_code')
-            ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
-            ->whereRaw('soi.delivered_qty < soi.qty')
-            ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
-            ->whereBetween('wo.creation', [Carbon::now()->subDays(7), Carbon::now()])
-            ->count();
+        $goods_in_transit = 0;
+        if (in_array('Goods In Transit - FI', $allowed_warehouses->toArray())) {
+            $goods_in_transit = DB::table('tabSales Order as so')
+                ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
+                ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
+                ->whereRaw('wo.production_item = soi.item_code')
+                ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
+                ->whereRaw('soi.delivered_qty < soi.qty')
+                ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
+                ->count();
+        }
 
         $pending_stock_entries = DB::table('tabStock Entry as se')->join('tabStock Entry Detail as sed', 'se.name', 'sed.parent')
             ->whereIn('sed.s_warehouse', $allowed_warehouses)->where('se.docstatus', 0)->where('se.purpose', 'Material Issue')
@@ -4661,7 +4663,7 @@ class MainController extends Controller
             $owners = DB::table('tabUser')->whereIn('email', collect($q)->pluck('owner'))->pluck('full_name', 'email');
 
             foreach ($q as $d) {
-                $available_qty = $this->get_available_qty($d->item_code, 'Goods in Transit - FI');
+                // $available_qty = $this->get_available_qty($d->item_code, 'Goods in Transit - FI');
                 $feedback_date = Carbon::parse($d->modified)->format('M. d, Y - h:i A');
                 $feedback_qty = 0;
                 $feedback_by = null;
@@ -4672,13 +4674,14 @@ class MainController extends Controller
                     $feedback_by = $feedback_details->created_by;
                 }
 
-                $sted_name = $sted_status = $duration_in_transit = $date_confirmed = null;
+                $sted_name = $sted_status = $duration_in_transit = $date_confirmed = $received_by = null;
                 if(isset($stock_entries[$d->name][$d->item_code])){
                     $stock_entry_details = $stock_entries[$d->name][$d->item_code][0];
                     $sted_name = $stock_entry_details->sted_name;
-                    $sted_status = $stock_entry_details->status;
+                    $sted_status = $stock_entry_details->status == 'For Checking' ? 'Pending to Receive' : $stock_entry_details->status;
                     if(in_array($sted_status, ['Received', 'Issued'])){
                         $date_confirmed = Carbon::parse($stock_entry_details->date_modified);
+                        $received_by = $stock_entry_details->session_user;
                         $duration_in_transit = Carbon::parse($date_confirmed)->diff(Carbon::now())->days.' Day(s)';
                     }
                 }
@@ -4687,6 +4690,9 @@ class MainController extends Controller
                 $part_nos = implode(', ', $part_nos->toArray());
 
                 $owner = isset($owners[$d->owner]) ? $owners[$d->owner] : $d->owner;
+                $owner = ucwords(str_replace('.', ' ', explode('@', $owner)[0]));
+                $feedback_by = ucwords(str_replace('.', ' ', explode('@', $feedback_by)[0]));
+                $received_by = ucwords(str_replace('.', ' ', explode('@', $received_by)[0]));
 
                 $list[] = [
                     'item_code' => $d->item_code,
@@ -4695,11 +4701,12 @@ class MainController extends Controller
                     'name' => $d->name, // work/production order number
                     'reference' => $d->so_name, // sales_order
                     'owner' => $owner,
-                    'qty' => $d->qty,
-                    'available_qty' => $available_qty,
+                    'qty' => number_format($d->qty),
+                    // 'available_qty' => number_format($available_qty),
                     'feedback_qty' => $feedback_qty,
                     'feedback_date' => $feedback_date,
                     'feedback_by' => $feedback_by,
+                    'received_by' => $received_by,
                     'duration_in_transit' => $duration_in_transit,
                     'date_confirmed' => $date_confirmed ? $date_confirmed->format('M. d, Y - h:i A') : null,
                     'status' => $sted_status,

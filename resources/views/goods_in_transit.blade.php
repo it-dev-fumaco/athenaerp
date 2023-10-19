@@ -44,8 +44,8 @@
 										<tr>
 											<th scope="col" class="text-center w-100 d-lg-none">Details</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Reference Number</th>
-											<th scope="col" class="text-center d-none d-xl-table-cell" style="width: 15%">Feedback Details</th>
-											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Duration in Transit</th>
+											<th scope="col" class="text-center d-none d-xl-table-cell" style="width: 15%">Date Feedbacked</th>
+											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Inventory Ageing</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 40%">Item Description</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 15%">Qty</th>
 											<th scope="col" class="text-center d-none d-lg-table-cell" style="width: 10%">Action</th>
@@ -61,7 +61,7 @@
 													</div>
 													<div class="col-6 col-md-4 d-flex d-lg-none justify-content-center align-items-center">
 														<div>
-															<h6 class="font-weight-bold">@{{ x.qty | number:2 }}</h6>
+															<h6 class="font-weight-bold">@{{ x.qty}}</h6>
 															<span>@{{ x.uom }}</span>
 														</div>
 													</div>
@@ -88,13 +88,14 @@
 													</div>
 													<div class="text-left mt-2">
 														<div class="row">
-															<div class="col-6">
+															{{-- <div class="col-6">
 																<span><b>Created by:</b> @{{ x.owner }}</span><br>
 																<span><b>Stocks in Transit:</b> <span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span></span>
-															</div>
+															</div> --}}
 															<div class="col-6" ng-if="x.status === 'Received'">
-																<span><b>Duration in Transit: </b>@{{ x.duration_in_transit + ' Day(s)' }}</span><br>
+																<span><b>Inventory Ageing: </b>@{{ x.duration_in_transit + ' Day(s)' }}</span><br>
 																<span><b>Date Received: </b>@{{ x.date_confirmed }}</span>
+																<span class="d-block">@{{ x.received_by }}</span>
 															</div>
 														</div>
 													</div>
@@ -110,28 +111,31 @@
 													<br><br>
 													<span>Date Received:</span><br>
 													<span style="font-size: 7pt"><b>@{{ x.date_confirmed }}</b></span>
+													<small class="d-block text-muted">@{{ x.received_by }}</small>
 												</div>
 											</td>
 											<td class="text-justify d-none d-lg-table-cell">
 												<div class="d-block font-weight-bold">
 													<span class="view-item-details font-weight-bold" data-item-code="@{{ x.item_code }}">@{{ x.item_code }}</span> 
 													<span class="badge badge-warning" style="font-size: 8pt;" ng-if="x.status === 'For Checking'">For Checking</span>
+													<span class="badge badge-warning" style="font-size: 8pt;" ng-if="x.status === 'Pending to Receive'">Pending to Receive</span>
 													<span class="badge badge-success" style="font-size: 8pt;" ng-if="x.status === 'Received'">Received</span>
-													<span class="badge badge-primary" style="font-size: 8pt;" ng-if="x.status === 'Issued'">Transferred</span>
+													<span class="badge badge-info" style="font-size: 8pt;" ng-if="x.status === 'Issued'">Pending Transfer Request</span>
 												</div>
 												<span class="d-block">@{{ x.description }}</span>
-												<small class="d-block mt-2" ng-hide="x.owner == null"><b>Created by:</b> @{{ x.owner }}</small>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<p><span style="font-size: 14pt;">@{{ x.qty | number:2 }}</span> <span>@{{ x.uom }}</span></p>
-												<span class="d-block mt-2" style="font-size: 10pt;">Stocks in Transit:</span>
-												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty | number:2 }} @{{ x.uom }}</span>
+												<p><span style="font-size: 14pt;">@{{ x.qty }}</span> <span>@{{ x.uom }}</span></p>
+												{{-- <span class="d-block mt-2" style="font-size: 10pt;">Stocks in Transit:</span>
+												<span class="badge badge-@{{ x.available_qty > 0 ? 'success' : 'danger' }}">@{{ x.available_qty }} @{{ x.uom }}</span> --}}
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'For Checking'">
-												<img src="dist/img/check.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'Received'">
+												<img src="dist/img/check.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'For Checking'">
+												<img src="dist/img/check.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'Pending to Receive'">
+												<img src="dist/img/icon.png" class="img-circle update-item checkout" data-id="@{{ x.sted_name }}" data-ref-no="@{{ x.soi_name }}" ng-if="x.status === 'Received'">
 												<div ng-if="x.status === 'Issued'">
 													<span class="font-weight-bold" style="font-size: 12pt;">@{{ x.reference_to_fg }}</span> <br>
+													<span class="badge badge-secondary" style="font-size: 8pt;">DRAFT</span>
 												</div>
 											</td>
 										</tr>

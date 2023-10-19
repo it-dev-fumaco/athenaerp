@@ -5,8 +5,12 @@
     @csrf
     <div class="modal-dialog" style="min-width: 35% !important;">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #6F42C1; color: #fff">
-                <h5 class="modal-title">Items in Transit <small class="badge {{ $data['status'] == 'For Checking' ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h5>
+            <div class="modal-header {{ $data['status'] == 'For Checking' ? 'bg-primary' : 'bg-info' }}">
+                @if ($data['status'] == 'For Checking')
+                <h5 class="modal-title">Receive Feedbacked Item</h5>
+                @else
+                <h5 class="modal-title">Transfer Item to FG Warehouse</h5>
+                @endif
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
@@ -15,8 +19,6 @@
                         <div class="box-header with-border">
                             <h5 class="box-title">
                                 @if ($data['status'] == 'For Checking')
-                                    <span>{{ $data['s_warehouse'] }}</span>
-                                    <i class="fas fa-angle-double-right mr-2 ml-2"></i>
                                     <span>{{ $data['t_warehouse'] }}</span>
                                 @else
                                     <span>Goods in Transit - FI</span>
