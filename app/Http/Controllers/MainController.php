@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Pagination\LengthAwarePaginator;
+use DB;
+use Mail;
+use Auth;
+use Webp;
+use ZipArchive;
+
 use Carbon\Carbon;
-use App\Models\StockReservation;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Auth;
-use DB;
-use Webp;
-use File;
-use ZipArchive;
+use Illuminate\Http\Request;
+use App\Models\StockReservation;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-use Carbon\CarbonPeriod;
 
 class MainController extends Controller
 {
@@ -4747,15 +4748,29 @@ class MainController extends Controller
         try {
             $headers = $this->get_api_headers();
 
-            $stock_entry_detail = Http::withHeaders($headers)
-                ->get(env('ERP_API_BASE_URL').'/api/resource/Stock Entry Detail/'.$id);
+            $stock_entry_detail = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+                ->leftJoin('tabItem Images as img', function ($q){
+                    return $q->on('img.parent', 'sted.item_code');
+                })
+                ->where('sted.name', $id)
+                ->select('ste.*', 'sted.*', 'img.image_path as image')
+                ->first();
 
-            if($stock_entry_detail->getStatusCode() != 200){
+            if(!$stock_entry_detail){
                 return response()->json(['success' => 0, 'message' => 'Stock Entry not found.']);
             }
 
-            $data = json_decode($stock_entry_detail->getBody(), true);
-            $stock_entry_detail = $data['data'];
+            $image = $stock_entry_detail->image ? $stock_entry_detail->image : '/icon/no_img.png';
+
+            $sales_order = Http::withHeaders($headers)
+                ->get(env('ERP_API_BASE_URL').'/api/resource/Sales Order/'.$stock_entry_detail->sales_order_no);
+
+            if($sales_order->getStatusCode() != 200){
+                return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
+            }
+
+            $sales_order = json_decode($sales_order)->data;
 
             $response = Http::withHeaders($headers)
                 ->post(env('ERP_API_BASE_URL').'/api/resource/Stock Entry', [
@@ -4773,9 +4788,9 @@ class MainController extends Controller
                     'owner' => Auth::user()->wh_user,
                     'items' => [
                         [
-                            'item_code' => $stock_entry_detail['item_code'],
-                            'qty' => $stock_entry_detail['qty'],
-                            'transfer_qty' => $stock_entry_detail['transfer_qty'],
+                            'item_code' => $stock_entry_detail->item_code,
+                            'qty' => $stock_entry_detail->qty,
+                            'transfer_qty' => $stock_entry_detail->transfer_qty,
                             's_warehouse' => 'Goods in Transit - FI',
                             't_warehouse' => 'Finished Goods - FI'
                         ]
@@ -4786,15 +4801,43 @@ class MainController extends Controller
                 return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
             }
 
+            $data = json_decode($response->getBody())->data;
+
             DB::table('tabStock Entry Detail')->where('name', $id)->update([
                 'status' => 'Issued',
                 'modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user
             ]);
 
+            $email_data = [
+                'id' => $data->name,
+                'uom' => $stock_entry_detail->uom,
+                'user' => Auth::user()->wh_user,
+                'image' => $image,
+                'status' => 'For Checking',
+                'purpose' => 'Material Transfer',
+                'item_code' => $stock_entry_detail->item_code,
+                'description' => $stock_entry_detail->description,
+                'transfer_qty' => $stock_entry_detail->transfer_qty,
+                'transaction_date' => Carbon::now()->format('M. d, Y'),
+                'source_warehouse' => $data->from_warehouse,
+                'target_warehouse' => $data->to_warehouse
+            ];
+
+            $email_sent = 1;
+            try {
+                Mail::mailer('local_mail')->send('mail_template.transit_to_fg', $email_data, function($message) use ($sales_order){
+                    $message->to($sales_order->owner);
+                    $message->subject('AthenaERP - Material Transfer');
+                });
+            } catch (\Throwable $th) {
+                $email_sent = 0;
+            }
+            
+
             DB::commit();
 
-            return response()->json(['success' => 1, 'message' => 'Stock Entry created!']);
+            return response()->json(['success' => 1, 'message' => 'Stock Entry created!', 'email_sent' => $email_sent]);
         } catch (\Throwable $th) {
             // throw $th;
             DB::rollback();

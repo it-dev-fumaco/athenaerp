@@ -249,6 +249,11 @@
 					}else{
 						showNotification("danger", response.message, "fa fa-info")
 					}
+
+					if('email_sent' in repsonse && !response.email_sent){
+						showNotification("danger", 'Email not sent!', "fa fa-info")
+					}
+
 					$('#btn-check-out').removeAttr('disabled')
 				},
 				error: (jqXHR, textStatus, errorThrown) => {
