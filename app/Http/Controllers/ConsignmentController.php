@@ -4125,7 +4125,7 @@ class ConsignmentController extends Controller
 
         $query = DB::table('tabWarehouse Users as wu')
             ->leftJoin('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
-            ->where('wu.user_group', 'Promodiser')
+            ->where('wu.user_group', 'Promodiser')->where('wu.enabled', 1)
             ->select('wu.wh_user', 'wu.last_login', 'wu.full_name', 'acw.warehouse', 'wu.name', 'wu.frappe_userid', 'wu.enabled')
             ->orderBy('wu.wh_user', 'asc')->get();
 

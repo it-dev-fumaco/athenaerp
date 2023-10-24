@@ -252,7 +252,7 @@ class MainController extends Controller
 
         $active_consignment_branches = collect($consignment_branches)->where('is_group', 0)->where('disabled', 0);
 
-        $promodisers = DB::table('tabWarehouse Users')->where('user_group', 'Promodiser')->count();
+        $promodisers = DB::table('tabWarehouse Users')->where('user_group', 'Promodiser')->where('enabled', 1)->count();
 
         $consignment_branches_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
             ->where('status', 'Approved')->whereIn('branch_warehouse', array_column($consignment_branches, 'name'))
