@@ -81,7 +81,7 @@
             </tbody>
         </table>
         
-        <p style="display:block;line-height:8px;">For more details, please log in to http://10.0.0.83:8000</p>
+        <p style="display:block;line-height:8px;">For more details, please log in to http://10.0.0.83</p>
         <p style="display:block;line-height:8px;">Submitted By: <i>{{ $ste['user'] }}</i></p>
         <br>
         <hr>

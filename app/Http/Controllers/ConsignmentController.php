@@ -2140,7 +2140,7 @@ class ConsignmentController extends Controller
 
             $data = [
                 'stock_entry_name' => $new_id,
-                'link' => 'http://10.0.0.83:8000/app/stock-entry/' . $new_id
+                'link' => 'http://10.0.0.83/app/stock-entry/' . $new_id
             ];
 
             return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.', 'data' => $data]);
@@ -4124,7 +4124,7 @@ class ConsignmentController extends Controller
         }
 
         $query = DB::table('tabWarehouse Users as wu')
-            ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
+            ->leftJoin('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
             ->where('wu.user_group', 'Promodiser')
             ->select('wu.wh_user', 'wu.last_login', 'wu.full_name', 'acw.warehouse', 'wu.name', 'wu.frappe_userid', 'wu.enabled')
             ->orderBy('wu.wh_user', 'asc')->get();
@@ -4262,7 +4262,7 @@ class ConsignmentController extends Controller
     public function editPromodiser($id, Request $request){
         DB::beginTransaction();
         try {
-            $warehouses = $request->warehouses;
+            $warehouses = $request->warehouses ? $request->warehouses : [];
 
             $assigned_warehouses = DB::table('tabAssigned Consignment Warehouse')->where('parent', $id)->pluck('warehouse');
 

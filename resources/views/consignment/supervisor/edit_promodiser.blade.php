@@ -150,19 +150,24 @@
         });
         
         function validate_submit(){
-            var warehouse_count = parseInt($('#warehouse-count').text());
-            if(warehouse_count > 0){
-                $('#add-warehouse').removeClass('error-btn');
-                $('.error-msg').addClass('d-none');
-                var form = $('#promodiser-form');
-                var reportValidity = form[0].reportValidity();
-
-                if(reportValidity){
-                    form.submit();
+            var isActive = $('input[type="checkbox"]:checked').length > 0
+            if (isActive) {
+                var warehouse_count = parseInt($('#warehouse-count').text());
+                if(warehouse_count > 0){
+                    $('#add-warehouse').removeClass('error-btn');
+                    $('.error-msg').addClass('d-none');
+                    
+                }else{
+                    $('#add-warehouse').addClass('error-btn');
+                    $('.error-msg').removeClass('d-none');
                 }
-            }else{
-                $('#add-warehouse').addClass('error-btn');
-                $('.error-msg').removeClass('d-none');
+            }
+
+            var form = $('#promodiser-form');
+            var reportValidity = form[0].reportValidity();
+
+            if(reportValidity){
+                form.submit();
             }
         }
     });
