@@ -11,23 +11,6 @@ use App\Http\Middleware\CheckConnectionMiddleware;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::get('/import_test', 'TestingEnvironmentController@import_testing');  # FOR TESTING
-Route::get('/local', 'TestingEnvironmentController@local_login'); # FOR TESTING
-Route::get('/janedoe', 'TestingEnvironmentController@jane_doe_login'); # FOR TESTING
-Route::get('/consignment_stock_adjustments', 'TestingEnvironmentController@consignment_stock_adjustments'); # FOR TESTING
-Route::get('/delivery_report', 'TestingEnvironmentController@delivery_report'); # FOR TESTING
-Route::get('/revert_audit', 'TestingEnvironmentController@revertAudit'); # FOR TESTING
-Route::get('/consignment_report', 'TestingEnvironmentController@consignment_report'); # FOR TESTING
-Route::get('/consignment_item_report', 'TestingEnvironmentController@consignment_item_report'); # FOR TESTING
-Route::get('/saveToJSON', 'TestingEnvironmentController@saveToJSON'); # FOR TESTING
-Route::get('/testing', 'TestingEnvironmentController@testing'); # FOR TESTING
-Route::get('/test_mail', 'TestingEnvironmentController@mail'); # FOR TESTING
-Route::get('/export_excel', 'TestingEnvironmentController@export_excel'); # FOR TESTING
-Route::get('/general_testing', 'TestingEnvironmentController@general_testing'); # FOR TESTING
-Route::get('/hr_report', 'TestingEnvironmentController@hr_report'); # FOR TESTING
-Route::get('/logs_file', 'TestingEnvironmentController@logs_file'); # FOR TESTING
-Route::get('/array_test', 'TestingEnvironmentController@array_test'); # FOR TESTING
-Route::get('/ping_test', 'TestingEnvironmentController@ping_test'); # FOR TESTING
 
 Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/login', 'LoginController@view_login')->name('login');
@@ -80,6 +63,12 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/picking_slip', 'MainController@view_picking_slip');
         Route::get('/production_to_receive', 'MainController@view_production_to_receive');
         Route::get('/recently_received_items', 'MainController@recently_received_items');
+
+        Route::prefix('/in_transit')->group(function(){
+            Route::get('/', 'MainController@feedbacked_in_transit');
+            Route::post('/receive/{id}', 'MainController@receive_transit_stocks');
+            Route::post('/transfer/{id}', 'MainController@transfer_transit_stocks');
+        });
 
         // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
         Route::post('/cancel_transaction', 'MainController@cancel_athena_transaction');
