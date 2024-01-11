@@ -4348,13 +4348,25 @@ class MainController extends Controller
 
         $goods_in_transit = 0;
         if (in_array('Goods In Transit - FI', $allowed_warehouses->toArray())) {
-            $goods_in_transit = DB::table('tabSales Order as so')
+            $feedbacked_production_orders = DB::table('tabSales Order as so')
                 ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
                 ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
                 ->whereRaw('wo.production_item = soi.item_code')
                 ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
                 ->whereRaw('soi.delivered_qty < soi.qty')
                 ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
+                ->pluck('wo.name');
+
+            $goods_in_transit = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where([
+                    'ste.docstatus' => 1,
+                    'ste.purpose' => 'Manufacture',
+                    'ste.company' => 'FUMACO Inc.',
+                    'sted.status' => 'For Checking',
+                    'sted.t_warehouse' => 'Goods in Transit - FI',
+                ])
+                ->whereIn('ste.work_order', $feedbacked_production_orders)
                 ->count();
         }
 
@@ -4659,12 +4671,12 @@ class MainController extends Controller
             $stock_entries = DB::table('tabStock Entry as p')
                 ->join('tabStock Entry Detail as c', 'c.parent', 'p.name')
                 ->where('p.purpose', 'Manufacture')->where('p.docstatus', 1)->where('p.company', 'FUMACO Inc.')->whereIn('p.work_order', $production_orders)
+                ->where('c.t_warehouse', 'Goods in Transit - FI')
                 ->select('c.name as sted_name', 'p.*', 'c.*')->get()->groupBy(['work_order', 'item_code']);
 
             $owners = DB::table('tabUser')->whereIn('email', collect($q)->pluck('owner'))->pluck('full_name', 'email');
 
             foreach ($q as $d) {
-                // $available_qty = $this->get_available_qty($d->item_code, 'Goods in Transit - FI');
                 $feedback_date = Carbon::parse($d->modified)->format('M. d, Y - h:i A');
                 $feedback_qty = 0;
                 $feedback_by = null;
@@ -4703,7 +4715,6 @@ class MainController extends Controller
                     'reference' => $d->so_name, // sales_order
                     'owner' => $owner,
                     'qty' => number_format($d->qty),
-                    // 'available_qty' => number_format($available_qty),
                     'feedback_qty' => $feedback_qty,
                     'feedback_date' => $feedback_date,
                     'feedback_by' => $feedback_by,

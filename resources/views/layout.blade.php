@@ -1314,11 +1314,6 @@
 	<script>
 		document.getElementById('loader-wrapper').removeAttribute('hidden');
 		$(document).ready(function(){
-			// DO NOT COMMIT
-			@if (env('DB_HOST') == '10.0.0.73')
-				showNotification("info", 'Reminder: Currently connected to Live DB.', "fa fa-info");
-			@endif
-			// DO NOT COMMIT
 			$('#loader-wrapper').attr('hidden', true);
 			$(document).on('ajaxComplete', function(event, xhr, settings) {
 				if(typeof xhr.status !== 'undefined' && xhr.status == 401){
