@@ -1,8 +1,10 @@
 @php
     $submit_url = $data['status'] == 'For Checking' ? '/in_transit/receive/'.$data['name'] : '/in_transit/transfer/'.$data['name'];
+    $refdoc = explode('-', $data['ref_no'])[0];
 @endphp
 <form method="POST" action="{{ $submit_url }}">
     @csrf
+    <input type="hidden" value="{{ $refdoc }}" name="reference_doctype">
     <div class="modal-dialog" style="min-width: 35% !important;">
         <div class="modal-content">
             <div class="modal-header {{ $data['status'] == 'For Checking' ? 'bg-primary' : 'bg-info' }}">

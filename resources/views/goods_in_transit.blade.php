@@ -57,7 +57,8 @@
 												<div class="row">
 													<div class="col-6 col-md-4 col-lg-12">
 														<h6 class="font-weight-bold mt-1">@{{ x.reference }}</h6>
-														<span class="mt-1">@{{ x.name }}</span>
+														<span class="mt-1">@{{ x.name }}</span> <br>
+														<small class="mt-1">@{{ x.customer }}</small>
 													</div>
 													<div class="col-6 col-md-4 d-flex d-lg-none justify-content-center align-items-center">
 														<div>

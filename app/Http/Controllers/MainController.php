@@ -4348,6 +4348,15 @@ class MainController extends Controller
 
         $goods_in_transit = 0;
         if (in_array('Goods In Transit - FI', $allowed_warehouses->toArray())) {
+            $feedbacked_production_orders_mreq = DB::table('tabMaterial Request as so')
+                ->join('tabMaterial Request Item as soi', 'soi.parent', 'so.name')
+                ->join('tabWork Order as wo', 'wo.material_request', 'so.name')
+                ->whereRaw('wo.production_item = soi.item_code')
+                ->where('so.docstatus', 1)->where('so.per_ordered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
+                ->whereRaw('soi.ordered_qty < soi.qty')
+                ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
+                ->pluck('wo.name')->toArray();
+                
             $feedbacked_production_orders = DB::table('tabSales Order as so')
                 ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
                 ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
@@ -4355,7 +4364,9 @@ class MainController extends Controller
                 ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
                 ->whereRaw('soi.delivered_qty < soi.qty')
                 ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
-                ->pluck('wo.name');
+                ->pluck('wo.name')->toArray();
+
+            $production_orders = array_merge($feedbacked_production_orders_mreq, $feedbacked_production_orders);
 
             $goods_in_transit = DB::table('tabStock Entry as ste')
                 ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
@@ -4366,7 +4377,7 @@ class MainController extends Controller
                     'sted.status' => 'For Checking',
                     'sted.t_warehouse' => 'Goods in Transit - FI',
                 ])
-                ->whereIn('ste.work_order', $feedbacked_production_orders)
+                ->whereIn('ste.work_order', $production_orders)
                 ->count();
         }
 
@@ -4649,7 +4660,7 @@ class MainController extends Controller
                 });
             }
 
-            $q = DB::table('tabSales Order as so')
+            $sales_orders = DB::table('tabSales Order as so')
                 ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
                 ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
                 ->whereRaw('wo.production_item = soi.item_code')
@@ -4659,8 +4670,21 @@ class MainController extends Controller
                 ->when($transferred_to_fg, function ($q) use ($transferred_to_fg){
                     return $q->whereNotIn('soi.name', $transferred_to_fg);
                 })
-                ->select('so.name as so_name', 'wo.sales_order as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom')
-                ->orderBy('wo.modified')
+                ->select('so.name as so_name', 'so.customer', 'wo.sales_order as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom');
+
+            $q = DB::table('tabMaterial Request as so')
+                ->join('tabMaterial Request Item as soi', 'soi.parent', 'so.name')
+                ->join('tabWork Order as wo', 'wo.material_request', 'so.name')
+                ->whereRaw('wo.production_item = soi.item_code')
+                ->where('so.docstatus', 1)->where('so.per_ordered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
+                ->whereRaw('soi.received_qty < soi.qty')
+                ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
+                ->when($transferred_to_fg, function ($q) use ($transferred_to_fg){
+                    return $q->whereNotIn('soi.name', $transferred_to_fg);
+                })
+                ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.received_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom')
+                ->unionAll($sales_orders)
+                ->orderBy('modified')
                 ->get();
 
             $production_orders = collect($q)->pluck('name');
@@ -4724,6 +4748,7 @@ class MainController extends Controller
                     'status' => $sted_status,
                     'sted_name' => $sted_name,
                     'soi_name' => $d->soi_name,
+                    'customer' => $d->customer,
                     'reference_to_fg' => $sted_status == 'Issued' && isset($draft_fg[$d->soi_name]) ? $draft_fg[$d->soi_name]->name : null
                 ];
             }
@@ -4733,16 +4758,18 @@ class MainController extends Controller
     }
 
     // /in_transit/receive
-    public function receive_transit_stocks($id){
+    public function receive_transit_stocks(Request $request, $id){
         DB::beginTransaction();
         try {
-            DB::table('tabStock Entry Detail')->where('name', $id)->update([
+            $update = [
                 'status' => 'Received',
                 'modified' => Carbon::now()->toDateTimeString(),
                 'date_modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'session_user' => Auth::user()->wh_user
-            ]);
+            ];
+
+            DB::table('tabStock Entry Detail')->where('name', $id)->update($update);
 
             DB::commit();
             return response()->json(['success' => 1, 'message' => 'Stocks Received!']);
@@ -4758,9 +4785,11 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
             $headers = $this->get_api_headers();
+            $doctype = $request->reference_doctype == 'SO' ? 'tabStock Entry' : 'tabMaterial Request';
+            $doctype_child = $request->reference_doctype == 'SO' ? 'tabStock Entry Detail' : 'tabMaterial Request Item';
 
-            $stock_entry_detail = DB::table('tabStock Entry as ste')
-                ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+            $stock_entry_detail = DB::table("$doctype as ste")
+                ->join("$doctype_child as sted", 'sted.parent', 'ste.name')
                 ->leftJoin('tabItem Images as img', function ($q){
                     return $q->on('img.parent', 'sted.item_code');
                 })
@@ -4814,7 +4843,7 @@ class MainController extends Controller
 
             $data = json_decode($response->getBody())->data;
 
-            DB::table('tabStock Entry Detail')->where('name', $id)->update([
+            DB::table($doctype_child)->where('name', $id)->update([
                 'status' => 'Issued',
                 'modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user
