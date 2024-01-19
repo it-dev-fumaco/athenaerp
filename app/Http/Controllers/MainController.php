@@ -4663,6 +4663,10 @@ class MainController extends Controller
             $sales_orders = DB::table('tabSales Order as so')
                 ->join('tabSales Order Item as soi', 'soi.parent', 'so.name')
                 ->join('tabWork Order as wo', 'wo.sales_order', 'so.name')
+                ->join('tabStock Entry as ste', 'ste.work_order', 'wo.name')
+                ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+                ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 1)->where('ste.company', 'FUMACO Inc.')
+                ->where('sted.t_warehouse', 'Goods in Transit - FI')
                 ->whereRaw('wo.production_item = soi.item_code')
                 ->where('so.docstatus', 1)->where('so.per_delivered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
                 ->whereRaw('soi.delivered_qty < soi.qty')
@@ -4670,11 +4674,15 @@ class MainController extends Controller
                 ->when($transferred_to_fg, function ($q) use ($transferred_to_fg){
                     return $q->whereNotIn('soi.name', $transferred_to_fg);
                 })
-                ->select('so.name as so_name', 'so.customer', 'wo.sales_order as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom');
+                ->select('so.name as so_name', 'so.customer', 'wo.sales_order as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom', 'sted.name as sted_name', 'sted.status as sted_status', 'sted.date_modified', 'sted.session_user', 'sted.qty as ste_qty', 'ste.name as ste_name');
 
             $q = DB::table('tabMaterial Request as so')
                 ->join('tabMaterial Request Item as soi', 'soi.parent', 'so.name')
                 ->join('tabWork Order as wo', 'wo.material_request', 'so.name')
+                ->join('tabStock Entry as ste', 'ste.work_order', 'wo.name')
+                ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+                ->where('ste.purpose', 'Manufacture')->where('ste.docstatus', 1)->where('ste.company', 'FUMACO Inc.')
+                ->where('sted.t_warehouse', 'Goods in Transit - FI')
                 ->whereRaw('wo.production_item = soi.item_code')
                 ->where('so.docstatus', 1)->where('so.per_ordered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
                 ->whereRaw('soi.received_qty < soi.qty')
@@ -4682,21 +4690,17 @@ class MainController extends Controller
                 ->when($transferred_to_fg, function ($q) use ($transferred_to_fg){
                     return $q->whereNotIn('soi.name', $transferred_to_fg);
                 })
-                ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.received_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom')
+                ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.received_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom', 'sted.name as sted_name', 'sted.status as sted_status', 'sted.date_modified', 'sted.session_user', 'sted.qty as ste_qty', 'ste.name as ste_name')
                 ->unionAll($sales_orders)
-                ->orderBy('modified')
-                ->get();
+                ->orderBy('modified')->get();
 
             $production_orders = collect($q)->pluck('name');
 
-            $mes_feedback_logs = DB::connection('mysql_mes')->table('feedbacked_logs')->whereIn('production_order', $production_orders)->where('status', 'Submitted')
-                ->select('production_order', DB::raw('CONCAT(transaction_date, " ", transaction_time) as feedback_date'), 'feedbacked_qty', 'created_by')->orderByDesc('last_modified_at')->get()->groupBy('production_order');
-
-            $stock_entries = DB::table('tabStock Entry as p')
-                ->join('tabStock Entry Detail as c', 'c.parent', 'p.name')
-                ->where('p.purpose', 'Manufacture')->where('p.docstatus', 1)->where('p.company', 'FUMACO Inc.')->whereIn('p.work_order', $production_orders)
-                ->where('c.t_warehouse', 'Goods in Transit - FI')
-                ->select('c.name as sted_name', 'p.*', 'c.*')->get()->groupBy(['work_order', 'item_code']);
+            $mes_feedback_logs = DB::connection('mysql_mes')
+                ->table('feedbacked_logs')->whereIn('production_order', $production_orders)
+                ->where('status', 'Submitted')
+                ->select('ste_no', DB::raw('CONCAT(transaction_date, " ", transaction_time) as feedback_date'), 'feedbacked_qty', 'created_by')
+                ->orderByDesc('last_modified_at')->get()->groupBy('ste_no');
 
             $owners = DB::table('tabUser')->whereIn('email', collect($q)->pluck('owner'))->pluck('full_name', 'email');
 
@@ -4704,23 +4708,21 @@ class MainController extends Controller
                 $feedback_date = Carbon::parse($d->modified)->format('M. d, Y - h:i A');
                 $feedback_qty = 0;
                 $feedback_by = null;
-                if(isset($mes_feedback_logs[$d->name])){
-                    $feedback_details = $mes_feedback_logs[$d->name][0];
+                if(isset($mes_feedback_logs[$d->ste_name])) {
+                    $feedback_details = $mes_feedback_logs[$d->ste_name][0];
                     $feedback_date = Carbon::parse($feedback_details->feedback_date)->format('M. d, Y - h:i A');
                     $feedback_qty = $feedback_details->feedbacked_qty;
                     $feedback_by = $feedback_details->created_by;
                 }
 
-                $sted_name = $sted_status = $duration_in_transit = $date_confirmed = $received_by = null;
-                if(isset($stock_entries[$d->name][$d->item_code])){
-                    $stock_entry_details = $stock_entries[$d->name][$d->item_code][0];
-                    $sted_name = $stock_entry_details->sted_name;
-                    $sted_status = $stock_entry_details->status == 'For Checking' ? 'Pending to Receive' : $stock_entry_details->status;
-                    if(in_array($sted_status, ['Received', 'Issued'])){
-                        $date_confirmed = Carbon::parse($stock_entry_details->date_modified);
-                        $received_by = $stock_entry_details->session_user;
-                        $duration_in_transit = Carbon::parse($date_confirmed)->diff(Carbon::now())->days.' Day(s)';
-                    }
+                $duration_in_transit = $date_confirmed = $received_by = null;
+
+                $sted_name = $d->sted_name;
+                $sted_status = $d->sted_status == 'For Checking' ? 'Pending to Receive' : $d->sted_status;
+                if(in_array($sted_status, ['Received', 'Issued'])){
+                    $date_confirmed = Carbon::parse($d->date_modified);
+                    $received_by = $d->session_user;
+                    $duration_in_transit = Carbon::parse($date_confirmed)->diff(Carbon::now())->days.' Day(s)';
                 }
 
                 $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
@@ -4738,7 +4740,7 @@ class MainController extends Controller
                     'name' => $d->name, // work/production order number
                     'reference' => $d->so_name, // sales_order
                     'owner' => $owner,
-                    'qty' => number_format($d->qty),
+                    'qty' => number_format($d->ste_qty),
                     'feedback_qty' => $feedback_qty,
                     'feedback_date' => $feedback_date,
                     'feedback_by' => $feedback_by,
@@ -4753,6 +4755,11 @@ class MainController extends Controller
                 ];
             }
         }
+
+        $list = collect($list)->sortBy([
+            ['status', 'asc'],
+            ['duration_in_transit', 'desc'],
+        ])->values()->all();
         
         return response()->json(['records' => $list]);
     }
