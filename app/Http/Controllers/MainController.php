@@ -266,7 +266,7 @@ class MainController extends Controller
 
         $consignment_branches_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory')
             ->where('status', 'Approved')->whereIn('branch_warehouse', array_column($consignment_branches, 'name'))
-            ->distinct('branch_warehouse')->pluck('branch_warehouse')->count();
+            ->distinct()->pluck('branch_warehouse')->count();
 
         if (count($consignment_branches) > 0) {
             $beginning_inv_percentage = number_format(($consignment_branches_with_beginning_inventory / count($consignment_branches)) * 100, 2);
@@ -275,8 +275,7 @@ class MainController extends Controller
         }
 
         // get total stock transfer
-        $total_stock_transfers = DB::table('tabConsignment Stock Entry')
-            ->where('status', 'Pending')->count();
+        $total_stock_transfers = DB::table('tabConsignment Stock Entry')->where('purpose', '!=', 'Item Return')->where('status', 'Pending')->count();
 
         $pending_to_receive = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
