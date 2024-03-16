@@ -105,9 +105,7 @@
         </div>
     </div>
 </div>
-@endif
-
-@if(!$is_stock_entry)
+@else
     <div class="modal-content">
         <div class="modal-header">
               <h5 class="modal-title">Deliveries <small class="badge {{ ($data['status'] == 'For Checking') ? 'badge-warning' : 'badge-success'  }}">{{ $data['status'] }}</small></h5>
@@ -155,8 +153,12 @@
                                         <dl>
                                             <dt>UoM</dt>
                                             <dd>{{ $data['uom'] }}</dd>
-                                            <dt>Available Qty</dt>
-                                            <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
+                                            @if (!$data['is_bundle'])
+                                                <dt>Available Qty</dt>
+                                                <dd>
+                                                    <span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span>
+                                                </dd>
+                                            @endif
                                             <dt class="mt-1">Reference No:</dt>
                                             <dd> 
                                                 <span class="d-block">{{ $data['delivery_note'] }}</span>

@@ -206,7 +206,7 @@
 					name: $('#transaction-name').text(),
 					reference: $('#transaction-reference').text()
 				},
-				success: function(response){
+				success: (response) => {
 					if(response.success){
 						showNotification("success", response.message, "fa fa-check");
 						angular.element('#anglrCtrl').scope().loadData();
@@ -218,6 +218,9 @@
 					}else{
 						showNotification("danger", response.message, "fa fa-check");
 					}
+				},
+				error: (error) => {
+					showNotification("danger", 'An error occured. Please try again', "fa fa-check");
 				}
 			});
 		});
@@ -251,9 +254,16 @@
 			$.ajax({
 				type: 'GET',
 				url: '/get_ps_details/' + id,
-				success: function(response){
+				success: (response) => {
+					if(response.error){
+						showNotification('danger', response.modal_message, 'fa fa-info')
+						return false
+					}
 					$('#ps-modal').modal('show');
 					$('#ps-modal .modal-dialog').html(response);
+				},
+				error: (error) => {
+					showNotification('danger', 'An error occured. Please try again.', 'fa fa-info')
 				}
 			});
 		});
@@ -269,9 +279,16 @@
 			$.ajax({
 				type: 'GET',
 				url: '/get_ste_details/' + id,
-				success: function(response){
+				success: (response) => {
+					if(response.error){
+						showNotification('danger', 'An error occured. Please try again.', 'fa fa-info')
+						return false
+					}
 					$('#ste-modal').modal('show');
 					$('#ste-modal .modal-dialog').html(response);
+				},
+				error: (error) => {
+					showNotification('danger', 'An error occured. Please try again.', 'fa fa-info')
 				}
 			});
 		});
