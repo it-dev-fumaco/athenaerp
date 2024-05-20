@@ -423,7 +423,7 @@ class MainController extends Controller
             'tabItem.package_height',
             'tabItem.weight_uom',
             'tabItem.package_dimension_uom',
-            $request->wh ? 'd.default_warehouse' : null
+            $request->wh ? 'd.warehouse' : null
         ];
 
         $select_columns = array_filter($select_columns);
@@ -488,8 +488,8 @@ class MainController extends Controller
                 return $q->whereIn('tabItem.name', $item_codes_based_on_warehouse_assigned);
             })
             ->when($request->wh, function($q) use ($request){
-                return $q->join('tabItem Default as d', 'd.parent', 'tabItem.name')
-                    ->where('d.default_warehouse', $request->wh);
+                return $q->join('tabBin as d', 'd.item_code', 'tabItem.name')
+                    ->where('d.warehouse', $request->wh);
             })
             ->when($request->group, function ($q) use ($request){
                 return $q->where(function ($query) use ($request){
