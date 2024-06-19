@@ -2168,7 +2168,7 @@
 						$('#warehouseLocationModal').modal('show');
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+						showNotification("danger", jqXHR.responseJSON.message, "fa fa-info");
 					}
 				});
 			}

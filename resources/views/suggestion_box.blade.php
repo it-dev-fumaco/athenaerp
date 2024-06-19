@@ -22,6 +22,9 @@
       </div>
       <div class="col-8 col-md-10 col-lg-9 col-xl-10 text-truncate">
         <span style="font-size: 10pt;"><b>{{ $item->name }}</b></span>
+        @if (in_array($item->name, $bundled_items))
+          &nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
+        @endif
         <br><span style="font-size: 10pt;">{{ strip_tags($item->description) }}</span>
       </div>
       <div class="col">

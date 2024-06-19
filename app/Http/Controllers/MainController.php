@@ -460,7 +460,7 @@ class MainController extends Controller
         }
 
         $items = DB::table('tabItem')->where('tabItem.disabled', 0)
-            ->where('tabItem.has_variants', 0)->where('tabItem.is_stock_item', 1)
+            ->where('tabItem.has_variants', 0)//->where('tabItem.is_stock_item', 1)
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
                     foreach ($search_str as $str) {
@@ -555,7 +555,7 @@ class MainController extends Controller
         $url = $request->fullUrl();
         $items->withPath($url);
 
-        if($request->searchString != ''){
+        if($request->searchString){
             DB::table('tabAthena Inventory Search History')->insert([
                 'name' => uniqid(),
                 'creation' => Carbon::now(),
@@ -572,6 +572,8 @@ class MainController extends Controller
         }
 
         $item_codes = array_column($items->items(), 'item_code');
+
+        $bundled_items = DB::table('tabProduct Bundle')->whereIn('name', $item_codes)->pluck('name')->toArray();
 
         $item_inventory = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->whereIn('item_code', $item_codes)
             ->when($is_promodiser, function($q) use ($allow_warehouse) {
@@ -831,7 +833,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department'));
+        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department', 'bundled_items'));
     }
 
     private function breadcrumbs($parent){
@@ -1025,7 +1027,7 @@ class MainController extends Controller
         $search_str = explode(' ', $request->search_string);
         $q = DB::table('tabItem')
             ->where('disabled', 0)
-            ->where('has_variants', 0)->where('is_stock_item', 1)
+            ->where('has_variants', 0)//->where('is_stock_item', 1)
             ->where(function($q) use ($search_str, $request) {
                 foreach ($search_str as $str) {
                     $q->where('tabItem.description', 'LIKE', "%".$str."%");
@@ -1039,14 +1041,14 @@ class MainController extends Controller
             ->select('tabItem.name', 'description', 'item_image_path')
             ->orderBy('tabItem.modified', 'desc')->paginate(8);
 
-        $item_codes = collect($q->items())->map(function ($q){
-            return $q->name;
-        });
+        $item_codes = collect($q->items())->pluck('name');
+
+        $bundled_items = DB::table('tabProduct Bundle')->whereIn('name', $item_codes)->pluck('name')->toArray();
 
         $image_collection = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
         $image = collect($image_collection)->groupBy('parent');
 
-        return view('suggestion_box', compact('q', 'image'));
+        return view('suggestion_box', compact('q', 'image', 'bundled_items'));
     }
 
     public function get_select_filters(Request $request){
@@ -2669,12 +2671,22 @@ class MainController extends Controller
     }
 
     public function form_warehouse_location($item_code){
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
+        try {
+            $user = Auth::user()->frappe_userid;
+            $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $warehouses = DB::table('tabBin')->whereIn('warehouse', $allowed_warehouses)->where('item_code', $item_code)->select('warehouse', 'location')->get();
+            $warehouses = DB::table('tabBin')->whereIn('warehouse', $allowed_warehouses)->where('item_code', $item_code)->select('warehouse', 'location')->get();
 
-        return view('form_warehouse_location', compact('warehouses', 'item_code'));
+            if(count($warehouses) <= 0){
+                throw new \ErrorException('Item <b>'.$item_code.'</b> is not available on any warehouse.');
+            }
+
+            return view('form_warehouse_location', compact('warehouses', 'item_code'));
+        } catch (\ErrorException $th) {
+            return response()->json(['status' => 0, 'message' => $th->getMessage()], 400);
+        } catch (\Exception $th) { // handle actual errors
+            return response()->json(['status' => 0, 'message' => `Something went wrong. Please try again.`], 400);
+        }
     }
 
     public function edit_warehouse_location(Request $request){
@@ -2715,6 +2727,8 @@ class MainController extends Controller
 
             return view('item_information', compact('item_details', 'uoms'));
         }
+
+        $bundled = DB::table('tabProduct Bundle')->where('name', $item_code)->exists();
 
         $user_department = Auth::user()->department;
         $user_group = Auth::user()->user_group;
@@ -2813,181 +2827,186 @@ class MainController extends Controller
             }
         }
 
-        $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
-        // get item alternatives based on parent item code
-        $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
-        $alternative_item_codes = collect($q)->map(function($q){
-            return $q->name;
-        });
-        
-        // get actual stock qty of all item alternatives
-        $actual_stocks_query = DB::table('tabBin')->whereIn('item_code', $alternative_item_codes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
-        $actual_stocks = collect($actual_stocks_query)->groupBy('item_code');
-        
-        // get total reserved and consumed qty of all item alternatives
-        $stock_reserves_query = StockReservation::whereIn('item_code', $alternative_item_codes)->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, item_code')->groupBy('item_code')->get();
-        $alternative_reserves = collect($stock_reserves_query)->groupBy('item_code');
-        
-        // get draft issued ste of all item alternatives
-        $ste_issued_query = DB::table('tabStock Entry Detail')->where('docstatus', 0)->whereIn('item_code', $alternative_item_codes)->where('status', 'Issued')->selectRaw('SUM(qty) as qty, item_code')->groupBy('item_code')->get();
-        $alternatives_issued_ste = collect($ste_issued_query)->groupBy('item_code');
-        
-        // get draft issued packing slip/drs of all item alternatives
-        $at_issued_query = DB::table('tabAthena Transactions as at')
-            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
-            ->where('psi.status', 'Issued')->where('at.status', 'Issued')
-            ->whereIn('at.item_code', $alternative_item_codes)
-            ->whereRaw('psi.item_code = at.item_code')
-            ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')->groupBy('at.item_code')
-            ->get();
-        $alternatives_issued_at = collect($at_issued_query)->groupBy('item_code');
-        
-        foreach($q as $a){
-            $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
+        $variants_price_arr = $variants_cost_arr = $variants_min_price_arr = $actual_variant_stocks = $manual_price_input = $attribute_names = $attributes = $co_variants = $item_attributes = [];
+
+        if(!$bundled){
+            $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
+            // get item alternatives based on parent item code
+            $q = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->orderBy('modified', 'desc')->get();
+            $alternative_item_codes = collect($q)->pluck('name');
             
-            $total_reserved = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('reserved_qty') : 0;
-            $total_consumed = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('consumed_qty') : 0;
-        
-            $total_issued_ste = isset($alternatives_issued_ste[$a->item_code]) ? $alternatives_issued_ste[$a->item_code]->sum('qty') : 0;
-            $total_isset_at = isset($alternatives_issued_at[$a->item_code]) ? $alternatives_issued_at[$a->item_code]->sum('qty') : 0;
+            // get actual stock qty of all item alternatives
+            $actual_stocks_query = DB::table('tabBin')->whereIn('item_code', $alternative_item_codes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
+            $actual_stocks = collect($actual_stocks_query)->groupBy('item_code');
             
-            $total_issued = $total_issued_ste + $total_isset_at;
-            $remaining_reserved = $total_reserved - $total_consumed;
-        
-            $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
-            $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
-            $available_qty = $available_qty > 0 ? $available_qty : 0;
-        
-            if(count($item_alternatives) < 7){
-                $item_alternatives[] = [
-                    'item_code' => $a->item_code,
-                    'description' => $a->description,
-                    'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
-                    'actual_stocks' => $available_qty
-                ];
-            }
-        }
-        
-        if(count($item_alternatives) <= 0) {
-            $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)
-                ->where('name', '!=', $item_details->name)->limit(100)->orderBy('modified', 'desc')->get();
-                
+            // get total reserved and consumed qty of all item alternatives
+            $stock_reserves_query = StockReservation::whereIn('item_code', $alternative_item_codes)->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, item_code')->groupBy('item_code')->get();
+            $alternative_reserves = collect($stock_reserves_query)->groupBy('item_code');
+            
+            // get draft issued ste of all item alternatives
+            $ste_issued_query = DB::table('tabStock Entry Detail')->where('docstatus', 0)->whereIn('item_code', $alternative_item_codes)->where('status', 'Issued')->selectRaw('SUM(qty) as qty, item_code')->groupBy('item_code')->get();
+            $alternatives_issued_ste = collect($ste_issued_query)->groupBy('item_code');
+            
+            // get draft issued packing slip/drs of all item alternatives
+            $at_issued_query = DB::table('tabAthena Transactions as at')
+                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
+                ->where('psi.status', 'Issued')->where('at.status', 'Issued')
+                ->whereIn('at.item_code', $alternative_item_codes)
+                ->whereRaw('psi.item_code = at.item_code')
+                ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')->groupBy('at.item_code')
+                ->get();
+            $alternatives_issued_at = collect($at_issued_query)->groupBy('item_code');
+
+            $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+            
             foreach($q as $a){
-                $item_alternative_image = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
-        
-                $total_reserved = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('reserved_qty') : 0;
-                $total_consumed = isset($alternative_reserves[$a->item_code]) ? $alternative_reserves[$a->item_code]->sum('consumed_qty') : 0;
-                
+                $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
+                $total_reserved = $total_consumed = 0;
+                if(isset($alternative_reserves[$a->item_code])){
+                    $total_reserved = $alternative_reserves[$a->item_code]->sum('reserved_qty');
+                    $total_consumed = $alternative_reserves[$a->item_code]->sum('consumed_qty');
+                }
+            
                 $total_issued_ste = isset($alternatives_issued_ste[$a->item_code]) ? $alternatives_issued_ste[$a->item_code]->sum('qty') : 0;
                 $total_isset_at = isset($alternatives_issued_at[$a->item_code]) ? $alternatives_issued_at[$a->item_code]->sum('qty') : 0;
                 
                 $total_issued = $total_issued_ste + $total_isset_at;
                 $remaining_reserved = $total_reserved - $total_consumed;
-        
+            
                 $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
                 $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
                 $available_qty = $available_qty > 0 ? $available_qty : 0;
-        
+            
                 if(count($item_alternatives) < 7){
                     $item_alternatives[] = [
                         'item_code' => $a->item_code,
                         'description' => $a->description,
-                        'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                        'item_alternative_image' => $item_alternative_image,
                         'actual_stocks' => $available_qty
                     ];
                 }
             }
-        }
-
-        $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
-
-        // variants
-        $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->where('disabled', 0)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
-        $variant_item_codes = array_column($co_variants->items(), 'name');
-
-        $variants_price_arr = [];
-        $variants_cost_arr = [];
-        $variants_min_price_arr = [];
-        $actual_variant_stocks = [];
-        $manual_price_input = [];
-        if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
-            // get item cost for items with 0 last purchase rate
-            $item_custom_cost = [];
-            foreach ($co_variants->items() as $row) {
-                $item_custom_cost[$row->name] = $row->custom_item_cost;
-            }
-
-            $variants_last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-                ->where('po.docstatus', 1)->whereIn('poi.item_code', $variant_item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
-
-            $variants_last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
-                ->where('a.docstatus', 1)->whereIn('b.item_code', $variant_item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
             
-            $variants_last_purchase_order_rates = collect($variants_last_purchase_order)->groupBy('item_code')->toArray();
-            $variants_last_landed_cost_voucher_rates = collect($variants_last_landed_cost_voucher)->groupBy('item_code')->toArray();
+            // $item_alternatives = [];
+            if(count($item_alternatives) <= 0) {
+                $q = DB::table('tabItem')->where('item_classification', $item_details->item_classification)
+                    ->where('name', '!=', $item_details->name)->limit(100)->orderBy('modified', 'desc')->get();
+                $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
 
-            $variants_website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
-                ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+                foreach($q as $a){
+                    $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
 
-            foreach($variant_item_codes as $variant){
-                $variants_default_price = 0;
-                $variant_rate = 0;
-                if(array_key_exists($variant, $variants_last_purchase_order_rates)){
-                    if($variants_last_purchase_order_rates[$variant][0]->supplier_group == 'Imported'){
-                        $variant_rate = isset($variants_last_landed_cost_voucher[$variant]) ? $variants_last_landed_cost_voucher[$variant][0]->valuation_rate : 0;
-                    }else{
-                        $variant_rate = $variants_last_purchase_order_rates[$variant][0]->base_rate;
+                    $total_reserved = $total_consumed = 0;
+                    if(isset($alternative_reserves[$a->item_code])){
+                        $total_reserved = $alternative_reserves[$a->item_code]->sum('reserved_qty');
+                        $total_consumed = $alternative_reserves[$a->item_code]->sum('consumed_qty');
+                    }
+                    
+                    $total_issued_ste = isset($alternatives_issued_ste[$a->item_code]) ? $alternatives_issued_ste[$a->item_code]->sum('qty') : 0;
+                    $total_isset_at = isset($alternatives_issued_at[$a->item_code]) ? $alternatives_issued_at[$a->item_code]->sum('qty') : 0;
+                    
+                    $total_issued = $total_issued_ste + $total_isset_at;
+                    $remaining_reserved = $total_reserved - $total_consumed;
+            
+                    $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
+                    $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
+                    $available_qty = $available_qty > 0 ? $available_qty : 0;
+            
+                    if(count($item_alternatives) < 7){
+                        $item_alternatives[] = [
+                            'item_code' => $a->item_code,
+                            'description' => $a->description,
+                            'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                            'actual_stocks' => $available_qty
+                        ];
                     }
                 }
+            }
 
-                $is_manual_rate = 0;
-                // custom item cost 
-                if ($variant_rate <= 0) {
-                    if (array_key_exists($variant, $item_custom_cost)) {
-                        $variant_rate = $item_custom_cost[$variant];
-                        $is_manual_rate = 1;
-                    } else {
-                        $variant_rate = 0;
+            $item_alternatives = collect($item_alternatives)->sortByDesc('actual_stocks')->toArray();
+
+            // variants
+            $co_variants = DB::table('tabItem')->where('variant_of', $item_details->variant_of)->where('name', '!=', $item_details->name)->where('disabled', 0)->select('name', 'item_name', 'custom_item_cost')->paginate(10);
+            $variant_item_codes = array_column($co_variants->items(), 'name');
+
+            if (in_array($user_department, $allowed_department) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
+                // get item cost for items with 0 last purchase rate
+                $item_custom_cost = [];
+                foreach ($co_variants->items() as $row) {
+                    $item_custom_cost[$row->name] = $row->custom_item_cost;
+                }
+
+                $variants_last_purchase_order = DB::table('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                    ->where('po.docstatus', 1)->whereIn('poi.item_code', $variant_item_codes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
+
+                $variants_last_landed_cost_voucher = DB::table('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                    ->where('a.docstatus', 1)->whereIn('b.item_code', $variant_item_codes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
+                
+                $variants_last_purchase_order_rates = collect($variants_last_purchase_order)->groupBy('item_code')->toArray();
+                $variants_last_landed_cost_voucher_rates = collect($variants_last_landed_cost_voucher)->groupBy('item_code')->toArray();
+
+                $variants_website_prices = DB::table('tabItem Price')->where('price_list', 'Website Price List')->where('selling', 1)
+                    ->whereIn('item_code', $variant_item_codes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+
+                foreach($variant_item_codes as $variant){
+                    $variants_default_price = 0;
+                    $variant_rate = 0;
+                    if(array_key_exists($variant, $variants_last_purchase_order_rates)){
+                        if($variants_last_purchase_order_rates[$variant][0]->supplier_group == 'Imported'){
+                            $variant_rate = isset($variants_last_landed_cost_voucher[$variant]) ? $variants_last_landed_cost_voucher[$variant][0]->valuation_rate : 0;
+                        }else{
+                            $variant_rate = $variants_last_purchase_order_rates[$variant][0]->base_rate;
+                        }
                     }
-                }
 
-                if($is_tax_included_in_rate) {
-                    $variants_default_price = ($variant_rate * $standard_price_computation) * 1.12;
-                }
+                    $is_manual_rate = 0;
+                    // custom item cost 
+                    if ($variant_rate <= 0) {
+                        if (array_key_exists($variant, $item_custom_cost)) {
+                            $variant_rate = $item_custom_cost[$variant];
+                            $is_manual_rate = 1;
+                        } else {
+                            $variant_rate = 0;
+                        }
+                    }
 
-                $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variants_default_price;
-                $variants_price_arr[$variant] = $variants_default_price;
-                $variants_cost_arr[$variant] = $variant_rate;
-                $variants_min_price_arr[$variant] = $variant_rate * $minimum_price_computation;
-                $manual_price_input[$variant] = $is_manual_rate;
+                    if($is_tax_included_in_rate) {
+                        $variants_default_price = ($variant_rate * $standard_price_computation) * 1.12;
+                    }
+
+                    $variants_default_price = array_key_exists($variant, $variants_website_prices) ? $variants_website_prices[$variant] : $variants_default_price;
+                    $variants_price_arr[$variant] = $variants_default_price;
+                    $variants_cost_arr[$variant] = $variant_rate;
+                    $variants_min_price_arr[$variant] = $variant_rate * $minimum_price_computation;
+                    $manual_price_input[$variant] = $is_manual_rate;
+                }
+            }
+
+            $actual_variant_stocks = DB::table('tabBin')->whereIn('item_code', $variant_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+
+            array_push($variant_item_codes, $item_details->name);
+
+            $attributes_query = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
+
+            $attribute_names = collect($attributes_query)->pluck('attribute')->unique();
+
+            $attributes = [];
+            foreach ($attributes_query as $row) {
+                $attributes[$row->parent][$row->attribute] = $row->attribute_value;
             }
         }
-
-        $actual_variant_stocks = DB::table('tabBin')->whereIn('item_code', $variant_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
-
-        array_push($variant_item_codes, $item_details->name);
-
-        $attributes_query = DB::table('tabItem Variant Attribute')->whereIn('parent', $variant_item_codes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
-
-        $attribute_names = collect($attributes_query)->map(function ($q){
-            return $q->attribute;
-        })->unique();
-
-        $attributes = [];
-        foreach ($attributes_query as $row) {
-            $attributes[$row->parent][$row->attribute] = $row->attribute_value;
-        }
+        
 
         $consignment_branches = [];
         if (Auth::user()->user_group == 'Promodiser') {
             $consignment_branches = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         }
 
-        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches'));
+        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches', 'bundled'));
     }
 
     public function save_item_information(Request $request, $item_code){
@@ -6343,5 +6362,31 @@ class MainController extends Controller
             'consignment_warehouses' => $consignment_warehouses,
             'site_warehouses' => $site_warehouses
         ];
+    }
+    
+    public function get_bundled_item_stock_levels(Request $request, $item_code){
+        $product_bundle = DB::table('tabProduct Bundle as p')
+            ->join('tabProduct Bundle Item as c', 'c.parent', 'p.name')
+            ->where('p.name', $item_code)
+            ->select('p.name as bundle_id', 'p.*', 'c.*')
+            ->get();
+
+        $items = collect($product_bundle)->pluck('item_code');
+        $grouped = collect($product_bundle)->groupBy('item_code');
+
+        $stocks = [];
+        foreach($items as $item){
+            $description = isset($grouped[$item]) ? $grouped[$item][0]->description : null;
+            $details = $this->get_item_stock_levels($item, $request);
+
+            unset($details['consignment_warehouses']);
+
+            $details['site_warehouses'] = collect($details['site_warehouses'])->where('actual_qty', '>', 0);
+            $details['description'] = $description;
+
+            $stocks[$item] = $details;
+        }
+
+        return view('item_stock_level_bundled', compact('stocks'));
     }
 }
