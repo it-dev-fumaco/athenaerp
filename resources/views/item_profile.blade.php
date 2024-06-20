@@ -260,7 +260,12 @@
                                             </div>
                                             <div class="d-none d-lg-block">
                                                 <div class="card-header border-bottom-0 p-1 ml-3">
-                                                    <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level{!! $bundled ? '&nbsp;per Component' : null !!}</h3>
+                                                    <h3 class="card-title m-0 font-responsive">
+                                                        @php
+                                                            $stock_title = $bundled ? 'Bundled Items' : 'Stock Level'
+                                                        @endphp
+                                                        <i class="fa fa-box-open"></i> {!! $stock_title !!}
+                                                    </h3>
                                                 </div>
                                                 <div class="box box-solid p-0 ml-3">
                                                     <div class="box-header with-border">
@@ -275,16 +280,16 @@
                                                 </div>
                                             </div>
                                         </div>
-                                            <div class="col-12 d-block d-lg-none">
-                                                <div class="card-header border-bottom-0 p-1 ml-3">
-                                                    <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level{!! $bundled ? '&nbsp;per Component' : null !!}</h3>
-                                                </div>
-                                                <div class="box box-solid p-0 ml-3">
-                                                    <div class="box-header with-border">
-                                                        <div class="box-body item-stock-level-div"></div>
-                                                    </div>
+                                        <div class="col-12 d-block d-lg-none">
+                                            <div class="card-header border-bottom-0 p-1 ml-3">
+                                                <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> {!! $stock_title !!}</h3>
+                                            </div>
+                                            <div class="box box-solid p-0 ml-3">
+                                                <div class="box-header with-border">
+                                                    <div class="box-body item-stock-level-div"></div>
                                                 </div>
                                             </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
