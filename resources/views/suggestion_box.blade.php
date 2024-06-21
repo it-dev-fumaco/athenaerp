@@ -5,7 +5,7 @@
       $img_webp = isset($image[$item->name]) ? "/img/" . explode('.',$image[$item->name][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
     @endphp
     <div class="search-row row w-100 p-2" style="border-bottom: 1px solid #ccc;">
-      <div class="text-center pl-2" style="width: 60px !important;">
+      <div class="text-center p-2 col-2">
         @if(!Storage::disk('public')->exists('/img'.$img_webp) && Storage::disk('public')->exists('/img'.$img))
           <img src="{{ asset('storage'.$img) }}" class="img w-100">
         @elseif(!Storage::disk('public')->exists('/img'.$img) && Storage::disk('public')->exists('/img'.$img_webp))
@@ -20,11 +20,14 @@
           </picture>
         @endif
       </div>
-      <div class="col-8 col-md-10 col-lg-9 col-xl-10 text-truncate">
+      <div class="col-8 col-md-9 text-truncate">
         <span style="font-size: 10pt;"><b>{{ $item->name }}</b></span>
+        @if (in_array($item->name, $bundled_items))
+          &nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
+        @endif
         <br><span style="font-size: 10pt;">{{ strip_tags($item->description) }}</span>
       </div>
-      <div class="col">
+      <div class="col-2 col-md-1 d-flex align-items-start justify-content-end">
         <a class="btn btn-default" href="/get_item_details/{{ $item->name }}">
           <i class="fa fa-arrow-right"></i>
         </a>

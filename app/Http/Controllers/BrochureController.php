@@ -92,7 +92,7 @@ class BrochureController extends Controller
 				$file_contents = $this->readFile($attached_file);
 
 				$content = $file_contents['content'];
-				$project = isset($file_contents['project']) && $file_contents['project'] ? trim($file_contents['project']) : '-';
+				$project = isset($file_contents['project']) && $file_contents['project'] ? trim(str_replace('/', '-', $file_contents['project'])) : '-';
 				$customer = $file_contents['customer'];
 				$headers = $file_contents['headers'];
 				$table_of_contents = $file_contents['table_of_contents'];

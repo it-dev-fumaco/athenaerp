@@ -40,7 +40,7 @@
 									</span>
 								</div>
 							</div>
-							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0">
+							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0" style="max-height: 80vh">
 								<div class="card m-0">
 									<div class="row m-0 p-0">
 										<div class="col-8">
@@ -178,7 +178,35 @@
 										</div>
 									</div>
 									<div class="row">
-										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
+										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}" style="max-height: 85vh">
+											<div class="card mb-3 pt-0" style="max-height: 100% !important; overflow-y: auto">
+												<div class="tab-content" style="min-height: 100% !important">
+													<div class="tree container"><!-- Item Group -->
+														<ul style="padding-left: 0 !important" >
+															@foreach (array_keys($item_groups) as $item)
+																@php
+																	$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
+																@endphp
+																<li class="{{ !$lvl2 ? 'p-2' : 'p-0' }}">
+																	<span class="p-0 w-75 tree-item" style="border: none !important">
+																		<a style="color: inherit; font-size: 10pt;" href="{!! request()->fullUrlWithQuery(['group' => $item]) !!}">
+																			<div class="btn-group w-100" role="group" aria-label="Basic example">
+																				<button type="button" class="btn w-25 p-0" style="background-color: #001F3F; color: #fff"><i class="far {{ $lvl2 ? 'fa-folder-open' : 'fa-file' }}"></i></button>
+																				<button type="button" class="btn w-75 p-0" style="border: 2px solid #001F3F; font-size: 10pt; color: inherit">{{ $item }}</button>
+																			</div>
+																		</a>
+																	</span>
+																	@if ($lvl2)
+																		@include('search_results_item_group_tree', ['all' => $all, 'groups' => $lvl2, 'current_lvl' => 2, 'prev_obj' => $item])
+																	@endif
+																</li>
+															@endforeach
+														</ul>
+													</div>
+												</div>
+											</div>
+										</div>
+										{{-- <div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
 											<div class="card mb-3 pt-0">
 												@php
 													$category = collect(array_keys($item_groups))->chunk(3);
@@ -211,17 +239,8 @@
 														</div>
 													@endfor
 												</div>
-												@if (count($category) > 1)
-													<ul class="nav nav-tabs" role="tablist">
-														@foreach ($category as $i => $item)
-															<li class="nav-item">
-																<a class="nav-link {{ $loop->first ? 'active' : null }}" data-toggle="tab" href="#class-category-{{ $i + 1 }}">{{ $i + 1 }}</a>
-															</li>
-														@endforeach
-													</ul>
-												@endif
 											</div>
-										</div>
+										</div> --}}
 										<div class="col-12 col-xl-{{ $item_groups ? '10' : '12' }}">
 											<div class="container-fluid m-0">
 												@forelse ($item_list as $row)
@@ -268,7 +287,11 @@
 															</div>
 															<div class="col-6 p-1">
 																<div class="col-md-12 m-0 text-justify" >
-																	<span class="font-italic item-class" >{{ $row['item_classification'] }}</span><br/>
+																	<span class="font-italic item-class" >{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span>
+																	@if (in_array($row['name'], $bundled_items))
+																		&nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
+																	@endif
+																	<br/>
 																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
 																	@if ($row['package_dimension'])
 																		<dl class="mt-3 mb-0">
@@ -333,7 +356,7 @@
 																			</tr>
 																		@endforeach
 																	</table>
-																@else
+																@elseif(!in_array($row['name'], $bundled_items))
 																	<div class="h-75 d-flex align-items-center">
 																		<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																	</div>
@@ -436,8 +459,17 @@
 																</a>
 															</div>
 															<div class="col-9 col-lg-10 col-xl-9">
-																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span><br/>
-																<span class="text-justify item-name"><span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}</span>
+																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span>
+																@if (in_array($row['name'], $bundled_items))
+																	&nbsp;<span class="badge badge-info font-italic d-none d-md-inline p-0" style="font-size: 8pt;">&nbsp;Product Bundle&nbsp;</span>
+																@endif
+																<br/>
+																<span class="text-justify item-name">
+																	@if (in_array($row['name'], $bundled_items))
+																		<i class="fas fa-box-open text-info d-md-none"></i>
+																	@endif
+																	<span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}
+																</span>
 																@if ($row['package_dimension'])
 																	<dl class="mt-3 mb-0">
 																		<dt style="font-size: 9pt;">Package Dimension</dt>
@@ -499,7 +531,7 @@
 																				</tr>
 																			@endforeach
 																		</table>
-																	@else
+																	@elseif(!in_array($row['name'], $bundled_items))
 																		<div class="h-100 d-flex align-items-center">
 																			<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																		</div>
@@ -612,7 +644,7 @@
 																			</tr>
 																		@endforeach
 																	</table>
-																@else
+																@elseif(!in_array($row['name'], $bundled_items))
 																	<p class="text-center pt-2 font-responsive">No Available Stock on All Warehouses</p>
 																@endif
 																
@@ -694,7 +726,7 @@
 											</div><!-- new table -->
 				
 											<div class="mt-3 ml-3 clearfix pagination" style="display: block;">
-												<div class="col-md-4 float-right">
+												<div class="container-fluid d-flex justify-content-end align-items-center">
 													{{ $items->links() }}
 												</div>
 											</div>
@@ -713,15 +745,14 @@
 </div>
 
 <style>
-	html,body
-{
-    width: 100% !important;
-    height: 100% !important;
-    margin: 0px !important;
-    padding: 0px !important;
-    overflow-x: hidden !important; 
-	position:relative;
-}
+	html,body{
+		width: 100% !important;
+		height: 100% !important;
+		margin: 0px !important;
+		padding: 0px !important;
+		overflow-x: hidden !important; 
+		position:relative;
+	}
 	.itemClassContainer{
 		min-height: 1px;
 		/* overflow: auto; */
