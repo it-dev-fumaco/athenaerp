@@ -24,14 +24,14 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#history">
+                        <a class="nav-link" id="get-stock-ledger" data-toggle="tab" href="#history">
                             <span class="d-none d-lg-block">ERP Submitted Transaction Histories</span>
                             <i class="fas fa-history d-block d-lg-none"></i>
                         </a>
                     </li>
                     @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#tab_4">
+                        <a class="nav-link" id="get-stock-reservations" data-toggle="tab" href="#tab_4">
                             <span class="d-none d-lg-block">Stock Reservations</span>
                             <i class="fas fa-warehouse d-block d-lg-none"></i>
                         </a>
@@ -598,7 +598,11 @@
                         <div class="col-md-2" style="display: inline-block">
                             <button class="btn btn-secondary font-responsive btn-sm" id="athReset">Reset Filters</button>
                         </div>
-                        <div id="athena-transactions" class="col-12"></div>
+                        <div id="athena-transactions" class="col-12">
+                            <div class="container d-flex justify-content-center align-items-center p-5">
+                                <div class="spinner-border"></div>
+                            </div>
+                        </div>
                     </div>
         
                     <div id="history" class="container-fluid tab-pane bg-white p-2">
@@ -632,7 +636,11 @@
                                 <div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
                             </div>
                         </div>
-                        <div id="stock-ledger" class="col-12"></div>
+                        <div id="stock-ledger" class="col-12">
+                            <div class="container d-flex justify-content-center align-items-center p-5">
+                                <div class="spinner-border"></div>
+                            </div>
+                        </div>
                     </div>
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <div id="purchase-history" class="container-fluid tab-pane bg-white">
@@ -651,7 +659,11 @@
                                 <div class="float-right m-2">
                                     <button class="btn btn-primary font-responsive btn-sm" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
                                 </div>
-                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
+                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table">
+                                    <div class="container d-flex justify-content-center align-items-center p-5">
+                                        <div class="spinner-border"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -900,7 +912,10 @@
             window.history.back();
         });
 
-        get_athena_transactions();
+        $(document).on('click', '#get-athena-transactions', function (e){
+            get_athena_transactions();
+        })
+
         function get_athena_transactions(page){
             var item_code = '{{ $item_details->name }}';
             var ath_src = $('#ath-src-warehouse-filter').val();
@@ -916,7 +931,10 @@
             });
         }
 
-        get_stock_reservation();
+        $(document).on('click', '#get-stock-reservations', function (e){
+            get_stock_reservation();
+        })
+
         function get_stock_reservation(tbl, page){
             var item_code = '{{ $item_details->name }}';
             $.ajax({
@@ -1012,7 +1030,10 @@
             });
         }
 
-        get_stock_ledger(1);
+        $(document).on('click', '#get-stock-ledger', function (e){
+            get_stock_ledger(1);
+        })
+
         function get_stock_ledger(page){
             var item_code = '{{ $item_details->name }}';
             var erp_user = $('#erp-warehouse-user-filter').val();
@@ -1181,7 +1202,7 @@
             load();
         });
 
-        load();
+        // load();
         function load(page) {
             var item_code = '{{ $item_details->name }}';
             var branch_warehouse = $('.csm-filter').eq(0).val();
