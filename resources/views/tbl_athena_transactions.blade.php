@@ -71,7 +71,12 @@
             <td class="text-center d-none d-sm-table-cell">{{ $row['target_warehouse'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['reference_type'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['issued_qty'] }}</td>
-            <td class="text-center d-none d-sm-table-cell">{{ $row['reference_no'] }}</td>
+            <td class="text-center d-none d-sm-table-cell">
+                {{ $row['reference_no'] }}
+                @if ($row['reference_type'] == 'Material Transfer for Manufacture' && $row['production_order'])
+                    <span class="badge badge-primary d-block">{{ $row['production_order'] }}</span>
+                @endif
+            </td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['transaction_date'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['warehouse_user'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['remarks'] }}</td>
