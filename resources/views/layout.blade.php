@@ -310,7 +310,15 @@
 		.dashboard-btn-grp{
 			text-align: right;
 		}
+		.avatar{
+			width: 30px;
+			height: 30px
+		}
 		@media (max-width: 575.98px) {
+			.avatar{
+				width: 25px;
+				height: 25px
+			}
 			.copyright{
 				font-size: 10pt;
 			}
@@ -508,6 +516,10 @@
 		.brochures-icon:hover > #brochure-list-floater{
 			display: block;
 		}
+
+		.test-border{
+			border: 3px solid red;
+		}
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
@@ -537,7 +549,7 @@
 							<div class="row">
 								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-md-center text-sm-left">
 									<a href="/" class="navbar-brand">
-										<span class="brand-text text-white d-sm-block d-md-none d-lg-none" style="font-size: 1.3rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
+										<span class="brand-text brand-sm text-white d-sm-block d-md-none d-lg-none" style="font-size: 1.2rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 										<span class="brand-text text-white d-none d-md-block d-lg-block" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 									</a>
 								</div>
@@ -552,7 +564,7 @@
 										@endif
 										<a class="d-inline nav-link text-white p-0" data-toggle="dropdown" href="#">
 											<div class="btn-group icon-container mt-2" role="group">
-												<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30"><i class="fas fa-caret-down ml-2 mt-1"></i>&nbsp;
+												<img src="{{ asset('dist/img/avatar04.png') }}" class="avatar img-circle" alt="User Image"><i class="fas fa-caret-down ml-0 ml-md-2 mt-1"></i>&nbsp;
 											</div>
 										</a>
 										<div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
