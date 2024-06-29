@@ -4,11 +4,11 @@
 ])
 
 @section('content')
-    <div class="container-fluid p-3">
+    <div class="container-fluid p-1 p-md-3">
         <div class="row">
             <div class="col-md-12">
                 <div class="back-btn">
-                    <img src="{{ asset('storage/icon/back.png') }}" style="width: 45px; cursor: pointer;" id="back-btn">
+                    <img src="{{ asset('storage/icon/back.png') }}" id="back-btn" class="w-100">
                 </div>
                 <ul class="nav nav-tabs" id="ip-navs" role="tablist" style="font-size: 10pt;">
                     <li class="nav-item">
@@ -24,14 +24,14 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#history">
+                        <a class="nav-link" id="get-stock-ledger" data-toggle="tab" href="#history">
                             <span class="d-none d-lg-block">ERP Submitted Transaction Histories</span>
                             <i class="fas fa-history d-block d-lg-none"></i>
                         </a>
                     </li>
                     @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#tab_4">
+                        <a class="nav-link" id="get-stock-reservations" data-toggle="tab" href="#tab_4">
                             <span class="d-none d-lg-block">Stock Reservations</span>
                             <i class="fas fa-warehouse d-block d-lg-none"></i>
                         </a>
@@ -39,15 +39,17 @@
                     @endif
                     @if (in_array($user_group, ['Manager', 'Director']))
                     <li class="nav-item">
-                        <a class="nav-link d-none d-lg-block" data-toggle="tab" href="#purchase-history">Purchase Rate History</a>
-                        <a class="nav-link d-block d-lg-none" data-toggle="tab" href="#purchase-history"><i class="fa fa-shopping-cart"></i></a>
+                        <a class="nav-link" id="get-purchase-history" data-toggle="tab" href="#purchase-history">
+                            <span class="d-none d-lg-block">Purchase Rate History</span>
+                            <i class="fa fa-shopping-cart d-block d-lg-none"></i>
+                        </a>
                     </li>
                     @endif
                     @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Promodiser', 'Director']))
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#consignment-stock-movement">
+                        <a class="nav-link" id="get-consignment-stock-movement" data-toggle="tab" href="#consignment-stock-movement">
                             <span class="d-none d-lg-block">Consignment Stock Movement</span>
-                            <i class="fas fa-warehouse d-block d-lg-none"></i>
+                            <i class="fas fa-warehouse d-block d-lg-none" style="font-size: 8pt"></i>
                         </a>
                     </li>
                     @endif
@@ -63,32 +65,32 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row">
-                                    <div class="col-3 p-2">
+                                    <div class="col-12 col-md-3 p-2">
                                         @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
-                                        <select class="form-control csm-filter" name="store" id="consignment-store-select"></select>
+                                            <select class="form-control csm-filter" name="store" id="consignment-store-select"></select>
                                         @else
-                                        @if (count($consignment_branches) > 1)
-                                        <select class="form-control csm-filter" name="store">
-                                            @foreach ($consignment_branches as $store)
-                                            <option value="{{ $store }}">{{ $store }}</option>
-                                            @endforeach
-                                        </select>
-                                        @endif
-                                        @if ((count($consignment_branches) == 1))
-                                        <input type="hidden" class="csm-filter" name="store" value="{{ $consignment_branches[0] }}">
-                                        @endif
+                                            @if (count($consignment_branches) > 1)
+                                            <select class="form-control csm-filter" name="store">
+                                                @foreach ($consignment_branches as $store)
+                                                <option value="{{ $store }}">{{ $store }}</option>
+                                                @endforeach
+                                            </select>
+                                            @endif
+                                            @if ((count($consignment_branches) == 1))
+                                                <input type="hidden" class="csm-filter" name="store" value="{{ $consignment_branches[0] }}">
+                                            @endif
                                         @endif
                                     </div>
-                                    <div class="col-3 p-2">
+                                    <div class="col-12 col-md-3 p-2">
                                         <input type="text" class="form-control date-range" id="consignment-date-range" name="date_range" style="height: 30px;"> 
                                     </div>
-                                    <div class="col-3 p-2">
+                                    <div class="col-12 col-md-3 p-2">
                                         <select name="user" id="consignment-user-select" class="form-control select2"></select>
                                     </div>
-                                    <div class="col-3 p-2">
+                                    <div class="col-12 col-md-3 p-2">
                                         <button class="btn btn-sm btn-secondary" id="consignment-reset">Reset Filters</button>
                                     </div>
-                                    <div class="col-12">
+                                    <div class="col-12 overflow-auto">
                                         <div id="consignment-ledger-content"></div>
                                     </div>
                                 </div>
@@ -284,7 +286,7 @@
                                             <div class="card-header border-bottom-0 p-1 ml-3">
                                                 <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> {!! $stock_title !!}</h3>
                                             </div>
-                                            <div class="box box-solid p-0 ml-3">
+                                            <div class="box box-solid p-0 ml-3 overflow-auto">
                                                 <div class="box-header with-border">
                                                     <div class="box-body item-stock-level-div"></div>
                                                 </div>
@@ -598,7 +600,11 @@
                         <div class="col-md-2" style="display: inline-block">
                             <button class="btn btn-secondary font-responsive btn-sm" id="athReset">Reset Filters</button>
                         </div>
-                        <div id="athena-transactions" class="col-12"></div>
+                        <div id="athena-transactions" class="col-12 overflow-auto">
+                            <div class="container d-flex justify-content-center align-items-center p-5">
+                                <div class="spinner-border"></div>
+                            </div>
+                        </div>
                     </div>
         
                     <div id="history" class="container-fluid tab-pane bg-white p-2">
@@ -632,10 +638,14 @@
                                 <div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
                             </div>
                         </div>
-                        <div id="stock-ledger" class="col-12"></div>
+                        <div id="stock-ledger" class="col-12 overflow-auto">
+                            <div class="container d-flex justify-content-center align-items-center p-5">
+                                <div class="spinner-border"></div>
+                            </div>
+                        </div>
                     </div>
                     @if (in_array($user_group, ['Manager', 'Director']))
-                    <div id="purchase-history" class="container-fluid tab-pane bg-white">
+                    <div id="purchase-history" class="container-fluid tab-pane bg-white overflow-auto">
                         <div id="purchase-history-div" class="p-3 col-12"></div>
                     </div>
                     @endif
@@ -651,7 +661,11 @@
                                 <div class="float-right m-2">
                                     <button class="btn btn-primary font-responsive btn-sm" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
                                 </div>
-                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table"></div>
+                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table">
+                                    <div class="container d-flex justify-content-center align-items-center p-5">
+                                        <div class="spinner-border"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -712,6 +726,8 @@
             position: absolute;
             right: 70px;
             top: -10px;
+            width: 45px;
+            cursor: pointer
         }
         .responsive-item-code{
             font-size: 14pt;
@@ -722,9 +738,40 @@
         .variants-table{
             font-size: 9pt;
         }
+        @media (max-width: 479.98px) {
+            #example tr > *:first-child {
+                min-width: 5rem;
+            }
+            .back-btn{
+                position: absolute;
+                margin-right: 8px;
+                top: 0;
+                width: 25px;
+            }
+            i{
+                font-size: 9pt;
+            }
+            .pagination{
+                font-size: 10pt !important;
+            }
+            .responsive-item-code{
+                font-size: 12pt !important;
+            }
+            .responsive-description{
+                font-size: 9pt !important;
+            }
+            .variants-table{
+                font-size: 8pt !important;
+            }
+        }
         @media (max-width: 575.98px) {
             #example tr > *:first-child {
                 min-width: 5rem;
+            }
+            .back-btn{
+                position: absolute;
+                top: 3px;
+                width: 25px;
             }
             .pagination{
                 font-size: 10pt !important;
@@ -742,6 +789,9 @@
         @media (max-width: 767.98px) {
             #example tr > *:first-child {
                 min-width: 5rem;
+            }
+            .back-btn{
+                right: 0;
             }
             .pagination{
                 font-size: 10pt !important;
@@ -900,7 +950,10 @@
             window.history.back();
         });
 
-        get_athena_transactions();
+        $(document).on('click', '#get-athena-transactions', function (e){
+            get_athena_transactions();
+        })
+
         function get_athena_transactions(page){
             var item_code = '{{ $item_details->name }}';
             var ath_src = $('#ath-src-warehouse-filter').val();
@@ -916,7 +969,10 @@
             });
         }
 
-        get_stock_reservation();
+        $(document).on('click', '#get-stock-reservations', function (e){
+            get_stock_reservation();
+        })
+
         function get_stock_reservation(tbl, page){
             var item_code = '{{ $item_details->name }}';
             $.ajax({
@@ -1012,7 +1068,10 @@
             });
         }
 
-        get_stock_ledger(1);
+        $(document).on('click', '#get-stock-ledger', function (e){
+            get_stock_ledger(1);
+        })
+
         function get_stock_ledger(page){
             var item_code = '{{ $item_details->name }}';
             var erp_user = $('#erp-warehouse-user-filter').val();
@@ -1046,7 +1105,9 @@
         });
 
         @if (in_array($user_group, ['Manager', 'Director']))
-        get_purchase_history();
+            $(document).on('click', '#get-purchase-history', function (e){
+                get_purchase_history();
+            })
         @endif
 
         function get_purchase_history(page){
@@ -1181,7 +1242,7 @@
             load();
         });
 
-        load();
+        // load();
         function load(page) {
             var item_code = '{{ $item_details->name }}';
             var branch_warehouse = $('.csm-filter').eq(0).val();
@@ -1262,6 +1323,10 @@
         $(document).on('select2:select', '#consignment-user-select', function(e){
             load();
         });
+
+        $(document).on('click', '#get-consignment-stock-movement', function (e){
+            load();
+        })
 
         $(document).on('click', '#consignment-reset', function (){
             $('#consignment-user-select').empty().trigger('change');

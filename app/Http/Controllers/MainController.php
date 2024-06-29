@@ -3041,23 +3041,34 @@ class MainController extends Controller
 
     public function get_athena_transactions(Request $request, $item_code){
         $user_group = Auth::user()->user_group;
-        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)
-            ->when($request->wh_user != '' and $request->wh_user != 'null', function($q) use ($request){
+
+        $req_wh_user = str_replace('null', null, $request->wh_user);
+        $req_src_wh = str_replace('null', null, $request->src_wh);
+        $req_trg_wh = str_replace('null', null, $request->trg_wh);
+        $req_ath_dates = str_replace('null', null, $request->ath_dates);
+
+        $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->where('status', 'Issued')
+            ->when($req_wh_user, function($q) use ($request){
                 return $q->where('warehouse_user', $request->wh_user);
             })
-            ->when($request->src_wh != '' and $request->src_wh != 'null', function($q) use ($request){
+            ->when($req_src_wh, function($q) use ($request){
                 return $q->where('source_warehouse', $request->src_wh);
             })
-            ->when($request->trg_wh != '' and $request->trg_wh != 'null', function($q) use ($request){
+            ->when($req_trg_wh, function($q) use ($request){
                 return $q->where('target_warehouse', $request->trg_wh);
             })
-            ->when($request->ath_dates != '' and $request->ath_dates != 'null', function($q) use ($request){
+            ->when($req_ath_dates, function($q) use ($request){
                 $dates = explode(' to ', $request->ath_dates);
                 $from = Carbon::parse($dates[0]);
                 $to = Carbon::parse($dates[1])->endOfDay();
                 return $q->whereBetween('transaction_date',[$from, $to]);
-            })->where('status', 'Issued')
+            })
             ->orderBy('transaction_date', 'desc')->paginate(15);
+
+        $production_logs = collect($logs->items())->groupBy('purpose');
+        $production_logs = isset($production_logs['Material Transfer for Manufacture']) ? $production_logs['Material Transfer for Manufacture'] : [];
+
+        $production_orders = DB::table('tabStock Entry')->whereIn('name', collect($production_logs)->pluck('reference_parent'))->pluck('work_order', 'name');
 
         $ste_names = array_column($logs->items(), 'reference_parent');
 
@@ -3112,6 +3123,7 @@ class MainController extends Controller
                 'issued_qty' => $row->issued_qty * 1,
                 'reference_no' => $row->reference_no,
                 'transaction_date' => $row->transaction_date,
+                'production_order' => isset($production_orders[$row->reference_parent]) ? $production_orders[$row->reference_parent] : null,
                 'warehouse_user' => $row->warehouse_user,
                 'status' => $status,
                 'remarks' => $remarks
