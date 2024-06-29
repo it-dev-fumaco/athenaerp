@@ -29,7 +29,7 @@
                             <i class="fas fa-history d-block d-lg-none"></i>
                         </a>
                     </li>
-                    @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager']))
+                    @if(Auth::check() and in_array(Auth::user()->user_group, ['Inventory Manager', 'Director']))
                     <li class="nav-item">
                         <a class="nav-link" id="get-stock-reservations" data-toggle="tab" href="#tab_4">
                             <span class="d-none d-lg-block">Stock Reservations</span>
@@ -655,7 +655,7 @@
                                 @php
                                     $attr = null;
                                     if(Auth::check()){
-                                        $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+                                        $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager', 'Director'])) ? 'disabled' : '';
                                     }
                                 @endphp
                                 <div class="float-right m-2">

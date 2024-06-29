@@ -2527,6 +2527,8 @@ class MainController extends Controller
             //     return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($ps_details->qty * 1) .'.']);
             // }
 
+            // $customer = DB::table('tabDelivery Note')->where('name', $ps_details->delivery_note)->pluck('customer')->first();
+
             $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
             if($request->qty > $available_qty && $request->is_bundle == false && $request->deduct_reserve == 0){
                 return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
@@ -4715,12 +4717,12 @@ class MainController extends Controller
                 ->where('sted.t_warehouse', 'Goods in Transit - FI')
                 ->whereRaw('wo.production_item = soi.item_code')
                 ->where('so.docstatus', 1)->where('so.per_ordered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
-                ->whereRaw('soi.received_qty < soi.qty')
+                ->whereRaw('soi.ordered_qty < soi.qty')
                 ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
                 ->when($transferred_to_fg, function ($q) use ($transferred_to_fg){
                     return $q->whereNotIn('soi.name', $transferred_to_fg);
                 })
-                ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.received_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom', 'sted.name as sted_name', 'sted.status as sted_status', 'sted.date_modified', 'sted.session_user', 'sted.qty as ste_qty', 'ste.name as ste_name')
+                ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.ordered_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom', 'sted.name as sted_name', 'sted.status as sted_status', 'sted.date_modified', 'sted.session_user', 'sted.qty as ste_qty', 'ste.name as ste_name')
                 ->unionAll($sales_orders)
                 ->orderBy('modified')->get();
 

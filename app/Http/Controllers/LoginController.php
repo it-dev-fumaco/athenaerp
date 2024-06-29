@@ -41,6 +41,9 @@ class LoginController extends Controller
 
                 if($authUser == true){
                     $user = DB::table('tabWarehouse Users')->where('wh_user', $email)->first();
+                    if (!$user) {
+                        $user = DB::table('tabWarehouse Users')->where('wh_user', str_replace('@fumaco.local', '@fumaco.com', $email))->first();
+                    }
 
                     if ($user) {
                         // attempt to do the login

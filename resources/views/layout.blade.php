@@ -555,7 +555,8 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										@if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser']))
+										{{-- @if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser'])) --}}
+										@if (Auth::check())
 											<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
 												<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
 												<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
@@ -607,7 +608,8 @@
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
-									@if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser']))
+									{{-- @if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser'])) --}}
+									@if (Auth::check())
 										<span class="d-none brochures-icon" style="position: relative;">
 											<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
 											<span class="badge bg-danger brochure-arr-count">0</span>
@@ -1430,7 +1432,7 @@
 				count_brochures();
 			});
 
-			@if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser']))
+			@if (Auth::check())
 				count_brochures();
 				function count_brochures(){
 					$.ajax({

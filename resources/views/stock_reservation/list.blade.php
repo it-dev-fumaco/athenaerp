@@ -27,7 +27,7 @@
                 $badge = 'secondary';
             }
 
-            $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+            $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager', 'Director'])) ? 'disabled' : '';
             $attr_cancelled = ($row->status == 'Cancelled') ? 'disabled' : '';
 
             $reserved_qty = (floor($row->reserve_qty) != $row->reserve_qty * 1) ? number_format($row->reserve_qty, 4) : $row->reserve_qty * 1;
@@ -114,7 +114,7 @@
                 $badge = 'secondary';
             }
 
-            $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+            $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager', 'Director'])) ? 'disabled' : '';
 
             $reserved_qty = (floor($row1->reserve_qty) != $row1->reserve_qty * 1) ? number_format($row1->reserve_qty, 4) : $row1->reserve_qty * 1;
             $consumed_qty = (floor($row1->consumed_qty) != $row1->consumed_qty * 1) ? number_format($row1->consumed_qty, 4) : $row1->consumed_qty * 1;
@@ -202,7 +202,7 @@
                 $badge = 'secondary';
             }
             
-            $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager'])) ? 'disabled' : '';
+            $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager', 'Director'])) ? 'disabled' : '';
 
             $reserved_qty = (floor($row2->reserve_qty) != $row2->reserve_qty * 1) ? number_format($row2->reserve_qty, 4) : $row2->reserve_qty * 1;
             $consumed_qty = (floor($row2->consumed_qty) != $row2->consumed_qty * 1) ? number_format($row2->consumed_qty, 4) : $row2->consumed_qty * 1;
