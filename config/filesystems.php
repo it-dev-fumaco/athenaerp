@@ -14,6 +14,7 @@ return [
     */
 
     'default' => env('FILESYSTEM_DRIVER', 'local'),
+    // 'default' => 'kimberly',
 
     /*
     |--------------------------------------------------------------------------
@@ -30,14 +31,32 @@ return [
 
     'disks' => [
 
+        // 'local' => [
+        //     'driver' => 'local',
+        //     'root' => storage_path('app'),
+        // ],
+
+        // 'public' => [
+        //     'driver' => 'local',
+        //     'root' => storage_path('app/public'),
+        //     'url' => env('APP_URL').'/storage',
+        //     'visibility' => 'public',
+        // ],
+
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app'),
+            'username' => env('SHARED_NETWORK_USERNAME', null),
+            'password' => env('SHARED_NETWORK_PASSWORD', null),
+            'root' => env('SHARED_NETWORK_ROOT'),
+            'ssl' => false
         ],
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'username' => env('SHARED_NETWORK_USERNAME', null),
+            'password' => env('SHARED_NETWORK_PASSWORD', null),
+            'root' => env('SHARED_NETWORK_ROOT'),
+            'ssl' => false,
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
         ],
