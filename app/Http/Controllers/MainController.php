@@ -2920,7 +2920,7 @@ class MainController extends Controller
                         $item_alternatives[] = [
                             'item_code' => $a->item_code,
                             'description' => $a->description,
-                            'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                            'item_alternative_image' => $item_alternative_image,
                             'actual_stocks' => $available_qty
                         ];
                     }
