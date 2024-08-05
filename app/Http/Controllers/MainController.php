@@ -18,7 +18,7 @@ use App\Models\StockReservation;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
-
+use Illuminate\Support\Facades\File;
 
 class MainController extends Controller
 {
@@ -3416,7 +3416,6 @@ class MainController extends Controller
 
     public function upload_item_image(Request $request){
         // get item removed image file names for delete
-
         $existing_images = $request->existing_images ? $request->existing_images : [];
         $removed_images = DB::table('tabItem Images')->where('parent', $request->item_code)
             ->when($existing_images, function ($q) use ($existing_images){
@@ -3442,32 +3441,36 @@ class MainController extends Controller
 
             $item_images_arr = [];
             foreach ($files as $i => $file) {
-               //get filename with extension
-                $filenamewithextension = $file->getClientOriginalName();
-                // //get filename without extension
-                $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-                //get file extension
-                $extension = $file->getClientOriginalExtension();
-                //filename to store
-                $micro_time = round(microtime(true));
-                
-                $filenametostore = $micro_time . $i . '-'. $request->item_code.'.'.$extension;//round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
+                $microTime = round(microtime(true));
+                $fileIndex = 0; // Initialize an index to handle multiple files, if needed
 
-                $destinationPath = storage_path('app/public/img/');
+                $filename = "{$microTime}{$fileIndex}-{$request->item_code}";
+                $originalExtension = $file->getClientOriginalExtension();
 
-                $jpeg_file = $micro_time . $i . '-'. $request->item_code.'.'.$extension;
+                // Paths for storage
+                $storagePath = 'img/';
+                $jpegFilename = "$filename.$originalExtension";
+                $webpFilename = "$filename.webp";
 
+                // Save the original file
+                Storage::putFileAs($storagePath, $file, $jpegFilename);
+
+                // Create and save the WebP version
                 $webp = Webp::make($file);
-                $webp_file_name = $micro_time . $i . '-'. $request->item_code.'.webp';
 
-                if($webp->save(storage_path('app/public/img/'.$webp_file_name))) {
-                    $file->move($destinationPath, $jpeg_file);
+                if(!File::exists(public_path('temp'))){
+                    File::makeDirectory(public_path('temp'), 0755, true);
                 }
 
-                // $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
-                // if (file_exists($jpeg_path)) {
-                //     unlink($jpeg_path);
-                // }
+                $webp_path = public_path("temp/$webpFilename");
+
+                // Storage::put("$storagePath$webpFilename", $webp);
+                $webp->save($webp_path);
+
+                $web_contents = file_get_contents($webp_path);
+                Storage::put("/img/$webpFilename", $web_contents);
+
+                unlink($webp_path);
 
                 $item_images_arr[] = [
                     'name' => uniqid(),
@@ -3479,7 +3482,7 @@ class MainController extends Controller
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => $filenametostore
+                    'image_path' => $jpegFilename
                 ];
             }
             
@@ -4454,7 +4457,11 @@ class MainController extends Controller
     }
 
     public function get_item_images($item_code){
-        return DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path', 'name');
+        $images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path', 'name');
+
+        return collect($images)->map(function ($image){
+            return $this->base64_image("/img/$image");
+        });
     }
 
     public function set_reservation_as_expired(){

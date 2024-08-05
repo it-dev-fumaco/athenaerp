@@ -23,7 +23,7 @@
                         <div class="pdf-body">
                             <div style="disply: block; clear: both; color: #000">
                                 <div style="width: 43%; float: left; padding: 2px !important;">
-                                    <img src="{{ asset('/storage/fumaco_logo.png') }}" width="230">
+                                    <img src="{{ $fumaco_logo }}" width="230">
                                 </div>
                                 <div style="width: 57%; float:left; text-transform: uppercase; font-size: 11pt;">
                                     <p>PROJECT: <b>{{ $item['project'] }}</b></p>
@@ -44,7 +44,7 @@
                                             if (isset($images['image'.$img]['filepath']) && $images['image'.$img]['filepath']) {
                                                 $img_actual = null;
                                                 $img_temp = 'd-none';
-                                                $img_src = asset($images['image'.$img]['filepath']);
+                                                $img_src = $images['image'.$img]['filepath'];
                                                 $img_id = $images['image'.$img]['id'];
                                             }
                                         @endphp
@@ -97,7 +97,7 @@
                     </div>
                     <div class="pdf-footer">
                         <div class="pdf-footer-company-logo">
-                            <img src="{{ asset('/storage/fumaco_logo.png') }}" width="155">
+                            <img src="{{ $fumaco_logo }}" width="155">
                         </div>
                         <div class="pdf-footer-company-website">www.fumaco.com</div>
                         <div class="pdf-footer-contacts">
