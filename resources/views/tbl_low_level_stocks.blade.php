@@ -20,25 +20,10 @@
         @forelse ($low_level_stocks as $n => $row)
         <tr>
             <td class="text-justify p-2 align-middle font-responsive">
-                @php
-                    $img = ($row['image']) ? "/img/" . $row['image'] : "/icon/no_img.png";
-                    $img_webp = ($row['image']) ? "/img/" . explode('.',$row['image'])[0].'.webp' : "/icon/no_img.webp";
-                @endphp
                 <div class="row">
                     <div class="col-2">
-                        <a href="{{ asset('storage/') . $img }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
-                            {{-- <img src="{{ asset('storage/').$img }}" class="img w-100"> --}}
-                            @if(!Storage::disk('public')->exists('/img/'.explode('.', $row['image'])[0].'.webp'))
-                                <img src="{{ asset('storage/').$img }}" class="img w-100">
-                            @elseif(!Storage::disk('public')->exists('/img/'.$row['image']))
-                                <img src="{{ asset('storage/').$img_webp }}" class="img w-100">
-                            @else
-                                <picture>
-                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img w-100">
-                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img w-100">
-                                    <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img w-100">
-                                </picture>
-                            @endif
+                        <a href="{{ $row['image'] }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
+                            <img src="{{ $row['image'] }}" class="img w-100">
                         </a>
                     </div>
                     <div class="col-10">

@@ -248,22 +248,8 @@
 													<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
 														<div class="row m-0">
 															<div class="col-1 p-1">
-																@php
-																	$img = isset($row['item_image_paths'][0]) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
-																	$img_webp = isset($row['item_image_paths'][0]) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-																@endphp
-																<a href="{{ asset('storage/') }}{{ $img }}" data-item-code="{{ $row['name'] }}" class="view-images">
-																	@if(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp'))
-																		<img src="{{ asset('storage/').$img }}" class="img w-100">
-																	@elseif(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.$row['item_image_paths'][0]->image_path))
-																		<img src="{{ asset('storage/').$img_webp }}" class="img w-100">
-																	@else
-																		<picture>
-																			<source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
-																			<source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
-																			<img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
-																		</picture>
-																	@endif
+																<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images">
+																	<img src="{{ $row['image'] }}" class="img w-100">
 																</a>
 					
 																<div class="text-center mt-2 mb-1">
@@ -434,22 +420,8 @@
 													<div class="d-block d-xl-none border border-outline-secondary"><!-- Mobile/Tablet -->
 														<div class="row m-0">
 															<div class="col-3 col-lg-2 col-xl-3 p-1">
-																@php
-																	$img = isset($row['item_image_paths'][0]) ? "/img/" . $row['item_image_paths'][0]->image_path : "/icon/no_img.png";
-																	$img_webp = isset($row['item_image_paths'][0]) ? "/img/" . explode('.',$row['item_image_paths'][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-																@endphp
-																<a href="{{ asset('storage/') }}{{ $img }}" data-item-code="{{ $row['name'] }}" class="view-images">
-																	@if(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.explode('.', $row['item_image_paths'][0]->image_path)[0].'.webp'))
-																		<img src="{{ asset('storage/').$img }}" class="img w-100">
-																	@elseif(isset($row['item_image_paths'][0]) && !Storage::disk('public')->exists('/img/'.$row['item_image_paths'][0]->image_path))
-																		<img src="{{ asset('storage/').$img_webp }}" class="img w-100">
-																	@else
-																		<picture>
-																			<source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
-																			<source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
-																			<img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
-																		</picture>
-																	@endif
+																<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images">
+																	<img src="{{ $row['image'] }}" class="img w-100">
 																</a>
 
 																<a href="/get_item_details/{{ $row['name'] }}">

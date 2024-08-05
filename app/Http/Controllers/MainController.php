@@ -13,6 +13,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Traits\GeneralTrait;
 use App\Models\StockReservation;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class MainController extends Controller
 {
+    use GeneralTrait;
     public function get_api_headers(){
         return [
             'Content-Type' => 'application/json',
@@ -619,8 +621,11 @@ class MainController extends Controller
             ->groupBy('parent', 'warehouse')->get();
         $lowLevelStock = collect($lowLevelStock)->groupBy('item')->toArray();
 
-        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
-        $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("/img/$image");
+        });
+        $no_img_placeholder = $this->base64_image('/icon/no_img.png');
 
         $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
@@ -656,10 +661,7 @@ class MainController extends Controller
 
         $item_list = [];
         foreach ($items as $row) {
-            $item_images = [];
-            if (array_key_exists($row->item_code, $item_image_paths)) {
-                $item_images = $item_image_paths[$row->item_code];
-            }
+            $image = isset($item_images[$row->item_code]) ? $item_images[$row->item_code] : $no_img_placeholder;
 
             $part_nos = Arr::exists($part_nos_query, $row->item_code) ? $part_nos_query[$row->item_code] : null;
 
@@ -780,7 +782,8 @@ class MainController extends Controller
             $item_list[] = [
                 'name' => $row->item_code,
                 'description' => $row->description,
-                'item_image_paths' => $item_images,
+                // 'item_image_paths' => $item_images,
+                'image' => $image,
                 'part_nos' => $part_nos,
                 'item_group' => $row->item_group,
                 'stock_uom' => $row->stock_uom,
@@ -833,7 +836,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department', 'bundled_items'));
+        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department', 'bundled_items', 'no_img_placeholder'));
     }
 
     private function breadcrumbs($parent){
@@ -1045,10 +1048,14 @@ class MainController extends Controller
 
         $bundled_items = DB::table('tabProduct Bundle')->whereIn('name', $item_codes)->pluck('name')->toArray();
 
-        $image_collection = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
-        $image = collect($image_collection)->groupBy('parent');
+        $image_collection = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $image_collection = collect($image_collection)->map(function ($image){
+            return $this->base64_image("/img/$image");
+        });
 
-        return view('suggestion_box', compact('q', 'image', 'bundled_items'));
+        $no_img = $this->base64_image('/icon/no_img.png');
+
+        return view('suggestion_box', compact('q', 'image_collection', 'bundled_items', 'no_img'));
     }
 
     public function get_select_filters(Request $request){
@@ -1588,12 +1595,9 @@ class MainController extends Controller
                 ->select('po.*')->first();
 
             $img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-            if(!$img){
-                $img = DB::table('tabItem')->where('name', $data->item_code)->pluck('item_image_path')->first();
-                $img = $img ? $img : null;
-            }
-        
-            // $q = [];
+            $img = $img ? "/img/$img" : '/icon/no_img.png';
+            $img = $this->base64_image($img);
+
             $q = [
                 'production_order' => $data->production_order,
                 'fg_warehouse' => $data->fg_warehouse,
@@ -1705,10 +1709,8 @@ class MainController extends Controller
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
         $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        if(!$img){
-            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
-            $img = $img ? $img : null;
-        }
+        $img = $img ? "/img/$img" : '/icon/no_img.png';
+        $img = $this->base64_image($img);
 
         $s_warehouse = $q->purpose == 'Manufacture' ? 'Goods In Transit - FI' : $q->s_warehouse;
 
@@ -1838,10 +1840,8 @@ class MainController extends Controller
         $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
         
         $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        if(!$img){
-            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
-            $img = $img ? $img : null;
-        }
+        $img = $img ? "/img/$img" : '/icon/no_img.png';
+        $img = $this->base64_image($img);
         
         $is_bundle = false;
         if(!$item_details->is_stock_item){
@@ -2802,7 +2802,13 @@ class MainController extends Controller
         }
 
         // get item images
-        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path')->toArray();
+        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path');
+
+        $item_images = collect($item_images)->map(function($image){
+            return $this->base64_image("/img/$image");
+        });
+
+        $no_img = $this->base64_image("/icon/no_img.png");
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
         $production_item_alternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
@@ -2814,7 +2820,10 @@ class MainController extends Controller
         $production_item_alt_actual_stock = DB::table('tabBin')->whereIn('item_code', $production_item_alternative_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')
             ->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
         foreach($production_item_alternatives as $a){
-            $item_alternative_image = array_key_exists($a->item_code, $item_alternative_images) ? $item_alternative_images[$a->item_code] : null;
+            // $item_alternative_image = array_key_exists($a->item_code, $item_alternative_images) ? $item_alternative_images[$a->item_code] : null;
+            $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? "/img/".$item_alternative_images[$a->item_code] : "/icon/no_img.png";
+            $item_alternative_image = $this->base64_image($item_alternative_image);
+
             $actual_stocks = array_key_exists($a->item_code, $production_item_alt_actual_stock) ? $production_item_alt_actual_stock[$a->item_code] : 0;
 
             if(count($item_alternatives) < 7){
@@ -2864,7 +2873,10 @@ class MainController extends Controller
             $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
             
             foreach($q as $a){
-                $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
+                // $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
+                $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? "/img/".$item_alternative_images[$a->item_code] : "/icon/no_img.png";
+                $item_alternative_image = $this->base64_image($item_alternative_image);
+
                 $total_reserved = $total_consumed = 0;
                 if(isset($alternative_reserves[$a->item_code])){
                     $total_reserved = $alternative_reserves[$a->item_code]->sum('reserved_qty');
@@ -2898,7 +2910,8 @@ class MainController extends Controller
                 $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
 
                 foreach($q as $a){
-                    $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
+                    $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? "/img/".$item_alternative_images[$a->item_code] : "/icon/no_img.png";
+                    $item_alternative_image = $this->base64_image($item_alternative_image);
 
                     $total_reserved = $total_consumed = 0;
                     if(isset($alternative_reserves[$a->item_code])){
@@ -3006,7 +3019,7 @@ class MainController extends Controller
             $consignment_branches = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         }
 
-        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches', 'bundled'));
+        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches', 'bundled', 'no_img'));
     }
 
     public function save_item_information(Request $request, $item_code){
@@ -3481,6 +3494,11 @@ class MainController extends Controller
     public function load_item_images($item_code, Request $request){
         $images = DB::table('tabItem Images')->where('parent', $item_code)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->orderBy('idx', 'asc')->get();
         $selected = $request->idx ? $request->idx : 0;
+
+        $images = collect($images)->map(function ($image){
+            $image->image = $this->base64_image("/img/".$image->image_path, 1);
+            return $image;
+        });
 
         return view('images_container', compact('images', 'selected'));
     }
@@ -4455,6 +4473,8 @@ class MainController extends Controller
             ->select('ir.name as id', 'i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty', 'i.item_classification')
             ->whereIn('i.name', $item_default_warehouses)->get();
 
+        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($query)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+
         $low_level_stocks = [];
         foreach ($query as $a) {
             $actual_qty = $this->get_actual_qty($a->item_code, $a->warehouse);
@@ -4466,15 +4486,8 @@ class MainController extends Controller
                     ->whereBetween('mr.transaction_date', [Carbon::now()->subDays(30)->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
                     ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
 
-                $item_image = null;
-                $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
-                if($item_image_path){
-                    $item_image_path = $item_image_path->image_path;
-                }else{
-                    $item_image_path = DB::table('tabItem')->where('name', $a->item_code)->first();
-                    $item_image = $item_image_path ? $item_image_path->item_image_path : null;
-                }
-
+                $item_image = isset($item_images[$a->item_code]) ? '/img/'.$item_images[$a->item_code] : '/icon/no_img.png';
+                $item_image = $this->base64_image($item_image);
 
                 $low_level_stocks[] = [
                     'id' => $a->id,
@@ -4523,9 +4536,13 @@ class MainController extends Controller
             ->select('sr.item_code', DB::raw('sum(sr.reserve_qty) as qty'), 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
             ->get();
 
+        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+
         $list = [];
         foreach($q as $row){
-            $item_image_path = DB::table('tabItem Images')->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
+            // $item_image_path = DB::table('tabItem Images')->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
+            $image = isset($item_images[$row->item_code]) ? '/img/'.$item_images[$row->item_code] : '/icon/no_icon.png';
+            $image = $this->base64_image($image);
 
             $list[] = [
                 'item_code' => $row->item_code,
@@ -4534,7 +4551,7 @@ class MainController extends Controller
                 'qty' => $row->qty * 1,
                 'warehouse' => $row->warehouse,
                 'stock_uom' => $row->stock_uom,
-                'image' => ($item_image_path) ? $item_image_path->image_path : null
+                'image' => $image
             ];
         }
 
@@ -5177,10 +5194,8 @@ class MainController extends Controller
             ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner', 'dr.docstatus')->first();
 
         $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        if(!$img){
-            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
-            $img = $img ? $img : null;
-        }
+        $img = $img ? "/img/$img" : '/icon/no_img.png';
+        $img = $this->base64_image($img);
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 

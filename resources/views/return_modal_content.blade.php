@@ -27,23 +27,8 @@
                         <div class="col-md-12">
                             <div class="row">
                                 <div class="col-4 mt-3">
-                                    @php
-                                        $img = ($data['img']) ? "/img/" .$data['img'] : "/icon/no_img.png";
-                                        $img_webp = ($data['img']) ? "/img/" . explode('.', $data['img'])[0].'.webp' : "/icon/no_img.webp";
-                                    @endphp
-                                    <a href="{{ asset('storage/') . '' . $img }}" data-toggle="lightbox" data-gallery="{{ $data['item_code'] }}" data-title="{{ $data['item_code'] }}">
-                                        @if(!Storage::disk('public')->exists('/img/'.explode('.', $data['img'])[0].'.webp'))
-                                            <img src="{{ asset('storage/').$img }}" class="item_image w-100">
-                                        @elseif(!Storage::disk('public')->exists('/img/'.$data['img']))
-                                            <img src="{{ asset('storage/').$img_webp }}" class="item_image w-100">
-                                        @else
-                                            <picture>
-                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" width="100%" class="item_image">
-                                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" width="100%" class="item_image">
-                                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="100%" class="item_image">
-                                            </picture>
-                                        @endif
-                                        {{-- <img class="display-block img-thumbnail" src="{{ asset('storage/') }}{{ $img }}" width="100%" class="item_image"> --}}
+                                    <a href="{{ $data['img'] }}" data-toggle="lightbox" data-gallery="{{ $data['item_code'] }}" data-title="{{ $data['item_code'] }}">
+                                        <img class="display-block img-thumbnail" src="{{ $data['img'] }}" width="100%" class="item_image">
                                     </a>
                                 </div>
                                 <div class="col-8 mt-3">

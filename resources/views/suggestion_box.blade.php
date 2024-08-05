@@ -1,24 +1,11 @@
 <div id="item-list" class="container-fluid p-0 ul_list" style="border: 1px solid #ccc;">
   @forelse ($q as $item)
     @php
-      $img = isset($image[$item->name]) ? "/img/" . $image[$item->name][0]->image_path : "/icon/no_img.png";
-      $img_webp = isset($image[$item->name]) ? "/img/" . explode('.',$image[$item->name][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+      $img = isset($image_collection[$item->name]) ? $image_collection[$item->name] : $no_img;
     @endphp
     <div class="search-row row w-100 p-2" style="border-bottom: 1px solid #ccc;">
       <div class="text-center p-2 col-2">
-        @if(!Storage::disk('public')->exists('/img'.$img_webp) && Storage::disk('public')->exists('/img'.$img))
-          <img src="{{ asset('storage'.$img) }}" class="img w-100">
-        @elseif(!Storage::disk('public')->exists('/img'.$img) && Storage::disk('public')->exists('/img'.$img_webp))
-          <img src="{{ asset('storage'.$img_webp) }}" class="img w-100">
-        @elseif(!Storage::disk('public')->exists('/img'.$img) && !Storage::disk('public')->exists('/img'.$img_webp))
-          <img src="{{ asset('storage/icon/no_img.webp') }}" class="img w-100">
-        @else
-          <picture>
-            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" style=" height: 60px;" class="w-100">
-            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" style="height: 60px;" class="w-100">
-            <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" style="height: 60px;" class="w-100">
-          </picture>
-        @endif
+        <img src="{{ $img }}" class="img w-100">
       </div>
       <div class="col-8 col-md-9 text-truncate">
         <span style="font-size: 10pt;"><b>{{ $item->name }}</b></span>
