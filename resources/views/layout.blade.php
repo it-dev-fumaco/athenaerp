@@ -534,10 +534,7 @@
 	</script>
 	@endif
 </head>
-<body class="hold-transition layout-top-nav" style="border: 3px solid red">
-	<div class="bg-danger" style="display: block !important; position: fixed; top: 0; left: 0; z-index: 9999; padding: 10px">
-        ERP DB Data: {{ env('DB_HOST_SRC') == '10.0.0.73' ? 'LIVE' : 'TESTING' }} <br>
-    </div>
+<body class="hold-transition layout-top-nav">
 	<div id="loader-wrapper">
 		<div id="loader"></div>
 		<div class="loader-section section-left"></div>
