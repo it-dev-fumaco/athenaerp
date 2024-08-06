@@ -107,12 +107,8 @@
                                             <td class="text-justify p-2 align-middle">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-0 text-left">
-                                                        <a href="{{ asset('storage/') }}{{ $row['img'] }}" class="view-images" data-item-code="{{ $row['item_code'] }}">
-                                                            <picture>
-                                                                <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp">
-                                                                <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg">
-                                                                <img src="{{ asset('storage'.$row['img']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" class="row-img">
-                                                            </picture>
+                                                        <a href="{{ $row['img'] }}" class="view-images" data-item-code="{{ $row['item_code'] }}">
+                                                            <img src="{{ $row['img'] }}" alt="{{ Illuminate\Support\Str::slug($row['description'], '-') }}" class="row-img">
                                                         </a>
                                                     </div>
                                                     <div class="pl-2 m-0">

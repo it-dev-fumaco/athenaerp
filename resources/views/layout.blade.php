@@ -534,7 +534,10 @@
 	</script>
 	@endif
 </head>
-<body class="hold-transition layout-top-nav">
+<body class="hold-transition layout-top-nav" style="border: 3px solid red">
+	<div class="bg-danger" style="display: block !important; position: fixed; top: 0; left: 0; z-index: 9999; padding: 10px">
+        ERP DB Data: {{ env('DB_HOST_SRC') == '10.0.0.73' ? 'LIVE' : 'TESTING' }} <br>
+    </div>
 	<div id="loader-wrapper">
 		<div id="loader"></div>
 		<div class="loader-section section-left"></div>
@@ -555,7 +558,7 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										@if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser']))
+										@if (Auth::check())
 											<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
 												<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
 												<span class="badge bg-danger brochure-arr-count" style="position: absolute; right: -5px; top: -10px;">0</span>
@@ -607,7 +610,7 @@
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
-									@if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser']))
+									@if (Auth::check())
 										<span class="d-none brochures-icon" style="position: relative;">
 											<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
 											<span class="badge bg-danger brochure-arr-count">0</span>
@@ -1430,7 +1433,7 @@
 				count_brochures();
 			});
 
-			@if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser']))
+			@if (Auth::check())
 				count_brochures();
 				function count_brochures(){
 					$.ajax({
@@ -2186,22 +2189,14 @@
 			}
 
 			function get_item_images(item_code){
-				var storage = "{{ asset('storage/img/') }}";
 				$.ajax({
 					type: 'GET',
 					url: '/get_item_images/' + item_code,
 					success: function(response){
-						$.each(response, function(i, d){
-							var image_src = storage + '/' + d;
-							var image_src_webp = storage + '/' + d.split('.')[0] + '.webp';
+						$.each(response, function(i, image_src){
 							$("<div class=\"col-md-4 pip img_upload\">" +
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
-							// "<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
-							"<picture>" +
-							"<source srcset=\"" + image_src_webp + "\" type=\"image/webp\">" +
-							"<source srcset=\"" + image_src + "\" type=\"image/jpeg\">" +
 							"<img src=\"" + image_src + "\" class=\"img-thumbnail\">" +
-							"</picture>" +
 							"<span class=\"add-fav remove\">&times;</span>" +
 							"</div>").insertAfter("#image-previews");
 						});

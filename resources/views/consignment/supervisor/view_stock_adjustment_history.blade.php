@@ -61,54 +61,11 @@
                                     </div>
                                 </div>
                                 @foreach ($stock['items'] as $item)
-                                    {{-- <div class="row p-0">
-                                        <div class="col-4 border p-2 font-weight-bold">
-                                            <div class="row">
-                                                <div class="col-5">
-                                                    <picture>
-                                                        <source srcset="{{ asset($item['webp']) }}" class="webp-src" type="image/webp">
-                                                        <source srcset="{{ asset($item['image']) }}" class="image-src" type="image/jpeg">
-                                                        <img src="{{ asset($item['image']) }}" class="image" alt="" width="50" height="50">
-                                                    </picture>
-                                                </div>
-                                                <div class="col-7" style="display: flex; justify-content: center; align-items: center;">
-                                                    {{ $item['item_code'] }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-4 border p-2 font-weight-bold" style="display: flex; justify-content: center; align-items: center;">
-                                            <div class="container-fluid">
-                                                <span><b>{{ number_format($item['new_qty']).' '.$item['uom'] }}</b></span>
-                                                @if ($item['new_qty'] != $item['previous_qty'])
-                                                    <br>
-                                                    <small>Previous: {{ number_format($item['previous_qty']).' '.$item['uom'] }}</small>
-                                                @endif
-                                            </div>
-                                            
-                                        </div>
-                                        <div class="col-4 border p-2 font-weight-bold" style="display: flex; justify-content: center; align-items: center;">
-                                            <div class="container-fluid">
-                                                <span><b>₱ {{ number_format($item['new_price'], 2) }}</b></span>
-                                                @if ($item['new_price'] != $item['previous_price'])
-                                                    <br>
-                                                    <small>Previous: ₱ {{ number_format($item['previous_price'], 2) }}</small>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="col-12 border p-2">
-                                            <div class="item-description text-justify">{{ strip_tags($item['item_description']) }}</div>
-                                        </div>
-                                    </div>
-                                    <hr> --}}
                                     <div class="row border w-100 items ' + item_code + '"  id="row-SA-' + item_code + '" data-item-code="' + item_code + '" style="font-size: 9pt;">
                                         <div class="col-9">
                                             <div class="row p-0 m-0 w-100">
                                                 <div class="col-2 d-flex justify-content-center align-items-center text-center">
-                                                    <picture>
-                                                        <source srcset="{{ asset($item['webp']) }}" class="webp-src" type="image/webp">
-                                                        <source srcset="{{ asset($item['image']) }}" class="image-src" type="image/jpeg">
-                                                        <img src="{{ asset($item['image']) }}" class="image w-75" alt="">
-                                                    </picture>
+                                                    <img src="{{ $item['image'] }}" class="image w-75" alt="">
                                                 </div>
                                                 <div class="col-6 d-flex justify-content-center align-items-center text-center">
                                                     <div class="row w-100 p-1">

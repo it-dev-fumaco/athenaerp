@@ -231,6 +231,8 @@
                                                                                                                             <span class="text-placeholder" id="{{ $inv['name'] }}-alt-display"></span> <br>
                                                                                                                             <span class="text-placeholder" id="{{ $inv['name'] }}-uom-display"></span>
                                                                                                                         </div>
+                                                                                                                        <img src="" class="src-placeholder" alt="" id="{{ $inv['name'] }}-new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
+
                                                                                                                         <picture>
                                                                                                                             <source srcset="" class="src-placeholder" id="{{ $inv['name'] }}-new-src-img-webp" type="image/webp">
                                                                                                                             <source srcset="" class="src-placeholder" id="{{ $inv['name'] }}-new-src-img" type="image/jpeg">
@@ -290,9 +292,7 @@
                                                                                 @forelse ($inv['items'] as $i => $item)
                                                                                     @php
                                                                                         $target = $inv['name'].'-'.$item['item_code'];
-                                                                                
-                                                                                        $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
-                                                                                        $img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
+                                                                                        $img = $item['image'];
                                                                                     @endphp
                                                                                     <tr id="row-{{ $target }}" class="{{ $item['item_code'] }}">
                                                                                         <td class="text-center p-1 align-middle">
@@ -301,12 +301,8 @@
                                                                                         <td class="text-center p-1 align-middle">
                                                                                             <div class="d-flex flex-row justify-content-start align-items-center" id="{{ $target }}-container">
                                                                                                 <div class="p-2 text-left">
-                                                                                                    <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
-                                                                                                        <picture>
-                                                                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" width="60" height="60">
-                                                                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" width="60" height="60">
-                                                                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="60" height="60">
-                                                                                                        </picture>
+                                                                                                    <a href="{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
+                                                                                                        <img src="{{ $img }}" alt="{{ Illuminate\Support\Str::slug($item['item_description'], '-') }}" width="60" height="60">
                                                                                                     </a>
                                                                                                 </div>
                                                                                                 <div class="p-2 text-left">

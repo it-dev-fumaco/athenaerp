@@ -41,35 +41,16 @@
                                 </thead>
                                 @forelse ($inv_summary as $item)
                                 @php
-                                    $orig_exists = 0;
-                                    $webp_exists = 0;
-
-                                    $img = '/icon/no_img.png';
-                                    $webp = '/icon/no_img.webp';
-
-                                    if(isset($item_image[$item->item_code])){
-                                        $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                                        $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                                        $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                                        $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                                        if($orig_exists == 0 && $webp_exists == 0){
-                                            $img = '/icon/no_img.png';
-                                            $webp = '/icon/no_img.webp';
-                                        }
-                                    }
+                                    $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $item_images['no_img'];
                                 @endphp
                                 <tbody>
                                     <tr>
                                         <td class="p-1 align-middle" rowspan="2">
-                                            <a href="{{ asset('storage/').$img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item->item_code }}" data-title="{{ $item->item_code }}">
-                                                <picture>
-                                                    <source srcset="{{ asset('storage'.$webp) }}" type="image/webp">
-                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
-                                                    <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
-                                                </picture>
-                                            </a>
+                                            <div>
+                                                <a href="{{ $img }}" data-toggle="mobile-lightbox" data-gallery="{{ $item->item_code }}" data-title="{{ $item->item_code }}">
+                                                    <img src="{{ $img }}" alt="{{ Illuminate\Support\Str::slug(strip_tags($item->description), '-') }}" class="w-100">
+                                                </a>
+                                            </div>
                                         </td>
                                         <td class="p-1 align-middle">
                                             <b>{{ $item->item_code }}</b>

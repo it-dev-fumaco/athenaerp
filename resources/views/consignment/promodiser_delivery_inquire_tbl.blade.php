@@ -31,35 +31,14 @@
             <tbody>
                 @foreach ($delivery_report as $item)
                 @php
-                    $orig_exists = 0;
-                    $webp_exists = 0;
-
-                    $img = '/icon/no_img.png';
-                    $webp = '/icon/no_img.webp';
-
-                    if(isset($item_image[$item->item_code])){
-                        $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                        $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                        $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                        $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                        if($orig_exists == 0 && $webp_exists == 0){
-                            $img = '/icon/no_img.png';
-                            $webp = '/icon/no_img.webp';
-                        }
-                    }
+                    $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $item_images['no_img'];
                 @endphp
                 <tr>
                     <td class="text-left p-1 align-middle" style="border-bottom: 0 !important;">
                         <div class="d-flex flex-row justify-content-start align-items-center">
                             <div class="p-1 text-left">
-                                <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $item->item_code }}">
-                                    <picture>
-                                        <source srcset="{{ asset('storage'.$webp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                        <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                        <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                    </picture>
+                                <a href="{{ $img }}" class="view-images" data-item-code="{{ $item->item_code }}">
+                                    <img src="{{ $img }}" alt="{{ Illuminate\Support\Str::slug(strip_tags($item->description), '-') }}" width="40" height="40">
                                 </a>
                             </div>
                             <div class="p-1 m-0">

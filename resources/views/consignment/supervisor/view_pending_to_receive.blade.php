@@ -87,12 +87,8 @@
                                         <td class="text-left p-1 align-middle">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-1 text-left">
-                                                    <a href="{{ asset('storage/') }}{{ $i['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $i['item_code'] }}" data-title="{{ $i['item_code'] }}">
-                                                    <picture>
-                                                        <source srcset="{{ asset('storage'.$i['img_webp']) }}" type="image/webp">
-                                                        <source srcset="{{ asset('storage'.$i['img']) }}" type="image/jpeg">
-                                                        <img src="{{ asset('storage'.$i['img']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $i['img'])[0], '-') }}" width="40" height="40">
-                                                    </picture>
+                                                    <a href="{{ $i['img'] }}" data-toggle="mobile-lightbox" data-gallery="{{ $i['item_code'] }}" data-title="{{ $i['item_code'] }}">
+                                                        <img src="{{ $i['img'] }}" alt="{{ $i['img_slug'] }}" width="40" height="40">
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">

@@ -3425,7 +3425,7 @@ class MainController extends Controller
 
         foreach($removed_images as $img) {
             // delete from file directory
-            Storage::delete('/public/img/' . $img);
+            Storage::delete('/img/' . $img);
         } 
 
         // delete from table item images
