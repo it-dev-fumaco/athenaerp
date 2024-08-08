@@ -22,7 +22,7 @@
                         <div class="card-body">
                             <h6 class="font-weight-bold text-info text-uppercase">Inventory Report</h6>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/cs_15.png') }}" style="width: 100%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['cs_15']) ? $images['cs_15'] : $images['no_img'] }}" style="width: 100%; margin-bottom: 30px;">
                             </div>
                             <ol class="mx-auto">
                                 <li class="mb-2"><b>Report Summary</b> – Shows quantity sold and total sales amount per item. Also shows total sales for the current cutoff.</li>
@@ -37,9 +37,5 @@
         </div>
 	</div>
 </div>
-
-@endsection
-
-@section('script')
 
 @endsection

@@ -22,7 +22,7 @@
                         <div class="card-body">
                             <h6 class="font-weight-bold text-info text-uppercase">Dashboard</h6>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/cs_1.png') }}" style="width: 100%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['cs_1']) ? $images['cs_1'] : $images['no_img'] }}" style="width: 100%; margin-bottom: 30px;">
                             </div>
                             <ol class="mx-auto">
                                 <li class="mb-2"><b>Inventory Report</b> – contains inventory audit entry per cutoff</li>

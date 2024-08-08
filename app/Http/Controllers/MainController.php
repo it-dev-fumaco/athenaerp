@@ -6423,4 +6423,97 @@ class MainController extends Controller
 
         return view('item_stock_level_bundled', compact('stocks'));
     }
+
+    private function get_guide_images($path, $title){
+        $files = Storage::files($path);
+
+        $files = collect($files)->filter(function ($file) use ($path, $title) {
+            return Str::startsWith($file, "$path/$title");
+        })->all();
+
+        $images = collect($files)->mapWithKeys(function ($image){
+            [$directory, $filename] = explode('/', $image);
+            [$id] = explode('.', $filename);
+
+            return [$id => $this->base64_image($image)];
+        });
+
+        $no_img = $this->base64_image('icon/no_img.png');
+        $images['no_img'] = $no_img;
+
+        return $images;
+    }
+
+    public function guide_beginning_inventory(){
+        $images = $this->get_guide_images('user_manual_img', 'beginning_inventory');
+        
+        return view('consignment.user_manual.beginning_inventory', compact('images'));
+    }
+
+    public function guide_sales_report_entry(){
+        $images = $this->get_guide_images('user_manual_img', 'sales_report');
+        
+        return view('consignment.user_manual.sales_report', compact('images'));
+    }
+
+    public function guide_stock_transfer(){
+        $images = $this->get_guide_images('user_manual_img', 'stock_transfer');
+
+        return view('consignment.user_manual.stock_transfer', compact('images'));
+    }
+
+    public function guide_damaged_items(){
+        $images = $this->get_guide_images('user_manual_img', 'damaged_items');
+
+        return view('consignment.user_manual.damaged_items', compact('images'));
+    }
+
+    public function guide_stock_receiving(){
+        $images = $this->get_guide_images('user_manual_img', 'stock_receiving');
+
+        return view('consignment.user_manual.stock_receiving', compact('images'));
+    }
+
+    public function guide_inventory_audit(){
+        $images = $this->get_guide_images('user_manual_img', 'inventory_audit');
+
+        return view('consignment.user_manual.inventory_audit', compact('images'));
+    }
+    
+    public function guide_consignment_dashboard(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.consignment_dashboard', compact('images'));
+    }
+    
+    public function guide_beginning_entries(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.beginning_entries', compact('images'));
+    }
+
+    public function guide_inventory_report(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.inventory_report', compact('images'));
+    }
+    
+    public function guide_inventory_summary(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.inventory_summary', compact('images'));
+    }
+
+    public function guide_stock_to_receive(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.stock_to_receive', compact('images'));
+    }
+
+    public function guide_consignment_stock_transfer(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+        $images['receiving-of-stocks'] = $this->base64_image('user_manual_img/receiving-of-stocks.png');
+
+        return view('consignment.user_manual.consignment_stock_transfer', compact('images'));
+    }
 }

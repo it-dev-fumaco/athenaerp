@@ -25,26 +25,26 @@
                             <p class="mt-2 mb-2 text-justify">To enter your Inventory Audit, follow these steps:</p>
                             <p class="mt-2 mb-2 text-justify">1. From the dashboard, click "<b>Inventory Report</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/inventory_audit_1.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['inventory_audit_1']) ? $images['inventory_audit_1'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">2. You will see the list of stores assigned to you without inventory audit entry for the current cutoff. Click "<b>Create</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/inventory_audit_2.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['inventory_audit_2']) ? $images['inventory_audit_2'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">3. From there, you will enter the ACTUAL PHYSICAL COUNT of your items. You have to do this on ALL of your items.</p>                          
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/inventory_audit_3.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['inventory_audit_3']) ? $images['inventory_audit_3'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">If you see this warning, this means that there is an item without an input.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/inventory_audit_4.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['inventory_audit_4']) ? $images['inventory_audit_4'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <div class="alert alert-info p-2 text-justify" style="font-size: 9pt;">
                                 <i class="fas fa-info-circle"></i> <b>Note:</b> You can copy that code and paste it on the search bar to easily find the item.
                             </div>
                             <p class="mt-2 mb-2 text-justify">4. After clicking "<b>Submit</b>". A confirmation pop up will be shown with the summary of your input.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/inventory_audit_5.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['inventory_audit_5']) ? $images['inventory_audit_5'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="m-2 font-weight-bold">This includes the following:</p>
                             <ul>
@@ -63,9 +63,4 @@
         </div>
 	</div>
 </div>
-
-@endsection
-
-@section('script')
-
 @endsection
