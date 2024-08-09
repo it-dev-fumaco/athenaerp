@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Storage;
 trait GeneralTrait
 {
     public function base64_image($file, $original = 0){
+        $file = explode('.', $file);
+        $file = $file[0].'.webp';
         return asset("storage/$file");
         // if(!$file){
         //     return null;

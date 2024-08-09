@@ -2006,10 +2006,17 @@
 				$.ajax({
 					type: "GET",
 					url: "/load_item_images/" + item_code,
-					data: {idx: idx},
-					success: function (response) {
+					data: idx,
+					success: (response) => {
 						$("#imgModal").modal('show');
 						$('#img-container').html(response);
+					},
+					error: (xhr, textStatus, errorThrown) => {
+						if (xhr.status === 404) {
+							showNotification("info", 'No images found for this item.', "fa fa-info");
+						} else {
+							showNotification("danger", errorThrown, "fa fa-info");
+						}
 					}
 				});
 			}

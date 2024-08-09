@@ -7,8 +7,11 @@
     <div class="carousel-inner">
         @foreach ($images as $i => $image)
             <div class="carousel-item {{ $selected == $i ? 'active' : null }}" style="max-height: 860px;">
-                @if ($image->image)
-                    <a href="{{ $image->image }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ $image->image }}"><i class="fa fa-download"></i> Download Image</a>
+                @php
+                    $webp = explode('.', $image->image_path)[0].'.webp';
+                @endphp
+                @if (Storage::exists("img/$webp"))
+                    <a href="/download_image/img/{{ $webp }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}"><i class="fa fa-download"></i> Download Image</a>
                 @endif 
                 <center>
                     <img class="modal-img" src="{{ $image->image }}">
