@@ -241,44 +241,26 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/consignment/branches', 'ConsignmentController@consignment_branches');
         Route::get('/consignment/export/{branch}', 'ConsignmentController@export_to_excel');
 
-        Route::get('/user_manual', function () {
-            return view('consignment.user_manual.index');
-        });
-        Route::get('/user_manual/beginning_inventory', function () {
-            return view('consignment.user_manual.beginning_inventory');
-        });
-        Route::get('/user_manual/sales_report_entry', function () {
-            return view('consignment.user_manual.sales_report');
-        });
-        Route::get('/user_manual/stock_transfer', function () {
-            return view('consignment.user_manual.stock_transfer');
-        });
-        Route::get('/user_manual/damaged_items', function () {
-            return view('consignment.user_manual.damaged_items');
-        });
-        Route::get('/user_manual/stock_receiving', function () {
-            return view('consignment.user_manual.stock_receiving');
-        });
-        Route::get('/user_manual/inventory_audit', function () {
-            return view('consignment.user_manual.inventory_audit');
-        });
-        Route::get('/user_manual/consignment_dashboard', function () {
-            return view('consignment.user_manual.consignment_dashboard');
-        });
-        Route::get('/user_manual/beginning_entries', function () {
-            return view('consignment.user_manual.beginning_entries');
-        });
-        Route::get('/user_manual/inventory_report', function () {
-            return view('consignment.user_manual.inventory_report');
-        });
-        Route::get('/user_manual/inventory_summary', function () {
-            return view('consignment.user_manual.inventory_summary');
-        });
-        Route::get('/user_manual/stock_to_receive', function () {
-            return view('consignment.user_manual.stock_to_receive');
-        });
-        Route::get('/user_manual/consignment_stock_transfer', function () {
-            return view('consignment.user_manual.consignment_stock_transfer');
+        Route::prefix('/user_manual')->group(function(){
+            Route::get('/', function () {
+                return view('consignment.user_manual.index');
+            });
+
+            // Promodisers
+            Route::get('/beginning_inventory', 'MainController@guide_beginning_inventory');
+            Route::get('/sales_report_entry', 'MainController@guide_sales_report_entry');
+            Route::get('/stock_transfer', 'MainController@guide_stock_transfer');
+            Route::get('/damaged_items', 'MainController@guide_damaged_items');
+            Route::get('/stock_receiving', 'MainController@guide_stock_receiving');
+            Route::get('/inventory_audit', 'MainController@guide_inventory_audit');
+            
+            // Consignment Supervisor
+            Route::get('/consignment_dashboard', 'MainController@guide_consignment_dashboard');
+            Route::get('/beginning_entries', 'MainController@guide_beginning_entries');
+            Route::get('/inventory_report', 'MainController@guide_inventory_report');
+            Route::get('/inventory_summary', 'MainController@guide_inventory_summary');
+            Route::get('/stock_to_receive', 'MainController@guide_stock_to_receive');
+            Route::get('/consignment_stock_transfer', 'MainController@guide_consignment_stock_transfer');
         });
         Route::get('/consignment_ledger', 'ConsignmentController@consignmentLedger');
         Route::get('/get_item_list', 'ConsignmentController@getErpItems');

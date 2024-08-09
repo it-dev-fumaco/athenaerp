@@ -24,15 +24,15 @@
                             <p class="mt-2 mb-2 text-justify">If you received an item with any damages or issues. You need to submit a damaged items entry.</p>
                             <p class="mt-2 mb-2 text-justify">1. From the dashboard, click Inventory > Damaged Items Entry.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/damaged_items_1.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['damaged_items_1']) ? $images['damaged_items_1'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>                                 
                             <p class="mt-2 mb-2 text-justify">2. Then, you will be redirected to the form. You have to select a store from the list of assigned stores to you.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/damaged_items_2.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['damaged_items_2']) ? $images['damaged_items_2'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">3. Click on "<b>Add Item</b>" to open up item selection. Then, you have to enter the quantity of damaged items (per item code) and a little description of the damage. Click "<b>Confirm</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/damaged_items_3.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['damaged_items_3']) ? $images['damaged_items_3'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">Repeat this process if there are more than one damaged item.</p>
                             <p class="mt-2 mb-2 text-justify">Warnings:</p>
@@ -41,19 +41,19 @@
                             </ul>
                             <p class="mt-2 mb-2 text-justify">4. Review your entry and then click "<b>Submit</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/damaged_items_4.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['damaged_items_4']) ? $images['damaged_items_4'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">5. After you've physically returned the damaged item to Fumaco – Plant 2. Click Report > Damaged Item Report.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/damaged_items_5.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['damaged_items_5']) ? $images['damaged_items_5'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">6. Look for the item and then click "<b>View</b>". Item status is "<b>For Return</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/damaged_items_6.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['damaged_items_6']) ? $images['damaged_items_6'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">7. You will see a summary of the report. After reviewing and confirming that the report is correct, click "<b>Return to Plant</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/damaged_items_7.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['damaged_items_7']) ? $images['damaged_items_7'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">8. A confirmation pop up will be shown, click "<b>Confirm</b>". This will update item status in the list to "<b>Returned</b>" and the quantity will be deducted to your current stocks.</p>
                         </div>

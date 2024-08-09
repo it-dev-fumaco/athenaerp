@@ -30,19 +30,19 @@
                             <p class="mt-2 mb-2 text-justify">To create a stock transfer request follow this steps:</p>
                             <p class="mt-2 mb-2 text-justify">1. Click "<b>Stock Transfer</b>" tab in the dashboard.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_1.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_1']) ? $images['stock_transfer_1'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">2. You will see a list of Approved and For approval stock transfer requests. Click "<b>Create</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_2.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_2']) ? $images['stock_transfer_2'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">3. Stock Transfer Request Form. Select "<b>Purpose</b>" of your transfer.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_3.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_3']) ? $images['stock_transfer_3'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">a. "<b>Store Transfer</b>" – if you selected this, "<b>To</b>" field will show up.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_4.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_4']) ? $images['stock_transfer_4'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">i. "<b>From</b>" – select from the list of stores assigned to you.</p>
                             <p class="mt-2 mb-2 text-justify">ii. "<b>To</b>" – select from the list of ALL available stores you wish to transfer your item.</p>
@@ -51,7 +51,7 @@
                             </div>
                             <p class="mt-2 mb-2 text-justify">b. "<b>For Return</b>" – selecting this will automatically fill up the "<b>To</b>" field with "<b>Fumaco – Plant 2</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_5.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_5']) ? $images['stock_transfer_5'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">i. "<b>From</b>" – select from the list of stores assigned to you.</p>
                             <p class="mt-2 mb-2 text-justify">c. "<b>Sales Return</b>" – selecting this option will remove the "<b>From</b>" field.</p>
@@ -61,16 +61,16 @@
                             </div>
                             <p class="mt-2 mb-2 text-justify">4. After completing ANY of the steps from step 3. Click "<b>Add Item</b>".</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_6.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_6']) ? $images['stock_transfer_6'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">5. Use the dropdown to search and select for the item/s you wish to transfer or return.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_7.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_7']) ? $images['stock_transfer_7'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">6. After selecting an item, you will see how many stocks are left for that item. You can then enter the quantity you want to transfer or return. Click on "<b>Add item</b>" to add the item to the list.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_8.png') }}" style="width: 70%; margin-bottom: 30px;">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_9.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_8']) ? $images['stock_transfer_8'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_9']) ? $images['stock_transfer_9'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <div class="alert alert-info p-2" style="font-size: 9pt;">
                                 <i class="fas fa-info-circle"></i> <b>Note:</b> If you selected "<b>Sales Return</b>", you will see the quantity sold per item instead.
@@ -81,25 +81,25 @@
                             </ul>
                             <p class="mt-2 mb-2 text-justify">7. You can also edit the quantity you wish to transfer on the list.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_10.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_10']) ? $images['stock_transfer_10'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">8. After reviewing your entry and making sure everything is in order, you can then click submit. After submitting the form, a new "<b>For Approval</b>" stock transfer request will be added to the list.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_11.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_11']) ? $images['stock_transfer_11'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">9. You can see the status of your request by clicking "<b>Store Transfer</b>" from the dashboard.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_12.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_12']) ? $images['stock_transfer_12'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <div class="alert alert-info p-2" style="font-size: 9pt;">
                                 <i class="fas fa-info-circle"></i> <b>Note:</b> List of Sales Returns are in the Sales Returns Report. Go to Report > Sales Returns Report
                             </div>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_13.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_13']) ? $images['stock_transfer_13'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                             <p class="mt-2 mb-2 text-justify">Then you will see the list of Approved and For Approval Sales Returns. Click "<b>View Items</b>" to verify if the request is correct.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ asset('storage/user_manual_img/stock_transfer_14.png') }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ isset($images['stock_transfer_14']) ? $images['stock_transfer_14'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                         </div>
                     </div>
@@ -108,9 +108,5 @@
         </div>
 	</div>
 </div>
-
-@endsection
-
-@section('script')
 
 @endsection
