@@ -23,7 +23,7 @@
                             <h6 class="font-weight-bold text-info text-uppercase">Inventory Report</h6>
                             <p>This page contains all of the inventory audit submitted by the promodisers and the list of stores with pending inventory audit.</p>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ isset($images['cs_14']) ? $images['cs_14'] : $images['no_img'] }}" style="width: 100%; margin-bottom: 30px;">
+                                <img src="{{ asset('storage/user_manual_img/cs_14.png') }}" style="width: 100%; margin-bottom: 30px;">
                             </div>
                             <ol class="mx-auto">
                                 <li class="mb-2"><b>Inventory Report</b> – List of submitted inventory entries per store and cutoff</li>
@@ -39,5 +39,9 @@
         </div>
 	</div>
 </div>
+
+@endsection
+
+@section('script')
 
 @endsection

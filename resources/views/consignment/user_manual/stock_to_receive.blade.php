@@ -22,7 +22,7 @@
                         <div class="card-body">
                             <h6 class="font-weight-bold text-info text-uppercase">Stock To Receive</h6>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ isset($images['cs_16']) ? $images['cs_16'] : $images['no_img'] }}" style="width: 100%; margin-bottom: 30px;">
+                                <img src="{{ asset('storage/user_manual_img/cs_16.png') }}" style="width: 100%; margin-bottom: 30px;">
                             </div>
                             <ol class="mx-auto">
                                 <li class="mb-2"><b>Incoming Deliveries List</b> – list of all deliveries on consignment stores.</li>
@@ -31,7 +31,7 @@
                                 <li class="mb-2"><b>View Items</b> – View all items in this delivery.</li>
                             </ol>
                             <div class="d-flex justify-content-center">
-                                <img src="{{ isset($images['cs_17']) ? $images['cs_17'] : $images['no_img'] }}" style="width: 70%; margin-bottom: 30px;">
+                                <img src="{{ asset('storage/user_manual_img/cs_17.png') }}" style="width: 70%; margin-bottom: 30px;">
                             </div>
                         </div>
                     </div>
