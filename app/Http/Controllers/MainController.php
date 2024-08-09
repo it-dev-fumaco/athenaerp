@@ -4493,7 +4493,7 @@ class MainController extends Controller
                     ->whereBetween('mr.transaction_date', [Carbon::now()->subDays(30)->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
                     ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
 
-                $item_image = isset($item_images[$a->item_code]) ? '/img/'.$item_images[$a->item_code] : '/icon/no_img.png';
+                $item_image = isset($item_images[$a->item_code]) ? '/img/'.$item_images[$a->item_code] : '/icon/no_img.webp';
                 $item_image = $this->base64_image($item_image);
 
                 $low_level_stocks[] = [
