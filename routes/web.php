@@ -274,4 +274,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/preview_standard', 'BrochureController@previewStandardBrochure');
     Route::get('/download/{project}/{filename}', 'BrochureController@downloadBrochure');
     Route::post('/remove_image', 'BrochureController@removeImage');
+
+    Route::get('/download_image/{directory}/{file}', 'MainController@download_image');
 });
