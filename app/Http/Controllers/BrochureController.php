@@ -789,7 +789,7 @@ class BrochureController extends Controller
                 $webpFilename = "$filename.webp";
 
                 // Save the original file
-                Storage::putFileAs($image_path, $file, $jpegFilename);
+                // Storage::putFileAs($image_path, $file, $jpegFilename);
 
                 // Create and save the WebP version
                 $webp = Webp::make($file);

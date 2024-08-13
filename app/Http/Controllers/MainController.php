@@ -3453,7 +3453,7 @@ class MainController extends Controller
                 $webpFilename = "$filename.webp";
 
                 // Save the original file
-                Storage::putFileAs($storagePath, $file, $jpegFilename);
+                // Storage::putFileAs($storagePath, $file, $jpegFilename);
 
                 // Create and save the WebP version
                 $webp = Webp::make($file);
@@ -3496,6 +3496,11 @@ class MainController extends Controller
 
     public function load_item_images($item_code, Request $request){
         $images = DB::table('tabItem Images')->where('parent', $item_code)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->orderBy('idx', 'asc')->get();
+
+        if(count($images) <= 0){
+            return response()->json([], 404);
+        }
+
         $selected = $request->idx ? $request->idx : 0;
 
         $images = collect($images)->map(function ($image){
