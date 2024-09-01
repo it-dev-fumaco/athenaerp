@@ -802,7 +802,7 @@ class MainController extends Controller
                 $q->whereIn('item_group_name', $igs)
                     ->orWhere('item_group_name', 'LIKE', '%'.$request->searchString.'%');
             })
-            ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
+            ->select('name','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
             ->orderByRaw('LENGTH(order_no) ASC')
             ->orderBy('order_no', 'ASC')
             ->get();
