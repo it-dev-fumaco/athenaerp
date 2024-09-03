@@ -101,7 +101,7 @@
                                                                     <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                                 </div>
                                                                 <div class="custom-a p-0">
-                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 50px;" required id="{{ $row->item_code }}" value="{{ $consigned_qty }}">
+                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 50px;" required id="{{ $row->item_code }}" value="{{ $qty }}">
                                                                 </div>
                                                                 <div class="input-group-append p-0">
                                                                     <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
