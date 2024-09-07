@@ -818,8 +818,10 @@ class ConsignmentController extends Controller
                 $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
                 $bin_items = collect($bin)->groupBy('item_code');
 
+                $skipped_items = [];
                 foreach($item_codes as $i => $item_code){
                     if(isset($items[$item_code]) && $items[$item_code][0]->status != 'For Approval'){ // Skip the approved/cancelled items
+                        $skipped_items = collect($skipped_items)->merge($item_code)->toArray();
                         continue;
                     }
                     
@@ -863,10 +865,14 @@ class ConsignmentController extends Controller
                     }
 
                     // Beginning Inventory
-                    if(isset($items[$item_code])){
+                    if(isset($items[$item_code]) || in_array($item_code, $skipped_items)){
                         if(isset($prices[$item_code])){
                             $update_values['price'] = $price;
                             $update_values['idx'] = $i + 1;
+                        }
+
+                        if(in_array($item_code, $skipped_items) && $request->has('status')){
+                            $update_values['status'] = $request->status;
                         }
         
                         DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update($update_values);
