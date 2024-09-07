@@ -4927,6 +4927,7 @@ class ConsignmentController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                 }
 
@@ -4985,6 +4986,7 @@ class ConsignmentController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                 }
 
@@ -5055,6 +5057,7 @@ class ConsignmentController extends Controller
                     'batch_no' => $r->batch_no,
                     'stock_value_difference' => ($r->actual_qty * $r->valuation_rate) * -1,
                     'posting_date' => $r->posting_date,
+					'posting_datetime' => $now->format('Y-m-d H:i:s')
                 ];
             }
 
