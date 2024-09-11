@@ -5544,7 +5544,7 @@ class MainController extends Controller
 				'posting_time' => $now->format('H:i:s'),
 				// 'customer_name' => null,
 				'to_warehouse' => $production_order_details->fg_warehouse,
-				'title' => 'Manufacture',
+				// 'title' => 'Manufacture',
 				'_comments' => null,
 				'from_warehouse' => null,
 				'set_posting_time' => 0,
