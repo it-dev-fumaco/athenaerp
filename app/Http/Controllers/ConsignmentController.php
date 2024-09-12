@@ -2109,7 +2109,6 @@ class ConsignmentController extends Controller
                 'naming_series' => 'STEC-',
                 'posting_time' => $now->format('H:i:s'),
                 'to_warehouse' => $details->target_warehouse,
-                'title' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
                 'from_warehouse' => $details->source_warehouse,
                 'set_posting_time' => 0,
                 'from_bom' => 0,
