@@ -3594,12 +3594,9 @@ class MainController extends Controller
                         'name' => 'ath' . uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->email,
-                        'owner' => Auth::user()->email,
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -3626,6 +3623,7 @@ class MainController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => ($row->qty * $row->valuation_rate) * -1,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                     
                     $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
@@ -3640,12 +3638,9 @@ class MainController extends Controller
                         'name' => 'ath' . uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->email,
-                        'owner' => Auth::user()->email,
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -3698,9 +3693,6 @@ class MainController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -3871,9 +3863,8 @@ class MainController extends Controller
                     }
                 }
             }
-            
         } catch (\Exception $e) {
-            return response()->json(["error" => $e->getMessage(), 'id' => $stock_entry]);
+            return response()->json(['success' => 0, "error" => $e->getMessage(), 'id' => $stock_entry]);
         }
     }
 	
@@ -3914,9 +3905,6 @@ class MainController extends Controller
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
                     'docstatus' => 1,
-                    'parent' => null,
-                    'parentfield' => null,
-                    'parenttype' => null,
                     'idx' => 0,
                     'fiscal_year' => $now->format('Y'),
                     'voucher_no' => $row->parent,
@@ -4192,6 +4180,8 @@ class MainController extends Controller
         try {
             $now = Carbon::now();
             $draft_ste = DB::table('tabStock Entry')->where('name', $id)->where('docstatus', 0)->first();
+            $success = true;
+            $err_message = null;
             if($draft_ste){
                 if ($draft_ste->purpose != 'Manufacture') {
                      // check if all items are issued
@@ -4262,13 +4252,29 @@ class MainController extends Controller
                         ->update($values);
                 }
 
-                $this->update_bin($id);
-                $this->create_stock_ledger_entry($id);
-                $this->create_gl_entry($id);
+                $bin = $this->update_bin($id);
+                $stock_ledger = $this->create_stock_ledger_entry($id);
+                $gl_entry = $this->create_gl_entry($id);
+
+                if(isset($bin['error'])){
+                    return ['success' => false, 'message' => $bin['error']];
+                }
+
+                if(!$stock_ledger['success']){
+                    return $stock_ledger;
+                }
+
+                if(!$gl_entry['success']){
+                    return $gl_entry;
+                }
             }
-        } catch (Exception $e) {
-            // DB::rollback();
-            // return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => 'There was a problem creating transaction.']);
+
+            if(!$success){
+                throw new Exception($err_message);
+            }
+        } catch (\Throwable $e) {
+            DB::rollback();
+            return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()]);
         }
     }
 
