@@ -102,14 +102,17 @@
                     <div class="box-header with-border">
                         <h5 class="box-title">{{ $data['warehouse'] }}</h5>
                     </div>
-                    <input type="hidden" name="child_tbl_id" value="{{ $data['id'] }}">
-                    <input type="hidden" name="is_stock_entry" value="1">
-                    <input type="hidden" name="has_reservation" value="{{ ($data['stock_reservation']) ? 1 : 0 }}">
-                    <input type="hidden" name="deduct_reserve" value="0">
-                    <input type="hidden" name="is_bundle" value="{{ ($data['is_bundle'] === false) ? 0 : 1 }}">
-                    <input type="hidden" name="warehouse" value="{{ $data['warehouse'] }}">
-                    <input type="hidden" name="dri_name" value="{{ $data['dri_name'] }}">
-                    <input type="hidden" name="sales_order" value="{{ $data['sales_order'] }}">
+                    <div class="d-none">
+                        <input type="text" name="child_tbl_id" value="{{ $data['id'] }}">
+                        <input type="text" name="type" value="{{ $data['type'] }}">
+                        <input type="text" name="is_stock_entry" value="1">
+                        <input type="text" name="has_reservation" value="{{ ($data['stock_reservation']) ? 1 : 0 }}">
+                        <input type="text" name="deduct_reserve" value="0">
+                        <input type="text" name="is_bundle" value="{{ ($data['is_bundle'] === false) ? 0 : 1 }}">
+                        <input type="text" name="warehouse" value="{{ $data['warehouse'] }}">
+                        <input type="text" name="dri_name" value="{{ $data['dri_name'] }}">
+                        <input type="text" name="sales_order" value="{{ $data['sales_order'] }}">
+                    </div>
                     <div class="box-body" style="font-size: 12pt;">
                         <div class="row">
                             <div class="col-md-6 form-group">
@@ -134,7 +137,7 @@
                                         <span class="item_code_txt font-weight-bold"></span> 
                                         <p class="description"></p>
                                         <span class="font-weight-bold">{{ $data['item_code'] }}</span> <span class="badge badge-info {{ ($data['is_bundle'] === false) ? 'd-none' : '' }}" style="font-size: 11pt;">Product Bundle</span>
-                                        <small class="d-block text-justify">{{ $data['description'] }}</small>
+                                        <small class="d-block text-justify">{{ strip_tags($data['description']) }}</small>
                                         <dl>
                                             <dt>UoM</dt>
                                             <dd>{{ $data['uom'] }}</dd>
@@ -202,7 +205,7 @@
                                         @foreach ($data['product_bundle_items'] as $row)
                                         <tr>
                                             <td class="text-justify align-middle">
-                                                <span class="font-weight-bold">{{ $row['item_code'] }}</span> <small>{{ $row['description'] }}</small></td>
+                                                <span class="font-weight-bold">{{ $row['item_code'] }}</span> <small>{{ strip_tags($row['description']) }}</small></td>
                                             <td class="text-center align-middle">
                                                 <span class="d-block font-weight-bold">{{ $row['qty'] }}</span>
                                                 <small>{{ $row['uom'] }}</small>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use DB;
+use Exception;
 use Mail;
 use Auth;
 use Webp;
@@ -13,16 +14,18 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use App\Traits\GeneralTrait;
 use App\Models\StockReservation;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\File;
 
+use App\Traits\ERPTrait;
+use App\Traits\GeneralTrait;
+
 class MainController extends Controller
 {
-    use GeneralTrait;
+    use ERPTrait, GeneralTrait;
     public function get_api_headers(){
         return [
             'Content-Type' => 'application/json',
@@ -1816,19 +1819,34 @@ class MainController extends Controller
         return ($query) ? $query : [];
     }
 
-    public function get_ps_details($id){
-        $q = DB::table('tabPacking Slip as ps')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-            ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-            ->whereRaw(('dri.item_code = psi.item_code'))
-            ->where('ps.docstatus', '<', 2)
-            ->where('ps.item_status', 'For Checking')
-            ->where('psi.name', $id)
-            ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
-            ->first();
-
+    public function get_ps_details(Request $request, $id){
+        if($request->type == 'packed_item'){
+            $q = DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
+                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
+                ->whereRaw(('dri.item_code = pi.parent_item'))
+                ->where('ps.docstatus', '<', 2)
+                ->where('ps.item_status', 'For Checking')
+                ->where('psi.name', $id)
+                ->where('dri.docstatus', 0)
+                ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'dri.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
+                ->first();
+        }else{
+            $q = DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
+                ->whereRaw(('dri.item_code = psi.item_code'))
+                ->where('ps.docstatus', '<', 2)
+                ->where('ps.item_status', 'For Checking')
+                ->where('psi.name', $id)
+                ->where('dri.docstatus', 0)
+                ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
+                ->first();
+        }
+        
         if(!$q){
             return response()->json([
                 'error' => 1,
@@ -1889,6 +1907,7 @@ class MainController extends Controller
 
         $data = [
             'id' => $q->id,
+            'type' => $request->type,
 	        'barcode' => $q->barcode,
             'item_image' => $img,//$item_details->item_image_path,
             'delivery_note' => $q->delivery_note,
@@ -2354,6 +2373,17 @@ class MainController extends Controller
                 ->whereRaw(('dri.item_code = psi.item_code'))->where('ps.item_status', 'For Checking')->where('dri.docstatus', 0)->where('psi.name', $id)
                 ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
                 ->first();
+
+            if(!$q){
+                $q = DB::table('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
+                    ->where('ps.item_status', 'For Checking')
+                    ->where('psi.name', $id)
+                    ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'pi.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
+                    ->first();
+            }
+
             $type = 'Check Out - Delivered';
             $purpose = 'Picking Slip';
             $barcode = $q->barcode;
@@ -2491,8 +2521,19 @@ class MainController extends Controller
     public function checkout_picking_slip_item(Request $request){
         DB::beginTransaction();
         try {
-            $ps_details = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')->where('psi.name', $request->child_tbl_id)
-            ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status')->first();
+            if($request->type == 'packed_item'){
+                $ps_details = DB::table('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
+                    ->where('psi.name', $request->child_tbl_id)
+                    ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status', 'pi.parent_item as item_code')->first();
+            }else{
+                $ps_details = DB::table('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->where('psi.name', $request->child_tbl_id)
+                    ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status')->first();
+            }
+
             if(!$ps_details){
                 return response()->json(['status' => 0, 'message' => 'Record not found.']);
             }
@@ -2540,9 +2581,13 @@ class MainController extends Controller
             }
 
             if($request->is_bundle){
-                $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
+                $query = DB::table('tabPacked Item as pi')
+                    ->join('tabPacking Slip Item as psi', 'psi.pi_detail', 'pi.name')
+                    ->where('pi.parent_detail_docname', $request->dri_name)
+                    ->select('pi.*', 'psi.name as item_id')->get();
+
                 foreach ($query as $row) {
-                    $bundle_item_qty = $row->qty;
+                    $bundle_item_qty = (float) $row->qty;
                    
                     $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
     
@@ -2550,14 +2595,14 @@ class MainController extends Controller
 
                     $available_qty = ($actual_qty - $total_issued);
 
+                    if($available_qty < $bundle_item_qty){
+                        return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . number_format($bundle_item_qty) . '</b>.']);
+                    }
+
                     if($request->deduct_reserve == 1){
                         $reserved_qty = $this->get_reserved_qty($row->item_code, $row->warehouse);
                         if ($available_qty > 0) {
                             $available_qty = $available_qty - $reserved_qty;
-                        }
-
-                        if($available_qty < $bundle_item_qty){
-                            return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
                         }
 
                         $stock_reservation_details = [];
@@ -2587,6 +2632,13 @@ class MainController extends Controller
                             return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
                         }
                     }
+
+                    $response = $this->erpOperation('put', 'Packing Slip Item', $row->item_id, ['status' => 'Issued']);
+                    $this->insert_transaction_log('Picking Slip', $row->item_id);
+
+                    if(!isset($response['data'])){
+                        throw new Exception(isset($response['message']) ? $response['message'] : 'An error occured. Please try again');
+                    }
                 }
             }
 
@@ -2613,20 +2665,26 @@ class MainController extends Controller
                 $this->update_reservation_status();
             }
 
-            $now = Carbon::now();
-            $values = [
-                'session_user' => Auth::user()->wh_user,
-                'status' => 'Issued',
-                'barcode' => $request->barcode,
-                'date_modified' => $now->toDateTimeString()
-            ];
+            if($request->type != 'packed_item'){
+                $now = Carbon::now();
+                $values = [
+                    'session_user' => Auth::user()->wh_user,
+                    'status' => 'Issued',
+                    'barcode' => $request->barcode,
+                    'date_modified' => $now->toDateTimeString()
+                ];
+    
+                DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
+                    ->where('docstatus', 0)->update($values);
+    
+                $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
+            }
+                
+            $check_parent = $this->update_pending_ps_item_status($ps_details->parent_ps);
 
-            DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
-                ->where('docstatus', 0)->update($values);
-
-            $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
-
-            $this->update_pending_ps_item_status();
+            if(!$check_parent['success']){
+                throw new Exception($check_parent['message']);
+            }
 
             DB::commit();
 
@@ -2635,38 +2693,30 @@ class MainController extends Controller
             }
 
             return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been checked out.']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
             return response()->json([
-                'error' => 1, 
+                'status' => 0, 
                 'modal_title' => 'Error', 
                 'modal_message' => 'Error creating transaction.'
             ]);
         }
     }
 
-    public function update_pending_ps_item_status(){
-        DB::beginTransaction();
+    public function update_pending_ps_item_status($id){
         try {
-            $for_checking_ps = DB::table('tabPacking Slip')
-                ->whereIn('item_status', ['For Checking', 'Issued'])->where('docstatus', 0)
-                ->orderBy('modified', 'desc')
-                ->pluck('name');
+            $items_for_checking = DB::table('tabPacking Slip Item')->where('parent', $id)->where('status', 'For Checking')->exists();
 
-            foreach($for_checking_ps as $ps){
-                $items_for_checking = DB::table('tabPacking Slip Item')
-                    ->where('parent', $ps)->where('status', 'For Checking')->exists();
-
-                if(!$items_for_checking){
-                    DB::table('tabPacking Slip')
-                        ->where('name', $ps)->where('docstatus', 0)
-                        ->update(['item_status' => 'Issued', 'docstatus' => 1]);
+            if(!$items_for_checking){
+                $response = $this->erpOperation('put', 'Packing Slip', $id, ['item_status' => 'Issued', 'docstatus' => 1]);
+                if(!isset($response['data'])){
+                    throw new Exception(json_encode($response, true));
                 }
             }
 
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollback();
+            return ['success' => 1, 'message' => 'Packing Slips updated!'];
+        } catch (Exception $e) {
+            return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
 
