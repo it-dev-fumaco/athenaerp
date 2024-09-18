@@ -4971,99 +4971,147 @@ class MainController extends Controller
     }
 
     public function view_deliveries(Request $request){
-        if(!$request->arr){
+        if (!$request->arr) {
             return view('picking_slip');
         }
-        
+
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $q = DB::table('tabPacking Slip as ps')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
-                ->where('ps.docstatus', 0)
-                ->where('dri.docstatus', 0)
-                ->whereIn('dri.warehouse', $allowed_warehouses)
-                ->select('dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->groupBy('dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")->get();
+        $pickingSlipQueryProductBundle = DB::table('tabPacking Slip as ps')
+            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
+            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
+            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
+            ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
+            ->where([
+                'dr.docstatus' => 0, 'ps.docstatus' => 0
+            ])
+            ->whereIn('dri.warehouse', $allowed_warehouses)
+            ->select([
+                'dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name',
+                'ps.delivery_note', 'pi.parent_item', 'pi.name as piName', 'dri.qty', 'pi.item_code', 'pi.description',
+                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', 'pi.qty as piQty', 'pi.warehouse as piWarehouse', 'pi.uom as piUom'
+            ])
+            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")
+            ->get();
 
+            // Fetch picking slips
+        $pickingSlipQuery = DB::table('tabPacking Slip as ps')
+            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
+            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
+            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
+            ->whereRaw('dri.item_code = psi.item_code')
+            ->where([
+                'dr.docstatus' => 0, 'ps.docstatus' => 0
+            ])
+            ->whereIn('dri.warehouse', $allowed_warehouses)
+            ->select([
+                'dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name',
+                'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'),
+                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
+            ])
+            ->groupBy([
+                'dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name',
+                'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom',
+                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
+            ])
+            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")
+            ->get();
+        
+        // Fetch stock entries
+        $stockEntryQuery = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', '=', 'sted.parent')
+            ->where('ste.docstatus', 0)
+            ->where('purpose', 'Material Transfer')
+            ->whereIn('s_warehouse', $allowed_warehouses)
+            ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->select([
+                'ste.delivery_date', 'sted.status', 'sted.validate_item_code', 'ste.sales_order_no',
+                'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse',
+                'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 
+                'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom'
+            ])
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
+            ->get();
+        
+        $allItems = $pickingSlipQuery->merge($stockEntryQuery);
+        
+        // Gather all item codes to minimize queries for supplier part numbers and owners
+        $itemCodes = $allItems->pluck('item_code')->unique();
+        $owners = $allItems->pluck('owner')->unique();
+        
+        if ($pickingSlipQueryProductBundle->count() > 0) {
+            $itemCodes = $itemCodes->merge($pickingSlipQueryProductBundle->pluck('parent_item')->unique());
+            $owners = $owners->merge($pickingSlipQueryProductBundle->pluck('owner')->unique());
+        } 
+        
+        // Fetch supplier part numbers for all items in one query
+        $supplierPartNos = DB::table('tabItem Supplier')
+            ->whereIn('parent', $itemCodes)->pluck('supplier_part_no', 'parent');
+        
+        // Fetch owners' full names in one query
+        $ownerNames = DB::table('tabUser')
+            ->whereIn('email', $owners)->pluck('full_name', 'email');
+        
         $list = [];
-        foreach ($q as $d) {
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-
-            $part_nos = implode(', ', $part_nos->toArray());
-
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
-
-            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
-
+        foreach ($allItems as $d) {
+            $part_nos = $supplierPartNos->get($d->item_code, '');
+            $owner = $ownerNames->get($d->owner, null);
+            $parent_warehouse = $this->get_warehouse_parent($d->warehouse ?? $d->s_warehouse);
+        
             $list[] = [
                 'owner' => $owner,
-                'warehouse' => $d->warehouse,
-                'customer' => $d->customer,
-                'sales_order' => $d->sales_order,
+                'warehouse' => $d->warehouse ?? $d->s_warehouse,
+                'customer' => $d->customer ?? $d->customer_1,
+                'sales_order' => $d->sales_order ?? $d->sales_order_no,
                 'id' => $d->id,
                 'part_nos' => $part_nos,
                 'status' => $d->status,
                 'name' => $d->name,
-                'delivery_note' => $d->delivery_note,
+                'delivery_note' => $d->delivery_note ?? null,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 'qty' => $d->qty,
-                'stock_uom' => $d->uom,
+                'stock_uom' => $d->uom ?? $d->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                'type' => 'picking_slip',
-                'classification' => 'Customer Order',
+                'type' => isset($d->sales_order_no) ? 'stock_entry' : 'picking_slip',
+                'classification' => $d->transfer_as ?? 'Customer Order',
                 'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
-                'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null
+                'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null,
             ];
         }
 
-        $q = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
-            ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
-            ->select('ste.delivery_date', 'sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
-            ->get();
-
-            foreach ($q as $d) {
-                $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-    
-                $part_nos = implode(', ', $part_nos->toArray());
-    
-                $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-                $owner = ($owner) ? $owner->full_name : null;
-    
-                $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+        if ($pickingSlipQueryProductBundle->count() > 0) {
+            $pickingSlipQueryProductBundle = $pickingSlipQueryProductBundle->groupBy('parent_item');
+            foreach ($pickingSlipQueryProductBundle as $parent_item => $rows) {
+                $part_nos = $supplierPartNos->get($parent_item, '');
+                $owner = $ownerNames->get($rows[0]->owner, null);
+                $parent_warehouse = $this->get_warehouse_parent($rows[0]->warehouse);
     
                 $list[] = [
                     'owner' => $owner,
-                    'warehouse' => $d->s_warehouse,
-                    'customer' => $d->customer_1,
-                    'sales_order' => $d->sales_order_no,
-                    'id' => $d->id,
+                    'warehouse' => $rows[0]->warehouse,
+                    'customer' => $rows[0]->customer,
+                    'sales_order' => $rows[0]->sales_order,
+                    'id' => $rows[0]->id,
                     'part_nos' => $part_nos,
-                    'status' => $d->status,
-                    'name' => $d->name,
-                    'delivery_note' => null,
-                    'item_code' => $d->item_code,
-                    'description' => $d->description,
-                    'qty' => $d->qty,
-                    'stock_uom' => $d->stock_uom,
+                    'status' => $rows[0]->status,
+                    'name' => $rows[0]->name,
+                    'delivery_note' => $rows[0]->delivery_note ?? null,
+                    'item_code' => $parent_item,
+                    'description' => $rows[0]->description,
+                    'qty' => $rows[0]->qty,
+                    'stock_uom' => $rows[0]->uom,
                     'parent_warehouse' => $parent_warehouse,
-                    'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                    'type' => 'stock_entry',
-                    'classification' => $d->transfer_as,
-                    'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
-                    'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null
+                    'creation' => Carbon::parse($rows[0]->creation)->format('M-d-Y h:i:A'),
+                    'type' => 'packed_item',
+                    'classification' => 'Customer Order',
+                    'delivery_date' => Carbon::parse($rows[0]->delivery_date)->format('M-d-Y'),
+                    'delivery_status' => (Carbon::parse($rows[0]->delivery_date) < Carbon::now()) ? 'late' : null,
                 ];
             }
+        }
         
         return response()->json(['picking' => $list]);
     }
