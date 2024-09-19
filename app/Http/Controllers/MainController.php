@@ -4789,12 +4789,12 @@ class MainController extends Controller
                 ->where('sted.t_warehouse', 'Goods in Transit - FI')
                 ->whereRaw('wo.production_item = soi.item_code')
                 ->where('so.docstatus', 1)->where('so.per_ordered', '<', 100)->where('so.company', 'FUMACO Inc.')->whereNotIn('so.status', ['Cancelled', 'Closed', 'Completed'])
-                ->whereRaw('soi.received_qty < soi.qty')
+                ->whereRaw('soi.ordered_qty < soi.qty')
                 ->where('wo.produced_qty', '>', 0)->where('wo.status', '!=', 'Stopped')->where('wo.fg_warehouse', 'Goods in Transit - FI')
                 ->when($transferred_to_fg, function ($q) use ($transferred_to_fg){
                     return $q->whereNotIn('soi.name', $transferred_to_fg);
                 })
-                ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.received_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom', 'sted.name as sted_name', 'sted.status as sted_status', 'sted.date_modified', 'sted.session_user', 'sted.qty as ste_qty', 'ste.name as ste_name')
+                ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.ordered_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom', 'sted.name as sted_name', 'sted.status as sted_status', 'sted.date_modified', 'sted.session_user', 'sted.qty as ste_qty', 'ste.name as ste_name')
                 ->unionAll($sales_orders)
                 ->orderBy('modified')->get();
 
@@ -4895,7 +4895,6 @@ class MainController extends Controller
     public function transfer_transit_stocks($id, Request $request){
         DB::beginTransaction();
         try {
-            $headers = $this->get_api_headers();
             $doctype = $request->reference_doctype == 'SO' ? 'tabStock Entry' : 'tabMaterial Request';
             $doctype_child = $request->reference_doctype == 'SO' ? 'tabStock Entry Detail' : 'tabMaterial Request Item';
 
@@ -4914,45 +4913,41 @@ class MainController extends Controller
 
             $image = $stock_entry_detail->image ? $stock_entry_detail->image : '/icon/no_img.png';
 
-            $sales_order = Http::withHeaders($headers)
-                ->get(env('ERP_API_BASE_URL').'/api/resource/Sales Order/'.$stock_entry_detail->sales_order_no);
+            $sales_order = DB::table('tabSales Order')->where('name', $stock_entry_detail->sales_order_no)->first();
 
-            if($sales_order->getStatusCode() != 200){
-                return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
+            if(!$sales_order){
+                return response()->json(['success' => 0, 'message' => 'Sales Order '.$stock_entry_detail->sales_order_no.' not found.']);
             }
 
-            $sales_order = json_decode($sales_order)->data;
-
-            $response = Http::withHeaders($headers)
-                ->post(env('ERP_API_BASE_URL').'/api/resource/Stock Entry', [
-                    'doctype' => 'Stock Entry',
-                    'purpose' => 'Material Transfer',
-                    'stock_entry_type' => 'Material Transfer',
-                    'docstatus' => 0,
-                    'item_status' => 'For Checking',
-                    'company' => 'FUMACO Inc.',
-                    'order_from' => 'Other Reference',
-                    'transfer_as' => 'Internal Transfer',
-                    'reference_no' => $request->ref_no,
-                    'from_warehouse' => 'Goods in Transit - FI',
-                    'to_warehouse' => 'Finished Goods - FI',
-                    'owner' => Auth::user()->wh_user,
-                    'items' => [
-                        [
-                            'item_code' => $stock_entry_detail->item_code,
-                            'qty' => $stock_entry_detail->qty,
-                            'transfer_qty' => $stock_entry_detail->transfer_qty,
-                            's_warehouse' => 'Goods in Transit - FI',
-                            't_warehouse' => 'Finished Goods - FI'
-                        ]
+            $response = $this->erpOperation('post', 'Stock Entry', null, $body = [
+                'doctype' => 'Stock Entry',
+                'purpose' => 'Material Transfer',
+                'stock_entry_type' => 'Material Transfer',
+                'docstatus' => 0,
+                'item_status' => 'For Checking',
+                'company' => 'FUMACO Inc.',
+                'order_from' => 'Other Reference',
+                'transfer_as' => 'Internal Transfer',
+                'reference_no' => $request->ref_no,
+                'from_warehouse' => 'Goods in Transit - FI',
+                'to_warehouse' => 'Finished Goods - FI',
+                'owner' => Auth::user()->wh_user,
+                'items' => [
+                    [
+                        'item_code' => $stock_entry_detail->item_code,
+                        'qty' => $stock_entry_detail->qty,
+                        'transfer_qty' => $stock_entry_detail->transfer_qty,
+                        's_warehouse' => 'Goods in Transit - FI',
+                        't_warehouse' => 'Finished Goods - FI'
                     ]
-                ]);
+                ]
+            ]);
 
-            if($response->getStatusCode() != 200){
+            if(!isset($response['data'])){
                 return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
             }
 
-            $data = json_decode($response->getBody())->data;
+            $data = $response['data'];
 
             DB::table($doctype_child)->where('name', $id)->update([
                 'status' => 'Issued',
@@ -4961,7 +4956,7 @@ class MainController extends Controller
             ]);
 
             $email_data = [
-                'id' => $data->name,
+                'id' => $data['name'],
                 'uom' => $stock_entry_detail->uom,
                 'user' => Auth::user()->wh_user,
                 'image' => $image,
@@ -4971,8 +4966,8 @@ class MainController extends Controller
                 'description' => $stock_entry_detail->description,
                 'transfer_qty' => $stock_entry_detail->transfer_qty,
                 'transaction_date' => Carbon::now()->format('M. d, Y'),
-                'source_warehouse' => $data->from_warehouse,
-                'target_warehouse' => $data->to_warehouse
+                'source_warehouse' => $data['from_warehouse'],
+                'target_warehouse' => $data['to_warehouse']
             ];
 
             $email_sent = 1;
@@ -4989,7 +4984,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['success' => 1, 'message' => 'Stock Entry created!', 'email_sent' => $email_sent]);
-        } catch (\Throwable $th) {
+        } catch (Exception $th) {
             // throw $th;
             DB::rollback();
             return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
