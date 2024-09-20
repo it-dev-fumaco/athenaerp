@@ -655,7 +655,7 @@ class BrochureController extends Controller
 
 			return view('brochure.multiple_brochure', compact('content', 'project', 'customer'));
 		} catch (\Throwable $th) {
-			throw $th;
+			// throw $th;
 			return redirect()->back()->with('error', 'An error occured. Please try again.');
 		}
 	}

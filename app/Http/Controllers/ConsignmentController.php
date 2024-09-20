@@ -18,9 +18,10 @@ use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
 use App\Traits\GeneralTrait;
+use App\Traits\ERPTrait;
 class ConsignmentController extends Controller
 {
-    use GeneralTrait;
+    use GeneralTrait, ERPTrait;
     public function viewSalesReportList($branch, Request $request) {
         $months = [];
         for ($m=1; $m<=12; $m++) {
