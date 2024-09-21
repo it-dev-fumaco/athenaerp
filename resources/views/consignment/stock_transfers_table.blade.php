@@ -18,16 +18,38 @@
     @php
         $badge = 'secondary';
         $status = 'Unknown';
-        if ($ste['status'] == 'Pending') {
-            $badge = 'warning';
-            $status = $ste['status'];
-        } elseif ($ste['status'] == 'Completed') {
-            $badge = 'success';
-            $status = $ste['status'];
-        } else {
-            $badge = 'danger';
-            $status = $ste['status'];
-        }
+        // if ($ste['status'] == 'Pending') {
+        //     $badge = 'warning';
+        //     $status = $ste['status'];
+        // } elseif ($ste['status'] == 'Completed') {
+        //     $badge = 'success';
+        //     $status = $ste['status'];
+        // } else {
+        //     $badge = 'danger';
+        //     $status = $ste['status'];
+        // }
+
+        if ($purpose == 'Item Return'){
+                $status = $ste['status'] == 'Cancelled' ? $ste['status'] : 'Completed';
+            }else{
+                $status = $ste['status'];
+            }
+                    
+            if ($purpose == 'Item Return') {
+                if (in_array($status, ['Completed', 'Pending'])){
+                    $badge = 'success';
+                } else {
+                    $badge = 'danger';
+                }
+            }else{
+                if($status == 'Pending'){
+                    $badge = 'warning';
+                }elseif ($status == 'Completed'){
+                    $badge = 'success';
+                } else {
+                    $badge = 'danger';
+                }
+            }
     @endphp
     <tr>
         <td class="text-center p-1 d-none d-lg-table-cell"><span class="font-weight-bold">{{ $ste['title'] ? $ste['title'] : $ste['name'] }}</span></td>

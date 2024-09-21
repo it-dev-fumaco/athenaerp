@@ -2564,6 +2564,8 @@ class MainController extends Controller
             //     return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($ps_details->qty * 1) .'.']);
             // }
 
+            // $customer = DB::table('tabDelivery Note')->where('name', $ps_details->delivery_note)->pluck('customer')->first();
+
             $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
             if($request->qty > $available_qty && $request->is_bundle == false && $request->deduct_reserve == 0){
                 return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
