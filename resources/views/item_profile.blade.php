@@ -152,20 +152,17 @@
                                         </div>
                                         <div class="col-md-3 col-lg-3 pl-2 pr-2 pb-2 pt-0">
                                             <div class="row pb-2" style="border-bottom: solid 3px #2E86C1">
-                                                @if ($item_images)
+                                                @if (count($item_images) > 0)
                                                     @for($i = 0; $i <= 3; $i++)
                                                         @isset($item_images[$i])
                                                             @php
-                                                                $image = '/img/' . $item_images[$i];
-                                                                $webp = explode('.', $image)[0].'.webp';
-                                                                $alt = Illuminate\Support\Str::slug(explode('.', $image)[0], '-');
+                                                                $image = $item_images[$i];
+                                                                $alt = Illuminate\Support\Str::slug($item_brochure_description, '-');
                                                             @endphp
                                                             <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }}" style="{{ $i > 0 ? 'height: 75px;' : null }}">
-                                                                <a href="http://athenaerp.fumaco.local/storage/img/1543455894-WC00038.jpg" class="view-images" data-item-code="{{ $item_details->name }}" data-idx="{{ $i }}">
+                                                                <a href="{{ $image }}" class="view-images" data-item-code="{{ $item_details->name }}" data-idx="{{ $i }}">
                                                                     <picture>
-                                                                        <source srcset="{{ asset('storage'.$webp) }}" type="image/webp">
-                                                                        <source srcset="{{ asset('storage'.$image) }}" type="image/jpeg">
-                                                                        <img src="{{ asset('storage'.$image) }}" alt="{{ $alt }}" class="img-responsive hover" style="width: 100%; height: 100%;">
+                                                                        <img src="{{ $image }}" alt="{{ $alt }}" class="img-responsive hover" style="width: 100%; height: 100%;">
                                                                     </picture>
                                                                     @if($i == 3 && count($item_images) > 4)
                                                                         <div class="card-img-overlay text-center">
@@ -178,11 +175,7 @@
                                                     @endfor
                                                 @else
                                                     <div class="col-12">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage/icon/no_img.webp') }}" type="image/webp">
-                                                            <source srcset="{{ asset('storage/icon/no_img.png') }}" type="image/jpeg">
-                                                            <img src="{{ asset('storage/icon/no_img.png') }}" class="img-responsive hover" style="width: 100%; height: 100%;">
-                                                        </picture>
+                                                        <img src="{{ $no_img }}" class="img-responsive hover" style="width: 100%; height: 100%;">
                                                     </div>
                                                 @endif
                                             </div>
@@ -545,16 +538,8 @@
                                                         <div class="col-12">
                                                             <div class="d-flex flex-row">
                                                                 <div class="pt-2 pb-2 pr-1 pl-1">
-                                                                    @php
-                                                                        $img = ($a['item_alternative_image']) ? '/img/' . explode('.', $a['item_alternative_image'])[0].'.jpg' : '/icon/no_img.jpg';
-                                                                        $img_webp = ($a['item_alternative_image']) ? '/img/' . explode('.', $a['item_alternative_image'])[0].'.webp' : '/icon/no_img.webp';
-                                                                    @endphp
-                                                                    <a href="{{ asset('storage' . $img) }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
-                                                                        <picture>
-                                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="rounded" width="80" height="80">
-                                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="rounded" width="80" height="80">
-                                                                            <img src="{{ asset('storage'.$img) }}" class="rounded" width="80" height="80">
-                                                                        </picture>
+                                                                    <a href="{{ $a['item_alternative_image'] }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
+                                                                        <img src="{{ $a['item_alternative_image'] }}" class="rounded" width="80" height="80">
                                                                     </a>
                                                                 </div>
                                                                 <a href="/get_item_details/{{ $a['item_code'] }}" class="text-dark" style="font-size: 9pt;">

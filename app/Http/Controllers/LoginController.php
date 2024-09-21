@@ -9,15 +9,21 @@ use Validator;
 use DB;
 
 use App\LdapClasses\adLDAP;
+use App\Traits\GeneralTrait;
 
 class LoginController extends Controller
 {
+    use GeneralTrait;
     public function view_login(){
         if(Auth::check()){
             return redirect('/');
+            
         }
 
-        return view('login_v2');
+        $bg1 = $this->base64_image('/img/img1.png');
+        $bg2 = $this->base64_image('/img/img2.png');
+
+        return view('login_v2', compact('bg1', 'bg2'));
     }
 
     public function login(Request $request){

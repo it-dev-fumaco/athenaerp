@@ -105,12 +105,8 @@
                                         <td class="text-center p-1">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-1 text-left">
-                                                    <a href="{{ asset('storage/') }}{{ $item['image'] }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
-                                                        <picture>
-                                                            <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
-                                                            <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
-                                                            <img src="{{ asset('storage'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
-                                                        </picture>
+                                                    <a href="{{ $item['image'] }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
+                                                        <img src="{{ $item['image'] }}" alt="{{ Illuminate\Support\Str::slug(strip_tags($item['description']), '-') }}" width="40" height="40">
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">

@@ -40,11 +40,7 @@
                                             <td class="text-justify p-1 align-middle" colspan="3">
                                                 <div class="d-flex flex-row justify-content-center align-items-center">
                                                     <div class="p-1 col-2 text-center">
-                                                        <picture>
-                                                            <source srcset="" id="new-src-img-webp" type="image/webp">
-                                                            <source srcset="" id="new-src-img" type="image/jpeg">
-                                                            <img src="" alt="" id="new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
-                                                        </picture>
+                                                        <img src="" alt="" id="new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
                                                     </div>
                                                     <div class="p-1 col m-0">
                                                         <span class="font-weight-bold font-responsive"><span id="new-item-code"></span></span>
@@ -120,20 +116,14 @@
             @forelse ($items as $item)
                 <tr id="{{ $item['item_code'] }}" class="{{ $item['item_code'] }}">
                     @php
-                        $img = array_key_exists($item['item_code'], $item_images) ? "/img/" . $item_images[$item['item_code']][0]->image_path : "/icon/no_img.png";
-                        $img_webp = array_key_exists($item['item_code'], $item_images) ? "/img/" . explode('.',$item_images[$item['item_code']][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-                        $img_count = array_key_exists($item['item_code'], $item_images) ? count($item_images[$item['item_code']]) : 0;
+                        $img = isset($item_images[$item['item_code']]) ? $item_images[$item['item_code']] : $item_images['no_img'];
                     @endphp 
                     <td class="text-justify p-1 align-middle" colspan="3">
                         <input type="text" name="item_code[]" id="{{ $item['item_code'] }}-id" class="d-none" value="{{ $item['item_code'] }}" />
                         <div class="d-flex flex-row justify-content-center align-items-center">
                             <div class="p-1 col-2 text-center">
-                                <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
-                                    <picture>
-                                        <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                        <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                        <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                    </picture>
+                                <a href="{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
+                                    <img src="{{ $img }}" alt="{{ Illuminate\Support\Str::slug(strip_tags($item['item_description']), '-') }}" width="40" height="40">
                                 </a>
                             </div>
                             <div class="p-1 col m-0">
@@ -509,10 +499,7 @@
                 return opt.text;
             }
 
-            var optimage = opt.image_webp;
-            if(optimage.indexOf('/icon/no_img') != -1){
-                optimage = opt.image;
-            }
+            var optimage = opt.image;
 
             if(!optimage){
                 return opt.text;
@@ -528,12 +515,9 @@
             $('#new-item-code').text(e.params.data.id); // item code
             $('#new-description').text(e.params.data.description); // description
             $('#new-classification').text(e.params.data.classification); // classification
-            $('#new-src-img').attr('src', e.params.data.image); // image
-            $('#new-src-img-webp').attr('src', e.params.data.image_webp); // webp
             $('#new-img').attr('src', e.params.data.image); // image
-
             $('#new-img-txt').text(e.params.data.image); // image
-            $('#new-webp-txt').text(e.params.data.image_webp); // webp
+
             $('#new-alt-txt').text(e.params.data.alt); // alt text
 
             $('#add-item-btn').removeClass('d-none');
@@ -548,8 +532,6 @@
             $('#new-item-code').text('');
             $('#new-description').text('');
             $('#new-classification').text('');
-            $('#new-src-img').attr('src', '');
-            $('#new-src-img-webp').attr('src', '');
             $('#new-img').attr('src', '');
 
             $('#new-img-txt').text('');
@@ -601,11 +583,7 @@
                     '<input type="text" name="item_code[]" id="' + item_code + '-id" class="d-none" value="' + item_code + '" />' +
                     '<div class="d-flex flex-row justify-content-center align-items-center">' +
                         '<div class="p-1 col-2 text-center">' +
-                            '<picture>' +
-                                '<source srcset="' + webp + '" type="image/webp" class="img-thumbna1il" alt="User Image" width="40" height="40">' +
-                                '<source srcset="' + image + '" type="image/jpeg" class="img-thumbna1il" alt="User Image" width="40" height="40">' +
-                                '<img src="' + image + '" alt="' + alt + '" class="img-thumbna1il" alt="User Image" width="40" height="40">' +
-                            '</picture>' +
+                            '<img src="' + image + '" alt="' + alt + '" class="img-thumbna1il" alt="User Image" width="40" height="40">' +
                         '</div>' +
                         '<div class="p-1 col m-0">' +
                             '<span class="font-weight-bold font-responsive">' + item_code + '</span>' +

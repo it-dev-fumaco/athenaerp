@@ -144,21 +144,13 @@
 																	</thead>
 																	<tbody>
 																		@forelse ($inv['items'] as $item)
-																		@php
-																			$img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
-																			$img_webp = $item['image'] ? "/img/" . explode('.', $item['image'])[0].'.webp' : "/icon/no_img.webp";
-																		@endphp
 																		<tr>
 																			<td class="text-center p-1 align-middle">
 																				<div class="d-none">{{ strip_tags($item['item_description']) }}</div>
 																				<div class="d-flex flex-row justify-content-start align-items-center">
 																					<div class="p-1 text-left">
-																						<a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
-																							<picture>
-																							<source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-																							<source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-																							<img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-																							</picture>
+																						<a href="{{ $item['image'] }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
+																							<img src="{{ $item['image'] }}" alt="{{ Illuminate\Support\Str::slug(strip_tags($item['item_description']), '-') }}" width="40" height="40">
 																						</a>
 																					</div>
 																					<div class="p-1 m-0">
@@ -248,41 +240,6 @@
 																									<th class="text-center" style="width: 20%;">Qty</th>
 																									<th class="text-center" style="width: 20%;">Amount</th>
 																								</tr>
-																								{{-- @foreach($inv['sold'] as $item)
-																									<tr>
-																										<td class="p-0" colspan=3>
-																											<div class="p-0 row">
-																												<div class="col-6">
-																													<div class="row">
-																														<div class="col-4">
-																															<picture>
-																																<source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
-																																<source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-																																<img src="{{ asset('storage'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
-																															</picture>
-																														</div>
-																														<div class="col-8" style="display: flex; justify-content: center; align-items: center;">
-																															<b>{{ $item['item_code'] }}</b>
-																														</div>
-																													</div>
-																												</div>
-																												<div class="col-3 pt-2">
-																													<b>{{ number_format($item['qty']) }}</b> <br>
-																													<small>{{ $item['uom'] }}</small>
-																												</div>
-																												<div class="col-3" style="display: flex; justify-content: center; align-items: center;">
-																													₱ {{ number_format($item['price'], 2) }}
-																												</div>
-																											</div>
-																											<div class="text-justify item-description">
-																												{{ $item['description'] }}
-																											</div>
-																											<div class="text-justify pt-1 pb-2">
-																												<b>Transaction Date:</b>&nbsp;{{ Carbon\Carbon::parse($item['date'])->format('F d, Y') }}
-																											</div>
-																										</td>
-																									</tr>
-																								@endforeach --}}
 																							</table>
 																						</div>
 																					{{-- @else --}}

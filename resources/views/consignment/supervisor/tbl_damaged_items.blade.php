@@ -15,11 +15,7 @@
             <td class="p-1 text-justify align-middle">
                 <div class="d-flex flex-row align-items-center">
                     <div class="p-1">
-                        <picture>
-                            <source srcset="{{ asset('storage/'.$item['webp']) }}" type="image/webp">
-                            <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                            <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['image_slug'] }}" width="70">
-                        </picture>
+                        <img src="{{ $item['image'] }}" alt="{{ $item['image_slug'] }}" width="70">
                     </div>
                     <div class="p-1">
                         <span class="d-block font-weight-bold">{{ $item['item_code'] }}</span>

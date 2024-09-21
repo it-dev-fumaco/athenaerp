@@ -555,7 +555,6 @@
 								</div>
 								<div class="col-2 col-md-3 d-block d-lg-none">
 									<li class="nav-item dropdown p-0 mob-dropdown-container" style="list-style-type: none !important;">
-										{{-- @if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser'])) --}}
 										@if (Auth::check())
 											<a href="/generate_multiple_brochures" class="d-none brochures-icon" style="position: relative;">
 												<i class="far fa-bookmark" style="color: #fff; font-size: 20pt; margin-top: 8px;"></i>
@@ -608,7 +607,6 @@
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
 								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
-									{{-- @if (Auth::check() && !in_array(Auth::user()->user_group, ['Promodiser'])) --}}
 									@if (Auth::check())
 										<span class="d-none brochures-icon" style="position: relative;">
 											<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
@@ -2008,10 +2006,17 @@
 				$.ajax({
 					type: "GET",
 					url: "/load_item_images/" + item_code,
-					data: {idx: idx},
-					success: function (response) {
+					data: idx,
+					success: (response) => {
 						$("#imgModal").modal('show');
 						$('#img-container').html(response);
+					},
+					error: (xhr, textStatus, errorThrown) => {
+						if (xhr.status === 404) {
+							showNotification("info", 'No images found for this item.', "fa fa-info");
+						} else {
+							showNotification("danger", errorThrown, "fa fa-info");
+						}
 					}
 				});
 			}
@@ -2188,22 +2193,14 @@
 			}
 
 			function get_item_images(item_code){
-				var storage = "{{ asset('storage/img/') }}";
 				$.ajax({
 					type: 'GET',
 					url: '/get_item_images/' + item_code,
 					success: function(response){
-						$.each(response, function(i, d){
-							var image_src = storage + '/' + d;
-							var image_src_webp = storage + '/' + d.split('.')[0] + '.webp';
+						$.each(response, function(i, image_src){
 							$("<div class=\"col-md-4 pip img_upload\">" +
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
-							// "<img class=\"img-thumbnail\" src=\"" + image_src + "\">" +
-							"<picture>" +
-							"<source srcset=\"" + image_src_webp + "\" type=\"image/webp\">" +
-							"<source srcset=\"" + image_src + "\" type=\"image/jpeg\">" +
 							"<img src=\"" + image_src + "\" class=\"img-thumbnail\">" +
-							"</picture>" +
 							"<span class=\"add-fav remove\">&times;</span>" +
 							"</div>").insertAfter("#image-previews");
 						});

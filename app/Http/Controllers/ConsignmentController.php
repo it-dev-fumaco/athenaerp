@@ -17,8 +17,11 @@ use Exception;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
+use App\Traits\GeneralTrait;
+use App\Traits\ERPTrait;
 class ConsignmentController extends Controller
 {
+    use GeneralTrait, ERPTrait;
     public function viewSalesReportList($branch, Request $request) {
         $months = [];
         for ($m=1; $m<=12; $m++) {
@@ -185,9 +188,6 @@ class ConsignmentController extends Controller
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
                     'docstatus' => 0,
-                    'parent' => null,
-                    'parentfield' => null,
-                    'parenttype' => null,
                     'idx' => 0,
                     'transaction_date' => $data['transaction_date'],
                     'branch_warehouse' => $data['branch_warehouse'],
@@ -621,10 +621,16 @@ class ConsignmentController extends Controller
 
         $item_codes = collect($inv_summary)->pluck('item_code');
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
+        });
 
-        return view('consignment.promodiser_warehouse_items', compact('inv_summary', 'item_image', 'branch', 'assigned_consignment_stores'));
+        $no_img = $this->base64_image('/icon/no_img.png');
+
+        $item_images['no_img'] = $no_img;
+
+        return view('consignment.promodiser_warehouse_items', compact('inv_summary', 'item_images', 'branch', 'assigned_consignment_stores'));
     }
 
     // /beginning_inv_list
@@ -679,13 +685,9 @@ class ConsignmentController extends Controller
                 ->paginate(10);
         }
 
-        $ids = collect($beginning_inventory->items())->map(function($q){
-            return $q->name;
-        });
+        $ids = collect($beginning_inventory->items())->pluck('name');
 
-        $warehouses = collect($beginning_inventory->items())->map(function($q){
-            return $q->branch_warehouse;
-        });
+        $warehouses = collect($beginning_inventory->items())->pluck('branch_warehouse');
 
         $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->orderBy('idx')->get();
         $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
@@ -709,8 +711,12 @@ class ConsignmentController extends Controller
             return $q->branch_warehouse;
         })->unique();
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
+        });
+
+        $no_img = $this->base64_image('icon/no_img.png');
 
         $uoms = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'stock_uom')->get();
         $uom = collect($uoms)->groupBy('item_code');
@@ -730,8 +736,7 @@ class ConsignmentController extends Controller
                     $items_arr[] = [
                         'parent' => $item->parent,
                         'inv_name' => $inv->name,
-                        'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
-                        'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
+                        'image' => isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img,
                         'item_code' => $item->item_code,
                         'item_description' => $item->item_description,
                         'uom' => $item->stock_uom,
@@ -742,9 +747,7 @@ class ConsignmentController extends Controller
                     ];
                 }
 
-                $included_items = collect($items_arr)->map(function ($q){
-                    return $q['item_code'];
-                })->toArray();
+                $included_items = collect($items_arr)->pluck('item_code')->toArray();
             }
 
             $inv_arr[] = [
@@ -816,8 +819,10 @@ class ConsignmentController extends Controller
                 $bin = DB::table('tabBin')->where('warehouse', $branch)->whereIn('item_code', $item_codes)->get();
                 $bin_items = collect($bin)->groupBy('item_code');
 
+                $skipped_items = [];
                 foreach($item_codes as $i => $item_code){
                     if(isset($items[$item_code]) && $items[$item_code][0]->status != 'For Approval'){ // Skip the approved/cancelled items
+                        $skipped_items = collect($skipped_items)->merge($item_code)->toArray();
                         continue;
                     }
                     
@@ -861,10 +866,14 @@ class ConsignmentController extends Controller
                     }
 
                     // Beginning Inventory
-                    if(isset($items[$item_code])){
+                    if(isset($items[$item_code]) || in_array($item_code, $skipped_items)){
                         if(isset($prices[$item_code])){
                             $update_values['price'] = $price;
                             $update_values['idx'] = $i + 1;
+                        }
+
+                        if(in_array($item_code, $skipped_items) && $request->has('status')){
+                            $update_values['status'] = $request->status;
                         }
         
                         DB::table('tabConsignment Beginning Inventory Item')->where('parent', $id)->where('item_code', $item_code)->update($update_values);
@@ -1050,8 +1059,12 @@ class ConsignmentController extends Controller
             ];
         }
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
+        });
+
+        $no_img = $this->base64_image('icon/no_img.png');
 
         $now = Carbon::now();
 
@@ -1063,8 +1076,7 @@ class ConsignmentController extends Controller
                 $items_arr[] = [
                     'item_code' => $item->item_code,
                     'description' => $item->description,
-                    'image' => isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : null,
-                    'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
+                    'image' => isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img,
                     'delivered_qty' => $item->transfer_qty,
                     'stock_uom' => $item->stock_uom,
                     'price' => isset($prices_arr[$ref_warehouse][$item->item_code]) ? $prices_arr[$ref_warehouse][$item->item_code]['price'] : 0,
@@ -1133,10 +1145,15 @@ class ConsignmentController extends Controller
                 ->select('ste.name', 'ste.delivery_date', 'ste.item_status', 'ste.from_warehouse', 'sted.t_warehouse', 'sted.s_warehouse', 'ste.creation', 'ste.posting_time', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.consignment_status', 'ste.transfer_as', 'ste.docstatus', 'sted.consignment_date_received', 'sted.consignment_received_by')
                 ->orderBy('ste.creation', 'desc')->get();
 
-            $item_images = DB::table('tabItem Images')->whereIn('parent', collect($delivery_report)->pluck('item_code'))->get();
-            $item_image = collect($item_images)->groupBy('parent');
+            $item_images = DB::table('tabItem Images')->whereIn('parent', collect($delivery_report)->pluck('item_code'))->pluck('image_path', 'parent');
+            $item_images = collect($item_images)->map(function ($image){
+                return $this->base64_image("img/$image");
+            });
+    
+            $no_img = $this->base64_image('icon/no_img.png');
+            $item_images['no_img'] = $no_img;
 
-            return view('consignment.promodiser_delivery_inquire_tbl', compact('delivery_report', 'item_image'));
+            return view('consignment.promodiser_delivery_inquire_tbl', compact('delivery_report', 'item_images'));
         }
 
         return view('consignment.promodiser_delivery_inquire', compact('delivery_report'));
@@ -1599,34 +1616,26 @@ class ConsignmentController extends Controller
             ->groupBy('item.item_code', 'item.description', 'item.item_image_path', 'item.item_classification', 'item.stock_uom')
             ->limit(8)->get();
 
-        $item_codes = collect($items)->map(function ($q){
-            return $q->item_code;
+        $item_codes = collect($items)->pluck('item_code');
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
         });
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $no_img = $this->base64_image('icon/no_img.png');
 
         $items_arr = [];
         foreach($items as $item){
-            $image = '/icon/no_img.png';
-            if(isset($item_image[$item->item_code]) || $item->item_image_path){
-                $image = isset($item_image[$item->item_code]) ? '/img/'.$item_image[$item->item_code][0]->image_path : '/img/'.$item->item_image_path;
-            }
-
-            $image_webp = '/icon/no_img.webp';
-            if(isset($item_image[$item->item_code]) || $item->item_image_path){
-                $image_webp = isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : $item->item_image_path;
-                $image_webp = '/img/'.(explode('.', $image_webp)[0]).'.webp';
-            }
+            $image = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
 
             $items_arr[] = [
                 'id' => $item->item_code,
                 'text' => $item->item_code.' - '.strip_tags($item->description),
                 'description' => strip_tags($item->description),
                 'classification' => $item->item_classification,
-                'image' => asset('storage'.$image),
-                'image_webp' => asset('storage'.$image_webp),
-                'alt' => Str::slug(explode('.', $image)[0], '-'),
+                'image' => $image,
+                'alt' => Str::slug(strip_tags($item->description), '-'),
                 'uom' => $item->stock_uom
             ];
         }
@@ -1689,12 +1698,16 @@ class ConsignmentController extends Controller
 
             $items = collect($items)->sortBy('item_description');
 
-            $item_codes = collect($items)->map(function($q){
-                return $q['item_code'];
+            $item_codes = collect($items)->pluck('item_code');
+
+            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+            $item_images = collect($item_images)->map(function ($image){
+                return $this->base64_image("img/$image");
             });
 
-            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-            $item_images = collect($item_images)->groupBy('parent')->toArray();
+            $no_img = $this->base64_image('icon/no_img.png');
+            $item_images['no_img'] = $no_img;
+
             $detail = [];
             if ($id) {
                 $detail = DB::table('tabConsignment Beginning Inventory')->where('name', $id)->first();
@@ -1959,28 +1972,18 @@ class ConsignmentController extends Controller
             return $q->item_code;
         });
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
+        });
+
+        $no_img = $this->base64_image('icon/no_img.png');
 
         $result = [];
         foreach($list as $item){
             $orig_exists = $webp_exists = 0;
 
-            $img = '/icon/no_img.png';
-            $webp = '/icon/no_img.webp';
-
-            if(isset($item_image[$item->item_code])){
-                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                if($orig_exists == 0 && $webp_exists == 0){
-                    $img = '/icon/no_img.png';
-                    $webp = '/icon/no_img.webp';
-                }
-            }
+            $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
             
             $result[] = [
                 'item_code' => $item->item_code,
@@ -1991,8 +1994,7 @@ class ConsignmentController extends Controller
                 'damage_description' => $item->damage_description,
                 'promodiser' => $item->promodiser,
                 'image' => $img,
-                'image_slug' => Str::slug(explode('.', $img)[0], '-'),
-                'webp' => $webp,
+                'image_slug' => Str::slug(explode('.', $item->description)[0], '-'),
                 'item_status' => $item->status,
                 'creation' => Carbon::parse($item->creation)->format('M d, Y - h:i A'),
             ];
@@ -2108,7 +2110,6 @@ class ConsignmentController extends Controller
                 'naming_series' => 'STEC-',
                 'posting_time' => $now->format('H:i:s'),
                 'to_warehouse' => $details->target_warehouse,
-                'title' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
                 'from_warehouse' => $details->source_warehouse,
                 'set_posting_time' => 0,
                 'from_bom' => 0,
@@ -2193,8 +2194,12 @@ class ConsignmentController extends Controller
     
                 $items = collect($items)->groupBy('parent');
     
-                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
-                $item_image = collect($item_images)->groupBy('parent');
+                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+                $item_images = collect($item_images)->map(function ($image){
+                    return $this->base64_image("img/$image");
+                });
+
+                $no_img = $this->base64_image('/icon/no_img.png');
     
                 $result = [];
                 foreach($list as $ste){
@@ -2203,21 +2208,7 @@ class ConsignmentController extends Controller
                         foreach($items[$ste->name] as $item){
                             $orig_exists = $webp_exists = 0;
     
-                            $img = '/icon/no_img.png';
-                            $webp = '/icon/no_img.webp';
-    
-                            if(isset($item_image[$item->item_code])){
-                                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-    
-                                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                                $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-    
-                                if($orig_exists == 0 && $webp_exists == 0){
-                                    $img = '/icon/no_img.png';
-                                    $webp = '/icon/no_img.webp';
-                                }
-                            }
+                            $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
     
                             $items_array[] = [
                                 'item_code' => $item->item_code,
@@ -2227,8 +2218,7 @@ class ConsignmentController extends Controller
                                 'uom' => $item->uom,
                                 'consigned_qty' => isset($current_stocks[$ste->source_warehouse][$item->item_code]) ? $current_stocks[$ste->source_warehouse][$item->item_code]['consigned_qty'] : 0,
                                 'image' => $img,
-                                'image_slug' => Str::slug(explode('.', $img)[0], '-'),
-                                'webp' => $webp
+                                'image_slug' => Str::slug(explode('.', $item->item_description)[0], '-')
                             ];
                         }
                     }
@@ -2251,7 +2241,7 @@ class ConsignmentController extends Controller
                     ->select('docstatus', 'name', 'consignment_status', 'consignment_received_by', 'consignment_date_received')
                     ->get()->groupBy('name')->toArray();
             }
-    
+
             return view('consignment.supervisor.tbl_stock_transfer', compact('result', 'list', 'purpose', 'stock_entries'));
         }
 
@@ -2357,29 +2347,16 @@ class ConsignmentController extends Controller
             return $q->item_code;
         });
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
+        });
+
+        $no_img = $this->base64_image('/icon/no_img.png');
 
         $damaged_arr = [];
         foreach($damaged_items as $item){
-            $orig_exists = 0;
-            $webp_exists = 0;
-
-            $img = '/icon/no_img.png';
-            $webp = '/icon/no_img.webp';
-
-            if(isset($item_image[$item->item_code])){
-                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                if($orig_exists == 0 && $webp_exists == 0){
-                    $img = '/icon/no_img.png';
-                    $webp = '/icon/no_img.webp';
-                }
-            }
+            $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
 
             $damaged_arr[] = [
                 'name' => $item->name,
@@ -2392,7 +2369,6 @@ class ConsignmentController extends Controller
                 'creation' => $item->creation,
                 'store' => $item->branch_warehouse,
                 'image' => $img,
-                'webp' => $webp,
                 'status' => $item->status
             ];
         }
@@ -2526,12 +2502,14 @@ class ConsignmentController extends Controller
             })
             ->where('bin.warehouse', $branch)->select('bin.*', 'item.*')->get();
 
-        $item_codes = collect($items)->map(function ($q) {
-            return $q->item_code;
+        $item_codes = collect($items)->pluck('item_code');
+
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
         });
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $no_img = $this->base64_image('/icon/no_img.png');
 
         $default_images = DB::table('tabItem')->whereIn('item_code', $item_codes)->whereNotNull('item_image_path')->select('item_code', 'item_image_path as image_path')->get(); // in case there are no saved images in Item Images
         $default_image = collect($default_images)->groupBy('item_code');
@@ -2545,30 +2523,7 @@ class ConsignmentController extends Controller
 
         $items_arr = [];
         foreach($items as $item){
-            $orig_exists = 0;
-            $webp_exists = 0;
-
-            $img = '/icon/no_img.png';
-            $webp = '/icon/no_img.webp';
-
-            $img_path = null;
-            $webp_path = null;
-
-            if(isset($item_image[$item->item_code]) || isset($default_image[$item->item_code])){
-                $img_path = isset($item_image[$item->item_code]) ? $item_image[$item->item_code][0]->image_path : $default_image[$item->item_code][0]->image_path;
-                $webp_path = isset($item_image[$item->item_code]) ? explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : explode('.', $default_image[$item->item_code][0]->image_path)[0].'.webp';
-
-                $orig_exists = Storage::disk('public')->exists('/img/'.$img_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.$webp_path) ? 1 : 0;
-
-                $img = $orig_exists == 1 ? '/img/'.$img_path : null;
-                $webp = $webp_exists == 1 ? '/img/'.$webp_path : null;
-
-                if($orig_exists == 0 && $webp_exists == 0){
-                    $img = '/icon/no_img.png';
-                    $webp = '/icon/no_img.webp';
-                }
-            }
+            $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
 
             $max = $item->consigned_qty * 1;
 
@@ -2580,8 +2535,7 @@ class ConsignmentController extends Controller
                 'uom' => $item->stock_uom,
                 'price' => '₱ '.number_format($item->consignment_price, 2),
                 'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
-                'img' => $img ? asset('storage'.$img) : null,
-                'webp' => $webp ? asset('storage'.$webp) : null,
+                'img' => $img,
                 'alt' => Str::slug(explode('.', $img)[0], '-')
             ];
         }
@@ -2999,32 +2953,19 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->get();
-            $item_image = collect($item_images)->groupBy('parent');
+            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
+            $item_images = collect($item_images)->map(function ($image){
+                return $this->base64_image("img/$image");
+            });
+
+            $no_img = $this->base64_image('/icon/no_img.png');
 
             $ste_arr = [];
             foreach($stock_transfers as $ste){
                 $items_arr = [];
                 if(isset($stock_transfer_item[$ste->name])){
                     foreach($stock_transfer_item[$ste->name] as $item){
-                        $orig_exists = 0;
-                        $webp_exists = 0;
-
-                        $img = '/icon/no_img.png';
-                        $webp = '/icon/no_img.webp';
-
-                        if(isset($item_image[$item->item_code])){
-                            $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                            $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                            $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                            $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                            if($orig_exists == 0 && $webp_exists == 0){
-                                $img = '/icon/no_img.png';
-                                $webp = '/icon/no_img.webp';
-                            }
-                        }
+                        $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
 
                         $items_arr[] = [
                             'item_code' => $item->item_code,
@@ -3033,8 +2974,6 @@ class ConsignmentController extends Controller
                             'transfer_qty' => $item->qty,
                             'uom' => $item->uom,
                             'image' => $img,
-                            'webp' => $webp,
-                            'img_count' => isset($item_image[$item->item_code]) ? count($item_image[$item->item_code]) : 0,
                             'return_reason' => $item->reason
                         ];
                     }
@@ -3326,32 +3265,18 @@ class ConsignmentController extends Controller
 
         $inv_audit = collect($inv_audit)->groupBy('item_code')->toArray();
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-        $item_image = collect($item_images)->groupBy('parent')->toArray();
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
+        });
+
+        $no_img = $this->base64_image('icon/no_img.png');
 
         $result = [];
         foreach ($list as $row) {
             $id = $row->item_code;
 
-            $orig_exists = $webp_exists = 0;
-
-            $img = '/icon/no_img.png';
-            $webp = '/icon/no_img.webp';
-
-            if(isset($item_image[$id])){
-                $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$id][0]->image_path) ? 1 : 0;
-                $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$id][0]->image_path)[0].'.webp' : null;
-                $img = $orig_exists == 1 ? '/img/'.$item_image[$id][0]->image_path : null;
-
-                if($orig_exists == 0 && $webp_exists == 0){
-                    $img = '/icon/no_img.png';
-                    $webp = '/icon/no_img.webp';
-                }
-            }
-
-            $img_count = array_key_exists($id, $item_image) ? count($item_image[$id]) : 0;
+            $img = isset($item_images[$id]) ? $item_images[$id] : $no_img;
             $opening_qty = array_key_exists($id, $inv_audit) ? $inv_audit[$id][0]->qty : 0;
 
             if (array_key_exists($id, $inv_audit)) {
@@ -3380,8 +3305,8 @@ class ConsignmentController extends Controller
                 'price' => $row->price,
                 'amount' => $row->amount,
                 'img' => $img,
-                'img_webp' => $webp,
-                'img_count' => $img_count,
+                // 'img_webp' => $webp,
+                // 'img_count' => $img_count,
                 'opening_qty' => number_format($opening_qty),
                 'previous_qty' => number_format($row->available_stock_on_transaction),
                 'audit_qty' => number_format($row->qty),
@@ -3628,8 +3553,12 @@ class ConsignmentController extends Controller
         $items_qry = DB::table('tabConsignment Stock Adjustment Items')->whereIn('parent', collect($stock_adjustments->items())->pluck('name'))->get();
         $adjusted_items = collect($items_qry)->groupBy('parent');
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($items_qry)->pluck('item_code'))->get();
-        $item_image = collect($item_images)->groupBy('parent');
+        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($items_qry)->pluck('item_code'))->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("img/$image");
+        });
+
+        $no_img = $this->base64_image('icon/no_img.png');
 
         $stock_adjustments_array = [];
         foreach($stock_adjustments as $sa){
@@ -3639,31 +3568,13 @@ class ConsignmentController extends Controller
             }
 
             foreach($adjusted_items[$sa->name] as $item){
-                $orig_exists = 0;
-                $webp_exists = 0;
-
-                $img = '/icon/no_img.png';
-                $webp = '/icon/no_img.webp';
-
-                if(isset($item_image[$item->item_code])){
-                    $orig_exists = Storage::disk('public')->exists('/img/'.$item_image[$item->item_code][0]->image_path) ? 1 : 0;
-                    $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-
-                    $webp = $webp_exists == 1 ? '/img/'.explode('.', $item_image[$item->item_code][0]->image_path)[0].'.webp' : null;
-                    $img = $orig_exists == 1 ? '/img/'.$item_image[$item->item_code][0]->image_path : null;
-
-                    if($orig_exists == 0 && $webp_exists == 0){
-                        $img = '/icon/no_img.png';
-                        $webp = '/icon/no_img.webp';
-                    }
-                }
+                $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
 
                 $items_array[] = [
                     'item_code' => $item->item_code,
                     'item_description' => strip_tags($item->item_description),
                     'uom' => $item->uom,
-                    'image' => '/storage'.$img,
-                    'webp' => '/storage'.$webp,
+                    'image' => $img,
                     'previous_qty' => $item->previous_qty,
                     'new_qty' => $item->new_qty,
                     'previous_price' => $item->previous_price,
@@ -4392,8 +4303,12 @@ class ConsignmentController extends Controller
                 $prices_arr[$item->warehouse][$item->item_code] = $item->consignment_price;
             }
 
-            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-            $item_images = collect($item_images)->groupBy('parent')->toArray();
+            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+            $item_images = collect($item_images)->map(function ($image){
+                return $this->base64_image("img/$image");
+            });
+
+            $no_img = $this->base64_image('icon/no_img.png');
 
             $assigned_consignment_promodisers = DB::table('tabWarehouse Users as wu')
                 ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
@@ -4415,24 +4330,8 @@ class ConsignmentController extends Controller
                     foreach($list_items[$stock_entry->name] as $item){
                         $item_code = $item->item_code;
                         $orig_exists = $webp_exists = 0;
-                
-                        $img = '/icon/no_img.png';
-                        $webp = '/icon/no_img.webp';
-                
-                        if(isset($item_images[$item_code])){
-                            $orig_exists = Storage::disk('public')->exists('/img/'.$item_images[$item_code][0]->image_path) ? 1 : 0;
-                            $webp_exists = Storage::disk('public')->exists('/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp') ? 1 : 0;
-                
-                            $webp = $webp_exists ? '/img/'.explode('.', $item_images[$item_code][0]->image_path)[0].'.webp' : null;
-                            $img = $orig_exists ? '/img/'.$item_images[$item_code][0]->image_path : null;
-                
-                            if(!$orig_exists && !$webp_exists){
-                                $img = '/icon/no_img.png';
-                                $webp = '/icon/no_img.webp';
-                            }
-                        }
-                
-                        $img_count = isset($item_images[$item_code]) ? count($item_images[$item_code]) : 0;
+
+                        $img = isset($item_images[$item_code]) ? $item_images[$item_code] : $no_img;
 
                         $price = isset($prices_arr[$warehouse][$item_code]) ? $prices_arr[$warehouse][$item_code] : 0;
 
@@ -4443,10 +4342,8 @@ class ConsignmentController extends Controller
                             'price' => $price,
                             'amount' => $price * $item->transfer_qty,
                             'img' => $img,
-                            'img_slug' => $img ? Str::slug(explode('.', $img)[0], '-') : null,
-                            'img_webp' => $webp,
+                            'img_slug' => Str::slug($item->description, '-'),
                             'stock_uom' => $item->stock_uom,
-                            'img_count' => $img_count,
                             'transfer_qty' => number_format($item->transfer_qty),
                         ];
                     }
@@ -4875,9 +4772,6 @@ class ConsignmentController extends Controller
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
                     'docstatus' => 1,
-                    'parent' => null,
-                    'parentfield' => null,
-                    'parenttype' => null,
                     'idx' => 0,
                     'fiscal_year' => $now->format('Y'),
                     'voucher_no' => $row->parent,
@@ -4952,9 +4846,6 @@ class ConsignmentController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -5000,9 +4891,6 @@ class ConsignmentController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -5030,6 +4918,7 @@ class ConsignmentController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                 }
 
@@ -5058,9 +4947,6 @@ class ConsignmentController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -5088,6 +4974,7 @@ class ConsignmentController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                 }
 
@@ -5158,6 +5045,7 @@ class ConsignmentController extends Controller
                     'batch_no' => $r->batch_no,
                     'stock_value_difference' => ($r->actual_qty * $r->valuation_rate) * -1,
                     'posting_date' => $r->posting_date,
+					'posting_datetime' => $now->format('Y-m-d H:i:s')
                 ];
             }
 

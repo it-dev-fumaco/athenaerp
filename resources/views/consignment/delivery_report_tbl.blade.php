@@ -48,35 +48,19 @@
                                             @foreach ($ste['items'] as $item)
                                             @php
                                             $id = $ste['name'].'-'.$item['item_code'];
-                                            $img = $item['image'] ? "/img/" . $item['image'] : "/icon/no_img.png";
-                                            $img_webp = $item['image'] ? "/img/" . explode('.',
-                                            $item['image'])[0].'.webp' : "/icon/no_img.webp";
+                                            $img = $item['image'];
                                             @endphp
                                             <tr>
                                                 <td class="text-left p-1 align-middle"
                                                     style="border-bottom: 0 !important;">
-                                                    <div
-                                                        class="d-flex flex-row justify-content-start align-items-center">
+                                                    <div class="d-flex flex-row justify-content-start align-items-center">
                                                         <div class="p-1 text-left">
-                                                            <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
-                                                                <picture>
-                                                                    <source srcset="{{ asset('storage'.$img_webp) }}"
-                                                                        type="image/webp"
-                                                                        alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}"
-                                                                        width="40" height="40">
-                                                                    <source srcset="{{ asset('storage'.$img) }}"
-                                                                        type="image/jpeg"
-                                                                        alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}"
-                                                                        width="40" height="40">
-                                                                    <img src="{{ asset('storage'.$img) }}"
-                                                                        alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}"
-                                                                        width="40" height="40">
-                                                                </picture>
+                                                            <a href="{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
+                                                                <img src="{{ $img }}" alt="{{ Illuminate\Support\Str::slug($item['description'], '-') }}" width="40" height="40">
                                                             </a>
                                                         </div>
                                                         <div class="p-1 m-0">
-                                                            <span class="font-weight-bold">{{ $item['item_code']
-                                                                }}</span>
+                                                            <span class="font-weight-bold">{{ $item['item_code'] }}</span>
                                                         </div>
                                                     </div>
                                                 </td>

@@ -136,7 +136,7 @@
 												<small class="d-block mt-3">@{{ x.classification }}</small>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<img src="dist/img/icon.png" ng-hide="x.type != 'picking_slip'" class="img-circle checkout update-ps"  data-id="@{{ x.id }}">
+												<img src="dist/img/icon.png" ng-hide="!['picking_slip', 'packed_item'].includes(x.type)" class="img-circle checkout update-ps"  data-id="@{{ x.id }}" data-type="@{{ x.type }}">
 												<img src="dist/img/icon.png"  ng-hide="x.type != 'stock_entry'" class="img-circle update-item checkout" data-id="@{{ x.id }}">
 											</td>
 										</tr>
@@ -251,9 +251,11 @@
 		
 		$(document).on('click', '.update-ps', function(){
 			var id = $(this).data('id');
+			const type = $(this).data('type')
 			$.ajax({
 				type: 'GET',
 				url: '/get_ps_details/' + id,
+				data: { type },
 				success: (response) => {
 					if(response.error){
 						showNotification('danger', response.modal_message, 'fa fa-info')

@@ -13,7 +13,8 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DRIVER', 'local'),
+    'default' => env('FILESYSTEM_DRIVER', 'public'),
+    // 'default' => 'kimberly',
 
     /*
     |--------------------------------------------------------------------------
@@ -42,6 +43,23 @@ return [
             'visibility' => 'public',
         ],
 
+        // 'local' => [
+        //     'driver' => 'local',
+        //     'username' => env('SHARED_NETWORK_USERNAME', null),
+        //     'password' => env('SHARED_NETWORK_PASSWORD', null),
+        //     'root' => env('SHARED_NETWORK_ROOT'),
+        //     'ssl' => false
+        // ],
+
+        // 'public' => [
+        //     'driver' => 'local',
+        //     'username' => env('SHARED_NETWORK_USERNAME', null),
+        //     'password' => env('SHARED_NETWORK_PASSWORD', null),
+        //     'root' => env('SHARED_NETWORK_ROOT'),
+        //     'ssl' => false,
+        //     'visibility' => 'public',
+        // ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -51,8 +69,7 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-        ],
-
+        ]
     ],
 
     /*

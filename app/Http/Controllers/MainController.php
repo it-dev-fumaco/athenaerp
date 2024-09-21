@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use DB;
+use Exception;
 use Mail;
 use Auth;
 use Webp;
@@ -17,10 +18,14 @@ use App\Models\StockReservation;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\File;
 
+use App\Traits\ERPTrait;
+use App\Traits\GeneralTrait;
 
 class MainController extends Controller
 {
+    use ERPTrait, GeneralTrait;
     public function get_api_headers(){
         return [
             'Content-Type' => 'application/json',
@@ -619,8 +624,11 @@ class MainController extends Controller
             ->groupBy('parent', 'warehouse')->get();
         $lowLevelStock = collect($lowLevelStock)->groupBy('item')->toArray();
 
-        $item_image_paths = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
-        $item_image_paths = collect($item_image_paths)->groupBy('parent')->toArray();
+        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $item_images = collect($item_images)->map(function ($image){
+            return $this->base64_image("/img/$image");
+        });
+        $no_img_placeholder = $this->base64_image('/icon/no_img.png');
 
         $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
@@ -656,10 +664,7 @@ class MainController extends Controller
 
         $item_list = [];
         foreach ($items as $row) {
-            $item_images = [];
-            if (array_key_exists($row->item_code, $item_image_paths)) {
-                $item_images = $item_image_paths[$row->item_code];
-            }
+            $image = isset($item_images[$row->item_code]) ? $item_images[$row->item_code] : $no_img_placeholder;
 
             $part_nos = Arr::exists($part_nos_query, $row->item_code) ? $part_nos_query[$row->item_code] : null;
 
@@ -780,7 +785,8 @@ class MainController extends Controller
             $item_list[] = [
                 'name' => $row->item_code,
                 'description' => $row->description,
-                'item_image_paths' => $item_images,
+                // 'item_image_paths' => $item_images,
+                'image' => $image,
                 'part_nos' => $part_nos,
                 'item_group' => $row->item_group,
                 'stock_uom' => $row->stock_uom,
@@ -799,7 +805,7 @@ class MainController extends Controller
                 $q->whereIn('item_group_name', $igs)
                     ->orWhere('item_group_name', 'LIKE', '%'.$request->searchString.'%');
             })
-            ->select('name','parent','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
+            ->select('name','item_group_name','parent_item_group','is_group','old_parent', 'order_no')
             ->orderByRaw('LENGTH(order_no) ASC')
             ->orderBy('order_no', 'ASC')
             ->get();
@@ -833,7 +839,7 @@ class MainController extends Controller
 
         $item_group_array = $this->item_group_tree(1, $item_groups, $all, $arr);
 
-        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department', 'bundled_items'));
+        return view('search_results', compact('item_list', 'items', 'all', 'item_groups', 'item_group_array', 'breadcrumbs', 'total_items', 'root', 'allowed_department', 'user_department', 'bundled_items', 'no_img_placeholder'));
     }
 
     private function breadcrumbs($parent){
@@ -1045,10 +1051,14 @@ class MainController extends Controller
 
         $bundled_items = DB::table('tabProduct Bundle')->whereIn('name', $item_codes)->pluck('name')->toArray();
 
-        $image_collection = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->get();
-        $image = collect($image_collection)->groupBy('parent');
+        $image_collection = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $image_collection = collect($image_collection)->map(function ($image){
+            return $this->base64_image("/img/$image");
+        });
 
-        return view('suggestion_box', compact('q', 'image', 'bundled_items'));
+        $no_img = $this->base64_image('/icon/no_img.png');
+
+        return view('suggestion_box', compact('q', 'image_collection', 'bundled_items', 'no_img'));
     }
 
     public function get_select_filters(Request $request){
@@ -1588,12 +1598,9 @@ class MainController extends Controller
                 ->select('po.*')->first();
 
             $img = DB::table('tabItem Images')->where('parent', $data->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-            if(!$img){
-                $img = DB::table('tabItem')->where('name', $data->item_code)->pluck('item_image_path')->first();
-                $img = $img ? $img : null;
-            }
-        
-            // $q = [];
+            $img = $img ? "/img/$img" : '/icon/no_img.png';
+            $img = $this->base64_image($img);
+
             $q = [
                 'production_order' => $data->production_order,
                 'fg_warehouse' => $data->fg_warehouse,
@@ -1705,10 +1712,8 @@ class MainController extends Controller
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
         $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        if(!$img){
-            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
-            $img = $img ? $img : null;
-        }
+        $img = $img ? "/img/$img" : '/icon/no_img.png';
+        $img = $this->base64_image($img);
 
         $s_warehouse = $q->purpose == 'Manufacture' ? 'Goods In Transit - FI' : $q->s_warehouse;
 
@@ -1814,19 +1819,34 @@ class MainController extends Controller
         return ($query) ? $query : [];
     }
 
-    public function get_ps_details($id){
-        $q = DB::table('tabPacking Slip as ps')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-            ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-            ->whereRaw(('dri.item_code = psi.item_code'))
-            ->where('ps.docstatus', '<', 2)
-            ->where('ps.item_status', 'For Checking')
-            ->where('psi.name', $id)
-            ->where('dri.docstatus', 0)
-            ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
-            ->first();
-
+    public function get_ps_details(Request $request, $id){
+        if($request->type == 'packed_item'){
+            $q = DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
+                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
+                ->whereRaw(('dri.item_code = pi.parent_item'))
+                ->where('ps.docstatus', '<', 2)
+                ->where('ps.item_status', 'For Checking')
+                ->where('psi.name', $id)
+                ->where('dri.docstatus', 0)
+                ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'dri.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
+                ->first();
+        }else{
+            $q = DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
+                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
+                ->whereRaw(('dri.item_code = psi.item_code'))
+                ->where('ps.docstatus', '<', 2)
+                ->where('ps.item_status', 'For Checking')
+                ->where('psi.name', $id)
+                ->where('dri.docstatus', 0)
+                ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
+                ->first();
+        }
+        
         if(!$q){
             return response()->json([
                 'error' => 1,
@@ -1838,10 +1858,8 @@ class MainController extends Controller
         $item_details = DB::table('tabItem')->where('name', $q->item_code)->first();
         
         $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        if(!$img){
-            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
-            $img = $img ? $img : null;
-        }
+        $img = $img ? "/img/$img" : '/icon/no_img.png';
+        $img = $this->base64_image($img);
         
         $is_bundle = false;
         if(!$item_details->is_stock_item){
@@ -1889,6 +1907,7 @@ class MainController extends Controller
 
         $data = [
             'id' => $q->id,
+            'type' => $request->type,
 	        'barcode' => $q->barcode,
             'item_image' => $img,//$item_details->item_image_path,
             'delivery_note' => $q->delivery_note,
@@ -2154,9 +2173,6 @@ class MainController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 0,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'use_multi_level_bom' => 0,
                         'delivery_note_no' => null,
@@ -2167,7 +2183,6 @@ class MainController extends Controller
                         'purchase_receipt_no' => null,
                         'posting_time' => $now->format('H:i:s'),
                         'to_warehouse' => null,
-                        'title' => 'Material Transfer',
                         '_comments' => null,
                         'from_warehouse' => null,
                         'set_posting_time' => 0,
@@ -2354,6 +2369,17 @@ class MainController extends Controller
                 ->whereRaw(('dri.item_code = psi.item_code'))->where('ps.item_status', 'For Checking')->where('dri.docstatus', 0)->where('psi.name', $id)
                 ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
                 ->first();
+
+            if(!$q){
+                $q = DB::table('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
+                    ->where('ps.item_status', 'For Checking')
+                    ->where('psi.name', $id)
+                    ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'pi.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
+                    ->first();
+            }
+
             $type = 'Check Out - Delivered';
             $purpose = 'Picking Slip';
             $barcode = $q->barcode;
@@ -2491,8 +2517,19 @@ class MainController extends Controller
     public function checkout_picking_slip_item(Request $request){
         DB::beginTransaction();
         try {
-            $ps_details = DB::table('tabPacking Slip as ps')->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')->where('psi.name', $request->child_tbl_id)
-            ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status')->first();
+            if($request->type == 'packed_item'){
+                $ps_details = DB::table('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
+                    ->where('psi.name', $request->child_tbl_id)
+                    ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status', 'pi.parent_item as item_code')->first();
+            }else{
+                $ps_details = DB::table('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->where('psi.name', $request->child_tbl_id)
+                    ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status')->first();
+            }
+
             if(!$ps_details){
                 return response()->json(['status' => 0, 'message' => 'Record not found.']);
             }
@@ -2542,9 +2579,13 @@ class MainController extends Controller
             }
 
             if($request->is_bundle){
-                $query = DB::table('tabPacked Item')->where('parent_detail_docname', $request->dri_name)->get();
+                $query = DB::table('tabPacked Item as pi')
+                    ->join('tabPacking Slip Item as psi', 'psi.pi_detail', 'pi.name')
+                    ->where('pi.parent_detail_docname', $request->dri_name)
+                    ->select('pi.*', 'psi.name as item_id')->get();
+
                 foreach ($query as $row) {
-                    $bundle_item_qty = $row->qty;
+                    $bundle_item_qty = (float) $row->qty;
                    
                     $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
     
@@ -2552,14 +2593,14 @@ class MainController extends Controller
 
                     $available_qty = ($actual_qty - $total_issued);
 
+                    if($available_qty < $bundle_item_qty){
+                        return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . number_format($bundle_item_qty) . '</b>.']);
+                    }
+
                     if($request->deduct_reserve == 1){
                         $reserved_qty = $this->get_reserved_qty($row->item_code, $row->warehouse);
                         if ($available_qty > 0) {
                             $available_qty = $available_qty - $reserved_qty;
-                        }
-
-                        if($available_qty < $bundle_item_qty){
-                            return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
                         }
 
                         $stock_reservation_details = [];
@@ -2589,6 +2630,13 @@ class MainController extends Controller
                             return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
                         }
                     }
+
+                    $response = $this->erpOperation('put', 'Packing Slip Item', $row->item_id, ['status' => 'Issued']);
+                    $this->insert_transaction_log('Picking Slip', $row->item_id);
+
+                    if(!isset($response['data'])){
+                        throw new Exception(isset($response['message']) ? $response['message'] : 'An error occured. Please try again');
+                    }
                 }
             }
 
@@ -2615,20 +2663,26 @@ class MainController extends Controller
                 $this->update_reservation_status();
             }
 
-            $now = Carbon::now();
-            $values = [
-                'session_user' => Auth::user()->wh_user,
-                'status' => 'Issued',
-                'barcode' => $request->barcode,
-                'date_modified' => $now->toDateTimeString()
-            ];
+            if($request->type != 'packed_item'){
+                $now = Carbon::now();
+                $values = [
+                    'session_user' => Auth::user()->wh_user,
+                    'status' => 'Issued',
+                    'barcode' => $request->barcode,
+                    'date_modified' => $now->toDateTimeString()
+                ];
+    
+                DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
+                    ->where('docstatus', 0)->update($values);
+    
+                $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
+            }
+                
+            $check_parent = $this->update_pending_ps_item_status($ps_details->parent_ps);
 
-            DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
-                ->where('docstatus', 0)->update($values);
-
-            $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
-
-            $this->update_pending_ps_item_status();
+            if(!$check_parent['success']){
+                throw new Exception($check_parent['message']);
+            }
 
             DB::commit();
 
@@ -2637,38 +2691,30 @@ class MainController extends Controller
             }
 
             return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been checked out.']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
             return response()->json([
-                'error' => 1, 
+                'status' => 0, 
                 'modal_title' => 'Error', 
                 'modal_message' => 'Error creating transaction.'
             ]);
         }
     }
 
-    public function update_pending_ps_item_status(){
-        DB::beginTransaction();
+    public function update_pending_ps_item_status($id){
         try {
-            $for_checking_ps = DB::table('tabPacking Slip')
-                ->whereIn('item_status', ['For Checking', 'Issued'])->where('docstatus', 0)
-                ->orderBy('modified', 'desc')
-                ->pluck('name');
+            $items_for_checking = DB::table('tabPacking Slip Item')->where('parent', $id)->where('status', 'For Checking')->exists();
 
-            foreach($for_checking_ps as $ps){
-                $items_for_checking = DB::table('tabPacking Slip Item')
-                    ->where('parent', $ps)->where('status', 'For Checking')->exists();
-
-                if(!$items_for_checking){
-                    DB::table('tabPacking Slip')
-                        ->where('name', $ps)->where('docstatus', 0)
-                        ->update(['item_status' => 'Issued', 'docstatus' => 1]);
+            if(!$items_for_checking){
+                $response = $this->erpOperation('put', 'Packing Slip', $id, ['item_status' => 'Issued', 'docstatus' => 1]);
+                if(!isset($response['data'])){
+                    throw new Exception(json_encode($response, true));
                 }
             }
 
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollback();
+            return ['success' => 1, 'message' => 'Packing Slips updated!'];
+        } catch (Exception $e) {
+            return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
 
@@ -2804,7 +2850,13 @@ class MainController extends Controller
         }
 
         // get item images
-        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path')->toArray();
+        $item_images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path');
+
+        $item_images = collect($item_images)->map(function($image){
+            return $this->base64_image("/img/$image");
+        });
+
+        $no_img = $this->base64_image("/icon/no_img.png");
         // get item alternatives from production order item table in erp
         $item_alternatives = [];
         $production_item_alternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
@@ -2816,7 +2868,10 @@ class MainController extends Controller
         $production_item_alt_actual_stock = DB::table('tabBin')->whereIn('item_code', $production_item_alternative_item_codes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')
             ->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
         foreach($production_item_alternatives as $a){
-            $item_alternative_image = array_key_exists($a->item_code, $item_alternative_images) ? $item_alternative_images[$a->item_code] : null;
+            // $item_alternative_image = array_key_exists($a->item_code, $item_alternative_images) ? $item_alternative_images[$a->item_code] : null;
+            $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? "/img/".$item_alternative_images[$a->item_code] : "/icon/no_img.png";
+            $item_alternative_image = $this->base64_image($item_alternative_image);
+
             $actual_stocks = array_key_exists($a->item_code, $production_item_alt_actual_stock) ? $production_item_alt_actual_stock[$a->item_code] : 0;
 
             if(count($item_alternatives) < 7){
@@ -2866,7 +2921,10 @@ class MainController extends Controller
             $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
             
             foreach($q as $a){
-                $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
+                // $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
+                $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? "/img/".$item_alternative_images[$a->item_code] : "/icon/no_img.png";
+                $item_alternative_image = $this->base64_image($item_alternative_image);
+
                 $total_reserved = $total_consumed = 0;
                 if(isset($alternative_reserves[$a->item_code])){
                     $total_reserved = $alternative_reserves[$a->item_code]->sum('reserved_qty');
@@ -2900,7 +2958,8 @@ class MainController extends Controller
                 $item_alternative_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
 
                 foreach($q as $a){
-                    $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? $item_alternative_images[$a->item_code] : null;
+                    $item_alternative_image = isset($item_alternative_images[$a->item_code]) ? "/img/".$item_alternative_images[$a->item_code] : "/icon/no_img.png";
+                    $item_alternative_image = $this->base64_image($item_alternative_image);
 
                     $total_reserved = $total_consumed = 0;
                     if(isset($alternative_reserves[$a->item_code])){
@@ -2922,7 +2981,7 @@ class MainController extends Controller
                         $item_alternatives[] = [
                             'item_code' => $a->item_code,
                             'description' => $a->description,
-                            'item_alternative_image' => ($item_alternative_image) ? $item_alternative_image->image_path : null,
+                            'item_alternative_image' => $item_alternative_image,
                             'actual_stocks' => $available_qty
                         ];
                     }
@@ -3008,7 +3067,7 @@ class MainController extends Controller
             $consignment_branches = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         }
 
-        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches', 'bundled'));
+        return view('item_profile', compact('is_tax_included_in_rate', 'item_details', 'item_attributes', 'site_warehouses', 'item_images', 'item_alternatives', 'consignment_warehouses', 'user_group', 'minimum_selling_price', 'default_price', 'attribute_names', 'co_variants', 'attributes', 'variants_price_arr', 'item_rate', 'last_purchase_date', 'allowed_department', 'user_department', 'avgPurchaseRate', 'last_purchase_rate', 'variants_cost_arr', 'variants_min_price_arr', 'actual_variant_stocks', 'item_stock_available', 'manual_rate', 'manual_price_input', 'consignment_branches', 'bundled', 'no_img'));
     }
 
     public function save_item_information(Request $request, $item_code){
@@ -3405,7 +3464,6 @@ class MainController extends Controller
 
     public function upload_item_image(Request $request){
         // get item removed image file names for delete
-
         $existing_images = $request->existing_images ? $request->existing_images : [];
         $removed_images = DB::table('tabItem Images')->where('parent', $request->item_code)
             ->when($existing_images, function ($q) use ($existing_images){
@@ -3415,7 +3473,7 @@ class MainController extends Controller
 
         foreach($removed_images as $img) {
             // delete from file directory
-            Storage::delete('/public/img/' . $img);
+            Storage::delete('/img/' . $img);
         } 
 
         // delete from table item images
@@ -3431,32 +3489,36 @@ class MainController extends Controller
 
             $item_images_arr = [];
             foreach ($files as $i => $file) {
-               //get filename with extension
-                $filenamewithextension = $file->getClientOriginalName();
-                // //get filename without extension
-                $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-                //get file extension
-                $extension = $file->getClientOriginalExtension();
-                //filename to store
-                $micro_time = round(microtime(true));
-                
-                $filenametostore = $micro_time . $i . '-'. $request->item_code.'.'.$extension;//round(microtime(true)) . $i . '-'. $request->item_code . '.webp';
+                $microTime = round(microtime(true));
+                $fileIndex = 0; // Initialize an index to handle multiple files, if needed
 
-                $destinationPath = storage_path('app/public/img/');
+                $filename = "{$microTime}{$fileIndex}-{$request->item_code}";
+                $originalExtension = $file->getClientOriginalExtension();
 
-                $jpeg_file = $micro_time . $i . '-'. $request->item_code.'.'.$extension;
+                // Paths for storage
+                $storagePath = 'img/';
+                $jpegFilename = "$filename.$originalExtension";
+                $webpFilename = "$filename.webp";
 
+                // Save the original file
+                // Storage::putFileAs($storagePath, $file, $jpegFilename);
+
+                // Create and save the WebP version
                 $webp = Webp::make($file);
-                $webp_file_name = $micro_time . $i . '-'. $request->item_code.'.webp';
 
-                if($webp->save(storage_path('app/public/img/'.$webp_file_name))) {
-                    $file->move($destinationPath, $jpeg_file);
+                if(!File::exists(public_path('temp'))){
+                    File::makeDirectory(public_path('temp'), 0755, true);
                 }
 
-                // $jpeg_path = storage_path('app/public/img/'.$jpeg_file);
-                // if (file_exists($jpeg_path)) {
-                //     unlink($jpeg_path);
-                // }
+                $webp_path = public_path("temp/$webpFilename");
+
+                // Storage::put("$storagePath$webpFilename", $webp);
+                $webp->save($webp_path);
+
+                $web_contents = file_get_contents($webp_path);
+                Storage::put("/img/$webpFilename", $web_contents);
+
+                unlink($webp_path);
 
                 $item_images_arr[] = [
                     'name' => uniqid(),
@@ -3468,7 +3530,7 @@ class MainController extends Controller
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => $filenametostore
+                    'image_path' => $jpegFilename
                 ];
             }
             
@@ -3482,7 +3544,17 @@ class MainController extends Controller
 
     public function load_item_images($item_code, Request $request){
         $images = DB::table('tabItem Images')->where('parent', $item_code)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->orderBy('idx', 'asc')->get();
+
+        if(count($images) <= 0){
+            return response()->json([], 404);
+        }
+
         $selected = $request->idx ? $request->idx : 0;
+
+        $images = collect($images)->map(function ($image){
+            $image->image = $this->base64_image("/img/".$image->image_path, 1);
+            return $image;
+        });
 
         return view('images_container', compact('images', 'selected'));
     }
@@ -3570,12 +3642,9 @@ class MainController extends Controller
                         'name' => 'ath' . uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->email,
-                        'owner' => Auth::user()->email,
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -3602,6 +3671,7 @@ class MainController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => ($row->qty * $row->valuation_rate) * -1,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                     
                     $bin_qry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
@@ -3616,12 +3686,9 @@ class MainController extends Controller
                         'name' => 'ath' . uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->email,
-                        'owner' => Auth::user()->email,
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -3648,6 +3715,7 @@ class MainController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                 }
 
@@ -3673,9 +3741,6 @@ class MainController extends Controller
                         'modified_by' => Auth::user()->wh_user,
                         'owner' => Auth::user()->wh_user,
                         'docstatus' => 1,
-                        'parent' => null,
-                        'parentfield' => null,
-                        'parenttype' => null,
                         'idx' => 0,
                         'serial_no' => $row->serial_no,
                         'fiscal_year' => $now->format('Y'),
@@ -3702,6 +3767,7 @@ class MainController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => ($row->s_warehouse) ? ($row->qty * $row->valuation_rate) * -1  : $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
+					    'posting_datetime' => $now->format('Y-m-d H:i:s')
                     ];
                 }
 
@@ -3751,9 +3817,6 @@ class MainController extends Controller
                             'modified_by' => Auth::user()->wh_user,
                             'owner' => Auth::user()->wh_user,
                             'docstatus' => 0,
-                            'parent' => null,
-                            'parentfield' => null,
-                            'parenttype' => null,
                             'idx' => 0,
                             'reserved_qty_for_production' => 0,
                             '_liked_by' => null,
@@ -3806,9 +3869,6 @@ class MainController extends Controller
                             'modified_by' => Auth::user()->wh_user,
                             'owner' => Auth::user()->wh_user,
                             'docstatus' => 0,
-                            'parent' => null,
-                            'parentfield' => null,
-                            'parenttype' => null,
                             'idx' => 0,
                             'reserved_qty_for_production' => 0,
                             '_liked_by' => null,
@@ -3845,9 +3905,8 @@ class MainController extends Controller
                     }
                 }
             }
-            
         } catch (\Exception $e) {
-            return response()->json(["error" => $e->getMessage(), 'id' => $stock_entry]);
+            return response()->json(['success' => 0, "error" => $e->getMessage(), 'id' => $stock_entry]);
         }
     }
 	
@@ -3888,9 +3947,6 @@ class MainController extends Controller
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
                     'docstatus' => 1,
-                    'parent' => null,
-                    'parentfield' => null,
-                    'parenttype' => null,
                     'idx' => 0,
                     'fiscal_year' => $now->format('Y'),
                     'voucher_no' => $row->parent,
@@ -4058,9 +4114,6 @@ class MainController extends Controller
                             'modified_by' => Auth::user()->wh_user,
                             'owner' => $production_order_details->owner,
                             'docstatus' => $docstatus,
-                            'parent' => null,
-                            'parentfield' => null,
-                            'parenttype' => null,
                             'idx' => 0,
                             'use_multi_level_bom' => 1,
                             'delivery_note_no' => null,
@@ -4166,6 +4219,8 @@ class MainController extends Controller
         try {
             $now = Carbon::now();
             $draft_ste = DB::table('tabStock Entry')->where('name', $id)->where('docstatus', 0)->first();
+            $success = true;
+            $err_message = null;
             if($draft_ste){
                 if ($draft_ste->purpose != 'Manufacture') {
                      // check if all items are issued
@@ -4236,13 +4291,29 @@ class MainController extends Controller
                         ->update($values);
                 }
 
-                $this->update_bin($id);
-                $this->create_stock_ledger_entry($id);
-                $this->create_gl_entry($id);
+                $bin = $this->update_bin($id);
+                $stock_ledger = $this->create_stock_ledger_entry($id);
+                $gl_entry = $this->create_gl_entry($id);
+
+                if(isset($bin['error'])){
+                    return ['success' => false, 'message' => $bin['error']];
+                }
+
+                if(!$stock_ledger['success']){
+                    return $stock_ledger;
+                }
+
+                if(!$gl_entry['success']){
+                    return $gl_entry;
+                }
             }
-        } catch (Exception $e) {
-            // DB::rollback();
-            // return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => 'There was a problem creating transaction.']);
+
+            if(!$success){
+                throw new Exception($err_message);
+            }
+        } catch (\Throwable $e) {
+            DB::rollback();
+            return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()]);
         }
     }
 
@@ -4438,7 +4509,11 @@ class MainController extends Controller
     }
 
     public function get_item_images($item_code){
-        return DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path', 'name');
+        $images = DB::table('tabItem Images')->where('parent', $item_code)->orderBy('idx', 'asc')->pluck('image_path', 'name');
+
+        return collect($images)->map(function ($image){
+            return $this->base64_image("/img/$image");
+        });
     }
 
     public function set_reservation_as_expired(){
@@ -4457,6 +4532,8 @@ class MainController extends Controller
             ->select('ir.name as id', 'i.item_code', 'i.description', 'ir.warehouse', 'ir.warehouse_reorder_level', 'i.stock_uom', 'ir.warehouse_reorder_qty', 'i.item_classification')
             ->whereIn('i.name', $item_default_warehouses)->get();
 
+        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($query)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+
         $low_level_stocks = [];
         foreach ($query as $a) {
             $actual_qty = $this->get_actual_qty($a->item_code, $a->warehouse);
@@ -4468,15 +4545,8 @@ class MainController extends Controller
                     ->whereBetween('mr.transaction_date', [Carbon::now()->subDays(30)->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
                     ->where('mri.warehouse', $a->warehouse)->select('mr.name')->first();
 
-                $item_image = null;
-                $item_image_path = DB::table('tabItem Images')->where('parent', $a->item_code)->orderBy('idx', 'asc')->first();
-                if($item_image_path){
-                    $item_image_path = $item_image_path->image_path;
-                }else{
-                    $item_image_path = DB::table('tabItem')->where('name', $a->item_code)->first();
-                    $item_image = $item_image_path ? $item_image_path->item_image_path : null;
-                }
-
+                $item_image = isset($item_images[$a->item_code]) ? '/img/'.$item_images[$a->item_code] : '/icon/no_img.webp';
+                $item_image = $this->base64_image($item_image);
 
                 $low_level_stocks[] = [
                     'id' => $a->id,
@@ -4525,9 +4595,13 @@ class MainController extends Controller
             ->select('sr.item_code', DB::raw('sum(sr.reserve_qty) as qty'), 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
             ->get();
 
+        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+
         $list = [];
         foreach($q as $row){
-            $item_image_path = DB::table('tabItem Images')->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
+            // $item_image_path = DB::table('tabItem Images')->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
+            $image = isset($item_images[$row->item_code]) ? '/img/'.$item_images[$row->item_code] : '/icon/no_icon.png';
+            $image = $this->base64_image($image);
 
             $list[] = [
                 'item_code' => $row->item_code,
@@ -4536,7 +4610,7 @@ class MainController extends Controller
                 'qty' => $row->qty * 1,
                 'warehouse' => $row->warehouse,
                 'stock_uom' => $row->stock_uom,
-                'image' => ($item_image_path) ? $item_image_path->image_path : null
+                'image' => $image
             ];
         }
 
@@ -4823,7 +4897,6 @@ class MainController extends Controller
     public function transfer_transit_stocks($id, Request $request){
         DB::beginTransaction();
         try {
-            $headers = $this->get_api_headers();
             $doctype = $request->reference_doctype == 'SO' ? 'tabStock Entry' : 'tabMaterial Request';
             $doctype_child = $request->reference_doctype == 'SO' ? 'tabStock Entry Detail' : 'tabMaterial Request Item';
 
@@ -4842,45 +4915,41 @@ class MainController extends Controller
 
             $image = $stock_entry_detail->image ? $stock_entry_detail->image : '/icon/no_img.png';
 
-            $sales_order = Http::withHeaders($headers)
-                ->get(env('ERP_API_BASE_URL').'/api/resource/Sales Order/'.$stock_entry_detail->sales_order_no);
+            $sales_order = DB::table('tabSales Order')->where('name', $stock_entry_detail->sales_order_no)->first();
 
-            if($sales_order->getStatusCode() != 200){
-                return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
+            if(!$sales_order){
+                return response()->json(['success' => 0, 'message' => 'Sales Order '.$stock_entry_detail->sales_order_no.' not found.']);
             }
 
-            $sales_order = json_decode($sales_order)->data;
-
-            $response = Http::withHeaders($headers)
-                ->post(env('ERP_API_BASE_URL').'/api/resource/Stock Entry', [
-                    'doctype' => 'Stock Entry',
-                    'purpose' => 'Material Transfer',
-                    'stock_entry_type' => 'Material Transfer',
-                    'docstatus' => 0,
-                    'item_status' => 'For Checking',
-                    'company' => 'FUMACO Inc.',
-                    'order_from' => 'Other Reference',
-                    'transfer_as' => 'Internal Transfer',
-                    'reference_no' => $request->ref_no,
-                    'from_warehouse' => 'Goods in Transit - FI',
-                    'to_warehouse' => 'Finished Goods - FI',
-                    'owner' => Auth::user()->wh_user,
-                    'items' => [
-                        [
-                            'item_code' => $stock_entry_detail->item_code,
-                            'qty' => $stock_entry_detail->qty,
-                            'transfer_qty' => $stock_entry_detail->transfer_qty,
-                            's_warehouse' => 'Goods in Transit - FI',
-                            't_warehouse' => 'Finished Goods - FI'
-                        ]
+            $response = $this->erpOperation('post', 'Stock Entry', null, $body = [
+                'doctype' => 'Stock Entry',
+                'purpose' => 'Material Transfer',
+                'stock_entry_type' => 'Material Transfer',
+                'docstatus' => 0,
+                'item_status' => 'For Checking',
+                'company' => 'FUMACO Inc.',
+                'order_from' => 'Other Reference',
+                'transfer_as' => 'Internal Transfer',
+                'reference_no' => $request->ref_no,
+                'from_warehouse' => 'Goods in Transit - FI',
+                'to_warehouse' => 'Finished Goods - FI',
+                'owner' => Auth::user()->wh_user,
+                'items' => [
+                    [
+                        'item_code' => $stock_entry_detail->item_code,
+                        'qty' => $stock_entry_detail->qty,
+                        'transfer_qty' => $stock_entry_detail->transfer_qty,
+                        's_warehouse' => 'Goods in Transit - FI',
+                        't_warehouse' => 'Finished Goods - FI'
                     ]
-                ]);
+                ]
+            ]);
 
-            if($response->getStatusCode() != 200){
+            if(!isset($response['data'])){
                 return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
             }
 
-            $data = json_decode($response->getBody())->data;
+            $data = $response['data'];
 
             DB::table($doctype_child)->where('name', $id)->update([
                 'status' => 'Issued',
@@ -4889,7 +4958,7 @@ class MainController extends Controller
             ]);
 
             $email_data = [
-                'id' => $data->name,
+                'id' => $data['name'],
                 'uom' => $stock_entry_detail->uom,
                 'user' => Auth::user()->wh_user,
                 'image' => $image,
@@ -4899,8 +4968,8 @@ class MainController extends Controller
                 'description' => $stock_entry_detail->description,
                 'transfer_qty' => $stock_entry_detail->transfer_qty,
                 'transaction_date' => Carbon::now()->format('M. d, Y'),
-                'source_warehouse' => $data->from_warehouse,
-                'target_warehouse' => $data->to_warehouse
+                'source_warehouse' => $data['from_warehouse'],
+                'target_warehouse' => $data['to_warehouse']
             ];
 
             $email_sent = 1;
@@ -4917,7 +4986,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['success' => 1, 'message' => 'Stock Entry created!', 'email_sent' => $email_sent]);
-        } catch (\Throwable $th) {
+        } catch (Exception $th) {
             // throw $th;
             DB::rollback();
             return response()->json(['success' => 0, 'message' => 'An error occured. Please try again.']);
@@ -4936,99 +5005,147 @@ class MainController extends Controller
     }
 
     public function view_deliveries(Request $request){
-        if(!$request->arr){
+        if (!$request->arr) {
             return view('picking_slip');
         }
-        
+
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $q = DB::table('tabPacking Slip as ps')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
-                ->where('ps.docstatus', 0)
-                ->where('dri.docstatus', 0)
-                ->whereIn('dri.warehouse', $allowed_warehouses)
-                ->select('dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->groupBy('dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation')
-                ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")->get();
+        $pickingSlipQueryProductBundle = DB::table('tabPacking Slip as ps')
+            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
+            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
+            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
+            ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
+            ->where([
+                'dr.docstatus' => 0, 'ps.docstatus' => 0
+            ])
+            ->whereIn('dri.warehouse', $allowed_warehouses)
+            ->select([
+                'dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name',
+                'ps.delivery_note', 'pi.parent_item', 'pi.name as piName', 'dri.qty', 'pi.item_code', 'pi.description',
+                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', 'pi.qty as piQty', 'pi.warehouse as piWarehouse', 'pi.uom as piUom'
+            ])
+            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")
+            ->get();
 
+            // Fetch picking slips
+        $pickingSlipQuery = DB::table('tabPacking Slip as ps')
+            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
+            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
+            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
+            ->whereRaw('dri.item_code = psi.item_code')
+            ->where([
+                'dr.docstatus' => 0, 'ps.docstatus' => 0
+            ])
+            ->whereIn('dri.warehouse', $allowed_warehouses)
+            ->select([
+                'dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name',
+                'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'),
+                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
+            ])
+            ->groupBy([
+                'dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name',
+                'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom',
+                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
+            ])
+            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")
+            ->get();
+        
+        // Fetch stock entries
+        $stockEntryQuery = DB::table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', '=', 'sted.parent')
+            ->where('ste.docstatus', 0)
+            ->where('purpose', 'Material Transfer')
+            ->whereIn('s_warehouse', $allowed_warehouses)
+            ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->select([
+                'ste.delivery_date', 'sted.status', 'sted.validate_item_code', 'ste.sales_order_no',
+                'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse',
+                'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 
+                'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom'
+            ])
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
+            ->get();
+        
+        $allItems = $pickingSlipQuery->merge($stockEntryQuery);
+        
+        // Gather all item codes to minimize queries for supplier part numbers and owners
+        $itemCodes = $allItems->pluck('item_code')->unique();
+        $owners = $allItems->pluck('owner')->unique();
+        
+        if ($pickingSlipQueryProductBundle->count() > 0) {
+            $itemCodes = $itemCodes->merge($pickingSlipQueryProductBundle->pluck('parent_item')->unique());
+            $owners = $owners->merge($pickingSlipQueryProductBundle->pluck('owner')->unique());
+        } 
+        
+        // Fetch supplier part numbers for all items in one query
+        $supplierPartNos = DB::table('tabItem Supplier')
+            ->whereIn('parent', $itemCodes)->pluck('supplier_part_no', 'parent');
+        
+        // Fetch owners' full names in one query
+        $ownerNames = DB::table('tabUser')
+            ->whereIn('email', $owners)->pluck('full_name', 'email');
+        
         $list = [];
-        foreach ($q as $d) {
-            $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-
-            $part_nos = implode(', ', $part_nos->toArray());
-
-            $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-            $owner = ($owner) ? $owner->full_name : null;
-
-            $parent_warehouse = $this->get_warehouse_parent($d->warehouse);
-
+        foreach ($allItems as $d) {
+            $part_nos = $supplierPartNos->get($d->item_code, '');
+            $owner = $ownerNames->get($d->owner, null);
+            $parent_warehouse = $this->get_warehouse_parent($d->warehouse ?? $d->s_warehouse);
+        
             $list[] = [
                 'owner' => $owner,
-                'warehouse' => $d->warehouse,
-                'customer' => $d->customer,
-                'sales_order' => $d->sales_order,
+                'warehouse' => $d->warehouse ?? $d->s_warehouse,
+                'customer' => $d->customer ?? $d->customer_1,
+                'sales_order' => $d->sales_order ?? $d->sales_order_no,
                 'id' => $d->id,
                 'part_nos' => $part_nos,
                 'status' => $d->status,
                 'name' => $d->name,
-                'delivery_note' => $d->delivery_note,
+                'delivery_note' => $d->delivery_note ?? null,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 'qty' => $d->qty,
-                'stock_uom' => $d->uom,
+                'stock_uom' => $d->uom ?? $d->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                'type' => 'picking_slip',
-                'classification' => 'Customer Order',
+                'type' => isset($d->sales_order_no) ? 'stock_entry' : 'picking_slip',
+                'classification' => $d->transfer_as ?? 'Customer Order',
                 'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
-                'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null
+                'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null,
             ];
         }
 
-        $q = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
-            ->whereIn('s_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['Consignment', 'Sample Item'])
-            ->select('ste.delivery_date', 'sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom')
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
-            ->get();
-
-            foreach ($q as $d) {
-                $part_nos = DB::table('tabItem Supplier')->where('parent', $d->item_code)->pluck('supplier_part_no');
-    
-                $part_nos = implode(', ', $part_nos->toArray());
-    
-                $owner = DB::table('tabUser')->where('email', $d->owner)->first();
-                $owner = ($owner) ? $owner->full_name : null;
-    
-                $parent_warehouse = $this->get_warehouse_parent($d->s_warehouse);
+        if ($pickingSlipQueryProductBundle->count() > 0) {
+            $pickingSlipQueryProductBundle = $pickingSlipQueryProductBundle->groupBy('parent_item');
+            foreach ($pickingSlipQueryProductBundle as $parent_item => $rows) {
+                $part_nos = $supplierPartNos->get($parent_item, '');
+                $owner = $ownerNames->get($rows[0]->owner, null);
+                $parent_warehouse = $this->get_warehouse_parent($rows[0]->warehouse);
     
                 $list[] = [
                     'owner' => $owner,
-                    'warehouse' => $d->s_warehouse,
-                    'customer' => $d->customer_1,
-                    'sales_order' => $d->sales_order_no,
-                    'id' => $d->id,
+                    'warehouse' => $rows[0]->warehouse,
+                    'customer' => $rows[0]->customer,
+                    'sales_order' => $rows[0]->sales_order,
+                    'id' => $rows[0]->id,
                     'part_nos' => $part_nos,
-                    'status' => $d->status,
-                    'name' => $d->name,
-                    'delivery_note' => null,
-                    'item_code' => $d->item_code,
-                    'description' => $d->description,
-                    'qty' => $d->qty,
-                    'stock_uom' => $d->stock_uom,
+                    'status' => $rows[0]->status,
+                    'name' => $rows[0]->name,
+                    'delivery_note' => $rows[0]->delivery_note ?? null,
+                    'item_code' => $parent_item,
+                    'description' => $rows[0]->description,
+                    'qty' => $rows[0]->qty,
+                    'stock_uom' => $rows[0]->uom,
                     'parent_warehouse' => $parent_warehouse,
-                    'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                    'type' => 'stock_entry',
-                    'classification' => $d->transfer_as,
-                    'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
-                    'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null
+                    'creation' => Carbon::parse($rows[0]->creation)->format('M-d-Y h:i:A'),
+                    'type' => 'packed_item',
+                    'classification' => 'Customer Order',
+                    'delivery_date' => Carbon::parse($rows[0]->delivery_date)->format('M-d-Y'),
+                    'delivery_status' => (Carbon::parse($rows[0]->delivery_date) < Carbon::now()) ? 'late' : null,
                 ];
             }
+        }
         
         return response()->json(['picking' => $list]);
     }
@@ -5179,10 +5296,8 @@ class MainController extends Controller
             ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner', 'dr.docstatus')->first();
 
         $img = DB::table('tabItem Images')->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        if(!$img){
-            $img = DB::table('tabItem')->where('name', $q->item_code)->pluck('item_image_path')->first();
-            $img = $img ? $img : null;
-        }
+        $img = $img ? "/img/$img" : '/icon/no_img.png';
+        $img = $this->base64_image($img);
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
@@ -5503,9 +5618,6 @@ class MainController extends Controller
 				'modified_by' => Auth::user()->wh_user,
 				'owner' => Auth::user()->wh_user,
 				'docstatus' => $docstatus,
-				'parent' => null,
-				'parentfield' => null,
-				'parenttype' => null,
 				'idx' => 0,
 				'use_multi_level_bom' => 1,
 				'delivery_note_no' => null,
@@ -5517,7 +5629,7 @@ class MainController extends Controller
 				'posting_time' => $now->format('H:i:s'),
 				// 'customer_name' => null,
 				'to_warehouse' => $production_order_details->fg_warehouse,
-				'title' => 'Manufacture',
+				// 'title' => 'Manufacture',
 				'_comments' => null,
 				'from_warehouse' => null,
 				'set_posting_time' => 0,
@@ -6402,5 +6514,98 @@ class MainController extends Controller
         }
 
         return view('item_stock_level_bundled', compact('stocks'));
+    }
+
+    private function get_guide_images($path, $title){
+        $files = Storage::files($path);
+
+        $files = collect($files)->filter(function ($file) use ($path, $title) {
+            return Str::startsWith($file, "$path/$title");
+        })->all();
+
+        $images = collect($files)->mapWithKeys(function ($image){
+            [$directory, $filename] = explode('/', $image);
+            [$id] = explode('.', $filename);
+
+            return [$id => $this->base64_image($image)];
+        });
+
+        $no_img = $this->base64_image('icon/no_img.png');
+        $images['no_img'] = $no_img;
+
+        return $images;
+    }
+
+    public function guide_beginning_inventory(){
+        $images = $this->get_guide_images('user_manual_img', 'beginning_inventory');
+        
+        return view('consignment.user_manual.beginning_inventory', compact('images'));
+    }
+
+    public function guide_sales_report_entry(){
+        $images = $this->get_guide_images('user_manual_img', 'sales_report');
+        
+        return view('consignment.user_manual.sales_report', compact('images'));
+    }
+
+    public function guide_stock_transfer(){
+        $images = $this->get_guide_images('user_manual_img', 'stock_transfer');
+
+        return view('consignment.user_manual.stock_transfer', compact('images'));
+    }
+
+    public function guide_damaged_items(){
+        $images = $this->get_guide_images('user_manual_img', 'damaged_items');
+
+        return view('consignment.user_manual.damaged_items', compact('images'));
+    }
+
+    public function guide_stock_receiving(){
+        $images = $this->get_guide_images('user_manual_img', 'stock_receiving');
+
+        return view('consignment.user_manual.stock_receiving', compact('images'));
+    }
+
+    public function guide_inventory_audit(){
+        $images = $this->get_guide_images('user_manual_img', 'inventory_audit');
+
+        return view('consignment.user_manual.inventory_audit', compact('images'));
+    }
+    
+    public function guide_consignment_dashboard(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.consignment_dashboard', compact('images'));
+    }
+    
+    public function guide_beginning_entries(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.beginning_entries', compact('images'));
+    }
+
+    public function guide_inventory_report(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.inventory_report', compact('images'));
+    }
+    
+    public function guide_inventory_summary(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.inventory_summary', compact('images'));
+    }
+
+    public function guide_stock_to_receive(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+
+        return view('consignment.user_manual.stock_to_receive', compact('images'));
+    }
+
+    public function guide_consignment_stock_transfer(){
+        $images = $this->get_guide_images('user_manual_img', 'cs');
+        $images['receiving-of-stocks'] = $this->base64_image('user_manual_img/receiving-of-stocks.png');
+
+        return view('consignment.user_manual.consignment_stock_transfer', compact('images'));
     }
 }

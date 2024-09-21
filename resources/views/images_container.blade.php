@@ -9,30 +9,12 @@
             <div class="carousel-item {{ $selected == $i ? 'active' : null }}" style="max-height: 860px;">
                 @php
                     $webp = explode('.', $image->image_path)[0].'.webp';
-                    $image_path = $image->image_path;
-                    if(!Storage::disk('public')->exists('/img/'.$image->image_path)){
-                        if (Storage::disk('public')->exists('/img/'.explode('.', $image->image_path)[0].'.jpg')) {
-                            $image_path = explode('.', $image->image_path)[0].'.jpg';
-                        }elseif (Storage::disk('public')->exists('/img/'.explode('.', $image->image_path)[0].'.jpeg')) {
-                            $image_path = explode('.', $image->image_path)[0].'.jpeg';
-                        }
-                    }
                 @endphp
-                @if ($image_path)
-                    <a href="{{ asset('storage/img/'.$image_path) }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ $image_path }}"><i class="fa fa-download"></i> Download Image</a>
+                @if (Storage::exists("img/$webp"))
+                    <a href="/download_image/img/{{ $webp }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}"><i class="fa fa-download"></i> Download Image</a>
                 @endif 
                 <center>
-                    @if(!Storage::disk('public')->exists('/img/'.$webp))
-                        <img class="modal-img" src="{{ asset('storage/img/'.$image_path) }}">
-                    @elseif(!Storage::disk('public')->exists('/img/'.$image_path))
-                        <img class="modal-img" src="{{ asset('storage/img/'.$webp) }}">
-                    @else
-                        <picture>
-                            <source srcset="{{ asset('storage/img/'.$webp) }}" type="image/webp">
-                            <source srcset="{{ asset('storage/img/'.$image_path) }}" type="image/jpeg">
-                            <img src="{{ asset('storage/img/'.$image_path) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image_path)[0], '-') }}" class="img-responsive modal-img hover">
-                        </picture>
-                    @endif
+                    <img class="modal-img" src="{{ $image->image }}">
                 </center>
                 <span class="font-italic hidden-on-slide" style="font-size: 8pt; font-weight: 600; position: absolute; right: 10px; bottom: 2px; z-index: 999">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }} - {{ Carbon\Carbon::parse($image->creation)->format('M. d, Y h:i A') }}</span>
             </div>

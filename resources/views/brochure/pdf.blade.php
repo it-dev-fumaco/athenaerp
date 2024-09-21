@@ -87,7 +87,7 @@
         <table style="width: 100% !important; border-collapse: collapse;"> 
             <tr>
                 <td style="width: 43%; padding: 0 !important; vertical-align: top !important">
-                    <img src="{{ public_path("storage/fumaco_logo.png") }}" alt="" style="width: 230px;">
+                    <img src="{{ $fumaco_logo }}" alt="" style="width: 230px;">
                 </td>
                 <td style="width: 55%; font-size: 11pt;">
                     <p style="text-transform: uppercase !important; margin: 0; line-height: .75rem;">
@@ -103,7 +103,7 @@
         <table style="width: 100% !important; border-collapse: collapse;">
             <tr>
                 <td style="width: 28%; vertical-align: top; padding-top: 15px;">
-                    <img src="{{ public_path("storage/fumaco_logo.png") }}" style="width: 80%;">
+                    <img src="{{ $fumaco_logo }}" style="width: 80%;">
                 </td>
                 <td style="width: 15%;font-size: .6rem; padding: 0 15px 10px 0 !important; line-height: .5rem;">
                     www.fumaco.com
@@ -139,15 +139,13 @@
                             $img_exists = 0;
                             if (isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
                                 if (isset($is_standard) && $is_standard) {
-                                    $img = isset($row['images']['image'.$i]['filepath']) ? public_path($row['images']['image'.$i]['filepath']) : null;
-                                    $img_exists = \Storage::disk('public')->exists(str_replace('storage/', null, $row['images']['image'.$i]['filepath'])) ? 1 : 0;
+                                    $img = isset($row['images']['image'.$i]['filepath']) ? $row['images']['image'.$i]['filepath'] : null;
                                 }else{
                                     $img = public_path('storage/brochures/'.$row['images']['image'.$i]);
-                                    $img_exists = \Storage::disk('public')->exists('brochures/'.$row['images']['image'.$i]) ? 1 : 0;
                                 }
                             }
                         @endphp
-                        @if ($img && $img_exists)
+                        @if ($img)
                             <img src="{{ $img }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
                         @endif
                     @endfor

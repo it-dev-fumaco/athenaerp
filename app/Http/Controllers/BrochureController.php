@@ -13,9 +13,15 @@ use DB;
 use Carbon\Carbon; 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
+use Illuminate\Support\Facades\File;
+use Webp;
+
+use App\Traits\GeneralTrait;
 
 class BrochureController extends Controller
 {
+
+	use GeneralTrait;
     public function viewForm(Request $request) {
 		if($request->ajax()){
 			$recents = DB::table('tabProduct Brochure Log')
@@ -596,13 +602,11 @@ class BrochureController extends Controller
 				$current_images = [];
 				foreach ($current_item_images as $e) {
 					$filename = $e->image_path;
-					if(!Storage::disk('public')->exists('img/' . $filename) && $filename){
-						$filename = explode(".", $filename)[0] . '.webp';
-					}
+					$base64 = $this->base64_image("/img/$filename");
 	
 					$current_images[] = [
 						'filename' => $filename,
-						'filepath' => 'img/' . $filename
+						'filepath' => $base64
 					];	
 				}
 
@@ -611,12 +615,8 @@ class BrochureController extends Controller
 					$row = $i + 1;
 					$images['image'.$row] = [
 						'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
-						'filepath' => isset($brochure_images[$i]) ? $brochure_images[$i]->image_path . $brochure_images[$i]->image_filename : null,
+						'filepath' => isset($brochure_images[$i]) ? $this->base64_image($brochure_images[$i]->image_path.$brochure_images[$i]->image_filename) : null,
 					];
-	
-					if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image'.$row]['filepath'])) && $images['image'.$row]['filepath']){
-						$images['image'.$row]['filepath'] = explode(".", $images['image'.$row]['filepath'])[0] . '.webp';
-					}
 				}
 
 				$content[] = [
@@ -637,9 +637,10 @@ class BrochureController extends Controller
 					'idx' => $no++
 				];
 			}
+			$fumaco_logo = $this->base64_image('fumaco_logo.png');
 
 			if($preview){
-				return view('brochure.preview_loop', compact('content', 'project', 'customer'));
+				return view('brochure.preview_loop', compact('content', 'project', 'customer', 'fumaco_logo'));
 			}
 
 			if($pdf){
@@ -678,29 +679,27 @@ class BrochureController extends Controller
 			$current_images = [];
 			foreach ($current_item_images as $e) {
 				$filename = $e->image_path;
-				if(!Storage::disk('public')->exists('img/' . $filename) && $filename){
-					$filename = explode(".", $filename)[0] . '.webp';
-				}
+				$base64 = $this->base64_image('/img/'.$filename);
 
 				$current_images[] = [
 					'filename' => $filename,
-					'filepath' => 'img/' . $filename
+					'filepath' => $base64
 				];	
 			}
 
 			$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
 
+
 			for($i = 0; $i < 3; $i++){
 				$row = $i + 1;
+				$base64 = isset($brochure_images[$i]) ? $this->base64_image('/brochures/'.$brochure_images[$i]->image_filename) : null;
 				$images['image'.$row] = [
 					'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
-					'filepath' => isset($brochure_images[$i]) ? $brochure_images[$i]->image_path . $brochure_images[$i]->image_filename : null,
+					'filepath' => $base64,
 				];
-
-				if(!Storage::disk('public')->exists(Str::replace('storage', '', $images['image'.$row]['filepath'])) && $images['image'.$row]['filepath']){
-					$images['image'.$row]['filepath'] = explode(".", $images['image'.$row]['filepath'])[0] . '.webp';
-				}
 			}
+
+			$fumaco_logo = $this->base64_image('fumaco_logo.png');
 
 			if(isset($request->get_images) && $request->get_images){
 				return view('brochure.brochure_images', compact('images', 'current_images'));
@@ -744,7 +743,7 @@ class BrochureController extends Controller
 				$is_standard = true;
 				DB::commit();
 
-				$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard', 'remarks'));
+				$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard', 'remarks', 'fumaco_logo'));
 				return $pdf->stream($new_filename.'.pdf');
 			}
 
@@ -752,7 +751,7 @@ class BrochureController extends Controller
 				return Storage::disk('public')->exists($q['filepath']) ? 1 : 0;
 			})->max();
 
-			return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'current_images', 'img_check', 'remarks'));
+			return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'current_images', 'img_check', 'remarks', 'fumaco_logo'));
 		} catch (\Throwable $th) {
 			DB::rollback();
 			throw $th;
@@ -778,20 +777,35 @@ class BrochureController extends Controller
 				if(!in_array($file_ext, $allowed_extensions)){
 					return response()->json(['status' => 0, 'message' => 'Sorry, only .jpeg, .jpg and .png files are allowed.']);
 				}
-	
-				//get filename with extension
+
 				$filenamewithextension = $file->getClientOriginalName();
-				// //get filename without extension
 				$filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-				//get file extension
-				$extension = $file->getClientOriginalExtension();
-				//filename to store
-				$micro_time = round(microtime(true));
-		
-				$destinationPath = storage_path('/app/public/brochures/');
-	
-				$filename = $item_code . '-' . $micro_time . '.' . $extension;
-				$image_path = 'storage/brochures/';
+				$filename = str_replace(' ', '-', $filename);
+                $extension = $file->getClientOriginalExtension();
+
+                // Paths for storage
+                $image_path = 'brochures/';
+                $jpegFilename = "$filename.$extension";
+                $webpFilename = "$filename.webp";
+
+                // Save the original file
+                // Storage::putFileAs($image_path, $file, $jpegFilename);
+
+                // Create and save the WebP version
+                $webp = Webp::make($file);
+
+                if(!File::exists(public_path('temp'))){
+                    File::makeDirectory(public_path('temp'), 0755, true);
+                }
+
+                $webp_path = public_path("temp/$webpFilename");
+
+                $webp->save($webp_path);
+
+                $web_contents = file_get_contents($webp_path);
+                Storage::put("$image_path$webpFilename", $web_contents);
+
+                unlink($webp_path);
 			}
 
 			$existing_image_idx = DB::table('tabItem Brochure Image')->where('parent', $item_code)->where('idx', $request->image_idx)->first();
@@ -800,7 +814,7 @@ class BrochureController extends Controller
 					'modified' => $transaction_date,
 					'modified_by' => Auth::user()->wh_user,
 					'idx' => $request->image_idx,
-					'image_filename' => $filename
+					'image_filename' => $jpegFilename
 				]);
 			} else {
 				DB::table('tabItem Brochure Image')->insert([
@@ -811,7 +825,7 @@ class BrochureController extends Controller
 					'owner' => Auth::user()->wh_user,
 					'parent' => $item_code,
 					'idx' => $request->image_idx,
-					'image_filename' => $filename,
+					'image_filename' => $jpegFilename,
 					'image_path' => $image_path
 				]);
 			}
@@ -831,10 +845,6 @@ class BrochureController extends Controller
 			]);
 
 			DB::commit();
-
-			if($request->hasFile('selected-file')){
-				$file->move($destinationPath, $filename);
-			}
 
 			$data_src = $image_path . $filename;
 

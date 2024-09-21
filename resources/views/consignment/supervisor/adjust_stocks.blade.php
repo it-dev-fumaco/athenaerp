@@ -311,17 +311,12 @@
                         return opt.text;
                     }
 
-                    var optimage = opt.webp;
-                    if(optimage.indexOf('/icon/no_img') != -1){
-                        optimage = opt.img;
-                    }
+                    optimage = opt.img;
 
                     if(!optimage){
                         return opt.text;
                     } else {
-                        var $opt = $(
-                        '<span><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>'
-                        );
+                        var $opt = $('<span><img src="' + optimage + '" width="40px" /> ' + opt.text + '</span>');
                         return $opt;
                     }
                 };
@@ -330,8 +325,6 @@
             $('#stock-adjustment-modal').on('select2:select', '.items-selection', function(e){
                 $('#stock-adjustment-modal .item-code').text(e.params.data.id);
                 $('#stock-adjustment-modal .description').text(e.params.data.description);
-                $('#stock-adjustment-modal .webp-src').attr('src', e.params.data.webp);
-                $('#stock-adjustment-modal .image-src').attr('src', e.params.data.img);
                 $('#stock-adjustment-modal .image').attr('src', e.params.data.img);
 
                 $('#stock-adjustment-modal .webp-placeholder').text(e.params.data.webp);
@@ -378,7 +371,6 @@
                 var uom = $('#stock-adjustment-modal .uom').text();
                 var price = $('#stock-adjustment-modal .price').text().replace('₱ ', '');
                 var item_code = $('#stock-adjustment-modal .item-code').text();
-                var webp = $('#stock-adjustment-modal .webp-placeholder').text();
                 var image = $('#stock-adjustment-modal .image-placeholder').text();
                 var description = $('#stock-adjustment-modal .description').text();
 
@@ -392,11 +384,7 @@
                     '<div class="col-8">' +
                         '<div class="row p-0 m-0 w-100">' +
                             '<div class="col-2 d-flex justify-content-center align-items-center text-center">' +
-                                '<picture>' +
-                                    '<source srcset="' + webp + '" class="webp-src" type="image/webp">' +
-                                    '<source srcset="' + image + '" class="image-src" type="image/jpeg">' +
-                                    '<img src="' + image + '" class="image w-75" alt="">' +
-                                '</picture>' +
+                                '<img src="' + image + '" class="image w-75" alt="">' +
                             '</div>' +
                             '<div class="col-6 d-flex justify-content-center align-items-center text-center">' +
                                 '<div class="row w-100 p-1">' +

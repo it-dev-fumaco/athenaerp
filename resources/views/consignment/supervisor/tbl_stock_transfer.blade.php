@@ -171,12 +171,8 @@
                                             <td class="text-center p-1 align-middle">
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-2 text-left">
-                                                        <a href="{{ asset('storage/') }}{{ $item['image'] }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
-                                                            <picture>
-                                                                <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
-                                                                <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                <img src="{{ asset('storage'.$item['image']) }}" alt="{{ $item['image_slug'] }}" width="60" height="60">
-                                                            </picture>
+                                                        <a href="{{ $item['image'] }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
+                                                            <img src="{{ $item['image'] }}" alt="{{ $item['image_slug'] }}" width="60" height="60">
                                                         </a>
                                                     </div>
                                                     <div class="p-2 text-left">
