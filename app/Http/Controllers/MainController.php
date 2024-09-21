@@ -2702,18 +2702,19 @@ class MainController extends Controller
     }
 
     public function update_pending_ps_item_status($id){
+        DB::beginTransaction();
         try {
             $items_for_checking = DB::table('tabPacking Slip Item')->where('parent', $id)->where('status', 'For Checking')->exists();
 
             if(!$items_for_checking){
-                $response = $this->erpOperation('put', 'Packing Slip', $id, ['item_status' => 'Issued', 'docstatus' => 1]);
-                if(!isset($response['data'])){
-                    throw new Exception(json_encode($response, true));
-                }
+                DB::table('tabPacking Slip')->where('name', $id)->update(['item_status' => 'Issued', 'docstatus' => 1]);
+
+                DB::commit();
             }
 
             return ['success' => 1, 'message' => 'Packing Slips updated!'];
         } catch (Exception $e) {
+            DB::rollBack();
             return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
