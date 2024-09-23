@@ -2672,9 +2672,9 @@ class MainController extends Controller
                     'date_modified' => $now->toDateTimeString()
                 ];
     
-                DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
-                    ->where('docstatus', 0)->update($values);
-    
+                // DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
+                //     ->where('docstatus', '<', 2)->update($values);
+                $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
                 $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
             }
                 
