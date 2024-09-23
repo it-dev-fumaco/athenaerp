@@ -5047,12 +5047,12 @@ class MainController extends Controller
             ->select([
                 'dr.delivery_date', 'ps.sales_order', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name',
                 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'),
-                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
+                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', DB::raw('"picking_slip" as type')
             ])
             ->groupBy([
                 'dr.delivery_date', 'ps.sales_order', 'sales_order_no', 'psi.name', 'psi.status', 'ps.name',
                 'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom',
-                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
+                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', 'type'
             ])
             ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")
             ->get();
@@ -5068,7 +5068,7 @@ class MainController extends Controller
                 'ste.delivery_date', 'sted.status', 'sted.validate_item_code', DB::raw('NULL as sales_order'), 'ste.sales_order_no',
                 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse',
                 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 
-                'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom'
+                'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom', DB::raw('"stock_entry" as type')
             ])
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
@@ -5114,7 +5114,7 @@ class MainController extends Controller
                 'stock_uom' => $d->uom ?? $d->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                'type' => isset($d->sales_order_no) ? 'stock_entry' : 'picking_slip',
+                'type' => $d->type, // isset($d->sales_order_no) && $d->sales_order_no ? 'stock_entry' : 'picking_slip',
                 'classification' => $d->transfer_as ?? 'Customer Order',
                 'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
                 'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null,
