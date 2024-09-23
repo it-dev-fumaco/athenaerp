@@ -691,7 +691,7 @@ class BrochureController extends Controller
 
 			for($i = 0; $i < 3; $i++){
 				$row = $i + 1;
-				$base64 = null;
+				$filepath = null;
 				if(isset($brochure_images[$i])){
 					$filepath = $brochure_images[$i]->image_path.$brochure_images[$i]->image_filename;
 					$filepath = asset($filepath);
