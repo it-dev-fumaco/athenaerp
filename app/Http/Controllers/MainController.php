@@ -2515,7 +2515,7 @@ class MainController extends Controller
 
     // /checkout_picking_slip_item
     public function checkout_picking_slip_item(Request $request){
-        DB::beginTransaction();
+        DB::connection('mysql')->beginTransaction();
         try {
             if($request->type == 'packed_item'){
                 $ps_details = DB::table('tabPacking Slip as ps')
@@ -2674,7 +2674,11 @@ class MainController extends Controller
     
                 // DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
                 //     ->where('docstatus', '<', 2)->update($values);
-                $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
+                return $response = $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
+                if(!isset($response['data'])){
+                    throw new Exception('An error occured while updating picking slip.');
+                }
+
                 $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
             }
                 
@@ -2684,7 +2688,7 @@ class MainController extends Controller
                 throw new Exception($check_parent['message']);
             }
 
-            DB::commit();
+            DB::connection('mysql')->commit();
 
             if($request->deduct_reserve == 1) {
                 return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been deducted from reservation.']);
@@ -2702,19 +2706,19 @@ class MainController extends Controller
     }
 
     public function update_pending_ps_item_status($id){
-        DB::beginTransaction();
+        // DB::beginTransaction();
         try {
             $items_for_checking = DB::table('tabPacking Slip Item')->where('parent', $id)->where('status', 'For Checking')->exists();
 
             if(!$items_for_checking){
-                DB::table('tabPacking Slip')->where('name', $id)->update(['item_status' => 'Issued', 'docstatus' => 1]);
-
-                DB::commit();
+                $this->erpOperation('put', 'Packing Slip', $id, ['item_status' => 'Issued', 'docstatus' => 1]);
+                // DB::table('tabPacking Slip')->where('name', $id)->update(['item_status' => 'Issued', 'docstatus' => 1]);
+                // DB::commit();
             }
 
             return ['success' => 1, 'message' => 'Packing Slips updated!'];
         } catch (Exception $e) {
-            DB::rollBack();
+            // DB::rollBack();
             return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
