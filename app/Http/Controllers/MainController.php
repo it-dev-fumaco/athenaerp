@@ -5027,7 +5027,7 @@ class MainController extends Controller
             ])
             ->whereIn('dri.warehouse', $allowed_warehouses)
             ->select([
-                'dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name',
+                'dr.delivery_date', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name',
                 'ps.delivery_note', 'pi.parent_item', 'pi.name as piName', 'dri.qty', 'pi.item_code', 'pi.description',
                 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', 'pi.qty as piQty', 'pi.warehouse as piWarehouse', 'pi.uom as piUom'
             ])
@@ -5045,12 +5045,12 @@ class MainController extends Controller
             ])
             ->whereIn('dri.warehouse', $allowed_warehouses)
             ->select([
-                'dr.delivery_date', 'ps.sales_order', 'psi.name AS id', 'psi.status', 'ps.name',
+                'dr.delivery_date', 'ps.sales_order', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name',
                 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'),
                 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
             ])
             ->groupBy([
-                'dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name',
+                'dr.delivery_date', 'ps.sales_order', 'sales_order_no', 'psi.name', 'psi.status', 'ps.name',
                 'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom',
                 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
             ])
@@ -5065,7 +5065,7 @@ class MainController extends Controller
             ->whereIn('s_warehouse', $allowed_warehouses)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
             ->select([
-                'ste.delivery_date', 'sted.status', 'sted.validate_item_code', 'ste.sales_order_no',
+                'ste.delivery_date', 'sted.status', 'sted.validate_item_code', DB::raw('NULL as sales_order'), 'ste.sales_order_no',
                 'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse',
                 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 
                 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom'
