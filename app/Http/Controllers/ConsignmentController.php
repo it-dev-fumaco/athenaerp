@@ -1719,9 +1719,8 @@ class ConsignmentController extends Controller
 
     // /save_beginning_inventory
     public function saveBeginningInventory(Request $request){
-        DB::beginTransaction();
         try {
-            if(!$request->branch || $request->branch == 'null'){
+            if(!$request->branch){
                 return redirect()->back()->with('error', 'Please select a store');
             }
 
@@ -1739,224 +1738,147 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('error', 'Please select an item to save');
             }
 
-            if(max($opening_stock) <= 0 || max($price) <= 0 || !array_filter($opening_stock) || !array_filter($price)) { // If all values of opening stocks or prices are 0 or if opening stocks or prices are null
-                $null_value = null;
-                if(max($opening_stock) <= 0 || !array_filter($opening_stock)){
-                    $null_value = 'Opening Stock';
-                }else{
-                    $null_value = 'Price';
-                }
+            $max_opening_stock = max($opening_stock);
+            $max_price = max($price);
+            $has_opening_stock = array_filter($opening_stock);
+            $has_price = array_filter($price);
 
+            if ($max_opening_stock <= 0 || $max_price <= 0 || !$has_opening_stock || !$has_price) {
+                $null_value = ($max_opening_stock <= 0 || !$has_opening_stock) ? 'Opening Stock' : 'Price';
                 return redirect()->back()->with('error', 'Please input values to '.$null_value);
             }
 
-            $now = Carbon::now()->toDateTimeString();
-
-            $transaction_date = $request->transaction_date ? $request->transaction_date : $now;
+            $now = Carbon::now();
     
-            $items = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'description', 'stock_uom')->get();
-            $item = collect($items)->groupBy('name');
+            $items = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'item_code', 'description', 'stock_uom')->get();
+            $items = collect($items)->map(function ($item) use ($opening_stock, $price){
+                unset($item->name);
+                $qty = isset($opening_stock[$item->item_code]) ? $opening_stock[$item->item_code] : 1;
+                $qty = (float) $qty;
+                $value = isset($opening_stock[$item->item_code]) ? $price[$item->item_code] : 1;
+                $value = (float) $value;
+                
+                $item->item_description = strip_tags($item->description);
+                $item->opening_stock = $qty;
+                $item->status = 'For Approval';
+                $item->price = $value;
+                $item->amount = $qty * $value;
 
-            $item_codes_with_beginning_inventory = DB::table('tabConsignment Beginning Inventory as cbi')
-                ->join('tabConsignment Beginning Inventory Item as item', 'cbi.name', 'item.parent')
-                ->where('cbi.branch_warehouse', $branch)->whereIn('cbi.status', ['Approved', 'For Approval'])->pluck('item_code')->toArray();
+                return $item;
+            });
 
-            $item_count = 0;
-            if(!$request->inv_name){ // If beginning inventory record does not exist
-                $inv_id = 'INV-'.uniqid();
-                $new_title = $this->generateConsignmentID('tabConsignment Beginning Inventory', 'INV', 6);
-    
-                $values = [
-                    'docstatus' => 0,
-                    'name' => $inv_id,
-                    'title' => $new_title,
-                    'idx' => 0,
-                    'status' => 'For Approval',
-                    'branch_warehouse' => $branch,
-                    'creation' => $now,
-                    'transaction_date' => $transaction_date,
-                    'owner' => Auth::user()->wh_user,
-                    'modified' => $now,
-                    'modified_by' => Auth::user()->wh_user,
-                    'remarks' => $request->remarks
-                ];
+            $body = [
+                'docstatus' => 0,
+                'status' => 'For Approval',
+                'branch_warehouse' => $branch,
+                'transaction_date' => $now->toDateTimeString(),
+                'remarks' => $request->remarks,
+                'items' => $items
+            ];
 
-                $row_values = [];
-                $grand_total = 0;
-                foreach($item_codes as $i => $item_code){
-                    if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
-                        continue;
-                    }
+            $response = $this->erpOperation('post', 'Consignment Beginning Inventory', null, $body);
 
-                    if(in_array($item_code, $item_codes_with_beginning_inventory)){
-                        continue;
-                    }
-
-                    if(isset($opening_stock[$item_code]) && $opening_stock[$item_code] < 0 || isset($price[$item_code]) && $price[$item_code] < 0){
-                        return redirect()->back()->with('error', 'Cannot enter value below 0');
-                    }
-
-                    $item_price = isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0;
-                    $qty = isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0;
-    
-                    $row_values[] = [
-                        'name' => uniqid(),
-                        'creation' => $now,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'parent' => $inv_id,
-                        'idx' => $i + 1,
-                        'item_code' => $item_code,
-                        'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
-                        'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                        'opening_stock' => $qty,
-                        'stocks_displayed' => 0,
-                        'status' => 'For Approval',
-                        'price' => $item_price,
-                        'amount' => $item_price * $qty,
-                        'modified' => $now,
-                        'modified_by' => Auth::user()->wh_user,
-                        'parentfield' => 'items',
-                        'parenttype' => 'Consignment Beginning Inventory' 
-                    ];
-                    $grand_total += ($item_price * $qty);
-
-                    $item_count = $item_count + 1;
-                }
-
-                $values['grand_total'] = $grand_total;
-
-                if (count($row_values) > 0) {
-                    DB::table('tabConsignment Beginning Inventory')->insert($values);    
-                    DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
-                }
-
-                session()->flash('success', 'Beginning Inventory is For Approval');
-
-                $subject = 'For Approval Beginning Inventory Entry for ' .$branch. ' has been created by '.Auth::user()->full_name.' at '.$now;
-                $reference = $inv_id;
-            }else if(isset($request->cancel)){ // delete cancelled beginning inventory record
-                DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->delete();
-                DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->delete();
-
-                session()->flash('success', 'Beginning Inventory is Cancelled');
-                session()->flash('cancelled', 'Cancelled');
-
-                $subject = 'For Approval Beginning Inventory Record for ' .$branch. ' has been deleted by '.Auth::user()->full_name.' at '.$now;
-                $reference = $request->inv_name;
-            }else{
-                $inventory_items = DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->pluck('item_code')->toArray();
-                $removed_items = array_diff($inventory_items, $item_codes->toArray());
-
-                foreach($removed_items as $remove){ // delete removed items
-                    DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $remove)->delete();
-                }
-
-                $grand_total = 0;
-                $row_values = [];
-                foreach($item_codes as $i => $item_code){
-                    if(!$item_code || isset($opening_stock[$item_code]) && $opening_stock[$item_code] == 0){ // Prevents saving removed items and items with 0 opening stock
-                        continue;
-                    }
-
-                    if(isset($opening_stock[$item_code]) && $opening_stock[$item_code] < 0 || isset($price[$item_code]) && $price[$item_code] < 0){
-                        return redirect()->back()->with('error', 'Cannot enter value below 0');
-                    }
-
-                    if(in_array($item_code, $inventory_items)){
-                        $item_price = isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0;
-                        $qty = isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0;
-
-                        $values = [
-                            'modified' => $now,
-                            'modified_by' => Auth::user()->wh_user,
-                            'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
-                            'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                            'opening_stock' => $qty,
-                            'price' => $item_price,
-                            'amount' => $item_price * $qty
-                        ];
-
-                        $grand_total += ($item_price * $qty);
-
-                        DB::table('tabConsignment Beginning Inventory Item')->where('parent', $request->inv_name)->where('item_code', $item_code)->update($values);
-                    }else{
-                        $idx = count($inventory_items) + ($i + 1); $item_price = isset($price[$item_code]) ? preg_replace("/[^0-9 .]/", "", $price[$item_code]) : 0;
-                        $qty = isset($opening_stock[$item_code]) ? preg_replace("/[^0-9 .]/", "", $opening_stock[$item_code]) : 0;
-                        $row_values[] = [
-                            'name' => uniqid(),
-                            'creation' => $now,
-                            'owner' => Auth::user()->wh_user,
-                            'docstatus' => 0,
-                            'parent' => $request->inv_name,
-                            'idx' => $idx,
-                            'item_code' => $item_code,
-                            'item_description' => isset($item[$item_code]) ? $item[$item_code][0]->description : null,
-                            'stock_uom' => isset($item[$item_code]) ? $item[$item_code][0]->stock_uom : null,
-                            'opening_stock' => $qty,
-                            'stocks_displayed' => 0,
-                            'status' => 'For Approval',
-                            'price' => $item_price,
-                            'amount' => $item_price * $qty,
-                            'modified' => $now,
-                            'modified_by' => Auth::user()->wh_user,
-                            'parentfield' => 'items',
-                            'parenttype' => 'Consignment Beginning Inventory' 
-                        ];
-
-                        $grand_total += ($item_price * $qty);
-                    }
-                    $item_count = $item_count + 1; 
-                }
-
-                if (count($row_values) > 0) {
-                    DB::table('tabConsignment Beginning Inventory Item')->insert($row_values);
-                }
-
-                DB::table('tabConsignment Beginning Inventory')->where('name', $request->inv_name)->update([
-                    'modified' => $now,
-                    'modified_by' => Auth::user()->wh_user,
-                    'grand_total' => $grand_total,
-                    'remarks' => $request->remarks,
-                    'transaction_date' => $transaction_date,
-                ]);
-
-                session()->flash('success', 'Beginning Inventory is Updated');
-
-                $subject = 'For Approval Beginning Inventory Record for ' .$branch. ' has been updated by '.Auth::user()->full_name.' at '.$now;
-                $reference = $request->inv_name;
+            if(!isset($response['data'])){
+                throw new Exception('An error occured. Please try again.');
             }
 
+            $subject = 'For Approval Beginning Inventory Entry for ' .$branch. ' has been created by '.Auth::user()->full_name.' at '.$now;
             $logs = [
-                'name' => uniqid(),
-                'creation' => $now,
-                'modified' => $now,
-                'modified_by' => Auth::user()->wh_user,
-                'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
-                'idx' => 0,
                 'subject' => $subject,
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now,
                 'reference_doctype' => 'Beginning Inventory',
-                'reference_name' => $reference,
+                'reference_name' => $response['data']['name'],
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
             ];
 
-            DB::table('tabActivity Log')->insert($logs);
-
-            session()->flash('transaction_date', Carbon::parse($transaction_date)->format('F d, Y'));
-
-            DB::commit();
-            return view('consignment.beginning_inv_success', compact('item_count', 'branch'));
+            $athena_logs = $this->erpOperation('post', 'Activity Log', null, $logs);
+            
+            return redirect('/beginning_inv_list')->with('success', 'Beginning Inventory Saved! Please wait for approval');
         } catch (Exception $e) {
-            DB::rollback();
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
 
+    public function cancelDraftBeginningInventory($beginning_inventory_id){
+        try {
+            $response = $this->erpOperation('delete', 'Consignment Beginning Inventory', $beginning_inventory_id);
+
+            if(!isset($response['data'])){
+                throw new Exception('An error occured.');
+            }
+
+            return redirect('/beginning_inv_list')->with('success', 'Beginning Inventory Canceled.');
+        } catch (\Throwable $th) {
+            // throw $th;
+            return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
+        }
+    }
+
+    public function updateDraftBeginningInventory($id, Request $request){
+        try {
+            $opening_stock = $request->opening_stock;
+            $opening_stock = preg_replace("/[^0-9 .]/", "", $opening_stock);
+
+            $price = $request->price;
+            $price = preg_replace("/[^0-9 .]/", "", $price);
+
+            $item_codes = $request->item_code;
+            $item_codes = collect(array_filter($item_codes))->unique(); // remove null values
+            $branch = $request->branch;
+
+            if(!$item_codes){
+                return redirect()->back()->with('error', 'Please select an item to save');
+            }
+
+            $max_opening_stock = max($opening_stock);
+            $max_price = max($price);
+            $has_opening_stock = array_filter($opening_stock);
+            $has_price = array_filter($price);
+
+            if ($max_opening_stock <= 0 || $max_price <= 0 || !$has_opening_stock || !$has_price) {
+                $null_value = ($max_opening_stock <= 0 || !$has_opening_stock) ? 'Opening Stock' : 'Price';
+                return redirect()->back()->with('error', 'Please input values to '.$null_value);
+            }
+
+            $items = DB::table('tabItem')->whereIn('name', $item_codes)->select('name', 'item_code', 'description', 'stock_uom')->get();
+            $items = collect($items)->map(function ($item) use ($opening_stock, $price){
+                unset($item->name);
+                $qty = isset($opening_stock[$item->item_code]) ? $opening_stock[$item->item_code] : 1;
+                $qty = (float) $qty;
+                $value = isset($opening_stock[$item->item_code]) ? $price[$item->item_code] : 1;
+                $value = (float) $value;
+                
+                $item->item_description = strip_tags($item->description);
+                $item->opening_stock = $qty;
+                $item->status = 'For Approval';
+                $item->price = $value;
+                $item->amount = $qty * $value;
+
+                return $item;
+            });
+
+            $body = [
+                'branch_warehouse' => $branch,
+                'remarks' => $request->remarks,
+                'items' => $items
+            ];
+
+            $response = $this->erpOperation('put', 'Consignment Beginning Inventory', $id, $body);
+
+            if(!isset($response['data'])){
+                throw new Exception('An error occured. Please try again.');
+            }
+
+            return redirect('/beginning_inv_list')->with('success', 'Beginning Inventory entry updated!');
+        } catch (\Throwable $th) {
+            // throw $th;
+            return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
+        }
+    }
     public function viewDamagedItemsList(Request $request) {
         $list = DB::table('tabConsignment Damaged Item')
             ->when($request->search, function ($q) use ($request){
