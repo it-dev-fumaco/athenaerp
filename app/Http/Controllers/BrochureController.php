@@ -689,13 +689,17 @@ class BrochureController extends Controller
 
 			$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
 
-
 			for($i = 0; $i < 3; $i++){
 				$row = $i + 1;
-				$base64 = isset($brochure_images[$i]) ? $this->base64_image('/brochures/'.$brochure_images[$i]->image_filename) : null;
+				$base64 = null;
+				if(isset($brochure_images[$i])){
+					$filepath = $brochure_images[$i]->image_path.$brochure_images[$i]->image_filename;
+					$filepath = asset($filepath);
+					// $base64 = $this->base64_image($filepath);
+				}
 				$images['image'.$row] = [
 					'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
-					'filepath' => $base64,
+					'filepath' => $filepath,
 				];
 			}
 
