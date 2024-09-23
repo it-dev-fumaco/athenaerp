@@ -2674,7 +2674,7 @@ class MainController extends Controller
     
                 // DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
                 //     ->where('docstatus', '<', 2)->update($values);
-                return $response = $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
+                $response = $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
                 if(!isset($response['data'])){
                     throw new Exception('An error occured while updating picking slip.');
                 }
