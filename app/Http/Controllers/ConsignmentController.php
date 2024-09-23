@@ -455,72 +455,52 @@ class ConsignmentController extends Controller
             }
 
             if ($status == 'Submitted') {
-                try {
-                    $submitted_by = Auth::user()->wh_user;
-                    $date_submitted = $now->toDateTimeString();
-
-                    $email_data = [
-                        'warehouse' => $request->branch,
-                        'month' => $request->month,
-                        'total_amount' => collect($sales_per_day)->sum(),
-                        'remarks' => $request->remarks,
-                        'year' => $request->year,
-                        'status' => $status,
-                        'submission_status' => $submission_status,
-                        'date_submitted' => $date_submitted
-                    ];
-
-                    Mail::send('mail_template.consignment_sales_report', $email_data, function($message){
-                        $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
-                        $message->subject('AthenaERP - Sales Report');
-                    });
-                } catch (\Throwable $th) {}
-            }
-
-            $existing_record = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $request->year)->where('month', $request->month)->where('warehouse', $request->branch)->first();
-            if($existing_record){
-                DB::table('tabConsignment Monthly Sales Report')->where('name', $existing_record->name)->update([
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
+                $submitted_by = Auth::user()->wh_user;
+                $email_data = [
                     'warehouse' => $request->branch,
                     'month' => $request->month,
-                    'sales_per_day' => json_encode($sales_per_day, true),
                     'total_amount' => collect($sales_per_day)->sum(),
                     'remarks' => $request->remarks,
-                    'fiscal_year' => $request->year,
+                    'year' => $request->year,
                     'status' => $status,
                     'submission_status' => $submission_status,
-                    'date_submitted' => $date_submitted,
-                    'submitted_by' => $submitted_by
-                ]);
-            }else{
-                DB::table('tabConsignment Monthly Sales Report')->insert([
-                    'name' => uniqid(),
-                    'creation' => $now->toDateTimeString(),
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 0,
-                    'idx' => 0,
-                    'warehouse' => $request->branch,
-                    'month' => $request->month,
-                    'sales_per_day' => json_encode($sales_per_day, true),
-                    'total_amount' => collect($sales_per_day)->sum(),
-                    'remarks' => $request->remarks,
-                    'fiscal_year' => $request->year,
-                    'status' => $status,
-                    'submission_status' => $submission_status,
-                    'date_submitted' => $date_submitted,
-                    'submitted_by' => $submitted_by
-                ]);
+                    'date_submitted' => $date_submitted
+                ];
+
+                $recipient = str_replace('.local', '.com', Auth::user()->wh_user);
+                $this->sendMail('mail_template.consignment_sales_report', $email_data, $recipient, 'AthenaERP - Sales Report');
             }
 
-            DB::commit();
+            $sales_report = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $request->year)->where('month', $request->month)->where('warehouse', $request->branch)->first();
 
-            return redirect()->back()->with('success', 'Sales Report for the month of <b>'.$request->month.'</b> has been '.($existing_record ? 'updated!' : 'added!'));
-        } catch (\Throwable $th) {
-            DB::rollback();
-            
+            $reference = null;
+            $method = 'post';
+            if($sales_report){
+                $reference = $sales_report->name;
+                $method = 'put';
+            }
+
+            $data = [
+                'warehouse' => $request->branch,
+                'month' => $request->month,
+                'sales_per_day' => json_encode($sales_per_day, true),
+                'total_amount' => collect($sales_per_day)->sum(),
+                'remarks' => $request->remarks,
+                'fiscal_year' => $request->year,
+                'status' => $status,
+                'submission_status' => $submission_status,
+                'date_submitted' => $date_submitted,
+                'submitted_by' => $submitted_by
+            ];
+
+            $response = $this->erpOperation($method, 'Consignment Monthly Sales Report', $reference, $data);
+
+            if(!isset($response['data'])){
+                throw new Exception($response['exc_type']);
+            }
+
+            return redirect()->back()->with('success', 'Sales Report for the month of <b>'.$request->month.'</b> has been '.($sales_report ? 'updated!' : 'added!'));
+        } catch (Exception $th) {
             return redirect()->back()->with('error', 'An error occured. Please try again.');
         }
     }
