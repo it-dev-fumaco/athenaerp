@@ -2636,11 +2636,11 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('error', 'Unable to cancel. Request is already COMPLETED.');
             }
 
-            DB::table('tabConsignment Stock Entry')->where('name', $stock_entry->name)->update([
-                'modified' => $now->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user,
-                'status' => 'Cancelled'
-            ]);
+            $response = $this->erpOperation('put', 'Consignment Stock Entry', $stock_entry->name, ['status' => 'Cancelled']);
+
+            if(!isset($response['data'])){
+                throw new Exception($response['exc_type']);
+            }
 
             if($stock_entry->purpose == 'Item Return'){
                 $stock_entry_items = DB::table('tabConsignment Stock Entry Detail')->where('parent', $id)->get();
@@ -2651,11 +2651,7 @@ class ConsignmentController extends Controller
                     if(isset($items[$item->item_code]))
 
                     $item_details = $items[$item->item_code][0];
-                    DB::table('tabBin')->where('name', $item_details->name)->update([
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $item_details->consigned_qty > $item->qty ? $item_details->consigned_qty - $item->qty : 0 
-                    ]);
+                    $bin = $this->erpOperation('put', 'Bin', $item_details->name, ['consigned_qty' => $item_details->consigned_qty > $item->qty ? $item_details->consigned_qty - $item->qty : 0]);
                 }
             }
 
@@ -2664,13 +2660,6 @@ class ConsignmentController extends Controller
             $transaction = $stock_entry->purpose;
 
             $logs = [
-                'name' => uniqid(),
-                'creation' => $now->toDateTimeString(),
-                'modified' => $now->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user,
-                'owner' => Auth::user()->wh_user,
-                'docstatus' => 0,
-                'idx' => 0,
                 'subject' => $transaction.' request from '.$source_warehouse.' to '.$target_warehouse.' has been cancelled by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
@@ -2681,14 +2670,14 @@ class ConsignmentController extends Controller
                 'full_name' => Auth::user()->full_name,
             ];
 
-            DB::table('tabActivity Log')->insert($logs);
 
-            DB::commit();
+            if(!isset($log['data'])){
+                session()->flash('warning', 'Activity Log not posted');
+            }
 
             return redirect()->route('stock_transfers', ['purpose' => $stock_entry->purpose])->with('success', $transaction.' has been cancelled.');
-        } catch (Exception $e) {
-            DB::rollback();
-
+        } catch (\Throwable $e) {
+            // throw $e;
             return redirect()->back()->with('error', 'Something went wrong. Please try again later.');
         }
     }
