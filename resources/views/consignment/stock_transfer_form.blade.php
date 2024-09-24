@@ -35,9 +35,9 @@
                                             <div class="container">
                                                 <label for="source_warehouse">Source Warehouse</label>
                                                 <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
-                                                    <option value="" disabled selected>Select Source Warehouse</option>
+                                                    <option value="" disabled {{ count($assigned_consignment_stores) > 1 ? 'selected' : null }}>Select Source Warehouse</option>
                                                     @foreach ($assigned_consignment_stores as $store)
-                                                        <option value="{{ $store }}">{{ $store }}</option>
+                                                        <option value="{{ $store }}" {{ count($assigned_consignment_stores) == 1 ? 'selected' : null }}>{{ $store }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -56,9 +56,9 @@
                                             <div class="container">
                                                 <label for="source_warehouse">Source Warehouse</label>
                                                 <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
-                                                    <option value="" disabled selected>Select Source Warehouse</option>
+                                                    <option value="" disabled {{ count($assigned_consignment_stores) > 1 ? 'selected' : null }}>Select Source Warehouse</option>
                                                     @foreach ($assigned_consignment_stores as $store)
-                                                        <option value="{{ $store }}">{{ $store }}</option>
+                                                        <option value="{{ $store }}" {{ count($assigned_consignment_stores) == 1 ? 'selected' : null }}>{{ $store }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -224,6 +224,26 @@
     <script>
         $(document).ready(function (){
             var form_purpose = '{{ $action }}';
+
+            const formatState = (opt) => {
+                if (!opt.id) {
+                    return opt.text;
+                }
+
+                var optimage = opt.img;
+
+                if(!optimage){
+                    return opt.text;
+                } else {                    
+                    var $opt = $(
+                        '<span style="font-size: 10pt;">' +
+                            '<img src="' + optimage + '" width="50px" />  ' + opt.text +
+                        '</span>'
+                    );
+                    return $opt;
+                }
+            };
+
             $(document).on('click', '#open-item-modal', function (){
                 var modal = $(this).data('target');
                 var no_err = true;
@@ -258,6 +278,8 @@
                     $('.warehouse-err').removeClass('d-none');
                 }
             });
+
+            get_received_items($('#src-warehouse').val());
 
             $('#src-warehouse').change(function(){
                 var src = $(this).val();
@@ -350,27 +372,6 @@
                 });
             }
             
-            function formatState (opt) {
-                if (!opt.id) {
-                    return opt.text;
-                }
-
-                var optimage = opt.webp;
-
-                if(optimage.indexOf('/icon/no_img') != -1){
-                    optimage = opt.img;
-                }
-
-                if(!optimage){
-                    return opt.text;
-                } else {                    
-                    var $opt = $(
-                    '<span style="font-size: 10pt;"><img src="' + optimage + '" width="50px" /> ' + opt.text + '</span>'
-                    );
-                    return $opt;
-                }
-            };
-
             validate_submit();
             function validate_submit(){
                 var inputs = new Array();
@@ -449,51 +450,6 @@
                 $('#items-container').removeClass('d-none');
             });
 
-            // Modal Add/Subtract Controls
-            // $('table#items-selection-table').on('click', '.qtyplus', function(e){
-            //     // Stop acting like a button
-            //     e.preventDefault();
-            //     // Get the field name
-            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-            //     var max = fieldName.data('max');
-            //     // Get its current value
-            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-            //     // If is not undefined
-            //     if (!isNaN(currentVal)) {
-            //         // Increment
-            //         if (form_purpose == 'Sales Return') {
-            //             fieldName.val(currentVal + 1);
-            //         }else{
-            //             if(currentVal < max){
-            //                 fieldName.val(currentVal + 1);
-            //             }
-            //         }
-            //     } else {
-            //         // Otherwise put a 0 there
-            //         fieldName.val(0);
-            //     }
-
-            // });
-
-            // $('table#items-selection-table').on('click', '.qtyminus', function(e){
-            //     // Stop acting like a button
-            //     e.preventDefault();
-            //     // Get the field name
-            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-            //     // Get its current value
-            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-            //     // If it isn't undefined or its greater than 0
-            //     if (!isNaN(currentVal) && currentVal > 0) {
-            //         // Decrement one
-            //         fieldName.val(currentVal - 1);
-            //     } else {
-            //         // Otherwise put a 0 there
-            //         fieldName.val(0);
-            //     }
-
-            // });
-            // Modal Add/Subtract Controls
-
             $("#item-search").on("keyup", function() {
                 var value = $(this).val().toLowerCase();
                 $("#items-table tr").filter(function() {
@@ -518,52 +474,6 @@
                     showNotification("warning", 'Item <b>' + item_code + '</b> already exists in the list.', "fa fa-info");
 					return false;
                 }
-
-                // var row = '<tr class="row-' + item_code + ' ' + item_code + '">' +
-                //     '<td colspan=3 class="text-center p-0">' +
-                //         '<div class="d-none">' + description + '</div>' + // reference for search
-                //         '<div class="row">' +
-                //             '<input name="item_code[]" class="items-list d-none" value="' + item_code + '" id="' + item_code + '" />' +
-                //             '<div class="p-1 col-2 text-center">' +
-                //                 '<picture>' +
-                //                     '<source srcset="' + webp + '" type="image/webp">' +
-                //                     '<source srcset="' + img + '" type="image/jpeg">' +
-                //                     '<img src="' + img + '" alt="' + alt + '" class="img-thumbnail" alt="User Image" width="40" height="40">' +
-                //                 '</picture>' +
-                //             '</div>' +
-                //             '<div class="p-1 col-2 m-0" style="display: flex; justify-content: center; align-items: center;">' +
-                //                 '<span class="font-weight-bold">' + item_code + '</span>' +
-                //             '</div>' +
-                //             '<div class="col-3 offset-1" style="display: flex; justify-content: center; align-items: center; height: 44px">' +
-                //                 '<div><span><b>' + stocks + '</b></span><br/>' +
-                //                 '<small>' + uom + '</small></div>' +
-                //             '</div>' +
-                //             '<div class="col p-0">' +
-                //                 '<div class="input-group p-1 ml-2">' +
-                //                     '<div class="input-group-prepend p-0">' +
-                //                         '<button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
-                //                     '</div>' +
-                //                     '<div class="custom-a p-0">' +
-                //                         '<input type="text" class="form-control form-control-sm validate qty to-return" id="qty-' + item_code + '" value="' + qty + '" data-item-code="' + item_code + '" name="item[' + item_code + '][transfer_qty]" data-max="' + stocks + '" style="text-align: center; width: 40px">' +
-                //                     '</div>' +
-                //                     '<div class="input-group-append p-0">' +
-                //                         '<button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>' +
-                //                     '</div>' +
-                //                 '</div>' +
-                //             '</div>' +
-                //             '<div class="col-1 text-center remove-item" data-item-code="' + item_code + '">' +
-                //                 '<i class="fa fa-remove" style="color: red"></i>' +
-                //             '</div>' +
-                //         '</div>' +
-                //     '</td>' +
-                // '</tr>' +
-                // '<tr class="row-' + item_code + '">' +
-                //     '<td colspan=3 class="text-justify p-2" style="font-size: 10pt;">' +
-                //         '<div class="d-none">' + item_code + '</div>' + // reference for search
-                //         '<div class="item-description">' + description + '</div>' +
-                //     '</td>' +
-                // '</tr>' + sales_return_row;
-
 
                 var row = '<tr class="row-' + item_code + ' ' + item_code + '">'+
                     '<td class="text-center p-0">'+
@@ -642,52 +552,6 @@
                 remove_items(item_code);
                 validate_submit();
             });
-
-            // $('table#items-table').on('click', '.qtyplus', function(e){
-            //     // Stop acting like a button
-            //     e.preventDefault();
-            //     // Get the field name
-            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-            //     var max = fieldName.data('max');
-            //     // Get its current value
-            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-            //     // If is not undefined
-            //     if (!isNaN(currentVal)) {
-            //         // Increment
-            //         if (form_purpose == 'Sales Return') {
-            //             fieldName.val(currentVal + 1);
-            //         }else{
-            //             if(currentVal < max){
-            //                 fieldName.val(currentVal + 1);
-            //             }
-            //         }
-            //     } else {
-            //         // Otherwise put a 0 there
-            //         fieldName.val(0);
-            //     }
-
-            //     validate_submit();
-            // });
-
-            // This button will decrement the value till 0
-            // $('table#items-table').on('click', '.qtyminus', function(e){
-            //     // Stop acting like a button
-            //     e.preventDefault();
-            //     // Get the field name
-            //     var fieldName = $(this).parents('.input-group').find('.qty').eq(0);
-            //     // Get its current value
-            //     var currentVal = parseInt(fieldName.val().replace(/,/g, ''));
-            //     // If it isn't undefined or its greater than 0
-            //     if (!isNaN(currentVal) && currentVal > 0) {
-            //         // Decrement one
-            //         fieldName.val(currentVal - 1);
-            //     } else {
-            //         // Otherwise put a 0 there
-            //         fieldName.val(0);
-            //     }
-
-            //     validate_submit();
-            // });
 
             cut_text();
             var showTotalChar = 90, showChar = "Show more", hideChar = "Show less";
