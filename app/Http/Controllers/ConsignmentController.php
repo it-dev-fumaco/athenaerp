@@ -2670,6 +2670,7 @@ class ConsignmentController extends Controller
                 'full_name' => Auth::user()->full_name,
             ];
 
+            $log = $this->erpOperation('post', 'Activity Log', null, $logs);
 
             if(!isset($log['data'])){
                 session()->flash('warning', 'Activity Log not posted');
@@ -4916,6 +4917,7 @@ class ConsignmentController extends Controller
             $project = $request->project;
             $branch = $request->branch;
             $customer_purchase_order = $request->cpo;
+            $path = request()->file('selected_file')->storeAs('tmp', request()->file('selected_file')->getClientOriginalName().uniqid(), 'local');
 
             $path = storage_path(). '/app/'.request()->file('selected_file')->store('tmp');
 
