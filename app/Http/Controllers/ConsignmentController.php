@@ -4919,8 +4919,7 @@ class ConsignmentController extends Controller
             $customer_purchase_order = $request->cpo;
             $path = request()->file('selected_file')->storeAs('tmp', request()->file('selected_file')->getClientOriginalName().uniqid(), 'local');
 
-            $path = storage_path(). '/app/'.request()->file('selected_file')->store('tmp');
-
+            $path = storage_path(). '/app/'.$path;
             $reader = new ReaderXlsx();
             $spreadsheet = $reader->load($path);
     
