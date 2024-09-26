@@ -138,7 +138,7 @@ class ConsignmentController extends Controller
     // /submit_inventory_audit_form
     public function submitInventoryAuditForm(Request $request) {
         $data = $request->all();
-        DB::beginTransaction();
+        $state_before_update = $items_with_insufficient_stocks = [];
 
         try {
             $cutoff_date = $this->getCutoffDate($data['transaction_date']);
@@ -166,70 +166,38 @@ class ConsignmentController extends Controller
             $period_from = Carbon::parse($cutoff_date[0])->format('Y-m-d');
             $period_to = Carbon::parse($cutoff_date[1])->format('Y-m-d');
 
-            $iar_existing_record = DB::table('tabConsignment Inventory Audit Report')->where('transaction_date', $data['transaction_date'])
-                ->where('branch_warehouse', $data['branch_warehouse'])->first();
+            $iar_existing_record = DB::table('tabConsignment Inventory Audit Report')
+                ->where('transaction_date', $data['transaction_date'])->where('branch_warehouse', $data['branch_warehouse'])
+                ->pluck('name')
+                ->first();
 
-            $new_iar_parent_data = $new_csr_parent_data = [];
-            $iar_new_id = $new_title = null;
-            if (!$iar_existing_record) {
-                // $iar_latest_id = DB::table('tabConsignment Inventory Audit Report')->max('name');
-                // $iar_latest_id_exploded = explode("-", $iar_latest_id);
-                // $iar_new_id = (($iar_latest_id) ? $iar_latest_id_exploded[1] : 0) + 1;
-                // $iar_new_id = str_pad($iar_new_id, 7, '0', STR_PAD_LEFT);
-                // $iar_new_id = 'IAR-'.$iar_new_id;
-                $iar_new_id = 'IAR-'.uniqid();
-                $new_title = $this->generateConsignmentID('tabConsignment Inventory Audit Report', 'IAR', 7);
+            $method = $iar_existing_record ? 'put' : 'post';
 
-                $new_iar_parent_data = [
-                    'name' => $iar_new_id,
-                    'title' => $new_title,
-                    'creation' => $currentDateTime->toDateTimeString(),
-                    'modified' => $currentDateTime->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 0,
-                    'idx' => 0,
-                    'transaction_date' => $data['transaction_date'],
-                    'branch_warehouse' => $data['branch_warehouse'],
-                    'grand_total' => null,
-                    'promodiser' => Auth::user()->full_name,
-                    'status' => $status,
-                    'cutoff_period_from' => $period_from,
-                    'cutoff_period_to' => $period_to,
-                    'audit_date_from' => $data['audit_date_from'],
-                    'audit_date_to' => $data['audit_date_to'],
-                ];
-            }
+            $item_details = $data['item'];
 
-            $iar_child_parent_name = ($iar_existing_record) ? $iar_existing_record->name : $iar_new_id;
+            $bin_items = DB::table('tabItem as p')
+                ->join('tabBin as c', 'c.item_code', 'p.name')->whereIn('p.item_code', array_keys($item_details))
+                ->where('warehouse', $data['branch_warehouse'])->select('c.consigned_qty', 'p.item_code', 'p.description', 'c.consignment_price as price', 'c.name as bin_id', 'c.modified', 'c.modified_by')->get();
 
-            $activity_log_data['details'] = [
-                'branch_warehouse' => $data['branch_warehouse'],
-                'transaction_date' => $data['transaction_date'],
-                'cutoff_period' => $period_from.' - '.$period_to,
-                'audit_period' => $data['audit_date_from'].' - '.$data['audit_date_to'],
-                'promodiser' => Auth::user()->full_name
-            ];
-            $sold_arr = $new_iar_child_data = $items_with_insufficient_stocks = [];
-            $iar_grand_total = $iar_total_items = 0;
-
-            $bin_items = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))
-                ->where('warehouse', $data['branch_warehouse'])->select('consigned_qty', 'item_code', 'consignment_price', 'name')->get();
-
+            $items = $sold_arr = [];
             foreach ($bin_items as $row) {
                 $item_code = $row->item_code;
-                $qty = 0;
-                if (isset($data['item'][$item_code]['qty'])) {
-                    $qty = preg_replace("/[^0-9 .]/", "", $data['item'][$item_code]['qty']);
+
+                if(!isset($item_details[$item_code])){
+                    throw new Exception("Item $item_code not found.");
                 }
 
-                $item_description = null;
-                if (isset($data['item'][$item_code]['description'])) {
-                    $item_description = $data['item'][$item_code]['description'];
+                $item_detail = $item_details[$item_code];
+
+                $qty = 0;
+                if (isset($item_detail['qty'])) {
+                    $qty = preg_replace("/[^0-9 .]/", "", $item_detail['qty']);
                 }
+
+                $item_description = $item_detail['description'];
 
                 $consigned_qty = $row->consigned_qty;
-                $price = $row->consignment_price;
+                $price = $row->price;
 
                 $sold_qty = ($consigned_qty - (float)$qty);
 
@@ -251,98 +219,69 @@ class ConsignmentController extends Controller
                     $items_with_insufficient_stocks[] = $item_code;
                 }
 
-                $bin_update = ['consigned_qty' => (float)$qty];
+                $bin_update = [];
+
+                if($qty != $row->consigned_qty){
+                    $bin_update['consigned_qty'] = (float) $qty;
+                }
+
                 if($price <= 0 && isset($request->price[$item_code])){
                     $price = preg_replace("/[^0-9 .]/", "", $request->price[$item_code]);
                     $bin_update['consignment_price'] = $price;
                 }
-                
-                $iar_amount = ((float)$price * (float)$qty);
 
-                DB::table('tabBin')->where('name', $row->name)->update($bin_update);
-
-                $has_existing_iari = false;
-                if ($iar_existing_record) {
-                    $iar_existing_child_record = DB::table('tabConsignment Inventory Audit Report Item')
-                        ->where('item_code', $item_code)->where('parent', $iar_existing_record->name)->first();
-
-                    if ($iar_existing_child_record) {
-                        $no_of_items_updated++;
-                        $iar_total_items++;
-                        $iar_grand_total += $iar_amount;
-
-                        $has_existing_iari = true;
-                    } else {
-                        $has_existing_iari = false;
-                    }
-                } 
-
-                if (!$has_existing_iari) {
-                    $no_of_items_updated++;
-                    $iar_total_items++;
-                    $iar_grand_total += $iar_amount;
-
-                    $new_iar_child_data[] = [
-                        'name' => uniqid(),
-                        'creation' => $currentDateTime->toDateTimeString(),
-                        'modified' => $currentDateTime->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 0,
-                        'parent' => $iar_child_parent_name,
-                        'parentfield' => 'items',
-                        'parenttype' => 'Consignment Inventory Audit Report',
-                        'idx' => $no_of_items_updated,
-                        'item_code' => $item_code,
-                        'description' => $item_description,
-                        'qty' => (float)$qty,
-                        'price' => (float)$price,
-                        'amount' => $iar_amount,
-                        'available_stock_on_transaction' => $consigned_qty
+                if($bin_update){
+                    $state_before_update['Bin'][$row->bin_id] = [
+                        'consigned_qty' => $row->consigned_qty,
+                        'consignment_price' => $row->price,
+                        'modified' => $row->modified,
+                        'modified_by' => $row->modified_by
                     ];
+
+                    $bin_response = $this->erpOperation('put', 'Bin', $row->bin_id, $bin_update);
+
+                    if(!isset($bin_response['data'])){
+                        throw new Exception($bin_response['exception']);
+                    }
                 }
+                
+                $iar_amount = (float)$price * (float)$qty;
+
+                $items[] = [
+                    'item_code' => $item_code,
+                    'description' => $item_description,
+                    'qty' => (float)$qty,
+                    'price' => (float)$price,
+                    'amount' => $iar_amount,
+                    'available_stock_on_transaction' => $consigned_qty
+                ];
             }
 
-            if (count($items_with_insufficient_stocks) > 0) {
-                DB::rollBack();
-                return redirect()->back()
-                    ->with(['old_data' => $data, 'item_codes' => $items_with_insufficient_stocks])
-                    ->with('error', true);
+            if(count($items_with_insufficient_stocks) > 0){
+                throw new Exception('There are items with insufficient stocks.');
             }
 
-            $reference = null;
-            if (!$iar_existing_record) {
-                $new_iar_parent_data['grand_total'] = $iar_grand_total;
-                $new_iar_parent_data['total_items'] = $iar_total_items;
+            $data = [
+                'transaction_date' => $data['transaction_date'],
+                'branch_warehouse' => $data['branch_warehouse'],
+                'grand_total' => collect($items)->sum('amount'),
+                'promodiser' => Auth::user()->full_name,
+                'status' => $status,
+                'cutoff_period_from' => $period_from,
+                'cutoff_period_to' => $period_to,
+                'audit_date_from' => $data['audit_date_from'],
+                'audit_date_to' => $data['audit_date_to'],
+                'items' => $items
+            ];
 
-                $iar_checker = DB::table('tabConsignment Inventory Audit Report')->where('owner', Auth::user()->wh_user)
-                    ->where(function ($q) use ($new_title){
-                        return $q->where('name', $new_title)->orWhere('title', $new_title);
-                    })->exists();
-                if($iar_checker){
-                    return redirect('/inventory_audit')->with('error', 'Inventory audit report has already been submitted!');
-                }
-            
-                DB::table('tabConsignment Inventory Audit Report')->insert($new_iar_parent_data);
-                $reference = $iar_existing_record ? $iar_existing_record->name : $iar_new_id;
-            } 
+            $iar_response = $this->erpOperation($method, 'Consignment Inventory Audit Report', $iar_existing_record, $data);
 
-            if ($iar_existing_record) {
-                DB::table('tabConsignment Inventory Audit Report')->where('name', $iar_existing_record->name)->update([
-                    'modified' => $currentDateTime->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'grand_total' => $iar_grand_total,
-                    'total_items' => $iar_total_items,
-                ]);
-                $reference = $iar_existing_record ? $iar_existing_record->name : $iar_new_id;
-            }
-
-            if (count($new_iar_child_data) > 0) {
-                DB::table('tabConsignment Inventory Audit Report Item')->insert($new_iar_child_data);
+            if(!isset($iar_response['data'])){
+                throw new Exception($iar_response['exception']);
             }
 
             // get actual qty
-            $updated_bin = DB::table('tabBin')->whereIn('item_code', array_keys($data['item']))->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code');
+            $updated_bin = DB::table('tabBin')->whereIn('item_code', array_keys($data['items']))->where('warehouse', $data['branch_warehouse'])->pluck('consigned_qty', 'item_code');
             foreach ($updated_bin as $item_code => $actual_qty) {
                 $activity_log_data[$item_code]['actual_qty_after_transaction'] = (float)$actual_qty;
             }
@@ -358,8 +297,8 @@ class ConsignmentController extends Controller
                 'subject' => 'Inventory Audit Report of '.$data['branch_warehouse'].' for cutoff periods '.$period_from.' - '.$period_to.'  has been created by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => Carbon::now()->toDateTimeString(),
-                'reference_doctype' => 'Inventory Audit',
-                'reference_name' => $reference,
+                'reference_doctype' => 'Inventory Audit Report',
+                'reference_name' => $iar_existing_record,
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
@@ -368,50 +307,35 @@ class ConsignmentController extends Controller
 
             DB::table('tabActivity Log')->insert($logs);
 
-            if(!Storage::disk('public')->exists('/inventory_audit_logs')){ // check logs folders
-                Storage::disk('public')->makeDirectory('/inventory_audit_logs');
-            }
-
             try {
-                $email_data = collect($activity_log_data['details'])->merge(['reference' => $reference])->toArray();
+                $email_data = collect($activity_log_data['details'])->merge(['reference' => $iar_existing_record])->toArray();
 
                 Mail::send('mail_template.consignment_inventory_audit', $email_data, function($message){
                     $message->to(str_replace('.local', '.com', Auth::user()->wh_user));
                     $message->subject('AthenaERP - Inventory Audit Report');
                 });
             } catch (\Throwable $th) {}
-            
-            Storage::disk('public')->put('/inventory_audit_logs/'.Carbon::now()->format('Y-m-d').'_'.$iar_child_parent_name.'.json', json_encode($activity_log_data, true));
 
-            DB::commit();
             return redirect()->back()->with([
                 'success' => 'Record successfully updated',
                 'total_qty_sold' => $sold_arr ? collect($sold_arr)->sum('sold_qty') : 0,
                 'grand_total' => $sold_arr ? collect($sold_arr)->sum('amount') : 0,
                 'branch' => $data['branch_warehouse'],
+                'old_data' => $data,
                 'transaction_date' => $data['transaction_date']
             ]);
-        } catch (Exception $th) {
-            DB::rollback();
-
-            $log = $data = [];
-
-            $now = Carbon::now();
-            if(Storage::disk('local')->exists('public/inventory_audit_logs/'.$now->format('Y-m-d').'_ERROR.json')){
-                $data = json_decode(file_get_contents(storage_path('/app/public/inventory_audit_logs/'.$now->format('Y-m-d').'_ERROR.json')), true);
+        } catch (\Throwable $th) {
+            // revert the changes
+            foreach($state_before_update as $doctype => $values){
+                foreach($values as $id => $value){
+                    DB::table("tab$doctype")->where('name', $id)->update($value);
+                }
             }
 
-            $log[Carbon::now()->format('H:i:s')] = [
-                'file' => $th->getFile(),
-                'line' => $th->getLine(),
-                'message' => $th->getMessage()
-            ];
-
-            $log = collect($data)->mergeRecursive($log)->sortKeysDesc();
-
-            Storage::disk('local')->put('public/inventory_audit_logs/'.$now->format('Y-m-d').'_ERROR.json', json_encode($log));
-
-            return redirect()->back()->withInput($request->input())->with('error', 'An error occured. Please contact your system administrator.');
+            return redirect()->back()
+                ->withInput($request->input())
+                ->with(['old_data' => $data, 'item_codes' => $items_with_insufficient_stocks])
+                ->with('error', 'An error occured. Please contact your system administrator.');
         }
     }
     
@@ -2012,6 +1936,7 @@ class ConsignmentController extends Controller
                 'naming_series' => 'STEC-',
                 'posting_time' => $now->format('H:i:s'),
                 'to_warehouse' => $details->target_warehouse,
+                // 'title' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
                 'from_warehouse' => $details->source_warehouse,
                 'set_posting_time' => 0,
                 'from_bom' => 0,
@@ -2039,7 +1964,7 @@ class ConsignmentController extends Controller
 
             DB::table('tabConsignment Stock Entry')->where('name', $details->name)->update(['references' => $new_id]);
 
-            DB::commit();
+            // DB::commit();
 
             $data = [
                 'stock_entry_name' => $new_id,
@@ -2047,10 +1972,11 @@ class ConsignmentController extends Controller
             ];
 
             return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.', 'data' => $data]);
-        } catch (Exception $th) {
+        } catch (Throwable $th) {
             DB::rollBack();
 
-            return response()->json(['status' => 0, 'message' => 'An error occured. Please contact your system administrator.']);
+            return $th->getMessage();
+            return response()->json(['status' => 0, 'message' => 'An error occured. Please contact your system administrator.'], 400);
         }
     }
 
@@ -4922,6 +4848,7 @@ class ConsignmentController extends Controller
             $path = storage_path(). '/app/'.$path;
             $reader = new ReaderXlsx();
             $spreadsheet = $reader->load($path);
+            
     
             $sheet = $spreadsheet->getActiveSheet();
 
