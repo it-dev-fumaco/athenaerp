@@ -615,7 +615,7 @@ class BrochureController extends Controller
 					$row = $i + 1;
 					$images['image'.$row] = [
 						'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
-						'filepath' => isset($brochure_images[$i]) ? $this->base64_image($brochure_images[$i]->image_path.$brochure_images[$i]->image_filename) : null,
+						'filepath' => isset($brochure_images[$i]) ? $brochure_images[$i]->image_path.$brochure_images[$i]->image_filename : null,
 					];
 				}
 
@@ -637,6 +637,7 @@ class BrochureController extends Controller
 					'idx' => $no++
 				];
 			}
+
 			$fumaco_logo = $this->base64_image('fumaco_logo.png');
 
 			if($preview){
@@ -703,7 +704,7 @@ class BrochureController extends Controller
 				];
 			}
 
-			$fumaco_logo = $this->base64_image('fumaco_logo.png');
+			$fumaco_logo = asset('fumaco_logo.png');
 
 			if(isset($request->get_images) && $request->get_images){
 				return view('brochure.brochure_images', compact('images', 'current_images'));
@@ -770,6 +771,7 @@ class BrochureController extends Controller
 			$transaction_date = Carbon::now()->toDateTimeString();
 			if ($request->existing) {
 				$filename = $request->selected_image;
+				$webpFilename = explode('.', $filename)[0].".webp";
 				$image_path = 'storage/img/';
 			}
 
@@ -789,7 +791,7 @@ class BrochureController extends Controller
 
                 // Paths for storage
                 $image_path = 'brochures/';
-                $jpegFilename = "$filename.$extension";
+                // $jpegFilename = "$filename.$extension";
                 $webpFilename = "$filename.webp";
 
                 // Save the original file
@@ -818,7 +820,7 @@ class BrochureController extends Controller
 					'modified' => $transaction_date,
 					'modified_by' => Auth::user()->wh_user,
 					'idx' => $request->image_idx,
-					'image_filename' => $jpegFilename
+					'image_filename' => $webpFilename
 				]);
 			} else {
 				DB::table('tabItem Brochure Image')->insert([
@@ -829,7 +831,7 @@ class BrochureController extends Controller
 					'owner' => Auth::user()->wh_user,
 					'parent' => $item_code,
 					'idx' => $request->image_idx,
-					'image_filename' => $jpegFilename,
+					'image_filename' => $webpFilename,
 					'image_path' => $image_path
 				]);
 			}
@@ -850,7 +852,7 @@ class BrochureController extends Controller
 
 			DB::commit();
 
-			$data_src = $image_path . $filename;
+			$data_src = "$image_path/$webpFilename";
 
 			return response()->json(['status' => 1, 'message' => 'Image uploaded.', 'src' => $data_src]);
 		} catch (Exception $e) {
