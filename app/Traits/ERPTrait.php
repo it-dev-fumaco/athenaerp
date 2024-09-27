@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use DB;
 
 trait ERPTrait{
     private function erpOperation($method, $doctype, $name = null, $body = [], $system_generated = false){
@@ -30,6 +31,25 @@ trait ERPTrait{
             // throw $th;
             return ['error' => 1, 'message' => $th->getMessage()];
         }
+    }
+
+    public function revertChanges($state_before_update){
+        DB::connection('mysql')->beginTransaction();
+        try {
+            foreach($state_before_update as $doctype => $values){
+                foreach($values as $id => $value){
+                    $value = !is_array($value) ? collect($value)->toArray() : $value;
+                    DB::table("tab$doctype")->where('name', $id)->update($value);
+                }
+            }
+    
+            DB::connection('mysql')->commit();
+            return 1;
+        } catch (\Throwable $th) {
+            DB::connection('mysql')->rollBack();
+            return 0;
+        }
+        
     }
 
     public function generateRandomString($length = 15) {

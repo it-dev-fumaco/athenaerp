@@ -326,11 +326,7 @@ class ConsignmentController extends Controller
             ]);
         } catch (\Throwable $th) {
             // revert the changes
-            foreach($state_before_update as $doctype => $values){
-                foreach($values as $id => $value){
-                    DB::table("tab$doctype")->where('name', $id)->update($value);
-                }
-            }
+            $this->revertChanges($state_before_update);
 
             return redirect()->back()
                 ->withInput($request->input())
@@ -1065,51 +1061,76 @@ class ConsignmentController extends Controller
 
     // /promodiser/receive/{id}
     public function promodiserReceiveDelivery(Request $request, $id){
-        DB::beginTransaction();
+        $state_before_update = [];
         try {
-            $wh = DB::table('tabStock Entry')->where('name', $id)->first();
-            if(!$wh){
-                return response()->json(['success' => 0, 'message' => $id.' not found.']);
+            $stock_entry = $this->erpOperation('get', 'Stock Entry', $id);
+
+            if(!isset($stock_entry['data'])){
+                throw new Exception('Stock Entry not found.');
             }
 
-            if($wh->consignment_status == 'Received' && isset($request->receive_delivery)){
-                return response()->json(['success' => 0, 'message' => $id.' already received.']);
+            $stock_entry = $stock_entry['data'];
+
+            if(isset($stock_entry['consignment_status']) && $stock_entry['consignment_status'] == 'Received'){
+                throw new Exception("$id already received.");
             }
 
             // check the prices
-            foreach($request->price as $p){
+            $item_prices = [];
+            foreach($request->price as $item_code => $p){
                 $price = preg_replace("/[^0-9 .]/", "", $p);
-                if($wh->transfer_as != 'For Return'){
+                $item_prices[$item_code] = $price;
+                if($stock_entry['transfer_as'] != 'For Return'){
                     if(!is_numeric($price) || $price <= 0){
-                        return response()->json(['success' => 0, 'message' => 'Item prices cannot be less than or equal to 0.']);
+                        throw new Exception('Item prices cannot be less than or equal to 0.');
                     }
                 }
             }
 
-            $ste_items = DB::table('tabStock Entry Detail')->where('parent', $id)->get();
+            $default_source_warehouse = isset($stock_entry['from_warehouse']) ? $stock_entry['from_warehouse'] : null;
+            $default_target_warehouse = isset($stock_entry['to_warehouse']) ? $stock_entry['to_warehouse'] : null;
+
+            $ste_items = $stock_entry['items'];
             // Get item codes, source warehouse/s, and target warehouse/s
             $item_codes = collect($ste_items)->pluck('item_code');
-            $source_warehouses = collect($ste_items)->pluck('s_warehouse')->push($wh->from_warehouse)->filter()->unique();
-            $target_warehouses = collect($ste_items)->pluck('t_warehouse')->push($request->target_warehouse)->filter()->unique();
+            $source_warehouses = collect($ste_items)->pluck('s_warehouse')->push($default_source_warehouse)->filter()->unique();
+            $target_warehouses = collect($ste_items)->pluck('t_warehouse')->push($request->target_warehouse)->push($default_target_warehouse)->filter()->unique();
 
             // get all items for each source and target warehouses
             $target_warehouse_details = DB::table('tabBin')->whereIn('warehouse', $target_warehouses)
-                ->whereIn('item_code', $item_codes)->select('warehouse', 'item_code', 'actual_qty', 'consigned_qty')
+                ->whereIn('item_code', $item_codes)->select('name', 'warehouse', 'item_code', 'actual_qty', 'consigned_qty', 'consignment_price', 'modified', 'modified_by')
                 ->get()->groupBy(['warehouse', 'item_code']);
 
             $source_warehouse_details = DB::table('tabBin')->whereIn('warehouse', $source_warehouses)
-                ->whereIn('item_code', $item_codes)->select('warehouse', 'item_code', 'actual_qty', 'consigned_qty')
+                ->whereIn('item_code', $item_codes)->select('name', 'warehouse', 'item_code', 'actual_qty', 'consigned_qty', 'consignment_price', 'modified', 'modified_by')
                 ->get()->groupBy(['warehouse', 'item_code']);
+                
+            $validate_stocks = collect($ste_items)->map(function ($item) use ($source_warehouse_details, $target_warehouse_details, $request, $default_source_warehouse, $default_target_warehouse){
+                $source_warehouse = $item['s_warehouse'] ?? $default_source_warehouse;
+                $target_warehouse = $item['t_warehouse'] ?? ($request->target_warehouse ?? $default_target_warehouse);
+                $item_code = $item['item_code'];
+                if(!isset($source_warehouse_details[$source_warehouse][$item_code])){
+                    return "Item $item_code does not exist in $source_warehouse";
+                }
 
-            // get the beginning inventory record of the target warehouses
-            $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cb')
-                ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                ->whereIn('cb.branch_warehouse', array_filter([$target_warehouses, $wh->to_warehouse, $request->target_warehouse]))->whereIn('cb.status', ['For Approval', 'Approved'])
-                ->select('cb.branch_warehouse', 'cbi.item_code', 'cb.name', 'cb.status', 'cbi.opening_stock', 'cbi.price')->get();
-            $previous_check = collect($beginning_inventory)->groupBy('item_code');
+                if(!isset($target_warehouse_details[$target_warehouse][$item_code])){
+                    return "Item $item_code does not exist in $target_warehouse";
+                }
+
+                $source_warehouse_consigned_qty = $source_warehouse_details[$source_warehouse][$item_code][0]->consigned_qty;
+
+                if($item['transfer_qty'] > $source_warehouse_consigned_qty){
+                    return "Insufficient stocks for item $item_code from $source_warehouse";
+                }
+                
+                return null;
+            })->filter();
+
+            if((count($validate_stocks) > 0)){
+                throw new Exception(collect($validate_stocks)->first());
+            }
 
             $now = Carbon::now();
-            $prices = $request->price ? $request->price : [];
 
             // set the details of the json data for activity logs
             $data['details'] = [
@@ -1120,112 +1141,85 @@ class ConsignmentController extends Controller
             $received_items = $expected_qty_after_transaction = $actual_qty_after_transaction = [];
 
             foreach($ste_items as $item){
-                // set the source and target warehouse
-                // use source/target warehouse of the child table by default
-                $src_branch = $item->s_warehouse ? $item->s_warehouse : $wh->from_warehouse;
-                if($request->target_warehouse){
-                    $branch = $request->target_warehouse;
-                }else{
-                    $branch = $item->t_warehouse ? $item->t_warehouse : $wh->to_warehouse;
-                }
+                $item_code = $item['item_code'];
+                $src_branch = $item['s_warehouse'] ?? $default_source_warehouse;
+                $target_branch = $request->target_warehouse ?? ($item['t_warehouse'] ?? $default_target_warehouse);
 
-                // For receiving, check if the item has a price
-                if(isset($request->receive_delivery) && !isset($prices[$item->item_code])){
-                    return response()->json(['success' => 0, 'message' => 'Please enter price for all items.']);
-                }
+                // Source Warehouse
+                $source_bin_details = $source_warehouse_details[$src_branch][$item_code][0];
+                $source_consigned_qty = $source_bin_details->consigned_qty;
+                $source_bin_id = $source_bin_details->name;
 
-                if($wh->transfer_as == 'For Return'){
-                    $basic_rate = $item->basic_rate;
-                }else{
-                    $basic_rate = preg_replace("/[^0-9 .]/", "", $prices[$item->item_code]);
-                }
+                $source_updated_consigned_qty = $source_consigned_qty > $item['transfer_qty'] ? $source_consigned_qty - $item['transfer_qty'] : 0;
+                    
+                $update_bin = ['consigned_qty' => $source_updated_consigned_qty];
 
-                $is_consigned = false;
-                if($src_branch != 'Consignment Warehouse - FI'){
-                    $is_consigned = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
-                        ->where('is_group', 0)->where('disabled', 0)->where('name', $src_branch)->exists();
-                }
+                // revert changes if there are errors
+                $state_before_update['Bin'][$source_bin_id] = collect($source_bin_details)->except(['name', 'doctype']);
 
-                // Update the Source Warehouse
-                $source_current_consigned_qty = $target_current_consigned_qty = 0;
-                if(isset($request->receive_delivery) && in_array($wh->transfer_as, ['For Return', 'Store Transfer', 'Consignment']) && $wh->purpose != 'Material Receipt' && $is_consigned){
-                    $source_current_consigned_qty = isset($source_warehouse_details[$src_branch][$item->item_code]) ? $source_warehouse_details[$src_branch][$item->item_code][0]->consigned_qty : 0;
-                    // check the stock qty of the item in the source warehouse
-                    if($source_current_consigned_qty < $item->transfer_qty){
-                        return response()->json(['success' => 0, 'message' => 'Not enough qty for '.$item->item_code.'. Qty needed is '.number_format($item->transfer_qty).', available qty is '.number_format($source_current_consigned_qty).'.']);
-                    }
-
-                    $update_bin = [
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $source_current_consigned_qty - $item->transfer_qty,
-                    ];
-
-                    // set the expected qty after transaction of the source warehouse
-                    $expected_qty_after_transaction['source'][$src_branch][$item->item_code] = $source_current_consigned_qty - $item->transfer_qty;
-
-                    if($wh->transfer_as != 'For Return'){
-                        $update_bin['consignment_price'] = $basic_rate;
-                    }
-
-                    $data[$src_branch][$item->item_code]['quantity'] = [
-                        'previous' => $source_current_consigned_qty,
-                        'transferred_qty' => $item->transfer_qty,
-                        'new' => $source_current_consigned_qty - $item->transfer_qty
-                    ];
-
-                    DB::table('tabBin')->where('warehouse', $src_branch)->where('item_code', $item->item_code)->update($update_bin);
-                }
-
-                // Update the Target Warehouse
-                if(isset($target_warehouse_details[$branch][$item->item_code])){
-                    $target_current_consigned_qty = $target_warehouse_details[$branch][$item->item_code][0]->consigned_qty;
-                    $new_qty = $target_current_consigned_qty + $item->transfer_qty;
-
-                    $update_values = [
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user
-                    ];
-
-                    // set the json details of price
-                    if(isset($request->update_price) || isset($request->receive_delivery)){
-                        $update_values['consignment_price'] = $basic_rate;
-
-                        $previous_price = isset($previous_check[$item->item_code]) ? (float)$previous_check[$item->item_code][0]->price : 0;
-                        $data[$branch][$item->item_code]['price'] = [
-                            'previous' => number_format($previous_price),
-                            'new' => number_format($basic_rate)
-                        ];
-                    }
-
-                    // set the json details of the stock
-                    if(isset($request->receive_delivery)){
-                        $update_values['consigned_qty'] = $new_qty;
-
-                        $expected_qty_after_transaction['target'][$branch][$item->item_code] = $new_qty;
-
-                        $data[$branch][$item->item_code]['quantity'] = [
-                            'previous' => $target_current_consigned_qty,
-                            'transferred_qty' => $item->transfer_qty,
-                            'new' => $new_qty
-                        ];
-                    }
-
-                    DB::table('tabBin')->where('warehouse', $branch)->where('item_code', $item->item_code)->update($update_values);
-                }
-
-                // Stock Entry Detail
-                $ste_details_update = [
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'basic_rate' => $basic_rate,
-                    'custom_basic_rate' => $basic_rate,
-                    'basic_amount' => $basic_rate * $item->transfer_qty,
-                    'custom_basic_amount' => $basic_rate * $item->transfer_qty,
-                    'status' => 'Issued'
+                // activity logs
+                $data[$src_branch][$item_code]['quantity'] = [
+                    'previous' => $source_consigned_qty,
+                    'transferred_qty' => $item['transfer_qty'],
+                    'new' => $source_updated_consigned_qty
                 ];
 
-                if($item->consignment_status != 'Received' && isset($request->receive_delivery)){
+                $bin_response = $this->erpOperation('put', 'Bin', $source_bin_id, $update_bin);
+
+                if(!isset($bin_response['data'])){
+                    throw new Exception('An error occured while updating Bin.');
+                }
+
+                $expected_qty_after_transaction['source'][$src_branch][$item_code] = $source_updated_consigned_qty;
+
+                $target_bin_details = $target_warehouse_details[$target_branch][$item_code][0];
+                $target_consigned_qty = $target_bin_details->consigned_qty;
+                $target_consignment_price = $target_bin_details->consignment_price;
+                $target_bin_id = $target_bin_details->name;
+
+                $basic_rate = $item['basic_rate'];
+                if($stock_entry['transfer_as'] != 'For Return'){
+                    $basic_rate = isset($item_prices[$item_code]) ? $item_prices[$item_code] : $basic_rate;
+                }
+
+                $target_updated_consigned_qty = $target_consigned_qty + $item['transfer_qty'];
+                    
+                $update_bin = [
+                    'consigned_qty' => $target_updated_consigned_qty,
+                    'consignment_price' => $target_consignment_price
+                ];
+
+                // activity logs
+                $data[$target_branch][$item_code]['quantity'] = [
+                    'previous' => $source_consigned_qty,
+                    'transferred_qty' => $item['transfer_qty'],
+                    'new' => $source_updated_consigned_qty
+                ];
+
+                if(isset($item_prices[$item_code])){
+                    $update_bin['consignment_price'] = $basic_rate;
+
+                    $data[$target_branch][$item_code]['price'] = [
+                        'previous' => $target_consignment_price,
+                        'new' => $basic_rate
+                    ];
+                }
+
+                // revert changes if there are errors
+                $state_before_update['Bin'][$target_bin_id] = collect($target_bin_details)->except(['name', 'doctype']);
+
+                $bin_response = $this->erpOperation('put', 'Bin', $target_bin_id, $update_bin);
+
+                if(!isset($bin_response['data'])){
+                    throw new Exception('Bin: '.$bin_response['exception']);
+                }
+
+                $expected_qty_after_transaction['target'][$target_branch][$item_code] = $target_updated_consigned_qty;
+            
+                // Stock Entry Detail
+                $ste_details_update = ['status' => 'Issued'];
+
+                if(!isset($item['consignment_status']) || $item['consignment_status'] != 'Received'){
                     $ste_details_update['consignment_status'] = 'Received';
                     $ste_details_update['consignment_date_received'] = $now->toDateTimeString();
                     $ste_details_update['consignment_received_by'] = Auth::user()->wh_user;
@@ -1237,19 +1231,23 @@ class ConsignmentController extends Controller
                     $ste_details_update['target_warehouse_location'] = $request->target_warehouse;
                 }
 
-                DB::table('tabStock Entry Detail')->where('name', $item->name)->update($ste_details_update);
+                $state_before_update['Stock Entry Detail'][$item['name']] = collect($item)->except(['name', 'owner', 'creation', 'docstatus', 'doctype']);
+                
+                $stock_entry_detail_response = $this->erpOperation('put', 'Stock Entry Detail', $item['name'], $ste_details_update);
+
+                if(!isset($stock_entry_detail_response['data'])){
+                    throw new Exception('Stock Entry Detail: '.$stock_entry_detail_response['exception']);
+                }
 
                 $received_items[] = [
-                    'item_code' => $item->item_code,
-                    'qty' => $item->transfer_qty,
+                    'item_code' => $item_code,
+                    'qty' => $item['transfer_qty'],
                     'price' => $basic_rate,
-                    'amount' => $basic_rate * $item->transfer_qty
+                    'amount' => $basic_rate * $item['transfer_qty']
                 ];
             }
 
-            $source_warehouses_arr = $source_warehouses->push($wh->from_warehouse)->unique()->values()->all();
-            $target_warehouses_arr = $target_warehouses->push($wh->to_warehouse)->unique()->values()->all();
-            $warehouses_arr = collect($source_warehouses_arr)->merge($target_warehouses_arr);
+            $warehouses_arr = collect($source_warehouses)->merge($target_warehouses);
 
             // get the actual qty after update for the source and target warehouse
             $actual_qty_after_transaction = DB::table('tabBin')->whereIn('warehouse', $warehouses_arr)->whereIn('item_code', $item_codes)->get(['item_code', 'consigned_qty', 'warehouse']);
@@ -1258,35 +1256,36 @@ class ConsignmentController extends Controller
             // Compare the expected qty vs actual qty after transaction for both source warehouse and target warehouse
             foreach ($ste_items as $item) {
                 // source warehouse
-                $src = $item->s_warehouse ? $item->s_warehouse : $wh->from_warehouse;
+                $item_code = $item['item_code'];
+                $src = $item['s_warehouse'] ? $item['s_warehouse'] : $stock_entry['from_warehouse'];
                 $is_consigned = false;
                 if($src != 'Consignment Warehouse - FI'){
                     $is_consigned = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')->where('is_group', 0)->where('disabled', 0)->where('name', $src)->exists();
                 }
                 
                 if($is_consigned){
-                    $expected_qty_in_source = isset($expected_qty_after_transaction['source'][$src][$item->item_code]) ? $expected_qty_after_transaction['source'][$src][$item->item_code] : 0;
-                    $actual_consigned_qty_in_source = isset($actual_qty_after_transaction[$src][$item->item_code]) ? $actual_qty_after_transaction[$src][$item->item_code][0]->consigned_qty : 0;
+                    $expected_qty_in_source = isset($expected_qty_after_transaction['source'][$src][$item_code]) ? $expected_qty_after_transaction['source'][$src][$item_code] : 0;
+                    $actual_consigned_qty_in_source = isset($actual_qty_after_transaction[$src][$item_code]) ? $actual_qty_after_transaction[$src][$item_code][0]->consigned_qty : 0;
 
                     if($expected_qty_in_source != $actual_consigned_qty_in_source){
-                        return response()->json(['success' => 0, 'message' => 'Error: Expected qty did not match the actual qty in source warehouse']);
+                        throw new Exception("Error: Expected qty of item $item_code did not match the actual qty in source warehouse");
                     }
                 }
 
                 // target warehouse
-                $trg = $item->t_warehouse ? $item->t_warehouse : $wh->to_warehouse;
+                $trg = $item['t_warehouse'] ? $item['t_warehouse'] : $stock_entry['to_warehouse'];
                 if(isset($request->receive_delivery)){
-                    $expected_qty_in_target = isset($expected_qty_after_transaction['target'][$trg][$item->item_code]) ? $expected_qty_after_transaction['target'][$trg][$item->item_code] : 0;
-                    $actual_consigned_qty_in_target = isset($actual_qty_after_transaction[$trg][$item->item_code]) ? $actual_qty_after_transaction[$trg][$item->item_code][0]->consigned_qty : 0;
+                    $expected_qty_in_target = isset($expected_qty_after_transaction['target'][$trg][$item_code]) ? $expected_qty_after_transaction['target'][$trg][$item_code] : 0;
+                    $actual_consigned_qty_in_target = isset($actual_qty_after_transaction[$trg][$item_code]) ? $actual_qty_after_transaction[$trg][$item_code][0]->consigned_qty : 0;
 
                     if($expected_qty_in_target != $actual_consigned_qty_in_target){
-                        return response()->json(['success' => 0, 'message' => 'Error: Expected qty did not match the actual qty in target warehouse']);
+                        throw new Exception("Error: Expected qty of $item_code did not match the actual qty in target warehouse");
                     }
                 }
             }
 
             // Set source and target warehouse for logs
-            $source_warehouse = $wh->from_warehouse ? $wh->from_warehouse : null;
+            $source_warehouse = isset($stock_entry['from_warehouse']) ? $stock_entry['from_warehouse'] : null;
             if(!$source_warehouse){
                 $source_warehouse = isset($source_warehouses[0]) ? $source_warehouses[0] : null;
             }
@@ -1294,21 +1293,13 @@ class ConsignmentController extends Controller
             if($request->target_warehouse){
                 $target_warehouse = $request->target_warehouse;
             }else{
-                $target_warehouse = $wh->to_warehouse ? $wh->to_warehouse : null;
+                $target_warehouse = $stock_entry['to_warehouse'] ? $stock_entry['to_warehouse'] : null;
                 if(!$target_warehouse){
                     $target_warehouse = isset($target_warehouses[0]) ? $target_warehouses[0] : null;
                 }
             }
 
-            // Activity Logs
             $logs = [
-                'name' => uniqid(),
-                'creation' => $now->toDateTimeString(),
-                'modified' => $now->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user,
-                'owner' => Auth::user()->wh_user,
-                'docstatus' => 0,
-                'idx' => 0,
                 'subject' => 'Stock Transfer from '.$source_warehouse.' to '.$target_warehouse.' has been received by '.Auth::user()->full_name. ' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
@@ -1320,26 +1311,26 @@ class ConsignmentController extends Controller
                 'data' => json_encode($data, true)
             ];
 
-            DB::table('tabActivity Log')->insert($logs);
+            $log = $this->erpOperation('post', 'Activity Log', null, $logs);
 
-            // If receiving, update Stock Entry
-            if(isset($request->receive_delivery)){
-                DB::table('tabStock Entry')->where('name', $id)->update([
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'consignment_status' => 'Received',
-                    'consignment_date_received' => $now->toDateTimeString(),
-                    'consignment_received_by' => Auth::user()->wh_user,
-                ]);
+            if(!isset($log['data'])){
+                session()->flash('warning', 'Activity Log not posted');
+            }
+
+            $stock_entry_response['data'] = $this->erpOperation('put', 'Stock Entry', $id, [
+                'consignment_status' => 'Received',
+                'consignment_date_received' => $now->toDateTimeString(),
+                'consignment_received_by' => Auth::user()->wh_user,
+            ]);
+
+            if(!isset($stock_entry_response['data'])){
+                throw new Exception('Stock Entry: '.$stock_entry_response['exception']);
             }
 
             $message = null;
-            if(isset($request->update_price)){
-                $message = 'Prices are successfully updated!';
-            }
 
             if(isset($request->receive_delivery)){
-                $t = $wh->transfer_as != 'For Return' ? 'your store inventory!' : (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) ? $target_warehouse : 'Quarantine Warehouse!');
+                $t = $stock_entry['transfer_as'] != 'For Return' ? 'your store inventory!' : (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) ? $target_warehouse : 'Quarantine Warehouse!');
                 $message = collect($received_items)->sum('qty').' Item(s) is/are successfully received and added to '.$t;
             }
 
@@ -1347,12 +1338,10 @@ class ConsignmentController extends Controller
             $received_items['branch'] = $target_warehouse;
             $received_items['action'] = 'received';
 
-            DB::commit();
-
             return response()->json(['success' => 1, 'message' => $message]);
         } catch (\Throwable $e) {
-            DB::rollback();
-            return response()->json(['success' => 0, 'message' => 'An error occured. Please try again later']);
+            $this->revertChanges($state_before_update);
+            return response()->json(['success' => 0, 'message' => $e->getMessage()]);
         }
     }
 
