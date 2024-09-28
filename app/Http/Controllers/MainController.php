@@ -3535,7 +3535,7 @@ class MainController extends Controller
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => $jpegFilename
+                    'image_path' => $webpFilename
                 ];
             }
             
