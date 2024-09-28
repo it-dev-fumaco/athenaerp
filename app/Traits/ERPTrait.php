@@ -38,7 +38,7 @@ trait ERPTrait{
         try {
             foreach($state_before_update as $doctype => $values){
                 foreach($values as $id => $value){
-                    $value = !is_array($value) ? collect($value)->toArray() : $value;
+                    $value = collect($value)->except(['name', 'owner', 'creation', 'docstatus', 'doctype'])->toArray();
                     DB::table("tab$doctype")->where('name', $id)->update($value);
                 }
             }

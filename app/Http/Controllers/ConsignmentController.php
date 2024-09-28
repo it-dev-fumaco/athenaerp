@@ -1155,7 +1155,7 @@ class ConsignmentController extends Controller
                 $update_bin = ['consigned_qty' => $source_updated_consigned_qty];
 
                 // revert changes if there are errors
-                $state_before_update['Bin'][$source_bin_id] = collect($source_bin_details)->except(['name', 'doctype']);
+                $state_before_update['Bin'][$source_bin_id] = $source_bin_details;
 
                 // activity logs
                 $data[$src_branch][$item_code]['quantity'] = [
@@ -1206,7 +1206,7 @@ class ConsignmentController extends Controller
                 }
 
                 // revert changes if there are errors
-                $state_before_update['Bin'][$target_bin_id] = collect($target_bin_details)->except(['name', 'doctype']);
+                $state_before_update['Bin'][$target_bin_id] = $target_bin_details;
 
                 $bin_response = $this->erpOperation('put', 'Bin', $target_bin_id, $update_bin);
 
@@ -1231,7 +1231,7 @@ class ConsignmentController extends Controller
                     $ste_details_update['target_warehouse_location'] = $request->target_warehouse;
                 }
 
-                $state_before_update['Stock Entry Detail'][$item['name']] = collect($item)->except(['name', 'owner', 'creation', 'docstatus', 'doctype']);
+                $state_before_update['Stock Entry Detail'][$item['name']] = $item;
                 
                 $stock_entry_detail_response = $this->erpOperation('put', 'Stock Entry Detail', $item['name'], $ste_details_update);
 
