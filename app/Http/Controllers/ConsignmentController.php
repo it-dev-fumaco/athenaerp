@@ -17,6 +17,8 @@ use Exception;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
+use App\Models\Item;
+
 use App\Traits\GeneralTrait;
 use App\Traits\ERPTrait;
 class ConsignmentController extends Controller
@@ -2067,90 +2069,108 @@ class ConsignmentController extends Controller
 
     public function promodiserDamageForm(){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-
-        $beginning_inventory = DB::table('tabConsignment Beginning Inventory as cbi')
-            ->join('tabConsignment Beginning Inventory Item as item', 'item.parent', 'cbi.name')
-            ->whereIn('cbi.branch_warehouse', $assigned_consignment_store)->where('cbi.status', 'Approved')
-            ->select('cbi.branch_warehouse', 'cbi.name', 'cbi.transaction_date')->get();
-        $beginning_inventory = collect($beginning_inventory)->groupBy('branch_warehouse');
-
-        return view('consignment.promodiser_damage_report_form', compact('assigned_consignment_store', 'beginning_inventory'));
+                 
+        return view('consignment.promodiser_damage_report_form', compact('assigned_consignment_store'));
     }
 
     // /promodiser/damage_report/submit
     public function submitDamagedItem(Request $request){
-        DB::beginTransaction();
+        $state_before_update = [];
         try {
             $item_codes = $request->item_code;
             $damaged_qty = preg_replace("/[^0-9 .]/", "", $request->damaged_qty);
             $reason = $request->reason;
+            $branch = $request->branch;
 
+            $now = Carbon::now();
+            
             if(collect($damaged_qty)->min() <= 0){
-                return redirect()->back()->with('error', 'Damaged items qty cannot be less than or equal to zero.');
+                throw new Exception('Items cannot be less than or equal to zero.');
             }
 
-            $items = DB::table('tabBin as bin')
-                ->join('tabItem as item', 'item.item_code', 'bin.item_code')
-                ->whereIn('bin.item_code', $item_codes)->where('bin.warehouse', $request->branch)
-                ->select('bin.item_code', 'item.description', 'bin.consigned_qty', 'bin.stock_uom')->get();
-            $items = collect($items)->groupBy('item_code');
+            $items = Item::whereIn('item_code', $item_codes)
+                ->with('bin', function ($query) use ($branch) {
+                    $query->where('warehouse', $branch) 
+                        ->select('item_code', 'consigned_qty', 'stock_uom', 'warehouse');
+                })
+                ->select('item_code', 'description', 'stock_uom')
+                ->get();
 
-            foreach($item_codes as $item_code){
-                if(!isset($items[$item_code])){
-                    return redirect()->back()->with('error', $item_code.' has not been delivered to '.$request->branch.' yet or beginning inventory has not been approved yet.');
-                }else{
-                    if($items[$item_code][0]->consigned_qty < $damaged_qty[$item_code]){
-                        return redirect()->back()->with('error', 'Damaged qty for '.$item_code.' is more than the available qty.');
-                    }
+            $validate_items = collect($items)->map(function ($item) use ($item_codes, $damaged_qty, $branch){
+                $bin_details = collect($item->bin)->first();
+
+                $item_code = $item->item_code;
+                $consigned_qty = $bin_details->consigned_qty;
+
+                if(!in_array($item_code, $item_codes)){
+                    return "Item $item_code not found on $branch";
                 }
 
-                $qty = isset($damaged_qty[$item_code]) ? $damaged_qty[$item_code] : 0;
-                $uom = isset($items[$item_code]) ? $items[$item_code][0]->stock_uom : null;
+                if(isset($damaged_qty[$item_code]) && $damaged_qty[$item_code] > $consigned_qty){
+                    return "Damaged qty of Item $item_code is more than its available qty on $branch";
+                }
 
-                $insert_values = [
-                    'name' => uniqid(),
-                    'creation' => Carbon::now()->toDateTimeString(),
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 1,
-                    'transaction_date' => Carbon::now()->toDateTimeString(),
-                    'branch_warehouse' => $request->branch,
+                return null;
+            })->filter()->first();
+
+            if($validate_items){
+                throw new Exception($validate_items);
+            }
+            
+            $items = collect($items)->groupBy('item_code');
+            $user = Auth::user()->full_name;
+
+            foreach($item_codes as $item_code){
+                $item_details = $items[$item_code][0];
+
+                $qty = isset($damaged_qty[$item_code]) ? $damaged_qty[$item_code] : 0;
+                $uom = $item_details->stock_uom;
+
+                $data = [
+                    'transaction_date' => $now->toDateTimeString(),
+                    'branch_warehouse' => $branch,
                     'item_code' => $item_code,
-                    'description' => isset($items[$item_code]) ? $items[$item_code][0]->description : null,
+                    'description' => $item_details->description,
                     'qty' => $qty,
                     'stock_uom' => $uom,
                     'damage_description' => isset($reason[$item_code]) ? $reason[$item_code] : 0,
-                    'promodiser' => Auth::user()->full_name,
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user
+                    'promodiser' => Auth::user()->name
                 ];
 
-                DB::table('tabConsignment Damaged Item')->insert($insert_values);
+                $response = $this->erpOperation('post', 'Consignment Damaged Item', null, $data);
 
-                $logs = [
-                    'name' => uniqid(),
-                    'creation' => Carbon::now()->toDateTimeString(),
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 0,
-                    'idx' => 0,
-                    'subject' => 'Damaged Item Report for '.$qty.' '.$uom.' of '.$item_code.' from '.$request->branch.' has been created by '.Auth::user()->full_name.' at '.Carbon::now()->toDateTimeString(),
-                    'content' => 'Consignment Activity Log',
-                    'communication_date' => Carbon::now()->toDateTimeString(),
-                    'reference_doctype' => 'Damaged Items',
-                    'reference_name' => $item_code,
-                    'reference_owner' => Auth::user()->wh_user,
-                    'user' => Auth::user()->wh_user,
-                    'full_name' => Auth::user()->full_name,
-                ];
+                if(!isset($response['data'])){
+                    throw new Exception($response['exception']);
+                }
 
-                DB::table('tabActivity Log')->insert($logs);
+                $activity_log_data[] = $data;
+
+                $response = $response['data'];
+                $state_before_update['Consignment Damaged Item'][$response['name']] = 'delete';
             }
 
-            DB::commit();
+            $logs = [
+                'subject' => "Damaged Item Report from $branch has been created by $user at $now",
+                'content' => 'Consignment Activity Log',
+                'communication_date' => $now->toDateTimeString(),
+                'reference_doctype' => 'Consignment Damaged Item',
+                'reference_name' => 'Consignment Damaged Item',
+                'reference_owner' => Auth::user()->wh_user,
+                'user' => Auth::user()->wh_user,
+                'full_name' => $user,
+                'data' => json_encode($activity_log_data, true)
+            ];
+
+            $log = $this->erpOperation('post', 'Activity Log', null, $logs);
+
+            if(isset($log['data'])){
+                session()->flash('error', 'Activity Log not posted');
+            }
+
             return redirect()->back()->with('success', 'Damage report submitted.');
         } catch (Exception $e) {
-            DB::rollback();
+            $this->revertChanges($state_before_update);
+
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
@@ -2356,6 +2376,8 @@ class ConsignmentController extends Controller
                 'alt' => Str::slug(explode('.', $img)[0], '-')
             ];
         }
+
+        $items_arr = collect($items_arr)->sortByDesc('max')->values()->all();
 
         return response()->json($items_arr);
     }
