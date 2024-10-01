@@ -1825,148 +1825,123 @@ class ConsignmentController extends Controller
     }
 
     public function generateStockTransferEntry(Request $request) {
-        DB::beginTransaction();
         try {
             $id = $request->cste;
-            $details = DB::table('tabConsignment Stock Entry')->where('name', $id)->first();
-            if (!$details) {
-                return response()->json(['success' => 0, 'message' => 'Record not found.']);
+            $table = 'Consignment Stock Entry';
+            $details = $this->erpOperation('get', $table, $id);
+            if (!isset($details['data'])) {
+                throw new Exception('Record not found.');
             }
 
-            if (in_array($details->status, ['Cancelled', 'Completed'])) {
-                return response()->json(['success' => 0, 'message' => 'Stock Transfer is ' . $details->status]);
+            $details = $details['data'];
+
+            if (in_array($details['status'], ['Cancelled', 'Completed'])) {
+                throw new Exception('Stock Transfer is ' . $details['status']);
             }
 
-            $items = DB::table('tabConsignment Stock Entry Detail')->where('parent', $details->name)->get();
+            $source_warehouse = $details['source_warehouse'];
+            $target_warehouse = $details['target_warehouse'];
+            $items = $details['items'];
 
-            $item_codes = collect($items)->pluck('item_code')->unique();
+            $item_codes = collect($items)->pluck('item_code');
+
+            $item_details = Item::whereIn('item_code', $item_codes)
+                ->with('bin', function ($bin) use ($source_warehouse, $target_warehouse){
+                    $bin->whereIn('warehouse', [$source_warehouse, $target_warehouse]);
+                })
+                ->get()->groupBy('item_code');
+
+            $validate_items = collect($items)->map(function ($item) use ($item_details, $source_warehouse){
+                $item_code = $item['item_code'];
+
+                if(!isset($item_details[$item_code])){
+                    return "Item $item_code does not exist in $source_warehouse";
+                }
+
+                $bin_details = $item_details[$item_code][0]->bin;
+                $bin_details = collect($bin_details)->groupBy('warehouse');
+
+                if(!isset($bin_details[$source_warehouse])){
+                    return "Item $item_code does not exist in $source_warehouse";
+                }
+
+                return null;
+            })->unique()->first();
+
+            if($validate_items){
+                throw new Exception($validate_items);
+            }
 
             $inventory_amount = collect($items)->sum('amount');
 
-            $bin = DB::table('tabBin as bin')->join('tabItem as item', 'item.item_code', 'bin.item_code')
-                ->where('bin.warehouse', $details->source_warehouse)->whereIn('bin.item_code', $item_codes)
-                ->select('item.item_code', 'item.description', 'item.item_name', 'bin.warehouse', 'item.stock_uom', 'bin.actual_qty', 'bin.consigned_qty', 'bin.consignment_price')
-                ->get();
-
-            $bin_array = [];
-            foreach($bin as $b){
-                $bin_array[$b->warehouse][$b->item_code] = [
-                    'description' => $b->description,
-                    'item_name' => $b->item_name,
-                    'uom' => $b->stock_uom,
-                    'actual_qty' => $b->actual_qty,
-                    'consigned_qty' => $b->consigned_qty,
-                    'consignment_price' => $b->consignment_price,
-                ];
-            }
-
             $now = Carbon::now();
-
-            $latest_ste = DB::table('tabStock Entry')->where('naming_series', 'STEC-')->max('name');
-            $latest_ste_exploded = explode("-", $latest_ste);
-            $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
-            $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
-            $new_id = 'STEC-'.$new_id;
-
             $stock_entry_detail = [];
-            foreach ($items as $index => $row) {
+            foreach ($items as $item) {
+                $item_code = $item['item_code'];
+                $item_detail = isset($item_details[$item_code]) ? $item_details[$item_code] : [];
                 $stock_entry_detail[] = [
-                    'name' =>  uniqid(),
-                    'creation' => $now->toDateTimeString(),
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'owner' => Auth::user()->wh_user,
-                    'docstatus' => 0,
-                    'parent' => $new_id,
-                    'parentfield' => 'items',
-                    'parenttype' => 'Stock Entry',
-                    'idx' => $index + 1,
-                    't_warehouse' => $details->target_warehouse,
-                    'transfer_qty' => $row->qty,
+                    't_warehouse' => $target_warehouse,
+                    'transfer_qty' => $item['qty'],
                     'expense_account' => 'Cost of Goods Sold - FI',
                     'cost_center' => 'Main - FI',
-                    'actual_qty' => isset($bin_array[$details->source_warehouse][$row->item_code]) ? $bin_array[$details->source_warehouse][$row->item_code]['actual_qty'] : 0,
-                    's_warehouse' => $details->source_warehouse,
-                    'item_name' => isset($bin_array[$details->source_warehouse][$row->item_code]) ? $bin_array[$details->source_warehouse][$row->item_code]['item_name'] : null,
-                    'additional_cost' => 0,
-                    'stock_uom' => $row->uom,
-                    'basic_amount' => $row->amount,
-                    'custom_basic_amount' => $row->amount,
-                    'sample_quantity' => 0,
-                    'uom' => $row->uom,
-                    'basic_rate' => $row->price,
-                    'custom_basic_rate' => $row->price,
-                    'description' => $row->item_description,
-                    'conversion_factor' => 1,
-                    'item_code' => $row->item_code,
-                    'validate_item_code' => $row->item_code,
-                    'retain_sample' => 0,
-                    'qty' => $row->qty,
-                    'allow_zero_valuation_rate' => 0,
-                    'amount' => $row->amount,
-                    'valuation_rate' => $row->price,
+                    's_warehouse' => $source_warehouse,
+                    'custom_basic_amount' => $item['amount'],
+                    'custom_basic_rate' => $item['price'],
+                    'item_code' => $item_code,
+                    'validate_item_code' => $item_code,
+                    'qty' => $item['qty'],
                     'status' => 'Issued',
-                    'return_reference' => $new_id,
                     'session_user' => Auth::user()->full_name,
-                    'issued_qty' => $row->qty,
+                    'issued_qty' => $item['qty'],
                     'date_modified' => $now->toDateTimeString(),
-                    'return_reason' => $row->reason,
+                    'return_reason' => isset($item['reason']) ? $item['reason'] : null,
                     'remarks' => 'Generated in AthenaERP'
                 ];
             }
 
             $stock_entry_data = [
-                'name' => $new_id,
-                'creation' => $now->toDateTimeString(),
-                'modified' => $now->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user,
-                'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
-                'idx' => 0,
-                'use_multi_level_bom' => 0,
                 'naming_series' => 'STEC-',
                 'posting_time' => $now->format('H:i:s'),
-                'to_warehouse' => $details->target_warehouse,
-                // 'title' => $request->transfer_as == 'Sales Return' ? 'Material Receipt' : 'Material Transfer',
-                'from_warehouse' => $details->source_warehouse,
-                'set_posting_time' => 0,
-                'from_bom' => 0,
-                'value_difference' => 0,
+                'to_warehouse' => $target_warehouse,
+                'from_warehouse' => $source_warehouse,
                 'company' => 'FUMACO Inc.',
                 'total_outgoing_value' => $inventory_amount,
-                'total_additional_costs' => 0,
                 'total_amount' => $inventory_amount,
                 'total_incoming_value' => $inventory_amount,
                 'posting_date' => $now->format('Y-m-d'),
                 'purpose' => 'Material Transfer',
                 'stock_entry_type' => 'Material Transfer',
                 'item_status' => 'Issued',
-                'transfer_as' => $details->purpose == 'Pull Out' ? 'Pull Out Item' : 'Store Transfer',
-                'receive_as' => null,
-                'qty_repack' => 0,
+                'transfer_as' => $details['purpose'] == 'Pull Out' ? 'Pull Out Item' : 'Store Transfer',
                 'delivery_date' => $now->format('Y-m-d'),
-                'remarks' => 'Generated in AthenaERP. '. $details->remarks,
+                'remarks' => 'Generated in AthenaERP. '. $details['remarks'],
                 'order_from' => 'Other Reference',
                 'reference_no' => '-',
+                'items' => $stock_entry_detail
             ];
 
-            DB::table('tabStock Entry')->insert($stock_entry_data);
-            DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
+            $response = $this->erpOperation('post', 'Stock Entry', null, $stock_entry_data);
 
-            DB::table('tabConsignment Stock Entry')->where('name', $details->name)->update(['references' => $new_id]);
+            if(!isset($response['data'])){
+                throw new Exception($response['exception']);
+            }
 
-            // DB::commit();
+            $response = $response['data'];
+
+            $consignment_response = $this->erpOperation('put', $table, $details['name'], ['references' => $response['name']]);
+
+            if(!isset($consignment_response['data'])){
+                session()->flash('error', $consignment_response['exception']);
+            }
 
             $data = [
-                'stock_entry_name' => $new_id,
-                'link' => 'http://10.0.0.83/app/stock-entry/' . $new_id
+                'stock_entry_name' => $response['name'],
+                'link' => 'http://10.0.0.83/app/stock-entry/' . $response['name']
             ];
 
             return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.', 'data' => $data]);
-        } catch (Throwable $th) {
-            DB::rollBack();
-
-            return $th->getMessage();
+        } catch (\Throwable $th) {
             return response()->json(['status' => 0, 'message' => 'An error occured. Please contact your system administrator.'], 400);
         }
     }
