@@ -335,8 +335,8 @@
                                                                                         </td>
                                                                                         <td class="text-center p-1 align-middle">
                                                                                             @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval')
-                                                                                                ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" id="item-price-{{ $target }}" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
-                                                                                                <input id="item-qty-{{ $target }}" type="text" class="d-none" name="qty[{{ $item['item_code'] }}][]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
+                                                                                                ₱ <input type="text" name="price[{{ $item['item_code'] }}]" id="item-price-{{ $target }}" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
+                                                                                                <input id="item-qty-{{ $target }}" type="text" class="d-none" name="qty[{{ $item['item_code'] }}]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
                                                                                             @elseif ($inv['status'] == 'Approved')
                                                                                                 <input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
                                                                                                 <span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
@@ -1031,7 +1031,7 @@
                                 '<button class="btn btn-outline-danger btn-xs new-item-qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
                             '</div>' +
                             '<div class="custom-a p-0">' +
-                                '<input type="text" name="qty[' + item_code + '][]" class="form-control form-control-sm qty new-item-validate new-item-stock" value="' + qty + '" style="text-align: center; width: 47px" required>' +
+                                '<input type="text" name="qty[' + item_code + ']" class="form-control form-control-sm qty new-item-validate new-item-stock" value="' + qty + '" style="text-align: center; width: 47px" required>' +
                             '</div>' +
                             '<div class="input-group-append p-0">' +
                                 '<button class="btn btn-outline-success btn-xs new-item-qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>' +
@@ -1040,7 +1040,7 @@
                         '<small>' + uom + '</small>' + 
                     '</td>' + 
                     '<td class="text-center p-1 align-middle">' + 
-                        '₱ <input type="text" name="price[' + item_code + '][]" id="item-price-' + item_code + '" value="' + price + '" style="text-align: center; width: 60px" required/>' + 
+                        '₱ <input type="text" name="price[' + item_code + ']" id="item-price-' + item_code + '" value="' + price + '" style="text-align: center; width: 60px" required/>' + 
                     '</td>' + 
                     '<td class="text-center p-1 align-middle">' + 
                         '<div class="btn-group" role="group" aria-label="Basic example">' + 

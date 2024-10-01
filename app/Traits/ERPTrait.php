@@ -41,7 +41,7 @@ trait ERPTrait{
                     if(!is_array($value) && !is_object($value)){
                         DB::table("tab$doctype")->where('name', $id)->delete();
                     }else{
-                        $value = collect($value)->except(['name', 'owner', 'creation', 'docstatus', 'doctype'])->toArray();
+                        $value = collect($value)->except(['name', 'owner', 'creation', 'docstatus', 'doctype', 'parent', 'parentfield', 'parenttype'])->toArray();
                         DB::table("tab$doctype")->where('name', $id)->update($value);
                     }
                 }
