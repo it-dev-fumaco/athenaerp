@@ -3288,116 +3288,107 @@ class ConsignmentController extends Controller
     }
 
     public function adjustStocks(Request $request){
-        DB::beginTransaction();
+        $state_before_update = [];
         try {
             if(!$request->warehouse){
-                return redirect()->back()->with('error', 'Please select a warehouse');
-            }
-
-            $item_codes = $request->item_codes;
-            $item_details = $request->item;
-
-            if(!$item_codes || !$item_details){
-                return redirect()->back()->with('error', 'Please select an item to adjust.');
-            }
-            
-            $bin_details = DB::table('tabBin as bin')
-                ->join('tabItem as item', 'item.name', 'bin.item_code')
-                ->where('bin.warehouse', $request->warehouse)->whereIn('bin.item_code', $item_codes)->get();
-            $bin = collect($bin_details)->groupBy('item_code');
-            
-            if(!$bin_details){
-                return redirect()->back()->with('error', 'No items found.');
+                throw new Exception('Please select a warehouse');
             }
 
             $now = Carbon::now();
+            $branch = $request->warehouse;
+            $item_codes = $request->item_codes;
+            $input = $request->item;
 
-            $csa_id = 'CSA-'.uniqid();
-            $new_title = $this->generateConsignmentID('tabConsignment Stock Adjustment', 'CSA', 6);
+            if(!$item_codes || !$input){
+                throw new Exception('Please select an Item.');
+            }
+            
+            $item_details = Item::whereIn('name', $item_codes)
+                ->with('bin', function ($bin) use ($branch){
+                    $bin->where('warehouse', $branch)
+                        ->select('name', 'item_code', 'consigned_qty', 'consignment_price', 'modified', 'modified_by');
+                })
+                ->select('item_code', 'description', 'stock_uom')
+                ->get();
+            
+            if(!$item_details){
+                throw new Exception('No items found.');
+            }
 
-            DB::table('tabConsignment Stock Adjustment')->insert([
-                'name' => $csa_id,
-                'title' => $new_title,
-                'creation' => $now->toDateTimeString(),
-                'modified' => $now->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user,
-                'owner' => Auth::user()->wh_user,
-                'docstatus' => 1,
-                'warehouse' => $request->warehouse,
-                'created_by' => Auth::user()->wh_user,
-                'transaction_date' => $now->toDateString(),
-                'transaction_time' => $now->toTimeString(),
-                'remarks' => $request->notes
-            ]);
+            $consignment_items = $activity_logs = [];
+            foreach($item_details as $item){
+                $item_code = $item->item_code;
+                $bin = collect($item->bin)->first();
 
-            $logs = $consignment_logs = [];
-            foreach($item_codes as $i => $item_code){
-                if(!isset($bin[$item_code]) || !isset($item_details[$item_code])){
-                    continue;
-                }
+                $bin_id = $bin->name;
+                unset($bin->name, $bin->item_code);
 
-                $original_stock = $bin[$item_code][0]->consigned_qty * 1;
-                $original_price = $bin[$item_code][0]->consignment_price * 1;
+                $state_before_update['Bin'][$bin_id] = $bin;
 
-                $stock = preg_replace("/[^0-9]/", "", $item_details[$item_code]['qty']);
-                $new_stock = $stock ? $stock * 1 : 0;
+                $new_stock = preg_replace("/[^0-9]/", null, $input[$item_code]['qty']);
+                $new_stock = $new_stock ? $new_stock * 1 : 0;
 
-                $price = preg_replace("/[^0-9 .]/", "", $item_details[$item_code]['price']);
-                $new_price = $price ? $price * 1 : 0;
+                $new_price = preg_replace("/[^0-9 .]/", null, $input[$item_code]['price']);
+                $new_price = $new_price ? $new_price * 1 : 0;
 
-                $item_remarks = isset($item_details[$item_code]['remarks']) ? $item_details[$item_code]['remarks'] : null;
-                
-                $update_array = [
-                    'modified' => Carbon::now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'consigned_qty' => $new_stock,
-                    'consignment_price' => $new_price
-                ];
+                $update = [];
 
-                if($original_stock == $new_stock){ // remove if value is unchanged
-                    unset($update_array['consigned_qty']);
-                }else{
-                    $logs[$request->warehouse][$item_code]['quantity'] = [
-                        'previous' => $original_stock,
+                if($bin->consigned_qty != $new_stock){
+                    $update['consigned_qty'] = $new_stock;
+                    $activity_logs[$branch][$item_code]['quantity'] = [
+                        'previous' => $bin->consigned_qty,
                         'new' => $new_stock
                     ];
                 }
 
-                if($original_price == $new_price){ // remove if value is unchanged
-                    unset($update_array['consignment_price']);
-                }else{
-                    $logs[$request->warehouse][$item_code]['price'] = [
-                        'previous' => $original_price,
+                if($bin->consignment_price != $new_price){
+                    $update['consignment_price'] = $new_price;
+                    $activity_logs[$branch][$item_code]['price'] = [
+                        'previous' => $bin->consignment_price,
                         'new' => $new_price
                     ];
                 }
 
-                DB::table('tabBin')->where('warehouse', $request->warehouse)->where('item_code', $item_code)->update($update_array);
+                $item_remarks = isset($item_details[$item_code]['remarks']) ? $item_details[$item_code]['remarks'] : null;
 
-                if($original_stock != $new_stock || $original_price != $new_price){
-                    $logs[$request->warehouse][$item_code]['reason'] = $item_remarks;
-                    $consignment_logs[] = [
-                        'name' => uniqid(),
-                        'creation' => $now->toDateTimeString(),
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'owner' => Auth::user()->wh_user,
-                        'docstatus' => 1,
-                        'parent' => $csa_id,
-                        'parentfield' => 'items',
-                        'parenttype' => 'Consignment Stock Adjustment',
-                        'idx' => $i + 1,
-                        'item_code' => $item_code,
-                        'item_description' => $bin[$item_code][0]->description,
-                        'uom' => $bin[$item_code][0]->stock_uom,
-                        'previous_qty' => $original_stock,
-                        'new_qty' => $new_stock,
-                        'previous_price' => $original_price,
-                        'new_price' => $new_price,
-                        'remarks' => $item_remarks
-                    ];
+                if(!$update){
+                    continue;
                 }
+
+                $bin_response = $this->erpOperation('put', 'Bin', $bin_id, $update);
+
+                if(!isset($bin_response['data'])){
+                    throw new Exception($bin_response['exception']);
+                }
+
+                $consignment_items[] = [
+                    'item_code' => $item_code,
+                    'item_description' => $item->description,
+                    'uom' => $item->stock_uom,
+                    'previous_qty' => $bin->consigned_qty,
+                    'new_qty' => $new_stock,
+                    'previous_price' => $bin->consignment_price,
+                    'new_price' => $new_price,
+                    'remarks' => $item_remarks
+                ];
             }
+
+            $consignment_data = [
+                'warehouse' => $request->warehouse,
+                'created_by' => Auth::user()->wh_user,
+                'transaction_date' => $now->toDateString(),
+                'transaction_time' => $now->toTimeString(),
+                'remarks' => $request->notes,
+                'items' => $consignment_items
+            ];
+
+            $consignment_response = $this->erpOperation('post', 'Consignment Stock Adjustment', null, $consignment_data);
+
+            if(!isset($consignment_response['data'])){
+                throw new Exception($consignment_response['exception']);
+            }
+
+            $consignment_id = $consignment_response['data']['name'];
 
             DB::table('tabActivity Log')->insert([
                 'name' => uniqid(),
@@ -3411,32 +3402,31 @@ class ConsignmentController extends Controller
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
                 'reference_doctype' => 'Consignment Stock Adjustment',
-                'reference_name' => $csa_id,
+                'reference_name' => $consignment_id,
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
-                'data' => json_encode($logs, true)
+                'data' => json_encode($activity_logs, true)
             ]);
 
-            DB::table('tabConsignment Stock Adjustment Items')->insert($consignment_logs);
-
-            $images = DB::table('tabItem Images')->whereIn('parent', collect($consignment_logs)->pluck('item_code'))->get()->groupBy('parent');
+            // Send Email Notification to assigned Promodisers
+            $images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->get()->groupBy('parent');
 
             $promodisers = DB::table('tabAssigned Consignment Warehouse as acw')
                 ->join('tabWarehouse Users as wu', 'wu.frappe_userid', 'acw.parent')
-                ->where('acw.warehouse', $request->warehouse)->pluck('wu.wh_user');
+                ->where('acw.warehouse', $branch)->pluck('wu.wh_user');
 
             $promodisers = collect($promodisers)->map(function ($q){
                 return str_replace('.local', '.com', $q);
             });
 
             $mail_data = [
-                'warehouse' => $request->warehouse,
+                'warehouse' => $branch,
                 'images' => $images,
-                'reference_no' => $csa_id,
+                'reference_no' => $consignment_id,
                 'created_by' => Auth::user()->wh_user,
                 'created_at' => Carbon::now()->format('M d, Y h:i A'),
-                'logs' => $consignment_logs,
+                'logs' => $activity_logs,
                 'notes' => $request->notes
             ];
 
@@ -3447,15 +3437,16 @@ class ConsignmentController extends Controller
                             $message->to($promodiser);
                             $message->subject('AthenaERP - Stock Adjustment');
                         });
-                    } catch (\Throwable $e) {}
+                    } catch (\Throwable $e) {
+                        session()->flash('error', 'An error occured while sending notification email');
+                    }
                 }
             }
 
-            DB::commit();
             session()->flash('success', 'Warehouse Stocks Adjusted.');
             return redirect('/beginning_inv_list');
-        } catch (Exception $e) {
-            DB::rollback();
+        } catch (\Throwable $e) {
+            $this->revertChanges($state_before_update);
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
