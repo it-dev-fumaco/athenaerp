@@ -17,9 +17,12 @@ use Exception;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
+use App\Models\AssignedWarehouses;
+use App\Models\Bin;
 use App\Models\Item;
 use App\Models\ERPUser;
 use App\Models\Warehouse;
+use App\Models\StockEntry;
 
 use App\Traits\GeneralTrait;
 use App\Traits\ERPTrait;
@@ -3952,7 +3955,10 @@ class ConsignmentController extends Controller
         if($request->ajax()){
             $status = $request->status;
 
-            $list = DB::table('tabStock Entry')
+            $list = StockEntry::with('mreq')
+                ->with('items', function($items) {
+                    $items->with('defaultImage')->select('name', 'parent', 't_warehouse', 'item_code', 'description', 'qty', 'transfer_qty', 'basic_rate', 'basic_amount');
+                })
                 ->whereDate('delivery_date', '>=', '2022-06-25')->whereIn('transfer_as', ['Consignment', 'Store Transfer'])->where('purpose', 'Material Transfer')->where('docstatus', 1)
                 ->when($status == 'Received', function ($q){
                     return $q->where('consignment_status', 'Received');
@@ -3965,89 +3971,40 @@ class ConsignmentController extends Controller
                 ->when($request->store, function ($q) use ($request){
                     return $q->where('to_warehouse', $request->store);
                 })
-                ->orderByRaw("FIELD(consignment_status, '', 'To Receive', 'Received') ASC")->orderBy('creation', 'desc')->paginate(20);
+                ->orderByRaw("FIELD(consignment_status, '', 'To Receive', 'Received') ASC")
+                ->orderByDesc('creation')->paginate(20);
 
-            $mreq_nos = collect($list->items())->pluck('material_request')->toArray();
+            $item_codes = collect($list->items())->flatMap(function($items) {
+                return $items->items->pluck('item_code');
+            })->unique()->values();
 
-            $mreq_owner = DB::table('tabMaterial Request')->whereIn('name', $mreq_nos)->pluck('owner', 'name')->toArray();
+            $target_warehouses = collect($list->items())->flatMap(function($items) {
+                return $items->items->pluck('t_warehouse');
+            })->unique()->values();
 
-            $stes = collect($list->items())->pluck('name')->toArray();
+            $item_details = Bin::with('item')
+                ->whereIn('item_code', $item_codes)->whereIn('warehouse', $target_warehouses)
+                ->select('name', 'item_code', 'warehouse', 'consignment_price')
+                ->get()->groupBy(['warehouse', 'item_code']);
 
-            $list_items = DB::table('tabStock Entry Detail as p')
-                ->whereIn('parent', $stes)
-                ->select('item_code', 'description', 'transfer_qty', 'stock_uom', 't_warehouse', 'basic_rate', 'basic_amount', 'parent', 'stock_uom')
-                ->orderBy('idx', 'asc')->get();
-
-            $item_codes = collect($list_items)->pluck('item_code')->unique();
-
-            $consignment_prices = DB::table('tabBin')->whereIn('warehouse', collect($list_items)->pluck('t_warehouse')->unique())->whereIn('item_code', $item_codes)->select('item_code', 'warehouse', 'consignment_price')->get();
-            $prices_arr = [];
-            foreach ($consignment_prices as $item) {
-                $prices_arr[$item->warehouse][$item->item_code] = $item->consignment_price;
-            }
-
-            $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->select('parent', 'image_path')->orderBy('idx', 'asc')->pluck('image_path', 'parent');
-            $item_images = collect($item_images)->map(function ($image){
-                return $this->base64_image("img/$image");
-            });
-
-            $no_img = $this->base64_image('icon/no_img.png');
-
-            $assigned_consignment_promodisers = DB::table('tabWarehouse Users as wu')
-                ->join('tabAssigned Consignment Warehouse as acw', 'wu.name', 'acw.parent')
-                ->where('user_group', 'Promodiser')->where('enabled', 1)
-                ->selectRaw('GROUP_CONCAT(DISTINCT full_name) as promodiser, warehouse')
-                ->groupBy('warehouse')->pluck('promodiser', 'warehouse')->toArray();
-
-            $list_items = collect($list_items)->groupBy('parent');
-
-            $result = [];
-            foreach ($list as $stock_entry) {
-                $items = [];
-                $warehouse = $stock_entry->to_warehouse;
-                if(!$warehouse){
-                    $warehouse = isset($list_items[$stock_entry->name]) ? $list_items[$stock_entry->name][0]->t_warehouse : null;
-                }
-
-                if(isset($list_items[$stock_entry->name])){
-                    foreach($list_items[$stock_entry->name] as $item){
-                        $item_code = $item->item_code;
-                        $orig_exists = $webp_exists = 0;
-
-                        $img = isset($item_images[$item_code]) ? $item_images[$item_code] : $no_img;
-
-                        $price = isset($prices_arr[$warehouse][$item_code]) ? $prices_arr[$warehouse][$item_code] : 0;
-
-                        $items[] = [
-                            'parent' => $item->parent,
-                            'item_code' => $item_code,
-                            'description' => $item->description,
-                            'price' => $price,
-                            'amount' => $price * $item->transfer_qty,
-                            'img' => $img,
-                            'img_slug' => Str::slug($item->description, '-'),
-                            'stock_uom' => $item->stock_uom,
-                            'transfer_qty' => number_format($item->transfer_qty),
-                        ];
+            $result = collect($list->items())->map(function ($stock_entry) use ($item_details){
+                $stock_entry->items = collect($stock_entry->items)->map(function ($item) use ($item_details){
+                    $item->image = $item->defaultImage ? '/img/'.$item->defaultImage->image_path : 'icon/no_img.png';
+                    if(Storage::disk('public')->exists('/img/'.explode('.', $item->image)[0].'.webp')){
+                        $item->image = explode('.', $item->image)[0].'.webp';
                     }
-                }
+                    
+                    $item->price = isset($item_details[$item->t_warehouse][$item->item_code]) ? (float) $item_details[$item->t_warehouse][$item->item_code][0]->consignment_price : 0;
 
-                $mreq_created_by = isset($mreq_owner[$stock_entry->material_request]) ? $mreq_owner[$stock_entry->material_request] : null;
-                $mreq_created_by = ucwords(str_replace('.', ' ', explode('@', $mreq_created_by)[0]));
-                
-                $result[] = [
-                    'name' => $stock_entry->name,
-                    'delivery_date' => Carbon::parse($stock_entry->delivery_date)->format('M. d, Y'),
-                    'mreq_no' => $stock_entry->material_request ? $stock_entry->material_request : '--',
-                    'warehouse' => $warehouse,
-                    'status' => $stock_entry->consignment_status,
-                    'promodiser' => array_key_exists($stock_entry->to_warehouse, $assigned_consignment_promodisers) ? $assigned_consignment_promodisers[$stock_entry->to_warehouse] : '--',
-                    'received_by' => $stock_entry->consignment_status == 'Received' ? $stock_entry->consignment_received_by : null,
-                    'date_received' =>  $stock_entry->consignment_status == 'Received' ? Carbon::parse($stock_entry->consignment_date_received)->format('M. d, Y h:i A') : null,
-                    'items' => $items,
-                    'created_by' => $mreq_created_by
-                ];
-            }
+                    $item->amount = $item->price * $item->qty;
+
+                    return $item;
+                });
+
+                $stock_entry->created_by = isset($stock_entry->mreq->owner) ? ucwords(str_replace('.', ' ', explode('@', $stock_entry->mreq->owner)[0])) : null;
+
+                return $stock_entry;
+            });
 
             return view('consignment.supervisor.view_pending_to_receive', compact('list', 'result'));
         }

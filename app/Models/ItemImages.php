@@ -15,4 +15,8 @@ class ItemImages extends Model
     protected $keyType = 'string';
 
     protected $table = 'tabItem Images';
+
+    public function item(){
+        return $this->belongsTo(Item::class, 'parent', 'name');
+    }
 }
