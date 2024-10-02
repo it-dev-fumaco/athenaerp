@@ -49,4 +49,8 @@ class User extends Authenticatable
         parent::setAttribute($key, $value);
         }
     }
+
+    public function assigned_warehouses(){
+        return $this->hasMany(AssignedWarehouses::class, 'parent', 'frappe_userid');
+    }
 }
