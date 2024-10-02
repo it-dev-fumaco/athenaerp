@@ -5057,37 +5057,42 @@ class ConsignmentController extends Controller
 
     public function consignment_branches(Request $request){
         if($request->ajax()){
-            $branches = DB::table('tabWarehouse')->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
-                ->when($request->search, function ($query) use ($request){
-                    return $query->where(function($q) use ($request) {
-                        $search_str = explode(' ', $request->search);
+            $search_string = $request->search;
+            $branches = Warehouse::where('parent_warehouse', 'P2 Consignment Warehouse - FI')->where('name', '!=', 'Consignment Warehouse - FI')
+                ->with('bin', function ($bin){
+                    $bin->select('name', 'warehouse', 'item_code', 'stock_uom', 'consigned_qty', 'consignment_price', 'actual_qty', DB::raw('consigned_qty * consignment_price as amount'));
+                })
+                ->when($request->search, function ($query) use ($search_string){
+                    return $query->where(function($q) use ($search_string) {
+                        $search_str = explode(' ', $search_string);
                         foreach ($search_str as $str) {
-                            $q->where('name', 'LIKE', "%".$str."%");
+                            $q->where('name', 'LIKE', "%$str%");
                         }
 
-                        $q->orWhere('name', 'LIKE', "%".$request->search."%");
+                        $q->orWhere('name', 'LIKE', "%$search_string%");
                     });
-                })->where('name', '!=', 'Consignment Warehouse - FI')
-                ->select('name')->paginate(20);
-            $items = DB::table('tabItem as i')
-                ->join('tabBin as b', 'i.name', 'b.item_code')
-                ->whereIn('b.warehouse', collect($branches->items())->pluck('name'))->where('i.disabled', 0)
-                ->where(function($q) {
-                    $q->where('b.actual_qty', '>', 0)->orWhere('b.consigned_qty', '>', 0);
-                })
-                ->select('i.item_code', 'i.description', 'i.item_classification', 'b.consigned_qty', 'b.warehouse', 'b.actual_qty', 'b.stock_uom', 'b.consignment_price', DB::raw('b.consigned_qty * b.consignment_price as amount'))
-                ->orderBy('b.warehouse', 'asc')->orderBy('b.actual_qty', 'desc')->get();
-            
-            $images = DB::table('tabItem Images')->whereIn('parent', collect($items)->pluck('item_code'))->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-            $images = collect($images)->groupBy('parent');
+                })->paginate(20);
 
-            $items = $items->groupBy('warehouse');
+            $warehouses = collect($branches->items())->pluck('name');
+
+            $item_codes = $branches->flatMap(function($branch) {
+                return $branch->bin->pluck('item_code');
+            })->unique()->values();
+
+            $flatten_item_codes = $item_codes->implode("','");
+
+            $item_details = Item::whereRaw("name IN ('$flatten_item_codes')")->where('disabled', 0)
+                ->with('defaultImage', function ($image){
+                    $image->select('parent', 'image_path');
+                })
+                ->select('name', 'item_code', 'item_classification', 'description', 'item_name')
+                ->get()->groupBy('item_code');
 
             $promodisers = DB::table('tabWarehouse Users as wu')
                 ->join('tabAssigned Consignment Warehouse as acw', 'acw.parent', 'wu.frappe_userid')
-                ->whereIn('acw.warehouse', collect($branches->items())->pluck('name'))->select('wu.*', 'acw.warehouse')->get()->groupBy('warehouse');
+                ->whereIn('acw.warehouse', $warehouses)->select('wu.*', 'acw.warehouse')->get()->groupBy('warehouse');
 
-            return view('consignment.supervisor.tbl_branches', compact('branches', 'items', 'images', 'promodisers'));
+            return view('consignment.supervisor.tbl_branches', compact('branches', 'item_details', 'promodisers'));
         }
 
         return view('consignment.supervisor.branches');

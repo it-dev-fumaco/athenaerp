@@ -10,4 +10,8 @@ class Warehouse extends Model
     use HasFactory;
 
     protected $table = 'tabWarehouse';
+
+    public function bin(){
+        return $this->hasMany(Bin::class, 'warehouse', 'name');
+    }
 }

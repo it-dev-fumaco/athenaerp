@@ -14,4 +14,12 @@ class Item extends Model
     public function bin(){
         return $this->hasMany(Bin::class, 'item_code', 'item_code');
     }
+
+    public function images(){
+        return $this->hasMany(ItemImages::class, 'parent', 'name');
+    }
+
+    public function defaultImage(){
+        return $this->hasOne(ItemImages::class, 'parent', 'name');
+    }
 }
