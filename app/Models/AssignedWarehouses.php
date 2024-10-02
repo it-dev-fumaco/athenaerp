@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class AssignedWarehouses extends Model
 {
     use HasFactory;
-
+    protected $connection = 'mysql';
+    protected $primaryKey = 'name';
+    public $timestamps = false;
+    protected $keyType = 'string';
     protected $table = 'tabAssigned Consignment Warehouse';
 }
