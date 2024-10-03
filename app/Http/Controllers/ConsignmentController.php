@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AssignedWarehouses;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
@@ -521,28 +522,17 @@ class ConsignmentController extends Controller
 
     // /inventory_items/{branch}
     public function inventoryItems($branch){
-        $assigned_consignment_stores = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->orderBy('warehouse', 'asc')->pluck('warehouse');
-        $inv_summary = DB::table('tabBin as b')
-            ->join('tabItem as i', 'i.name', 'b.item_code')
-            ->where('i.disabled', 0)->where('i.is_stock_item', 1)
-            ->where('b.warehouse', $branch)
-            ->where('consigned_qty', '>', 0)
-            ->select('i.item_code', 'i.description', 'i.stock_uom', 'b.consigned_qty', 'b.consignment_price')
-            ->orderBy('i.item_code', 'asc')
-            ->get()->toArray();
+        $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->orderBy('warehouse', 'asc')->pluck('warehouse');
 
-        $item_codes = collect($inv_summary)->pluck('item_code');
+        $inv_summary = Item::whereHas('bin', function ($bin) use ($branch){
+                $bin->where('warehouse', $branch)->where('consigned_qty', '>', 0);
+            })->with('defaultImage')->with('bin', function ($bin) use ($branch){
+                $bin->where('warehouse', $branch)->where('consigned_qty', '>', 0)->select('name', 'warehouse', 'item_code', 'consigned_qty', 'consignment_price');
+            })->where('disabled', 0)->where('is_stock_item', 1)
+            ->select('name', 'item_code', 'description', 'stock_uom')
+            ->orderBy('item_code')->get();
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
-        $item_images = collect($item_images)->map(function ($image){
-            return $this->base64_image("img/$image");
-        });
-
-        $no_img = $this->base64_image('/icon/no_img.png');
-
-        $item_images['no_img'] = $no_img;
-
-        return view('consignment.promodiser_warehouse_items', compact('inv_summary', 'item_images', 'branch', 'assigned_consignment_stores'));
+        return view('consignment.promodiser_warehouse_items', compact('inv_summary', 'branch', 'assigned_consignment_stores'));
     }
 
     // /beginning_inv_list
