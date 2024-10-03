@@ -1950,15 +1950,16 @@ class ConsignmentController extends Controller
                 return $stock_transfer->items->pluck('item_code');
             })->unique()->values();
 
-            $warehouses = collect($list->items())->pluck('source_warehouse');
+            $warehouses = collect($list->items())->pluck($purpose == 'Item Return' ? 'target_warehouse' : 'source_warehouse');
 
             $flatten_item_codes = $item_codes->implode("','");
 
             $bin_details = Bin::with('defaultImage')->whereRaw("item_code in ('$flatten_item_codes')")->whereIn('warehouse', $warehouses)
                 ->select('item_code', 'warehouse', 'consigned_qty')->get()->groupBy(['warehouse', 'item_code']);
 
-            $result = collect($list->items())->map(function ($stock_transfer) use ($bin_details){
-                $bin = $bin_details[$stock_transfer->source_warehouse];
+            $result = collect($list->items())->map(function ($stock_transfer) use ($bin_details, $purpose){
+                $warehouse = $purpose == 'Item Return' ? $stock_transfer->target_warehouse : $stock_transfer->source_warehouse;
+                $bin = $bin_details[$warehouse];
 
                 $stock_transfer->submitted_by = ucwords(str_replace('.', ' ', explode('@', $stock_transfer->owner)[0]));
 
