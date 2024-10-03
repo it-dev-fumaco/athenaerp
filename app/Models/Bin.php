@@ -21,4 +21,8 @@ class Bin extends Model
     public function item(){
         return $this->belongsTo(Item::class, 'item_code', 'name');
     }
+
+    public function defaultImage(){
+        return $this->hasOne(ItemImages::class, 'parent', 'item_code')->select('image_path', 'parent');
+    }
 }

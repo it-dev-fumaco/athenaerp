@@ -23,6 +23,7 @@ use App\Models\Item;
 use App\Models\ERPUser;
 use App\Models\Warehouse;
 use App\Models\StockEntry;
+use App\Models\ConsignmentStockEntry;
 
 use App\Traits\GeneralTrait;
 use App\Traits\ERPTrait;
@@ -1953,95 +1954,68 @@ class ConsignmentController extends Controller
 
     // /stocks_report/list
     public function stockTransferReport(Request $request){
-        if ($request->ajax()) {
-            if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
-                $purpose = $request->purpose;
-                $list = DB::table('tabConsignment Stock Entry')->where('purpose', $purpose)
-                    ->when($request->q, function ($q) use ($request){
-                        return $q->where('name', 'like', '%'.$request->q.'%');
-                    })
-                    ->when($request->source_warehouse, function ($q) use ($request){
-                        return $q->where('source_warehouse', $request->source_warehouse);
-                    })
-                    ->when($request->target_warehouse, function ($q) use ($request){
-                        return $q->where('target_warehouse', $request->target_warehouse);
-                    })
-                    ->when($request->status, function ($q) use ($request){
-                        return $q->where('status', $request->status);
-                    })->orderBy('creation', 'desc')->paginate(20);
-    
-                $references = collect($list->items())->map(function ($q){
-                    return $q->name;
-                });
-    
-                $items = DB::table('tabConsignment Stock Entry Detail')->whereIn('parent', $references)->get();
-                $item_codes = collect($items)->map(function ($q){
-                    return $q->item_code;
-                });
-    
-                $source_warehouses = collect($list->items())->pluck('source_warehouse')->unique();
-    
-                $bin = DB::table('tabBin')->whereIn('warehouse', $source_warehouses)
-                    ->whereIn('item_code', $item_codes)->select('item_code', 'warehouse', 'consigned_qty')->get();
-    
-                $current_stocks = [];
-                foreach($bin as $b){
-                    $current_stocks[$b->warehouse][$b->item_code] = [
-                        'consigned_qty' => $b->consigned_qty
-                    ];
-                }
-    
-                $items = collect($items)->groupBy('parent');
-    
-                $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
-                $item_images = collect($item_images)->map(function ($image){
-                    return $this->base64_image("img/$image");
-                });
+        if (!in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) { // for supervisor stock transfers list
+            return redirect('/')->with('error', 'Unauthorized');
+        }
 
-                $no_img = $this->base64_image('/icon/no_img.png');
-    
-                $result = [];
-                foreach($list as $ste){
-                    $items_array = [];
-                    if(isset($items[$ste->name])){
-                        foreach($items[$ste->name] as $item){
-                            $orig_exists = $webp_exists = 0;
-    
-                            $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
-    
-                            $items_array[] = [
-                                'item_code' => $item->item_code,
-                                'description' => $item->item_description,
-                                'transfer_qty' => $item->qty,
-                                'price' => $item->price,
-                                'uom' => $item->uom,
-                                'consigned_qty' => isset($current_stocks[$ste->source_warehouse][$item->item_code]) ? $current_stocks[$ste->source_warehouse][$item->item_code]['consigned_qty'] : 0,
-                                'image' => $img,
-                                'image_slug' => Str::slug(explode('.', $item->item_description)[0], '-')
-                            ];
-                        }
+        if($request->ajax()) {
+            $purpose = $request->purpose;
+
+            $list = ConsignmentStockEntry::with('items')
+                ->with('stock_entry', function ($stock_entry){
+                    $stock_entry->select('docstatus', 'name', 'consignment_status', 'consignment_received_by', 'consignment_date_received');
+                })
+                ->where('purpose', $purpose)
+                ->when($request->q, function ($q) use ($request){
+                    return $q->where('name', 'like', "%$request->q%");
+                })
+                ->when($request->source_warehouse, function ($q) use ($request){
+                    return $q->where('source_warehouse', $request->source_warehouse);
+                })
+                ->when($request->target_warehouse, function ($q) use ($request){
+                    return $q->where('target_warehouse', $request->target_warehouse);
+                })
+                ->when($request->status, function ($q) use ($request){
+                    return $q->where('status', $request->status);
+                })->orderBy('creation', 'desc')->paginate(20);
+
+            $item_codes = collect($list->items())->flatMap(function($stock_transfer) {
+                return $stock_transfer->items->pluck('item_code');
+            })->unique()->values();
+
+            $warehouses = collect($list->items())->pluck('source_warehouse');
+
+            $flatten_item_codes = $item_codes->implode("','");
+
+            $bin_details = Bin::with('defaultImage')->whereRaw("item_code in ('$flatten_item_codes')")->whereIn('warehouse', $warehouses)
+                ->select('item_code', 'warehouse', 'consigned_qty')->get()->groupBy(['warehouse', 'item_code']);
+
+            $result = collect($list->items())->map(function ($stock_transfer) use ($bin_details){
+                $bin = $bin_details[$stock_transfer->source_warehouse];
+
+                $stock_transfer->submitted_by = ucwords(str_replace('.', ' ', explode('@', $stock_transfer->owner)[0]));
+
+                $stock_transfer->items = collect($stock_transfer->items)->map(function ($item) use ($bin) {
+                    $item_code = $item->item_code;
+                    $consignment_details = $bin[$item_code][0];
+
+                    $item->consigned_qty = (int) $consignment_details->consigned_qty;
+                    $item->qty = (int) $item->qty;
+                    $item->price = (float) $item->price;
+                    $item->amount = (float) $item->amount;
+
+                    $item->image = isset($consignment_details->defaultImage->image_path) ? '/img/'.$consignment_details->defaultImage->image_path : '/icon/no_img.png';
+                    if(Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')){
+                        $item->image = explode('.', $item->image)[0].'.webp';
                     }
-    
-                    $result[] = [
-                        'name' => $ste->name,
-                        'creation' => Carbon::parse($ste->creation)->format('M d, Y - h:i A'),
-                        'source_warehouse' => $ste->source_warehouse,
-                        'target_warehouse' => $ste->target_warehouse,
-                        'purpose' => $ste->purpose,
-                        'status' => $ste->status,
-                        'submitted_by' => ucwords(str_replace('.', ' ', explode('@', $ste->owner)[0])),
-                        'items' => $items_array,
-                        'references' => $ste->references
-                    ];
-                }
 
-                $cste_references = array_filter(collect($result)->pluck('references')->toArray());
-                $stock_entries = DB::table('tabStock Entry')->whereIn('name', $cste_references)
-                    ->select('docstatus', 'name', 'consignment_status', 'consignment_received_by', 'consignment_date_received')
-                    ->get()->groupBy('name')->toArray();
-            }
+                    return $item;
+                });
 
-            return view('consignment.supervisor.tbl_stock_transfer', compact('result', 'list', 'purpose', 'stock_entries'));
+                return $stock_transfer;
+            });
+
+            return view('consignment.supervisor.tbl_stock_transfer', compact('result', 'list', 'purpose'));
         }
 
         return view('consignment.supervisor.view_stock_transfers');
