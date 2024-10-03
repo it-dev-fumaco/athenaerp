@@ -17,13 +17,17 @@ use Exception;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 
-use App\Models\AssignedWarehouses;
+use App\Models\ActivityLog;
+use App\Models\BeginningInventory;
 use App\Models\Bin;
-use App\Models\Item;
-use App\Models\ERPUser;
-use App\Models\Warehouse;
-use App\Models\StockEntry;
+use App\Models\ConsignmentDamagedItems;
+use App\Models\ConsignmentStockAdjustment;
 use App\Models\ConsignmentStockEntry;
+use App\Models\ERPUser;
+use App\Models\Item;
+use App\Models\ItemImages;
+use App\Models\StockEntry;
+use App\Models\Warehouse;
 
 use App\Traits\GeneralTrait;
 use App\Traits\ERPTrait;
@@ -551,13 +555,13 @@ class ConsignmentController extends Controller
         if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
             $status = $request->status ? $request->status : 'For Approval';
 
-            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+            $beginning_inventory = BeginningInventory::with('items')
                 ->when($request->search, function ($q) use ($request){
-                    return $q->where('name', 'LIKE', '%'.$request->search.'%')
-                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
+                    return $q->where('name', 'LIKE', "%$request->search%")
+                        ->orWhere('owner', 'LIKE', "%$request->search%");
                 })
                 ->when($request->date, function ($q) use ($from_date, $to_date){
-                    return $q->whereDate('transaction_date', '>=', $from_date)->whereDate('transaction_date', '<=', $to_date);
+                    return $q->whereBetween('transaction_date', [$from_date, $to_date]);
                 })
                 ->when($request->store, function ($q) use ($request){
                     return $q->where('branch_warehouse', $request->store);
@@ -593,91 +597,54 @@ class ConsignmentController extends Controller
                 ->paginate(10);
         }
 
-        $ids = collect($beginning_inventory->items())->pluck('name');
+        $item_codes = collect($beginning_inventory->items())->flatMap(function($stock_transfer) {
+            return $stock_transfer->items->pluck('item_code');
+        })->unique()->values();
 
         $warehouses = collect($beginning_inventory->items())->pluck('branch_warehouse');
 
-        $beginning_inv_items = DB::table('tabConsignment Beginning Inventory Item')->whereIn('parent', $ids)->orderBy('idx')->get();
-        $beginning_inventory_items = collect($beginning_inv_items)->groupBy('parent');
+        $flatten_item_codes = $item_codes->implode("','");
 
-        $inventory_item_codes = $beginning_inv_items->pluck('item_code');
+        $bin_details = Bin::with('defaultImage')->whereRaw("item_code in ('$flatten_item_codes')")->whereIn('warehouse', $warehouses)
+            ->select('item_code', 'warehouse', 'consignment_price')->get()->groupBy(['warehouse', 'item_code']);
 
-        $item_prices = DB::table('tabBin')->whereIn('warehouse', $warehouses)->whereIn('item_code', $inventory_item_codes)->select('warehouse', 'consignment_price', 'item_code')->get();
-        $item_price = [];
+        $inv_arr = collect($beginning_inventory->items())->map(function ($inventory) use ($bin_details){
+            $bin = $bin_details[$inventory->branch_warehouse];
 
-        foreach($item_prices as $item){
-            $item_price[$item->warehouse][$item->item_code] = [
-                'price' => $item->consignment_price
-            ];
-        }
+            $inventory->owner = ucwords(str_replace('.', ' ', explode('@', $inventory->owner)[0]));
+            $inventory->transaction_date = Carbon::parse($inventory->transaction_date)->format('M. d, Y');
 
-        $item_codes = collect($beginning_inv_items)->map(function ($q){
-            return $q->item_code;
-        })->unique();
+            $inventory->qty = collect($inventory->items)->sum('opening_stock');
+            $inventory->amount = collect($inventory->items)->sum('amount');
+            $inventory->items = collect($inventory->items)->map(function ($item) use ($bin) {
+                $item_code = $item->item_code;
 
-        $warehouses = collect($beginning_inventory->items())->map(function ($q){
-            return $q->branch_warehouse;
-        })->unique();
+                $item->image = '/icon/no_img.png';
+                $price = 0;
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
-        $item_images = collect($item_images)->map(function ($image){
-            return $this->base64_image("img/$image");
-        });
+                $item->opening_stock = (int) $item->opening_stock;
+                $item->amount = (float) $item->amount;
 
-        $no_img = $this->base64_image('icon/no_img.png');
+                if(isset($bin[$item_code][0])){
+                    $consignment_details = $bin[$item_code][0];
+                    $price = $item->status == 'For Approval' ? $item->price : $consignment_details->consignment_price;
 
-        $uoms = DB::table('tabItem')->whereIn('item_code', $item_codes)->select('item_code', 'stock_uom')->get();
-        $uom = collect($uoms)->groupBy('item_code');
-
-        $inv_arr = [];
-        foreach($beginning_inventory as $inv){
-            $items_arr = [];
-            $included_items = [];
-            
-            if(isset($beginning_inventory_items[$inv->name])){
-                foreach($beginning_inventory_items[$inv->name] as $item){
-                    $price = isset($item_price[$inv->branch_warehouse][$item->item_code]) ? $item_price[$inv->branch_warehouse][$item->item_code]['price'] * 1 : 0;
-                    if($inv->status == 'For Approval'){
-                        $price = $item->price;
+                    $item->image = isset($consignment_details->defaultImage->image_path) ? '/img/'.$consignment_details->defaultImage->image_path : '/icon/no_img.png';
+                    if(Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')){
+                        $item->image = explode('.', $item->image)[0].'.webp';
                     }
-
-                    $items_arr[] = [
-                        'parent' => $item->parent,
-                        'inv_name' => $inv->name,
-                        'image' => isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img,
-                        'item_code' => $item->item_code,
-                        'item_description' => $item->item_description,
-                        'uom' => $item->stock_uom,
-                        'opening_stock' => ($item->opening_stock * 1),
-                        'price' => $price,
-                        'amount' => ($price * 1) * ($item->opening_stock * 1),
-                        'idx' => $item->idx
-                    ];
                 }
 
-                $included_items = collect($items_arr)->pluck('item_code')->toArray();
-            }
+                return $item;
+            });
 
-            $inv_arr[] = [
-                'name' => $inv->name,
-                'branch' => $inv->branch_warehouse,
-                'owner' => $inv->owner,
-                'creation' => Carbon::parse($inv->creation)->format('M d, Y - h:i a'),
-                'status' => $inv->status,
-                'transaction_date' => Carbon::parse($inv->transaction_date)->format('M d, Y - h:i a'),
-                'items' => $items_arr,
-                'qty' => collect($items_arr)->sum('opening_stock'),
-                'amount' => collect($items_arr)->sum('amount'),
-                'remarks' => $inv->remarks,
-                'approved_by' => $inv->approved_by,
-                'date_approved' => $inv->date_approved
-            ];
-        }
+            return $inventory;
+        });
 
         $last_record = collect($beginning_inventory->items()) ? collect($beginning_inventory->items())->sortByDesc('creation')->last() : [];
         $earliest_date = $last_record ? Carbon::parse($last_record->creation)->format("Y-M-d") : Carbon::now()->format("Y-M-d");
 
-        $activity_logs_users = DB::table('tabActivity Log')->where('content', 'Consignment Activity Log')->distinct()->pluck('full_name');
+        $activity_logs_users = ActivityLog::where('content', 'Consignment Activity Log')->distinct()->pluck('full_name');
 
         if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
             return view('consignment.supervisor.view_stock_adjustments', compact('consignment_stores', 'inv_arr', 'beginning_inventory', 'activity_logs_users'));
@@ -3097,38 +3064,27 @@ class ConsignmentController extends Controller
         $transaction_date = Carbon::parse($date);
         $now = Carbon::now();
 
-        $ste_items = DB::table('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->whereBetween('sted.consignment_date_received', [$transaction_date, $now])->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('sted.item_code', $item_code)->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->where('sted.t_warehouse', $branch)->where('sted.consignment_status', 'Received')
-
-            ->orWhereBetween('sted.consignment_date_received', [$transaction_date, $now])->whereIn('ste.transfer_as', ['For Return'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('sted.item_code', $item_code)->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->where('sted.s_warehouse', $branch)
-
-            ->orWhereBetween('sted.consignment_date_received', [$transaction_date, $now])->whereIn('ste.transfer_as', ['Store Transfer'])->whereIn('ste.item_status', ['For Checking', 'Issued'])->where('sted.item_code', $item_code)->where('ste.purpose', 'Material Transfer')->where('ste.docstatus', 1)->where('sted.s_warehouse', $branch)
-
-            ->selectRaw('sted.item_code, sted.description, sted.transfer_qty, sted.basic_rate, sted.basic_amount, ste.name, sted.consignment_date_received, sted.consignment_received_by, ste.delivery_date')
-            ->orderBy('sted.consignment_date_received', 'desc')->first();
-
-        $damaged_items = DB::table('tabConsignment Damaged Item')
-            ->where('branch_warehouse', $branch)
-            ->where('item_code', $item_code)
-            ->whereBetween('transaction_date', [$transaction_date, $now])
-            ->orderBy('transaction_date', 'desc')->first();
-
-        $stock_adjustments = DB::table('tabConsignment Stock Adjustment as sa')
-            ->join('tabConsignment Stock Adjustment Items as sai', 'sai.parent', 'sa.name')
-            ->whereBetween('sa.creation', [$transaction_date, $now])
-            ->where('sa.warehouse', $branch)->where('sai.item_code', $item_code)
-            ->when($csa_id != null, function ($q) use ($csa_id){
-                return $q->where('sa.name', '!=', $csa_id);
+        $has_stock_entry = StockEntry::whereHas('items', function ($item) use ($now, $transaction_date, $item_code, $branch){
+                $item->where('item_code', $item_code)->whereBetween('consignment_date_received', [$transaction_date, $now])->where('s_warehouse', $branch);
             })
-            ->where('sa.status', '!=', 'Cancelled')
-            ->get();
+            ->whereIn('transfer_as', ['Consignment', 'For Return', 'Store Transfer'])->where('item_status', ['For Checking', 'Issued'])->where('purpose', 'Material Transfer')->where('docstatus', 1)
+            ->exists();
 
-        return $transaction_array = [
-            // 'sold_transactions' => $sold > 0 ? 1 : 0,
-            'ste_transactions' => $ste_items ? 1 : 0,
-            'damaged_transactions' => $damaged_items ? 1 : 0,
-            'stock_adjustment_transactions' => count($stock_adjustments) > 0 ? 1 : 0
+        $has_damaged_items = ConsignmentDamagedItems::where('branch_warehouse', $branch)->where('item_code', $item_code)->whereBetween('transaction_date', [$transaction_date, $now])->exists();
+
+        $has_stock_adjustments = ConsignmentStockAdjustment::whereHas('items', function ($item) use ($item_code){
+                $item->where('item_code', $item_code);
+            })
+            ->whereBetween('creation', [$transaction_date, $now])
+            ->where('warehouse', $branch)->where('status', '!=', 'Cancelled')
+            ->when($csa_id != null, function ($q) use ($csa_id){
+                return $q->where('name', '!=', $csa_id);
+            })->exists();
+
+        return [
+            'ste_transactions' => $has_stock_entry,
+            'damaged_transactions' => $has_damaged_items,
+            'stock_adjustment_transactions' => $has_stock_adjustments
         ];
     }
 
@@ -3201,60 +3157,52 @@ class ConsignmentController extends Controller
     }
 
     public function viewStockAdjustmentHistory(Request $request){
-        $stock_adjustments = DB::table('tabConsignment Stock Adjustment')
-            ->when($request->branch_warehouse, function ($q) use ($request){
+        $stock_adjustments = ConsignmentStockAdjustment::with('items')->when($request->branch_warehouse, function ($q) use ($request){
                 return $q->where('warehouse', $request->branch_warehouse);
             })
             ->orderBy('creation', 'desc')->paginate(10);
 
-        $items_qry = DB::table('tabConsignment Stock Adjustment Items')->whereIn('parent', collect($stock_adjustments->items())->pluck('name'))->get();
-        $adjusted_items = collect($items_qry)->groupBy('parent');
+        $item_codes = collect($stock_adjustments->items())->flatMap(function($stock_adjustment) {
+            return $stock_adjustment->items->pluck('item_code');
+        })->unique()->values();
 
-        $item_images = DB::table('tabItem Images')->whereIn('parent', collect($items_qry)->pluck('item_code'))->pluck('image_path', 'parent');
-        $item_images = collect($item_images)->map(function ($image){
-            return $this->base64_image("img/$image");
+        $flatten_item_codes = $item_codes->implode("','");
+
+        $item_images = ItemImages::whereRaw("parent IN ('$flatten_item_codes')")->pluck('image_path', 'parent');
+
+        $stock_adjustments_array = collect($stock_adjustments->items())->map(function ($stock_adjustment) use ($item_images){
+            $warehouse = $stock_adjustment->warehouse;
+            $creation = $stock_adjustment->creation;
+            $stock_adjustment->items = collect($stock_adjustment->items)->map(function ($item) use ($item_images, $warehouse, $creation){
+                $item_code = $item->item_code;
+                $transactions = $this->check_item_transactions($item_code, $warehouse, $creation, $item->parent);
+
+                $item->transactions = $transactions;
+                $item->has_transactions = in_array(true, $transactions);
+
+                $item->previous_qty = (int) $item->previous_qty;
+                $item->previous_price = (float) $item->previous_price;
+
+                $item->new_qty = (int) $item->new_qty;
+                $item->new_price = (float) $item->new_price;
+
+                $item->item_description = strip_tags($item->item_description);
+
+                $item->reason = $item->remarks;
+
+                $item->image = isset($item_images[$item_code]) ? '/img/'.$item_images[$item_code] : '/icon/no_img.png';
+                if(Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')){
+                    $item->image = explode('.', $item->image)[0].'.webp';
+                }
+
+                return $item;
+            });
+
+            $stock_adjustment->transaction_date = Carbon::parse("$stock_adjustment->transaction_date $stock_adjustment->transaction_time")->format('M. d, Y h:i A');
+            $stock_adjustment->has_transactions = in_array(true, collect($stock_adjustment->items)->pluck('has_transactions')->toArray());
+
+            return $stock_adjustment;
         });
-
-        $no_img = $this->base64_image('icon/no_img.png');
-
-        $stock_adjustments_array = [];
-        foreach($stock_adjustments as $sa){
-            $items_array = [];
-            if(!isset($adjusted_items[$sa->name])){
-                continue;
-            }
-
-            foreach($adjusted_items[$sa->name] as $item){
-                $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
-
-                $items_array[] = [
-                    'item_code' => $item->item_code,
-                    'item_description' => strip_tags($item->item_description),
-                    'uom' => $item->uom,
-                    'image' => $img,
-                    'previous_qty' => $item->previous_qty,
-                    'new_qty' => $item->new_qty,
-                    'previous_price' => $item->previous_price,
-                    'new_price' => $item->new_price,
-                    'has_transactions' => collect($this->check_item_transactions($item->item_code, $sa->warehouse, $sa->creation, $sa->name))->max(),
-                    'transactions' => $this->check_item_transactions($item->item_code, $sa->warehouse, $sa->creation, $sa->name),
-                    'reason' => $item->remarks
-                ];
-            }
-
-            $stock_adjustments_array[] = [
-                'name' => $sa->name,
-                'title' => $sa->title,
-                'warehouse' => $sa->warehouse,
-                'created_by' => $sa->created_by,
-                'creation' => $sa->creation,
-                'status' => $sa->status,
-                'transaction_date' => $sa->transaction_date.' '.$sa->transaction_time,
-                'items' => $items_array,
-                'has_transactions' => collect($items_array)->pluck('has_transactions')->max(),
-                'remarks' => $sa->remarks
-            ];
-        }
 
         return view('consignment.supervisor.view_stock_adjustment_history', compact('stock_adjustments', 'stock_adjustments_array'));
     }
@@ -3657,12 +3605,11 @@ class ConsignmentController extends Controller
 
     // /get_activity_logs
     public function activityLogs(Request $request) {
-        // return $request->all();
         $dates = $request->date ? explode(' to ', $request->date) : [];
         
-        $logs = DB::table('tabActivity Log')->where('content', 'Consignment Activity Log')
+        $logs = ActivityLog::where('content', 'Consignment Activity Log')
             ->when($request->warehouse, function($q) use ($request){
-                return $q->where('subject', 'like', '%'.$request->warehouse.'%');
+                return $q->where('subject', 'like', "%$request->warehouse%");
             })
             ->when($dates, function ($q) use ($dates){
                 return $q->whereBetween('creation', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]);
