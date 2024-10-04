@@ -913,7 +913,7 @@ class ConsignmentController extends Controller
             return $stock_entry->items->pluck('target_warehouses');
         })->unique()->values();
 
-        $item_prices = DB::table('tabBin')->whereIn('warehouse', $target_warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get()->groupBy(['item_code', 'warehouse']);
+        $item_prices = Bin::whereIn('warehouse', $target_warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get()->groupBy(['item_code', 'warehouse']);
 
         $ste_arr = collect($delivery_report->items())->map(function ($stock_entry) use ($item_prices){
             $stock_entry->items = collect($stock_entry->items)->map(function ($item) use ($item_prices){
