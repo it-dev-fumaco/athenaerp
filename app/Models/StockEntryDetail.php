@@ -20,6 +20,6 @@ class StockEntryDetail extends Model
     }
 
     public function defaultImage(){
-        return $this->hasOne(ItemImages::class, 'parent', 'item_code');
+        return $this->hasOne(ItemImages::class, 'parent', 'item_code')->select('image_path', 'parent');
     }
 }

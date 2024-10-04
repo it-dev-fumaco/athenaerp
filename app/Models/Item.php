@@ -23,6 +23,6 @@ class Item extends Model
     }
 
     public function defaultImage(){
-        return $this->hasOne(ItemImages::class, 'parent', 'name');
+        return $this->hasOne(ItemImages::class, 'parent', 'name')->select('image_path', 'parent');
     }
 }
