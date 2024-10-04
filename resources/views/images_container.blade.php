@@ -7,14 +7,13 @@
     <div class="carousel-inner">
         @foreach ($images as $i => $image)
             <div class="carousel-item {{ $selected == $i ? 'active' : null }}" style="max-height: 860px;">
-                @php
-                    $webp = explode('.', $image->image_path)[0].'.webp';
-                @endphp
-                {{-- @if (Storage::exists("img/$webp")) --}}
-                    <a href="{{ $image->image }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ $image->image }}"><i class="fa fa-download"></i> Download Image</a>
-                {{-- @endif  --}}
+                @if (!$image->original)
+                    <a href="/download_image/{{ $image->image }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" data-download="{{ $image->image_path }}"><i class="fa fa-download"></i> Download Image</a>
+                @else
+                    <a href="{{ asset("storage/$image->image_path") }}" class="btn btn-primary hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ asset("storage/$image->image_path") }}"><i class="fa fa-download"></i> Download Image</a>
+                @endif
                 <center>
-                    <img class="modal-img" src="{{ $image->image }}">
+                    <img class="modal-img" src="{{ asset("storage/$image->image_path") }}">
                 </center>
                 <span class="font-italic hidden-on-slide" style="font-size: 8pt; font-weight: 600; position: absolute; right: 10px; bottom: 2px; z-index: 999">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }} - {{ Carbon\Carbon::parse($image->creation)->format('M. d, Y h:i A') }}</span>
             </div>
@@ -71,7 +70,7 @@
     }
 </style>
 <script>
-    $(document).ready(function (){
+    // $(document).ready(function (){
         $('#images-control').on('slide.bs.carousel', function (){
             $('.hidden-on-slide').addClass('d-none');
             $('.carousel-control').addClass('d-none');
@@ -82,5 +81,5 @@
             $(this).find('.active').find('span').removeClass('d-none');
             $('.carousel-control').removeClass('d-none');
         });
-    });
+    // });
 </script>

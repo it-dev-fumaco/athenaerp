@@ -19,7 +19,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Response;
+
 use App\Models\Item;
+use App\Models\ItemImages;
 
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
@@ -6613,5 +6616,33 @@ class MainController extends Controller
         $images['receiving-of-stocks'] = $this->base64_image('user_manual_img/receiving-of-stocks.png');
 
         return view('consignment.user_manual.consignment_stock_transfer', compact('images'));
+    }
+
+    public function download_image($webp){
+        $webpPath = storage_path("app/public/img/$webp");
+
+        if (!file_exists($webpPath)) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        $image = imagecreatefromwebp($webpPath);
+
+        if (!$image) {
+            return response()->json(['message' => 'Failed to convert the image'], 500);
+        }
+
+        ob_start();
+        imagejpeg($image);
+        $jpgData = ob_get_contents();
+        ob_end_clean();
+
+        imagedestroy($image);
+
+        $name = explode('.', $webp)[0];
+
+        return Response::make($jpgData, 200, [
+            'Content-Type' => 'image/jpeg',
+            'Content-Disposition' => "attachment; filename=$name.jpg"
+        ]);
     }
 }
