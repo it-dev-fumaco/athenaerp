@@ -33,7 +33,7 @@
                                 </div>
                                 <div class="col-8 mt-3">
                                     <span class="d-block font-weight-bold">{{ $data['item_code'] }}</span>
-                                    <small class="d-block text-justify">{{ $data['description'] }}</small>
+                                    <small class="d-block text-justify">{{ strip_tags($data['description']) }}</small>
                                     <dl>
                                         <dt>Available Qty</dt>
                                         <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>

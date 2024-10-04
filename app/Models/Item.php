@@ -25,4 +25,12 @@ class Item extends Model
     public function defaultImage(){
         return $this->hasOne(ItemImages::class, 'parent', 'name')->select('image_path', 'parent');
     }
+
+    public function item_default(){
+        return $this->hasMany(ItemDefault::class, 'parent', 'name');
+    }
+
+    public function item_reorder(){
+        return $this->hasOne(ItemReorder::class, 'parent', 'name');
+    }
 }
