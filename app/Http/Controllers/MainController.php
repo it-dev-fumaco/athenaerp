@@ -1953,8 +1953,6 @@ class MainController extends Controller
                     $item->where('name', $child_table_id);
                 })->first();
 
-                return $steDetails;
-
             if(!$steDetails || !$steDetails->items){
                 throw new Exception('Record not found!');
             }
