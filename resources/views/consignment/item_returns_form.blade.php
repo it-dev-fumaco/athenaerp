@@ -261,11 +261,7 @@
                     return opt.text;
                 }
 
-                var optimage = opt.webp;
-
-                if(optimage.indexOf('/icon/no_img') != -1){
-                    optimage = opt.img;
-                }
+                var optimage = opt.img;
 
                 if(!optimage){
                     return opt.text;

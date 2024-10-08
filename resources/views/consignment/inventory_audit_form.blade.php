@@ -67,7 +67,7 @@
                                                 $qty = null;
                                                 if(session()->has('error')) {
                                                     $data = session()->get('old_data');
-                                                    $qty = $data['item'][$row->item_code]['qty'];
+                                                    $qty = isset($data['items'][$row->item_code]['qty']) ? $data['items'][$row->item_code]['qty'] : 0;
                                                 }
                                             @endphp
                                             <tr style="border-bottom: 0 !important;" class="item-row {{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">

@@ -4,11 +4,13 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\Storage;
 
+use Mail;
+use Illuminate\Support\Facades\Response;
 trait GeneralTrait
 {
     public function base64_image($file, $original = 0){
-        $file = explode('.', $file);
-        $file = $file[0].'.webp';
+        // $file = explode('.', $file);
+        // $file = $file[0].'.webp';
         return asset("storage/$file");
         // if(!$file){
         //     return null;
@@ -29,4 +31,18 @@ trait GeneralTrait
 
         // return "data:$mimetype;base64,$base64";
     }
+
+    public function sendMail($template, $data, $recipient, $subject = null){
+        try {
+            Mail::send($template, $data, function($message) use ($recipient, $subject){
+                $message->to($recipient);
+                $message->subject($subject);
+            });
+
+            return ['success' => 1, 'message' => 'Email Sent!'];
+        } catch (\Throwable $th) {
+            return ['success' => 0, 'message' => $th->getMessage()];
+        }
+    }
+
 }

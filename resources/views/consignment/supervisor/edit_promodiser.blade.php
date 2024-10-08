@@ -41,14 +41,14 @@
                                 @csrf
                                 <div class="row">
                                     <div class="col-12">
-                                        <span><b>Username:</b> {{ $user_details->wh_user }}</span> <br>
+                                        <span><b>Username:</b> {{ $user_details->name }}</span> <br>
                                         <span><b>Full Name:</b> {{ $user_details->full_name }}</span>
                                     </div>
                                 </div>
                                 <div class="row mt-2">
                                     <div class="col-3">
                                         <div class="form-group">
-                                            <input type="checkbox" name="enabled" {{ $user_details->enabled == 1 ? 'checked' : null }}>
+                                            <input type="checkbox" name="enabled" {{ $user_details->wh_user->enabled ? 'checked' : null }}>
                                             <label for="customCheck1">Active</label>
                                         </div>
                                     </div>

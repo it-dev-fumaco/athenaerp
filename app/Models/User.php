@@ -25,7 +25,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token', 'api_key', 'api_secret'
     ];
 
     /**
@@ -48,5 +48,9 @@ class User extends Authenticatable
         {
         parent::setAttribute($key, $value);
         }
+    }
+
+    public function assigned_warehouses(){
+        return $this->hasMany(AssignedWarehouses::class, 'parent', 'frappe_userid');
     }
 }

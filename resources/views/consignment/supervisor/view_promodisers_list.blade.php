@@ -46,17 +46,23 @@
                             @endif
                             <table class="table table-bordered table-striped" style="font-size: 9pt;">
                                 <thead class="border-top">
+                                    {{-- <th class="text-center font-responsive p-2 align-middle" style="width: 10%;">Status</th> --}}
                                     <th class="text-center font-responsive p-2 align-middle" style="width: 20%;">Promodiser Name</th>
-                                    <th class="text-center font-responsive p-2 align-middle" style="width: 45%;">Assigned Store</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 40%;">Assigned Store</th>
                                     <th class="text-center font-responsive p-2 align-middle" style="width: 10%;">Opening</th>
                                     <th class="text-center font-responsive p-2 align-middle" style="width: 20%;">Last Login</th>
+                                    <th class="text-center font-responsive p-2 align-middle" style="width: 5%;">Enable</th>
                                     <th class="text-center font-responsive p-2 align-middle" style="width: 5%;">Action</th>
                                 </thead>
                                 <tbody>
                                     @forelse ($result as $row)
                                     <tr>
+                                        {{-- <td></td> --}}
                                         <td class="text-center p-1 align-middle">
-                                            {{ $row['promodiser_name'] }}<br><span class="badge badge-{{ $row['enabled'] ? 'primary' : 'secondary' }}">{{ $row['enabled'] ? 'Active' : 'Inactive' }}</span>
+                                            {{ $row['promodiser_name'] }}
+                                            <br>
+                                            {{-- <span class="badge badge-{{ $row['enabled'] ? 'primary' : 'secondary' }}">{{ $row['enabled'] ? 'Active' : 'Inactive' }}</span> --}}
+                                            <small>{{ $row['id'] }}</small>
                                         </td>
                                         <td class="text-center p-0 align-middle">
                                             @foreach ($row['stores'] as $store)
@@ -78,6 +84,12 @@
                                             @endif
                                         </td>
                                         <td class="text-center p-1 align-middle">
+                                            <label class="switch">
+                                                <input type="checkbox" class="toggle" name="status" {{ $row['enabled'] ? 'checked' : '' }} value="{{ $row['id'] }}"/>
+                                                <span class="slider round"></span>
+                                            </label>
+                                        </td>
+                                        <td class="text-center p-1 align-middle">
                                             <a href="/edit_promodiser/{{ $row['id'] }}" class="btn btn-primary btn-xs"><i class="fa fa-edit" style="font-size: 9pt;"></i></a>
                                         </td>
                                     </tr>
@@ -96,8 +108,111 @@
         </div>
 	</div>
 </div>
+
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 30px;
+        height: 16px;
+    }
+
+    .switch input { 
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 10px;
+        width: 10px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+        -webkit-transform: translateX(16px);
+        -ms-transform: translateX(16px);
+        transform: translateX(16px);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+</style>
 @endsection
 
 @section('script')
+<script>
+    $(document).ready(function (){
+        const showNotification = (color, message, icon) => {
+            $.notify({
+                icon: icon,
+                message: message
+            },{
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: {
+                from: 'top',
+                align: 'center'
+                }
+            });
+        }
+
+        $(document).on('change', ".toggle", function(){
+            const btn = $(this);
+
+            const id = $(this).val()
+            const data = {
+                'enabled': $(this).prop('checked') == true ? 1 : 0,
+                'enabled': $(this).val(),
+                '_token': "{{ csrf_token() }}",
+            }
+            $.ajax({
+                type:'POST',
+                url:'/edit_promodiser_submit/' + id,
+                data: data,
+                success: (response) => {
+                    console.log('success');
+                },
+                error: (error) => {
+                    btn.prop('checked', false)
+                    showNotification('danger', 'An error occured while updating user.', 'fa fa-info')
+                }
+            });
+        });    
+    })
+</script>
 
 @endsection

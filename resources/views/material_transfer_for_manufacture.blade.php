@@ -216,6 +216,10 @@
 					}else{
 						showNotification("danger", response.message, "fa fa-check");
 					}
+				},
+				error: (xhr, textStatus, errorThrown) => {
+					console.log(xhr, textStatus, errorThrown) 
+					showNotification("danger", xhr.responseJSON.message, "fa fa-info");
 				}
 			});
 		});
@@ -290,15 +294,12 @@
 							showNotification("success", response.message, "fa fa-check");
 							angular.element('#anglrCtrl').scope().loadData();
 							$('#ste-modal').modal('hide');
-							$('#btn-deduct-res').removeAttr('disabled');
-							$('#btn-check-out').removeAttr('disabled');
-						}else{
-							showNotification("danger", response.message, "fa fa-info");
-							$('#btn-deduct-res').removeAttr('disabled');
-							$('#btn-check-out').removeAttr('disabled');
 						}
 					},
-					error: function(jqXHR, textStatus, errorThrown) {
+					error: (xhr, textStatus, errorThrown) => {
+						showNotification("danger", xhr.responseJSON.message, "fa fa-info");
+					},
+					complete: (data) => {
 						$('#btn-deduct-res').removeAttr('disabled');
 						$('#btn-check-out').removeAttr('disabled');
 					}

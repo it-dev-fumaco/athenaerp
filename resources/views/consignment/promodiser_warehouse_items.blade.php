@@ -41,7 +41,12 @@
                                 </thead>
                                 @forelse ($inv_summary as $item)
                                 @php
-                                    $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $item_images['no_img'];
+                                    $img = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no_img.png';
+                                    if(Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')){
+                                        $img = explode('.', $item->image)[0].'.webp';
+                                    }
+
+                                    $img = asset("storage/$img");
                                 @endphp
                                 <tbody>
                                     <tr>
@@ -57,12 +62,12 @@
                                         </td>
                                         <td class="text-center p-1 align-middle">
                                             <p>
-                                                <span class="font-weight-bold d-block">{{ number_format($item->consigned_qty) }}</span>
+                                                <span class="font-weight-bold d-block">{{ number_format($item->bin[0]->consigned_qty) }}</span>
                                                 <small class="text-muted">{{ $item->stock_uom }}</small>
                                             </p>
                                         </td>
                                         <td class="text-center p-1 align-middle font-weight-bold">
-                                            {{ '₱ ' . number_format($item->consignment_price, 2) }}
+                                            {{ '₱ ' . number_format($item->bin[0]->consignment_price, 2) }}
                                         </td>
                                     </tr>
                                     <tr>

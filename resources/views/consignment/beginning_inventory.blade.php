@@ -14,6 +14,12 @@
                             <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Beginning Inventory Entry</span>
                         </div>
                         <div class="card-body p-1">
+                            @if(session()->has('success'))
+                                <div class="callout callout-success font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
+                                    {{ session()->get('success') }}
+                                </div>
+                            @endif
+
                             @if(session()->has('error'))
                                 <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">
                                     {{ session()->get('error') }}

@@ -1,4 +1,8 @@
-<form action='/save_beginning_inventory' id='beginning-inventory-form' method="post" class="text-center {{ $branch != 'none' ? null : 'd-none' }}">
+@php
+    $action = $inv_name ? "/update_beginning_inventory/$inv_name" : '/save_beginning_inventory';
+@endphp
+
+<form action='{{ $action }}' id='beginning-inventory-form' method="post" class="text-center {{ $branch != 'none' ? null : 'd-none' }}">
     @csrf
     <div class="row">
         <div class="col-8">
@@ -176,7 +180,29 @@
         <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
         <div class="m-2">
             @if ($inv_name)
-                <button type="button" class="btn btn-danger btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-remove"></i> CANCEL</button>
+                <button type="button" class="btn btn-primary btn-block submit-once" id="submit-btn"><i class="fas fa-check"></i> UPDATE</button>
+
+                <button type="button" class="btn btn-secondary btn-block submit-once" data-toggle="modal" data-target="#cancel-beginning-inventory-modal"><i class="fas fa-remove"></i> CANCEL</button>
+
+                <div class="modal fade" id="cancel-beginning-inventory-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog text-center" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-navy">
+                                <h5 class="modal-title" id="exampleModalLabel">Cancel Beginning Inventory</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to cancel Beginning Inventory Entry: <b>{{ $inv_name }}</b>?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <a href="/cancel_beginning_inventory/{{ $inv_name }}" class="btn btn-primary">Cancel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             @else
                 <button type="button" class="btn btn-primary btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
             @endif

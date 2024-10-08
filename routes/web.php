@@ -172,6 +172,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
             Route::get('/cancel_stock_adjustment/{id}', 'ConsignmentController@cancelStockAdjustment');
             Route::post('/item_return/submit', 'ConsignmentController@itemReturnSubmit');
             Route::post('/save_beginning_inventory', 'ConsignmentController@saveBeginningInventory');
+            Route::get('/cancel_beginning_inventory/{id}', 'ConsignmentController@cancelDraftBeginningInventory');
+            Route::post('/update_beginning_inventory/{id}', 'ConsignmentController@updateDraftBeginningInventory');
             Route::get('/promodiser/receive/{id}', 'ConsignmentController@promodiserReceiveDelivery');
             Route::get('/promodiser/cancel/received/{id}', 'ConsignmentController@promodiserCancelReceivedDelivery');
             Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem');
@@ -275,5 +277,5 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/download/{project}/{filename}', 'BrochureController@downloadBrochure');
     Route::post('/remove_image', 'BrochureController@removeImage');
 
-    Route::get('/download_image/{directory}/{file}', 'MainController@download_image');
+    Route::get('/download_image/{file}', 'MainController@download_image');
 });
