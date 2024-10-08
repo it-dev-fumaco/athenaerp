@@ -25,8 +25,10 @@ use App\Models\Item;
 use App\Models\ItemImages;
 use App\Models\DeliveryNote;
 use App\Models\MaterialRequest;
+use App\Models\MaterialRequestItem;
 use App\Models\SalesOrder;
 use App\Models\StockEntry;
+use App\Models\StockEntryDetail;
 use App\Models\StockReservation;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderItem;
@@ -1955,7 +1957,7 @@ class MainController extends Controller
             $now = Carbon::now();
 
             $child_table_id = $request->child_tbl_id;
-            return $steDetails = StockEntry::whereHas('items', function ($item) use ($child_table_id){
+            $steDetails = StockEntry::whereHas('items', function ($item) use ($child_table_id){
                     $item->where('name', $child_table_id);
                 })->with('items', function ($item) use ($child_table_id){
                     $item->where('name', $child_table_id);
