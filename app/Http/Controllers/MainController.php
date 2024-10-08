@@ -20,9 +20,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 
+use App\Models\Bin;
 use App\Models\Item;
 use App\Models\ItemImages;
 use App\Models\DeliveryNote;
+use App\Models\MaterialRequest;
 use App\Models\SalesOrder;
 use App\Models\StockEntry;
 use App\Models\StockReservation;
@@ -1971,7 +1973,7 @@ class MainController extends Controller
             $source_warehouse = $itemDetails->s_warehouse;
             $target_warehouse = $itemDetails->t_warehouse;
 
-            $check_item_code = Item::where('name', $item_code)->select('name', 'is_stock_item')->first();
+            $check_item_code = Item::select('name', 'is_stock_item')->find($item_code);
 
             $itemDetails->qty = (float) $itemDetails->qty;
 
@@ -2000,7 +2002,8 @@ class MainController extends Controller
                 throw new Exception("Qty cannot be greater than $itemDetails->qty");
             }
 
-            $sales_person = SalesOrder::where('name', $steDetails->sales_order_no)->pluck('sales_person')->first();
+            $sales_person = $steDetails->sales_order_no ? SalesOrder::select('sales_person')->find($steDetails->sales_order_no) : MaterialRequest::select('sales_person')->find($steDetails->material_request);
+            $sales_person = $sales_person->sales_person;
 
             $floating_qty = StockReservation::where('item_code', $item_code)->where('warehouse', $source_warehouse)->where('sales_person', $sales_person)->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->whereIn('status', ['Active', 'Partially Issued'])->selectRaw("sum(consumed_qty) as consumed_qty, sum(reserve_qty) as reserve_qty")->first();
 
@@ -2040,7 +2043,7 @@ class MainController extends Controller
                 throw new Exception($err);
             }
 
-            $status_result = $this->update_pending_ste_item_status();
+            // $status_result = $this->update_pending_ste_item_status();
 
             $expected_qty_in_source = null;
             $expected_qty_in_target = null;
@@ -2052,43 +2055,67 @@ class MainController extends Controller
             $current_qty_in_target = $this->get_actual_qty($item_code, $target_warehouse);
             $expected_qty_in_target = $current_qty_in_target + $request->qty;
 
+            if ($steDetails->purpose == 'Material Transfer for Manufacture') {
+                $production_order_details = WorkOrder::find($steDetails->work_order);
+                
+                if(!$production_order_details){
+                    throw new Exception("Production Order $steDetails->work_order not found.");
+                }
+
+                if($production_order_details->docstatus == 2){
+                    throw new Exception("Production Order $steDetails->work_order was cancelled. Please reload the page.");
+                }
+
+                $stock_entry_submission = $this->submit_stock_entry($steDetails->name, 1);
+                if($stock_entry_submission['error']){
+                    $err = isset($stock_entry_submission['modal_message']) ? $stock_entry_submission['modal_message'] : 'An error occured while submitting stock entry.';
+                    throw new Exception($err);
+                }
+
+                $generate_stock_entry = $this->generate_stock_entry($steDetails->work_order);
+                if(!$generate_stock_entry['success']){
+                    $err = isset($stock_entry_submission['message']) ? $stock_entry_submission['message'] : 'An error occured while generating stock entry';
+                    throw new Exception($err);
+                }
+            }
+
             $stock_reservation_details = [];
             if($request->has_reservation) {
-                $ref_no = $steDetails->sales_order_no ?? $steDetails->material_request;
-                
-                $so_details = SalesOrder::where('name', $ref_no)->first();
+                $ref_details = $steDetails->sales_order_no ? SalesOrder::find($steDetails->sales_order_no) : MaterialRequest::find($steDetails->material_request);
 
-                $sales_person = ($so_details) ? $so_details->sales_person : null;
-                $project = ($so_details) ? $so_details->project : null;
-                $consignment_warehouse = null;
-                if($steDetails->transfer_as == 'Consignment') {
-                    $sales_person = null;
-                    $project = null;
-                    $consignment_warehouse = $target_warehouse;
-                }
-                
-                $stock_reservation_details = $this->get_stock_reservation($item_code, $source_warehouse, $sales_person, $project, $consignment_warehouse);
-
-                if($stock_reservation_details && $request->deduct_reserve == 1){
-                    $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
-                    $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
-                    
-                    $state_before_update['Stock Reservation'][$stock_reservation_details->name] = $stock_reservation_details;
-                    $stock_reservation_response = $this->erpOperation('put', 'Stock Reservation', $stock_reservation_details->name, ['consumed_qty' => $consumed_qty]);
-
-                    if(!isset($stock_reservation_response['data'])){
-                        $err = isset($stock_reservation_response['exception']) ? $stock_reservation_response['exception'] : 'An error occured while updating Stock Reservations';
-                        throw new Exception($err);
+                if($ref_details){
+                    $sales_person = ($ref_details) ? $ref_details->sales_person : null;
+                    $project = ($ref_details) ? $ref_details->project : null;
+                    $consignment_warehouse = null;
+                    if($steDetails->transfer_as == 'Consignment') {
+                        $sales_person = null;
+                        $project = null;
+                        $consignment_warehouse = $target_warehouse;
                     }
+                    
+                    $stock_reservation_details = $this->get_stock_reservation($item_code, $source_warehouse, $sales_person, $project, $consignment_warehouse);
+    
+                    if($stock_reservation_details && $request->deduct_reserve == 1){
+                        $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
+                        $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+                        
+                        $state_before_update['Stock Reservation'][$stock_reservation_details->name] = $stock_reservation_details;
+                        $stock_reservation_response = $this->erpOperation('put', 'Stock Reservation', $stock_reservation_details->name, ['consumed_qty' => $consumed_qty]);
+    
+                        if(!isset($stock_reservation_response['data'])){
+                            $err = isset($stock_reservation_response['exception']) ? $stock_reservation_response['exception'] : 'An error occured while updating Stock Reservations';
+                            throw new Exception($err);
+                        }
+                    }
+    
+                    $this->update_reservation_status();
                 }
-
-                $this->update_reservation_status();
             }
 
             // get actual qty AFTER submission of stock entry (for double checking of stocks after transaction)
-            $ste_docstatus = StockEntry::where('name', $steDetails->parent_se)->pluck('docstatus')->first();
+            $stock_entry_after_submission = StockEntry::find($steDetails->name);
 
-            if($ste_docstatus){
+            if($stock_entry_after_submission->docstatus){
                 if($source_warehouse){
                     $actual_qty_in_source = $this->get_actual_qty($item_code, $source_warehouse);
                     if(number_format($expected_qty_in_source, 4, '.', '') != number_format($actual_qty_in_source, 4, '.', '')){
@@ -2114,7 +2141,8 @@ class MainController extends Controller
             return response()->json(['status' => 1, 'message' => $message]);
         } catch (Exception $e) {
             $this->revertChanges($state_before_update);
-            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.'], 500);
+
+            return response()->json(['status' => 0, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -3766,320 +3794,143 @@ class MainController extends Controller
 	}
 
     public function generate_stock_entry($production_order){
-        DB::beginTransaction();
         try {
             $now = Carbon::now();
-            $production_order_details = DB::table('tabWork Order')
-                ->where('name', $production_order)->first();
 
-            // get raw materials from production order items in erp
-            $production_order_items = DB::table('tabWork Order Item')
-                ->where('parent', $production_order)->orderBy('idx', 'asc')->get();
+            $stock_entry = StockEntry::with('items')->where('docstatus', 0)->where('work_order', $production_order)->first();
+            $stock_entry_items = collect($stock_entry->items)->groupBy('item_code');
 
-            foreach ($production_order_items as $index => $row) {
-                $pending_ste = DB::table('tabStock Entry Detail as sted')
-                    ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
-                    ->where('sted.item_code', $row->item_code)->where('ste.work_order', $row->parent)
-                    ->where('ste.docstatus', 0)->first();
+            $production_order_details = WorkOrder::with('items')->find($production_order);
+            $production_order_items = collect($production_order_details->items)->whereIn('item_code', collect($stock_entry->items)->pluck('item_code'));
 
-                if(!$pending_ste){
-                    $remaining_qty = $row->required_qty - $row->transferred_qty;
-
-                    $issued_qty = DB::table('tabStock Entry as ste')
-                        ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                        ->where('ste.work_order', $row->parent)
-                        ->where('sted.item_code', $row->item_code)
-                        ->where('sted.s_warehouse', $row->source_warehouse)
-                        ->where('ste.docstatus', 0)
-                        ->where('sted.status', 'Issued')->sum('sted.qty');
-
-                    $remaining_qty = $remaining_qty - $issued_qty;
-                    if($remaining_qty > 0){
-                        $latest_ste = DB::table('tabStock Entry')->where('name', 'like', '%step%')->max('name');
-                        $latest_ste_exploded = explode("-", $latest_ste);
-                        $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
-                        $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
-                        $new_id = 'STEP-'.$new_id;
-                        
-                        $bom_material = DB::table('tabBOM Item')
-                            ->where('parent', $production_order_details->bom_no)
-                            ->where('item_code', $row->item_code)->first();
-
-                        if(!$bom_material){
-                            $valuation_rate = DB::table('tabBin')
-                                ->where('item_code', $row->item_code)
-                                ->where('warehouse', $row->source_warehouse)
-                                ->sum('valuation_rate');
-                        }
-
-                        $conversion_factor = (!$bom_material) ? 1 : $bom_material->conversion_factor;
-
-                        $base_rate = ($bom_material) ? $bom_material->base_rate : $valuation_rate;
-
-                        $actual_qty = DB::table('tabBin')
-                            ->where('item_code', $row->item_code)->where('warehouse', $row->source_warehouse)
-                            ->sum('actual_qty');
-
-                        if(in_array($row->source_warehouse, ['Fabrication - FI', 'Spotwelding Warehouse - FI']) && $actual_qty > $row->required_qty){
-                            $item_status = 'Issued';
-                        }else{
-                            $item_status = 'For Checking';
-                        }
-
-                        $docstatus = ($item_status == 'Issued') ? 1 : 0;
-            
-                        $stock_entry_detail = [
-                            'name' =>  uniqid(),
-                            'creation' => $now->toDateTimeString(),
-                            'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'owner' => $production_order_details->owner,
-                            'docstatus' => $docstatus,
-                            'parent' => $new_id,
-                            'parentfield' => 'items',
-                            'parenttype' => 'Stock Entry',
-                            'idx' => $index + 1,
-                            't_warehouse' => $production_order_details->wip_warehouse,
-                            'transfer_qty' => $remaining_qty,
-                            'serial_no' => null,
-                            'expense_account' => 'Cost of Goods Sold - FI',
-                            'cost_center' => 'Main - FI',
-                            'actual_qty' => $actual_qty,
-                            's_warehouse' => $row->source_warehouse,
-                            'item_name' => $row->item_name,
-                            'image' => null,
-                            'additional_cost' => 0,
-                            'stock_uom' => $row->stock_uom,
-                            'basic_amount' => $base_rate * $remaining_qty,
-                            'sample_quantity' => 0,
-                            'uom' => $row->stock_uom,
-                            'basic_rate' => $base_rate,
-                            'description' => $row->description,
-                            'barcode' => null,
-                            'conversion_factor' => $conversion_factor,
-                            'item_code' => $row->item_code,
-                            'retain_sample' => 0,
-                            'qty' => $remaining_qty,
-                            'bom_no' => null,
-                            'allow_zero_valuation_rate' => 0,
-                            'material_request_item' => null,
-                            'amount' => $base_rate * $remaining_qty,
-                            'batch_no' => null,
-                            'valuation_rate' => $base_rate,
-                            'material_request' => null,
-                            't_warehouse_personnel' => null,
-                            's_warehouse_personnel' => null,
-                            'target_warehouse_location' => null,
-                            'source_warehouse_location' => null,
-                            'status' => $item_status,
-                            'date_modified' => ($item_status == 'Issued') ? $now->toDateTimeString() : null,
-                            'session_user' => ($item_status == 'Issued') ? Auth::user()->full_name : null,
-                            'remarks' => ($item_status == 'Issued') ? 'MES' : null,
-                        ];
-
-                        $stock_entry_data = [
-                            'name' => $new_id,
-                            'creation' => $now->toDateTimeString(),
-                            'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user,
-                            'owner' => $production_order_details->owner,
-                            'docstatus' => $docstatus,
-                            'idx' => 0,
-                            'use_multi_level_bom' => 1,
-                            'delivery_note_no' => null,
-                            'naming_series' => 'STE-',
-                            'fg_completed_qty' => $production_order_details->qty,
-                            'letter_head' => null,
-                            '_liked_by' => null,
-                            'purchase_receipt_no' => null,
-                            'posting_time' => $now->format('H:i:s'),
-                            // 'customer_name' => null,
-                            'to_warehouse' => $production_order_details->wip_warehouse,
-                            'title' => 'Material Transfer for Manufacture',
-                            '_comments' => null,
-                            'from_warehouse' => null,
-                            'set_posting_time' => 0,
-                            'purchase_order' => null,
-                            'from_bom' => 1,
-                            'supplier_address' => null,
-                            'supplier' => null,
-                            'source_address_display' => null,
-                            'address_display' => null,
-                            'source_warehouse_address' => null,
-                            'value_difference' => 0,
-                            'credit_note' => null,
-                            'sales_invoice_no' => null,
-                            'company' => 'FUMACO Inc.',
-                            'target_warehouse_address' => null,
-                            // 'customer_address' => null,
-                            'total_outgoing_value' => collect($stock_entry_detail)->sum('basic_amount'),
-                            'supplier_name' => null,
-                            'remarks' => null,
-                            '_user_tags' => null,
-                            'total_additional_costs' => 0,
-                            // 'customer' => null,
-                            'bom_no' => $production_order_details->bom_no,
-                            'amended_from' => null,
-                            'total_amount' => collect($stock_entry_detail)->sum('basic_amount'),
-                            'total_incoming_value' => collect($stock_entry_detail)->sum('basic_amount'),
-                            'project' => $production_order_details->project,
-                            '_assign' => null,
-                            'select_print_heading' => null,
-                            'posting_date' => $now->format('Y-m-d'),
-                            'target_address_display' => null,
-                            'work_order' => $production_order,
-                            'purpose' => 'Material Transfer for Manufacture',
-                            'stock_entry_type' => 'Material Transfer for Manufacture',
-                            'shipping_address_contact_person' => null,
-                            'customer_1' => null,
-                            'material_request' => $production_order_details->material_request,
-                            'reference_no' => null,
-                            'delivery_date' => null,
-                            'delivery_address' => null,
-                            'city' => null,
-                            'address_line_2' => null,
-                            'address_line_1' => null,
-                            'item_status' => $item_status,
-                            'sales_order_no' => $production_order_details->sales_order_no,
-                            'transfer_as' => 'Internal Transfer',
-                            'workflow_state' => null,
-                            'item_classification' => $production_order_details->item_classification,
-                            'bom_repack' => null,
-                            'qty_repack' => 0,
-                            'issue_as' => null,
-                            'receive_as' => null,
-                            'so_customer_name' => $production_order_details->customer,
-                            'order_type' => $production_order_details->classification,
-                        ];
-            
-                        DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
-                        DB::table('tabStock Entry')->insert($stock_entry_data);
-                        
-                        if ($docstatus == 1) {
-                            $production_order_item = [
-                                'transferred_qty' => $row->required_qty
-                            ];
-            
-                            DB::table('tabWork Order Item')->where('name', $row->name)->update($production_order_item);
-
-                            if($production_order_details->status == 'Not Started'){
-                                DB::table('tabWork Order')
-                                    ->where('name', $production_order_details->name)
-                                    ->update(['status' => 'In Process', 'material_transferred_for_manufacturing' => $production_order_details->qty]);
-                            }
-                
-                            $this->update_bin($new_id);
-                            $this->create_stock_ledger_entry($new_id);
-                            $this->create_gl_entry($new_id);
-                        }
-                    }
-                }
+            if(!$production_order_items){
+                throw new Exception('No item(s) found');
             }
 
-            DB::commit();
+            $stock_entry_detail = [];
+            $item_status = 'For Checking';
+            foreach($production_order_items as $item){
+                $item_status = 'For Checking';
+                $docstatus = 0;
+                $item_code = $item->item_code;
 
-            return response()->json(['success' => 1, 'message' => 'Stock Entry has been created.']);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['success' => 0, 'message' => 'There was a problem creating stock entries.']);
+                $remaining_qty = $item->required_qty - $item->transferred_qty;
+
+                if($remaining_qty < 0){
+                    continue;
+                }
+
+                $issued_qty = isset($stock_entry_items[$item_code][0]) ? $stock_entry_items[$item_code][0]->qty : 0;
+
+                $actual_qty = Bin::where('item_code', $item->item_code)->where('warehouse', $item->source_warehouse)->sum('actual_qty');
+
+                if(in_array($item->source_warehouse, ['Fabrication - FI', 'Spotwelding Warehouse - FI']) && $actual_qty > $item->required_qty){
+                    $item_status = 'Issued';
+                    $docstatus = 1;
+                }
+
+                $stock_entry_detail[] = [
+                    't_warehouse' => $production_order_details->wip_warehouse,
+                    'transfer_qty' => (float) $remaining_qty,
+                    'expense_account' => 'Cost of Goods Sold - FI',
+                    'cost_center' => 'Main - FI',
+                    's_warehouse' => $item->source_warehouse,
+                    'item_code' => $item->item_code,
+                    'qty' => (float) $remaining_qty,
+                    'status' => $item_status,
+                    'date_modified' => ($item_status == 'Issued') ? $now->toDateTimeString() : null,
+                    'session_user' => ($item_status == 'Issued') ? Auth::user()->full_name : null,
+                    'remarks' => ($item_status == 'Issued') ? 'MES' : null,
+                ];
+            }
+
+            if(!$stock_entry_detail){
+                return ['success' => 1, 'message' => 'No items found.'];
+            }
+
+            $stock_entry_data = [
+                'docstatus' => $docstatus,
+                'naming_series' => 'STE-',
+                'posting_time' => $now->format('h:i:a'),
+                'to_warehouse' => $production_order_details->wip_warehouse,
+                'company' => 'FUMACO Inc.',
+                'purpose' => 'Material Transfer for Manufacture',
+                'item_status' => $item_status,
+                'posting_date' => $now->format('M d, Y'),
+                'posting_datetime' => $now->format('M d, Y h:i:a'),
+                'fg_completed_qty' => (float) $production_order_details->qty,
+                'title' => 'Material Transfer for Manufacture',
+                'project' => $production_order_details->project,
+                'work_order' => $production_order,
+                'stock_entry_type' => 'Material Transfer for Manufacture',
+                'material_request' => $production_order_details->material_request,
+                'sales_order_no' => $production_order_details->sales_order_no,
+                'transfer_as' => 'Internal Transfer',
+                'so_customer_name' => $production_order_details->customer,
+                'order_type' => $production_order_details->classification,
+                'items' => $stock_entry_detail,
+            ];
+
+            $stock_entry_response = $this->erpOperation('post', 'Stock Entry', null, $stock_entry_data);
+            if(!isset($stock_entry_response['data'])){
+                $err = isset($stock_entry_response['exception']) ? $stock_entry_response['exception'] : 'An error occured while generating Stock Entry';
+                throw new Exception($err);
+            }
+
+            return ['success' => 1, 'message' => 'Stock Entry has been created.'];
+        } catch (Exception $e) {
+            return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
 
-    public function submit_stock_entry($id){
+    public function submit_stock_entry($id, $system_generated = 0){
         try {
             $now = Carbon::now();
-            $draft_ste = DB::table('tabStock Entry')->where('name', $id)->where('docstatus', 0)->first();
-            $success = true;
-            $err_message = null;
-            if($draft_ste){
-                if ($draft_ste->purpose != 'Manufacture') {
-                     // check if all items are issued
-                    $count_not_issued_items = DB::table('tabStock Entry Detail')->whereNotIn('status', ['Issued', 'Returned'])->where('parent', $draft_ste->name)->count();
-                    if($count_not_issued_items > 0){
-                        return response()->json(['success' => 0, 'message' => 'All item(s) must be issued.']);
-                    }
-                }
 
-                $production_order_details = DB::table('tabWork Order')->where('name', $draft_ste->work_order)->first();
-                if($draft_ste->purpose == 'Material Transfer for Manufacture'){
-                    // get total "for quantity" (submitted)
-                    $transferred_qty = DB::table('tabStock Entry')
-                        ->where('work_order', $draft_ste->work_order)->where('docstatus', 1)
-                        ->where('purpose', 'Material Transfer for Manufacture')->sum('fg_completed_qty');
-                    
-                    $total_transferred_qty = $transferred_qty + $draft_ste->fg_completed_qty;
-                    if ($total_transferred_qty > $production_order_details->qty) {
-                        $fg_completed_qty = $production_order_details->qty - $transferred_qty;
-                    }else{
-                        $fg_completed_qty = $draft_ste->fg_completed_qty;
-                    }
+            $draft_ste = StockEntry::with('items')->find($id);
 
-                    $material_transferred_for_manufacturing = $transferred_qty + $fg_completed_qty;
-
-                    DB::table('tabWork Order')->where('name', $draft_ste->work_order)
                         ->update(['status' => 'In Process', 'material_transferred_for_manufacturing' => $material_transferred_for_manufacturing]);
-                
-                    $values = [
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'docstatus' => 1,
-                        'fg_completed_qty' => $fg_completed_qty
-                    ];
-                }else{
-                    $values = [
-                        'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                        'docstatus' => 1
-                    ];
-                }
                
-                DB::table('tabStock Entry')->where('name', $id)->update($values);
-                DB::table('tabStock Entry Detail')->where('parent', $id)->update([
-                    'modified' => $now->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                    'docstatus' => 1
-                ]);
+            if(!$draft_ste){
+            }
 
-                if ($production_order_details) {
-                    $this->update_production_order_items($production_order_details->name);
-                }
+            if($draft_ste->docstatus == 1){
+                throw new Exception('Stock Entry already submitted');
+            }
 
                 if($draft_ste->purpose == 'Material Transfer for Manufacture'){
-                    if($production_order_details->status == 'Not Started'){
                         $values = [
-                            'status' => 'In Process',
-                            'material_transferred_for_manufacturing' => $production_order_details->qty
-                        ];
-                    }else{
-                        $values = [
-                            'material_transferred_for_manufacturing' => $production_order_details->qty
-                        ];
-                    }
-    
-                    DB::table('tabWork Order')
-                        ->where('name', $production_order_details->name)
-                        ->update($values);
-                }
-
-                $bin = $this->update_bin($id);
-                $stock_ledger = $this->create_stock_ledger_entry($id);
-                $gl_entry = $this->create_gl_entry($id);
-
-                if(isset($bin['error'])){
-                    return ['success' => false, 'message' => $bin['error']];
-                }
-
-                if(!$stock_ledger['success']){
-                    return $stock_ledger;
-                }
-
-                if(!$gl_entry['success']){
-                    return $gl_entry;
                 }
             }
 
-            if(!$success){
-                throw new Exception($err_message);
+            $stock_entry_data = ['docstatus' => 1];
+
+            $production_order_details = WorkOrder::find($draft_ste->work_order);
+            if($draft_ste->purpose == 'Material Transfer for Manufacture'){
+                // get total "for quantity" (submitted)
+                $transferred_qty = StockEntry::where('work_order', $draft_ste->work_order)->where('docstatus', 1)
+                    ->where('purpose', 'Material Transfer for Manufacture')->sum('fg_completed_qty');
+                
+                $total_transferred_qty = $transferred_qty + $draft_ste->fg_completed_qty;
+                if ($total_transferred_qty > $production_order_details->qty) {
+                    $fg_completed_qty = $production_order_details->qty - $transferred_qty;
+                }else{
+                    $fg_completed_qty = $draft_ste->fg_completed_qty;
+                }
+
+                $stock_entry_data['fg_completed_qty'] = $fg_completed_qty;
+            }
+
+            $stock_entry_response = $this->erpOperation('put', 'Stock Entry', $id, $stock_entry_data);
+            if(!isset($stock_entry_response['data'])){
+                $err = isset($stock_entry_response['exception']) ? $stock_entry_response['exception'] : 'An error occured while submitting Stock Entry';
+                throw new Exception($err);
+            }
+            
+            return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
+        } catch (Exception $e) {
+            if($system_generated){
+                return ['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()];
             }
         } catch (\Throwable $e) {
             DB::rollback();

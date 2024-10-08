@@ -163,14 +163,33 @@
 			}
 		});
 
+		const showNotification = (color, message, icon) => {
+			$.notify({
+				icon: icon,
+				message: message
+			},{
+				type: color,
+				timer: 500,
+				z_index: 1060,
+				placement: {
+					from: 'top',
+					align: 'center'
+				}
+			});
+		}
+
 		$(document).on('click', '.feedback-details', function(){
 			var id = $(this).data('id');
 			$.ajax({
 				type: 'GET',
 				url: '/feedback_details/' + id,
-				success: function(response){
+				success: (response) => {
 					$('#receive-item-modal').modal('show');
 					$('#receive-item-modal .modal-dialog').html(response);
+				},
+				error: (xhr, textStatus, errorThrown) => {
+					console.log((xhr, textStatus, errorThrown))
+					showNotification("danger", errorThrown, "fa fa-info");
 				}
 			});
 		});
@@ -220,27 +239,16 @@
 							$('#receive-item-modal form button').removeAttr('disabled');
 						}
 					},
-					error: function(jqXHR, textStatus, errorThrown) {
+					error: (xhr, textStatus, errorThrown) => {
+						showNotification("danger", xhr.responseJSON.message, "fa fa-info");
 						$('#receive-item-modal form button').removeAttr('disabled');
 					}
 				});
 			}
+			
 		});
 
-		function showNotification(color, message, icon){
-			$.notify({
-				icon: icon,
-				message: message
-			},{
-				type: color,
-				timer: 500,
-				z_index: 1060,
-				placement: {
-					from: 'top',
-					align: 'center'
-				}
-			});
-		}
+		
 	});
 
 	var app = angular.module('myApp', []);
