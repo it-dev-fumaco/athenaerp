@@ -15,7 +15,7 @@ class StockEntryDetail extends Model
     protected $keyType = 'string';
     protected $table = 'tabStock Entry Detail';
 
-    public function stock_entry(){
+    public function parent_doctype(){
         return $this->belongsTo(StockEntry::class, 'parent', 'name');
     }
 

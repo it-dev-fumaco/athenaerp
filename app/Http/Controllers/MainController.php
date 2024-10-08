@@ -1736,14 +1736,12 @@ class MainController extends Controller
         $available_qty = $this->get_available_qty($q->item_code, $s_warehouse);
     
         $stock_reservation_details = [];
-        $so_details = DB::table('tabSales Order')->where('name', $ref_no)->first();
 
-        $mr_details = DB::table('tabMaterial Request')->where('name', $ref_no)->first();
-
-        $sales_person = ($so_details) ? $so_details->sales_person : null;
-        $sales_person = ($mr_details) ? $mr_details->sales_person : $sales_person;
-        $project = ($so_details) ? $so_details->project : null;
-        $project = ($mr_details) ? $mr_details->project : $project;
+        $ref_id = explode('-', $ref_no)[0];
+        $model = $ref_id == 'SO' ? SalesOrder::class : MaterialRequest::class;
+        $reference = $model::find($ref_no);
+        $sales_person = $reference->sales_person;
+        $project = $reference->project;
         $consignment_warehouse = null;
         if($q->transfer_as == 'Consignment') {
             $sales_person = null;
@@ -1957,7 +1955,7 @@ class MainController extends Controller
             $now = Carbon::now();
 
             $child_table_id = $request->child_tbl_id;
-            $steDetails = StockEntry::whereHas('items', function ($item) use ($child_table_id){
+            return $steDetails = StockEntry::whereHas('items', function ($item) use ($child_table_id){
                     $item->where('name', $child_table_id);
                 })->with('items', function ($item) use ($child_table_id){
                     $item->where('name', $child_table_id);

@@ -14,7 +14,11 @@ class MaterialRequestItem extends Model
     public $timestamps = false;
     protected $keyType = 'string';
 
-    public function items(){
+    public function parent_doctype(){
         return $this->belongsTo(MaterialRequest::class, 'parent', 'name');
+    }
+
+    public function defaultImage(){
+        return $this->hasOne(ItemImages::class, 'parent', 'item_code')->select('image_path', 'parent');
     }
 }
