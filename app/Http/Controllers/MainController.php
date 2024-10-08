@@ -3889,17 +3889,19 @@ class MainController extends Controller
 
             $draft_ste = StockEntry::with('items')->find($id);
 
-                        ->update(['status' => 'In Process', 'material_transferred_for_manufacturing' => $material_transferred_for_manufacturing]);
-               
             if(!$draft_ste){
+                throw new Exception('Stock Entry not found');
             }
 
             if($draft_ste->docstatus == 1){
                 throw new Exception('Stock Entry already submitted');
             }
 
-                if($draft_ste->purpose == 'Material Transfer for Manufacture'){
-                        $values = [
+            if ($draft_ste->purpose != 'Manufacture') {
+                // check if all items are issued
+                $count_not_issued_items = collect($draft_ste->items)->whereNotIn('status', ['Issued', 'Returned'])->count();
+                if($count_not_issued_items){
+                    throw new Exception('All item(s) must be issued.');
                 }
             }
 
