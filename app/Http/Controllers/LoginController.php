@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use Exception;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,9 +40,7 @@ class LoginController extends Controller
             $validator = Validator::make($request->all(), $rules);
         
             if ($validator->fails()) {
-                return redirect()->back()
-                    ->withErrors($validator)
-                    ->withInput($request->except('password'));
+                throw new Exception($validator->first());
             }
         
             $adldap = new adLDAP();
@@ -49,9 +48,7 @@ class LoginController extends Controller
             $authUser = $adldap->user()->authenticate($username, $request->password);
 
             if (!$authUser) {
-                return redirect()->back()
-                    ->withInput($request->except('password'))
-                    ->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
+                throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
             }
         
             $user = DB::table('tabWarehouse Users')
@@ -60,13 +57,11 @@ class LoginController extends Controller
                 ->first();
         
             if (!$user) {
-                return redirect()->back()
-                    ->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
+                throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
             }
         
             if (!$user->enabled) {
-                return redirect()->back()
-                    ->withErrors('<span class="blink_text">Your account is disabled.</span>');
+                throw new Exception('<span class="blink_text">Your account is disabled.</span>');
             }
         
             if (Auth::loginUsingId($user->frappe_userid)) {
@@ -75,9 +70,7 @@ class LoginController extends Controller
         
                     if (!$api_credentials['success']) {
                         Auth::logout();
-                        return redirect()->back()
-                            ->withInput($request->except('password'))
-                            ->withErrors('<span class="blink_text">An error occurred.<br>Please contact your system administrator.</span>');
+                        throw new Exception('<span class="blink_text">An error occurred.<br>Please contact your system administrator.</span>');
                     }
                 }
         
@@ -87,13 +80,11 @@ class LoginController extends Controller
         
                 return redirect('/');
             }
-        
-            return redirect()->back()
-                ->withErrors('<span class="blink_text">Login failed. Please try again.</span>');
-        } catch (adLDAPException $e) {
+            throw new Exception('<span class="blink_text">Login failed. Please try again.</span>');
+        } catch (Exception $e) {
             return redirect()->back()
                 ->withInput($request->except('password'))
-                ->withErrors('<span class="blink_text">Cannot connect to LDAP.<br>Please contact your system administrator.</span>');
+                ->withErrors($e->getMessage());
         }
     }
 
