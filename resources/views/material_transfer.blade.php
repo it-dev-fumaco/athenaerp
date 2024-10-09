@@ -281,7 +281,8 @@
 							$('#ste-modal form button').removeAttr('disabled');
 						}
 					},
-					error: function(jqXHR, textStatus, errorThrown) {
+					error: (xhr, textStatus, errorThrown) => {
+						showNotification("danger", xhr.responseJSON.message, "fa fa-info");
 						$('#ste-modal form button').removeAttr('disabled');
 					}
 				});
