@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ConsignmentStockEntry;
 use DB;
 use Exception;
 use Mail;
@@ -200,8 +201,8 @@ class MainController extends Controller
                     ->whereIn('source_warehouse', $assigned_consignment_store)->where('status', 'Pending')
                     ->count();
 
-                // get total stock adjustments
-                $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->whereIn('branch_warehouse', $assigned_consignment_store)->where('status', '!=', 'Approved')->count();
+                // get total consignment orders
+                $total_consignment_orders = ConsignmentStockEntry::whereIn('target_warehouse', $assigned_consignment_store)->where('purpose', 'Stock Replenishment')->where('status', 'Pending')->count();
 
                 // get incoming / to receive items
                 $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
@@ -220,7 +221,7 @@ class MainController extends Controller
                     }
                 }
 
-                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'inventory_summary', 'total_stock_transfer', 'total_stock_adjustments', 'branches_with_pending_beginning_inventory', 'due'));
+                return view('consignment.index_promodiser', compact('assigned_consignment_store', 'inventory_summary', 'total_stock_transfer', 'total_consignment_orders', 'branches_with_pending_beginning_inventory', 'due'));
             }
 
             return redirect('/search_results');
