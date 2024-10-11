@@ -180,6 +180,17 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
             Route::post('/generate_stock_transfer_entry', 'ConsignmentController@generateStockTransferEntry');
             Route::post('/consignment_read_file', 'ConsignmentController@readFile');
             Route::post('/assign_barcodes', 'ConsignmentController@assign_barcodes');
+
+            Route::prefix('/consignment')->group(function(){
+                Route::prefix('/replenish')->group(function(){
+                    Route::get('/', 'ConsignmentController@replenish_index');
+                    Route::post('/', 'ConsignmentController@replenish_submit');
+                    Route::get('/form', 'ConsignmentController@replenish_form');
+                    Route::post('/{id}', 'ConsignmentController@replenish_update');
+                    Route::get('/{id}', 'ConsignmentController@replenish_update_form');
+                    Route::get('/{id}/delete', 'ConsignmentController@replenish_delete');
+                });
+            });
         });
 
         // Consignment Supervisor

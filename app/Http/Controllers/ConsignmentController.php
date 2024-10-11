@@ -1930,6 +1930,131 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.view_stock_transfers');
     }
 
+    public function replenish_index(Request $request){
+        $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        if($request->ajax()){
+            $target_warehouses = $request->branch ? [$request->branch] : $assigned_consignment_stores;
+            $list = ConsignmentStockEntry::whereIn('target_warehouse', $target_warehouses)->where('purpose', 'Stock Replenishment')
+                ->when($request->status, function ($query) use ($request){
+                    return $query->where('status', $request->status);
+                })
+                ->when($request->search, function ($query) use ($request){
+                    return $query->where('name', 'like', "%$request->search%");
+                })->orderByDesc('modified')->paginate(10);
+    
+            return view('consignment.replenish_tbl', compact('list'));
+        }
+
+        return view('consignment.replenish_index', compact('assigned_consignment_stores'));
+    }
+
+    public function replenish_update_form($id){
+        $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $stock_entry = ConsignmentStockEntry::with('items')->find($id);
+
+        $item_images = ItemImages::whereIn('parent', collect($stock_entry->items)->pluck('item_code'))->pluck('image_path', 'parent');
+
+        return view('consignment.replenish_form', compact('stock_entry', 'item_images', 'assigned_consignment_stores'));
+    }
+
+    public function replenish_update(Request $request, $id){
+        $state_before_update = [];
+        try {
+            $branch = $request->branch;
+            $items = $request->items;
+            $now = Carbon::now();
+
+            $items_data = [];
+            foreach ($items as $item_code => $item) {
+                $name = isset($item['name']) ? $item['name'] : null;
+                $price = (float) $item['price'];
+                $qty = (int) $item['qty'];
+                $remarks = $item['reason'];
+                $status = $request->status == 'Draft' ? 'Pending' : $request->status;
+                $amount = $price * $qty;
+                $items_data[] = compact('name', 'item_code', 'price', 'qty', 'remarks', 'status', 'amount');
+            }
+
+            $data = [
+                'target_warehouse' => $branch,
+                'status' => $request->status,
+                'transaction_date' => $now->toDateTimeString(),
+                'items' => $items_data
+            ];
+
+            $response = $this->erpOperation('put', 'Consignment Stock Entry', $id, $data);
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating stock entry';
+                throw new Exception($err);
+            }
+
+            return redirect()->back()->with('success', "$id successfully updated!");
+        } catch (Exception $th) {
+            throw $th;
+            return redirect()->back()->with('error', $th->getMessage());
+        }
+        
+    }
+
+    public function replenish_form(Request $request){
+        $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        return view('consignment.replenish_form', compact('assigned_consignment_stores'));
+    }
+
+    public function replenish_delete($id){
+        try {
+            $response = $this->erpOperation('delete', 'Consignment Stock Entry', $id);
+
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while deleting the document';
+                throw new Exception($err);
+            }
+
+            return redirect('consignment/replenish')->with('success', "$id Deleted.");
+        } catch (Exception $th) {
+            return redirect()->back()->with('error', $th->getMessage());
+        }
+    }
+
+    public function replenish_submit(Request $request){
+        try {
+            $branch = $request->branch;
+            $items = $request->items;
+            $now = Carbon::now();
+
+            $items_data = [];
+            foreach ($items as $item_code => $item) {
+                $price = (float) $item['price'];
+                $qty = (int) $item['qty'];
+                $remarks = $item['reason'];
+                $status = $request->status == 'Draft' ? 'Pending' : $request->status;
+                $amount = $price * $qty;
+                $items_data[] = compact('item_code', 'price', 'qty', 'remarks', 'status', 'amount');
+            }
+
+            $data = [
+                'target_warehouse' => $branch,
+                'purpose' => 'Stock Replenishment',
+                'status' => $request->status,
+                'items' => $items_data,
+                'transaction_date' => $now->toDateTimeString()
+            ];
+
+            $response = $this->erpOperation('post', 'Consignment Stock Entry', null, $data);
+
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while submitting Stock Entry';
+                throw new Exception($err);
+            }
+
+            // return $response;
+
+            return redirect('consignment/replenish');
+        } catch (Exception $th) {
+            return redirect()->back()->with('error', $th->getMessage());
+        }
+    }
+
     public function promodiserDamageForm(){
         $assigned_consignment_store = DB::table('tabAssigned Consignment Warehouse')->where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
                  

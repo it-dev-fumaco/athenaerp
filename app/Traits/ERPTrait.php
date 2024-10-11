@@ -39,10 +39,10 @@ trait ERPTrait{
             foreach($state_before_update as $doctype => $values){
                 foreach($values as $id => $value){
                     if(!is_array($value) && !is_object($value)){
-                        DB::table("tab$doctype")->where('name', $id)->delete();
+                        DB::connection('mysql')->table("tab$doctype")->where('name', $id)->delete();
                     }else{
                         $value = collect($value)->except(['name', 'owner', 'creation', 'docstatus', 'doctype', 'parent', 'parentfield', 'parenttype'])->toArray();
-                        DB::table("tab$doctype")->where('name', $id)->update($value);
+                        DB::connection('mysql')->table("tab$doctype")->where('name', $id)->update($value);
                     }
                 }
             }
