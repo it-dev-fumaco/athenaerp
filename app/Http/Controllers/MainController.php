@@ -2101,7 +2101,7 @@ class MainController extends Controller
 
             if ($steDetails->purpose == 'Material Transfer') {
                 if($steDetails->transfer_as == 'For Return' && $status_result == 'Returned'){
-                    return $this->submit_stock_entry($steDetails->parent_se);
+                    $this->submit_stock_entry($steDetails->parent_se);
 
                     if ($steDetails->work_order) {
                         $prodDetails = DB::table('tabWork Order Item')->where('parent', $steDetails->work_order)->where('item_code', $steDetails->item_code)->first();
@@ -4126,56 +4126,40 @@ class MainController extends Controller
     public function submit_stock_entry($id, $system_generated = 0){
         try {
             $now = Carbon::now();
-
             $draft_ste = StockEntry::with('items')->find($id);
-
-            if(!$draft_ste){
+    
+            if (!$draft_ste) {
                 throw new Exception('Stock Entry not found');
             }
-
-            if($draft_ste->docstatus == 1){
+    
+            if ($draft_ste->docstatus == 1) {
                 throw new Exception('Stock Entry already submitted');
             }
-
-            if ($draft_ste->purpose != 'Manufacture') {
-                // check if all items are issued
-                $count_not_issued_items = collect($draft_ste->items)->whereNotIn('status', ['Issued', 'Returned'])->count();
-                if($count_not_issued_items){
+    
+            if ($draft_ste->purpose) {
+                $count_not_issued_items = collect($draft_ste->items)
+                    ->whereNotIn('status', ['Issued', 'Returned'])
+                    ->count();
+    
+                if ($count_not_issued_items) {
                     throw new Exception('All item(s) must be issued.');
                 }
             }
-
+    
             $stock_entry_data = ['docstatus' => 1];
-
-            $production_order_details = WorkOrder::find($draft_ste->work_order);
-            if($draft_ste->purpose == 'Material Transfer for Manufacture'){
-                // get total "for quantity" (submitted)
-                $transferred_qty = StockEntry::where('work_order', $draft_ste->work_order)->where('docstatus', 1)
-                    ->where('purpose', 'Material Transfer for Manufacture')->sum('fg_completed_qty');
-                
-                $total_transferred_qty = $transferred_qty + $draft_ste->fg_completed_qty;
-                if ($total_transferred_qty > $production_order_details->qty) {
-                    $fg_completed_qty = $production_order_details->qty - $transferred_qty;
-                }else{
-                    $fg_completed_qty = $draft_ste->fg_completed_qty;
-                }
-
-                $stock_entry_data['fg_completed_qty'] = $fg_completed_qty;
-            }
-
+    
             $stock_entry_response = $this->erpOperation('put', 'Stock Entry', $id, $stock_entry_data);
-            if(!isset($stock_entry_response['data'])){
-                $err = isset($stock_entry_response['exception']) ? $stock_entry_response['exception'] : 'An error occured while submitting Stock Entry';
+    
+            if (!isset($stock_entry_response['data'])) {
+                $err = isset($stock_entry_response['exception']) ? $stock_entry_response['exception'] : 'An error occurred while submitting Stock Entry';
                 throw new Exception($err);
             }
-            
+    
             return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
         } catch (Exception $e) {
-            if($system_generated){
+            if ($system_generated) {
                 return ['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()];
             }
-        } catch (\Throwable $e) {
-            DB::rollback();
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()]);
         }
     }
