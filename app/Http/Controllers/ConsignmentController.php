@@ -2331,10 +2331,10 @@ class ConsignmentController extends Controller
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
         $item_images = collect($item_images)->map(function ($image){
-            return $this->base64_image("img/$image");
+            return "img/$image";
         });
 
-        $no_img = $this->base64_image('/icon/no_img.png');
+        $no_img = '/icon/no_img.png';
 
         $default_images = DB::table('tabItem')->whereIn('item_code', $item_codes)->whereNotNull('item_image_path')->select('item_code', 'item_image_path as image_path')->get(); // in case there are no saved images in Item Images
         $default_image = collect($default_images)->groupBy('item_code');
