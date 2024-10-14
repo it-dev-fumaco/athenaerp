@@ -44,12 +44,8 @@
                                         <td class="text-justify p-1 align-middle" style="border-bottom: 0 !important;">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-0 text-left">
-                                                    <a href="{{ asset('storage/') }}{{ $row['img'] }}" class="view-images" data-item-code="{{ $row['item_code'] }}">
-                                                        {{-- <picture>
-                                                            <source srcset="{{ asset('storage'.$row['img_webp']) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
-                                                            <source srcset="{{ asset('storage'.$row['img']) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40"> --}}
-                                                            <img src="{{ asset('storage'.$row['img']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
-                                                        {{-- </picture> --}}
+                                                    <a href="{{ asset("storage/".$row['img']) }}" class="view-images" data-item-code="{{ $row['item_code'] }}">
+                                                        <img src="{{ asset("storage/".$row['img']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">

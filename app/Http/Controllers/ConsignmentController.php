@@ -2957,11 +2957,11 @@ class ConsignmentController extends Controller
         $inv_audit = collect($inv_audit)->groupBy('item_code')->toArray();
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
-        $item_images = collect($item_images)->map(function ($image){
-            return $this->base64_image("img/$image");
+        $item_images = collect($item_images)->map(function ($image): string{
+            return "img/$image";
         });
 
-        $no_img = $this->base64_image('icon/no_img.png');
+        $no_img = 'icon/no_img.png';
 
         $result = [];
         foreach ($list as $row) {
