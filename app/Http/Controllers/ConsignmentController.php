@@ -2040,16 +2040,21 @@ class ConsignmentController extends Controller
                 'transaction_date' => $now->toDateTimeString()
             ];
 
-            $response = $this->erpOperation('post', 'Consignment Stock Entry', null, $data);
+            $method = 'post';
+            $name = null;
+            if($request->id){
+                $name = $request->id;
+                $method = 'put';
+            }
+
+            $response = $this->erpOperation($method, 'Consignment Stock Entry', $name, $data);
 
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while submitting Stock Entry';
                 throw new Exception($err);
             }
 
-            // return $response;
-
-            return redirect('consignment/replenish');
+            return redirect('consignment/replenish')->with('success', "Request submitted.");
         } catch (Exception $th) {
             return redirect()->back()->with('error', $th->getMessage());
         }
@@ -2349,6 +2354,7 @@ class ConsignmentController extends Controller
         $items_arr = [];
         foreach($items as $item){
             $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
+            $img = asset("storage/$img");
 
             $max = $item->consigned_qty * 1;
 
