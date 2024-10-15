@@ -5,19 +5,15 @@
 
 @section('content')
 @php
-    $id = $target_warehouse = null;
+    $target_warehouse = null;
     $method = 'post';
     $action = '/consignment/replenish';
-
 
     if(isset($stock_entry)){
         $method = 'put';
         $item_images = isset($item_images) ? $item_images : [];
-        $id = $stock_entry->name;
         $target_warehouse = $stock_entry->target_warehouse;
         $items = $stock_entry->items;
-
-        $action .= "/$id";
     }else{
         $stock_entry = $items = $item_images = [];
     }
@@ -66,6 +62,7 @@
                                 @endif
                                 <form id="replenish-form" action="{{ $action }}" method="post">
                                     @csrf
+                                    <input type="hidden" name="id" value="{{ $stock_entry ? $stock_entry->name : null }}">
                                     <div class="container">
                                         <div class="row pt-2 pb-2">
                                             <div class="col-8">
@@ -230,13 +227,13 @@
                                                             <div class="modal-dialog" role="document">
                                                                 <div class="modal-content">
                                                                     <div class="modal-header">
-                                                                        <h5 class="modal-title" id="exampleModalLabel">Submit {{ $stock_entry->name }}</h5>
+                                                                        <h5 class="modal-title" id="exampleModalLabel">Submit for Approval</h5>
                                                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                             <span aria-hidden="true">&times;</span>
                                                                         </button>
                                                                     </div>
                                                                     <div class="modal-body text-center">
-                                                                        Submit <b>{{ $stock_entry->name }}</b>?
+                                                                        Submit as Draft?
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
