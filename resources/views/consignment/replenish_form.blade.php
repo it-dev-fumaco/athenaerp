@@ -10,10 +10,11 @@
     $action = '/consignment/replenish';
 
     $items = [];
-    if($stock_entry){
+    if($material_request){
+        $action .= "/$material_request->name";
         $method = 'put';
-        $target_warehouse = $stock_entry->target_warehouse;
-        $items = $stock_entry->items;
+        $target_warehouse = $material_request->branch_warehouse;
+        $items = $material_request->items;
     }
 @endphp
     <div class="content">
@@ -25,14 +26,13 @@
                             <div class="card-header text-center p-2" id="report">
                                 <span class="font-responsive font-weight-bold text-uppercase d-inline-block">
                                     Consignment Order Form
-                                    @if ($stock_entry)
+                                    @if ($material_request)
                                         @php
-                                            switch ($stock_entry->status) {
-                                                case 'Pending':
+                                            switch ($material_request->consignment_status) {
+                                                case 'For Approval':
                                                     $badge = 'primary';
                                                     break;
-                                                case 'Issued':
-                                                case 'Completed':
+                                                case 'Approved':
                                                     $badge = 'success';
                                                     break;
                                                 case 'Cancelled':
@@ -43,7 +43,7 @@
                                                     break;
                                             }
                                         @endphp
-                                        <span class="badge badge-{{ $badge }}">{{ $stock_entry->status }}</span>
+                                        <span class="badge badge-{{ $badge }}">{{ $material_request->consignment_status }}</span>
                                     @endif
                                 </span>
                             </div>
@@ -60,7 +60,7 @@
                                 @endif
                                 <form id="replenish-form" action="{{ $action }}" method="post">
                                     @csrf
-                                    <input type="hidden" name="id" value="{{ $stock_entry ? $stock_entry->name : null }}">
+                                    <input type="hidden" name="id" value="{{ $material_request ? $material_request->name : null }}">
                                     <div class="container">
                                         <div class="row pt-2 pb-2">
                                             <div class="col-8">
@@ -174,14 +174,14 @@
                                                                         <span class="font-weight-bold font-responsive item-code">{{ $item_code }}</span>
                                                                     </div>
                                                                     <div class="p-0 col-3 d-flex justify-content-center align-items-center">
-                                                                        @if ($stock_entry->status == 'Cancelled')
-                                                                            ₱ {{ number_format($item->price) }}
+                                                                        @if ($material_request->consignment_status == 'Cancelled')
+                                                                            ₱ {{ number_format($item->rate) }}
                                                                         @else
-                                                                            ₱&nbsp;<input type="text" name="items[{{ $item_code }}][price]" class="form-control item-price m-2 number-input number-validate text-center" value="{{ number_format($item->price) }}">
+                                                                            ₱&nbsp;<input type="text" name="items[{{ $item_code }}][price]" class="form-control item-price m-2 number-input number-validate text-center" value="{{ (float) $item->rate }}">
                                                                         @endif
                                                                     </div>
                                                                     <div class="p-0 col-4">
-                                                                        @if ($stock_entry->status == 'Cancelled')
+                                                                        @if ($material_request->consignment_status == 'Cancelled')
                                                                             <div class="text-center">
                                                                                 <b>{{ number_format($item->qty) }}</b><br>
                                                                                 <small>{{ $item->uom }}</small>
@@ -200,10 +200,20 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="p-1 item-description" style="font-size: 9.5pt !important;">
-                                                                    {{ strip_tags($item->item_description) }}
+                                                                    {{ strip_tags($item->description) }}
                                                                 </div>
                                                                 <div class="p-1">
-                                                                    <textarea class="form-control reason" name="items[{{ $item_code }}][reason]" placeholder='Reason...' rows=5 style="font-size: 9.5pt !important;">
+                                                                    @php
+                                                                        $reasons = ['Customer Order', 'Stock Replenishment'];
+                                                                    @endphp
+                                                                    <select class="form-control reason my-2" name="items[{{ $item_code }}][reason]" style="font-size: 9.5pt" required>
+                                                                        <option value="">Select a reason</option>
+                                                                        @foreach ($reasons as $reason)
+                                                                            <option value="{{ $reason }}" {{ $item->consignment_reason == $reason ? 'selected' : null }}>{{ $reason }}</option>
+                                                                        @endforeach
+                                                                    </select>
+
+                                                                    <textarea class="form-control remarks" name="items[{{ $item_code }}][remarks]" placeholder='Reason...' rows=5 style="font-size: 9.5pt !important;">
                                                                         {{ $item->remarks }}
                                                                     </textarea>
                                                                 </div>
@@ -220,7 +230,7 @@
                                             </table>
                                             <div class="col-12 text-right">
                                                 <div class="m-2">
-                                                    @if (!$stock_entry || $stock_entry->status == 'Draft')
+                                                    @if (!$material_request || $material_request->consignment_status == 'Draft')
                                                         <button type="button" class="btn btn-sm btn-primary btn-block submit-once submit-btn" data-status="0"><i id="submit-logo" class="fas fa-check"></i> Save as Draft</button>
                                                         <button type="button" class="btn btn-sm btn-success btn-block mb-2" data-toggle="modal" data-target="#submitModal">
                                                             <i id="submit-logo" class="fas fa-check"></i> Submit for Approval
@@ -237,7 +247,7 @@
                                                                     </div>
                                                                     <div class="modal-body text-center">
                                                                         Submit for Approval?
-
+                                                                        <br>
                                                                         <small class="font-italic">Note: You cannot update this entry after submission</small>
                                                                     </div>
                                                                     <div class="modal-footer">
@@ -249,7 +259,7 @@
                                                         </div>
                                                     @endif
 
-                                                    @if ($stock_entry && $stock_entry->status == 'Draft')
+                                                    @if ($material_request && $material_request->consignment_status == 'Draft')
                                                         <button type="button" class="btn btn-sm btn-secondary btn-block" data-toggle="modal" data-target="#deleteModal">
                                                             <i id="submit-logo" class="fas fa-remove"></i> Delete
                                                         </button>
@@ -258,24 +268,24 @@
                                                             <div class="modal-dialog" role="document">
                                                                 <div class="modal-content">
                                                                     <div class="modal-header">
-                                                                        <h5 class="modal-title" id="exampleModalLabel">Delete {{ $stock_entry->name }}</h5>
+                                                                        <h5 class="modal-title" id="exampleModalLabel">Delete {{ $material_request->name }}</h5>
                                                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                             <span aria-hidden="true">&times;</span>
                                                                         </button>
                                                                     </div>
                                                                     <div class="modal-body text-center">
-                                                                        Permanently Delete <b>{{ $stock_entry->name }}</b>?
+                                                                        Permanently Delete <b>{{ $material_request->name }}</b>?
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
-                                                                        <a href="/consignment/replenish/{{ $stock_entry->name }}/delete" class="btn btn-sm btn-primary">Delete</a>
+                                                                        <a href="/consignment/replenish/{{ $material_request->name }}/delete" class="btn btn-sm btn-primary">Delete</a>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     @endif
 
-                                                    @if ($stock_entry && $stock_entry->status == 'Pending')
+                                                    @if ($material_request && $material_request->consignment_status == 'For Approval')
                                                         <button type="button" class="btn btn-sm btn-secondary btn-block" data-toggle="modal" data-target="#deleteModal">
                                                             <i id="submit-logo" class="fas fa-remove"></i> Cancel
                                                         </button>
@@ -284,13 +294,13 @@
                                                             <div class="modal-dialog" role="document">
                                                                 <div class="modal-content">
                                                                     <div class="modal-header">
-                                                                        <h5 class="modal-title" id="exampleModalLabel">Cancel {{ $stock_entry->name }}</h5>
+                                                                        <h5 class="modal-title" id="exampleModalLabel">Cancel {{ $material_request->name }}</h5>
                                                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                             <span aria-hidden="true">&times;</span>
                                                                         </button>
                                                                     </div>
                                                                     <div class="modal-body text-center">
-                                                                        Cancel <b>{{ $stock_entry->name }}</b>?
+                                                                        Cancel <b>{{ $material_request->name }}</b>?
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>

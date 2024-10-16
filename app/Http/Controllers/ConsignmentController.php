@@ -28,6 +28,7 @@ use App\Models\Customer;
 use App\Models\ERPUser;
 use App\Models\Item;
 use App\Models\ItemImages;
+use App\Models\MaterialRequest;
 use App\Models\StockEntry;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -2051,58 +2052,80 @@ class ConsignmentController extends Controller
         }
     }
 
-    // public function replenish_update_form($id){
-    //     $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-    //     // return $stock_entry = ConsignmentStockEntry::with('items')->find($id);
+    public function replenish_update(Request $request, $id){
+        $state_before_update = [];
+        try {
+            $branch = $request->branch;
+            $items = $request->items;
+            $now = Carbon::now();
 
-    //     $item_images = ItemImages::whereIn('parent', collect($stock_entry->items)->pluck('item_code'))->pluck('image_path', 'parent');
+            $status = $request->status ? 'For Approval' : 'Draft';
+            $customer = 'CW MARKETING AND DEVELOPMENT CORPORATION';
+            $project = 'CW HOME DEPOT';
+            if(Str::contains($branch, 'WILCON DEPOT')){
+                $customer = 'WILCON DEPOT, INC.';
+                $project = 'WILCON STOCKS';
+            }
 
-    //     return view('consignment.replenish_form', compact('stock_entry', 'item_images', 'assigned_consignment_stores'));
-    // }
+            $items_data = [];
+            foreach ($items as $item_code => $item) {
+                $name = isset($item['name']) ? $item['name'] : null;
+                $rate = (float) $item['price'];
+                $qty = (int) $item['qty'];
+                $remarks = $item['remarks'];
+                $consignment_reason = $item['reason'];
+                $schedule_date = (Clone $now)->addDays($consignment_reason == 'Stock Replenishment' ? 5 : 3)->format('Y-m-d');
+                $warehouse = $branch;
+                $items_data[] = compact('name', 'item_code', 'rate', 'qty', 'remarks', 'consignment_reason', 'schedule_date', 'warehouse');
+            }
 
-    // public function replenish_update(Request $request, $id){
-    //     $state_before_update = [];
-    //     try {
-    //         $branch = $request->branch;
-    //         $items = $request->items;
-    //         $now = Carbon::now();
+            $data = [
+                'branch_warehouse' => $branch,
+                'consignment_status' => $status,
+                'transaction_date' => $now->toDateTimeString(),
+                'customer' => $customer,
+                'project' => $project,
+                'items' => $items_data,
+            ];
 
-    //         $items_data = [];
-    //         foreach ($items as $item_code => $item) {
-    //             $name = isset($item['name']) ? $item['name'] : null;
-    //             $price = (float) $item['price'];
-    //             $qty = (int) $item['qty'];
-    //             $remarks = $item['reason'];
-    //             $status = $request->status == 'Draft' ? 'Pending' : $request->status;
-    //             $amount = $price * $qty;
-    //             $items_data[] = compact('name', 'item_code', 'price', 'qty', 'remarks', 'status', 'amount');
-    //         }
+            return $response = $this->erpOperation('put', 'Material Request', $id, $data);
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating stock entry';
+                throw new Exception($err);
+            }
 
-    //         $data = [
-    //             'target_warehouse' => $branch,
-    //             'status' => $request->status,
-    //             'transaction_date' => $now->toDateTimeString(),
-    //             'items' => $items_data
-    //         ];
+            $response_data = $response['data'];
+            $response_data['branch'] = $branch;
 
-    //         $response = $this->erpOperation('put', 'Consignment Stock Entry', $id, $data);
-    //         if(!isset($response['data'])){
-    //             $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating stock entry';
-    //             throw new Exception($err);
-    //         }
+            $users = User::where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
 
-    //         return redirect()->back()->with('success', "$id successfully updated!");
-    //     } catch (Exception $th) {
-    //         throw $th;
-    //         return redirect()->back()->with('error', $th->getMessage());
-    //     }
+            foreach ($users as $user) {
+                $user = str_replace('.local', '.com', $user);
+                try {
+                    Mail::send('mail_template.consignment_order', $response_data, function($message) use ($user){
+                        $message->to($user);
+                        $message->subject('AthenaERP - Consignment Order Notification');
+                    });
+                } catch (\Throwable $th) {}
+            }
+
+            return redirect()->back()->with('success', "$id successfully updated!");
+        } catch (Exception $th) {
+            return redirect()->back()->with('error', $th->getMessage());
+        }
         
-    // }
+    }
 
-    public function replenish_form($id = null, Request $request){
+    public function replenish_form(Request $request, $id = null){
         $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
-        $stock_entry = $item_images = [];
-        return view('consignment.replenish_form', compact('assigned_consignment_stores', 'stock_entry', 'item_images'));
+        $material_request = $item_images = [];
+
+        if($id){
+            $material_request = MaterialRequest::with('items')->find($id);
+            $item_images = ItemImages::whereIn('parent', collect($material_request->items)->pluck('item_code'))->pluck('image_path', 'parent');
+        }
+
+        return view('consignment.replenish_form', compact('assigned_consignment_stores', 'material_request', 'item_images'));
     }
 
     public function replenish_delete($id){
@@ -2154,19 +2177,12 @@ class ConsignmentController extends Controller
                 'sales_person' => 'Plant 2',
                 'customer' => $customer,
                 'project' => $project,
-                'status' => $status,
+                'consignment_status' => $status,
                 'items' => $items_data,
                 'transaction_date' => $now->toDateTimeString()
             ];
 
-            $method = 'post';
-            $name = null;
-            if($request->id){
-                $name = $request->id;
-                $method = 'put';
-            }
-
-            $response = $this->erpOperation($method, 'Material Request', $name, $data);
+            $response = $this->erpOperation('post', 'Material Request', null, $data);
 
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while submitting your request';
@@ -2181,8 +2197,8 @@ class ConsignmentController extends Controller
             foreach ($users as $user) {
                 $user = str_replace('.local', '.com', $user);
                 try {
-                    Mail::send('mail_template.consignment_order', $response_data, function($message){
-                        $message->to();
+                    Mail::send('mail_template.consignment_order', $response_data, function($message) use ($user){
+                        $message->to($user);
                         $message->subject('AthenaERP - Consignment Order Notification');
                     });
                 } catch (\Throwable $th) {}
@@ -2190,7 +2206,6 @@ class ConsignmentController extends Controller
             
             return redirect('consignment/replenish')->with('success', "Request submitted.");
         } catch (Exception $th) {
-            throw $th;
             return redirect()->back()->with('error', $th->getMessage());
         }
     }
