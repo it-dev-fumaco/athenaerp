@@ -13,7 +13,6 @@ use Storage;
 use Cache;
 use Mail;
 use Illuminate\Support\Str;
-use App\Mail\StockTransfersNotification;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
@@ -24,7 +23,6 @@ use App\Models\Bin;
 use App\Models\ConsignmentDamagedItems;
 use App\Models\ConsignmentStockAdjustment;
 use App\Models\ConsignmentStockEntry;
-use App\Models\Customer;
 use App\Models\ERPUser;
 use App\Models\Item;
 use App\Models\ItemImages;
@@ -39,21 +37,23 @@ class ConsignmentController extends Controller
 {
     use GeneralTrait, ERPTrait;
     public function viewSalesReportList($branch, Request $request) {
-        $months = [];
-        for ($m=1; $m<=12; $m++) {
-            $months[] = date('F', mktime(0,0,0,$m, 1, date('Y')));
-        }
+        $months = collect(range(1, 12))->map(function ($m) {
+            return date('F', mktime(0, 0, 0, $m, 1, date('Y')));
+        });
+
         $currentYear = Carbon::now()->format('Y');
         $currentMonth = Carbon::now()->format('m');
        
-        $years = [];
-        for ($i = 2021; $i <= $currentYear; $i++) { 
-            array_push($years, $i);
-        }
+        $years = range(2021, $currentYear);
 
         if ($request->ajax()) {
-            $request_year = $request->year ? $request->year : $currentYear;
-            $sales_per_month = DB::table('tabConsignment Monthly Sales Report')->where('fiscal_year', $request_year)->where('warehouse', $branch)->get()->groupBy('month');
+            $request_year = $request->input('year', $currentYear);
+            $sales_per_month = Cache::remember("sales_report_{$request_year}_{$branch}", 600, function () use ($request_year, $branch) {
+                return DB::table('tabConsignment Monthly Sales Report')
+                    ->where('fiscal_year', $request_year)
+                    ->where('warehouse', $branch)
+                    ->get()->groupBy('month');
+            });
 
             return view('consignment.tbl_sales_report', compact('months', 'sales_per_month', 'currentMonth', 'currentYear', 'request_year', 'branch'));
         }
@@ -62,17 +62,29 @@ class ConsignmentController extends Controller
     }
 
     public function salesReportDeadline(Request $request) {        
+        $sales_report_deadline = Cache::remember('sales_report_deadline', 600, function () {
+            return DB::table('tabConsignment Sales Report Deadline')->first();
+        });
+
         $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
         if ($sales_report_deadline) {
             $cutoff_1 = $sales_report_deadline->{'1st_cutoff_date'};
 
-            $calendarMonth = $request->month;
-            $calendarYear = $request->year;
-
-            $first_cutoff = Carbon::createFromFormat('m/d/Y', $calendarMonth .'/'. $cutoff_1 .'/'. $calendarYear)->format('F d, Y');
-
-            return 'Deadline: ' . $first_cutoff;
+            if ($cutoff_1 && $request->has('month') && $request->has('year')) {
+                try {
+                    // Create the first cutoff date
+                    $first_cutoff = Carbon::createFromFormat('m/d/Y', $request->month . '/' . $cutoff_1 . '/' . $request->year)
+                        ->format('F d, Y');
+                    
+                    return 'Deadline: ' . $first_cutoff;
+                } catch (\Exception $e) {
+                    // Handle invalid date format
+                    return 'Invalid date format.';
+                }
+            }
         }
+
+        return 'No deadline data available.';
     }
 
     public function checkBeginningInventory(Request $request) {
@@ -1935,17 +1947,26 @@ class ConsignmentController extends Controller
 
     public function replenish_index(Request $request){
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
-        $assigned_consignment_stores = AssignedWarehouses::when($is_promodiser, function ($q){
-            return $q->where('parent', Auth::user()->frappe_userid);
-        })->pluck('warehouse');
+
+        if ($is_promodiser) {
+            $consignmentStores = AssignedWarehouses::when($is_promodiser, function ($q){
+                return $q->where('parent', Auth::user()->frappe_userid);
+            })->pluck('warehouse');
+        } else {
+            $consignmentStores = Warehouse::where([
+                'disabled' => 0,
+                'parent_warehouse' => 'P2 Consignment Warehouse - FI'
+            ])->orderBy('name')->pluck('name');
+        }
 
         if($request->ajax()){
-            $target_warehouses = $is_promodiser ? $assigned_consignment_stores : [];
+            $target_warehouses = $consignmentStores;
             $target_warehouses = $request->branch ? [$request->branch] : $target_warehouses;
 
-            $order = $is_promodiser ? "'Draft', 'Pending', 'Partially Issued', 'Issued', 'Completed', 'Cancelled'" : "'Pending', 'Draft', 'Partially Issued', 'Issued', 'Completed', 'Cancelled'";
-            $list = ConsignmentStockEntry::when($target_warehouses, function ($query) use ($target_warehouses){
-                    return $query->whereIn('target_warehouse', $target_warehouses);
+            $order = "'Draft', 'For Approval', 'Approved', 'Delivered', 'Cancelled'";
+            $list =  MaterialRequest::with('items')->where(['transfer_as' => 'Consignment', 'custom_purpose' => 'Consignment Order'])
+                ->when($target_warehouses, function ($query) use ($target_warehouses){
+                    return $query->whereIn('branch_warehouse', $target_warehouses);
                 })
                 ->when($request->status, function ($query) use ($request){
                     return $query->where('status', $request->status);
@@ -1953,14 +1974,23 @@ class ConsignmentController extends Controller
                 ->when($request->search, function ($query) use ($request){
                     return $query->where('name', 'like', "%$request->search%");
                 })
-                ->where('purpose', 'Stock Replenishment')
-                ->orderByRaw("FIELD(status, $order) ASC")
-                ->orderByDesc('modified')->paginate(10);
-    
-            return view('consignment.replenish_tbl', compact('list'));
+                ->orderByDesc('creation')->paginate(20);
+
+            $result = [];
+            foreach ($list as $row) {
+                $result[] = [
+                    'name' => $row->name,
+                    'branch_warehouse' => $row->branch_warehouse,
+                    'owner' => ucwords(str_replace('.', ' ', explode('@', $row->owner)[0])),
+                    'creation' => Carbon::parse($row->creation)->format('M. d, Y - h:i A'),
+                    'status' => $row->consignment_status,
+                ];
+            }
+          
+            return view('consignment.supervisor.consignment_order_table', compact('result', 'list'));
         }
 
-        return view('consignment.replenish_index', compact('assigned_consignment_stores'));
+        return view('consignment.supervisor.consignment_order_index', compact('consignmentStores'));
     }
 
     public function replenish_modal_contents($id){
@@ -5165,7 +5195,8 @@ class ConsignmentController extends Controller
     public function consignment_branches(Request $request){
         if($request->ajax()){
             $search_string = $request->search;
-            $branches = Warehouse::where('parent_warehouse', 'P2 Consignment Warehouse - FI')->where('name', '!=', 'Consignment Warehouse - FI')
+            $branches = Warehouse::where('parent_warehouse', 'P2 Consignment Warehouse - FI')
+                ->where('name', '!=', 'Consignment Warehouse - FI')->where('disabled', 0)
                 ->with('bin', function ($bin){
                     $bin->select('name', 'warehouse', 'item_code', 'stock_uom', 'consigned_qty', 'consignment_price', 'actual_qty', DB::raw('consigned_qty * consignment_price as amount'));
                 })

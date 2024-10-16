@@ -17,6 +17,28 @@ class LoginController extends Controller
 {
     use ERPTrait, GeneralTrait;
     public function view_login(){
+
+        // $so = DB::table('tabSales Order Item')->where('parent', 'SO-28492')
+        //     ->select('item_code','description', 'qty', 'uom', 'base_rate', 'base_amount')->get();
+
+        // $dr = DB::table('tabDelivery Note as dr')->join('tabDelivery Note Item as dri', 'dr.name', 'dri.parent')
+        //     ->where('dr.sales_order', 'SO-28492')
+        //     ->orWhere('dri.against_sales_order', 'SO-28492')
+        //     ->select('dr.name', 'dr.delivery_date', 'dr.is_return', 'dr.return_against', 'dri.item_code', 'dri.base_rate', 'dri.qty', 'dri.base_amount')
+        //     ->get();
+
+        // $dr_returns = $dr->filter(function($i) {
+        //     return $i->is_return > 0;
+        // })->groupBy('item_code')->toArray();
+
+        // $drs= $dr->filter(function($i) {
+        //     return $i->is_return <= 0;
+        // })->groupBy('item_code')->toArray();
+
+
+        // return view('test', compact('so', 'drs', 'dr_returns'));
+
+        // return $dr_returns;
         if(Auth::check()){
             return redirect('/');
             
