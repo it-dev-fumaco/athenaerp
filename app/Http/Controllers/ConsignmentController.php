@@ -1952,13 +1952,12 @@ class ConsignmentController extends Controller
             $target_warehouses = $assigned_consignment_stores;
             $target_warehouses = $request->branch ? [$request->branch] : $target_warehouses;
 
-            $order = "'Draft', 'For Approval', 'Approved', 'Delivered', 'Cancelled'";
             $list =  MaterialRequest::with('items')->where(['transfer_as' => 'Consignment', 'custom_purpose' => 'Consignment Order'])
                 ->when($target_warehouses, function ($query) use ($target_warehouses){
                     return $query->whereIn('branch_warehouse', $target_warehouses);
                 })
                 ->when($request['status'], function ($query) use ($request){
-                    return $query->where('status', $request['status']);
+                    return $query->where('consignment_status', $request['status']);
                 })
                 ->when($request['search'], function ($query) use ($request){
                     $search_string = $request['search'];
@@ -1992,7 +1991,7 @@ class ConsignmentController extends Controller
                     return $query->whereIn('branch_warehouse', $target_warehouses);
                 })
                 ->when($request->status, function ($query) use ($request){
-                    return $query->where('status', $request->status);
+                    return $query->where('consignment_status', $request->status);
                 })
                 ->when($request->search, function ($query) use ($request){
                     return $query->where('name', 'like', "%$request->search%");

@@ -31,7 +31,7 @@
                                 @endif
                                 <div class="container-fluid">
                                     @php
-                                        $statuses = ['Draft', 'Pending', 'Partially Issued', 'Completed', 'Cancelled'];
+                                        $statuses = ['Draft', 'For Approval', 'Approved', 'Delivered', 'Cancelled'];
                                     @endphp
                                     <div class="row">
                                         <div class="col-12 p-2">
@@ -46,16 +46,18 @@
                                             
                                             <div class="row additional-filters" style='display: none'>
                                                 <div class="col-8 p-2">
-                                                    <select name="branch" class="form-control form-control-sm">
+                                                    <select name="branch" class="form-control form-control-sm select-filter">
                                                         <option value="" disabled selected>Select a Branch</option>
+                                                        <option value="">Select all</option>
                                                         @foreach ($assigned_consignment_stores as $store)
                                                             <option value="{{ $store }}">{{ $store }}</option>
                                                         @endforeach 
                                                     </select>
                                                 </div>
                                                 <div class="col-4 p-2">
-                                                    <select name="status" class="form-control form-control-sm">
+                                                    <select name="status" class="form-control form-control-sm select-filter">
                                                         <option value="" disabled selected>Status</option>
+                                                        <option value="">Select all</option>
                                                         @foreach ($statuses as $status)
                                                             <option value="{{ $status }}">{{ $status }}</option>
                                                         @endforeach 
@@ -136,43 +138,24 @@
             });
         };
 
-        load(); // Load the table initially
+        load();
 
-        $(document).on('click', '.open-modal', function (e) {
-            e.preventDefault();
-            const btn = $(this);
-            const id = btn.data('id');
-            const target = btn.data('target');
-
-            const content = '#content-' + id;
-
-            $.ajax({
-                type: 'get',
-                url: `/consignment/replenish/modal/${id}`,
-                success: (response) => {
-                    $(content).html(response);
-                    $(target).modal('show');
-                },
-                error: (xhr, textStatus, errorThrown) => {
-                    showNotification("danger", xhr.responseJSON.message, "fa fa-info");
-                }
-            });
-        });
-
-        // Handle pagination
         $(document).on('click', '#pagination a', function (event) {
             event.preventDefault();
             const page = $(this).attr('href').split('page=')[1];
             load(page);
         });
 
-        // Handle search button click
+        $(document).on('change', '.select-filter', function (e) {
+            e.preventDefault();
+            load();
+        })
+
         $(document).on('click', '.search', function (e) {
             e.preventDefault();
             load();
         });
 
-        // Toggle additional filters
         $(document).on('click', '#toggle-filters', function () {
             $('.additional-filters').slideToggle();
         });
