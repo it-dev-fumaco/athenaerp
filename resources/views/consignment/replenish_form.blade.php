@@ -30,9 +30,12 @@
                                         @php
                                             switch ($material_request->consignment_status) {
                                                 case 'For Approval':
-                                                    $badge = 'primary';
+                                                    $badge = 'warning';
                                                     break;
                                                 case 'Approved':
+                                                    $badge = 'primary';
+                                                    break;
+                                                case 'Delivered':
                                                     $badge = 'success';
                                                     break;
                                                 case 'Cancelled':
@@ -117,6 +120,8 @@
                                                                                             <div class="input-group-append">
                                                                                                 <button class="btn btn-outline-success increment" type="button">+</button>
                                                                                             </div>
+
+                                                                                            <a href="#" class="btn btn-danger btn-sm remove-item d-none" style="margin-left: 10px;">&times;</a>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -155,7 +160,7 @@
                                                     @forelse ($items as $item)
                                                         @php
                                                             $item_code = $item->item_code;
-                                                            $image = isset($item_images[$item_code]) ? "img/".$item_images[$item_code] : '/icon/no_icon.png';
+                                                            $image = isset($item_images[$item_code]) ? "img/".$item_images[$item_code] : '/icon/no_img.png';
 
                                                             if(Storage::disk('public')->exists(explode('.', $image)[0].'.webp')){
                                                                 $image = explode('.', $image)[0].'.webp';
@@ -166,6 +171,31 @@
                                                                 <input type="text" name="items[{{ $item_code }}][name]" value="{{ $item->name }}">
                                                             </div>
                                                             <td class="text-justify p-1 align-middle" colspan="3">
+                                                                <div class="col-12 text-right">
+                                                                    <a href="#" class="text-secondary" data-toggle="modal" data-target="#remove-{{ $item_code }}-modal">
+                                                                        <i class="fa fa-remove"></i>
+                                                                    </a>
+
+                                                                    <div class="modal fade" id="remove-{{ $item_code }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                        <div class="modal-dialog" role="document">
+                                                                            <div class="modal-content">
+                                                                                <div class="modal-header">
+                                                                                    <h5 class="modal-title" id="exampleModalLabel">Remove {{ $item_code }}?</h5>
+                                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                                        <span aria-hidden="true">&times;</span>
+                                                                                    </button>
+                                                                                </div>
+                                                                                <div class="modal-body text-center">
+                                                                                    Remove Item <b>{{ $item_code }}</b> from the list?
+                                                                                </div>
+                                                                                <div class="modal-footer">
+                                                                                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
+                                                                                    <button type="button" class="btn btn-sm btn-danger remove-item">Remove Item</button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                                 <div class="d-flex flex-row justify-content-center align-items-center">
                                                                     <div class="p-1 col-2 text-center">
                                                                         <img src="{{ asset("storage/$image") }}" class="img-thumbnail" alt="User Image" width="100%">
@@ -177,7 +207,7 @@
                                                                         @if ($material_request->consignment_status == 'Cancelled')
                                                                             ₱ {{ number_format($item->rate) }}
                                                                         @else
-                                                                            ₱&nbsp;<input type="text" name="items[{{ $item_code }}][price]" class="form-control item-price m-2 number-input number-validate text-center" value="{{ (float) $item->rate }}">
+                                                                            ₱&nbsp;<input type="text" name="items[{{ $item_code }}][price]" class="form-control item-price m-2 number-input number-validate text-center" value="{{ (float) $item->rate }}" style="font-size: 9pt">
                                                                         @endif
                                                                     </div>
                                                                     <div class="p-0 col-4">
@@ -191,7 +221,7 @@
                                                                                 <div class="input-group-prepend">
                                                                                     <button class="btn btn-outline-danger decrement" type="button">-</button>
                                                                                 </div>
-                                                                                <input type="text" name="items[{{ $item_code }}][qty]" class="form-control number-input number-validate text-center item-qty" value="{{ number_format($item->qty) }}">
+                                                                                <input type="text" name="items[{{ $item_code }}][qty]" class="form-control number-input number-validate text-center item-qty" value="{{ number_format($item->qty) }}" style="font-size: 9pt">
                                                                                 <div class="input-group-append">
                                                                                     <button class="btn btn-outline-success increment" type="button">+</button>
                                                                                 </div>
@@ -259,7 +289,7 @@
                                                         </div>
                                                     @endif
 
-                                                    @if ($material_request && $material_request->consignment_status == 'Draft')
+                                                    @if ($material_request && !$material_request->docstatus)
                                                         <button type="button" class="btn btn-sm btn-secondary btn-block" data-toggle="modal" data-target="#deleteModal">
                                                             <i id="submit-logo" class="fas fa-remove"></i> Delete
                                                         </button>
@@ -275,36 +305,12 @@
                                                                     </div>
                                                                     <div class="modal-body text-center">
                                                                         Permanently Delete <b>{{ $material_request->name }}</b>?
+                                                                        <br>
+                                                                        <small class="font-italic">Note: * This cannot be undone</small>
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
                                                                         <a href="/consignment/replenish/{{ $material_request->name }}/delete" class="btn btn-sm btn-primary">Delete</a>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    @endif
-
-                                                    @if ($material_request && $material_request->consignment_status == 'For Approval')
-                                                        <button type="button" class="btn btn-sm btn-secondary btn-block" data-toggle="modal" data-target="#deleteModal">
-                                                            <i id="submit-logo" class="fas fa-remove"></i> Cancel
-                                                        </button>
-                                                        
-                                                        <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                                            <div class="modal-dialog" role="document">
-                                                                <div class="modal-content">
-                                                                    <div class="modal-header">
-                                                                        <h5 class="modal-title" id="exampleModalLabel">Cancel {{ $material_request->name }}</h5>
-                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                            <span aria-hidden="true">&times;</span>
-                                                                        </button>
-                                                                    </div>
-                                                                    <div class="modal-body text-center">
-                                                                        Cancel <b>{{ $material_request->name }}</b>?
-                                                                    </div>
-                                                                    <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
-                                                                        <button type="button" class="btn btn-sm btn-primary submit-btn" data-status="2">Cancel</button>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -513,6 +519,7 @@
                 row.find('.item-qty').addClass('number-validate').attr('name', `items[${item_code}][qty]`)
                 row.find('.reason').attr('name', `items[${item_code}][reason]`).val(selected_reason);
                 row.find('.remarks').attr('name', `items[${item_code}][remarks]`)
+                row.find('.remove-item').removeClass('d-none')
 
                 $('#selected-items-table tbody').prepend(row);
 
@@ -528,6 +535,13 @@
                 $('#item-selection-table textarea').val('')
                 $('#item-selection-table .number-input').val(1)
                 $('#placeholder').remove()
+            });
+
+            $(document).on('click', '.remove-item', function() {
+                $('.modal').modal('hide')
+                $('.modal').on('hidden.bs.modal', function (e) {
+                    $(this).closest('tr').remove();
+                })
             });
 
             $(document).on('click', '.submit-btn', function (e){

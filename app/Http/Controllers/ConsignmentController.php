@@ -2134,7 +2134,7 @@ class ConsignmentController extends Controller
 
     public function replenish_delete($id){
         try {
-            $response = $this->erpOperation('delete', 'Consignment Stock Entry', $id);
+            $response = $this->erpOperation('delete', 'Material Request', $id);
 
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while deleting the document';
