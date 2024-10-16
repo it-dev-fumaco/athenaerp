@@ -10,8 +10,13 @@
                 <div class="row pt-1">
                     <div class="col-md-12 p-0 m-0">
                         <div class="card card-lightblue">
-                            <div class="card-header text-center p-2" id="report">
-                                <span class="font-responsive font-weight-bold text-uppercase d-inline-block">Consignment Orders</span>
+                            <div class="card-header d-flex justify-content-between align-items-center p-2">
+                                <div class="flex-grow-1 text-center">
+                                    <span class="font-responsive font-weight-bold text-uppercase">Consignment Orders</span>
+                                </div>
+                                @if (Auth::user()->user_group == 'Promodiser')
+                                    <a href="/consignment/replenish/form" class="btn btn-sm btn-primary">+ Add</a>
+                                @endif
                             </div>
                             <div class="card-body p-0">
                                 @if(session()->has('success'))
@@ -65,7 +70,9 @@
                                             </div>
                                         </div>
                                         <div id="replenish-tbl" class="col-12">
-                                            
+                                            <div class="d-flex justify-content-center align-items-center p-5">
+                                                <div class="spinner-border"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -94,59 +101,81 @@
 @endsection
 
 @section('script')
-    <script>
-        $(document).ready(function (){
-            const showNotification = (color, message, icon) => {
-                $.notify({
-                    icon: icon,
-                    message: message
-                },{
-                    type: color,
-                    timer: 500,
-                    z_index: 1060,
-                    placement: {
-                        from: 'top',
-                        align: 'center'
-                    }
-                });
-            }
+<script>
+    $(document).ready(function () {
+        const showNotification = (color, message, icon) => {
+            $.notify({
+                icon: icon,
+                message: message
+            }, {
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: {
+                    from: 'top',
+                    align: 'center'
+                }
+            });
+        };
 
-            const load = (page = 1) => {
-                const branch = $('select[name="branch"]').val()
-                const status = $('select[name="status"]').val()
-                const search = $('input[name="search"]').val()
+        const load = (page = 1) => {
+            const branch = $('select[name="branch"]').val();
+            const status = $('select[name="status"]').val();
+            const search = $('input[name="search"]').val();
 
-                $.ajax({
-					type: 'GET',
-					url: '/consignment/replenish',
-                    data: {
-                        page, branch, status, search
-                    },
-					success: (response) => {
-						$('#replenish-tbl').html(response);
-					},
-                    error: (xhr, textStatus, errorThrown) => {
-						showNotification("danger", xhr.responseJSON.message, "fa fa-info");
-					}
-				});
-            }
+            $.ajax({
+                type: 'GET',
+                url: '/consignment/replenish',
+                data: { page, branch, status, search },
+                success: (response) => {
+                    $('#replenish-tbl').html(response);
+                },
+                error: (xhr, textStatus, errorThrown) => {
+                    showNotification("danger", xhr.responseJSON.message, "fa fa-info");
+                }
+            });
+        };
 
-            load()
+        load(); // Load the table initially
 
-            $(document).on('click', '#pagination a', function(event){
-				event.preventDefault();
-				var page = $(this).attr('href').split('page=')[1];
-				load(page);
-			});
+        $(document).on('click', '.open-modal', function (e) {
+            e.preventDefault();
+            const btn = $(this);
+            const id = btn.data('id');
+            const target = btn.data('target');
 
-            $(document).on('click', '.search', function (e){
-                e.preventDefault()
-                load()
-            })
+            const content = '#content-' + id;
 
-            $(document).on('click', '#toggle-filters', function() {
-                $('.additional-filters').slideToggle()
+            $.ajax({
+                type: 'get',
+                url: `/consignment/replenish/modal/${id}`,
+                success: (response) => {
+                    $(content).html(response);
+                    $(target).modal('show');
+                },
+                error: (xhr, textStatus, errorThrown) => {
+                    showNotification("danger", xhr.responseJSON.message, "fa fa-info");
+                }
             });
         });
-    </script>
+
+        // Handle pagination
+        $(document).on('click', '#pagination a', function (event) {
+            event.preventDefault();
+            const page = $(this).attr('href').split('page=')[1];
+            load(page);
+        });
+
+        // Handle search button click
+        $(document).on('click', '.search', function (e) {
+            e.preventDefault();
+            load();
+        });
+
+        // Toggle additional filters
+        $(document).on('click', '#toggle-filters', function () {
+            $('.additional-filters').slideToggle();
+        });
+    });
+</script>
 @endsection

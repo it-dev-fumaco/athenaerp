@@ -15,7 +15,7 @@ class Bin extends Model
     protected $table = 'tabBin';
 
     public function warehouses(){
-        return $this->belongsTo(Warehouse::class, 'name', 'warehouse');
+        return $this->hasMany(Warehouse::class, 'name', 'warehouse');
     }
 
     public function item(){

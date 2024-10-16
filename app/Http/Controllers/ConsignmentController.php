@@ -24,6 +24,7 @@ use App\Models\Bin;
 use App\Models\ConsignmentDamagedItems;
 use App\Models\ConsignmentStockAdjustment;
 use App\Models\ConsignmentStockEntry;
+use App\Models\Customer;
 use App\Models\ERPUser;
 use App\Models\Item;
 use App\Models\ItemImages;
@@ -1931,21 +1932,122 @@ class ConsignmentController extends Controller
     }
 
     public function replenish_index(Request $request){
-        $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        $is_promodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
+        $assigned_consignment_stores = AssignedWarehouses::when($is_promodiser, function ($q){
+            return $q->where('parent', Auth::user()->frappe_userid);
+        })->pluck('warehouse');
+
         if($request->ajax()){
-            $target_warehouses = $request->branch ? [$request->branch] : $assigned_consignment_stores;
-            $list = ConsignmentStockEntry::whereIn('target_warehouse', $target_warehouses)->where('purpose', 'Stock Replenishment')
+            $target_warehouses = $is_promodiser ? $assigned_consignment_stores : [];
+            $target_warehouses = $request->branch ? [$request->branch] : $target_warehouses;
+
+            $order = $is_promodiser ? "'Draft', 'Pending', 'Partially Issued', 'Issued', 'Completed', 'Cancelled'" : "'Pending', 'Draft', 'Partially Issued', 'Issued', 'Completed', 'Cancelled'";
+            $list = ConsignmentStockEntry::when($target_warehouses, function ($query) use ($target_warehouses){
+                    return $query->whereIn('target_warehouse', $target_warehouses);
+                })
                 ->when($request->status, function ($query) use ($request){
                     return $query->where('status', $request->status);
                 })
                 ->when($request->search, function ($query) use ($request){
                     return $query->where('name', 'like', "%$request->search%");
-                })->orderByDesc('modified')->paginate(10);
+                })
+                ->where('purpose', 'Stock Replenishment')
+                ->orderByRaw("FIELD(status, $order) ASC")
+                ->orderByDesc('modified')->paginate(10);
     
             return view('consignment.replenish_tbl', compact('list'));
         }
 
         return view('consignment.replenish_index', compact('assigned_consignment_stores'));
+    }
+
+    public function replenish_modal_contents($id){
+        $stock_entry = ConsignmentStockEntry::with('items')->find($id);
+
+        $item_images = $inventory = [];
+        $item_codes = $stock_entry->items->pluck('item_code');
+        
+        $flatten_item_codes = $item_codes->implode("','");
+        $item_images = ItemImages::whereRaw("parent IN ('$flatten_item_codes')")->pluck('image_path', 'parent');
+
+        $allowed_warehouses = Warehouse::where('parent_warehouse', 'like', 'P2%')->where('parent_warehouse', '!=', 'P2 Consignment Warehouse - FI')->pluck('parent_warehouse')->unique();
+
+        $inventory = Bin::whereHas('warehouses', function ($warehouse) use ($allowed_warehouses) {
+            $warehouse->whereIn('parent_warehouse', $allowed_warehouses);
+        })->whereRaw("item_code IN ('$flatten_item_codes')")->select('warehouse', 'item_code')->get();
+        $inventory = collect($inventory)->map(function ($item) {
+            $item_code = $item->item_code;
+            $warehouse = $item->warehouse;
+
+            $item->available_qty = $this->get_available_qty($item_code, $warehouse);
+
+            if($item->available_qty){
+                return $item;
+            }
+        })->filter()->groupBy('item_code');
+
+        return view('consignment.replenish_modal', compact('stock_entry', 'inventory'));
+    }
+
+    public function replenish_approve($id, Request $request){
+        try{
+            $issue = $request->issue;
+            $items = $request->items;
+            
+            $stock_entry = ConsignmentStockEntry::with('items')->find($id);
+
+            // $data = $child_data = [];
+            // $has_pending = false;
+            $columns_to_exclude = ['parent', 'creation', 'modified', 'modified_by', 'owner', 'docstatus', 'parentfield', 'parenttype'];
+            $stock_entry->items = collect($stock_entry->items)->map(function ($item) use ($items, $issue, $columns_to_exclude, $stock_entry, &$child_data, &$has_pending) {
+                $item_code = $item->item_code;
+
+                foreach ($columns_to_exclude as $column) {
+                    unset($item->$column);
+                }
+
+                $qty = (float) $item->qty;
+                // $issuance_details = $items[$item_code];
+
+                // if ($issue == 'selected' && isset($items[$item_code]['issue']) && $items[$item_code]['issue'] != 'on') {
+                    $item->status = 'Issued';
+                    // $child_data[] = [
+                    //     'item_code' => $item_code,
+                    //     'qty' => $qty,
+                    //     'source_warehouse' => $issuance_details['source_warehouse'],
+                    //     'target_warehouse' => $stock_entry->target_warehouse
+                    // ];
+                // } else {
+                //     $item->status = 'Issued';
+                // }
+
+                // if ($item->status == 'Pending') {
+                //     $has_pending = true;
+                // }
+
+                return $item;
+            })->values();
+
+            // return $has_pending;
+
+            // $data = [
+            //     'transfer_as' => 'Consignment',
+            //     'purpose' => 'Consignment Order',
+            //     'branch_warehouse' => $stock_entry->target_warehouse,
+            //     'sales_person' => 'Plant 2',
+            //     'company' => 'FUMACO Inc.',
+            //     'customer' => 'WILCON DEPOT, INC.',
+            //     'customer_address' => 'WILCON DEPOT-Shipping',
+            //     'project' => 'WILCON STOCKS',
+            //     'items' => $child_data
+            // ];
+
+            // return $request->all();
+            // return 1;
+        }catch(Exception $e){
+            throw $e;
+            return response()->json(['success' => 0, 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function replenish_update_form($id){
@@ -2032,7 +2134,7 @@ class ConsignmentController extends Controller
                 $items_data[] = compact('item_code', 'price', 'qty', 'remarks', 'status', 'amount');
             }
 
-            $data = [
+            return $data = [
                 'target_warehouse' => $branch,
                 'purpose' => 'Stock Replenishment',
                 'status' => $request->status,

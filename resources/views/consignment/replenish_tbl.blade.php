@@ -8,13 +8,17 @@
     </tr>
     @forelse ($list->items() as $stock_entry)
         @php
+            $is_promodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
             $owner = explode('.', explode('@', $stock_entry->owner)[0]);
-            $parsedOwner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
+
+            $stock_entry->owner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
+            $stock_entry->creation = Carbon\Carbon::parse($stock_entry->creation)->format('M. d, Y h:i a');
 
             switch ($stock_entry->status) {
                 case 'Pending':
                     $badge = 'primary';
                     break;
+                case 'Partially Issued':
                 case 'Issued':
                 case 'Completed':
                     $badge = 'success';
@@ -32,19 +36,47 @@
                 {{ $stock_entry->name }}  <span class="d-inline d-lg-none badge badge-{{ $badge }}" style="font-size: 7pt">{{ $stock_entry->status }}</span>
                 <div class="d-block d-lg-none" style="font-size: 9pt">
                     <b>{{ $stock_entry->target_warehouse }}</b>
-                    <span class="d-block" style="font-size: 8pt">{{ $parsedOwner }} | {{ Carbon\Carbon::parse($stock_entry->creation)->format('M. d, Y h:i a') }}</span>
+                    <span class="d-block" style="font-size: 8pt">{{ $stock_entry->owner }} | {{ $stock_entry->creation }}</span>
                 </div>
             </td>
             <td class="d-none d-sm-table-cell ">{{ $stock_entry->target_warehouse }}</td>
             <td class="d-none d-sm-table-cell "><span class="badge badge-{{ $badge }}">{{ $stock_entry->status }}</span></td>
             <td class="d-none d-sm-table-cell ">
-                <span>{{ $parsedOwner }}</span><br>
-                <small>{{ Carbon\Carbon::parse($stock_entry->creation)->format('M. d, Y h:i a') }}</small>
+                <span>{{ $stock_entry->owner }}</span><br>
+                <small>{{ $stock_entry->creation }}</small>
             </td>
             <td class="text-center">
-                <a href="/consignment/replenish/{{ $stock_entry->name }}" style="font-size: 9pt">
-                    <i class="fa fa-edit"></i> View
-                </a>
+                @if ($is_promodiser)
+                    <a href="/consignment/replenish/{{ $stock_entry->name }}" style="font-size: 9pt">
+                        <i class="fa fa-edit"></i> View
+                    </a>
+                @else
+                    <a href="#" class="open-modal" style="font-size: 9pt" data-target="#view-{{ $stock_entry->name }}" data-id="{{ $stock_entry->name }}">
+                        <i class="fa fa-edit"></i> View
+                    </a>
+
+                    <div class="modal fade" id="view-{{ $stock_entry->name }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-xl" role="document" style="max-width: 95% !important">
+                            <div class="modal-content">
+                                <div class="modal-header d-flex justify-content-between align-items-center">
+                                    <h5 class="modal-title">{{ $stock_entry->name }}</h5>
+                                    
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge badge-{{ $badge }}" style="font-size: 10pt">{{ $stock_entry->status }}</span>
+                                        <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="content-{{ $stock_entry->name }}" class="text-left">
+                                    <div class="d-flex justify-content-center align-items-center p-5">
+                                        <div class="spinner-border"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </td>
         </tr>
     @empty
@@ -73,5 +105,16 @@
             }
         });
     }
+
+    $(document).on('change', 'input[type="checkbox"][name^="items"]', function() {
+        const itemCode = $(this).attr('name').match(/items\[(.*?)\]\['Issue'\]/)[1];
+        const warehouseSelect = $(`select[name="items[${itemCode}]['source_warehouse']"]`);
+
+        if ($(this).is(':checked')) {
+            warehouseSelect.attr('required', 'required');
+        } else {
+            warehouseSelect.removeAttr('required');
+        }
+    });
     truncate_description();
 </script>

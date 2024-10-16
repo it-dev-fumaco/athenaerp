@@ -6,6 +6,7 @@
 @section('content')
 @php
     $target_warehouse = null;
+    $stock_entry = $items = $item_images = [];
     $method = 'post';
     $action = '/consignment/replenish';
 
@@ -14,8 +15,6 @@
         $item_images = isset($item_images) ? $item_images : [];
         $target_warehouse = $stock_entry->target_warehouse;
         $items = $stock_entry->items;
-    }else{
-        $stock_entry = $items = $item_images = [];
     }
 @endphp
     <div class="content">

@@ -188,6 +188,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
                     Route::get('/form', 'ConsignmentController@replenish_form');
                     Route::post('/{id}', 'ConsignmentController@replenish_update');
                     Route::get('/{id}', 'ConsignmentController@replenish_update_form');
+                    Route::get('/modal/{id}', 'ConsignmentController@replenish_modal_contents');
+                    Route::post('/{id}/approve', 'ConsignmentController@replenish_approve');
                     Route::get('/{id}/delete', 'ConsignmentController@replenish_delete');
                 });
             });

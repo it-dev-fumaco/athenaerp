@@ -313,8 +313,8 @@ class MainController extends Controller
             })
             ->count();
 
-        // get total stock adjustments
-        $total_stock_adjustments = DB::table('tabConsignment Beginning Inventory')->where('status', 'For Approval')->count();
+        // get total consignment orders
+        $total_consignment_orders = ConsignmentStockEntry::where('purpose', 'Stock Replenishment')->where('status', 'Pending')->count();
 
         $total_pending_inventory_audit = 0;
         // get total pending inventory audit
@@ -415,7 +415,7 @@ class MainController extends Controller
             $sales_report_included_years[] = $i;
         }
 
-        return view('consignment.index_consignment_supervisor', compact('duration', 'pending_to_receive', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_stock_adjustments', 'cutoff_filters', 'sales_report_included_years'));
+        return view('consignment.index_consignment_supervisor', compact('duration', 'pending_to_receive', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_consignment_orders', 'cutoff_filters', 'sales_report_included_years'));
     }
 
     public function search_results(Request $request){
