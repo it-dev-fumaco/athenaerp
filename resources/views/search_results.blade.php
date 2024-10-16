@@ -163,15 +163,24 @@
 													</div>
 													@endif
 													@if ($promodiser_restriction)
-													<div class="col-8 col-md-3 col-xl-2 mx-auto text-center">
-														<div class="form-group m-0r">
-															<label style="white-space: nowrap">
-																<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
-																
-																<span class="filter-font">Warehouse Assigned to Me</span>
-															</label>
+														<div class="col-6 col-md-3 col-xl-2 mx-auto text-center">
+															<div class="form-group m-0r">
+																<label style="white-space: nowrap">
+																	<input type="checkbox" class="minimal" id="promodiser-warehouse" {{ (request('assigned_to_me')) ? 'checked' : null }} >
+																	
+																	<span class="filter-font">Warehouse Assigned to Me</span>
+																</label>
+															</div>
 														</div>
-													</div>
+														<div class="col-6 col-md-3 col-xl-2 mx-auto text-center">
+															<div class="form-group m-0r">
+																<label style="white-space: nowrap">
+																	<input type="checkbox" class="minimal" id="promodiser-items" {{ (request('assigned_items')) ? 'checked' : null }} >
+																	
+																	<span class="filter-font">Items in my Branch</span>
+																</label>
+															</div>
+														</div>
 													@endif
 												</div>
 											</div>

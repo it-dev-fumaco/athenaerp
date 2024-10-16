@@ -456,7 +456,7 @@ class MainController extends Controller
             $check_qty = $request->check_qty == 'on' ? 1 : 0;
         }
 
-        $allow_warehouse = [];
+        $allow_warehouse = $consignment_stores = [];
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
         if ($is_promodiser) {
             $allowed_parent_warehouse_for_promodiser = DB::table('tabWarehouse Access as wa')
@@ -485,17 +485,21 @@ class MainController extends Controller
 
         $items = DB::table('tabItem')->where('tabItem.disabled', 0)
             ->where('tabItem.has_variants', 0)//->where('tabItem.is_stock_item', 1)
+            ->when($request->assigned_items, function ($q) use ($consignment_stores){
+                return $q->join('tabBin as bin', 'bin.item_code', 'tabItem.item_code')
+                    ->whereIn('bin.warehouse', $consignment_stores);
+            })
             ->when($request->searchString, function ($query) use ($search_str, $request) {
                 return $query->where(function($q) use ($search_str, $request) {
                     foreach ($search_str as $str) {
-                        $q->where('tabItem.description', 'LIKE', "%".$str."%");
+                        $q->where('tabItem.description', 'LIKE', "%$str%");
                     }
 
-                    $q->orWhere('tabItem.name', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere('tabItem.item_group', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere('tabItem.item_classification', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere('tabItem.stock_uom', 'LIKE', "%".$request->searchString."%")
-                        ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%".$request->searchString."%");
+                    $q->orWhere('tabItem.name', 'LIKE', "%$request->searchString%")
+                        ->orWhere('tabItem.item_group', 'LIKE', "%$request->searchString%")
+                        ->orWhere('tabItem.item_classification', 'LIKE', "%$request->searchString%")
+                        ->orWhere('tabItem.stock_uom', 'LIKE', "%$request->searchString%")
+                        ->orWhere(DB::raw('(SELECT GROUP_CONCAT(DISTINCT supplier_part_no SEPARATOR "; ") FROM `tabItem Supplier` WHERE parent = `tabItem`.name)'), 'LIKE', "%$request->searchString%");
                 });
             })
             ->when($request->classification, function($q) use ($request){
