@@ -6,13 +6,12 @@
 @section('content')
 @php
     $target_warehouse = null;
-    $stock_entry = $items = $item_images = [];
     $method = 'post';
     $action = '/consignment/replenish';
 
-    if(isset($stock_entry)){
+    $items = [];
+    if($stock_entry){
         $method = 'put';
-        $item_images = isset($item_images) ? $item_images : [];
         $target_warehouse = $stock_entry->target_warehouse;
         $items = $stock_entry->items;
     }
@@ -123,7 +122,12 @@
                                                                                 </div>
                                                                                 <div class="p-1 item-description" style="font-size: 9.5pt !important;"></div>
                                                                                 <div class="p-1">
-                                                                                    <textarea class="form-control reason" placeholder='Reason...' rows=5 style="font-size: 9.5pt !important;"></textarea>
+                                                                                    <select class="form-control reason my-2" style="font-size: 9.5pt" required>
+                                                                                        <option value="">Select a reason</option>
+                                                                                        <option value="Customer Order">Customer Order</option>
+                                                                                        <option value="Stock Replenishment">Stock Replenishment</option>
+                                                                                    </select>
+                                                                                    <textarea class="form-control remarks" placeholder='Remarks...' rows=5 style="font-size: 9.5pt !important;"></textarea>
                                                                                 </div>
                                                                             </td>
                                                                         </tr>
@@ -217,7 +221,7 @@
                                             <div class="col-12 text-right">
                                                 <div class="m-2">
                                                     @if (!$stock_entry || $stock_entry->status == 'Draft')
-                                                        <button type="button" class="btn btn-sm btn-primary btn-block submit-once submit-btn" data-status="Draft"><i id="submit-logo" class="fas fa-check"></i> Save as Draft</button>
+                                                        <button type="button" class="btn btn-sm btn-primary btn-block submit-once submit-btn" data-status="0"><i id="submit-logo" class="fas fa-check"></i> Save as Draft</button>
                                                         <button type="button" class="btn btn-sm btn-success btn-block mb-2" data-toggle="modal" data-target="#submitModal">
                                                             <i id="submit-logo" class="fas fa-check"></i> Submit for Approval
                                                         </button>
@@ -232,11 +236,13 @@
                                                                         </button>
                                                                     </div>
                                                                     <div class="modal-body text-center">
-                                                                        Submit as Draft?
+                                                                        Submit for Approval?
+
+                                                                        <small class="font-italic">Note: You cannot update this entry after submission</small>
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
-                                                                        <button type="button" class="btn btn-sm btn-success submit-once submit-btn" data-status="Pending"><i id="submit-logo" class="fas fa-check"></i> Submit for Approval</button>
+                                                                        <button type="button" class="btn btn-sm btn-success submit-once submit-btn" data-status="1"><i id="submit-logo" class="fas fa-check"></i> Submit for Approval</button>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -455,7 +461,6 @@
 
             $(document).on('select2:select', '#item-selection', function(e){
                 const data = e.params.data
-                console.log(data)
                 $('#item-selection-table').removeClass('d-none')
                 $('#item-selection-table .item-code').text(data.id)
                 $('#item-selection-table .item-price').val(parseCurrencyToInteger(data.price))
@@ -490,11 +495,14 @@
 					return false;
                 }
 
+                const selected_reason = $('#item-selection-table .reason').val();
+
                 const row = $('#item-selection-table tbody tr').clone();
                 row.attr('id', 'row-' + item_code);
                 row.find('.item-price').addClass('number-validate').attr('name', `items[${item_code}][price]`)
                 row.find('.item-qty').addClass('number-validate').attr('name', `items[${item_code}][qty]`)
-                row.find('.reason').attr('name', `items[${item_code}][reason]`)
+                row.find('.reason').attr('name', `items[${item_code}][reason]`).val(selected_reason);
+                row.find('.remarks').attr('name', `items[${item_code}][remarks]`)
 
                 $('#selected-items-table tbody').prepend(row);
 
@@ -505,6 +513,7 @@
                 truncate_description();
                 $('#add-Modal').modal('hide')
                 $("#item-selection").empty().trigger('change');
+                $('#item-selection-table .reason').val('');
 
                 $('#item-selection-table textarea').val('')
                 $('#item-selection-table .number-input').val(1)
@@ -515,7 +524,6 @@
                 e.preventDefault()
                 const status = $(this).data('status');
                 if (!validateInputs() && status != 'Cancelled') {
-                    console.log('testing')
                     e.preventDefault()
                     $('.submit-warning').removeClass('d-none').text('Please ensure all items have Prices and Qty');
 

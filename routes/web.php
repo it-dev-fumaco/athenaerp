@@ -185,7 +185,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
                 Route::prefix('/replenish')->group(function(){
                     Route::get('/', 'ConsignmentController@replenish_index');
                     Route::post('/', 'ConsignmentController@replenish_submit');
-                    Route::get('/form', 'ConsignmentController@replenish_form');
+                    Route::get('/form/{id?}', 'ConsignmentController@replenish_form');
                     Route::post('/{id}', 'ConsignmentController@replenish_update');
                     Route::get('/{id}', 'ConsignmentController@replenish_update_form');
                     Route::get('/modal/{id}', 'ConsignmentController@replenish_modal_contents');
