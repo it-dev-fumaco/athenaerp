@@ -6,21 +6,22 @@
         <th class="d-none d-sm-table-cell">Requested By</th>
         <th class='text-center' style="width: 23%">Action</th>
     </tr>
-    @forelse ($list->items() as $stock_entry)
+    @forelse ($list->items() as $material_request)
         @php
             $is_promodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
-            $owner = explode('.', explode('@', $stock_entry->owner)[0]);
+            $owner = explode('.', explode('@', $material_request->owner)[0]);
 
-            $stock_entry->owner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
-            $stock_entry->creation = Carbon\Carbon::parse($stock_entry->creation)->format('M. d, Y h:i a');
+            $material_request->owner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
+            $material_request->creation = Carbon\Carbon::parse($material_request->creation)->format('M. d, Y h:i a');
 
-            switch ($stock_entry->status) {
-                case 'Pending':
+            switch ($material_request->consignment_status) {
+                case 'For Approval':
+                    $badge = 'warning';
+                    break;
+                case 'Approved':
                     $badge = 'primary';
                     break;
-                case 'Partially Issued':
-                case 'Issued':
-                case 'Completed':
+                case 'Delivered':
                     $badge = 'success';
                     break;
                 case 'Cancelled':
@@ -33,50 +34,22 @@
         @endphp
         <tr>
             <td>
-                {{ $stock_entry->name }}  <span class="d-inline d-lg-none badge badge-{{ $badge }}" style="font-size: 7pt">{{ $stock_entry->status }}</span>
+                {{ $material_request->name }}  <span class="{{ $material_request->consignment_status ? 'd-inline' : 'd-none' }} d-lg-none badge badge-{{ $badge }} " style="font-size: 7pt">{{ $material_request->consignment_status }}</span>
                 <div class="d-block d-lg-none" style="font-size: 9pt">
-                    <b>{{ $stock_entry->target_warehouse }}</b>
-                    <span class="d-block" style="font-size: 8pt">{{ $stock_entry->owner }} | {{ $stock_entry->creation }}</span>
+                    <b>{{ $material_request->branch_warehouse }}</b>
+                    <span class="d-block" style="font-size: 8pt">{{ $material_request->owner }} | {{ $material_request->creation }}</span>
                 </div>
             </td>
-            <td class="d-none d-sm-table-cell ">{{ $stock_entry->target_warehouse }}</td>
-            <td class="d-none d-sm-table-cell "><span class="badge badge-{{ $badge }}">{{ $stock_entry->status }}</span></td>
-            <td class="d-none d-sm-table-cell ">
-                <span>{{ $stock_entry->owner }}</span><br>
-                <small>{{ $stock_entry->creation }}</small>
+            <td class="d-none d-sm-table-cell">{{ $material_request->branch_warehouse }}</td>
+            <td class="d-none d-sm-table-cell"><span class="badge badge-{{ $badge }} {{ $material_request->consignment_status ?? 'd-none' }}">{{ $material_request->consignment_status }}</span></td>
+            <td class="d-none d-sm-table-cell">
+                <span>{{ $material_request->owner }}</span><br>
+                <small>{{ $material_request->creation }}</small>
             </td>
             <td class="text-center">
-                @if ($is_promodiser)
-                    <a href="/consignment/replenish/{{ $stock_entry->name }}" style="font-size: 9pt">
-                        <i class="fa fa-edit"></i> View
-                    </a>
-                @else
-                    <a href="#" class="open-modal" style="font-size: 9pt" data-target="#view-{{ $stock_entry->name }}" data-id="{{ $stock_entry->name }}">
-                        <i class="fa fa-edit"></i> View
-                    </a>
-
-                    <div class="modal fade" id="view-{{ $stock_entry->name }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-xl" role="document" style="max-width: 95% !important">
-                            <div class="modal-content">
-                                <div class="modal-header d-flex justify-content-between align-items-center">
-                                    <h5 class="modal-title">{{ $stock_entry->name }}</h5>
-                                    
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge badge-{{ $badge }}" style="font-size: 10pt">{{ $stock_entry->status }}</span>
-                                        <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="content-{{ $stock_entry->name }}" class="text-left">
-                                    <div class="d-flex justify-content-center align-items-center p-5">
-                                        <div class="spinner-border"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
+                <a href="/consignment/replenish/form/{{ $material_request->name }}" style="font-size: 9pt">
+                    <i class="fa fa-edit"></i> View
+                </a>
             </td>
         </tr>
     @empty

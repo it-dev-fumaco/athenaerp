@@ -418,7 +418,7 @@
                 });
             }
 
-            const  parseCurrencyToInteger = (currencyString) => {
+            const parseCurrencyToInteger = (currencyString) => {
                 let numericString = currencyString.replace(/[₱,\s]/g, '');
 
                 let numericValue = parseFloat(numericString);

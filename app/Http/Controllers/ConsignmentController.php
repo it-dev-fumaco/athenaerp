@@ -1945,19 +1945,42 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.view_stock_transfers');
     }
 
+    public function replenish_index_promodiser($request){
+        $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+
+        if($request->ajax()){
+            $target_warehouses = $assigned_consignment_stores;
+            $target_warehouses = $request->branch ? [$request->branch] : $target_warehouses;
+
+            $order = "'Draft', 'For Approval', 'Approved', 'Delivered', 'Cancelled'";
+            $list =  MaterialRequest::with('items')->where(['transfer_as' => 'Consignment', 'custom_purpose' => 'Consignment Order'])
+                ->when($target_warehouses, function ($query) use ($target_warehouses){
+                    return $query->whereIn('branch_warehouse', $target_warehouses);
+                })
+                ->when($request['status'], function ($query) use ($request){
+                    return $query->where('status', $request['status']);
+                })
+                ->when($request['search'], function ($query) use ($request){
+                    $search_string = $request['search'];
+                    return $query->where('name', 'like', "%$search_string%");
+                })
+                ->orderByDesc('creation')->paginate(20);
+          
+            return view('consignment.replenish_tbl', compact('list'));
+        }
+        return view('consignment.replenish_index', compact('assigned_consignment_stores'));
+    }
+
     public function replenish_index(Request $request){
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
-
         if ($is_promodiser) {
-            $consignmentStores = AssignedWarehouses::when($is_promodiser, function ($q){
-                return $q->where('parent', Auth::user()->frappe_userid);
-            })->pluck('warehouse');
-        } else {
-            $consignmentStores = Warehouse::where([
-                'disabled' => 0,
-                'parent_warehouse' => 'P2 Consignment Warehouse - FI'
-            ])->orderBy('name')->pluck('name');
+            return $this->replenish_index_promodiser($request);
         }
+
+        $consignmentStores = Warehouse::where([
+            'disabled' => 0,
+            'parent_warehouse' => 'P2 Consignment Warehouse - FI'
+        ])->orderBy('name')->pluck('name');
 
         if($request->ajax()){
             $target_warehouses = $consignmentStores;
