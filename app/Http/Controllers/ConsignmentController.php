@@ -2059,7 +2059,9 @@ class ConsignmentController extends Controller
             $items = $request->items;
             $now = Carbon::now();
 
-            $status = $request->status ? 'For Approval' : 'Draft';
+            $statuses = ['Draft', 'For Approval', 'Cancelled'];
+
+            $status = isset($statuses[$request->status]) ? $statuses[$request->status] : 'Draft';
             $customer = 'CW MARKETING AND DEVELOPMENT CORPORATION';
             $project = 'CW HOME DEPOT';
             if(Str::contains($branch, 'WILCON DEPOT')){
@@ -2088,25 +2090,27 @@ class ConsignmentController extends Controller
                 'items' => $items_data,
             ];
 
-            return $response = $this->erpOperation('put', 'Material Request', $id, $data);
+            $response = $this->erpOperation('put', 'Material Request', $id, $data);
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating stock entry';
                 throw new Exception($err);
             }
 
-            $response_data = $response['data'];
-            $response_data['branch'] = $branch;
+            if($status == 'For Approval'){
+                $response_data = $response['data'];
+                $response_data['branch'] = $branch;
+                
+                $users = User::where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
 
-            $users = User::where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
-
-            foreach ($users as $user) {
-                $user = str_replace('.local', '.com', $user);
-                try {
-                    Mail::send('mail_template.consignment_order', $response_data, function($message) use ($user){
-                        $message->to($user);
-                        $message->subject('AthenaERP - Consignment Order Notification');
-                    });
-                } catch (\Throwable $th) {}
+                foreach ($users as $user) {
+                    $user = str_replace('.local', '.com', $user);
+                    try {
+                        Mail::send('mail_template.consignment_order', $response_data, function($message) use ($user){
+                            $message->to($user);
+                            $message->subject('AthenaERP - Consignment Order Notification');
+                        });
+                    } catch (\Throwable $th) {}
+                }
             }
 
             return redirect()->back()->with('success', "$id successfully updated!");
@@ -2189,19 +2193,21 @@ class ConsignmentController extends Controller
                 throw new Exception($err);
             }
 
-            $response_data = $response['data'];
-            $response_data['branch'] = $branch;
+            if($status == 'For Approval'){
+                $response_data = $response['data'];
+                $response_data['branch'] = $branch;
 
-            $users = User::where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
+                $users = User::where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
 
-            foreach ($users as $user) {
-                $user = str_replace('.local', '.com', $user);
-                try {
-                    Mail::send('mail_template.consignment_order', $response_data, function($message) use ($user){
-                        $message->to($user);
-                        $message->subject('AthenaERP - Consignment Order Notification');
-                    });
-                } catch (\Throwable $th) {}
+                foreach ($users as $user) {
+                    $user = str_replace('.local', '.com', $user);
+                    try {
+                        Mail::send('mail_template.consignment_order', $response_data, function($message) use ($user){
+                            $message->to($user);
+                            $message->subject('AthenaERP - Consignment Order Notification');
+                        });
+                    } catch (\Throwable $th) {}
+                }
             }
             
             return redirect('consignment/replenish')->with('success', "Request submitted.");

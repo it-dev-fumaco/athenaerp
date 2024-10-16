@@ -304,7 +304,7 @@
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
-                                                                        <button type="button" class="btn btn-sm btn-primary submit-btn" data-status="Cancelled">Cancel</button>
+                                                                        <button type="button" class="btn btn-sm btn-primary submit-btn" data-status="2">Cancel</button>
                                                                     </div>
                                                                 </div>
                                                             </div>
