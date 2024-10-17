@@ -38,7 +38,7 @@
                 <small>{{ $row['creation'] }}</small>
             </td>
             <td class="text-center p-1 align-middle">
-                <a href="/edit/{{ $row['name'] }}" class="btn btn-dark btn-xs"><i class="fa fa-edit"></i> Edit</a>
+                <a href="/consignment_order/{{ $row['name'] }}/edit" class="btn btn-dark btn-xs"><i class="fa fa-edit"></i> Edit</a>
             </td>
         </tr>
         @empty

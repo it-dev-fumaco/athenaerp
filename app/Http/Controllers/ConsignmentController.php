@@ -2015,6 +2015,64 @@ class ConsignmentController extends Controller
         return view('consignment.supervisor.consignment_order_index', compact('consignmentStores'));
     }
 
+    public function editConsignmentOrder($id) {
+        $details = MaterialRequest::with('items')->find($id);
+
+        $consignmentStores = Warehouse::where([
+            'disabled' => 0,
+            'parent_warehouse' => 'P2 Consignment Warehouse - FI'
+        ])->orderBy('name')->pluck('name');
+
+        return view('consignment.supervisor.consignment_order_edit', compact('details', 'consignmentStores'));
+    }
+
+    public function updateConsignmentOrder($id, Request $request) {
+        try {
+            $items = [];
+            foreach ($request->item_code as $index => $item_code) {
+                $rate = (float) str_replace(',', '', $request->price[$index]);
+                $qty = (int) str_replace(',', '', $request->quantity[$index]);
+                $warehouse = $request->branch;
+                $items[] = compact('item_code', 'rate', 'qty', 'warehouse');
+            }
+
+            $consignment_status = $request->consignment_status;
+            switch ($consignment_status) {
+                case 'Approved':
+                    $docstatus = 1;
+                    break;
+                case 'Cancelled':
+                    $docstatus = 2;
+                    break;
+                default:
+                    $docstatus = 0;
+                    break;
+            }
+            
+            $data = [
+                'customer' => $request->customer,
+                'docstatus' => $docstatus,
+                'consignment_status' => $consignment_status,
+                'branch_warehouse' => $request->branch,
+                'delivery_date' => $request->delivery_date,
+                'required_by' => $request->required_by,
+                'project' => $request->project,
+                'customer_address' => $request->customer_address,
+                'items' => $items
+            ];
+
+            $response = $this->erpOperation('put', 'Material Request', $id, $data);
+            if(!isset($response['data'])){
+                $err = $response['exception'] ?? 'An error occured while updating material request';
+                throw new Exception($err);
+            }
+
+            return redirect()->back()->with('success', "$id successfully updated!");
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('error', "An error occured. Please contact your system administrator.");
+        }
+    }
+
     public function replenish_modal_contents($id){
         $stock_entry = ConsignmentStockEntry::with('items')->find($id);
 
