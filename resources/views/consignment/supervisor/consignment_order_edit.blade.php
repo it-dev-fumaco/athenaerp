@@ -56,14 +56,20 @@
                                         </div>
                                        
                                         <div class="col-6 text-right">
+                                            @php
+                                                $erp_url = env('ERP_API_BASE_URL');
+                                                $print_url = "$erp_url/printview?doctype=Material%20Request&name=$details->name&trigger_print=1&format=Material%20Request%20Format&no_letterhead=0&letterhead=FUMACO%20Plant%202&settings=%7B%7D&_lang=en";
+                                            @endphp
+                                            <a href="{{ $print_url }}" target="_blank" class="btn btn-success btn-sm" ><i class="fas fa-print"></i> Print</a>
+
                                             @if (in_array($details->consignment_status, ['Draft', 'For Approval']) && $details->docstatus == 0)
-                                            <button class="btn btn-secondary btn-sm" name="consignment_status" value="{{ $details->consignment_status }}" type="submit"><i class="fas fa-save"></i> Save</button>
+                                                <button class="btn btn-secondary btn-sm" name="consignment_status" value="{{ $details->consignment_status }}" type="submit"><i class="fas fa-save"></i> Save</button>
                                             @endif
                                             @if (in_array($details->consignment_status, ['For Approval']) && $details->docstatus == 0)
-                                            <button class="btn btn-primary btn-sm" type="button" id="approveBtn" data-toggle="modal" data-target="#approveModal"><i class="fas fa-check"></i> Approve</button>
+                                                <button class="btn btn-primary btn-sm" type="button" id="approveBtn" data-toggle="modal" data-target="#approveModal"><i class="fas fa-check"></i> Approve</button>
                                             @endif
                                             @if (in_array($details->consignment_status, ['For Approval', 'Approved']) && $details->docstatus < 2)
-                                            <button class="btn btn-danger btn-sm" type="button" id="cancelBtn" data-toggle="modal" data-target="#cancelModal"><i class="fa fa-ban"></i> Cancel</button>
+                                                <button class="btn btn-danger btn-sm" type="button" id="cancelBtn" data-toggle="modal" data-target="#cancelModal"><i class="fa fa-ban"></i> Cancel</button>
                                             @endif
                                         </div>
                                     </div>
@@ -89,7 +95,7 @@
                                             </div>
                                         </div>
                                     </div> 
-                                </div>              
+                                </div>
 
                                 <!-- Modal -->
                                 <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -110,7 +116,7 @@
                                             </div>
                                         </div>
                                     </div> 
-                                </div>              
+                                </div>
 
                                 <div class="card-body">
                                     <div class="row">
@@ -233,21 +239,21 @@
     <script>
         $(document).ready(function() {
             $(".add-row").click(function () {
-                markup = '<tr><td class="text-center">' + 
-                    '<input type="text" name="item_code[]" class="form-control form-control-sm" placeholder="Enter Item Code" style="text-align: center;"></td>' +
-                    '<td class="text-justify"><small></small></td><td class="text-center">' +
-                        '<input type="text" name="quantity[]" class="form-control form-control-sm" placeholder="Enter Qty" style="text-align: center;">'+
-                        '<small class="d-block mt-2 font-weight-bold"></small>'+
-                    '</td>'+
-                    '<td class="text-center">'+
-                        '<input type="text" name="price[]" class="form-control form-control-sm" placeholder="Enter Price" style="text-align: center;">'+
-                    '</td>'+
-                    '<td class="text-center">'+
-                        '<button class="btn btn-danger btn-xs">'+
-                            '<i class="fa fa-trash"></i>'+
-                        '</button>'+
-                    '</td>'+
-                '</tr>';
+                markup = `<tr><td class="text-center">
+                    <input type="text" name="item_code[]" class="form-control form-control-sm" placeholder="Enter Item Code" style="text-align: center;"></td>
+                    <td class="text-justify"><small></small></td><td class="text-center">
+                        <input type="text" name="quantity[]" class="form-control form-control-sm" placeholder="Enter Qty" style="text-align: center;">
+                        <small class="d-block mt-2 font-weight-bold"></small>
+                    </td>
+                    <td class="text-center">
+                        <input type="text" name="price[]" class="form-control form-control-sm" placeholder="Enter Price" style="text-align: center;">
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-danger btn-xs">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
                 tableBody = $("table tbody");
                 tableBody.append(markup);
             });
@@ -259,9 +265,6 @@
             $(document).on('click', '#approveBtn', function() {
                 $('#approveModal').modal('show');
             });
-
-
-
         })
     </script>
 @endsection

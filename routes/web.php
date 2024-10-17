@@ -195,8 +195,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
             Route::get('/consignment_order/{id}/edit', 'ConsignmentController@editConsignmentOrder');
             Route::post('/consignment_order/{id}/update', 'ConsignmentController@updateConsignmentOrder');
-            
-
         });
 
         // Consignment Supervisor
