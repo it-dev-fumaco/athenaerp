@@ -589,6 +589,7 @@
 										@endphp
 										<input type="hidden" id="cb-1" name="check_qty" value="{{ $check_qty }}">
 										<input type="checkbox" id="assigned-to-me" name="assigned_to_me" hidden>
+										<input type="checkbox" id="assigned-items" name="assigned_items" hidden>
 										<input type="hidden" name="wh" id="wh-1" value="{{ request('wh') }}">
 										<input type="hidden" name="group" id="grp-1" value="{{ request('group') }}">
 										<input type="hidden" name="classification" id="class-1" value="{{ request('classification') }}">
@@ -1630,26 +1631,23 @@
 			});
 
 			// Warehouse Assigned to me - Promodiser
-			$('#promodiser-warehouse').on('ifChecked', function(event){
-				$("#assigned-to-me").prop("checked", true);
+			$('#promodiser-warehouse').on('ifChanged', function(event) {
+				$("#assigned-to-me").prop("checked", this.checked);
 				$('#search-form').submit();
 			});
 
-			$('#promodiser-warehouse').on('ifUnchecked', function(event){
-				$("#assigned-to-me").prop("checked", false);
-				$('#search-form').submit();
-			});
-
-			$('#mobile-promodiser-warehouse').on('ifChecked', function(event){
-				$("#assigned-to-me").prop("checked", true);
-				$('#search-form').submit();
-			});
-
-			$('#mobile-promodiser-warehouse').on('ifUnchecked', function(event){
-				$("#assigned-to-me").prop("checked", false);
+			$('#mobile-promodiser-warehouse').on('ifChanged', function(event){
+				$("#assigned-to-me").prop("checked", this.checked);
 				$('#search-form').submit();
 			});
 			// Warehouse Assigned to me - Promodiser
+
+			// Show only the items that are in the assigned branch - Promodiser
+			$('#promodiser-items').on('ifChanged', function(event) {
+				$("#assigned-items").prop("checked", this.checked);
+				$('#search-form').submit();
+			});
+			// Show only the items that are in the assigned branch - Promodiser
 
 			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
 				e.preventDefault();
