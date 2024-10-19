@@ -393,45 +393,49 @@
                 }
             });
 
-            $('.item_code').autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: '/beginning_inv/get_received_items/' + $('select[name="branch"]').val(),
-                        method: 'GET',
-                        dataType: 'json',
-                        data: {
-                            q: request.term,
-                        },
-                        success: function(data) {
-                            response($.map(data, function(response) {
-                                return {
-                                    label: response.id + ' - ' + response.description,
-                                    value: response.id,
-                                    description: response.description
-                                };
-                            }));
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-                        }
-                    });
-                },
-                select: function(event, ui) {
-                    var itemCodeExists = false;
-                    $('.item_code').each(function() {
-                        if ($(this).val() === ui.item.value) {
-                            itemCodeExists = true;
+            $(document).on('focus', '.item_code', function() {
+                $(this).autocomplete({
+                    source: function(request, response) {
+                        $.ajax({
+                            url: '/beginning_inv/get_received_items/' + $('select[name="branch"]').val(),
+                            method: 'GET',
+                            dataType: 'json',
+                            data: {
+                                q: request.term,
+                            },
+                            success: function(data) {
+                                response($.map(data, function(item) {
+                                    return {
+                                        label: item.id + ' - ' + item.description,
+                                        value: item.id,
+                                        description: item.description
+                                    };
+                                }));
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                            }
+                        });
+                    },
+                    select: function(event, ui) {
+                        var itemCodeExists = false;
+
+                        $('.item_code').each(function() {
+                            if ($(this).val() === ui.item.value) {
+                                itemCodeExists = true;
+                                return false;
+                            }
+                        });
+
+                        if (itemCodeExists) {
+                            showNotification("warning", "Item code already exists in the table.", "fa fa-warning");
                             return false;
                         }
-                    });
 
-                    if (itemCodeExists) {
-                        showNotification("warning", "Item code already exists in the table.", "fa fa-warning");
-                        return false;
+                        $(this).closest('tr').find('.description').html('<small>' + ui.item.description + '</small>');
                     }
-                    $(this).closest('tr').find('.description').html('<small>' + ui.item.description + '</small>');
-                }
-            })
+                });
+            });
 
             $('.date-range').daterangepicker({
                 singleDatePicker: true,
