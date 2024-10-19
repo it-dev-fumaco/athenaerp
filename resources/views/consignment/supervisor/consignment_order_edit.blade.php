@@ -12,12 +12,7 @@
                         <div class="row">
                             <div class="col-2">
                                 <div style="margin-bottom: -43px;">
-                                    @php
-                                        $redirecthref =
-                                            Auth::user()->user_group == 'Director' ? '/consignment_dashboard' : '/';
-                                    @endphp
-                                    <a href="{{ $redirecthref }}" class="btn btn-secondary" style="width: 80px;"><i
-                                            class="fas fa-arrow-left"></i></a>
+                                    <a href="/consignment/replenish" class="btn btn-secondary" style="width: 80px;"><i class="fas fa-arrow-left"></i></a>
                                 </div>
                             </div>
                             <div class="col-10 col-lg-8 p-0">
@@ -25,7 +20,6 @@
                             </div>
                         </div>
 
-                  
                         <div class="card card-secondary card-outline">
                             <form action="/consignment_order/{{ $details->name }}/update" method="POST">
                                 @csrf
