@@ -2070,7 +2070,6 @@ class ConsignmentController extends Controller
 
             return redirect()->back()->with('success', "$id successfully updated!");
         } catch (\Throwable $th) {
-            return 0;
             return redirect()->back()->with('error', "An error occured. Please contact your system administrator.");
         }
     }
