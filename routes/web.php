@@ -24,6 +24,12 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         Route::post('/generate_sales_order', 'ConsignmentController@createSalesOrder');
 
+        // ERP
+        Route::get('/customers', 'MainController@get_customers');
+        Route::get('/erp_projects', 'MainController@get_erp_projects');
+        Route::get('/customer_address', 'MainController@get_customer_address');
+        Route::get('/branch_warehouses', 'MainController@get_branch_warehouses');
+
         // standard product brochure printing
         Route::get('/generate_brochure', 'BrochureController@generateBrochure');
         Route::post('/upload_image_for_standard_brochure', 'BrochureController@uploadImageForStandard');

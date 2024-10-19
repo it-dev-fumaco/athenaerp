@@ -158,13 +158,24 @@
                                                 @endforeach
                                             </select>
                                         </div>
+                                        @php
+                                            $required_by = $details->required_by ? Carbon\Carbon::parse($details->required_by)->format('Y-M-d') : null;
+                                            $address_display = trim($details->address_line1);
+                                            if($details->address_line2){
+                                                $address_display .= ", $details->address_line2";
+                                            }
+
+                                            if($details->city_town){
+                                                $address_display .= ", $details->city_town";
+                                            }
+                                        @endphp
                                         <div class="col-3 mb-4">
                                             <small for="deliveryDateInput" class="form-label font-weight-bold">Delivery Date</small>
-                                            <input type="text" name="delivery_date" class="form-control form-control-sm" value="{{ $details->delivery_date }}" id="deliveryDateInput">
+                                            <input type="text" name="delivery_date" class="form-control form-control-sm date-range" value="{{ Carbon\Carbon::parse($details->delivery_date)->format('Y-M-d') }}" id="deliveryDateInput">
                                         </div>
                                         <div class="col-3 mb-4">
                                             <small for="requiredByInput" class="form-label font-weight-bold">Required By</small>
-                                            <input type="text" name="required_by" class="form-control form-control-sm" value="{{ $details->required_by }}" id="requiredByInput">
+                                            <input type="text" name="required_by" class="form-control form-control-sm date-range" value="{{ $required_by }}" id="requiredByInput">
                                         </div>
                                         <div class="col-6 mb-4">
                                             <small for="projectInput" class="form-label font-weight-bold">Project</small>
@@ -176,7 +187,7 @@
                                         </div>
                                         <div class="col-6 offset-6 mb-4">
                                             <small for="addressDisplayInput" class="form-label font-weight-bold">Address Display</small>
-                                            <textarea readonly class="form-control form-control-sm" rows="3" id="addressDisplayInput">{{ $details->address_line . ', ' . $details->address_line2 . ', ' . $details->city_town }}</textarea>
+                                            <textarea readonly class="form-control form-control-sm" rows="3" id="addressDisplayInput">{{ $address_display }}</textarea>
                                         </div>
                                     </div>
                                     <div class="row">
@@ -195,10 +206,10 @@
                                                     @foreach ($details->items as $item)
                                                         <tr>
                                                             <td class="text-center">
-                                                                <input type="text" name="item_code[]" class="form-control form-control-sm"
-                                                                    style="text-align: center;" value="{{ $item->item_code }}">
+                                                                <input type="text" name="item_code[]" class="form-control form-control-sm item_code" style="text-align: center;" value="{{ $item->item_code }}">
+                                                                <input type="hidden" name="name[]" value="{{ $item->name }}">
                                                             </td>
-                                                            <td class="text-justify">
+                                                            <td class="text-justify description">
                                                                 <small>{!! strip_tags($item->description) !!}</small>
                                                             </td>
 
@@ -215,7 +226,7 @@
                                                                     value="{{ number_format($item->rate, 2) }}">
                                                             </td>
                                                             <td class="text-center">
-                                                                <button class="btn btn-danger btn-xs">
+                                                                <button type="button" class="btn btn-danger btn-xs" data-item-code="{{ $item->item_code }}">
                                                                     <i class="fa fa-trash"></i>
                                                                 </button>
                                                             </td>
@@ -233,14 +244,53 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* Minimize the autocomplete container size */
+        .ui-autocomplete {
+            max-width: 500px;
+            max-height: 300px;
+            overflow-y: auto; /* Add scrolling if suggestions exceed container size */
+            background-color: #fff;
+            border: 1px solid #ccc;
+            z-index: 1000;
+        }
+
+        /* Remove the bullet or icon from the list items */
+        .ui-menu-item {
+            list-style: none; /* Removes bullet points or icons from li */
+            padding: 5px;
+        }
+
+        /* Optional: Adjust the background color on hover */
+        .ui-menu-item:hover {
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+    </style>
 @endsection
 
 @section('script')
     <script>
         $(document).ready(function() {
+            const showNotification = (color, message, icon) => {
+				$.notify({
+				  icon: icon,
+				  message: message
+				},{
+				  type: color,
+				  timer: 500,
+				  z_index: 1060,
+				  placement: {
+					from: 'top',
+					align: 'center'
+				  }
+				});
+			}
+
             $(".add-row").click(function () {
                 markup = `<tr><td class="text-center">
-                    <input type="text" name="item_code[]" class="form-control form-control-sm" placeholder="Enter Item Code" style="text-align: center;"></td>
+                    <input type="text" name="item_code[]" class="form-control form-control-sm item_code" placeholder="Enter Item Code" style="text-align: center;"></td>
                     <td class="text-justify"><small></small></td><td class="text-center">
                         <input type="text" name="quantity[]" class="form-control form-control-sm" placeholder="Enter Qty" style="text-align: center;">
                         <small class="d-block mt-2 font-weight-bold"></small>
@@ -264,6 +314,133 @@
 
             $(document).on('click', '#approveBtn', function() {
                 $('#approveModal').modal('show');
+            });
+
+            $('input[name="customer"]').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: '/customers',
+                        method: 'GET',
+                        dataType: 'json',
+                        data: {
+                            term: request.term 
+                        },
+                        success: function(data) {
+                            response($.map(data, function(response) {
+                                return {
+                                    label: response.name,
+                                    value: response.name
+                                };
+                            }));
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                        }
+                    });
+                }
+            });
+
+            $('input[name="project"]').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: '/erp_projects',
+                        method: 'GET',
+                        dataType: 'json',
+                        data: {
+                            term: request.term 
+                        },
+                        success: function(data) {
+                            response($.map(data, function(response) {
+                                return {
+                                    label: response.name,
+                                    value: response.name
+                                };
+                            }));
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                        }
+                    });
+                }
+            });
+
+            $('input[name="customer_address"]').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: '/customer_address',
+                        method: 'GET',
+                        dataType: 'json',
+                        data: {
+                            term: request.term,
+                            customer: $('input[name="customer"]').val()
+                        },
+                        success: function(data) {
+                            response($.map(data, function(response) {
+                                return {
+                                    label: response.name,
+                                    value: response.name,
+                                    address_display: response.address_display
+                                };
+                            }));
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                        }
+                    });
+                },
+                select: function(event, ui) {
+                    $('#addressDisplayInput').val(ui.item.address_display);
+                }
+            });
+
+            $('.item_code').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: '/beginning_inv/get_received_items/' + $('select[name="branch"]').val(),
+                        method: 'GET',
+                        dataType: 'json',
+                        data: {
+                            q: request.term,
+                        },
+                        success: function(data) {
+                            response($.map(data, function(response) {
+                                return {
+                                    label: response.id + ' - ' + response.description,
+                                    value: response.id,
+                                    description: response.description
+                                };
+                            }));
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                        }
+                    });
+                },
+                select: function(event, ui) {
+                    var itemCodeExists = false;
+                    $('.item_code').each(function() {
+                        if ($(this).val() === ui.item.value) {
+                            itemCodeExists = true;
+                            return false;
+                        }
+                    });
+
+                    if (itemCodeExists) {
+                        showNotification("warning", "Item code already exists in the table.", "fa fa-warning");
+                        return false;
+                    }
+                    $(this).closest('tr').find('.description').html('<small>' + ui.item.description + '</small>');
+                }
+            })
+
+            $('.date-range').daterangepicker({
+                singleDatePicker: true,
+                showDropdowns: true,
+                minYear: 2024,
+                maxYear: parseInt(moment().format('YYYY'),10),
+                locale: {
+                    format: 'MMM. DD, YYYY'
+                }
             });
         })
     </script>

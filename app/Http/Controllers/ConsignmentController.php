@@ -2032,8 +2032,9 @@ class ConsignmentController extends Controller
             foreach ($request->item_code as $index => $item_code) {
                 $rate = (float) str_replace(',', '', $request->price[$index]);
                 $qty = (int) str_replace(',', '', $request->quantity[$index]);
+                $name = isset($request->name[$index]) ? $request->name[$index] : null;
                 $warehouse = $request->branch;
-                $items[] = compact('item_code', 'rate', 'qty', 'warehouse');
+                $items[] = compact('name', 'item_code', 'rate', 'qty', 'warehouse');
             }
 
             $consignment_status = $request->consignment_status;
@@ -2054,8 +2055,8 @@ class ConsignmentController extends Controller
                 'docstatus' => $docstatus,
                 'consignment_status' => $consignment_status,
                 'branch_warehouse' => $request->branch,
-                'delivery_date' => $request->delivery_date,
-                'required_by' => $request->required_by,
+                'delivery_date' => Carbon::parse($request->delivery_date)->format('Y-m-d'),
+                'required_by' => Carbon::parse($request->required_by)->format('Y-m-d'),
                 'project' => $request->project,
                 'customer_address' => $request->customer_address,
                 'items' => $items
@@ -2069,6 +2070,7 @@ class ConsignmentController extends Controller
 
             return redirect()->back()->with('success', "$id successfully updated!");
         } catch (\Throwable $th) {
+            return 0;
             return redirect()->back()->with('error', "An error occured. Please contact your system administrator.");
         }
     }

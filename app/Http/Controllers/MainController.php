@@ -22,11 +22,13 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 
 use App\Models\Bin;
+use App\Models\Customer;
 use App\Models\Item;
 use App\Models\ItemImages;
 use App\Models\DeliveryNote;
 use App\Models\MaterialRequest;
 use App\Models\MaterialRequestItem;
+use App\Models\Project;
 use App\Models\SalesOrder;
 use App\Models\StockEntry;
 use App\Models\StockEntryDetail;
@@ -6155,5 +6157,51 @@ class MainController extends Controller
             'Content-Type' => 'image/jpeg',
             'Content-Disposition' => "attachment; filename=$name.jpg"
         ]);
+    }
+
+    public function get_customers(Request $request){
+        $term = $request->term;
+        $customers = Customer::where('name', 'like', "%$term%")->select('name')->get();
+
+        return response()->json($customers);
+    }
+
+    public function get_erp_projects(Request $request){
+        $term = $request->term;
+        $projects = Project::where('name', 'like', "%$term%")->select('name')->get();
+
+        return response()->json($projects);
+    }
+
+    public function get_customer_address(Request $request){
+        $term = $request->term;
+        $customer = $request->customer;
+
+        $customer_details = DB::table('tabCustomer as c')
+            ->join('tabDynamic Link as d', 'd.link_name', 'c.name')
+            ->join('tabAddress as a', 'a.name', 'd.parent')
+            ->where('d.link_doctype', 'Customer')
+            ->where('d.parenttype', 'Address')
+            ->when($customer, function ($q) use ($customer){
+                return $q->where('c.name', $customer);
+            })
+            ->where('a.name', 'LIKE', "%$term%")
+            ->select('a.address_title', 'a.name', 'a.address_line1', 'a.address_line2', 'a.city')->limit(10)
+            ->get();
+
+        $customer_details = collect($customer_details)->map(function ($customer){
+            $customer->address_display = trim($customer->address_line1);
+            if($customer->address_line2){
+                $customer->address_display .= ", $customer->address_line2";
+            }
+    
+            if($customer->city){
+                $customer->address_display .= ", $customer->city";
+            }
+
+            return $customer;
+        });
+
+        return response()->json($customer_details);
     }
 }
