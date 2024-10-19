@@ -95,12 +95,38 @@
 
                                                                 <table class="table table-striped mt-4 d-none" id="item-selection-table">
                                                                     <thead>
-                                                                        <th class="font-responsive text-center p-1 align-middle" style="width: 65%">Item Code</th>
+                                                                        <th class="font-responsive text-center p-1 align-middle">Item Code</th>
+                                                                        <th class="font-responsive text-center p-1 align-middle">Price</th>
                                                                         <th class="font-responsive text-center p-1 align-middle">Qty</th>
                                                                     </thead>
                                                                     <tbody>
                                                                         <tr>
                                                                             <td class="text-justify p-1 align-middle" colspan=3>
+                                                                                <div class="remove-modal-parent col-12 text-right d-none">
+                                                                                    <a href="#" class="text-secondary" data-toggle="modal">
+                                                                                        <i class="fa fa-remove"></i>
+                                                                                    </a>
+                
+                                                                                    <div class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                                        <div class="modal-dialog" role="document">
+                                                                                            <div class="modal-content">
+                                                                                                <div class="modal-header">
+                                                                                                    <h5 class="modal-title" id="exampleModalLabel">Remove <span class="item-code-display"></span>?</h5>
+                                                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                                                        <span aria-hidden="true">&times;</span>
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                                <div class="modal-body text-center">
+                                                                                                    Remove Item <b class="item-code-display"></b> from the list?
+                                                                                                </div>
+                                                                                                <div class="modal-footer">
+                                                                                                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
+                                                                                                    <button type="button" class="btn btn-sm btn-danger remove-item">Remove Item</button>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
                                                                                 <div class="d-flex flex-row justify-content-center align-items-center">
                                                                                     <div class="p-1 col-2 text-center">
                                                                                         <img src="" alt="" class="img-thumbnail" alt="User Image" width="100%">
@@ -120,8 +146,6 @@
                                                                                             <div class="input-group-append">
                                                                                                 <button class="btn btn-outline-success increment" type="button">+</button>
                                                                                             </div>
-
-                                                                                            <a href="#" class="btn btn-danger btn-sm remove-item d-none" style="margin-left: 10px;">&times;</a>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -520,6 +544,10 @@
                 row.find('.reason').attr('name', `items[${item_code}][reason]`).val(selected_reason);
                 row.find('.remarks').attr('name', `items[${item_code}][remarks]`)
                 row.find('.remove-item').removeClass('d-none')
+                row.find('.remove-modal-parent').removeClass('d-none')
+                row.find('a').attr('data-target', `#remove-${item_code}-modal`)
+                row.find('.modal').attr('id', `remove-${item_code}-modal`)
+                row.find('.item-code-display').text(item_code)
 
                 $('#selected-items-table tbody').prepend(row);
 
