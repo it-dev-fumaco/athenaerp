@@ -6204,4 +6204,24 @@ class MainController extends Controller
 
         return response()->json($customer_details);
     }
+
+    public function get_manuals(){
+        $files = collect(Storage::files('Manuals'))->map(function ($file) {
+            return basename($file);
+        });
+        
+        $consignment_promodiser_manuals = $files->filter(function ($file) {
+            return str_contains($file, 'Consignment') && str_contains($file, 'Promodiser');
+        });
+        
+        $consignment_supervisor_manuals = $files->filter(function ($file) {
+            return str_contains($file, 'Consignment') && str_contains($file, 'Supervisors');
+        });
+        
+        $generic_manuals = $files->reject(function ($file) {
+            return str_contains($file, 'Consignment');
+        });
+
+        return view('user_manual', compact('consignment_promodiser_manuals', 'consignment_supervisor_manuals', 'generic_manuals'));
+    }
 }
