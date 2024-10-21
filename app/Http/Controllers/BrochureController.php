@@ -606,7 +606,7 @@ class BrochureController extends Controller
 	
 					$current_images[] = [
 						'filename' => $filename,
-						'filepath' => $base64
+						'filepath' => "storage/img/$filename"
 					];	
 				}
 
@@ -680,11 +680,14 @@ class BrochureController extends Controller
 			$current_images = [];
 			foreach ($current_item_images as $e) {
 				$filename = $e->image_path;
-				$base64 = $this->base64_image('/img/'.$filename);
+				if(!Storage::disk('public')->exists('img/' . $filename) && $filename){
+					$filename = explode(".", $filename)[0] . '.webp';
+				}
+				// $base64 = $this->base64_image('/img/'.$filename);
 
 				$current_images[] = [
 					'filename' => $filename,
-					'filepath' => $base64
+					'filepath' => 'storage/img/' . $filename
 				];	
 			}
 
@@ -772,7 +775,7 @@ class BrochureController extends Controller
 			if ($request->existing) {
 				$filename = $request->selected_image;
 				$webpFilename = explode('.', $filename)[0].".webp";
-				$image_path = 'storage/img/';
+				$image_path = 'img/';
 			}
 
 			if($request->hasFile('selected-file')){
@@ -832,7 +835,7 @@ class BrochureController extends Controller
 					'parent' => $item_code,
 					'idx' => $request->image_idx,
 					'image_filename' => $webpFilename,
-					'image_path' => $image_path
+					'image_path' => "storage/$image_path"
 				]);
 			}
 
@@ -852,12 +855,11 @@ class BrochureController extends Controller
 
 			DB::commit();
 
-			$data_src = "$image_path/$webpFilename";
+			$data_src = "storage/$image_path/$webpFilename";
 
 			return response()->json(['status' => 1, 'message' => 'Image uploaded.', 'src' => $data_src]);
-		} catch (Exception $e) {
+		} catch (\Throwable $e) {
 			DB::rollback();
-
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 		}
 	}

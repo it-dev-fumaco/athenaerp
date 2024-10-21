@@ -2601,7 +2601,7 @@ class MainController extends Controller
                     'barcode' => $request->barcode,
                     'date_modified' => $now->toDateTimeString()
                 ];
-    
+
                 // DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
                 //     ->where('docstatus', '<', 2)->update($values);
                 $response = $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
@@ -2611,11 +2611,11 @@ class MainController extends Controller
 
                 $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
             }
-                
-            $check_parent = $this->update_pending_ps_item_status($ps_details->parent_ps);
 
-            if(!$check_parent['success']){
-                throw new Exception($check_parent['message']);
+            $items_for_checking = DB::connection('mysql')->table('tabPacking Slip Item')->where('parent', $ps_details->parent_ps)->where('status', 'For Checking')->exists();
+
+            if(!$items_for_checking){
+                DB::connection('mysql')->table('tabPacking Slip')->where('name', $ps_details->parent_ps)->update(['item_status' => 'Issued', 'docstatus' => 1]);
             }
 
             DB::connection('mysql')->commit();
@@ -2626,7 +2626,7 @@ class MainController extends Controller
 
             return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been checked out.']);
         } catch (Exception $e) {
-            DB::rollback();
+            DB::connection('mysql')->rollback();
             return response()->json([
                 'status' => 0, 
                 'modal_title' => 'Error', 
@@ -2636,19 +2636,15 @@ class MainController extends Controller
     }
 
     public function update_pending_ps_item_status($id){
-        // DB::beginTransaction();
         try {
             $items_for_checking = DB::table('tabPacking Slip Item')->where('parent', $id)->where('status', 'For Checking')->exists();
 
             if(!$items_for_checking){
                 $this->erpOperation('put', 'Packing Slip', $id, ['item_status' => 'Issued', 'docstatus' => 1]);
-                // DB::table('tabPacking Slip')->where('name', $id)->update(['item_status' => 'Issued', 'docstatus' => 1]);
-                // DB::commit();
             }
 
             return ['success' => 1, 'message' => 'Packing Slips updated!'];
         } catch (Exception $e) {
-            // DB::rollBack();
             return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
@@ -4792,6 +4788,7 @@ class MainController extends Controller
             ])
             ->whereIn('dri.warehouse', $allowed_warehouses)
             ->select([
+
                 'dr.delivery_date', 'ps.sales_order', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name',
                 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'),
                 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', DB::raw('"picking_slip" as type')

@@ -33,7 +33,7 @@
                                             if (isset($images['image1']['filepath']) && $images['image1']['filepath']) {
                                                 $img1_actual = null;
                                                 $img1_temp = 'd-none';
-                                                $img1_src = $images['image1']['filepath'];
+                                                $img1_src = asset($images['image1']['filepath']);
                                                 $img1_id = $images['image1']['id'];
                                             } else {
                                                 $img1_actual = 'd-none';
@@ -44,7 +44,7 @@
                                             if (isset($images['image2']['filepath']) && $images['image2']['filepath']) {
                                                 $img2_actual = null;
                                                 $img2_temp = 'd-none';
-                                                $img2_src = $images['image2']['filepath'];
+                                                $img2_src = asset($images['image2']['filepath']);
                                                 $img2_id = $images['image2']['id'];
                                             } else {
                                                 $img2_actual = 'd-none';
@@ -55,7 +55,7 @@
                                             if (isset($images['image3']['filepath']) && $images['image3']['filepath']) {
                                                 $img3_actual = null;
                                                 $img3_temp = 'd-none';
-                                                $img3_src = $images['image3']['filepath'];
+                                                $img3_src = asset($images['image3']['filepath']);
                                                 $img3_id = $images['image3']['id'];
                                             } else {
                                                 $img3_actual = 'd-none';
