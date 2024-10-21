@@ -558,7 +558,7 @@ class ConsignmentController extends Controller
         $consignment_stores = [];
         $status = $request->status ? $request->status : 'All';
         if(in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])){
-            $status = $request->status ? $request->status : 'For Approval';
+            $status = $request->status ?? 'For Approval';
 
             $beginning_inventory = BeginningInventory::with('items')
                 ->when($request->search, function ($q) use ($request){
@@ -584,7 +584,7 @@ class ConsignmentController extends Controller
                 ->pluck('warehouse');
             $consignment_stores = collect($consignment_stores)->unique();
             
-            $beginning_inventory = DB::table('tabConsignment Beginning Inventory')
+            $beginning_inventory = BeginningInventory::with('items')
                 ->when($request->search, function ($q) use ($request){
                     return $q->where('name', 'LIKE', '%'.$request->search.'%')
                         ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
