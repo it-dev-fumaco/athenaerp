@@ -9,6 +9,8 @@
     <tbody>
         @forelse ($result as $row)
         @php
+            $erp_url = env('ERP_API_BASE_URL');
+            $id = $row['name'];
             switch ($row['status']) {
                 case 'For Approval':
                     $badge = 'warning';
@@ -28,7 +30,12 @@
             }
         @endphp
         <tr>
-            <td class="text-center p-1 align-middle">{{ $row['name'] }}</td>
+            <td class="text-center p-1 align-middle">
+                <a href="{{ "$erp_url/app/material-request/$id" }}" class="text-dark" target="_blank">
+                    {{ $row['name'] }}
+                    <i class="fa fa-arrow-right"></i>
+                </a>
+            </td>
             <td class="text-center p-1 align-middle">{{ $row['branch_warehouse'] }}</td>
             <td class="text-center p-1 align-middle">
                 <span class=" badge badge-{{ $badge }}">{{ $row['status'] }}</span>
