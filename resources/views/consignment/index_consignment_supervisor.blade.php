@@ -58,12 +58,12 @@
                             </a>
                         </div>
                         <div class="col-6 col-md-3 p-1">
-                            <a href="/beginning_inv_list" style="color: inherit">
+                            <a href="/consignment/replenish" style="color: inherit">
                                 <div class="info-box bg-gradient-secondary m-0">
                                     <div class="info-box-content p-0">
                                         <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_stock_adjustments) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
-                                            <div class="p-1 text-left col-8">Beginning Entries</div>
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_consignment_orders) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-left col-8">Consignment Orders</div>
                                         </div>
                                     </div>
                                 </div>

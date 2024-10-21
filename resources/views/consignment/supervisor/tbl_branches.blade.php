@@ -10,12 +10,13 @@
     <tbody>
         @foreach ($branches as $i => $branch)
             @php
-                $items_arr = isset($items[$branch->name]) ? $items[$branch->name] : [];
-                $promodisers_arr = isset($promodisers[$branch->name]) ? $promodisers[$branch->name] : [];
+                // $items_arr = isset($items[$branch->name]) ? $items[$branch->name] : [];
+                $items = $branch->bin;
+                $assigned_promodisers = isset($promodisers[$branch->name]) ? $promodisers[$branch->name] : [];
             @endphp
             <tr>
                 <td class="p-2">
-                    <span class="text-{{ $promodisers_arr ? 'success' : 'secondary' }}">●</span>
+                    <span class="text-{{ $assigned_promodisers ? 'success' : 'secondary' }}">●</span>
                     <a href="#" data-toggle="modal" data-target="#modal-{{ $i }}">{{ $branch->name }}</a>
 
                     <div class="modal fade" id="modal-{{ $i }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -31,16 +32,16 @@
                                     <div class="container-fluid">
                                         <div class="row">
                                             <div class="col-4">
-                                                <p><b>Total Items</b>: {{ number_format(count($items_arr)) }}</p>
-                                                <p><b>Total Qty</b>: {{ number_format(collect($items_arr)->sum('consigned_qty')) }}</p>
+                                                <p><b>Total Items</b>: {{ number_format(count($items)) }}</p>
+                                                <p><b>Total Qty</b>: {{ number_format(collect($items)->sum('consigned_qty')) }}</p>
                                             </div>
                                             <div class="col-4">
-                                                <p><b>Total Inventory Value</b>: ₱ {{ number_format(collect($items_arr)->sum('amount'), 2) }}</p>
+                                                <p><b>Total Inventory Value</b>: ₱ {{ number_format(collect($items)->sum('amount'), 2) }}</p>
                                             </div>
                                             <div class="col-4">
                                                 <p><b>Assigned Promodiser(s)</b>:</p>
                                                 <ul>
-                                                    @foreach ($promodisers_arr as $promodiser)
+                                                    @foreach ($assigned_promodisers as $promodiser)
                                                         <li>{{ $promodiser->full_name }}</li>
                                                     @endforeach
                                                 </ul>
@@ -66,39 +67,36 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        @forelse ($items_arr as $item)
+                                        @forelse ($items as $item)
+                                            @php
+                                                $item_code = $item->item_code;
+                                                $item_detail = isset($item_details[$item_code]) ? $item_details[$item_code] : [];
+
+                                                $item_description = $image = null;
+                                                if(isset($item_details[$item_code])){
+                                                    $item_detail = $item_details[$item_code][0];
+
+                                                    $item_description = $item_detail->description;
+                                                    $image = "/icon/no_img.png";
+                                                    if($item_detail->defaultImage && Storage::disk('public')->exists('/img/'.$item_detail->defaultImage->image_path)){
+                                                        $image = $item_detail->defaultImage->image_path;
+                                                        if(Storage::disk('public')->exists('/img/'.explode('.', $image)[0].'.webp')){
+                                                            $image = explode('.', $image)[0].'.webp';
+                                                        }
+                                                        $image = '/img/'.$image;
+                                                    }
+                                                }
+                                            @endphp
                                             <div class="row">
                                                 <div class="col-8 pt-2 pb-2 text-center border" style="font-size: 10pt;">
                                                     <div class="row">
                                                         <div class="col-2">
-                                                            @php
-                                                                $image = isset($images[$item->item_code]) ? $images[$item->item_code][0]->image_path : "/icon/no_img.png";
-                                                                $webp = explode('.', $image)[0].'.webp';
-                                                                $image_path = $image;
-                                                                if(!Storage::disk('public')->exists('/img/'.$image)){
-                                                                    if (Storage::disk('public')->exists('/img/'.explode('.', $image)[0].'.jpg')) {
-                                                                        $image_path = explode('.', $image)[0].'.jpg';
-                                                                    }elseif (Storage::disk('public')->exists('/img/'.explode('.', $image)[0].'.jpeg')) {
-                                                                        $image_path = explode('.', $image)[0].'.jpeg';
-                                                                    }
-                                                                }
-                                                            @endphp
-                                                            <center>
-                                                                @if(!Storage::disk('public')->exists('/img/'.$webp))
-                                                                    <img class="w-100" src="{{ asset('storage/img/'.$image_path) }}">
-                                                                @elseif(!Storage::disk('public')->exists('/img/'.$image_path))
-                                                                    <img class="w-100" src="{{ asset('storage/img/'.$webp) }}">
-                                                                @else
-                                                                    <picture>
-                                                                        <source srcset="{{ asset('storage/img/'.$webp) }}" type="image/webp">
-                                                                        <source srcset="{{ asset('storage/img/'.$image_path) }}" type="image/jpeg">
-                                                                        <img src="{{ asset('storage/img/'.$image_path) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image_path)[0], '-') }}" class="img-responsive w-100 hover">
-                                                                    </picture>
-                                                                @endif
-                                                            </center>
+                                                            <img src="{{ asset("storage/$image") }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive w-100 hover">
                                                         </div>
                                                         <div class="col-10 text-justify">
-                                                            <b>{{ $item->item_code }}</b> - {{ strip_tags($item->description) }}
+                                                            <b>{{ $item_code }}</b>
+                                                            <br/>
+                                                            {{ strip_tags($item_description) }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -123,7 +121,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
                                             </div>
                                         @empty
                                             <div class="col-12 p-2 text-center">
@@ -139,9 +136,9 @@
                         </div>
                     </div>
                 </td>
-                <td class="p-2 text-center">{{ number_format(count($items_arr)) }}</td>
-                <td class="p-2 text-center">{{ number_format(collect($items_arr)->sum('consigned_qty')) }}</td>
-                <td class="p-2 text-center">₱ {{ number_format(collect($items_arr)->sum('amount'), 2) }}</td>
+                <td class="p-2 text-center">{{ number_format(count($items)) }}</td>
+                <td class="p-2 text-center">{{ number_format(collect($items)->sum('consigned_qty')) }}</td>
+                <td class="p-2 text-center">₱ {{ number_format(collect($items)->sum('amount'), 2) }}</td>
             </tr>
         @endforeach
     </tbody>

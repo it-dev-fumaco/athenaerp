@@ -24,6 +24,12 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         Route::post('/generate_sales_order', 'ConsignmentController@createSalesOrder');
 
+        // ERP
+        Route::get('/customers', 'MainController@get_customers');
+        Route::get('/erp_projects', 'MainController@get_erp_projects');
+        Route::get('/customer_address', 'MainController@get_customer_address');
+        Route::get('/branch_warehouses', 'MainController@get_branch_warehouses');
+
         // standard product brochure printing
         Route::get('/generate_brochure', 'BrochureController@generateBrochure');
         Route::post('/upload_image_for_standard_brochure', 'BrochureController@uploadImageForStandard');
@@ -172,12 +178,29 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
             Route::get('/cancel_stock_adjustment/{id}', 'ConsignmentController@cancelStockAdjustment');
             Route::post('/item_return/submit', 'ConsignmentController@itemReturnSubmit');
             Route::post('/save_beginning_inventory', 'ConsignmentController@saveBeginningInventory');
+            Route::get('/cancel_beginning_inventory/{id}', 'ConsignmentController@cancelDraftBeginningInventory');
+            Route::post('/update_beginning_inventory/{id}', 'ConsignmentController@updateDraftBeginningInventory');
             Route::get('/promodiser/receive/{id}', 'ConsignmentController@promodiserReceiveDelivery');
             Route::get('/promodiser/cancel/received/{id}', 'ConsignmentController@promodiserCancelReceivedDelivery');
             Route::post('/promodiser/damage_report/submit', 'ConsignmentController@submitDamagedItem');
             Route::post('/generate_stock_transfer_entry', 'ConsignmentController@generateStockTransferEntry');
             Route::post('/consignment_read_file', 'ConsignmentController@readFile');
             Route::post('/assign_barcodes', 'ConsignmentController@assign_barcodes');
+
+            Route::prefix('/consignment')->group(function(){
+                Route::prefix('/replenish')->group(function(){
+                    Route::get('/', 'ConsignmentController@replenish_index');
+                    Route::post('/', 'ConsignmentController@replenish_submit');
+                    Route::get('/form/{id?}', 'ConsignmentController@replenish_form');
+                    Route::post('/{id}', 'ConsignmentController@replenish_update');
+                    Route::get('/modal/{id}', 'ConsignmentController@replenish_modal_contents');
+                    Route::post('/{id}/approve', 'ConsignmentController@replenish_approve');
+                    Route::get('/{id}/delete', 'ConsignmentController@replenish_delete');
+                });
+            });
+
+            Route::get('/consignment_order/{id}/edit', 'ConsignmentController@editConsignmentOrder');
+            Route::post('/consignment_order/{id}/update', 'ConsignmentController@updateConsignmentOrder');
         });
 
         // Consignment Supervisor
@@ -275,5 +298,5 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/download/{project}/{filename}', 'BrochureController@downloadBrochure');
     Route::post('/remove_image', 'BrochureController@removeImage');
 
-    Route::get('/download_image/{directory}/{file}', 'MainController@download_image');
+    Route::get('/download_image/{file}', 'MainController@download_image');
 });

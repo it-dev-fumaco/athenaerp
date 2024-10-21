@@ -125,12 +125,12 @@
           </a>
         </div>
         <div class="col-6 p-1">
-          <a href="/beginning_inv_list">
+          <a href="/consignment/replenish">
             <div class="info-box bg-gradient-secondary m-0">
               <div class="info-box-content p-0">
                 <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
                   <div class="p-1 text-center" style="font-size: 30px !important;"><i class="fas fa-boxes"></i></div>
-                  <div class="p-1 text-center" style="font-size: 9pt;">Beginning Entries <span class="d-block" style="font-size: 7pt;">Pending: {{ number_format($total_stock_adjustments) }}</span></div>
+                  <div class="p-1 text-center" style="font-size: 9pt;">Consignment Order <span class="d-block" style="font-size: 7pt;">Pending: {{ number_format($total_consignment_orders) }}</span></div>
                 </div>
               </div>
             </div>

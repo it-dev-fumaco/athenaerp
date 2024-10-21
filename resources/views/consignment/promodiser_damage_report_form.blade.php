@@ -34,7 +34,7 @@
                                                 <select name="branch" id="branch" class="form-control form-control-sm">
                                                     <option value="" disabled selected>Select a Branch</option>
                                                     @foreach ($assigned_consignment_store as $store)
-                                                        <option value="{{ $store }}" {{ !isset($beginning_inventory[$store]) ? 'disabled' : null }}>{{ $store }}</option>
+                                                        <option value="{{ $store }}">{{ $store }}</option>
                                                     @endforeach 
                                                 </select>
                                             </div>
@@ -216,10 +216,7 @@
                     return opt.text;
                 }
 
-                var optimage = opt.webp;
-                if(optimage.indexOf('/icon/no_img') != -1){
-                    optimage = opt.img;
-                }
+                optimage = opt.img;
 
                 if(!optimage){
                     return opt.text;

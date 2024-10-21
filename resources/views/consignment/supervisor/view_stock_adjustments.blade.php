@@ -108,45 +108,48 @@
                                         </thead>
                                         @forelse ($inv_arr as $inv)
                                             @php
-                                                $badge = 'secondary';
-                                                if($inv['status'] == 'For Approval'){
-                                                    $badge = 'primary';
-                                                }else if($inv['status'] == 'Approved'){
-                                                    $badge = 'success';
-                                                }else if($inv['status'] == 'Cancelled'){
-                                                    $badge = 'secondary';
+                                                switch ($inv->status) {
+                                                    case 'Approved':
+                                                        $badge = 'success';
+                                                        break;
+                                                    case 'Cancelled':
+                                                        $badge = 'secondary';
+                                                        break;
+                                                    default:
+                                                        $badge = 'primary';
+                                                        break;
                                                 }
 
-                                                $modal_form = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
+                                                $modal_form = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval' ? '/approve_beginning_inv/'.$inv->name : '/stock_adjust/submit/'.$inv->name;
                                             @endphp
                                             <tr>
                                                 <td class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">
-                                                    <span style="white-space: nowrap">{{ $inv['transaction_date'] }}</span>
+                                                    <span style="white-space: nowrap">{{ $inv->transaction_date }}</span>
                                                 </td>
                                                 <td class="font-responsive align-middle p-2 text-left text-xl-center">
-                                                    <span class="d-block">{{ $inv['branch'] }}</span>
+                                                    <span class="d-block">{{ $inv->branch_warehouse }}</span>
                                                     <small class="d-block text-left d-lg-none">
-                                                        <span class="d-block"><b>By:</b>&nbsp;{{ $inv['owner'] }}</span>
-                                                        <span class="d-block"><b>Date:</b>&nbsp;{{ $inv['transaction_date'] }}</span>
+                                                        <span class="d-block"><b>By:</b>&nbsp;{{ $inv->owner }}</span>
+                                                        <span class="d-block"><b>Date:</b>&nbsp;{{ $inv->transaction_date }}</span>
                                                     </small>
                                                 </td>
-                                                <td class="font-responsive align-middle p-2 text-center">{{ number_format($inv['qty']) }}</td>
-                                                <td class="font-responsive align-middle p-2 text-center">{{ '₱ ' . number_format($inv['amount'], 2) }}</td>
-                                                <td class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">{{ $inv['owner'] }}</td>
+                                                <td class="font-responsive align-middle p-2 text-center">{{ number_format($inv->qty) }}</td>
+                                                <td class="font-responsive align-middle p-2 text-center">{{ '₱ ' . number_format($inv->amount, 2) }}</td>
+                                                <td class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">{{ $inv->owner }}</td>
                                                 <td class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">
-                                                    <span class="badge badge-{{ $badge }}">{{ $inv['status'] }}</span>
+                                                    <span class="badge badge-{{ $badge }}">{{ $inv->status }}</span>
                                                 </td>
                                                 <td class="font-responsive align-middle p-2 text-center">
-                                                    <a href="#" class="d-block modal-trigger" data-branch='{{ $inv["branch"] }}' data-toggle="modal" data-target="#{{ $inv['name'] }}-Modal">View Items</a>
-                                                    <span class="badge badge-{{ $badge }} d-xl-none d-lg-none">{{ $inv['status'] }}</span>
+                                                    <a href="#" class="d-block modal-trigger" data-branch='{{ $inv["branch"] }}' data-toggle="modal" data-target="#{{ $inv->name }}-Modal">View Items</a>
+                                                    <span class="badge badge-{{ $badge }} d-xl-none d-lg-none">{{ $inv->status }}</span>
                                                         
-                                                    <div class="modal fade" id="{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                    <div class="modal fade" id="{{ $inv->name }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                         <div class="modal-dialog modal-xl" role="document">
                                                             <div class="modal-content">
                                                                 <form action="{{ $modal_form }}" method="post">
                                                                     @csrf
                                                                     <div class="modal-header bg-navy">
-                                                                        <h6 class="modal-title">{{ $inv['branch'] }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $inv['status'] }}</span></h6>
+                                                                        <h6 class="modal-title">{{ $inv->branch_warehouse }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $inv->status }}</span></h6>
                                                                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                                             <span aria-hidden="true">&times;</span>
                                                                         </button>
@@ -156,23 +159,23 @@
                                                                             <div class="pt-0 pr-2 pl-2 pb-2 col-6 col-lg-4 col-xl-4 text-left">
                                                                                 <dl class="row">
                                                                                     <dt class="col-12 col-xl-4 col-lg-6">Inventory Date:</dt>
-                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ $inv['transaction_date'] }}</dd>
+                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ $inv->transaction_date }}</dd>
                                                                                   
                                                                                     <dt class="col-12 col-xl-4 col-lg-6">Submitted By:</dt>
-                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ $inv['owner'] }}</dd>
+                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ $inv->owner }}</dd>
                                                                                 </dl>
                                                                             </div>
                                                                             <div class="pt-0 pr-2 pl-2 pb-2 col-6 col-lg-4 col-xl-4 text-left">
                                                                                 <dl class="row">
                                                                                     <dt class="col-12 col-xl-4 col-lg-6">Total Qty:</dt>
-                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ number_format($inv['qty']) }}</dd>
+                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ number_format($inv->qty) }}</dd>
                                                                                   
                                                                                     <dt class="col-12 col-xl-4 col-lg-6">Total Value:</dt>
-                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ '₱ ' . number_format($inv['amount'], 2) }}</dd>
+                                                                                    <dd class="col-12 col-xl-8 col-lg-6">{{ '₱ ' . number_format($inv->amount, 2) }}</dd>
                                                                                 </dl>
                                                                             </div>
                                                                             <div class="pt-0 pr-2 pl-2 pb-2 col-12 col-lg-4 col-xl-4 text-left">
-                                                                                @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval')
+                                                                                @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval')
                                                                                 @php
                                                                                     $status_selection = [
                                                                                         ['title' => 'Approve', 'value' => 'Approved'],
@@ -188,32 +191,32 @@
                                                                                         @endforeach
                                                                                     </select>
                                                                                     <div class="input-group-append">
-                                                                                        <button class="btn btn-primary" type="submit" id="{{ $inv['name'] }}-submit">Submit</button>
+                                                                                        <button class="btn btn-primary" type="submit" id="{{ $inv->name }}-submit">Submit</button>
                                                                                     </div>
                                                                                 </div>
                                                                                 @endif
                                                                             </div>
                                                                         </div>
 
-                                                                        @if ($inv['status'] == 'For Approval')
+                                                                        @if ($inv->status == 'For Approval')
                                                                             <div class="callout callout-info font-responsive text-center pr-2 pl-2 pb-3 pt-3" style="font-size: 10pt;">
                                                                                 <span class="d-block"><i class="fas fa-info-circle"></i> "For your Approval - you can modify/change item code and prices" - Once Approved stocks will be automatically added to this consignment Store</span>
                                                                             </div>
                                                                             <!-- Add item modal -->
-                                                                            <button type='button' class="btn btn-primary float-right mb-2" style='font-size: 10pt;' data-toggle="modal" data-target="#addItems{{ $inv['name'] }}Modal"><i class="fa fa-plus"></i> Add Items</button>
+                                                                            <button type='button' class="btn btn-primary float-right mb-2" style='font-size: 10pt;' data-toggle="modal" data-target="#addItems{{ $inv->name }}Modal"><i class="fa fa-plus"></i> Add Items</button>
                                                                             
-                                                                            <div class="modal fade" id="addItems{{ $inv['name'] }}Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                            <div class="modal fade" id="addItems{{ $inv->name }}Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                                                 <div class="modal-dialog" role="document">
                                                                                     <div class="modal-content">
                                                                                         <div class="modal-header bg-navy">
                                                                                             <h5 class="modal-title" id="exampleModalLabel">Add Items</h5>
-                                                                                            <button type="button" class="close" onclick="close_modal('#addItems{{ $inv['name'] }}Modal')">
+                                                                                            <button type="button" class="close" onclick="close_modal('#addItems{{ $inv->name }}Modal')">
                                                                                                 <span aria-hidden="true" style="color: #fff">&times;</span>
                                                                                             </button>
                                                                                         </div>
                                                                                         <div class="modal-body add-item-modal">
-                                                                                            <select class="replacement-item form-control" data-name="{{ $inv['name'] }}"></select>
-                                                                                            <div id="{{ $inv['name'] }}-new-item-container" class="pt-2 d-none">
+                                                                                            <select class="replacement-item form-control" data-name="{{ $inv->name }}"></select>
+                                                                                            <div id="{{ $inv->name }}-new-item-container" class="pt-2 d-none">
                                                                                                 <table class="table table-striped new-item-table">
                                                                                                     <thead>
                                                                                                         <th class="font-responsive text-center p-1 align-middle" style="width: 35%">Item Code</th>
@@ -226,21 +229,21 @@
                                                                                                                 <div class="d-flex flex-row justify-content-center align-items-center">
                                                                                                                     <div class="p-1 col-2 text-center">
                                                                                                                         <div class="d-none">
-                                                                                                                            <span class="text-placeholder" id="{{ $inv['name'] }}-webp-display"></span> <br>
-                                                                                                                            <span class="text-placeholder" id="{{ $inv['name'] }}-img-display"></span> <br>
-                                                                                                                            <span class="text-placeholder" id="{{ $inv['name'] }}-alt-display"></span> <br>
-                                                                                                                            <span class="text-placeholder" id="{{ $inv['name'] }}-uom-display"></span>
+                                                                                                                            <span class="text-placeholder" id="{{ $inv->name }}-webp-display"></span> <br>
+                                                                                                                            <span class="text-placeholder" id="{{ $inv->name }}-img-display"></span> <br>
+                                                                                                                            <span class="text-placeholder" id="{{ $inv->name }}-alt-display"></span> <br>
+                                                                                                                            <span class="text-placeholder" id="{{ $inv->name }}-uom-display"></span>
                                                                                                                         </div>
-                                                                                                                        <img src="" class="src-placeholder" alt="" id="{{ $inv['name'] }}-new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
+                                                                                                                        <img src="" class="src-placeholder" alt="" id="{{ $inv->name }}-new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
 
                                                                                                                         <picture>
-                                                                                                                            <source srcset="" class="src-placeholder" id="{{ $inv['name'] }}-new-src-img-webp" type="image/webp">
-                                                                                                                            <source srcset="" class="src-placeholder" id="{{ $inv['name'] }}-new-src-img" type="image/jpeg">
-                                                                                                                            <img src="" class="src-placeholder" alt="" id="{{ $inv['name'] }}-new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
+                                                                                                                            <source srcset="" class="src-placeholder" id="{{ $inv->name }}-new-src-img-webp" type="image/webp">
+                                                                                                                            <source srcset="" class="src-placeholder" id="{{ $inv->name }}-new-src-img" type="image/jpeg">
+                                                                                                                            <img src="" class="src-placeholder" alt="" id="{{ $inv->name }}-new-img" class="img-thumbna1il" alt="User Image" width="40" height="40">
                                                                                                                         </picture>
                                                                                                                     </div>
                                                                                                                     <div class="p-1 col m-0">
-                                                                                                                        <span class="font-weight-bold font-responsive"><span class="text-placeholder" id="{{ $inv['name'] }}-item-code-display"></span></span>
+                                                                                                                        <span class="font-weight-bold font-responsive"><span class="text-placeholder" id="{{ $inv->name }}-item-code-display"></span></span>
                                                                                                                     </div>
                                                                                                                     <div class="p-0 col-4">
                                                                                                                         <div class="input-group p-1">
@@ -248,7 +251,7 @@
                                                                                                                                 <button class="btn btn-outline-danger btn-xs new-item-qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                                                                                             </div>
                                                                                                                             <div class="custom-a p-0">
-                                                                                                                                <input type="text" class="form-control form-control-sm qty new-item-validate new-item-stock value-placeholder" id="{{ $inv['name'] }}-new-item-stock" value="0" style="text-align: center; width: 47px">
+                                                                                                                                <input type="text" class="form-control form-control-sm qty new-item-validate new-item-stock value-placeholder" id="{{ $inv->name }}-new-item-stock" value="0" style="text-align: center; width: 47px">
                                                                                                                             </div>
                                                                                                                             <div class="input-group-append p-0">
                                                                                                                                 <button class="btn btn-outline-success btn-xs new-item-qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>
@@ -256,10 +259,10 @@
                                                                                                                         </div>
                                                                                                                     </div>
                                                                                                                     <div class="col-3 text-center p-1 align-middle">
-                                                                                                                        <input type="text" id="{{ $inv['name'] }}-new-item-price" value="" class="form-control value-placeholder text-center"/>
+                                                                                                                        <input type="text" id="{{ $inv->name }}-new-item-price" value="" class="form-control value-placeholder text-center"/>
                                                                                                                     </div>
                                                                                                                 </div>
-                                                                                                                <div class="p-1 text-placeholder" id="{{ $inv['name'] }}-description-display" style="font-size: 9.5pt !important;"></div>
+                                                                                                                <div class="p-1 text-placeholder" id="{{ $inv->name }}-description-display" style="font-size: 9.5pt !important;"></div>
                                                                                                             </td>
                                                                                                         </tr>
                                                                                                     </tbody>
@@ -267,7 +270,7 @@
                                                                                             </div>
                                                                                         </div>
                                                                                         <div class="modal-footer">
-                                                                                            <button type='button' data-id='{{ $inv['name'] }}' id="{{ $inv['name'] }}-add-item" class="add-item btn btn-primary w-100" disabled>Add item</button>
+                                                                                            <button type='button' data-id='{{ $inv->name }}' id="{{ $inv->name }}-add-item" class="add-item btn btn-primary w-100" disabled>Add item</button>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -275,39 +278,39 @@
                                                                             <!-- Add item modal -->
                                                                         @endif
                                                                         
-                                                                        <span id="item-count-{{ $inv['name'] }}" class="d-none">{{ count($inv['items']) }}</span>
-                                                                        <table class="table table-striped items-table" id="{{ $inv['name'] }}-items-table" style="font-size: 10pt;">
+                                                                        <span id="item-count-{{ $inv->name }}" class="d-none">{{ count($inv->items) }}</span>
+                                                                        <table class="table table-striped items-table" id="{{ $inv->name }}-items-table" style="font-size: 10pt;">
                                                                             <thead>
                                                                                 <th class="text-center p-2 align-middle col-lg-4 col-3" style="width: 2%"></th>
                                                                                 <th class="text-center p-2 align-middle col-lg-4 col-3" style="width: 36%">Item Code</th>
                                                                                 <th class="text-center p-2 align-middle col-lg-2 col-3" style='width: 16%'>Opening Stock</th>
                                                                                 <th class="text-center p-2 align-middle col-lg-2 col-3" style='width: 16%'>Price</th>
-                                                                                @if ($inv['status'] == 'Approved')
+                                                                                @if ($inv->status == 'Approved')
                                                                                     <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 15%'>-</th>
                                                                                 @else
                                                                                     <th class="text-center p-2 align-middle col-lg-2 col-3"style='width: 15%'>Action</th>
                                                                                 @endif
                                                                             </thead>
                                                                             <tbody>
-                                                                                @forelse ($inv['items'] as $i => $item)
+                                                                                @forelse ($inv->items as $i => $item)
                                                                                     @php
-                                                                                        $target = $inv['name'].'-'.$item['item_code'];
-                                                                                        $img = $item['image'];
+                                                                                        $target = $inv->name.'-'.$item->item_code;
+                                                                                        $img = asset("storage/$item->image");
                                                                                     @endphp
-                                                                                    <tr id="row-{{ $target }}" class="{{ $item['item_code'] }}">
+                                                                                    <tr id="row-{{ $target }}" class="{{ $item->item_code }}">
                                                                                         <td class="text-center p-1 align-middle">
-                                                                                            {{ $item['idx'] }}
+                                                                                            {{ $item->idx.$i }}
                                                                                         </td>
                                                                                         <td class="text-center p-1 align-middle">
                                                                                             <div class="d-flex flex-row justify-content-start align-items-center" id="{{ $target }}-container">
                                                                                                 <div class="p-2 text-left">
-                                                                                                    <a href="{{ $img }}" class="view-images" data-item-code="{{ $item['item_code'] }}">
-                                                                                                        <img src="{{ $img }}" alt="{{ Illuminate\Support\Str::slug($item['item_description'], '-') }}" width="60" height="60">
+                                                                                                    <a href="{{ $img }}" class="view-images" data-item-code="{{ $item->item_code }}">
+                                                                                                        <img src="{{ $img }}" alt="{{ Illuminate\Support\Str::slug($item->item_description, '-') }}" width="60" height="60">
                                                                                                     </a>
                                                                                                 </div>
                                                                                                 <div class="p-2 text-left">
-                                                                                                    <b>{!! ''.$item['item_code'] !!}</b>
-                                                                                                    <span class="d-none d-xl-inline"> - {!! strip_tags($item['item_description']) !!}</span>
+                                                                                                    <b>{!! ''.$item->item_code !!}</b>
+                                                                                                    <span class="d-none d-xl-inline"> - {!! strip_tags($item->item_description) !!}</span>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div class="d-none flex-row justify-content-start align-items-center" id="{{ $target }}-replacement-container">
@@ -327,36 +330,36 @@
                                                                                             </div>
                                                                                         </td>
                                                                                         <td class="text-center p-1 align-middle text-nowrap">
-                                                                                            <b id="{{ $inv['name'].'-'.$item['item_code'] }}-qty">{!! $item['opening_stock'] !!}<br></b>
-                                                                                            @if ($inv['status'] == 'Approved')
-                                                                                                <input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-qty" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][qty]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
+                                                                                            <b id="{{ $inv->name.'-'.$item->item_code }}-qty">{!! $item->opening_stock !!}<br></b>
+                                                                                            @if ($inv->status == 'Approved')
+                                                                                                <input id="{{ $inv->name.'-'.$item->item_code }}-new-qty" type="text" class="form-control text-center d-none" name="item[{{ $item->item_code }}][qty]" value={{ $item->opening_stock }} style="font-size: 10pt;"/>
                                                                                             @endif
-                                                                                            <small id="{{ $target }}-uom">{{ $item['uom'] }}</small>
+                                                                                            <small id="{{ $target }}-uom">{{ $item->uom }}</small>
                                                                                         </td>
                                                                                         <td class="text-center p-1 align-middle">
-                                                                                            @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval')
-                                                                                                ₱ <input type="text" name="price[{{ $item['item_code'] }}][]" id="item-price-{{ $target }}" value="{{ number_format($item['price'], 2) }}" style="text-align: center; width: 60px" required/>
-                                                                                                <input id="item-qty-{{ $target }}" type="text" class="d-none" name="qty[{{ $item['item_code'] }}][]" value={{ $item['opening_stock'] }} style="font-size: 10pt;"/>
-                                                                                            @elseif ($inv['status'] == 'Approved')
-                                                                                                <input id="{{ $inv['name'].'-'.$item['item_code'] }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item['item_code'] }}][price]" value={{ $item['price'] }} style="font-size: 10pt;"/>
-                                                                                                <span id="{{ $inv['name'].'-'.$item['item_code'] }}-price">₱ {{ number_format($item['price'], 2) }}</span>
+                                                                                            @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval')
+                                                                                                ₱ <input type="text" name="price[{{ $item->item_code }}]" id="item-price-{{ $target }}" value="{{ number_format($item->price, 2) }}" style="text-align: center; width: 60px" required/>
+                                                                                                <input id="item-qty-{{ $target }}" type="text" class="d-none" name="qty[{{ $item->item_code }}]" value={{ $item->opening_stock }} style="font-size: 10pt;"/>
+                                                                                            @elseif ($inv->status == 'Approved')
+                                                                                                <input id="{{ $inv->name.'-'.$item->item_code }}-new-price" type="text" class="form-control text-center d-none" name="item[{{ $item->item_code }}][price]" value={{ $item->price }} style="font-size: 10pt;"/>
+                                                                                                <span id="{{ $inv->name.'-'.$item->item_code }}-price">₱ {{ number_format($item->price, 2) }}</span>
                                                                                             @else
-                                                                                                ₱ {{ number_format($item['price'], 2) }}
+                                                                                                ₱ {{ number_format($item->price, 2) }}
                                                                                             @endif
                                                                                         </td>
-                                                                                        @if ($inv['status'] == 'Approved')
+                                                                                        @if ($inv->status == 'Approved')
                                                                                             <td class="text-center p-1 align-middle">
-                                                                                                <span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv['name'].'-'.$item['item_code'] }}" data-name="{{ $inv['name'] }}"><i class="fa fa-edit"></i></span>
+                                                                                                <span class="btn btn-primary btn-xs edit-stock_qty" data-reference="{{ $inv->name.'-'.$item->item_code }}" data-name="{{ $inv->name }}"><i class="fa fa-edit"></i></span>
                                                                                             </td>
                                                                                         @else
                                                                                             <td class="text-center p-1 align-middle">
                                                                                                 <div class="btn-group" role="group" aria-label="Basic example">
                                                                                                     <!-- Change Button -->
-                                                                                                    <button type="button" class="btn btn-xs btn-outline-primary p-1" id="{{ $target }}-replacement-button" style="font-size: 9pt;" data-toggle="modal" data-target="#{{ $target }}-replacement-Modal" data-original-code="{{ $item['item_code'] }}">Change</button>
+                                                                                                    <button type="button" class="btn btn-xs btn-outline-primary p-1" id="{{ $target }}-replacement-button" style="font-size: 9pt;" data-toggle="modal" data-target="#{{ $target }}-replacement-Modal" data-original-code="{{ $item->item_code }}">Change</button>
                                                                                                     <!-- Change Button -->
 
                                                                                                     <!-- Undo Button -->
-                                                                                                    <button type="button" class="btn btn-xs btn-outline-primary p-1 undo-change d-none" id="{{ $target }}-undo-button" style="font-size: 9pt;" data-target="{{ $target }}" data-original-code="{{ $item['item_code'] }}" data-orignal-uom="{{ $item['uom'] }}" data-replacement=''><i class="fa fa-undo"></i> Reset</button>
+                                                                                                    <button type="button" class="btn btn-xs btn-outline-primary p-1 undo-change d-none" id="{{ $target }}-undo-button" style="font-size: 9pt;" data-target="{{ $target }}" data-original-code="{{ $item->item_code }}" data-orignal-uom="{{ $item->uom }}" data-replacement=''><i class="fa fa-undo"></i> Reset</button>
                                                                                                     <!-- Undo Button -->
 
                                                                                                     <!-- Remove Button -->
@@ -368,13 +371,13 @@
                                                                                                         <div class="modal-dialog" role="document">
                                                                                                             <div class="modal-content">
                                                                                                                 <div class="modal-header bg-navy">
-                                                                                                                    <h5 class="modal-title" id="exampleModalLabel">Change Code for {{ $item['item_code'] }}</h5>
+                                                                                                                    <h5 class="modal-title" id="exampleModalLabel">Change Code for {{ $item->item_code }}</h5>
                                                                                                                     <button type="button" class="close" onclick="close_modal('#{{ $target }}-replacement-Modal')">
                                                                                                                         <span aria-hidden="true" style="color: #fff">&times;</span>
                                                                                                                     </button>
                                                                                                                 </div>
                                                                                                                 <div class="modal-body replace-item-modal">
-                                                                                                                    <select class="form-control replacement-item" id="{{ $target }}-replacement" data-original-code='{{ $item['item_code'] }}' data-id='{{ $target }}' style="width: 200px !important;"></select>
+                                                                                                                    <select class="form-control replacement-item" id="{{ $target }}-replacement" data-original-code='{{ $item->item_code }}' data-id='{{ $target }}' style="width: 200px !important;"></select>
                                                                                                                     <br>
                                                                                                                     <div class="row d-none" id="{{ $target }}-replacement-info">
                                                                                                                         <div class="p-2 col-2 vertically-align-element">
@@ -399,7 +402,7 @@
                                                                                                                     </div>
                                                                                                                 </div>
                                                                                                                 <div class="modal-footer">
-                                                                                                                <button type="button" class="btn btn-primary w-100 {{ $target }} change-item" data-name="{{ $inv['name'] }}" data-target="{{ $target }}" data-original-code="{{ $item['item_code'] }}" disabled>Change Item</button>
+                                                                                                                <button type="button" class="btn btn-primary w-100 {{ $target }} change-item" data-name="{{ $inv->name }}" data-target="{{ $target }}" data-original-code="{{ $item->item_code }}" disabled>Change Item</button>
                                                                                                                 </div>
                                                                                                             </div>
                                                                                                         </div>
@@ -417,10 +420,10 @@
                                                                                                                     </button>
                                                                                                                 </div>
                                                                                                                 <div class="modal-body">
-                                                                                                                    Remove {{ $item['item_code'] }}?
+                                                                                                                    Remove {{ $item->item_code }}?
                                                                                                                 </div>
                                                                                                                 <div class="modal-footer">
-                                                                                                                <button type="button" class="btn btn-primary w-100 remove-item" data-name="{{ $inv['name'] }}" data-target="{{ $target }}">Confirm</button>
+                                                                                                                <button type="button" class="btn btn-primary w-100 remove-item" data-name="{{ $inv->name }}" data-target="{{ $target }}">Confirm</button>
                                                                                                                 </div>
                                                                                                             </div>
                                                                                                         </div>
@@ -432,7 +435,7 @@
                                                                                     </tr>
                                                                                     <tr class="d-xl-none">
                                                                                         <td colspan="4" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-                                                                                            <div class="w-100 item-description">{!! strip_tags($item['item_description']) !!}</div>
+                                                                                            <div class="w-100 item-description">{!! strip_tags($item->item_description) !!}</div>
                                                                                         </td>
                                                                                     </tr>
                                                                                 @empty
@@ -445,36 +448,36 @@
                                                                     </div>
                                                                     <div class="container text-left p-2">
                                                                         <label style='font-size: 10pt;'>Remarks</label>
-                                                                        <textarea name="remarks" id="remarks" cols="30" rows="5" class="form-control" placeholder='Remarks' data-name="{{ $inv['name'] }}" style="font-size: 10pt;">{{ $inv['remarks'] }}</textarea>
+                                                                        <textarea name="remarks" id="remarks" cols="30" rows="5" class="form-control" placeholder='Remarks' data-name="{{ $inv->name }}" style="font-size: 10pt;">{{ $inv->remarks }}</textarea>
                                                                     </div>
                                                                     {{-- Update button for approved records --}}
-                                                                    @if ($inv['status'] == 'Approved')
+                                                                    @if ($inv->status == 'Approved')
                                                                     <div class="modal-footer">
-                                                                        <div class="container-fluid" id="{{ $inv['name'] }}-stock-adjust-update-btn" style="display: none">
+                                                                        <div class="container-fluid" id="{{ $inv->name }}-stock-adjust-update-btn" style="display: none">
                                                                             <button type="submit" class="btn btn-info w-100">Update</button>
                                                                         </div>
                                                                         <div class="container-fluid">
-                                                                            <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $inv['name'] }}-Modal">
+                                                                            <button type="button" class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-{{ $inv->name }}-Modal">
                                                                                 Cancel
                                                                             </button>
                                                                             
                                                                             <!-- Modal -->
-                                                                            <div class="modal fade" id="cancel-{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                            <div class="modal fade" id="cancel-{{ $inv->name }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                                                 <div class="modal-dialog" role="document">
                                                                                     <div class="modal-content">
                                                                                         <div class="modal-header bg-navy">
                                                                                             <h6 id="exampleModalLabel">Cancel Beginning Inventory?</h6>
                                                                                             <button type="button" class="close">
-                                                                                            <span aria-hidden="true" style="color: #fff" onclick="close_modal('#cancel-{{ $inv['name'] }}-Modal')">&times;</span>
+                                                                                            <span aria-hidden="true" style="color: #fff" onclick="close_modal('#cancel-{{ $inv->name }}-Modal')">&times;</span>
                                                                                             </button>
                                                                                         </div>
                                                                                         <div class="modal-body">
                                                                                             <div class="callout callout-danger text-justify">
-                                                                                                <i class="fas fa-info-circle"></i> Are you sure you want to cancel {{ $inv['name'] }}?
+                                                                                                <i class="fas fa-info-circle"></i> Are you sure you want to cancel {{ $inv->name }}?
                                                                                             </div>
                                                                                         </div>
                                                                                         <div class="modal-footer">
-                                                                                            <a href="/cancel/approved_beginning_inv/{{ $inv['name'] }}" class="btn btn-primary w-100">Confirm</a>
+                                                                                            <a href="/cancel/approved_beginning_inv/{{ $inv->name }}" class="btn btn-primary w-100">Confirm</a>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -812,10 +815,7 @@
                     return opt.text;
                 }
 
-                var optimage = opt.image_webp;
-                if(optimage.indexOf('/icon/no_img') != -1){
-                    optimage = opt.image;
-                }
+                const optimage = opt.image;
 
                 if(!optimage){
                     return opt.text;
@@ -1031,7 +1031,7 @@
                                 '<button class="btn btn-outline-danger btn-xs new-item-qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>' +
                             '</div>' +
                             '<div class="custom-a p-0">' +
-                                '<input type="text" name="qty[' + item_code + '][]" class="form-control form-control-sm qty new-item-validate new-item-stock" value="' + qty + '" style="text-align: center; width: 47px" required>' +
+                                '<input type="text" name="qty[' + item_code + ']" class="form-control form-control-sm qty new-item-validate new-item-stock" value="' + qty + '" style="text-align: center; width: 47px" required>' +
                             '</div>' +
                             '<div class="input-group-append p-0">' +
                                 '<button class="btn btn-outline-success btn-xs new-item-qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>' +
@@ -1040,7 +1040,7 @@
                         '<small>' + uom + '</small>' + 
                     '</td>' + 
                     '<td class="text-center p-1 align-middle">' + 
-                        '₱ <input type="text" name="price[' + item_code + '][]" id="item-price-' + item_code + '" value="' + price + '" style="text-align: center; width: 60px" required/>' + 
+                        '₱ <input type="text" name="price[' + item_code + ']" id="item-price-' + item_code + '" value="' + price + '" style="text-align: center; width: 60px" required/>' + 
                     '</td>' + 
                     '<td class="text-center p-1 align-middle">' + 
                         '<div class="btn-group" role="group" aria-label="Basic example">' + 
