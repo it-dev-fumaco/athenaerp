@@ -204,7 +204,7 @@ class MainController extends Controller
                     ->count();
 
                 // get total consignment orders
-                $total_consignment_orders = ConsignmentStockEntry::whereIn('target_warehouse', $assigned_consignment_store)->where('purpose', 'Stock Replenishment')->where('status', 'Pending')->count();
+                $total_consignment_orders = MaterialRequest::where('custom_purpose', 'Consignment Order')->where('transfer_as', 'Consignment')->whereIn('branch_warehouse', $assigned_consignment_store)->where('consignment_status', 'For Approval')->count();
 
                 // get incoming / to receive items
                 $beginning_inventory_start = DB::table('tabConsignment Beginning Inventory')->orderBy('transaction_date', 'asc')->pluck('transaction_date')->first();
@@ -316,7 +316,7 @@ class MainController extends Controller
             ->count();
 
         // get total consignment orders
-        $total_consignment_orders = ConsignmentStockEntry::where('purpose', 'Stock Replenishment')->where('status', 'Pending')->count();
+        $total_consignment_orders = MaterialRequest::where('custom_purpose', 'Consignment Order')->where('transfer_as', 'Consignment')->where('consignment_status', 'For Approval')->count();
 
         $total_pending_inventory_audit = 0;
         // get total pending inventory audit
