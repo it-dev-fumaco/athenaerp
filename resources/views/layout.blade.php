@@ -607,7 +607,7 @@
 						</div>
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
-								<li class="nav-item dropdown col-xl-10 text-right" style="margin: auto">
+								<li class="nav-item dropdown col-xl-10 text-right p-0" style="margin: auto">
 									@if (Auth::check())
 										<span class="d-none brochures-icon" style="position: relative;">
 											<i class="far fa-bookmark" style="color: #fff; font-size: 18pt; margin: 8px 20px;"></i>
@@ -618,6 +618,7 @@
 									@endif
 									<img src="{{ asset('dist/img/avatar04.png') }}" class="img-circle" alt="User Image" width="30" height="30">
 									<span class="text-white d-md-none d-lg-none d-xl-inline-block" style="font-size: 13pt;">&nbsp;{{ Auth::check() ? Auth::user()->full_name : null }}</span>
+									<a href="/user_manual"><i class="fa fa-info text-white mx-1 p-1"></i></a>
 								</li>
 								<li class="d-none d-lg-block col-xl-2 nav-item dropdown text-right">
 									<a href="/logout" class="btn btn-default m-1"><i class="fas fa-sign-out-alt"></i></a>
