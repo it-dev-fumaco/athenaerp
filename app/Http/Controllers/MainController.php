@@ -2606,16 +2606,22 @@ class MainController extends Controller
                 //     ->where('docstatus', '<', 2)->update($values);
                 $response = $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
                 if(!isset($response['data'])){
-                    throw new Exception('An error occured while updating picking slip.');
+                    $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating picking slip';
+                    throw new Exception($err);
                 }
 
                 $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
             }
 
-            $items_for_checking = DB::connection('mysql')->table('tabPacking Slip Item')->where('parent', $ps_details->parent_ps)->where('status', 'For Checking')->exists();
+            $items_for_checking = DB::connection('mysql')->table('tabPacking Slip Item')->where('name', '!=', $request->child_tbl_id)->where('parent', $ps_details->parent_ps)->where('status', 'For Checking')->exists();
 
             if(!$items_for_checking){
-                DB::connection('mysql')->table('tabPacking Slip')->where('name', $ps_details->parent_ps)->update(['item_status' => 'Issued', 'docstatus' => 1]);
+                // DB::connection('mysql')->table('tabPacking Slip')->where('name', $ps_details->parent_ps)->update();
+                $parent_response = $this->erpOperation('put', 'Packing Slip', $ps_details->parent_ps, ['item_status' => 'Issued', 'docstatus' => 1]);
+                if(!isset($parent_response['data'])){
+                    $err = isset($parent_response['exception']) ? $parent_response['exception'] : 'An error occured while updating picking slip';
+                    throw new Exception($err);
+                }
             }
 
             DB::connection('mysql')->commit();
