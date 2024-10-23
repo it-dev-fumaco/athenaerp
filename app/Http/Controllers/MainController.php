@@ -1985,8 +1985,8 @@ class MainController extends Controller
             $item_code = $stock_entry_item->item_code;
             $itemDetails = Item::find($item_code);
 
-            if(in_array($stock_entry->per_item_status, ['Issued', 'Returned'])){
-                throw new Exception("Item already $stock_entry->per_item_status");
+            if(in_array($stock_entry->item_status, ['Issued', 'Returned'])){
+                throw new Exception("Item already $stock_entry->item_status");
             }
 
             if($stock_entry->docstatus == 1){
@@ -2002,7 +2002,7 @@ class MainController extends Controller
             }
 
             if($request->barcode != $item_code){
-                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+                throw new Exception("Invalid barcode for <b>$item_code</b>.");
             }
 
             if($request->qty <= 0){
