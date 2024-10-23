@@ -1049,11 +1049,11 @@ class ConsignmentController extends Controller
                     return "Item $item_code does not exist in $target_warehouse";
                 }
 
-                $source_warehouse_consigned_qty = $source_warehouse_details[$source_warehouse][$item_code][0]->consigned_qty;
+                // $source_warehouse_consigned_qty = $source_warehouse_details[$source_warehouse][$item_code][0]->consigned_qty;
 
-                if($item['transfer_qty'] > $source_warehouse_consigned_qty){
-                    return "Insufficient stocks for item $item_code from $source_warehouse";
-                }
+                // if($item['transfer_qty'] > $source_warehouse_consigned_qty){
+                //     return "Insufficient stocks for item $item_code from $source_warehouse";
+                // }
                 
                 return null;
             })->filter();
