@@ -5254,6 +5254,74 @@ class MainController extends Controller
         return view('return_modal_content', compact('data', 'is_stock_entry'));
     }
 
+    public function submit_dr_sales_return_api(Request $request){
+        try {
+            $child_id = $request->child_tbl_id;
+            $delivery_note = DeliveryNote::with('items')->whereHas('items', function ($item) use ($child_id){
+                return $item->where('name', $child_id);
+            })->first();
+
+            $now = Carbon::now();
+
+            if(!$delivery_note){
+                throw new Exception('Record not found');
+            }
+
+            if(in_array($delivery_note->item_status, ['Issued', 'Returned'])){
+                throw new Exception("Item already $delivery_note->item_status.");
+            }
+
+            $delivery_note->qty = (float) $delivery_note->qty;
+
+            $delivery_note_item = collect($delivery_note->items)->where('name', $child_id)->first();
+            $item_code = $delivery_note_item->item_code;
+            $itemDetails = Item::find($item_code);
+
+            if(!$itemDetails){
+                throw new Exception("Item <b>$item_code</b> not found.");
+            }
+
+            if(!$itemDetails->is_stock_item){
+                throw new Exception("Item <b>$item_code</b> is not a stock item.");
+            }
+
+            if($request->barcode != $itemDetails->item_code){
+                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+            }
+
+            if($request->qty <= 0){
+                throw new Exception("Qty cannot be less than or equal to 0.");
+            }
+
+            foreach ($delivery_note->items as $item) { // Update only the specific child
+                if ($item->name === $child_id) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->item_status = 'Returned';
+                    $item->barcode_return = $request->barcode;
+                    $item->date_modified = $now->toDateTimeString();
+                    break;
+                }
+            }
+
+            $pending_items = collect($delivery_note->items)->where('name', $child_id)->where('status', 'For Checking')->count();
+            if($pending_items <= 0){
+                $delivery_note->item_status = 'Returned';
+            }
+
+            $response = $this->erpOperation('put', 'Delivery Note', $delivery_note->name, collect($delivery_note)->toArray());
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Delivery Note';
+                throw new Exception($err);
+            }
+
+            $this->insert_transaction_log('Delivery Note', $request->child_tbl_id);
+            return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been returned"]);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+        }
+    }
+
      // /submit_dr_sales_return
     public function submit_dr_sales_return(Request $request){
         DB::beginTransaction();

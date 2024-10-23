@@ -131,7 +131,7 @@
 	</form>
 </div>
 <div class="modal fade" id="dr-modal">
-	<form method="POST" action="/submit_dr_sales_return">
+	<form method="POST" action="/submit_dr_sales_return_api">
 		@csrf
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>

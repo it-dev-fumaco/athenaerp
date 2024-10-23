@@ -127,6 +127,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         Route::get('/returns', 'MainController@returns');
         Route::post('/submit_sales_return', 'MainController@submit_sales_return');
+        Route::post('/submit_dr_sales_return_api', 'MainController@submit_dr_sales_return_api');
         Route::get('/replacements', 'MainController@replacements');
         Route::get('/receipts', 'MainController@receipts');
 
