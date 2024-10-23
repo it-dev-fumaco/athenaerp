@@ -925,12 +925,12 @@ class ConsignmentController extends Controller
         })->unique()->values();
 
         $target_warehouses = collect($delivery_report->items())->flatMap(function($stock_entry) {
-            return $stock_entry->items->pluck('target_warehouses');
+            return $stock_entry->items->pluck('t_warehouse');
         })->unique()->values();
 
         $item_prices = Bin::whereIn('warehouse', $target_warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get()->groupBy(['item_code', 'warehouse']);
 
-        $ste_arr = collect($delivery_report->items())->map(function ($stock_entry) use ($item_prices){
+        $ste_arr = collect($delivery_report->items())->map(function ($stock_entry) use ($item_prices, $target_warehouses){
             $stock_entry->items = collect($stock_entry->items)->map(function ($item) use ($item_prices){
                 $item_code = $item->item_code;
                 $warehouse = $item->t_warehouse;
@@ -947,6 +947,7 @@ class ConsignmentController extends Controller
                 $item->price = $price;
                 return $item;
             });
+            $stock_entry->to_warehouse = collect($target_warehouses)->first();
 
             if($stock_entry->item_status == 'Issued' && Carbon::parse($stock_entry->delivery_date)->lt(Carbon::now())){
                 $status = 'Delivered';
@@ -2323,6 +2324,7 @@ class ConsignmentController extends Controller
             
             return redirect('consignment/replenish')->with('success', "Request submitted.");
         } catch (Exception $th) {
+            throw $th;
             return redirect()->back()->with('error', $th->getMessage());
         }
     }
