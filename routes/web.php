@@ -66,6 +66,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/material_issue', 'MainController@view_material_issue');
         Route::get('/material_transfer_for_manufacture', 'MainController@view_material_transfer_for_manufacture');
         Route::get('/material_transfer', 'MainController@view_material_transfer');
+        Route::post('/submit_internal_transfer', 'MainController@submit_internal_transfer');
         Route::get('/picking_slip', 'MainController@view_picking_slip');
         Route::get('/production_to_receive', 'MainController@view_production_to_receive');
         Route::get('/recently_received_items', 'MainController@recently_received_items');

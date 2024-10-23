@@ -2039,6 +2039,167 @@ class MainController extends Controller
         }
     }
 
+    public function submit_internal_transfer(Request $request){
+        try {
+            $child_id = $request->child_tbl_id;
+            $stock_entry = StockEntry::with('items')->whereHas('items', function ($item) use ($child_id){
+                return $item->where('name', $child_id);
+            })->first();
+
+            $now = Carbon::now();
+
+            if(!$stock_entry){
+                throw new Exception('Record not found');
+            }
+
+            $stock_entry->qty = (float) $stock_entry->qty;
+
+            $stock_entry_item = collect($stock_entry->items)->where('name', $child_id)->first();
+            $item_code = $stock_entry_item->item_code;
+            $itemDetails = Item::find($item_code);
+
+            if(in_array($stock_entry->item_status, ['Issued', 'Returned'])){
+                throw new Exception("Item already $stock_entry->item_status");
+            }
+
+            if($stock_entry->docstatus == 1){
+                throw new Exception('Item already issued.');
+            }
+
+            if(!$itemDetails){
+                throw new Exception("Item <b>$item_code</b> not found.");
+            }
+
+            if($itemDetails->is_stock_item == 0){
+                throw new Exception("Item <b>$item_code</b> is not a stock item.");
+            }
+
+            if($request->barcode != $item_code){
+                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+            }
+
+            if($request->qty <= 0){
+                throw new Exception("Qty cannot be less than or equal to 0.");
+            }
+
+            if($stock_entry->material_request){
+                $mreq_issued_qty = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+                    ->where('sted.s_warehouse', $stock_entry_item->s_warehouse)->where('sted.t_warehouse', $stock_entry_item->t_warehouse)
+                    ->where('ste.material_request', $stock_entry->material_request)->where('ste.docstatus', 1)
+                    ->where('purpose', 'Material Transfer')->where('sted.item_code', $item_code)
+                    ->where('sted.status', 'Issued')->where('ste.docstatus', '<', 2)->sum('issued_qty');
+
+                $mreq_qry = MaterialRequest::with(['items' => function ($item) use ($item_code){
+                        $item->where('item_code', $item_code);
+                    }])->whereHas('items', function ($item) use ($item_code){
+                        $item->where('item_code', $item_code);
+                    })->find($stock_entry->material_request);
+
+                if(!$mreq_qry){
+                    throw new Exception("Item $item_code not found in $stock_entry->material_request<br/>Please contact MREQ owner: $stock_entry->requested_by");
+                }
+
+                $mreq_item = collect($mreq_qry->items)->first();
+                $mreq_requested_qty = $mreq_item->qty;
+                if($mreq_issued_qty >= $mreq_requested_qty){
+                    $mreq_issued_qty = number_format($mreq_issued_qty);
+                    $mreq_requested_qty = number_format($mreq_requested_qty);
+                    throw new Exception("Issued qty cannot be greater than requested qty<br/>Total Issued Qty: $mreq_issued_qty<br/>Requested Qty: $mreq_requested_qty<br/>Please contact MREQ owner: '.$stock_entry->requested_by");
+                }
+
+                if($request->qty > ($mreq_requested_qty - $mreq_issued_qty)){
+                    $diff = $mreq_requested_qty - $mreq_issued_qty;
+                    throw new Exception("Qty cannot be greater than $diff.");
+                }
+            }
+
+            $unissued_qty = $stock_entry_item->qty - $request->qty;
+
+            if($unissued_qty > 0){
+                $unissued_stock_entry = [
+                    'title' => 'Material Transfer',
+                    'naming_series' => 'STE-',
+                    'company' => 'FUMACO Inc.',
+                    'project' => $stock_entry->project,
+                    'work_order' => $stock_entry->work_order,
+                    'purpose' => 'Material Transfer',
+                    'stock_entry_type' => 'Material Transfer',
+                    'material_request' => $stock_entry->material_request,
+                    'item_status' => 'For Checking',
+                    'sales_order_no' => $stock_entry->sales_order_no,
+                    'transfer_as' => 'For Return',
+                    'item_classification' => $stock_entry->item_classification,
+                    'so_customer_name' => $stock_entry->so_customer_name,
+                    'order_type' => $stock_entry->order_type,
+                    'items' => [[
+                        't_warehouse' => $stock_entry_item->t_warehouse,
+                        'transfer_qty' => $unissued_qty,
+                        'expense_account' => 'Cost of Goods Sold - FI',
+                        'cost_center' => 'Main - FI',
+                        's_warehouse' => $stock_entry_item->s_warehouse,
+                        'item_code' => $item_code,
+                        'qty' => $unissued_qty
+                    ]]
+                ];
+
+                $unissued_response = $this->erpOperation('post', 'Stock Entry', null, $unissued_stock_entry);
+                if(!isset($unissued_response['data'])){
+                    $err = isset($unissued_response['exception']) ? $unissued_response['exception'] : 'An error occured while submitting Stock entry for unissued items';
+                    throw new Exception($err);
+                }
+            }
+
+            foreach ($stock_entry->items as $item) { // Update only the specific child
+                if ($item->name === $child_id) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->status = 'Issued';
+                    $item->transfer_qty = $request->qty;
+                    $item->qty = $request->qty;
+                    $item->issued_qty = $request->qty;
+                    $item->validate_item_code = $request->barcode;
+                    $item->date_modified = $now->toDateTimeString();
+                    break;
+                }
+            }
+
+            $checker = collect($stock_entry->items)->where('name', '!=', $child_id)->where('status', 'For Checking')->count();
+            if(!$checker){
+                $stock_entry->item_status = 'Issued';
+                $stock_entry->docstatus = 1;
+            }
+
+            if($stock_entry->naming_series == 'STEC'){ // for consignment
+                foreach ($stock_entry->items as $item) { // Update only the specific child
+                    if ($item->name === $child_id) {
+                        $item->consignment_status = 'Received';
+                        $item->consignment_date_received = Carbon::now()->toDateTimeString();
+                        $item->consignment_received_by = Auth::user()->wh_user;
+                        break;
+                    }
+                }
+                
+                $consignment_checker = collect($stock_entry->items)->where('name', '!=', $child_id)->where('consignment_status', 'To Receive')->count();
+                if(!$consignment_checker){
+                    $stock_entry->consignment_status = 'Received';
+                    $stock_entry->consignment_date_received = Carbon::now()->toDateTimeString();
+                    $stock_entry->consignment_received_by = Auth::user()->wh_user;
+                }
+            }
+
+            $response = $this->erpOperation('put', 'Stock Entry', $stock_entry->name, collect($stock_entry)->toArray());
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
+                throw new Exception($err);
+            }
+
+            return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been checked out."]);
+        } catch (\Throwable $th) {
+            throw $th;
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+        }
+    }
+
     // /submit_transaction
     public function submit_transaction(Request $request){
         DB::beginTransaction();
