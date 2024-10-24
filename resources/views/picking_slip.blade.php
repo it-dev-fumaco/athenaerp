@@ -157,7 +157,7 @@
 	</form>
 </div>
 <div class="modal fade" id="ps-modal">
-	<form method="POST" action="/checkout_picking_slip_item">
+	<form method="POST" action="/checkout_picking_slip">
 		@csrf
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>
