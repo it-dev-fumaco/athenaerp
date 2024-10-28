@@ -1019,6 +1019,10 @@ class ConsignmentController extends Controller
                 }
             }
 
+            if(!isset($stock_entry['to_warehouse']) && $stock_entry['items'][0]['t_warehouse']){
+                $stock_entry['to_warehouse'] = $stock_entry['items'][0]['t_warehouse'];
+            }
+
             $default_source_warehouse = isset($stock_entry['from_warehouse']) ? $stock_entry['from_warehouse'] : null;
             $default_target_warehouse = isset($stock_entry['to_warehouse']) ? $stock_entry['to_warehouse'] : null;
 
