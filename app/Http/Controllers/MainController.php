@@ -2852,7 +2852,7 @@ class MainController extends Controller
             return response()->json([
                 'status' => 0, 
                 'modal_title' => 'Error', 
-                'modal_message' => 'Error creating transaction.'
+                'modal_message' => $th->getMessage()
             ]);
         }
     }
@@ -2981,7 +2981,7 @@ class MainController extends Controller
             return response()->json([
                 'status' => 0, 
                 'modal_title' => 'Error', 
-                'message' => 'Error creating transaction.'
+                'message' => $th->getMessage()
             ]);
         }
     }
