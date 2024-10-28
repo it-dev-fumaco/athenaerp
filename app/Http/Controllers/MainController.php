@@ -2036,7 +2036,7 @@ class MainController extends Controller
 
             return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been returned"]);
         }catch(Exception $e){
-            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+            return response()->json(['status' => 0, 'message' => $e->getMessage()]);
         }
     }
 
@@ -2211,43 +2211,43 @@ class MainController extends Controller
             $now = Carbon::now();
 
             if(!$steDetails){
-                return response()->json(['status' => 0, 'message' => 'Record not found.']);
+                return response()->json(['status' => 0, 'message' => 'Record not found.'], 500);
             }
 
             if(in_array($steDetails->per_item_status, ['Issued', 'Returned'])){
-                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.']);
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.'], 500);
             }
 
             if($steDetails->se_status == 1){
-                return response()->json(['status' => 0, 'message' => 'Item already issued.']);
+                return response()->json(['status' => 0, 'message' => 'Item already issued.'], 500);
             }
 
             $itemDetails = DB::table('tabItem')->where('name', $steDetails->item_code)->first();
             if(!$itemDetails){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> not found.']);
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> not found.'], 500);
             }
 
             if($itemDetails->is_stock_item == 0){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> is not a stock item.']);
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> is not a stock item.'], 500);
             }
 
             if($request->barcode != $itemDetails->item_code){
-                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.']);
+                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.'], 500);
             }
 
             if($request->qty <= 0){
-                return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.'], 500);
             }
 
             if($steDetails->purpose != 'Material Transfer for Manufacture' && $request->qty > $steDetails->qty){
-                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.'], 500);
             }
 
             $available_qty = $this->get_available_qty($steDetails->item_code, $steDetails->s_warehouse);
             if($steDetails->purpose != 'Material Receipt' && $request->deduct_reserve == 0){
                 if($request->qty > $available_qty){
                     return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><
-                    br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
+                    br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.'], 500);
                 }
             }
 
@@ -2261,7 +2261,7 @@ class MainController extends Controller
             $remaining_reserved = $remaining_reserved > 0 ? $remaining_reserved : 0;
 
             if($request->qty > $remaining_reserved && $request->deduct_reserve == 1){ // For deduct from reserved, if requested qty is more than the reserved qty
-                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.']);
+                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.'], 500);
             }
 
             if ($steDetails->purpose == 'Material Transfer' && $steDetails->material_request){
@@ -2278,17 +2278,17 @@ class MainController extends Controller
                     ->select('mri.item_code', 'mri.qty')->first();
 
                 if(!$mreq_qry){
-                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
+                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please contact MREQ owner: '.$steDetails->requested_by], 500);
                 }
 
                 $mreq_requested_qty = $mreq_qry->qty;
 
                 if($mreq_issued_qty >= $mreq_requested_qty){
-                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
+                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please contact MREQ owner: '.$steDetails->requested_by], 500);
                 }
 
                 if($request->qty > ($mreq_requested_qty - $mreq_issued_qty)){
-                    return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than '.($mreq_requested_qty - $mreq_issued_qty).'.']);
+                    return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than '.($mreq_requested_qty - $mreq_issued_qty).'.'], 500);
                 }
             }
 
@@ -2333,7 +2333,7 @@ class MainController extends Controller
                     ->where('name', $steDetails->work_order)->where('docstatus', 2)->first();
 
                 if($cancelled_production_order){
-                    return response()->json(['status' => 0, 'message' => 'Production Order ' . $cancelled_production_order->name . ' was cancelled. Please reload the page.']);
+                    return response()->json(['status' => 0, 'message' => 'Production Order ' . $cancelled_production_order->name . ' was cancelled. Please reload the page.'], 500);
                 }
 
                 $this->submit_stock_entry($steDetails->parent_se);
@@ -2600,13 +2600,13 @@ class MainController extends Controller
                 if($steDetails->s_warehouse){
                     $actual_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
                     if(number_format($expected_qty_in_source, 4, '.', '') != number_format($actual_qty_in_source, 4, '.', '')){
-                        return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
+                        return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.'], 500);
                     }
                 }
                 
                 $actual_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
                 if(number_format($expected_qty_in_target, 4, '.', '') != number_format($actual_qty_in_target, 4, '.', '')){
-                    return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
+                    return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.'], 500);
                 }
             }
         
@@ -2624,7 +2624,7 @@ class MainController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.'], 500);
         }
     }
 
