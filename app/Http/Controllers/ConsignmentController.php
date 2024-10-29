@@ -925,12 +925,12 @@ class ConsignmentController extends Controller
         })->unique()->values();
 
         $target_warehouses = collect($delivery_report->items())->flatMap(function($stock_entry) {
-            return $stock_entry->items->pluck('target_warehouses');
+            return $stock_entry->items->pluck('t_warehouse');
         })->unique()->values();
 
         $item_prices = Bin::whereIn('warehouse', $target_warehouses)->whereIn('item_code', $item_codes)->select('warehouse', 'consignment_price', 'item_code')->get()->groupBy(['item_code', 'warehouse']);
 
-        $ste_arr = collect($delivery_report->items())->map(function ($stock_entry) use ($item_prices){
+        $ste_arr = collect($delivery_report->items())->map(function ($stock_entry) use ($item_prices, $target_warehouses){
             $stock_entry->items = collect($stock_entry->items)->map(function ($item) use ($item_prices){
                 $item_code = $item->item_code;
                 $warehouse = $item->t_warehouse;
@@ -947,6 +947,7 @@ class ConsignmentController extends Controller
                 $item->price = $price;
                 return $item;
             });
+            $stock_entry->to_warehouse = collect($target_warehouses)->first();
 
             if($stock_entry->item_status == 'Issued' && Carbon::parse($stock_entry->delivery_date)->lt(Carbon::now())){
                 $status = 'Delivered';
@@ -1018,6 +1019,10 @@ class ConsignmentController extends Controller
                 }
             }
 
+            if(!isset($stock_entry['to_warehouse']) && $stock_entry['items'][0]['t_warehouse']){
+                $stock_entry['to_warehouse'] = $stock_entry['items'][0]['t_warehouse'];
+            }
+
             $default_source_warehouse = isset($stock_entry['from_warehouse']) ? $stock_entry['from_warehouse'] : null;
             $default_target_warehouse = isset($stock_entry['to_warehouse']) ? $stock_entry['to_warehouse'] : null;
 
@@ -1048,11 +1053,11 @@ class ConsignmentController extends Controller
                     return "Item $item_code does not exist in $target_warehouse";
                 }
 
-                $source_warehouse_consigned_qty = $source_warehouse_details[$source_warehouse][$item_code][0]->consigned_qty;
+                // $source_warehouse_consigned_qty = $source_warehouse_details[$source_warehouse][$item_code][0]->consigned_qty;
 
-                if($item['transfer_qty'] > $source_warehouse_consigned_qty){
-                    return "Insufficient stocks for item $item_code from $source_warehouse";
-                }
+                // if($item['transfer_qty'] > $source_warehouse_consigned_qty){
+                //     return "Insufficient stocks for item $item_code from $source_warehouse";
+                // }
                 
                 return null;
             })->filter();
@@ -2323,6 +2328,7 @@ class ConsignmentController extends Controller
             
             return redirect('consignment/replenish')->with('success', "Request submitted.");
         } catch (Exception $th) {
+            throw $th;
             return redirect()->back()->with('error', $th->getMessage());
         }
     }

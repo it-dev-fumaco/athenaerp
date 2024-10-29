@@ -139,7 +139,7 @@
 </div>
 
 <div class="modal fade" id="ste-modal">
-	<form method="POST" action="/submit_transaction">
+	<form method="POST" action="/submit_internal_transfer">
 		@csrf
 		<div class="modal-dialog" style="min-width: 35% !important;"></div>
 	</form>

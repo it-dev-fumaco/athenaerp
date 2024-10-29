@@ -66,7 +66,9 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/material_issue', 'MainController@view_material_issue');
         Route::get('/material_transfer_for_manufacture', 'MainController@view_material_transfer_for_manufacture');
         Route::get('/material_transfer', 'MainController@view_material_transfer');
+        Route::post('/submit_internal_transfer', 'MainController@submit_internal_transfer');
         Route::get('/picking_slip', 'MainController@view_picking_slip');
+        Route::post('/checkout_picking_slip', 'MainController@checkout_picking_slip');
         Route::get('/production_to_receive', 'MainController@view_production_to_receive');
         Route::get('/recently_received_items', 'MainController@recently_received_items');
 
@@ -126,6 +128,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::post('/update_stock_entry', 'MainController@update_stock_entry');
 
         Route::get('/returns', 'MainController@returns');
+        Route::post('/submit_sales_return', 'MainController@submit_sales_return');
+        Route::post('/submit_dr_sales_return_api', 'MainController@submit_dr_sales_return_api');
         Route::get('/replacements', 'MainController@replacements');
         Route::get('/receipts', 'MainController@receipts');
 

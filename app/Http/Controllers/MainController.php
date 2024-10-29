@@ -28,6 +28,7 @@ use App\Models\ItemImages;
 use App\Models\DeliveryNote;
 use App\Models\MaterialRequest;
 use App\Models\MaterialRequestItem;
+use App\Models\PackingSlip;
 use App\Models\Project;
 use App\Models\SalesOrder;
 use App\Models\StockEntry;
@@ -1966,6 +1967,240 @@ class MainController extends Controller
         return view('deliveries_modal_content', compact('data', 'is_stock_entry'));
     }
 
+    public function submit_sales_return(Request $request){
+        try{
+            $child_id = $request->child_tbl_id;
+            $stock_entry = StockEntry::with('items')->whereHas('items', function ($item) use ($child_id){
+                return $item->where('name', $child_id);
+            })->first();
+
+            $now = Carbon::now();
+
+            if(!$stock_entry){
+                throw new Exception('Record not found');
+            }
+
+            $stock_entry->qty = (float) $stock_entry->qty;
+
+            $stock_entry_item = collect($stock_entry->items)->where('name', $child_id)->first();
+            $item_code = $stock_entry_item->item_code;
+            $itemDetails = Item::find($item_code);
+
+            if(in_array($stock_entry->item_status, ['Issued', 'Returned'])){
+                throw new Exception("Item already $stock_entry->item_status");
+            }
+
+            if($stock_entry->docstatus == 1){
+                throw new Exception('Item already issued.');
+            }
+
+            if(!$itemDetails){
+                throw new Exception("Item <b>$item_code</b> not found.");
+            }
+
+            if($itemDetails->is_stock_item == 0){
+                throw new Exception("Item <b>$item_code</b> is not a stock item.");
+            }
+
+            if($request->barcode != $item_code){
+                throw new Exception("Invalid barcode for <b>$item_code</b>.");
+            }
+
+            if($request->qty <= 0){
+                throw new Exception("Qty cannot be less than or equal to 0.");
+            }
+
+            foreach ($stock_entry->items as $item) { // Update only the specific child
+                if ($item->name === $child_id) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->status = 'Returned';
+                    $item->transfer_qty = $request->qty;
+                    $item->qty = $request->qty;
+                    $item->issued_qty = $request->qty;
+                    $item->validate_item_code = $request->barcode;
+                    $item->date_modified = $now->toDateTimeString();
+                    break;
+                }
+            }
+
+            $pending_items = collect($stock_entry->items)->where('name', $child_id)->where('status', 'For Checking')->count();
+            if($pending_items <= 0){
+                $stock_entry->item_status = 'Returned';
+            }
+
+            $response = $this->erpOperation('put', 'Stock Entry', $stock_entry->name, collect($stock_entry)->toArray());
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
+                throw new Exception($err);
+            }
+
+            return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been returned"]);
+        }catch(Exception $e){
+            return response()->json(['status' => 0, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function submit_internal_transfer(Request $request){
+        try {
+            $child_id = $request->child_tbl_id;
+            $stock_entry = StockEntry::with('items')->whereHas('items', function ($item) use ($child_id){
+                return $item->where('name', $child_id);
+            })->first();
+
+            $now = Carbon::now();
+
+            if(!$stock_entry){
+                throw new Exception('Record not found');
+            }
+
+            $stock_entry->qty = (float) $stock_entry->qty;
+
+            $stock_entry_item = collect($stock_entry->items)->where('name', $child_id)->first();
+            $item_code = $stock_entry_item->item_code;
+            $itemDetails = Item::find($item_code);
+
+            if(in_array($stock_entry->item_status, ['Issued', 'Returned'])){
+                throw new Exception("Item already $stock_entry->item_status");
+            }
+
+            if($stock_entry->docstatus == 1){
+                throw new Exception('Item already issued.');
+            }
+
+            if(!$itemDetails){
+                throw new Exception("Item <b>$item_code</b> not found.");
+            }
+
+            if($itemDetails->is_stock_item == 0){
+                throw new Exception("Item <b>$item_code</b> is not a stock item.");
+            }
+
+            if($request->barcode != $item_code){
+                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+            }
+
+            if($request->qty <= 0){
+                throw new Exception("Qty cannot be less than or equal to 0.");
+            }
+
+            if($stock_entry->material_request){
+                $mreq_issued_qty = DB::table('tabStock Entry as ste')
+                    ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+                    ->where('sted.s_warehouse', $stock_entry_item->s_warehouse)->where('sted.t_warehouse', $stock_entry_item->t_warehouse)
+                    ->where('ste.material_request', $stock_entry->material_request)->where('ste.docstatus', 1)
+                    ->where('purpose', 'Material Transfer')->where('sted.item_code', $item_code)
+                    ->where('sted.status', 'Issued')->where('ste.docstatus', '<', 2)->sum('issued_qty');
+
+                $mreq_qry = MaterialRequest::with(['items' => function ($item) use ($item_code){
+                        $item->where('item_code', $item_code);
+                    }])->whereHas('items', function ($item) use ($item_code){
+                        $item->where('item_code', $item_code);
+                    })->find($stock_entry->material_request);
+
+                if(!$mreq_qry){
+                    throw new Exception("Item $item_code not found in $stock_entry->material_request<br/>Please contact MREQ owner: $stock_entry->requested_by");
+                }
+
+                $mreq_item = collect($mreq_qry->items)->first();
+                $mreq_requested_qty = $mreq_item->qty;
+                if($mreq_issued_qty >= $mreq_requested_qty){
+                    $mreq_issued_qty = number_format($mreq_issued_qty);
+                    $mreq_requested_qty = number_format($mreq_requested_qty);
+                    throw new Exception("Issued qty cannot be greater than requested qty<br/>Total Issued Qty: $mreq_issued_qty<br/>Requested Qty: $mreq_requested_qty<br/>Please contact MREQ owner: '.$stock_entry->requested_by");
+                }
+
+                if($request->qty > ($mreq_requested_qty - $mreq_issued_qty)){
+                    $diff = $mreq_requested_qty - $mreq_issued_qty;
+                    throw new Exception("Qty cannot be greater than $diff.");
+                }
+            }
+
+            $unissued_qty = $stock_entry_item->qty - $request->qty;
+
+            if($unissued_qty > 0){
+                $unissued_stock_entry = [
+                    'title' => 'Material Transfer',
+                    'naming_series' => 'STE-',
+                    'company' => 'FUMACO Inc.',
+                    'project' => $stock_entry->project,
+                    'work_order' => $stock_entry->work_order,
+                    'purpose' => 'Material Transfer',
+                    'stock_entry_type' => 'Material Transfer',
+                    'material_request' => $stock_entry->material_request,
+                    'item_status' => 'For Checking',
+                    'sales_order_no' => $stock_entry->sales_order_no,
+                    'transfer_as' => 'For Return',
+                    'item_classification' => $stock_entry->item_classification,
+                    'so_customer_name' => $stock_entry->so_customer_name,
+                    'order_type' => $stock_entry->order_type,
+                    'items' => [[
+                        't_warehouse' => $stock_entry_item->t_warehouse,
+                        'transfer_qty' => $unissued_qty,
+                        'expense_account' => 'Cost of Goods Sold - FI',
+                        'cost_center' => 'Main - FI',
+                        's_warehouse' => $stock_entry_item->s_warehouse,
+                        'item_code' => $item_code,
+                        'qty' => $unissued_qty
+                    ]]
+                ];
+
+                $unissued_response = $this->erpOperation('post', 'Stock Entry', null, $unissued_stock_entry);
+                if(!isset($unissued_response['data'])){
+                    $err = isset($unissued_response['exception']) ? $unissued_response['exception'] : 'An error occured while submitting Stock entry for unissued items';
+                    throw new Exception($err);
+                }
+            }
+
+            foreach ($stock_entry->items as $item) { // Update only the specific child
+                if ($item->name === $child_id) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->status = 'Issued';
+                    $item->transfer_qty = $request->qty;
+                    $item->qty = $request->qty;
+                    $item->issued_qty = $request->qty;
+                    $item->validate_item_code = $request->barcode;
+                    $item->date_modified = $now->toDateTimeString();
+                    break;
+                }
+            }
+
+            $checker = collect($stock_entry->items)->where('name', '!=', $child_id)->where('status', 'For Checking')->count();
+            if(!$checker){
+                $stock_entry->item_status = 'Issued';
+                $stock_entry->docstatus = 1;
+            }
+
+            if($stock_entry->naming_series == 'STEC'){ // for consignment
+                foreach ($stock_entry->items as $item) { // Update only the specific child
+                    if ($item->name === $child_id) {
+                        $item->consignment_status = 'Received';
+                        $item->consignment_date_received = Carbon::now()->toDateTimeString();
+                        $item->consignment_received_by = Auth::user()->wh_user;
+                        break;
+                    }
+                }
+                
+                $consignment_checker = collect($stock_entry->items)->where('name', '!=', $child_id)->where('consignment_status', 'To Receive')->count();
+                if(!$consignment_checker){
+                    $stock_entry->consignment_status = 'Received';
+                    $stock_entry->consignment_date_received = Carbon::now()->toDateTimeString();
+                    $stock_entry->consignment_received_by = Auth::user()->wh_user;
+                }
+            }
+
+            $response = $this->erpOperation('put', 'Stock Entry', $stock_entry->name, collect($stock_entry)->toArray());
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
+                throw new Exception($err);
+            }
+
+            return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been checked out."]);
+        } catch (\Throwable $th) {
+            throw $th;
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+        }
+    }
+
     // /submit_transaction
     public function submit_transaction(Request $request){
         DB::beginTransaction();
@@ -1976,43 +2211,43 @@ class MainController extends Controller
             $now = Carbon::now();
 
             if(!$steDetails){
-                return response()->json(['status' => 0, 'message' => 'Record not found.']);
+                return response()->json(['status' => 0, 'message' => 'Record not found.'], 500);
             }
 
             if(in_array($steDetails->per_item_status, ['Issued', 'Returned'])){
-                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.']);
+                return response()->json(['status' => 0, 'message' => 'Item already ' . $steDetails->per_item_status . '.'], 500);
             }
 
             if($steDetails->se_status == 1){
-                return response()->json(['status' => 0, 'message' => 'Item already issued.']);
+                return response()->json(['status' => 0, 'message' => 'Item already issued.'], 500);
             }
 
             $itemDetails = DB::table('tabItem')->where('name', $steDetails->item_code)->first();
             if(!$itemDetails){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> not found.']);
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> not found.'], 500);
             }
 
             if($itemDetails->is_stock_item == 0){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> is not a stock item.']);
+                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $steDetails->item_code . '</b> is not a stock item.'], 500);
             }
 
             if($request->barcode != $itemDetails->item_code){
-                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.']);
+                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.'], 500);
             }
 
             if($request->qty <= 0){
-                return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.'], 500);
             }
 
             if($steDetails->purpose != 'Material Transfer for Manufacture' && $request->qty > $steDetails->qty){
-                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.']);
+                return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($steDetails->qty * 1) .'.'], 500);
             }
 
             $available_qty = $this->get_available_qty($steDetails->item_code, $steDetails->s_warehouse);
             if($steDetails->purpose != 'Material Receipt' && $request->deduct_reserve == 0){
                 if($request->qty > $available_qty){
                     return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><
-                    br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
+                    br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.'], 500);
                 }
             }
 
@@ -2026,7 +2261,7 @@ class MainController extends Controller
             $remaining_reserved = $remaining_reserved > 0 ? $remaining_reserved : 0;
 
             if($request->qty > $remaining_reserved && $request->deduct_reserve == 1){ // For deduct from reserved, if requested qty is more than the reserved qty
-                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.']);
+                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remaining_reserved . '</b>, you need <b>' . $request->qty . '</b>.'], 500);
             }
 
             if ($steDetails->purpose == 'Material Transfer' && $steDetails->material_request){
@@ -2043,17 +2278,17 @@ class MainController extends Controller
                     ->select('mri.item_code', 'mri.qty')->first();
 
                 if(!$mreq_qry){
-                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
+                    return response()->json(['status' => 0, 'message' => 'Item '.$steDetails->item_code.' not found in '.$steDetails->material_request.'<br/>Please contact MREQ owner: '.$steDetails->requested_by], 500);
                 }
 
                 $mreq_requested_qty = $mreq_qry->qty;
 
                 if($mreq_issued_qty >= $mreq_requested_qty){
-                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please contact MREQ owner: '.$steDetails->requested_by]);
+                    return response()->json(['status' => 0, 'message' => 'Issued qty cannot be greater than requested qty<br/>Total Issued Qty: '.number_format($mreq_issued_qty).'<br/>Requested Qty: '.number_format($mreq_requested_qty).'<br/>Please contact MREQ owner: '.$steDetails->requested_by], 500);
                 }
 
                 if($request->qty > ($mreq_requested_qty - $mreq_issued_qty)){
-                    return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than '.($mreq_requested_qty - $mreq_issued_qty).'.']);
+                    return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than '.($mreq_requested_qty - $mreq_issued_qty).'.'], 500);
                 }
             }
 
@@ -2098,7 +2333,7 @@ class MainController extends Controller
                     ->where('name', $steDetails->work_order)->where('docstatus', 2)->first();
 
                 if($cancelled_production_order){
-                    return response()->json(['status' => 0, 'message' => 'Production Order ' . $cancelled_production_order->name . ' was cancelled. Please reload the page.']);
+                    return response()->json(['status' => 0, 'message' => 'Production Order ' . $cancelled_production_order->name . ' was cancelled. Please reload the page.'], 500);
                 }
 
                 $this->submit_stock_entry($steDetails->parent_se);
@@ -2140,36 +2375,138 @@ class MainController extends Controller
 
                 $unissued_qty = $steDetails->qty - $request->qty;
 
-                if($unissued_qty > 0){
+                if($unissued_qty > 0){ // For partial returns create new STE for the remaining qty
+                    $actual_qty = DB::table('tabBin')->where('item_code', $steDetails->item_code)->where('warehouse', $steDetails->s_warehouse)->pluck('actual_qty')->first();
+                    $latest_ste = DB::table('tabStock Entry')->where('name', 'like', '%step%')->max('name');
+                    $latest_ste_exploded = explode("-", $latest_ste);
+                    $new_id = (($latest_ste) ? $latest_ste_exploded[1] : 0) + 1;
+                    $new_id = str_pad($new_id, 6, '0', STR_PAD_LEFT);
+                    $new_id = 'STEP-'.$new_id;
+
                     $stock_entry_detail = [
+                        'name' =>  uniqid(),
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'parent' => $new_id,
+                        'parentfield' => 'items',
+                        'parenttype' => 'Stock Entry',
+                        'idx' => 1,
                         't_warehouse' => $steDetails->t_warehouse,
                         'transfer_qty' => $unissued_qty,
+                        'serial_no' => null,
                         'expense_account' => 'Cost of Goods Sold - FI',
                         'cost_center' => 'Main - FI',
+                        'actual_qty' => $actual_qty,
                         's_warehouse' => $steDetails->s_warehouse,
+                        'item_name' => $steDetails->item_name,
+                        'image' => null,
+                        'additional_cost' => 0,
+                        'stock_uom' => $steDetails->stock_uom,
+                        'basic_amount' => $steDetails->basic_rate * $unissued_qty,
+                        'sample_quantity' => 0,
+                        'uom' => $steDetails->uom,
+                        'basic_rate' => $steDetails->basic_rate,
+                        'description' => $steDetails->description,
+                        'barcode' => null,
+                        'conversion_factor' => $steDetails->conversion_factor,
                         'item_code' => $steDetails->item_code,
+                        'retain_sample' => 0,
                         'qty' => $unissued_qty,
+                        'bom_no' => null,
+                        'allow_zero_valuation_rate' => 0,
+                        'material_request_item' => null,
+                        'amount' => $steDetails->basic_rate * $unissued_qty,
+                        'batch_no' => null,
+                        'valuation_rate' => $steDetails->valuation_rate,
+                        'material_request' => null,
+                        't_warehouse_personnel' => null,
+                        's_warehouse_personnel' => null,
+                        'target_warehouse_location' => null,
+                        'source_warehouse_location' => null,
+                        'status' => 'For Checking',
+                        'date_modified' => null,
+                        'session_user' => null,
+                        'remarks' => null,
+                        'return_reference' => $new_id
                     ];
 
                     $stock_entry_data = [
+                        'name' => $new_id,
+                        'creation' => $now->toDateTimeString(),
+                        'modified' => $now->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'owner' => Auth::user()->wh_user,
+                        'docstatus' => 0,
+                        'idx' => 0,
+                        'use_multi_level_bom' => 0,
+                        'delivery_note_no' => null,
                         'naming_series' => 'STE-',
+                        'fg_completed_qty' => 0,
+                        'letter_head' => null,
+                        '_liked_by' => null,
+                        'purchase_receipt_no' => null,
+                        'posting_time' => $now->format('H:i:s'),
+                        'to_warehouse' => null,
+                        'title' => 'Material Transfer',
+                        '_comments' => null,
+                        'from_warehouse' => null,
+                        'set_posting_time' => 0,
+                        'purchase_order' => null,
+                        'from_bom' => 0,
+                        'supplier_address' => null,
+                        'supplier' => null,
+                        'source_address_display' => null,
+                        'address_display' => null,
+                        'source_warehouse_address' => null,
+                        'value_difference' => 0,
+                        'credit_note' => null,
+                        'sales_invoice_no' => null,
+                        'company' => 'FUMACO Inc.',
+                        'target_warehouse_address' => null,
+                        'total_outgoing_value' => collect($stock_entry_detail)->sum('basic_amount'),
+                        'supplier_name' => null,
+                        'remarks' => null,
+                        '_user_tags' => null,
+                        'total_additional_costs' => 0,
+                        'bom_no' => null,
+                        'amended_from' => null,
+                        'total_amount' => collect($stock_entry_detail)->sum('basic_amount'),
+                        'total_incoming_value' => collect($stock_entry_detail)->sum('basic_amount'),
                         'project' => $steDetails->project,
+                        '_assign' => null,
+                        'select_print_heading' => null,
+                        'posting_date' => $now->format('Y-m-d'),
+                        'target_address_display' => null,
                         'work_order' => $steDetails->work_order,
                         'purpose' => 'Material Transfer',
                         'stock_entry_type' => 'Material Transfer',
+                        'shipping_address_contact_person' => null,
+                        'customer_1' => null,
                         'material_request' => $steDetails->material_request,
+                        'reference_no' => null,
+                        'delivery_date' => null,
+                        'delivery_address' => null,
+                        'city' => null,
+                        'address_line_2' => null,
+                        'address_line_1' => null,
                         'item_status' => 'For Checking',
                         'sales_order_no' => $steDetails->sales_order_no,
                         'transfer_as' => 'For Return',
+                        'workflow_state' => null,
+                        'item_classification' => $steDetails->item_classification,
+                        'bom_repack' => null,
+                        'qty_repack' => 0,
+                        'issue_as' => null,
+                        'receive_as' => null,
+                        'so_customer_name' => $steDetails->so_customer_name,
                         'order_type' => $steDetails->order_type,
-                        'items' => [$stock_entry_detail]
                     ];
 
-                    $unissued_response = $this->erpOperation('post', 'Stock Entry', null, $stock_entry_data);
-                    if(!isset($unissued_response['data'])){
-                        $err = isset($unissued_response['exception']) ? $unissued_response['exception'] : 'An error occured while generating Stock Entry';
-                        throw new Exception($err);
-                    }
+                    DB::table('tabStock Entry Detail')->insert($stock_entry_detail);
+                    DB::table('tabStock Entry')->insert($stock_entry_data);
                 }
 
                 // Returns from Consignment Function
@@ -2263,17 +2600,17 @@ class MainController extends Controller
                 if($steDetails->s_warehouse){
                     $actual_qty_in_source = $this->get_actual_qty($steDetails->item_code, $steDetails->s_warehouse);
                     if(number_format($expected_qty_in_source, 4, '.', '') != number_format($actual_qty_in_source, 4, '.', '')){
-                        return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
+                        return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.'], 500);
                     }
                 }
                 
                 $actual_qty_in_target = $this->get_actual_qty($steDetails->item_code, $steDetails->t_warehouse);
                 if(number_format($expected_qty_in_target, 4, '.', '') != number_format($actual_qty_in_target, 4, '.', '')){
-                    return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.']);
+                    return response()->json(['success' => 0, 'message' => 'There was a problem submitting transaction. Please reload the page and try again.'], 500);
                 }
             }
         
-            // DB::commit();
+            DB::commit();
 
             if($request->deduct_reserve == 1) {
                 return response()->json(['status' => 1, 'message' => 'Item ' . $steDetails->item_code . ' has been deducted from reservation.']);
@@ -2287,7 +2624,7 @@ class MainController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.'], 500);
         }
     }
 
@@ -2441,6 +2778,211 @@ class MainController extends Controller
             return $item_status;
         } catch (\Exception $e) {
             DB::rollback();
+        }
+    }
+
+    public function checkout_picking_slip_bundled($packing_slip, $child_id, $request){
+        DB::connection('mysql')->beginTransaction();
+        try {
+            $now = Carbon::now();
+            $packed_items = collect($packing_slip->items)->filter(function ($item) use ($request) {
+                return $item->packed->parent_item == $request->barcode;
+            });
+
+            if(!$packed_items){
+                throw new Exception("Item(s) not found");
+            }
+
+            if($request->has_reservation && $request->deduct_reserve) {
+                $so_details = SalesOrder::find($request->sales_order);
+                foreach($packed_items as $packed){
+                    if($so_details) {
+                        $stock_reservation_details = $this->get_stock_reservation($packed->item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
+                    }
+    
+                    if($stock_reservation_details){
+                        $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
+                        $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+    
+                        $data = [
+                            'modified_by' => Auth::user()->wh_user,
+                            'modified' => Carbon::now()->toDateTimeString(),
+                            'consumed_qty' => $consumed_qty
+                        ];
+
+                        DB::connection('mysql')->table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
+                    }
+                }
+            }
+
+            $items_to_issue = [];
+            foreach ($packing_slip->items as $item) {
+                $item->qty = (float) $item->qty;
+                if ($item->packed->parent_item === $request->barcode) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->status = 'Issued';
+                    $item->barcode = $request->barcode;
+                    $item->date_modified = $now->toDateTimeString();
+                    $item->qty = (float) $request->qty;
+
+                    $items_to_issue[] = $item->name;
+                }
+
+                unset($item->packed);
+            }
+
+            $items_for_checking = collect($packing_slip->items)->whereNotIn('name', $items_to_issue)->where('status', 'For Checking')->count();
+
+            if($items_for_checking <= 0){
+                $packing_slip->docstatus = 1;
+                $packing_slip->item_status = 'Issued';
+            }
+
+            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
+                throw new Exception($err);
+            }
+
+            DB::connection('mysql')->commit();
+            $message = $request->deduct_reserve ? "Item <b>$request->barcode</b> has been deducted from reservation" : "Item <b>$request->barcode</b> has been checked out";
+            return response()->json(['status' => 1, 'message' => $message]);
+        } catch (\Throwable $th) {
+            DB::connection('mysql')->rollback();
+            return response()->json([
+                'status' => 0, 
+                'modal_title' => 'Error', 
+                'modal_message' => $th->getMessage()
+            ]);
+        }
+    }
+
+    public function checkout_picking_slip(Request $request){
+        try {
+            $child_id = $request->child_tbl_id;
+            $now = Carbon::now();
+            $packing_slip = PackingSlip::with(['items' => function ($item) {
+                $item->with('packed');
+            }])->whereHas('items', function ($item) use ($child_id){
+                $item->where('name', $child_id);
+            })->first();
+
+            if(!$packing_slip){
+                throw new Exception("Record not found");
+            }
+
+            if($request->qty <= 0){
+                throw new Exception("Qty cannot be less than or equal to 0.");
+            }
+
+            if(in_array($packing_slip->item_status, ['Issued', 'Returned'])){
+                throw new Exception("Item already $packing_slip->item_status.");
+            }
+
+            if($packing_slip->docstatus == 1){
+                throw new Exception("Item already submitted.");
+            }
+
+            // Checkout for bundled items
+            if($request->type == 'packed_item'){
+                return $this->checkout_picking_slip_bundled($packing_slip, $child_id, $request);
+            }
+
+            $packing_slip_item = collect($packing_slip->items)->where('name', $child_id)->first();
+
+            $item_code = $packing_slip_item->item_code;
+
+            $itemDetails = Item::find($item_code);
+            if(!$itemDetails){
+                throw new Exception("Item <b>$item_code</b> not found.");
+            }
+
+            if($request->is_bundle == 0 && $itemDetails->is_stock_item == 0) {
+                throw new Exception("Item <b>$item_code</b> is not a stock item.");
+            }
+            
+            if($request->barcode != $itemDetails->item_code){
+                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+            }
+            
+            $qty_check = $this->get_available_qty($item_code, $request->warehouse);
+            $qty_display = 'qty';
+            if($request->deduct_reserve){
+                $qty_check = $this->get_reserved_qty($item_code, $request->warehouse);
+                $qty_display = 'reserved qty';
+            }
+
+            if($request->qty > $qty_check && $request->is_bundle == false){
+                throw new Exception("Qty not available for <b>$item_code</b> in <b>$request->warehouse</b><
+                br><br>Available $qty_display is <b>$qty_check</b>, you need <b>$request->qty</b>.");
+            }
+
+            $stock_reservation_details = [];
+            if($request->has_reservation && $request->deduct_reserve) {
+                $so_details = SalesOrder::find($request->sales_order);
+                if($so_details) {
+                    $stock_reservation_details = $this->get_stock_reservation($item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
+                }
+
+                if($stock_reservation_details){
+                    $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
+                    $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+
+                    $data = [
+                        'modified_by' => Auth::user()->wh_user,
+                        'modified' => Carbon::now()->toDateTimeString(),
+                        'consumed_qty' => $consumed_qty
+                    ];
+
+                    $reservation_response = $this->erpOperation('put', 'Stock Reservation', $stock_reservation_details->name, $data);
+                    if(!isset($reservation_response['data'])){
+                        $err = isset($reservation_response['exception']) ? $reservation_response['exception'] : 'An error occured while updating Packing Slip';
+                        throw new Exception($err);
+                    }
+                }
+            }
+
+            foreach ($packing_slip->items as $item) {
+                $item->qty = (float) $item->qty;
+                if(!$item->dn_detail){ // Delivery Note Item reference is required
+                    $delivery_note_item = DB::table('tabDelivery Note as dn')
+                        ->join('tabDelivery Note Item as dni', 'dni.parent', 'dn.name')
+                        ->where('dn.name', $packing_slip->delivery_note)->where('dni.item_code', $item->item_code)
+                        ->pluck('dni.name')->first();
+
+                    $item->dn_detail = $delivery_note_item;
+                }
+
+                if ($item->name === $child_id) { // Issue only the specific child
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->status = 'Issued';
+                    $item->barcode = $request->barcode;
+                    $item->date_modified = $now->toDateTimeString();
+                    $item->qty = (float) $request->qty;
+                }
+            }
+
+            $items_for_checking = collect($packing_slip->items)->where('name', '!=', $child_id)->where('status', 'For Checking')->count();
+
+            if($items_for_checking <= 0){
+                $packing_slip->docstatus = 1;
+                $packing_slip->item_status = 'Issued';
+            }
+
+            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
+                throw new Exception($err);
+            }
+
+            $message = $request->deduct_reserve ? "Item <b>$item_code</b> has been deducted from reservation" : "Item <b>$item_code</b> has been checked out";
+            return response()->json(['status' => 1, 'message' => $message]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => 0, 
+                'modal_title' => 'Error', 
+                'message' => $th->getMessage()
+            ]);
         }
     }
 
@@ -2606,16 +3148,22 @@ class MainController extends Controller
                 //     ->where('docstatus', '<', 2)->update($values);
                 $response = $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
                 if(!isset($response['data'])){
-                    throw new Exception('An error occured while updating picking slip.');
+                    $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating picking slip';
+                    throw new Exception($err);
                 }
 
                 $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
             }
 
-            $items_for_checking = DB::connection('mysql')->table('tabPacking Slip Item')->where('parent', $ps_details->parent_ps)->where('status', 'For Checking')->exists();
+            $items_for_checking = DB::connection('mysql')->table('tabPacking Slip Item')->where('name', '!=', $request->child_tbl_id)->where('parent', $ps_details->parent_ps)->where('status', 'For Checking')->exists();
 
             if(!$items_for_checking){
-                DB::connection('mysql')->table('tabPacking Slip')->where('name', $ps_details->parent_ps)->update(['item_status' => 'Issued', 'docstatus' => 1]);
+                // DB::connection('mysql')->table('tabPacking Slip')->where('name', $ps_details->parent_ps)->update();
+                $parent_response = $this->erpOperation('put', 'Packing Slip', $ps_details->parent_ps, ['item_status' => 'Issued', 'docstatus' => 1]);
+                if(!isset($parent_response['data'])){
+                    $err = isset($parent_response['exception']) ? $parent_response['exception'] : 'An error occured while updating picking slip';
+                    throw new Exception($err);
+                }
             }
 
             DB::connection('mysql')->commit();
@@ -5071,6 +5619,74 @@ class MainController extends Controller
 
         $is_stock_entry = false;
         return view('return_modal_content', compact('data', 'is_stock_entry'));
+    }
+
+    public function submit_dr_sales_return_api(Request $request){
+        try {
+            $child_id = $request->child_tbl_id;
+            $delivery_note = DeliveryNote::with('items')->whereHas('items', function ($item) use ($child_id){
+                return $item->where('name', $child_id);
+            })->first();
+
+            $now = Carbon::now();
+
+            if(!$delivery_note){
+                throw new Exception('Record not found');
+            }
+
+            if(in_array($delivery_note->item_status, ['Issued', 'Returned'])){
+                throw new Exception("Item already $delivery_note->item_status.");
+            }
+
+            $delivery_note->qty = (float) $delivery_note->qty;
+
+            $delivery_note_item = collect($delivery_note->items)->where('name', $child_id)->first();
+            $item_code = $delivery_note_item->item_code;
+            $itemDetails = Item::find($item_code);
+
+            if(!$itemDetails){
+                throw new Exception("Item <b>$item_code</b> not found.");
+            }
+
+            if(!$itemDetails->is_stock_item){
+                throw new Exception("Item <b>$item_code</b> is not a stock item.");
+            }
+
+            if($request->barcode != $itemDetails->item_code){
+                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+            }
+
+            if($request->qty <= 0){
+                throw new Exception("Qty cannot be less than or equal to 0.");
+            }
+
+            foreach ($delivery_note->items as $item) { // Update only the specific child
+                if ($item->name === $child_id) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->item_status = 'Returned';
+                    $item->barcode_return = $request->barcode;
+                    $item->date_modified = $now->toDateTimeString();
+                    break;
+                }
+            }
+
+            $pending_items = collect($delivery_note->items)->where('name', $child_id)->where('status', 'For Checking')->count();
+            if($pending_items <= 0){
+                $delivery_note->item_status = 'Returned';
+            }
+
+            $response = $this->erpOperation('put', 'Delivery Note', $delivery_note->name, collect($delivery_note)->toArray());
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Delivery Note';
+                throw new Exception($err);
+            }
+
+            $this->insert_transaction_log('Delivery Note', $request->child_tbl_id);
+            return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been returned"]);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
+        }
     }
 
      // /submit_dr_sales_return

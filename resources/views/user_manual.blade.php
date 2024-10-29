@@ -29,7 +29,7 @@
                                 </ul>
                             @endif
                             @if ($consignment_promodiser_manuals && in_array(Auth::user()->user_group, ['Director', 'Promodiser']))
-                                <h6 class="font-weight-bold text-info text-uppercase my-3">Consignment Supervisor Manuals</h6>
+                                <h6 class="font-weight-bold text-info text-uppercase my-3">Promodiser Manuals</h6>
                                 <ul class="list-group list-group-flush">
                                     @foreach ($consignment_promodiser_manuals as $manual)
                                         <li class="list-group-item p-2"><a href="{{ asset("storage/Manuals/$manual") }}" class="text-dark" target="_blank"><i class="fas fa-angle-right"></i> {{ $manual }}</a></li>

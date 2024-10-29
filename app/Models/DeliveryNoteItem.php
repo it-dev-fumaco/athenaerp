@@ -16,4 +16,8 @@ class DeliveryNoteItem extends Model
     public function delivery_note(){
         return $this->belongsTo(DeliveryNote::class, 'parent', 'name');
     }
+
+    public function packed_items(){
+        return $this->belongsTo(PackedItem::class, 'parent_detail_docname', 'name');
+    }
 }
