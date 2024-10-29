@@ -62,15 +62,16 @@ trait ERPTrait{
 
     public function generate_api_credentials(){
         try {
-            $existing_key = $this->erpOperation('get', 'User', Auth::user()->wh_user, [], true);
-            $existing_key = isset($existing_key['data']['api_key']) ? $existing_key['data']['api_key'] : null;
+            $loggedInUser = str_replace('fumaco.local', 'fumaco.com', Auth::user()->wh_user);
+            $existing_key = $this->erpOperation('get', 'User', $loggedInUser, [], true);
+            $existing_key = $existing_key['data']['api_key'] ?? null;
 
             $tokens = [
                 'api_key' => $existing_key ?? $this->generateRandomString(),
                 'api_secret' => $this->generateRandomString()
             ];
 
-            $user = $this->erpOperation('put', 'User', Auth::user()->wh_user, $tokens, true);
+            $user = $this->erpOperation('put', 'User', $loggedInUser, $tokens, true);
 
             if(!isset($user['data'])){
                 throw new \Exception('An error occured while generating API Credentials');
