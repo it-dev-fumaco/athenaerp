@@ -2837,9 +2837,11 @@ class MainController extends Controller
             if($items_for_checking <= 0){
                 $packing_slip->docstatus = 1;
                 $packing_slip->item_status = 'Issued';
+
+                DB::table('tabPacking Slip')->where('name', $packing_slip->name)->update(['item_status' => 'Issued']);
             }
 
-            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray(), true);
+            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
                 throw new Exception($err);
@@ -2968,9 +2970,11 @@ class MainController extends Controller
             if($items_for_checking <= 0){
                 $packing_slip->docstatus = 1;
                 $packing_slip->item_status = 'Issued';
+
+                DB::table('tabPacking Slip')->where('name', $packing_slip->name)->update(['item_status' => 'Issued']);
             }
 
-            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray(), true);
+            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
                 throw new Exception($err);
