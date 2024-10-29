@@ -706,7 +706,7 @@
 												@endforelse
 											</div><!-- new table -->
 				
-											<div class="mt-3 ml-3 clearfix pagination" style="display: block;">
+											<div id="search-results-pagination" class="mt-3 ml-3 clearfix pagination" style="display: block;">
 												<div class="container-fluid d-flex justify-content-end align-items-center">
 													{{ $items->links() }}
 												</div>
@@ -1080,6 +1080,21 @@
 			}else{ // desktop
 				$('#collapseOne').addClass('show');
 			}
+		});
+
+		$(document).on('click', '#search-results-pagination a', function(event) {
+			event.preventDefault();
+			var page = $(this).attr('href').split('page=')[1];
+
+			// Get the current URL and parameters
+			var url = new URL(window.location.href);
+			var params = new URLSearchParams(url.search);
+
+			// Update the page parameter
+			params.set('page', page);
+
+			// Reload the page with the updated URL
+			window.location.href = `${url.pathname}?${params.toString()}`;
 		});
 	</script>
 @endsection	
