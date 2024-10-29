@@ -2839,7 +2839,7 @@ class MainController extends Controller
                 $packing_slip->item_status = 'Issued';
             }
 
-            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
+            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray(), true);
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
                 throw new Exception($err);
@@ -2970,7 +2970,7 @@ class MainController extends Controller
                 $packing_slip->item_status = 'Issued';
             }
 
-            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
+            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray(), true);
             if(!isset($response['data'])){
                 $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
                 throw new Exception($err);
