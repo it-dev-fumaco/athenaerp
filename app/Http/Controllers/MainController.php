@@ -530,9 +530,9 @@ class MainController extends Controller
                         ->orWhere('tabItem.item_group_level_4', $request->group)
                         ->orWhere('tabItem.item_group_level_5', $request->group);
                 });
-            })->select($select_columns)->orderBy('tabItem.modified', 'desc')->get();
+            })->select($select_columns)->orderBy('tabItem.modified', 'desc')->paginate(20);
 
-        $itemGroups = collect($items)->map(function ($q){
+        $itemGroups = collect($items->items())->map(function ($q){
             return [
                 'item_group' => $q->item_group,
                 'item_group_level_1' => $q->lvl1,
@@ -568,23 +568,24 @@ class MainController extends Controller
             }
         }
 
-        $total_items = count($items);
+        // $total_items = count($items);
+        $total_items = $items->total();
 
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        // Create a new Laravel collection from the array data3
-        $itemCollection = collect($items);
-        // Define how many items we want to be visible in each page
-        $perPage = 20;
-        // Slice the collection to get the items to display in current page
-        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
-        // Create our paginator and pass it to the view
-        $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
-        // set url path for generted links
-        $paginatedItems->setPath($request->url());
-        $items = $paginatedItems;
+        // $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        // // Create a new Laravel collection from the array data3
+        // $itemCollection = collect($items);
+        // // Define how many items we want to be visible in each page
+        // $perPage = 20;
+        // // Slice the collection to get the items to display in current page
+        // $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        // // Create our paginator and pass it to the view
+        // $paginatedItems= new LengthAwarePaginator($currentPageItems , count($itemCollection), $perPage);
+        // // set url path for generted links
+        // $paginatedItems->setPath($request->url());
+        // $items = $paginatedItems;
 
-        $url = $request->fullUrl();
-        $items->withPath($url);
+        // $url = $request->fullUrl();
+        // $items->withPath($url);
 
         if($request->searchString){
             DB::table('tabAthena Inventory Search History')->insert([
