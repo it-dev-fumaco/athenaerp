@@ -156,7 +156,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::post('/submit_sales_return', 'MainController@submit_sales_return');
         Route::get('/view_deliveries', 'MainController@view_deliveries');
         Route::get('/get_athena_logs', 'MainController@get_athena_logs');
-        Route::post('/submit_transaction', 'MainController@submit_transaction');
+        // Route::post('/submit_transaction', 'MainController@submit_transaction');
+        Route::post('/submit_transaction', 'TransactionController@submit_transaction');
         Route::get('/create_material_request/{id}', 'MainController@create_material_request');
         Route::get('/consignment_warehouses', 'MainController@consignment_warehouses');
         Route::post('/create_feedback', 'MainController@create_feedback');
