@@ -39,6 +39,10 @@ class TransactionController extends Controller
                 return response()->json(['status' => 0, 'message' => "Item  <b> $steDetails->item_code </b> not found."], 500);
             }
 
+            if($itemDetails->disabled){
+                return response()->json(['status' => 0, 'message' => "Item Code <b> $itemDetails->item_code </b> is disabled."], 500);
+            }
+
             if($request->barcode != $itemDetails->item_code){
                 return response()->json(['status' => 0, 'message' => "Invalid barcode for <b> $itemDetails->item_code </b>."], 500);
             }
