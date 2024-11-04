@@ -2213,411 +2213,217 @@ class MainController extends Controller
         }
     }
 
-    public function checkout_picking_slip_bundled($packing_slip, $child_id, $request){
-        DB::connection('mysql')->beginTransaction();
-        try {
-            $now = Carbon::now();
-            $packed_items = collect($packing_slip->items)->filter(function ($item) use ($request) {
-                return $item->packed->parent_item == $request->barcode;
-            });
+    // public function checkout_picking_slip_bundled($packing_slip, $child_id, $request){
+    //     DB::connection('mysql')->beginTransaction();
+    //     try {
+    //         $now = Carbon::now();
+    //         $packed_items = collect($packing_slip->items)->filter(function ($item) use ($request) {
+    //             return $item->packed->parent_item == $request->barcode;
+    //         });
 
-            if(!$packed_items){
-                throw new Exception("Item(s) not found");
-            }
+    //         if(!$packed_items){
+    //             throw new Exception("Item(s) not found");
+    //         }
 
-            if($request->has_reservation && $request->deduct_reserve) {
-                $so_details = SalesOrder::find($request->sales_order);
-                foreach($packed_items as $packed){
-                    if($so_details) {
-                        $stock_reservation_details = $this->get_stock_reservation($packed->item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
-                    }
+    //         if($request->has_reservation && $request->deduct_reserve) {
+    //             $so_details = SalesOrder::find($request->sales_order);
+    //             foreach($packed_items as $packed){
+    //                 if($so_details) {
+    //                     $stock_reservation_details = $this->get_stock_reservation($packed->item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
+    //                 }
     
-                    if($stock_reservation_details){
-                        $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
-                        $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+    //                 if($stock_reservation_details){
+    //                     $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
+    //                     $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
     
-                        $data = [
-                            'modified_by' => Auth::user()->wh_user,
-                            'modified' => Carbon::now()->toDateTimeString(),
-                            'consumed_qty' => $consumed_qty
-                        ];
+    //                     $data = [
+    //                         'modified_by' => Auth::user()->wh_user,
+    //                         'modified' => Carbon::now()->toDateTimeString(),
+    //                         'consumed_qty' => $consumed_qty
+    //                     ];
 
-                        DB::connection('mysql')->table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
-                    }
-                }
-            }
+    //                     DB::connection('mysql')->table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
+    //                 }
+    //             }
+    //         }
 
-            $items_to_issue = [];
-            foreach ($packing_slip->items as $item) {
-                $item->qty = (float) $item->qty;
-                if ($item->packed->parent_item === $request->barcode) {
-                    $item->session_user = Auth::user()->wh_user;
-                    $item->status = 'Issued';
-                    $item->barcode = $request->barcode;
-                    $item->date_modified = $now->toDateTimeString();
-                    $item->qty = (float) $request->qty;
+    //         $items_to_issue = [];
+    //         foreach ($packing_slip->items as $item) {
+    //             $item->qty = (float) $item->qty;
+    //             if ($item->packed->parent_item === $request->barcode) {
+    //                 $item->session_user = Auth::user()->wh_user;
+    //                 $item->status = 'Issued';
+    //                 $item->barcode = $request->barcode;
+    //                 $item->date_modified = $now->toDateTimeString();
+    //                 $item->qty = (float) $request->qty;
 
-                    $items_to_issue[] = $item->name;
-                }
+    //                 $items_to_issue[] = $item->name;
+    //             }
 
-                unset($item->packed);
-            }
+    //             unset($item->packed);
+    //         }
 
-            $items_for_checking = collect($packing_slip->items)->whereNotIn('name', $items_to_issue)->where('status', 'For Checking')->count();
+    //         $items_for_checking = collect($packing_slip->items)->whereNotIn('name', $items_to_issue)->where('status', 'For Checking')->count();
 
-            if($items_for_checking <= 0){
-                $packing_slip->docstatus = 1;
-                $packing_slip->item_status = 'Issued';
+    //         if($items_for_checking <= 0){
+    //             $packing_slip->docstatus = 1;
+    //             $packing_slip->item_status = 'Issued';
 
-                DB::table('tabPacking Slip')->where('name', $packing_slip->name)->update(['item_status' => 'Issued']);
-            }
+    //             DB::table('tabPacking Slip')->where('name', $packing_slip->name)->update(['item_status' => 'Issued']);
+    //         }
 
-            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
-            if(!isset($response['data'])){
-                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
-                throw new Exception($err);
-            }
+    //         $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
+    //         if(!isset($response['data'])){
+    //             $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
+    //             throw new Exception($err);
+    //         }
 
-            DB::connection('mysql')->commit();
-            $message = $request->deduct_reserve ? "Item <b>$request->barcode</b> has been deducted from reservation" : "Item <b>$request->barcode</b> has been checked out";
-            return response()->json(['status' => 1, 'message' => $message]);
-        } catch (\Throwable $th) {
-            DB::connection('mysql')->rollback();
-            return response()->json([
-                'status' => 0, 
-                'modal_title' => 'Error', 
-                'modal_message' => $th->getMessage()
-            ]);
-        }
-    }
+    //         DB::connection('mysql')->commit();
+    //         $message = $request->deduct_reserve ? "Item <b>$request->barcode</b> has been deducted from reservation" : "Item <b>$request->barcode</b> has been checked out";
+    //         return response()->json(['status' => 1, 'message' => $message]);
+    //     } catch (\Throwable $th) {
+    //         DB::connection('mysql')->rollback();
+    //         return response()->json([
+    //             'status' => 0, 
+    //             'modal_title' => 'Error', 
+    //             'modal_message' => $th->getMessage()
+    //         ]);
+    //     }
+    // }
 
-    public function checkout_picking_slip(Request $request){
-        try {
-            $child_id = $request->child_tbl_id;
-            $now = Carbon::now();
-            $packing_slip = PackingSlip::with(['items' => function ($item) {
-                $item->with('packed');
-            }])->whereHas('items', function ($item) use ($child_id){
-                $item->where('name', $child_id);
-            })->first();
+    // public function checkout_picking_slip(Request $request){
+    //     try {
+    //         $child_id = $request->child_tbl_id;
+    //         $now = Carbon::now();
+    //         $packing_slip = PackingSlip::with(['items' => function ($item) {
+    //             $item->with('packed');
+    //         }])->whereHas('items', function ($item) use ($child_id){
+    //             $item->where('name', $child_id);
+    //         })->first();
 
-            if(!$packing_slip){
-                throw new Exception("Record not found");
-            }
+    //         if(!$packing_slip){
+    //             throw new Exception("Record not found");
+    //         }
 
-            if($request->qty <= 0){
-                throw new Exception("Qty cannot be less than or equal to 0.");
-            }
+    //         if($request->qty <= 0){
+    //             throw new Exception("Qty cannot be less than or equal to 0.");
+    //         }
 
-            if(in_array($packing_slip->item_status, ['Issued', 'Returned'])){
-                throw new Exception("Item already $packing_slip->item_status.");
-            }
+    //         if(in_array($packing_slip->item_status, ['Issued', 'Returned'])){
+    //             throw new Exception("Item already $packing_slip->item_status.");
+    //         }
 
-            if($packing_slip->docstatus == 1){
-                throw new Exception("Item already submitted.");
-            }
+    //         if($packing_slip->docstatus == 1){
+    //             throw new Exception("Item already submitted.");
+    //         }
 
-            // Checkout for bundled items
-            if($request->type == 'packed_item'){
-                return $this->checkout_picking_slip_bundled($packing_slip, $child_id, $request);
-            }
+    //         // Checkout for bundled items
+    //         if($request->type == 'packed_item'){
+    //             return $this->checkout_picking_slip_bundled($packing_slip, $child_id, $request);
+    //         }
 
-            $packing_slip_item = collect($packing_slip->items)->where('name', $child_id)->first();
+    //         $packing_slip_item = collect($packing_slip->items)->where('name', $child_id)->first();
 
-            $item_code = $packing_slip_item->item_code;
+    //         $item_code = $packing_slip_item->item_code;
 
-            $itemDetails = Item::find($item_code);
-            if(!$itemDetails){
-                throw new Exception("Item <b>$item_code</b> not found.");
-            }
+    //         $itemDetails = Item::find($item_code);
+    //         if(!$itemDetails){
+    //             throw new Exception("Item <b>$item_code</b> not found.");
+    //         }
 
-            if($request->is_bundle == 0 && $itemDetails->is_stock_item == 0) {
-                throw new Exception("Item <b>$item_code</b> is not a stock item.");
-            }
+    //         if($request->is_bundle == 0 && $itemDetails->is_stock_item == 0) {
+    //             throw new Exception("Item <b>$item_code</b> is not a stock item.");
+    //         }
             
-            if($request->barcode != $itemDetails->item_code){
-                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
-            }
+    //         if($request->barcode != $itemDetails->item_code){
+    //             throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+    //         }
             
-            $qty_check = $this->get_available_qty($item_code, $request->warehouse);
-            $qty_display = 'qty';
-            if($request->deduct_reserve){
-                $qty_check = $this->get_reserved_qty($item_code, $request->warehouse);
-                $qty_display = 'reserved qty';
-            }
+    //         $qty_check = $this->get_available_qty($item_code, $request->warehouse);
+    //         $qty_display = 'qty';
+    //         if($request->deduct_reserve){
+    //             $qty_check = $this->get_reserved_qty($item_code, $request->warehouse);
+    //             $qty_display = 'reserved qty';
+    //         }
 
-            if($request->qty > $qty_check && $request->is_bundle == false){
-                throw new Exception("Qty not available for <b>$item_code</b> in <b>$request->warehouse</b><
-                br><br>Available $qty_display is <b>$qty_check</b>, you need <b>$request->qty</b>.");
-            }
+    //         if($request->qty > $qty_check && $request->is_bundle == false){
+    //             throw new Exception("Qty not available for <b>$item_code</b> in <b>$request->warehouse</b><
+    //             br><br>Available $qty_display is <b>$qty_check</b>, you need <b>$request->qty</b>.");
+    //         }
 
-            $stock_reservation_details = [];
-            if($request->has_reservation && $request->deduct_reserve) {
-                $so_details = SalesOrder::find($request->sales_order);
-                if($so_details) {
-                    $stock_reservation_details = $this->get_stock_reservation($item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
-                }
+    //         $stock_reservation_details = [];
+    //         if($request->has_reservation && $request->deduct_reserve) {
+    //             $so_details = SalesOrder::find($request->sales_order);
+    //             if($so_details) {
+    //                 $stock_reservation_details = $this->get_stock_reservation($item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
+    //             }
 
-                if($stock_reservation_details){
-                    $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
-                    $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
+    //             if($stock_reservation_details){
+    //                 $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
+    //                 $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
 
-                    $data = [
-                        'modified_by' => Auth::user()->wh_user,
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'consumed_qty' => $consumed_qty
-                    ];
+    //                 $data = [
+    //                     'modified_by' => Auth::user()->wh_user,
+    //                     'modified' => Carbon::now()->toDateTimeString(),
+    //                     'consumed_qty' => $consumed_qty
+    //                 ];
 
-                    $reservation_response = $this->erpOperation('put', 'Stock Reservation', $stock_reservation_details->name, $data);
-                    if(!isset($reservation_response['data'])){
-                        $err = isset($reservation_response['exception']) ? $reservation_response['exception'] : 'An error occured while updating Packing Slip';
-                        throw new Exception($err);
-                    }
-                }
-            }
+    //                 $reservation_response = $this->erpOperation('put', 'Stock Reservation', $stock_reservation_details->name, $data);
+    //                 if(!isset($reservation_response['data'])){
+    //                     $err = isset($reservation_response['exception']) ? $reservation_response['exception'] : 'An error occured while updating Packing Slip';
+    //                     throw new Exception($err);
+    //                 }
+    //             }
+    //         }
 
-            foreach ($packing_slip->items as $item) {
-                $item->qty = (float) $item->qty;
-                if(!$item->dn_detail){ // Delivery Note Item reference is required
-                    $delivery_note_item = DB::table('tabDelivery Note as dn')
-                        ->join('tabDelivery Note Item as dni', 'dni.parent', 'dn.name')
-                        ->where('dn.name', $packing_slip->delivery_note)->where('dni.item_code', $item->item_code)
-                        ->pluck('dni.name')->first();
+    //         foreach ($packing_slip->items as $item) {
+    //             $item->qty = (float) $item->qty;
+    //             if(!$item->dn_detail){ // Delivery Note Item reference is required
+    //                 $delivery_note_item = DB::table('tabDelivery Note as dn')
+    //                     ->join('tabDelivery Note Item as dni', 'dni.parent', 'dn.name')
+    //                     ->where('dn.name', $packing_slip->delivery_note)->where('dni.item_code', $item->item_code)
+    //                     ->pluck('dni.name')->first();
 
-                    $item->dn_detail = $delivery_note_item;
-                }
+    //                 $item->dn_detail = $delivery_note_item;
+    //             }
 
-                if ($item->name === $child_id) { // Issue only the specific child
-                    $item->session_user = Auth::user()->wh_user;
-                    $item->status = 'Issued';
-                    $item->barcode = $request->barcode;
-                    $item->date_modified = $now->toDateTimeString();
-                    $item->qty = (float) $request->qty;
-                }
-            }
+    //             if ($item->name === $child_id) { // Issue only the specific child
+    //                 $item->session_user = Auth::user()->wh_user;
+    //                 $item->status = 'Issued';
+    //                 $item->barcode = $request->barcode;
+    //                 $item->date_modified = $now->toDateTimeString();
+    //                 $item->qty = (float) $request->qty;
+    //             }
+    //         }
 
-            $items_for_checking = collect($packing_slip->items)->where('name', '!=', $child_id)->where('status', 'For Checking')->count();
+    //         $items_for_checking = collect($packing_slip->items)->where('name', '!=', $child_id)->where('status', 'For Checking')->count();
 
-            if($items_for_checking <= 0){
-                $packing_slip->docstatus = 1;
-                $packing_slip->item_status = 'Issued';
+    //         if($items_for_checking <= 0){
+    //             $packing_slip->docstatus = 1;
+    //             $packing_slip->item_status = 'Issued';
 
-                DB::table('tabPacking Slip')->where('name', $packing_slip->name)->update(['item_status' => 'Issued']);
-            }
 
-            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
-            if(!isset($response['data'])){
-                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
-                throw new Exception($err);
-            }
+    //             return $packing_slip;
 
-            $message = $request->deduct_reserve ? "Item <b>$item_code</b> has been deducted from reservation" : "Item <b>$item_code</b> has been checked out";
-            return response()->json(['status' => 1, 'message' => $message]);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => 0, 
-                'modal_title' => 'Error', 
-                'message' => $th->getMessage()
-            ]);
-        }
-    }
+    //             DB::table('tabPacking Slip')->where('name', $packing_slip->name)->update(['item_status' => 'Issued']);
+    //         }
 
-    // /checkout_picking_slip_item
-    public function checkout_picking_slip_item(Request $request){
-        DB::connection('mysql')->beginTransaction();
-        try {
-            if($request->type == 'packed_item'){
-                $ps_details = DB::table('tabPacking Slip as ps')
-                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                    ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
-                    ->where('psi.name', $request->child_tbl_id)
-                    ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status', 'pi.parent_item as item_code')->first();
-            }else{
-                $ps_details = DB::table('tabPacking Slip as ps')
-                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                    ->where('psi.name', $request->child_tbl_id)
-                    ->select('ps.name as parent_ps', 'ps.*', 'psi.*', 'psi.status as per_item_status', 'ps.docstatus as ps_status')->first();
-            }
+    //         $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, collect($packing_slip)->toArray());
+    //         if(!isset($response['data'])){
+    //             $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Packing Slip';
+    //             throw new Exception($err);
+    //         }
 
-            if(!$ps_details){
-                return response()->json(['status' => 0, 'message' => 'Record not found.']);
-            }
-
-            if(in_array($ps_details->per_item_status, ['Issued', 'Returned'])){
-                return response()->json(['status' => 0, 'message' => 'Item already ' . $ps_details->per_item_status . '.']);
-            }
-
-            if($ps_details->ps_status == 1){
-                return response()->json(['status' => 0, 'message' => 'Item already submitted.']);
-            }
-            
-            $itemDetails = DB::table('tabItem')->where('name', $ps_details->item_code)->first();
-            if(!$itemDetails){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $ps_details->item_code . '</b> not found.']);
-            }
-            if($request->is_bundle == 0) {
-                if($itemDetails->is_stock_item == 0){
-                    return response()->json(['status' => 0, 'message' => 'Item  <b>' . $ps_details->item_code . '</b> is not a stock item.']);
-                }
-            }
-            
-            if($request->barcode != $itemDetails->item_code){
-                return response()->json(['status' => 0, 'message' => 'Invalid barcode for <b>' . $itemDetails->item_code . '</b>.']);
-            }
-            
-            if($request->qty <= 0){
-                return response()->json(['status' => 0, 'message' => 'Qty cannot be less than or equal to 0.']);
-            }
-            // if($request->qty > $ps_details->qty){
-            //     return response()->json(['status' => 0, 'message' => 'Qty cannot be greater than ' . ($ps_details->qty * 1) .'.']);
-            // }
-
-            // $customer = DB::table('tabDelivery Note')->where('name', $ps_details->delivery_note)->pluck('customer')->first();
-
-            $available_qty = $this->get_available_qty($ps_details->item_code, $request->warehouse);
-            if($request->qty > $available_qty && $request->is_bundle == false && $request->deduct_reserve == 0){
-                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
-                br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
-            }
-
-            $reserved_qty = $this->get_reserved_qty($ps_details->item_code, $request->warehouse);
-            if($request->qty > $reserved_qty && $request->is_bundle == false && $request->deduct_reserve == 1){
-                return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $ps_details->item_code . '</b> in <b>' . $request->warehouse . '</b><
-                br><br>Available reserved qty is <b>' . $reserved_qty . '</b>, you need <b>' . $request->qty . '</b>.']);
-            }
-
-            if($request->is_bundle){
-                $query = DB::table('tabPacked Item as pi')
-                    ->join('tabPacking Slip Item as psi', 'psi.pi_detail', 'pi.name')
-                    ->where('pi.parent_detail_docname', $request->dri_name)
-                    ->select('pi.*', 'psi.name as item_id')->get();
-
-                foreach ($query as $row) {
-                    $bundle_item_qty = (float) $row->qty;
-                   
-                    $actual_qty = $this->get_actual_qty($row->item_code, $row->warehouse);
-    
-                    $total_issued = $this->get_issued_qty($row->item_code, $row->warehouse);
-
-                    $available_qty = ($actual_qty - $total_issued);
-
-                    if($available_qty < $bundle_item_qty){
-                        return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . number_format($bundle_item_qty) . '</b>.']);
-                    }
-
-                    if($request->deduct_reserve == 1){
-                        $reserved_qty = $this->get_reserved_qty($row->item_code, $row->warehouse);
-                        if ($available_qty > 0) {
-                            $available_qty = $available_qty - $reserved_qty;
-                        }
-
-                        $stock_reservation_details = [];
-                        if($request->has_reservation && $request->has_reservation == 1) {
-                            $so_details = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
-                            if($so_details) {
-                                $stock_reservation_details = $this->get_stock_reservation($row->item_code, $row->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
-                            }
-
-                            if($stock_reservation_details && $request->deduct_reserve == 1){
-                                $consumed_qty = $stock_reservation_details->consumed_qty + $bundle_item_qty;
-                                $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
-
-                                $data = [
-                                    'modified_by' => Auth::user()->wh_user,
-                                    'modified' => Carbon::now()->toDateTimeString(),
-                                    'consumed_qty' => $consumed_qty
-                                ];
-
-                                DB::table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
-                            }
-                            
-                            $this->update_reservation_status();
-                        }
-                    } else {
-                        if($available_qty < $bundle_item_qty){
-                            return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $row->item_code . '</b> in <b>' . $row->warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . ($row->qty * 1) . '</b>.']);
-                        }
-                    }
-
-                    $response = $this->erpOperation('put', 'Packing Slip Item', $row->item_id, ['status' => 'Issued']);
-                    $this->insert_transaction_log('Picking Slip', $row->item_id);
-
-                    if(!isset($response['data'])){
-                        throw new Exception(isset($response['message']) ? $response['message'] : 'An error occured. Please try again');
-                    }
-                }
-            }
-
-            $stock_reservation_details = [];
-            if($request->has_reservation && $request->has_reservation == 1) {
-                $so_details = DB::table('tabSales Order')->where('name', $request->sales_order)->first();
-                if($so_details) {
-                    $stock_reservation_details = $this->get_stock_reservation($ps_details->item_code, $request->warehouse, $so_details->sales_person, $so_details->project, null, $so_details->order_type, $so_details->po_no);
-                }
-
-                if($stock_reservation_details && $request->deduct_reserve == 1){
-                    $consumed_qty = $stock_reservation_details->consumed_qty + $request->qty;
-                    $consumed_qty = ($consumed_qty > $stock_reservation_details->reserve_qty) ? $stock_reservation_details->reserve_qty : $consumed_qty;
-
-                    $data = [
-                        'modified_by' => Auth::user()->wh_user,
-                        'modified' => Carbon::now()->toDateTimeString(),
-                        'consumed_qty' => $consumed_qty
-                    ];
-
-                    DB::table('tabStock Reservation')->where('name', $stock_reservation_details->name)->update($data);
-                }
-                
-                $this->update_reservation_status();
-            }
-
-            if($request->type != 'packed_item'){
-                $now = Carbon::now();
-                $values = [
-                    'session_user' => Auth::user()->wh_user,
-                    'status' => 'Issued',
-                    'barcode' => $request->barcode,
-                    'date_modified' => $now->toDateTimeString()
-                ];
-
-                // DB::table('tabPacking Slip Item')->where('name', $request->child_tbl_id)
-                //     ->where('docstatus', '<', 2)->update($values);
-                $response = $this->erpOperation('put', 'Packing Slip Item', $request->child_tbl_id, $values);
-                if(!isset($response['data'])){
-                    $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating picking slip';
-                    throw new Exception($err);
-                }
-
-                $this->insert_transaction_log('Picking Slip', $request->child_tbl_id);
-            }
-
-            $items_for_checking = DB::connection('mysql')->table('tabPacking Slip Item')->where('name', '!=', $request->child_tbl_id)->where('parent', $ps_details->parent_ps)->where('status', 'For Checking')->exists();
-
-            if(!$items_for_checking){
-                // DB::connection('mysql')->table('tabPacking Slip')->where('name', $ps_details->parent_ps)->update();
-                $parent_response = $this->erpOperation('put', 'Packing Slip', $ps_details->parent_ps, ['item_status' => 'Issued', 'docstatus' => 1]);
-                if(!isset($parent_response['data'])){
-                    $err = isset($parent_response['exception']) ? $parent_response['exception'] : 'An error occured while updating picking slip';
-                    throw new Exception($err);
-                }
-            }
-
-            DB::connection('mysql')->commit();
-
-            if($request->deduct_reserve == 1) {
-                return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been deducted from reservation.']);
-            }
-
-            return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been checked out.']);
-        } catch (Exception $e) {
-            DB::connection('mysql')->rollback();
-            return response()->json([
-                'status' => 0, 
-                'modal_title' => 'Error', 
-                'modal_message' => 'Error creating transaction.'
-            ]);
-        }
-    }
+    //         $message = $request->deduct_reserve ? "Item <b>$item_code</b> has been deducted from reservation" : "Item <b>$item_code</b> has been checked out";
+    //         return response()->json(['status' => 1, 'message' => $message]);
+    //     } catch (\Throwable $th) {
+    //         return response()->json([
+    //             'status' => 0, 
+    //             'modal_title' => 'Error', 
+    //             'message' => $th->getMessage()
+    //         ]);
+    //     }
+    // }
 
     public function update_pending_ps_item_status($id){
         try {
