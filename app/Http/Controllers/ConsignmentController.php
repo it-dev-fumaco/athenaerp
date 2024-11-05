@@ -949,6 +949,7 @@ class ConsignmentController extends Controller
             });
             $stock_entry->to_warehouse = collect($target_warehouses)->first();
 
+            $status = 'Pending';
             if($stock_entry->item_status == 'Issued' && Carbon::parse($stock_entry->delivery_date)->lt(Carbon::now())){
                 $status = 'Delivered';
             }
