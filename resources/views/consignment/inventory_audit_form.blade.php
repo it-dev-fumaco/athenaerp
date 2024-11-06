@@ -253,7 +253,7 @@
                 </button>
             </div>
             <div class="modal-body" style="font-size: 10pt;">
-                @if(session()->has('item_codes'))
+                @if(session()->has('item_codes') && count(session()->get('item_codes')) > 0)
                     <p class="text-center mt-0">
                         <span class="d-block">Insufficient stocks for the following item(s):</span>
                     </p>
@@ -265,7 +265,9 @@
                         </ul>
                     </div>
                 @else
-                    <span class="d-block">{{ session()->get('error') }}.</span>
+                    <div class="text-center">
+                        <span class="d-block">{{ session()->get('error') }}.</span>
+                    </div>
                 @endif
                 <div class="d-flex flex-row justify-content-center">
                     <div class="p-2">

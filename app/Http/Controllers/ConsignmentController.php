@@ -176,11 +176,11 @@ class ConsignmentController extends Controller
             // If user submits without qty input
             $null_qty_items = collect($data['item'])->where('qty', null);
             if(count($null_qty_items) > 0){
-                return redirect()->back()->withInput($request->all())->with('error', 'Please enter the qty of all items.');
+                throw new Exception('Please enter the qty of all items.');
             }
 
             if($request->price && collect($request->price)->min() <= 0){
-                return redirect()->back()->withInput($request->all())->with('error', 'Price cannot be less than or equal to 0');
+                throw new Exception('Price cannot be less than or equal to 0');
             }
 
             $currentDateTime = Carbon::now();
@@ -359,7 +359,7 @@ class ConsignmentController extends Controller
             return redirect()->back()
                 ->withInput($request->input())
                 ->with(['old_data' => $data, 'item_codes' => $items_with_insufficient_stocks])
-                ->with('error', 'An error occured. Please contact your system administrator.');
+                ->with('error', $th->getMessage());
         }
     }
     
@@ -449,7 +449,9 @@ class ConsignmentController extends Controller
 
             return redirect()->back()->with('success', 'Sales Report for the month of <b>'.$request->month.'</b> has been '.($sales_report ? 'updated!' : 'added!'));
         } catch (Exception $th) {
-            return redirect()->back()->with('error', 'An error occured. Please try again.');
+            $error = 'An error occured. Please try again';
+            $error = $th->getMessage();
+            return redirect()->back()->with('error', $error);
         }
     }
 
