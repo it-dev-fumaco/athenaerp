@@ -244,6 +244,7 @@ class TransactionController extends Controller
             $values->items[$index]->status = 'Issued';
             $values->items[$index]->barcode = $request->barcode;
             $values->items[$index]->date_modified = Carbon::now()->toDateTimeString();
+            $values->items[$index]->qty = (float) $values->items[$index]->qty;
             if ($countPendingItems < 1) {
                 $values->item_status = 'Issued';
                 $values->docstatus = 1;
@@ -272,7 +273,7 @@ class TransactionController extends Controller
                 $this->update_reservation_status();
             }
 
-            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, $values, true);
+            $response = $this->erpOperation('put', 'Packing Slip', $packing_slip->name, $values->toArray(), true);
             if(!isset($response['data'])){
                 $err = $response['exception'] ?? 'An error occured while updating picking slip';
                 throw new Exception($err);
