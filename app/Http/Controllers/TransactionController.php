@@ -245,10 +245,20 @@ class TransactionController extends Controller
             $values->items[$index]->barcode = $request->barcode;
             $values->items[$index]->date_modified = Carbon::now()->toDateTimeString();
             $values->items[$index]->qty = (float) $values->items[$index]->qty;
+            $values->net_weight_pkg = (float) $values->net_weight_pkg;
+            $values->gross_weight_pkg = (float) $values->gross_weight_pkg;
+            $values->qty = (float) $values->qty;
             if ($countPendingItems < 1) {
                 $values->item_status = 'Issued';
                 $values->docstatus = 1;
-            } 
+            }
+
+            // Ensure ALL item qty are not string
+            $values->items = collect($values->items)->map(function ($item){
+                $item->net_weight = (float) $item->net_weight;
+                $item->qty = (float) $item->qty;
+                return $item;
+            });
 
             $stock_reservation_details = [];
             if($request->has_reservation && $request->has_reservation == 1) {
