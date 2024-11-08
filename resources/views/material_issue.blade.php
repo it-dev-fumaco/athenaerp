@@ -277,6 +277,7 @@
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
+						showNotification("danger", jqXHR.responseJSON.message, "fa fa-info")
 						$('#ste-modal form button').removeAttr('disabled');
 					}
 				});
