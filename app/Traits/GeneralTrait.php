@@ -281,9 +281,11 @@ trait GeneralTrait
                 }
             }
     
-            $stock_entry_data = ['docstatus' => 1];
+            if($draft_ste->transfer_as != 'Consignment'){
+                $stock_entry_data = ['docstatus' => 1];
     
-            return $stock_entry_response = $this->erpOperation('put', 'Stock Entry', $id, $stock_entry_data);
+                return $stock_entry_response = $this->erpOperation('put', 'Stock Entry', $id, $stock_entry_data);
+            }
     
             if (!isset($stock_entry_response['data'])) {
                 $err = $stock_entry_response['exception'] ?? 'An error occurred while submitting Stock Entry';
