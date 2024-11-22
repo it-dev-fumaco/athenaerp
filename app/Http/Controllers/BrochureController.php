@@ -638,7 +638,7 @@ class BrochureController extends Controller
 				];
 			}
 
-			$fumaco_logo = $this->base64_image('fumaco_logo.png');
+			$fumaco_logo = asset('storage/fumaco_logo.png');
 
 			if($preview){
 				return view('brochure.preview_loop', compact('content', 'project', 'customer', 'fumaco_logo'));
@@ -707,7 +707,7 @@ class BrochureController extends Controller
 				];
 			}
 
-			$fumaco_logo = asset('fumaco_logo.png');
+			$fumaco_logo = asset('storage/fumaco_logo.png');
 
 			if(isset($request->get_images) && $request->get_images){
 				return view('brochure.brochure_images', compact('images', 'current_images'));
