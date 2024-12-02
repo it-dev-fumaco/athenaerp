@@ -2173,13 +2173,12 @@ class ConsignmentController extends Controller
 
             $items_data = [];
             foreach ($items as $item_code => $item) {
-                $rate = (float) $item['price'];
                 $qty = (int) $item['qty'];
                 $remarks = $item['remarks'];
                 $consignment_reason = $item['reason'];
                 $schedule_date = (Clone $now)->addDays($consignment_reason == 'Stock Replenishment' ? 5 : 3)->format('Y-m-d');
                 $warehouse = $branch;
-                $items_data[] = compact('item_code', 'rate', 'qty', 'remarks', 'consignment_reason', 'schedule_date', 'warehouse');
+                $items_data[] = compact('item_code', 'qty', 'remarks', 'consignment_reason', 'schedule_date', 'warehouse');
             }
 
             $data = [
@@ -2225,6 +2224,133 @@ class ConsignmentController extends Controller
             return redirect('consignment/replenish')->with('success', "Request submitted.");
         } catch (Exception $th) {
             throw $th;
+            return redirect()->back()->with('error', $th->getMessage());
+        }
+    }
+
+    public function replenish_approve($id, Request $request){
+        try{
+            $issue = $request->issue;
+            $items = $request->items;
+            
+            $stock_entry = ConsignmentStockEntry::with('items')->find($id);
+
+            // $data = $child_data = [];
+            // $has_pending = false;
+            $columns_to_exclude = ['parent', 'creation', 'modified', 'modified_by', 'owner', 'docstatus', 'parentfield', 'parenttype'];
+            $stock_entry->items = collect($stock_entry->items)->map(function ($item) use ($items, $issue, $columns_to_exclude, $stock_entry, &$child_data, &$has_pending) {
+                $item_code = $item->item_code;
+
+                foreach ($columns_to_exclude as $column) {
+                    unset($item->$column);
+                }
+
+                $qty = (float) $item->qty;
+                // $issuance_details = $items[$item_code];
+
+                // if ($issue == 'selected' && isset($items[$item_code]['issue']) && $items[$item_code]['issue'] != 'on') {
+                    $item->status = 'Issued';
+                    // $child_data[] = [
+                    //     'item_code' => $item_code,
+                    //     'qty' => $qty,
+                    //     'source_warehouse' => $issuance_details['source_warehouse'],
+                    //     'target_warehouse' => $stock_entry->target_warehouse
+                    // ];
+                // } else {
+                //     $item->status = 'Issued';
+                // }
+
+                // if ($item->status == 'Pending') {
+                //     $has_pending = true;
+                // }
+
+                return $item;
+            })->values();
+
+            // return $has_pending;
+
+            // $data = [
+            //     'transfer_as' => 'Consignment',
+            //     'purpose' => 'Consignment Order',
+            //     'branch_warehouse' => $stock_entry->target_warehouse,
+            //     'sales_person' => 'Plant 2',
+            //     'company' => 'FUMACO Inc.',
+            //     'customer' => 'WILCON DEPOT, INC.',
+            //     'customer_address' => 'WILCON DEPOT-Shipping',
+            //     'project' => 'WILCON STOCKS',
+            //     'items' => $child_data
+            // ];
+
+            // return $request->all();
+            // return 1;
+        }catch(Exception $e){
+            throw $e;
+            return response()->json(['success' => 0, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function replenish_update(Request $request, $id){
+        $state_before_update = [];
+        try {
+            $branch = $request->branch;
+            $items = $request->items;
+            $now = Carbon::now();
+
+            $statuses = ['Draft', 'For Approval', 'Cancelled'];
+
+            $status = isset($statuses[$request->status]) ? $statuses[$request->status] : 'Draft';
+            $customer = 'CW MARKETING AND DEVELOPMENT CORPORATION';
+            $project = 'CW HOME DEPOT';
+            if(Str::contains($branch, 'WILCON DEPOT')){
+                $customer = 'WILCON DEPOT, INC.';
+                $project = 'WILCON STOCKS';
+            }
+
+            $items_data = [];
+            foreach ($items as $item_code => $item) {
+                $name = isset($item['name']) ? $item['name'] : null;
+                $qty = (int) $item['qty'];
+                $remarks = $item['remarks'];
+                $consignment_reason = $item['reason'];
+                $schedule_date = (Clone $now)->addDays($consignment_reason == 'Stock Replenishment' ? 5 : 3)->format('Y-m-d');
+                $warehouse = $branch;
+                $items_data[] = compact('name', 'item_code', 'qty', 'remarks', 'consignment_reason', 'schedule_date', 'warehouse');
+            }
+
+            $data = [
+                'branch_warehouse' => $branch,
+                'consignment_status' => $status,
+                'transaction_date' => $now->toDateTimeString(),
+                'customer' => $customer,
+                'project' => $project,
+                'items' => $items_data,
+            ];
+
+            $response = $this->erpOperation('put', 'Material Request', $id, $data);
+            if(!isset($response['data'])){
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating stock entry';
+                throw new Exception($err);
+            }
+
+            if($status == 'For Approval'){
+                $response_data = $response['data'];
+                $response_data['branch'] = $branch;
+                
+                $users = User::where('user_group', 'Consignment Supervisor')->where('enabled', 1)->pluck('wh_user');
+
+                foreach ($users as $user) {
+                    $user = str_replace('.local', '.com', $user);
+                    try {
+                        Mail::send('mail_template.consignment_order', $response_data, function($message) use ($user){
+                            $message->to($user);
+                            $message->subject('AthenaERP - Consignment Order Notification');
+                        });
+                    } catch (\Throwable $th) {}
+                }
+            }
+
+            return redirect()->back()->with('success', "$id successfully updated!");
+        } catch (Exception $th) {
             return redirect()->back()->with('error', $th->getMessage());
         }
     }

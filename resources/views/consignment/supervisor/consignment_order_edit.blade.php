@@ -188,10 +188,9 @@
                                         <div class="col-12">
                                             <table class="table">
                                                 <thead>
-                                                    <th class="text-center" style="width: 15%; font-size: 16px;">Item Code</th>
-                                                    <th class="text-center" style="width: 45%; font-size: 16px;">Description</th>
-                                                    <th class="text-center" style="width: 15%; font-size: 16px;">Quantity</th>
-                                                    <th class="text-center" style="width: 15%; font-size: 16px;">Price</th>
+                                                    <th class="text-center" style="width: 20%; font-size: 16px;">Item Code</th>
+                                                    <th class="text-center" style="width: 50%; font-size: 16px;">Description</th>
+                                                    <th class="text-center" style="width: 20%; font-size: 16px;">Quantity</th>
                                                     <th class="text-center p-2" style="width: 10%;">
                                                         <button class="add-row btn btn-dark btn-sm m-0" type="button"><i class="fa fa-plus"></i> Add</button>
                                                     </th>
@@ -213,11 +212,6 @@
                                                                     value="{{ number_format($item->qty) }}">
                                                                 <small
                                                                     class="d-block mt-2 font-weight-bold">{{ $item->stock_uom }}</small>
-                                                            </td>
-                                                            <td class="text-center">
-                                                                <input type="text" name="price[]" class="form-control form-control-sm"
-                                                                    style="text-align: center;"
-                                                                    value="{{ number_format($item->rate, 2) }}">
                                                             </td>
                                                             <td class="text-center">
                                                                 <button type="button" class="btn btn-danger btn-xs" data-item-code="{{ $item->item_code }}">
