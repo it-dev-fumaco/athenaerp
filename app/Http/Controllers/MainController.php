@@ -2131,16 +2131,16 @@ class MainController extends Controller
                 }
             }
 
-            foreach ($stock_entry->items as $item) { // Update only the specific child
-                if ($item->name === $child_id) {
+            foreach ($stock_entry->items as $item) {
+                $item->qty = (float) $item->qty;
+                if ($item->name === $child_id) { // Update only the specific child
                     $item->session_user = Auth::user()->wh_user;
                     $item->status = 'Issued';
                     $item->transfer_qty = $request->qty;
-                    $item->qty = $request->qty;
+                    $item->qty = (float) $request->qty;
                     $item->issued_qty = $request->qty;
                     $item->validate_item_code = $request->barcode;
                     $item->date_modified = $now->toDateTimeString();
-                    break;
                 }
             }
 
@@ -2150,33 +2150,49 @@ class MainController extends Controller
                 $stock_entry->docstatus = 1;
             }
 
-            if($stock_entry->naming_series == 'STEC'){ // for consignment
-                foreach ($stock_entry->items as $item) { // Update only the specific child
-                    if ($item->name === $child_id) {
-                        $item->consignment_status = 'Received';
-                        $item->consignment_date_received = Carbon::now()->toDateTimeString();
-                        $item->consignment_received_by = Auth::user()->wh_user;
-                        break;
-                    }
-                }
-                
-                $consignment_checker = collect($stock_entry->items)->where('name', '!=', $child_id)->where('consignment_status', 'To Receive')->count();
-                if(!$consignment_checker){
-                    $stock_entry->consignment_status = 'Received';
-                    $stock_entry->consignment_date_received = Carbon::now()->toDateTimeString();
-                    $stock_entry->consignment_received_by = Auth::user()->wh_user;
-                }
-            }
-
             $response = $this->erpOperation('put', 'Stock Entry', $stock_entry->name, collect($stock_entry)->toArray());
             if(!isset($response['data'])){
-                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
-                throw new Exception($err);
+                if(isset($response['exc_type']) && $response['exc_type'] == 'TimestampMismatchError'){ // If DB data does not match real time data
+                    $stock_entry = $this->erpOperation('get', 'Stock Entry', $stock_entry->name);
+
+                    $stock_entry = $stock_entry['data'];
+
+                    $stock_entry['items'] = collect($stock_entry['items'])->map(function ($item) use ($request, $now, $child_id){
+                        $item['qty'] = (float) $item['qty'];
+                        if ($item['name'] === $child_id) {
+                            $item['session_user'] = Auth::user()->wh_user;
+                            $item['status'] = 'Issued';
+                            $item['transfer_qty'] = $request->qty;
+                            $item['qty'] = (float) $request->qty;
+                            $item['issued_qty'] = $request->qty;
+                            $item['validate_item_code'] = $request->barcode;
+                            $item['date_modified'] = $now->toDateTimeString();
+                        }
+
+                        return $item;
+                    });
+
+                    $checker = collect($stock_entry['items'])->where('name', '!=', $child_id)->where('status', 'For Checking')->count();
+                    if(!$checker){
+                        $stock_entry['item_status'] = 'Issued';
+                        $stock_entry['docstatus'] = 1;
+                    }
+
+                    $response = $this->erpOperation('put', 'Stock Entry', $stock_entry['name'], collect($stock_entry)->toArray());
+
+                    if(!isset($response['data'])){
+                        $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
+                        throw new Exception($err);
+                    }
+                }else{
+                    $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
+                    throw new Exception($err);
+                }
             }
 
             return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been checked out."]);
         } catch (\Throwable $th) {
-            throw $th;
+            // throw $th;
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
         }
     }
