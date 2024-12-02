@@ -185,7 +185,7 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col">
+                                        <div class="col-12">
                                             <table class="table">
                                                 <thead>
                                                     <th class="text-center" style="width: 15%; font-size: 16px;">Item Code</th>
@@ -228,6 +228,10 @@
                                                     @endforeach
                                                 </tbody>
                                             </table>
+                                            <div class="container">
+                                                <label>Remarks</label>
+                                                <textarea name="remarks" id="" cols="30" rows="5" class="form-control">{{ $details->notes00 }}</textarea>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
