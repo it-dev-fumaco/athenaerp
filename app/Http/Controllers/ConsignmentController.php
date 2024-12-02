@@ -444,7 +444,8 @@ class ConsignmentController extends Controller
             $response = $this->erpOperation($method, 'Consignment Monthly Sales Report', $reference, $data);
 
             if(!isset($response['data'])){
-                throw new Exception($response['exc_type']);
+                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while submitting Sales Report';
+                throw new Exception($err);
             }
 
             return redirect()->back()->with('success', 'Sales Report for the month of <b>'.$request->month.'</b> has been '.($sales_report ? 'updated!' : 'added!'));
@@ -2037,15 +2038,20 @@ class ConsignmentController extends Controller
     public function updateConsignmentOrder($id, Request $request) {
         try {
             $items = [];
-            foreach ($request->item_code as $index => $item_code) {
-                $rate = (float) str_replace(',', '', $request->price[$index]);
-                $qty = (int) str_replace(',', '', $request->quantity[$index]);
-                $name = isset($request->name[$index]) ? $request->name[$index] : null;
-                $warehouse = $request->branch;
-                $items[] = compact('name', 'item_code', 'rate', 'qty', 'warehouse');
+
+            $material_request = MaterialRequest::find($id);
+            $consignment_status = $request->consignment_status;
+
+            if(!$material_request){
+                throw new Exception("MREQ $id not found!");
             }
 
-            $consignment_status = $request->consignment_status;
+            if($consignment_status == 'Cancelled' && $material_request->docstatus == 2){
+                throw new Exception("MREQ $id is already canceled!");
+            }
+            
+            $method = $consignment_status == 'Cancelled' && !$material_request->docstatus ? 'delete' : 'put';
+
             switch ($consignment_status) {
                 case 'Approved':
                     $docstatus = 1;
@@ -2056,6 +2062,14 @@ class ConsignmentController extends Controller
                 default:
                     $docstatus = 0;
                     break;
+            }
+
+            foreach ($request->item_code as $index => $item_code) {
+                $rate = (float) str_replace(',', '', $request->price[$index]);
+                $qty = (int) str_replace(',', '', $request->quantity[$index]);
+                $name = isset($request->name[$index]) ? $request->name[$index] : null;
+                $warehouse = $request->branch;
+                $items[] = compact('name', 'item_code', 'rate', 'qty', 'warehouse');
             }
             
             $data = [
@@ -2070,13 +2084,17 @@ class ConsignmentController extends Controller
                 'items' => $items
             ];
 
-            $response = $this->erpOperation('put', 'Material Request', $id, $data);
+            $response = $this->erpOperation($method, 'Material Request', $id, $data);
             if(!isset($response['data'])){
                 $err = $response['exception'] ?? 'An error occured while updating material request';
                 throw new Exception($err);
             }
 
-            return redirect()->back()->with('success', "$id successfully updated!");
+            if($consignment_status == 'Cancelled' && !$material_request->docstatus){
+                return redirect('/consignment/replenish')->with('success', "MREQ $id successfully deleted");
+            }else{
+                return redirect()->back()->with('success', "$id successfully updated!");
+            }
         } catch (\Throwable $th) {
             return redirect()->back()->with('error', "An error occured. Please contact your system administrator.");
         }
