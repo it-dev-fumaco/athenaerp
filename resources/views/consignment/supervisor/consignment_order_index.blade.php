@@ -104,6 +104,17 @@
             });
         };
 
+        let success_notification = '{{ session()->has("success") ? session()->get("success") : null }}'
+        let error_notification = '{{ session()->has("error") ? session()->get("error") : null }}'
+
+        if(success_notification){
+            showNotification("success", success_notification, "fa fa-info");
+        }
+
+        if(error_notification){
+            showNotification("danger", error_notification, "fa fa-info");
+        }
+
         load();
 
         // Handle pagination

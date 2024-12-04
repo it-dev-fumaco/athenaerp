@@ -554,6 +554,8 @@ class BrochureController extends Controller
 
 			if($pdf){
 				set_time_limit(300);
+				ini_set('max_execution_time', 3600);
+				ini_set('memory_limit', '4096M');
 			}
 
 			$attributes_qry = DB::table('tabItem Variant Attribute as variant')
@@ -638,7 +640,7 @@ class BrochureController extends Controller
 				];
 			}
 
-			$fumaco_logo = $this->base64_image('fumaco_logo.png');
+			$fumaco_logo = asset('storage/fumaco_logo.png');
 
 			if($preview){
 				return view('brochure.preview_loop', compact('content', 'project', 'customer', 'fumaco_logo'));
@@ -707,7 +709,7 @@ class BrochureController extends Controller
 				];
 			}
 
-			$fumaco_logo = asset('fumaco_logo.png');
+			$fumaco_logo = asset('storage/fumaco_logo.png');
 
 			if(isset($request->get_images) && $request->get_images){
 				return view('brochure.brochure_images', compact('images', 'current_images'));

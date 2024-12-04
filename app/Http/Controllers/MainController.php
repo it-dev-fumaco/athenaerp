@@ -2131,16 +2131,16 @@ class MainController extends Controller
                 }
             }
 
-            foreach ($stock_entry->items as $item) { // Update only the specific child
-                if ($item->name === $child_id) {
+            foreach ($stock_entry->items as $item) {
+                $item->qty = (float) $item->qty;
+                if ($item->name === $child_id) { // Update only the specific child
                     $item->session_user = Auth::user()->wh_user;
                     $item->status = 'Issued';
                     $item->transfer_qty = $request->qty;
-                    $item->qty = $request->qty;
+                    $item->qty = (float) $request->qty;
                     $item->issued_qty = $request->qty;
                     $item->validate_item_code = $request->barcode;
                     $item->date_modified = $now->toDateTimeString();
-                    break;
                 }
             }
 
@@ -2150,33 +2150,49 @@ class MainController extends Controller
                 $stock_entry->docstatus = 1;
             }
 
-            if($stock_entry->naming_series == 'STEC'){ // for consignment
-                foreach ($stock_entry->items as $item) { // Update only the specific child
-                    if ($item->name === $child_id) {
-                        $item->consignment_status = 'Received';
-                        $item->consignment_date_received = Carbon::now()->toDateTimeString();
-                        $item->consignment_received_by = Auth::user()->wh_user;
-                        break;
-                    }
-                }
-                
-                $consignment_checker = collect($stock_entry->items)->where('name', '!=', $child_id)->where('consignment_status', 'To Receive')->count();
-                if(!$consignment_checker){
-                    $stock_entry->consignment_status = 'Received';
-                    $stock_entry->consignment_date_received = Carbon::now()->toDateTimeString();
-                    $stock_entry->consignment_received_by = Auth::user()->wh_user;
-                }
-            }
-
             $response = $this->erpOperation('put', 'Stock Entry', $stock_entry->name, collect($stock_entry)->toArray());
             if(!isset($response['data'])){
-                $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
-                throw new Exception($err);
+                if(isset($response['exc_type']) && $response['exc_type'] == 'TimestampMismatchError'){ // If DB data does not match real time data
+                    $stock_entry = $this->erpOperation('get', 'Stock Entry', $stock_entry->name);
+
+                    $stock_entry = $stock_entry['data'];
+
+                    $stock_entry['items'] = collect($stock_entry['items'])->map(function ($item) use ($request, $now, $child_id){
+                        $item['qty'] = (float) $item['qty'];
+                        if ($item['name'] === $child_id) {
+                            $item['session_user'] = Auth::user()->wh_user;
+                            $item['status'] = 'Issued';
+                            $item['transfer_qty'] = $request->qty;
+                            $item['qty'] = (float) $request->qty;
+                            $item['issued_qty'] = $request->qty;
+                            $item['validate_item_code'] = $request->barcode;
+                            $item['date_modified'] = $now->toDateTimeString();
+                        }
+
+                        return $item;
+                    });
+
+                    $checker = collect($stock_entry['items'])->where('name', '!=', $child_id)->where('status', 'For Checking')->count();
+                    if(!$checker){
+                        $stock_entry['item_status'] = 'Issued';
+                        $stock_entry['docstatus'] = 1;
+                    }
+
+                    $response = $this->erpOperation('put', 'Stock Entry', $stock_entry['name'], collect($stock_entry)->toArray());
+
+                    if(!isset($response['data'])){
+                        $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
+                        throw new Exception($err);
+                    }
+                }else{
+                    $err = isset($response['exception']) ? $response['exception'] : 'An error occured while updating Stock Entry';
+                    throw new Exception($err);
+                }
             }
 
             return response()->json(['status' => 1, 'message' => "Item <b>$item_code</b> has been checked out."]);
         } catch (\Throwable $th) {
-            throw $th;
+            // throw $th;
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
         }
     }
@@ -5042,7 +5058,7 @@ class MainController extends Controller
             ];
 
             // MES Transactions
-            $manufactured_qty = $production_order_details->produced_qty + $request->fg_completed_qty;
+            $manufactured_qty = $mes_production_order_details->feedback_qty + $request->fg_completed_qty;
             $status = $manufactured_qty == $production_order_details->qty ? 'Completed' : $mes_production_order_details->status;
 
             $production_data_mes = [
@@ -5069,9 +5085,10 @@ class MainController extends Controller
             DB::connection('mysql_mes')->table('production_order')->where('production_order', $production_order_details->name)->update($production_data_mes);
             $this->insert_production_scrap($production_order_details->name, $request->fg_completed_qty);
 
+            $item_code = $production_order_details->production_item;
             $feedbacked_timelogs = [
                 'production_order'  => $mes_production_order_details->production_order,
-                'item_code'     => $production_order_details->production_item,
+                'item_code'     => $item_code,
                 'item_name'     => $production_order_details->item_name,
                 'feedbacked_qty' => $request->fg_completed_qty, 
                 'from_warehouse'=> $production_order_details->wip_warehouse,
@@ -5082,7 +5099,7 @@ class MainController extends Controller
                 'created_by'  =>  Auth::user()->wh_user,
             ];
 
-            DB::connection('mysql_mes')->table('feedbacked_logs')->insert($feedbacked_timelogs);
+            $feedback_log_id = DB::connection('mysql_mes')->table('feedbacked_logs')->insertGetId($feedbacked_timelogs, 'feedbacked_log_id');
 
             $stock_entry_response = $this->erpOperation('post', 'Stock Entry', null, $stock_entry_data);
             if(!isset($stock_entry_response['data'])){
@@ -5090,8 +5107,40 @@ class MainController extends Controller
                 throw new Exception($err);
             }
 
-            $this->insert_transaction_log('Stock Entry', $stock_entry_response['data']['name']);
-                
+            $stock_entry_data = $stock_entry_response['data'];
+
+            $filtered_item = collect($stock_entry_data['items'])->filter(function ($item) use ($item_code) {
+                return $item['item_code'] == $item_code;
+            })->first();
+
+            DB::connection('mysql_mes')->table('feedbacked_logs')->where('feedbacked_log_id', $feedback_log_id)->update(['ste_no' => $stock_entry_data['name']]);
+
+            $values = [
+                'name' => uniqid(date('mdY')),
+                'reference_type' => 'Stock Entry',
+                'reference_name' => $filtered_item['name'],
+                'reference_parent' => $filtered_item['parent'],
+                'item_code' => $filtered_item['item_code'],
+                'qty' => $filtered_item['qty'],
+                'barcode' => $filtered_item['item_code'],
+                'transaction_date' => $now->toDateTimeString(),
+                'warehouse_user' => Auth::user()->wh_user,
+                'issued_qty' => $filtered_item['qty'],
+                'remarks' => isset($stock_entry_data['remarks']) ? $stock_entry_data['remarks'] : null,
+                'source_warehouse' => isset($filtered_item['s_warehouse']) ? $filtered_item['s_warehouse'] : null,
+                'target_warehouse' => isset($filtered_item['t_warehouse']) ? $filtered_item['t_warehouse'] : null,
+                'description' => $filtered_item['description'],
+                'reference_no' => $stock_entry_data['sales_order_no'] ?? $stock_entry_data['material_request'],
+                'creation' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+                'owner' => Auth::user()->wh_user,
+                'uom' => $filtered_item['stock_uom'],
+                'purpose' => 'Manufacture',
+                'transaction_type' => 'Check In - Received'
+            ];
+            DB::table('tabAthena Transactions')->insert($values);
+            
 			DB::commit();
 			return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.']);
 		} catch (Exception $e) {

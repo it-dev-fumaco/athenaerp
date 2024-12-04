@@ -96,12 +96,11 @@
                                                                 <table class="table table-striped mt-4 d-none" id="item-selection-table">
                                                                     <thead>
                                                                         <th class="font-responsive text-center p-1 align-middle">Item Code</th>
-                                                                        <th class="font-responsive text-center p-1 align-middle">Price</th>
                                                                         <th class="font-responsive text-center p-1 align-middle">Qty</th>
                                                                     </thead>
                                                                     <tbody>
                                                                         <tr>
-                                                                            <td class="text-justify p-1 align-middle" colspan=3>
+                                                                            <td class="text-justify p-1 align-middle" colspan=2>
                                                                                 <div class="remove-modal-parent col-12 text-right d-none">
                                                                                     <a href="#" class="text-secondary" data-toggle="modal">
                                                                                         <i class="fa fa-remove"></i>
@@ -127,17 +126,15 @@
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                <div class="d-flex flex-row justify-content-center align-items-center">
-                                                                                    <div class="p-1 col-2 text-center">
+                                                                                <div class="d-flex flex-row justify-content-center justify-content-xl-start align-items-center">
+                                                                                    <div class="p-1 col-2 col-xl-1 text-center">
                                                                                         <img src="" alt="" class="img-thumbnail" alt="User Image" width="100%">
                                                                                     </div>
-                                                                                    <div class="p-1 col-3 m-0" style="font-size: 9pt">
+                                                                                    <div class="p-1 col-5 col-xl-7 m-0" style="font-size: 9pt">
                                                                                         <span class="font-weight-bold font-responsive item-code"></span>
+                                                                                        <div class="p-1 d-none item-description  d-xl-block" style="font-size: 9.5pt !important;"></div>
                                                                                     </div>
-                                                                                    <div class="p-0 col-3 d-flex justify-content-center align-items-center">
-                                                                                        ₱&nbsp;<input type="text" class="form-control item-price m-2">
-                                                                                    </div>
-                                                                                    <div class="p-0 col-4">
+                                                                                    <div class="p-0 col-4 col-xl-2">
                                                                                         <div class="input-group number-control">
                                                                                             <div class="input-group-prepend">
                                                                                                 <button class="btn btn-outline-danger decrement" type="button">-</button>
@@ -149,7 +146,7 @@
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                <div class="p-1 item-description" style="font-size: 9.5pt !important;"></div>
+                                                                                <div class="p-1 item-description d-xl-none" style="font-size: 9.5pt !important;"></div>
                                                                                 <div class="p-1">
                                                                                     <select class="form-control reason my-2" style="font-size: 9.5pt" required>
                                                                                         <option value="">Select a reason</option>
@@ -177,7 +174,6 @@
                                             <table class="table table-striped" id="selected-items-table" style="font-size: 9pt;">
                                                 <thead>
                                                     <th class="font-responsive text-center p-1 align-middle">Item Code</th>
-                                                    <th class="font-responsive text-center p-1 align-middle">Price</th>
                                                     <th class="font-responsive text-center p-1 align-middle">Qty</th>
                                                 </thead>
                                                 <tbody>
@@ -194,7 +190,7 @@
                                                             <div class="d-none">
                                                                 <input type="text" name="items[{{ $item_code }}][name]" value="{{ $item->name }}">
                                                             </div>
-                                                            <td class="text-justify p-1 align-middle" colspan="3">
+                                                            <td class="text-justify p-1 align-middle" colspan="2">
                                                                 <div class="col-12 text-right">
                                                                     <a href="#" class="text-secondary" data-toggle="modal" data-target="#remove-{{ $item_code }}-modal">
                                                                         <i class="fa fa-remove"></i>
@@ -220,21 +216,17 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="d-flex flex-row justify-content-center align-items-center">
-                                                                    <div class="p-1 col-2 text-center">
+                                                                <div class="d-flex flex-row justify-content-center justify-content-xl-start align-items-center">
+                                                                    <div class="p-1 col-2 col-xl-1 text-center">
                                                                         <img src="{{ asset("storage/$image") }}" class="img-thumbnail" alt="User Image" width="100%">
                                                                     </div>
-                                                                    <div class="p-1 col-3 m-0" style="font-size: 9pt">
+                                                                    <div class="p-1 col-5 col-xl-7 m-0" style="font-size: 9pt">
                                                                         <span class="font-weight-bold font-responsive item-code">{{ $item_code }}</span>
+                                                                        <div class="p-1 d-none d-xl-block" style="font-size: 9.5pt !important;">
+                                                                            {{ strip_tags($item->description) }}
+                                                                        </div>
                                                                     </div>
-                                                                    <div class="p-0 col-3 d-flex justify-content-center align-items-center">
-                                                                        @if ($material_request->consignment_status == 'Cancelled')
-                                                                            ₱ {{ number_format($item->rate) }}
-                                                                        @else
-                                                                            ₱&nbsp;<input type="text" name="items[{{ $item_code }}][price]" class="form-control item-price m-2 number-input number-validate text-center" value="{{ (float) $item->rate }}" style="font-size: 9pt">
-                                                                        @endif
-                                                                    </div>
-                                                                    <div class="p-0 col-4">
+                                                                    <div class="p-0 col-4 col-xl-2">
                                                                         @if ($material_request->consignment_status == 'Cancelled')
                                                                             <div class="text-center">
                                                                                 <b>{{ number_format($item->qty) }}</b><br>
@@ -253,7 +245,7 @@
                                                                         @endif
                                                                     </div>
                                                                 </div>
-                                                                <div class="p-1 item-description" style="font-size: 9.5pt !important;">
+                                                                <div class="p-1 item-description d-xl-none" style="font-size: 9.5pt !important;">
                                                                     {{ strip_tags($item->description) }}
                                                                 </div>
                                                                 <div class="p-1">
@@ -275,7 +267,7 @@
                                                         </tr>
                                                     @empty
                                                         <tr id='placeholder'>
-                                                            <td colspan=3 class="text-center">
+                                                            <td colspan=2 class="text-center">
                                                                 Please select item(s)
                                                             </td>
                                                         </tr>
@@ -503,7 +495,6 @@
                 const data = e.params.data
                 $('#item-selection-table').removeClass('d-none')
                 $('#item-selection-table .item-code').text(data.id)
-                $('#item-selection-table .item-price').val(parseCurrencyToInteger(data.price))
                 $('#item-selection-table .img-thumbnail').attr('src', data.img)
                 $('#item-selection-table .item-description').text(data.description)
 
@@ -539,7 +530,6 @@
 
                 const row = $('#item-selection-table tbody tr').clone();
                 row.attr('id', 'row-' + item_code);
-                row.find('.item-price').addClass('number-validate').attr('name', `items[${item_code}][price]`)
                 row.find('.item-qty').addClass('number-validate').attr('name', `items[${item_code}][qty]`)
                 row.find('.reason').attr('name', `items[${item_code}][reason]`).val(selected_reason);
                 row.find('.remarks').attr('name', `items[${item_code}][remarks]`)
@@ -577,7 +567,7 @@
                 const status = $(this).data('status');
                 if (!validateInputs() && status != 'Cancelled') {
                     e.preventDefault()
-                    $('.submit-warning').removeClass('d-none').text('Please ensure all items have Prices and Qty');
+                    $('.submit-warning').removeClass('d-none').text('Please ensure all items have Qty');
 
                     return false;
                 }

@@ -64,6 +64,10 @@ trait ERPTrait{
         try {
             $loggedInUser = str_replace('fumaco.local', 'fumaco.com', Auth::user()->wh_user);
             $existing_key = $this->erpOperation('get', 'User', $loggedInUser, [], true);
+            if(!isset($existing_key['data'])){ // Promodisers
+                $loggedInUser = Auth::user()->wh_user;
+                $existing_key = $this->erpOperation('get', 'User', $loggedInUser, [], true);
+            }
             $existing_key = $existing_key['data']['api_key'] ?? null;
 
             $tokens = [
@@ -74,13 +78,15 @@ trait ERPTrait{
             $user = $this->erpOperation('put', 'User', $loggedInUser, $tokens, true);
 
             if(!isset($user['data'])){
-                throw new \Exception('An error occured while generating API Credentials');
+                $error = isset($user['exception']) ? $user['exception'] : 'An error occured while generating API tokens';
+                throw new \Exception($error);
             }
 
             $warehouse_user = $this->erpOperation('put', 'Warehouse Users', Auth::user()->name, $tokens, true);
 
             if(!isset($warehouse_user['data'])){
-                throw new \Exception('An error occured while generating API Credentials');
+                $error = isset($warehouse_user['exception']) ? $warehouse_user['exception'] : 'An error occured while generating API tokens';
+                throw new \Exception($error);
             }
 
             $user = Auth::user();
