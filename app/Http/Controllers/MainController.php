@@ -5825,6 +5825,7 @@ class MainController extends Controller
                     'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
                     'actual_qty' => $value->actual_qty,
+                    'issued_qty' => $issued_qty,
                     'available_qty' => $available_qty,
                     'stock_uom' => $value->stock_uom,
                 ];
@@ -5838,6 +5839,7 @@ class MainController extends Controller
                     'location' => $value->location,
                     'reserved_qty' => $reserved_qty,
                     'actual_qty' => $value->actual_qty,
+                    'issued_qty' => $issued_qty,
                     'available_qty' => $available_qty,
                     'stock_uom' => $value->stock_uom,
                 ];
