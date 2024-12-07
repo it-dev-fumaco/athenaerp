@@ -283,12 +283,12 @@
             $(".add-row").click(function () {
                 markup = `<tr><td class="text-center">
                     <input type="text" name="item_code[]" class="form-control form-control-sm item_code" placeholder="Enter Item Code" style="text-align: center;"></td>
-                    <td class="text-justify"><small></small></td><td class="text-center">
-                        <input type="text" name="quantity[]" class="form-control form-control-sm" placeholder="Enter Qty" style="text-align: center;">
-                        <small class="d-block mt-2 font-weight-bold"></small>
+                    <td class="text-justify description">
+                        <small></small>
                     </td>
                     <td class="text-center">
-                        <input type="text" name="price[]" class="form-control form-control-sm" placeholder="Enter Price" style="text-align: center;">
+                        <input type="text" name="quantity[]" class="form-control form-control-sm" placeholder="Enter Qty" style="text-align: center;">
+                        <small class="d-block mt-2 font-weight-bold"></small>
                     </td>
                     <td class="text-center">
                         <button class="btn btn-danger btn-xs">
