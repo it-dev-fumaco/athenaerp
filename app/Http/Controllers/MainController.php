@@ -2197,8 +2197,6 @@ class MainController extends Controller
         }
     }
 
-    
-
     public function update_pending_ste_item_status(){
         DB::beginTransaction();
         try {
@@ -4649,34 +4647,35 @@ class MainController extends Controller
     }
 
     public function get_athena_logs(Request $request) {
-        $user = Auth::user()->frappe_userid;
-        $allowed_warehouses = $this->user_allowed_warehouse($user);
+        try {
+            $user = Auth::user()->frappe_userid;
+            $allowed_warehouses = $this->user_allowed_warehouse($user);
 
-        $date = Carbon::now();
+            $date = Carbon::parse($request->month);
+            $start = (Clone $date)->startOfMonth();
+            $end = (Clone $date)->endOfMonth();
 
-        $startOfYear = $date->copy()->startOfYear();
-        $endOfYear = $date->copy()->endOfYear();
+            $stock_adjustments_query =  DB::table('tabStock Ledger Entry as sle')
+                ->where('voucher_type', 'Stock Reconciliation')->join('tabItem as i', 'i.name', 'sle.item_code')
+                ->whereIn('sle.warehouse', $allowed_warehouses)->whereBetween('sle.creation', [$start, $end])
+                ->select('sle.creation as transaction_date', 'voucher_type as transaction_type', 'sle.item_code', 'i.description', 'sle.warehouse as s_warehouse', 'sle.warehouse as t_warehouse', 'sle.qty_after_transaction as qty', 'sle.voucher_no as reference_no', 'sle.voucher_no as reference_parent', 'sle.owner as user');
 
-        $stock_adjustments_query =  DB::table('tabStock Ledger Entry as sle')
-        ->where('voucher_type', 'Stock Reconciliation')->join('tabItem as i', 'i.name', 'sle.item_code')
-            ->whereIn('sle.warehouse', $allowed_warehouses)->whereBetween('sle.creation', [$startOfYear, $endOfYear])
-            ->whereMonth('sle.creation', $request->month)
-            ->select('sle.creation as transaction_date', 'voucher_type as transaction_type', 'sle.item_code', 'i.description', 'sle.warehouse as s_warehouse', 'sle.warehouse as t_warehouse', 'sle.qty_after_transaction as qty', 'sle.voucher_no as reference_no', 'sle.voucher_no as reference_parent', 'sle.owner as user');
+            // check in transactions 
+            $checkin_transactions = DB::table('tabAthena Transactions')->whereIn('target_warehouse', $allowed_warehouses)
+                ->whereNull('source_warehouse')->whereBetween('transaction_date', [$start, $end])->where('status', 'Issued')
+                ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
+                ->orderBy('transaction_date', 'desc');
 
-        // check in transactions 
-        $checkin_transactions = DB::table('tabAthena Transactions')->whereIn('target_warehouse', $allowed_warehouses)
-            ->whereNull('source_warehouse')->whereBetween('transaction_date', [$startOfYear, $endOfYear])
-            ->whereMonth('transaction_date', $request->month)->where('status', 'Issued')
-            ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
-            ->orderBy('transaction_date', 'desc');
+            $list = DB::table('tabAthena Transactions')->whereIn('source_warehouse', $allowed_warehouses)
+                ->whereBetween('transaction_date', [$start, $end])->where('status', 'Issued')
+                ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
+                ->orderBy('transaction_date', 'desc')->union($stock_adjustments_query)->union($checkin_transactions)->orderBy('transaction_date', 'desc')->get();
 
-        $list = DB::table('tabAthena Transactions')->whereIn('source_warehouse', $allowed_warehouses)
-            ->whereBetween('transaction_date', [$startOfYear, $endOfYear])
-            ->whereMonth('transaction_date', $request->month)->where('status', 'Issued')
-            ->select('transaction_date', 'transaction_type', 'item_code', 'description', 'source_warehouse as s_warehouse', 'target_warehouse as t_warehouse', 'qty', 'reference_no', 'reference_parent', 'warehouse_user as user')
-            ->orderBy('transaction_date', 'desc')->union($stock_adjustments_query)->union($checkin_transactions)->orderBy('transaction_date', 'desc')->get();
-
-        return view('tbl_athena_logs', compact('list'));
+            return view('tbl_athena_logs', compact('list'));
+        } catch (\Throwable $th) {
+            // throw $th;
+            return response()->json(['success' => 0, 'message' => 'An error occured. Please contact the system administrator', 'error' => $th->getMessage()], 500);
+        }
     }
 
     public function update_reservation_status(){
