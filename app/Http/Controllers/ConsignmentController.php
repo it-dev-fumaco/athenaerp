@@ -2625,9 +2625,12 @@ class ConsignmentController extends Controller
                     $q->orWhere('item.item_code', 'LIKE', "%".$request->q."%");
                 });
             })
-            ->where('bin.warehouse', $branch)->select('bin.*', 'item.*')->get();
+            ->when(Auth::user()->user_group == 'Promodiser', function ($q) use ($branch){
+                return $q->where('bin.warehouse', $branch);
+            })
+            ->select('bin.*', 'item.*')->get()->groupBy('item_code');
 
-        $item_codes = collect($items)->pluck('item_code');
+        $item_codes = collect($items)->keys();
 
         $item_images = DB::table('tabItem Images')->whereIn('parent', $item_codes)->pluck('image_path', 'parent');
         $item_images = collect($item_images)->map(function ($image){
@@ -2647,20 +2650,25 @@ class ConsignmentController extends Controller
         $inventory = collect($inventory_arr)->groupBy('item_code');
 
         $items_arr = [];
-        foreach($items as $item){
-            $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $no_img;
+        foreach($item_codes as $item_code){
+            if(!isset($items[$item_code])){
+                continue;
+            }
+
+            $item = $items[$item_code][0];
+            $img = isset($item_images[$item_code]) ? $item_images[$item_code] : $no_img;
             $img = asset("storage/$img");
 
             $max = $item->consigned_qty * 1;
 
             $items_arr[] = [
-                'id' => $item->item_code,
-                'text' => $item->item_code.' - '.strip_tags($item->description),
+                'id' => $item_code,
+                'text' => $item_code.' - '.strip_tags($item->description),
                 'description' => strip_tags($item->description),
                 'max' => $max,
                 'uom' => $item->stock_uom,
                 'price' => '₱ '.number_format($item->consignment_price, 2),
-                'transaction_date' => isset($inventory[$item->item_code]) ? $inventory[$item->item_code][0]->transaction_date : null,
+                'transaction_date' => isset($inventory[$item_code]) ? $inventory[$item_code][0]->transaction_date : null,
                 'img' => $img,
                 'alt' => Str::slug(explode('.', $img)[0], '-')
             ];

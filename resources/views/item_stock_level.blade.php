@@ -2,10 +2,11 @@
     <thead>
         <tr>
             <th scope="col" rowspan="2" class="font-responsive text-center p-1 align-middle">Warehouse</th>
-            <th scope="col" colspan="3" class="font-responsive text-center p-1">Quantity</th>
+            <th scope="col" colspan="4" class="font-responsive text-center p-1">Quantity</th>
         </tr>
         <tr>
             <th scope="col" class="font-responsive text-center p-1 text-muted">Reserved</th>
+            <th scope="col" class="font-responsive text-center p-1 text-muted">Issued</th>
             <th scope="col" class="font-responsive text-center p-1">Actual</th>
             <th scope="col" class="font-responsive text-center p-1">Available</th>
         </tr>
@@ -19,7 +20,14 @@
             @endif
         </td>
         <td class="text-center p-1 font-responsive align-middle">
-            <span class="text-muted">{{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</span>
+            <span class="text-muted">
+                {{ number_format((float)$stock['reserved_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}
+            </span>
+        </td>
+        <td class="text-center p-1 font-responsive align-middle">
+            <span class="text-muted">
+                {{ number_format((float)$stock['issued_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}
+            </span>
         </td>
         <td class="text-center p-1 font-responsive align-middle">{{ number_format((float)$stock['actual_qty'], 2, '.', '') .' '. $stock['stock_uom'] }}</td>
         <td class="text-center p-1 align-middle">

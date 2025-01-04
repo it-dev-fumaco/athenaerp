@@ -231,25 +231,33 @@
 														</div>
 														
 														<div class="tab-pane font-responsive" id="tab_2-1">
-															<div id="athena-logs-table"></div>
+															<div id="athena-logs-table" class="p-2">
+																<center>
+																	<div class="spinner-border" role="status">
+																		<span class="sr-only">Loading...</span>
+																	</div>
+																</center>
+															</div>
 															<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
 																@php
-																	$month_today = now()->month;
+																	$now = Carbon\Carbon::now();
+
+																	$start = (Clone $now)->subMonth(11);
+
+																	$months = [];
+																	while($start->lessThanOrEqualTo($now)){
+																		$months[] = Clone $start;
+																		$start->addMonth();
+																	}
 																@endphp
-																@for ($i = 1; $i < ($month_today + 1); $i++)
-																@if($i == 1)
-																<li class="page-item prev {{ ($month_today == 1) ? 'disabled' : '' }}"><a class="page-link" href="#">«</a></li>
-																@endif
-																<li class="page-item month {{ ($month_today == $i) ? 'active' : '' }}">
-																	<a class="page-link" href="#" data-month="{{ $i }}">
-																		<p class="page-month" style="font-size: 0.9rem;">{{ date("M", mktime(0, 0, 0, $i, 1, now()->year)) }}</p>
-																		<p class="page-year" style="font-size: 0.8rem;">{{ now()->year }}</p>
-																	</a>
-																</li>
-																@if($i == $month_today)
-																<li class="page-item next {{ ($i == $month_today) ? 'disabled' : '' }}"><a class="page-link" href="#">»</a></li>
-																@endif
-																@endfor
+																@foreach ($months as $month)
+																	<li class="page-item month {{ $month->eq($now) ? 'active' : null }}" data-month="{{ $month->format('Y-m-d') }}">
+																		<a class="page-link" href="#">
+																			<p class="page-month" style="font-size: 0.9rem;">{{ $month->format('M') }}</p>
+																			<p class="page-year" style="font-size: 0.8rem;">{{ $month->format('Y') }}</p>
+																		</a>
+																	</li>
+																@endforeach
 															</ul>
 														</div>
 
@@ -278,21 +286,12 @@
 														<div class="card-body p-2">
 															<div class="box">
 																<form autocomplete="off">
-																	<div class="text-center">Monthly Inventory Accuracy: 
+																	<div class="text-center">Monthly Inventory Accuracy:
 																		<select style="width: 15%;" id="monthly-inv-month" class="filter-inv-accuracy">
 																			<option value="">-</option>
-																			<option value="01" {{ date('m') == '01' ? 'selected' : '' }}>Jan</option>
-																			<option value="02" {{ date('m') == '02' ? 'selected' : '' }}>Feb</option>
-																			<option value="03" {{ date('m') == '03' ? 'selected' : '' }}>Mar</option>
-																			<option value="04" {{ date('m') == '04' ? 'selected' : '' }}>Apr</option>
-																			<option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
-																			<option value="06" {{ date('m') == '06' ? 'selected' : '' }}>Jun</option>
-																			<option value="07" {{ date('m') == '07' ? 'selected' : '' }}>Jul</option>
-																			<option value="08" {{ date('m') == '08' ? 'selected' : '' }}>Aug</option>
-																			<option value="09" {{ date('m') == '09' ? 'selected' : '' }}>Sept</option>
-																			<option value="10" {{ date('m') == '10' ? 'selected' : '' }}>Oct</option>
-																			<option value="11" {{ date('m') == '11' ? 'selected' : '' }}>Nov</option>
-																			<option value="12" {{ date('m') == '12' ? 'selected' : '' }}>Dec</option>
+																			@for($i = 1; $i <= 12; $i++)
+																				<option value="{{ $i }}" {{ (int) $now->format('m') == $i ? 'selected' : '' }}>{{ Carbon\Carbon::createFromDate(0, $i, 1)->format('M') }}</option>
+																			@endfor
 																		</select>
 																		<select style="width: 15%;" id="monthly-inv-year" class="filter-inv-accuracy">
 																			@for ($start = 2018; $start <= date('Y'); $start++)
@@ -396,7 +395,20 @@
 	$(document).ready(function(){
 
 		dashboard_data();
-	
+			function showNotification(color, message, icon){
+				$.notify({
+				  icon: icon,
+				  message: message
+				},{
+				  type: color,
+				  timer: 500,
+				  z_index: 1060,
+				  placement: {
+					from: 'top',
+					align: 'center'
+				  }
+				});
+			}
 
 			function dashboard_data(purpose, div){
 				$.ajax({
@@ -476,20 +488,32 @@
 				});
 			}
 
-			get_athena_logs({{ now()->month }});
+			get_athena_logs("{{ Carbon\Carbon::now()->format('F d, Y') }}");
 			function get_athena_logs(month) {
 				$.ajax({
 					type: "GET",
 					url: "/get_athena_logs?month=" + month,
-					success: function (data) {
+					success: (data) => {
 						$('#athena-logs-table').html(data);
+					},
+					error: (data) => {
+						const error = data.responseJSON
+						showNotification('danger', error.message, 'fa fa-info')
 					}
 				});
 			}
 
 			$('#athena-logs-pagination .month').click(function(e){
 				e.preventDefault();
-				var month = $(this).find('.page-link').eq(0).data('month');
+				$('#athena-logs-table').html(`
+					<center>
+						<div class="spinner-border" role="status">
+							<span class="sr-only">Loading...</span>
+						</div>
+					</center>
+				`);
+				var month = $(this).data('month');
+
 				$('#athena-logs-pagination li.active').removeClass('active');
 				$(this).addClass('active');
 
