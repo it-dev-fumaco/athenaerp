@@ -313,8 +313,9 @@ class TransactionController extends Controller
         DB::connection('mysql')->beginTransaction();
         try {
             $now = Carbon::now();
+
             $packed_items = collect($packing_slip->items)->filter(function ($item) use ($request) {
-                return $item->packed->parent_item == $request->barcode;
+                return $item->packed && $item->packed->parent_item == $request->barcode;
             });
 
             if(!$packed_items){
@@ -329,21 +330,25 @@ class TransactionController extends Controller
             foreach ($packing_slip->items as $item) {
                 $item->qty = (float) $item->qty;
 
-                $available_qty = $this->get_available_qty($item->item_code, $item->packed->warehouse);
-                if($item->qty > $available_qty && $request->deduct_reserve == 0){
-                    return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $item->item_code . '</b> in <b>' . $item->warehouse . '</b><
-                    br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $item->qty . '</b>.']);
+                if ($item->packed) {
+                    $available_qty = $this->get_available_qty($item->item_code, $item->packed->warehouse);
+                    if($item->qty > $available_qty && $request->deduct_reserve == 0){
+                        return response()->json(['status' => 0, 'message' => 'Qty not available for <b> ' . $item->item_code . '</b> in <b>' . $item->warehouse . '</b><
+                        br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $item->qty . '</b>.']);
+                    }
+    
+                    if ($item->packed->parent_item === $request->barcode) {
+                        $item->session_user = Auth::user()->wh_user;
+                        $item->status = 'Issued';
+                        $item->barcode = $request->barcode;
+                        $item->date_modified = $now->toDateTimeString();
+                        $item->qty = (float) $request->qty;
+                    }
+    
+                    unset($item->packed);
                 }
 
-                if ($item->packed->parent_item === $request->barcode) {
-                    $item->session_user = Auth::user()->wh_user;
-                    $item->status = 'Issued';
-                    $item->barcode = $request->barcode;
-                    $item->date_modified = $now->toDateTimeString();
-                    $item->qty = (float) $request->qty;
-                }
-
-                unset($item->packed);
+                
             }
 
             if ($countPendingItems < 1) {

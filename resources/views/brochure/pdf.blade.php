@@ -74,6 +74,7 @@
     </head>
     @php
         $fumaco_logo = storage_path('app/public/fumaco_logo.png');
+        $fumaco_logo = asset('storage/fumaco_logo.png');
         $margin = '1.2in';
         $rows = 1;
         if(strlen($project) > 29){
