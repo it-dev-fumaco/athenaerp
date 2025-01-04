@@ -240,8 +240,6 @@
 															</div>
 															<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
 																@php
-																	$month_today = now()->month;
-
 																	$now = Carbon\Carbon::now();
 
 																	$start = (Clone $now)->subMonth(11);
