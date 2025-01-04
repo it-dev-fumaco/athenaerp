@@ -288,21 +288,12 @@
 														<div class="card-body p-2">
 															<div class="box">
 																<form autocomplete="off">
-																	<div class="text-center">Monthly Inventory Accuracy: 
+																	<div class="text-center">Monthly Inventory Accuracy:
 																		<select style="width: 15%;" id="monthly-inv-month" class="filter-inv-accuracy">
 																			<option value="">-</option>
-																			<option value="01" {{ date('m') == '01' ? 'selected' : '' }}>Jan</option>
-																			<option value="02" {{ date('m') == '02' ? 'selected' : '' }}>Feb</option>
-																			<option value="03" {{ date('m') == '03' ? 'selected' : '' }}>Mar</option>
-																			<option value="04" {{ date('m') == '04' ? 'selected' : '' }}>Apr</option>
-																			<option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
-																			<option value="06" {{ date('m') == '06' ? 'selected' : '' }}>Jun</option>
-																			<option value="07" {{ date('m') == '07' ? 'selected' : '' }}>Jul</option>
-																			<option value="08" {{ date('m') == '08' ? 'selected' : '' }}>Aug</option>
-																			<option value="09" {{ date('m') == '09' ? 'selected' : '' }}>Sept</option>
-																			<option value="10" {{ date('m') == '10' ? 'selected' : '' }}>Oct</option>
-																			<option value="11" {{ date('m') == '11' ? 'selected' : '' }}>Nov</option>
-																			<option value="12" {{ date('m') == '12' ? 'selected' : '' }}>Dec</option>
+																			@for($i = 1; $i <= 12; $i++)
+																				<option value="{{ $i }}" {{ (int) $now->format('m') == $i ? 'selected' : '' }}>{{ Carbon\Carbon::createFromDate(0, $i, 1)->format('M') }}</option>
+																			@endfor
 																		</select>
 																		<select style="width: 15%;" id="monthly-inv-year" class="filter-inv-accuracy">
 																			@for ($start = 2018; $start <= date('Y'); $start++)
