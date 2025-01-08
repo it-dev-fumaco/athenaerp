@@ -3217,6 +3217,14 @@ class ConsignmentController extends Controller
     public function viewInventoryAuditItems($store, $from, $to, Request $request) {
         $is_promodiser = Auth::user()->user_group == 'Promodiser' ? true : false;
 
+        if($is_promodiser){
+            $assigned_consignment_stores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->orderBy('warehouse', 'asc')->pluck('warehouse')->toArray();
+
+            if(!in_array($store, $assigned_consignment_stores)){
+                return redirect('/')->with('error', 'No access to selected branch.');
+            }
+        }
+
         $list = DB::table('tabConsignment Inventory Audit Report as cia')
             ->join('tabConsignment Inventory Audit Report Item as ciar', 'cia.name', 'ciar.parent')
             ->join('tabItem as i', 'i.name', 'ciar.item_code')
