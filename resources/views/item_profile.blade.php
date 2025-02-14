@@ -147,6 +147,11 @@
                                                             <i class="fa fa-edit pb-1"></i> Package Details
                                                         </a>
                                                     @endif
+                                                    @if (in_array(Auth::user()->user_group, ['Director']))
+                                                    <a class="dropdown-item" href="#" href="/item_form/{{ $item_details->name }}">
+                                                        <i class="fa fa-info pb-1"></i> Update Attribute
+                                                    </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -215,6 +220,11 @@
                                                     @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
                                                     <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal' style="font-size: 8pt !important">
                                                         <i class="fa fa-edit pb-1"></i> Package Details
+                                                    </a> 
+                                                    @endif
+                                                    @if (in_array(Auth::user()->user_group, ['Director']))
+                                                    <a class="btn btn-app m-2 d-block pb-5"  href="/item_form/{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                        <i class="fa fa-info pb-1"></i> Update Attribute
                                                     </a> 
                                                     @endif
                                                 </div>
@@ -311,6 +321,11 @@
                                         <a class="btn btn-app m-2 d-block pb-5" data-toggle="modal" data-target='#item-information-modal'>
                                             <i class="fa fa-edit pb-1"></i> Package Details
                                         </a> 
+                                        @endif
+                                        @if (in_array(Auth::user()->user_group, ['Director']))
+                                        <a class="btn btn-app m-2 d-block pb-5" href="/item_form/{{ $item_details->name }}">
+                                            <i class="fa fa-info pb-1"></i> Update Attribute
+                                        </a>
                                         @endif
                                     </div>
                                 </div>
