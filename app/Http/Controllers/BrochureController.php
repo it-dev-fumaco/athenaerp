@@ -785,6 +785,7 @@ class BrochureController extends Controller
 				$allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
 	
 				$file_ext = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
+
 				if(!in_array($file_ext, $allowed_extensions)){
 					return response()->json(['status' => 0, 'message' => 'Sorry, only .jpeg, .jpg and .png files are allowed.']);
 				}
@@ -803,20 +804,23 @@ class BrochureController extends Controller
                 // Storage::putFileAs($image_path, $file, $jpegFilename);
 
                 // Create and save the WebP version
-                $webp = Webp::make($file);
+				if (strtolower($file_ext) != 'webp') {
+					$webp = Webp::make($file);
 
-                if(!File::exists(public_path('temp'))){
-                    File::makeDirectory(public_path('temp'), 0755, true);
-                }
+					if(!File::exists(public_path('temp'))){
+						File::makeDirectory(public_path('temp'), 0755, true);
+					}
 
-                $webp_path = public_path("temp/$webpFilename");
+					$webp_path = public_path("temp/$webpFilename");
+					$webp->save($webp_path);
+				} else {
+					$webp_path = $file;
+				}
+	
+				$web_contents = file_get_contents($webp_path);
+				Storage::put("$image_path$webpFilename", $web_contents);
 
-                $webp->save($webp_path);
-
-                $web_contents = file_get_contents($webp_path);
-                Storage::put("$image_path$webpFilename", $web_contents);
-
-                unlink($webp_path);
+				unlink($webp_path);
 			}
 
 			$existing_image_idx = DB::table('tabItem Brochure Image')->where('parent', $item_code)->where('idx', $request->image_idx)->first();

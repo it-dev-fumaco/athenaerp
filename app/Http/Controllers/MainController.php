@@ -2150,7 +2150,10 @@ class MainController extends Controller
                 $stock_entry->docstatus = 1;
             }
 
+            unset($stock_entry->creation, $stock_entry->owner);
+
             $response = $this->erpOperation('put', 'Stock Entry', $stock_entry->name, collect($stock_entry)->toArray());
+
             if(!isset($response['data'])){
                 if(isset($response['exc_type']) && $response['exc_type'] == 'TimestampMismatchError'){ // If DB data does not match real time data
                     $stock_entry = $this->erpOperation('get', 'Stock Entry', $stock_entry->name);

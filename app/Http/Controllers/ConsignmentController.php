@@ -5245,7 +5245,8 @@ class ConsignmentController extends Controller
                 "branch_warehouse" => $request->branch_warehouse,
                 "project" => $request->project,
                 "items" => $sales_order_item_data,
-                "taxes" => $sales_taxes
+                "taxes" => $sales_taxes,
+                "payment_terms_template" => "CASH"
             ];
 
             $erp_api_key = env('ERP_API_KEY');
