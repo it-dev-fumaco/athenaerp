@@ -20,6 +20,14 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::post('/U_login_user', 'ItemAttributeController@login');
 
     Route::group(['middleware' => 'auth'], function(){
+        Route::get('/item_form/{item_code}', 'ItemController@index');
+        Route::get('/item_attribute_values/{attributeName}', 'ItemController@getAttributeValues');
+        Route::get('/item_attribute/{item_code}', 'ItemController@getItemAttributes');
+        Route::post('/save_item_attribute', 'ItemController@saveItemAttribute');
+        Route::post('/delete_item_attribute', 'ItemController@deleteItemAttribute');
+        Route::post('/save_item_info', 'ItemController@saveItem');
+        Route::post('/update_item_variant', 'ItemController@updateItemVariant');
+
         Route::get('/checkConnection', 'MainController@checkConnection');
 
         Route::post('/generate_sales_order', 'ConsignmentController@createSalesOrder');
