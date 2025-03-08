@@ -5,6 +5,7 @@ use Exception;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Validator;
 use DB;
@@ -50,65 +51,109 @@ class LoginController extends Controller
         return view('login_v2', compact('bg1', 'bg2'));
     }
 
-    public function login(Request $request){
+    public function login (Request $request){
         try {
-            $rules = ['email' => 'required'];
-            $email = $request->email;
-        
-            if (!strpos($email, '@fumaco.local')) {
-                $email .= '@fumaco.local';
-            }
-        
-            $validator = Validator::make($request->all(), $rules);
-        
-            if ($validator->fails()) {
-                throw new Exception($validator->first());
-            }
-        
-            $adldap = new adLDAP();
-            $username = str_replace(['@fumaco.local', '@fumaco.com'], '', $email);
-            $authUser = $adldap->user()->authenticate($username, $request->password);
+            $email = str_replace('@fumaco.com', null, $request->email);
+            $email = str_replace('@fumaco.local', null, $email);
 
-            if (!$authUser) {
-                throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
-            }
-        
-            $user = DB::table('tabWarehouse Users')
-                ->where('wh_user', $email)
-                ->orWhere('wh_user', str_replace('@fumaco.local', '@fumaco.com', $email))
-                ->first();
-        
-            if (!$user) {
-                throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
-            }
-        
-            if (!$user->enabled) {
-                throw new Exception('<span class="blink_text">Your account is disabled.</span>');
-            }
-        
-            if (Auth::loginUsingId($user->frappe_userid)) {
-                if (!Auth::user()->api_key || !Auth::user()->api_secret) {
-                    $api_credentials = $this->generate_api_credentials();
-        
-                    if (!$api_credentials['success']) {
-                        Auth::logout();
-                        throw new Exception('<span class="blink_text">An error occurred.<br>Please contact your system administrator.</span>');
+            $email = "$email@fumaco.com";
+            $password = $request->password;
+    
+            $erp_api_base_url = env('ERP_API_BASE_URL');
+            $response = Http::post("$erp_api_base_url/api/method/login", [
+                'usr' => $email,
+                'pwd' => $password,
+            ]);
+    
+            if ($response->successful()) {
+                $user = DB::table('tabWarehouse Users')
+                    ->where('wh_user', $email)
+                    ->first();
+
+                if (Auth::loginUsingId($user->frappe_userid)) {
+                    if (!Auth::user()->api_key || !Auth::user()->api_secret) {
+                        $api_credentials = $this->generate_api_credentials();
+            
+                        if (!$api_credentials['success']) {
+                            Auth::logout();
+                            throw new Exception($api_credentials['message']);
+                        }
                     }
+            
+                    DB::table('tabWarehouse Users')
+                        ->where('name', $user->name)
+                        ->update(['last_login' => Carbon::now()->toDateTimeString()]);
+            
+                    return redirect('/');
                 }
-        
-                DB::table('tabWarehouse Users')
-                    ->where('name', $user->name)
-                    ->update(['last_login' => Carbon::now()->toDateTimeString()]);
-        
-                return redirect('/');
             }
-            throw new Exception('<span class="blink_text">Login failed. Please try again.</span>');
-        } catch (Exception $e) {
-            return redirect()->back()
-                ->withInput($request->except('password'))
-                ->withErrors($e->getMessage());
+
+            throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
+        } catch (\Throwable $th) {
+            return redirect()->back()->withInput($request->except('password'))->withErrors($th->getMessage());
         }
     }
+
+    // public function login(Request $request){
+    //     try {
+    //         $rules = ['email' => 'required'];
+    //         $email = $request->email;
+        
+    //         if (!strpos($email, '@fumaco.local')) {
+    //             $email .= '@fumaco.local';
+    //         }
+        
+    //         $validator = Validator::make($request->all(), $rules);
+        
+    //         if ($validator->fails()) {
+    //             throw new Exception($validator->first());
+    //         }
+        
+    //         $adldap = new adLDAP();
+    //         $username = str_replace(['@fumaco.local', '@fumaco.com'], '', $email);
+    //         $authUser = $adldap->user()->authenticate($username, $request->password);
+
+    //         if (!$authUser) {
+    //             throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
+    //         }
+        
+    //         $user = DB::table('tabWarehouse Users')
+    //             ->where('wh_user', $email)
+    //             ->orWhere('wh_user', str_replace('@fumaco.local', '@fumaco.com', $email))
+    //             ->first();
+        
+    //         if (!$user) {
+    //             throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
+    //         }
+        
+    //         if (!$user->enabled) {
+    //             throw new Exception('<span class="blink_text">Your account is disabled.</span>');
+    //         }
+        
+    //         if (Auth::loginUsingId($user->frappe_userid)) {
+    //             if (!Auth::user()->api_key || !Auth::user()->api_secret) {
+    //                 $api_credentials = $this->generate_api_credentials();
+        
+    //                 if (!$api_credentials['success']) {
+    //                     Auth::logout();
+    //                     throw new Exception($api_credentials['message']);
+    //                 }
+    //             }
+        
+    //             DB::table('tabWarehouse Users')
+    //                 ->where('name', $user->name)
+    //                 ->update(['last_login' => Carbon::now()->toDateTimeString()]);
+        
+    //             return redirect('/');
+    //         }
+    //         throw new Exception('<span class="blink_text">Login failed. Please try again.</span>');
+    //     } catch (Exception $e) {
+    //         throw $e;
+    //         return redirect()->back()
+    //             ->withInput($request->except('password'))
+    //             ->withErrors($e->getMessage());
+    //     }
+    // }
 
     //     try {
     //         // validate the info, create rules for the inputs
