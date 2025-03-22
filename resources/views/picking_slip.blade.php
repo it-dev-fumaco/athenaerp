@@ -449,7 +449,7 @@
 
 		$scope.$watch('fltr', function(newVal, oldVal) {
 			if (newVal !== oldVal) {
-				$scope.loadData(true);
+				$scope.loadData(false);
 			}
 		});
 
