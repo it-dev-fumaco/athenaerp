@@ -413,6 +413,7 @@
         $scope.currentPage = 1;
         $scope.hasMore = true;
         $scope.custom_loading_spinner_1 = false;
+		$scope.fltr = "";
 
         $http.get("/get_parent_warehouses").then(function(response) {
             $scope.wh = response.data.wh;
@@ -420,13 +421,13 @@
 
         $scope.loadData = function(loadMore = false) {
             if (!loadMore) {
-                $scope.ps = [];      // Reset if not loading more
+                $scope.ps = [];
                 $scope.currentPage = 1;
                 $scope.hasMore = true;
             }
             $scope.custom_loading_spinner_1 = true;
 
-            $http.get("/view_deliveries?arr=1&page=" + $scope.currentPage).then(function(response) {
+            $http.get("/view_deliveries?arr=1&page=" + $scope.currentPage + "&search=" + encodeURIComponent($scope.fltr)).then(function(response) {
                 if (response.data.picking.length > 0) {
                     $scope.ps = $scope.ps.concat(response.data.picking);
                     $scope.currentPage++;
@@ -445,6 +446,12 @@
                 $scope.loadData(true);
             }
         };
+
+		$scope.$watch('fltr', function(newVal, oldVal) {
+			if (newVal !== oldVal) {
+				$scope.loadData(true);
+			}
+		});
 
         $scope.loadData(); // Initial load
     });
