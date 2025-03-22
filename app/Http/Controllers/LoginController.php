@@ -67,7 +67,7 @@ class LoginController extends Controller
     
             if ($response->successful()) {
                 $user = DB::table('tabWarehouse Users')
-                    ->where('wh_user', $email)
+                    ->whereIn('wh_user', [$email, str_replace('@fumaco.com', '@fumaco.local', $email)])
                     ->first();
 
                 if (Auth::loginUsingId($user->frappe_userid)) {
