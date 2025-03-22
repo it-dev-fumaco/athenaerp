@@ -4504,6 +4504,7 @@ class MainController extends Controller
     
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
+        $search = $request->search;
     
         // Picking Slip - SINGLE ITEMS
         $pickingSlipQuery = DB::table('tabPacking Slip as ps')
@@ -4515,6 +4516,13 @@ class MainController extends Controller
                 'dr.docstatus' => 0,
                 'ps.docstatus' => 0
             ])
+            ->where(function($query) use ($search) {
+                $query->where('psi.item_code', 'like', "%{$search}%")
+                    ->orWhere('psi.description', 'like', "%{$search}%")
+                    ->orWhere('dr.customer', 'like', "%{$search}%")
+                    ->orWhere('ps.sales_order', 'like', "%{$search}%")
+                    ->orWhere('psi.name', 'like', "%{$search}%");
+            })
             ->whereIn('dri.warehouse', $allowed_warehouses)
             ->select([
                 'dr.delivery_date',
@@ -4553,6 +4561,13 @@ class MainController extends Controller
             ->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $allowed_warehouses)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->where(function($query) use ($search) {
+                $query->where('sted.item_code', 'like', "%{$search}%")
+                    ->orWhere('sted.description', 'like', "%{$search}%")
+                    ->orWhere('ste.customer_1', 'like', "%{$search}%")
+                    ->orWhere('ste.sales_order_no', 'like', "%{$search}%")
+                    ->orWhere('sted.name', 'like', "%{$search}%");
+            })
             ->select([
                 'ste.delivery_date',
                 DB::raw('NULL as sales_order'),
@@ -4589,6 +4604,13 @@ class MainController extends Controller
                 'ps.docstatus' => 0
             ])
             ->whereIn('dri.warehouse', $allowed_warehouses)
+            ->where(function($query) use ($search) {
+                $query->where('pi.item_code', 'like', "%{$search}%")
+                    ->orWhere('pi.description', 'like', "%{$search}%")
+                    ->orWhere('dr.customer', 'like', "%{$search}%")
+                    ->orWhere('ps.sales_order', 'like', "%{$search}%")
+                    ->orWhere('psi.name', 'like', "%{$search}%");
+            })
             ->select([
                 'dr.delivery_date',
                 'ps.sales_order',
