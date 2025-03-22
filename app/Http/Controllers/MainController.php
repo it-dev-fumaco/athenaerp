@@ -4501,52 +4501,52 @@ class MainController extends Controller
         if (!$request->arr) {
             return view('picking_slip');
         }
-
+    
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
-
-        $pickingSlipQueryProductBundle = DB::table('tabPacking Slip as ps')
-            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
-            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
-            ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
-            ->where([
-                'dr.docstatus' => 0, 'ps.docstatus' => 0
-            ])
-            ->whereIn('dri.warehouse', $allowed_warehouses)
-            ->select([
-                'dr.delivery_date', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name',
-                'ps.delivery_note', 'pi.parent_item', 'pi.name as piName', 'dri.qty', 'pi.item_code', 'pi.description',
-                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', 'pi.qty as piQty', 'pi.warehouse as piWarehouse', 'pi.uom as piUom', DB::raw('"packed_item" as type')
-            ])
-            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")
-            ->get();
-
-            // Fetch picking slips
+    
+        // Picking Slip - SINGLE ITEMS
         $pickingSlipQuery = DB::table('tabPacking Slip as ps')
             ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
             ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
             ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
             ->whereRaw('dri.item_code = psi.item_code')
             ->where([
-                'dr.docstatus' => 0, 'ps.docstatus' => 0
+                'dr.docstatus' => 0,
+                'ps.docstatus' => 0
             ])
             ->whereIn('dri.warehouse', $allowed_warehouses)
             ->select([
-
-                'dr.delivery_date', 'ps.sales_order', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name',
-                'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'),
-                'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', DB::raw('"picking_slip" as type')
+                'dr.delivery_date',
+                'ps.sales_order',
+                DB::raw('NULL as sales_order_no'),
+                'psi.name AS id',
+                'psi.status',
+                'ps.name',
+                'ps.delivery_note',
+                'psi.item_code',
+                'psi.description',
+                DB::raw('SUM(dri.qty) as qty'),
+                'dri.uom',
+                'dri.warehouse',
+                'psi.owner',
+                'dr.customer',
+                'ps.creation',
+                DB::raw('NULL as parent_item'),
+                DB::raw('NULL as piName'),
+                DB::raw('NULL as piQty'),
+                DB::raw('NULL as piWarehouse'),
+                DB::raw('NULL as piUom'),
+                DB::raw('"picking_slip" as type')
             ])
             ->groupBy([
-                'dr.delivery_date', 'ps.sales_order', 'sales_order_no', 'psi.name', 'psi.status', 'ps.name',
+                'dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name',
                 'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom',
-                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation', 'type'
+                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
             ])
-            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC")
-            ->get();
-        
-        // Fetch stock entries
+            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC");
+    
+        // Stock Entry
         $stockEntryQuery = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', '=', 'sted.parent')
             ->where('ste.docstatus', 0)
@@ -4554,39 +4554,97 @@ class MainController extends Controller
             ->whereIn('s_warehouse', $allowed_warehouses)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
             ->select([
-                'ste.delivery_date', 'sted.status', 'sted.validate_item_code', DB::raw('NULL as sales_order'), 'ste.sales_order_no',
-                'ste.customer_1', 'sted.parent', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse',
-                'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 
-                'ste.material_request', 'ste.creation', 'ste.transfer_as', 'sted.name as id', 'sted.stock_uom', DB::raw('"stock_entry" as type')
+                'ste.delivery_date',
+                DB::raw('NULL as sales_order'),
+                'ste.sales_order_no',
+                'sted.name AS id',
+                'sted.status',
+                'ste.name',
+                DB::raw('NULL as delivery_note'),
+                'sted.item_code',
+                'sted.description',
+                'sted.qty',
+                'sted.uom',
+                'sted.s_warehouse as warehouse',
+                'sted.owner',
+                'ste.customer_1 as customer',
+                'ste.creation',
+                DB::raw('NULL as parent_item'),
+                DB::raw('NULL as piName'),
+                DB::raw('NULL as piQty'),
+                DB::raw('NULL as piWarehouse'),
+                DB::raw('NULL as piUom'),
+                DB::raw('"stock_entry" as type')
             ])
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
-            ->get();
-        
-        $allItems = $pickingSlipQuery->merge($stockEntryQuery);
-        
-        // Gather all item codes to minimize queries for supplier part numbers and owners
-        $itemCodes = $allItems->pluck('item_code')->unique();
-        $owners = $allItems->pluck('owner')->unique();
-        
-        if ($pickingSlipQueryProductBundle->count() > 0) {
-            $itemCodes = $itemCodes->merge($pickingSlipQueryProductBundle->pluck('parent_item')->unique());
-            $owners = $owners->merge($pickingSlipQueryProductBundle->pluck('owner')->unique());
-        } 
-        
-        // Fetch supplier part numbers for all items in one query
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
+    
+        // Product Bundles
+        $productBundleQuery = DB::table('tabPacking Slip as ps')
+            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
+            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
+            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
+            ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
+            ->where([
+                'dr.docstatus' => 0,
+                'ps.docstatus' => 0
+            ])
+            ->whereIn('dri.warehouse', $allowed_warehouses)
+            ->select([
+                'dr.delivery_date',
+                'ps.sales_order',
+                DB::raw('NULL as sales_order_no'),
+                'psi.name AS id',
+                'psi.status',
+                'ps.name',
+                'ps.delivery_note',
+                'pi.item_code',
+                'pi.description',
+                'pi.qty as qty',
+                'pi.uom',
+                'pi.warehouse',
+                'psi.owner',
+                'dr.customer',
+                'ps.creation',
+                'pi.parent_item',
+                'pi.name as piName',
+                'pi.qty as piQty',
+                'pi.warehouse as piWarehouse',
+                'pi.uom as piUom',
+                DB::raw('"packed_item" as type')
+            ])
+            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC");
+    
+        // Union everything together
+        $unionQuery = $pickingSlipQuery
+            ->unionAll($stockEntryQuery)
+            ->unionAll($productBundleQuery);
+    
+        // Apply pagination
+        $paginatedData = DB::table(DB::raw("({$unionQuery->toSql()}) as sub"))
+            ->orderByRaw("FIELD(status, 'For Checking', 'Issued') ASC")
+            ->mergeBindings($unionQuery)
+            ->paginate(20);
+    
+        // Gather all item codes and owners
+        $itemCodes = collect($paginatedData->items())->pluck('item_code')->unique();
+        $owners = collect($paginatedData->items())->pluck('owner')->unique();
+    
+        // Fetch supplier part numbers in bulk
         $supplierPartNos = DB::table('tabItem Supplier')
-            ->whereIn('parent', $itemCodes)->pluck('supplier_part_no', 'parent');
-        
-        // Fetch owners' full names in one query
+            ->whereIn('parent', $itemCodes)
+            ->pluck('supplier_part_no', 'parent');
+    
+        // Fetch owners' full names in bulk
         $ownerNames = DB::table('tabUser')
-            ->whereIn('email', $owners)->pluck('full_name', 'email');
-        
+            ->whereIn('email', $owners)
+            ->pluck('full_name', 'email');
+    
         $list = [];
-        foreach ($allItems as $d) {
+        foreach ($paginatedData->items() as $d) {
             $part_nos = $supplierPartNos->get($d->item_code, '');
             $owner = $ownerNames->get($d->owner, null);
             $parent_warehouse = $this->get_warehouse_parent($d->warehouse ?? $d->s_warehouse);
-        
+    
             $list[] = [
                 'owner' => $owner,
                 'warehouse' => $d->warehouse ?? $d->s_warehouse,
@@ -4603,45 +4661,22 @@ class MainController extends Controller
                 'stock_uom' => $d->uom ?? $d->stock_uom,
                 'parent_warehouse' => $parent_warehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                'type' => $d->type, // isset($d->sales_order_no) && $d->sales_order_no ? 'stock_entry' : 'picking_slip',
+                'type' => $d->type,
                 'classification' => $d->transfer_as ?? 'Customer Order',
                 'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
                 'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null,
             ];
         }
-
-        if ($pickingSlipQueryProductBundle->count() > 0) {
-            $pickingSlipQueryProductBundle = $pickingSlipQueryProductBundle->groupBy('parent_item');
-            foreach ($pickingSlipQueryProductBundle as $parent_item => $rows) {
-                $part_nos = $supplierPartNos->get($parent_item, '');
-                $owner = $ownerNames->get($rows[0]->owner, null);
-                $parent_warehouse = $this->get_warehouse_parent($rows[0]->warehouse);
     
-                $list[] = [
-                    'owner' => $owner,
-                    'warehouse' => $rows[0]->warehouse,
-                    'customer' => $rows[0]->customer,
-                    'sales_order' => $rows[0]->sales_order,
-                    'id' => $rows[0]->id,
-                    'part_nos' => $part_nos,
-                    'status' => $rows[0]->status,
-                    'name' => $rows[0]->name,
-                    'delivery_note' => $rows[0]->delivery_note ?? null,
-                    'item_code' => $parent_item,
-                    'description' => $rows[0]->description,
-                    'qty' => $rows[0]->qty,
-                    'stock_uom' => $rows[0]->uom,
-                    'parent_warehouse' => $parent_warehouse,
-                    'creation' => Carbon::parse($rows[0]->creation)->format('M-d-Y h:i:A'),
-                    'type' => 'packed_item',
-                    'classification' => 'Customer Order',
-                    'delivery_date' => Carbon::parse($rows[0]->delivery_date)->format('M-d-Y'),
-                    'delivery_status' => (Carbon::parse($rows[0]->delivery_date) < Carbon::now()) ? 'late' : null,
-                ];
-            }
-        }
-        
-        return response()->json(['picking' => $list]);
+        return response()->json([
+            'picking' => $list,
+            'pagination' => [
+                'total' => $paginatedData->total(),
+                'per_page' => $paginatedData->perPage(),
+                'current_page' => $paginatedData->currentPage(),
+                'last_page' => $paginatedData->lastPage()
+            ]
+        ]);
     }
 
     // /picking_slip
