@@ -4668,27 +4668,15 @@ class MainController extends Controller
             ];
         }
     
-                    'sales_order' => $rows[0]->sales_order,
-                    'id' => $rows[0]->id,
-                    'part_nos' => $part_nos,
-                    'status' => $rows[0]->status,
-                    'name' => $rows[0]->name,
-                    'delivery_note' => $rows[0]->delivery_note ?? null,
-                    'item_code' => $parent_item,
-                    'description' => $rows[0]->description,
-                    'qty' => $rows[0]->qty,
-                    'stock_uom' => $rows[0]->uom,
-                    'parent_warehouse' => $parent_warehouse,
-                    'creation' => Carbon::parse($rows[0]->creation)->format('M-d-Y h:i:A'),
-                    'type' => 'packed_item',
-                    'classification' => 'Customer Order',
-                    'delivery_date' => Carbon::parse($rows[0]->delivery_date)->format('M-d-Y'),
-                    'delivery_status' => (Carbon::parse($rows[0]->delivery_date) < Carbon::now()) ? 'late' : null,
-                ];
-            }
-        }
-        
-        return response()->json(['picking' => $list]);
+        return response()->json([
+            'picking' => $list,
+            'pagination' => [
+                'total' => $paginatedData->total(),
+                'per_page' => $paginatedData->perPage(),
+                'current_page' => $paginatedData->currentPage(),
+                'last_page' => $paginatedData->lastPage()
+            ]
+        ]);
     }
 
     // /picking_slip
