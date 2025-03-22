@@ -4521,6 +4521,8 @@ class MainController extends Controller
                     ->orWhere('psi.description', 'like', "%{$search}%")
                     ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('ps.sales_order', 'like', "%{$search}%")
+                    ->orWhere('ps.name', 'like', "%{$search}%")
+                    ->orWhere('dr.name', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
             })
             ->whereIn('dri.warehouse', $allowed_warehouses)
@@ -4553,7 +4555,6 @@ class MainController extends Controller
                 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
             ])
             ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC");
-    
         // Stock Entry
         $stockEntryQuery = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', '=', 'sted.parent')
@@ -4566,6 +4567,7 @@ class MainController extends Controller
                     ->orWhere('sted.description', 'like', "%{$search}%")
                     ->orWhere('ste.customer_1', 'like', "%{$search}%")
                     ->orWhere('ste.sales_order_no', 'like', "%{$search}%")
+                    ->orWhere('ste.name', 'like', "%{$search}%")
                     ->orWhere('sted.name', 'like', "%{$search}%");
             })
             ->select([
@@ -4609,6 +4611,8 @@ class MainController extends Controller
                     ->orWhere('pi.description', 'like', "%{$search}%")
                     ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('ps.sales_order', 'like', "%{$search}%")
+                    ->orWhere('ps.name', 'like', "%{$search}%")
+                    ->orWhere('dr.name', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
             })
             ->select([
