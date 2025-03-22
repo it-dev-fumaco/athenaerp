@@ -1401,6 +1401,7 @@ class ConsignmentController extends Controller
             return redirect()->back()->with('success', $cancelled_arr);
         } catch (Exception $e) {
             DB::rollback();
+            throw $e;
             return redirect()->back()->with('error', 'An error occured. Please try again later');
         }
     }
@@ -2098,6 +2099,7 @@ class ConsignmentController extends Controller
                 return redirect()->back()->with('success', "$id successfully updated!");
             }
         } catch (\Throwable $th) {
+            throw $th;
             return redirect()->back()->with('error', "An error occured. Please contact your system administrator.");
         }
     }
@@ -5268,6 +5270,7 @@ class ConsignmentController extends Controller
 
             return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
         } catch (\Throwable $th) {
+            throw $th;
             return response()->json(['status' => 0, 'message' => 'Something went wrong. Please contact your system administrator.']);
         }
     }

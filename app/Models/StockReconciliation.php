@@ -5,15 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DeliveryNoteItem extends Model
+class StockReconciliation extends Model
 {
     use HasFactory;
-    protected $table = 'tabDelivery Note Item';
+    protected $table = 'tabStock Reconciliation';
     protected $connection = 'mysql';
     protected $primaryKey = 'name';
     public $timestamps = false;
     protected $keyType = 'string';
-    public function delivery_note(){
-        return $this->belongsTo(DeliveryNote::class, 'parent', 'name');
+    
+    public function items(){
+        return $this->hasMany(StockReconciliationItem::class, 'parent', 'name');
     }
+
 }

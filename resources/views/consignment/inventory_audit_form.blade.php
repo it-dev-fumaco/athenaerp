@@ -4,6 +4,163 @@
 ])
 
 @section('content')
+@php
+// $input_values = [ // Uriah
+//     'DB00007' => 1,
+//     'DB00008' => 2,
+//     'DB00010' => 2,
+//     'DB00005' => 3,
+//     'DB00006' => 2,
+//     'DB00009' => 1,
+//     'DB00003' => 4,
+
+//     'BR00012' => 12,
+//     'BR00003' => 29,
+//     'BR00005' => 7,
+//     'BR00007' => 0,
+//     'BR00009' => 16,
+//     'BR00010' => 9,
+
+//     'HO02122' => 9,
+//     'BT00797' => 28,
+//     'BT00461' => 29,
+//     'BT00153' => 0,
+//     'BT00333' => 3,
+
+//     'EB14196' => 10,
+
+//     'ME00019' => 3,
+
+//     'FG77208' => 3,
+//     'FG77207' => 1,
+//     'FG64287' => 4,
+//     'FG64288' => 2,
+//     'FG70811' => 1,
+//     'FG71490' => 3,
+//     'FG70818' => 2,
+//     'FG71813' => 7,
+
+//     'LT01509' => 2,
+//     'LT01467' => 3,
+//     'LT01513' => 5,
+//     'LT01473' => 1,
+//     'LT01475' => 5,
+//     'LT01511' => 0,
+//     'LT01515' => 5,
+//     'LT01477' => 5,
+// ];
+
+// $input_values = [ // Melvin
+//     'FG70811' => 0,
+//     'FG71808' => 11,
+//     'FG70861' => 44,
+//     'FG71818' => 48,
+//     'FG71084' => 5,
+//     'FG70818' => 22,
+//     'FG71811' => 19,
+//     'FG70824' => 11,
+//     'FG71813' => 12,
+//     'FG71085' => 36,
+//     'FG71823' => 36,
+//     'FG71089' => 9,
+//     'FG71826' => 9,
+//     'FG70844' => 3,
+//     'FG71816' => 5,
+//     'LT01465' => 0,
+//     'LT01513' => 0,
+//     'LT01475' => 0,
+//     'LT01515' => 0,
+//     'LT01477' => 0,
+//     'LT01516' => 0,
+//     'HI00059' => 6,
+//     'SA00278' => 6,
+//     'SA00299' => 0,
+//     'SA00280' => 8,
+//     'SA00281' => 7,
+//     'SA00282' => 10,
+//     'SA00283' => 6,
+//     'SA00279' => 6,
+//     'SA00306' => 5,
+//     'SA00301' => 11,
+//     'SA00302' => 14,
+//     'SA00303' => 11,
+//     'SA00305' => 10,
+//     'SA00304' => 9,
+//     'DB00007' => 5,
+//     'DB00008' => 6,
+//     'DB00010' => 4,
+//     'DB00005' => 10,
+//     'DB00006' => 7,
+//     'DB00009' => 5,
+//     'DB00003' => 8,
+//     'SE00092' => 8,
+//     'SE00046' => 4,
+//     'BR00012' => 36,
+//     'BR00011' => 15,
+//     'BR00003' => 90,
+//     'BR00004' => 88,
+//     'BR00005' => 77,
+//     'BR00006' => 75,
+//     'BR00007' => 47,
+//     'BR00008' => 39,
+//     'BR00009' => 0,
+//     'BR00010' => 38,
+//     'HO02122' => 6,
+//     'HO01979' => 19,
+//     'BT00916' => 0,
+//     'TT00483' => 3,
+//     'TT00466' => 8,
+//     'TT00471' => 2,
+//     'TT00473' => 5,
+//     'EB14192' => 250,
+//     'EB14196' => 150,
+//     'EB14194' => 200,
+//     'EB14195' => 265,
+//     'ME00019' => 15,
+//     'FG77209' => 10,
+//     'FG77210' => 0,
+//     'FG77207' => 16,
+//     'FG77208' => 27,
+//     'FG76183' => 5,
+//     'FG65655' => 45,
+//     'FG67538' => 41,
+//     'FG63922' => 20,
+//     'FG72000' => 9,
+//     'FG72006' => 4,
+//     'FG71995' => 4,
+//     'FG63955' => 17,
+//     'FG63707' => 10,
+//     'FG68790' => 6,
+//     'FG68791' => 14,
+// ];
+
+$input_values = [ // Eric Cayabyab
+    'HO02122' => 24,
+    'HO01979' => 16,
+    'HO05157' => 1,
+    'PA74779' => 5,
+    'EB00009' => 67,
+    'EB14195' => 159,
+    'ME00019' => 34,
+    'DB00009' => 5,
+    'DB00003' => 11,
+    'DB00004' => 6,
+    'SE00092' => 20,
+    'DB00007' => 0,
+    'DB00008' => 0,
+    'DB00010' => 8,
+    'DB00005' => 1,
+    'FG65655' => 63,
+    'FG67538' => 44,
+    'FG64457' => 43,
+    'FG65713' => 26,
+    'FG71818' => 0,
+    'FG70434' => 19,
+    'FG70216' => 0,
+    'FG63904' => 2
+];
+
+@endphp
 <div class="content">
 	<div class="content-header p-0">
         <div class="container">
@@ -101,7 +258,8 @@
                                                                     <button class="btn btn-outline-danger btn-xs qtyminus" style="padding: 0 5px 0 5px;" type="button">-</button>
                                                                 </div>
                                                                 <div class="custom-a p-0">
-                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 50px;" required id="{{ $row->item_code }}" value="{{ $qty }}">
+                                                                    {{-- <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 50px;" required id="{{ $row->item_code }}" value="{{ isset($input_values[$row->item_code]) ? $input_values[$row->item_code] : null }}"> --}}
+                                                                    <input type="text" class="form-control form-control-sm qty item-audit-qty" name="item[{{ $row->item_code }}][qty]" style="text-align: center; width: 50px;" required id="{{ $row->item_code }}" value="{{ $consigned_qty }}">
                                                                 </div>
                                                                 <div class="input-group-append p-0">
                                                                     <button class="btn btn-outline-success btn-xs qtyplus" style="padding: 0 5px 0 5px;" type="button">+</button>

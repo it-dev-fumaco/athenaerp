@@ -5147,7 +5147,7 @@ class MainController extends Controller
 			return response()->json(['status' => 1, 'message' => 'Stock Entry has been created.']);
 		} catch (Exception $e) {
 			DB::rollback();
-            // throw $e;
+            throw $e;
 			return response()->json(['status' => 0, 'message' => $e->getMessage()], 500);
 		}
     }

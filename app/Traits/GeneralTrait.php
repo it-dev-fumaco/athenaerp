@@ -9,6 +9,8 @@ use DB;
 use Carbon\Carbon;
 use Auth;
 use Exception;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 trait GeneralTrait
 {
@@ -182,6 +184,10 @@ trait GeneralTrait
                 ->select('sted.*', 'ste.sales_order_no', 'ste.material_request', 'ste.purpose', 'ste.transfer_as', 'ste.issue_as', 'ste.receive_as')
                 ->first();
 
+                // return $id;
+                return collect($q);
+
+
             $type = null;
             if($q->purpose == 'Manufacture') {
                 $type = 'Check In - Received';
@@ -298,6 +304,49 @@ trait GeneralTrait
                 return ['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()];
             }
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()]);
+        }
+    }
+
+    public function slackNotification($message){
+        try {
+            $response = Http::withOptions([
+                'Content-Type' => 'application/json',
+                'verify' => false,
+            ])->post("https://hooks.slack.com/services/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", [
+                'text' => $message
+            ]);
+
+            if($response != 'ok'){
+                info('Error sending Slack Notification');
+                return new \ErrorException();
+            }
+
+            return 1;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function getJson($file){
+        try {
+            $log_data = [];
+            if(Storage::disk('public')->exists("$file.json")){
+                $log_data = json_decode(file_get_contents(storage_path("/app/public/$file.json")), true);
+            }
+
+            return $log_data;
+        } catch (\Throwable $th) {
+            return [];
+        }
+    }
+
+    public function saveJson($file, $data){
+        try {
+            Storage::disk('public')->put("$file.json", json_encode($data));
+
+            return 1;
+        } catch (\Throwable $th) {
+            return 0;
         }
     }
 }

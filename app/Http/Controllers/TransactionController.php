@@ -165,6 +165,8 @@ class TransactionController extends Controller
         } catch (Exception $e) {
             DB::rollback();
 
+            throw $e;
+
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.'], 500);
         }
     }
@@ -300,6 +302,8 @@ class TransactionController extends Controller
             return response()->json(['status' => 1, 'message' => 'Item ' . $itemDetails->item_code . ' has been checked out.']);
         } catch (Exception $e) {
             DB::connection('mysql')->rollback();
+
+            throw $e;
 
             return response()->json([
                 'status' => 0, 

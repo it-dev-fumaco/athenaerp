@@ -51,6 +51,7 @@ trait ERPTrait{
             return 1;
         } catch (\Throwable $th) {
             DB::connection('mysql')->rollBack();
+            return $th->getMessage();
             return 0;
         }
         
@@ -96,7 +97,7 @@ trait ERPTrait{
             
             return ['success' => 1, 'message' => 'API Credentials Created!'];
         } catch (\Exception $th) {
-            // throw $th;
+            throw $th;
             return ['success' => 0, 'message' => $th->getMessage()];
         }
     }

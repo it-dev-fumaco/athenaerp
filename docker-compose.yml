@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  web:
+    image: fumacojave/athenaerp:version-7.14
+    container_name: athenaerp-docker
+    build:
+      target: web
+      context: .
+    env_file:
+      - .env
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    deploy:
+      resources:
+        reservations:
+          memory: 4g 
+        limits:
+          memory: 8g
+  db:
+    platform: "linux/amd64"
+    image: mysql:5.7
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    deploy:
+      resources:
+        reservations:
+          memory: 4g
+        limits:
+          memory: 8g
+volumes:
+  dbdata:

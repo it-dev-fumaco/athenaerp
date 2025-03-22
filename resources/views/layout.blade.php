@@ -534,7 +534,23 @@
 	</script>
 	@endif
 </head>
-<body class="hold-transition layout-top-nav">
+<body class="hold-transition layout-top-nav" style="border: 3px solid red">
+	<div class="bg-danger" style="position: fixed; top: 0; left: 0; z-index: 9999; padding: 10px">
+		@php
+			$db_source = env('DB_HOST_SRC');
+			$api_source = env('ERP_API_BASE_URL');
+			$db_sources = [
+				'10.0.0.76' => 'Live',
+				'10.0.0.111' => 'Testing'
+			];
+			$api_sources = [
+				'http://10.0.0.83' => 'Live',
+				'http://10.0.48.106' => 'Testing'
+			];
+		@endphp
+        ERP DB Data: {{ $db_sources[$db_source] }} <br>
+        ERP API Data: {{ $api_sources[$api_source] }} <br>
+    </div>
 	<div id="loader-wrapper">
 		<div id="loader"></div>
 		<div class="loader-section section-left"></div>

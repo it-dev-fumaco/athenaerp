@@ -527,7 +527,8 @@ class BrochureController extends Controller
 			return response()->json(['status' => 1, 'message' => 'Item added to list.', 'show_notif' => $show_notif]);
 		} catch (\Throwable $th) {
 			DB::rollback();
-			return response()->json(['status' => 0, 'message' => 'An error occured. Please try again.']);
+			throw $th;
+			// return response()->json(['status' => 0, 'message' => 'An error occured. Please try again.']);
 		}
 	}
 

@@ -16,3 +16,10 @@ yarn-error.log
 /public/storage1
 /public/storage2
 
+app/Http/Controllers/TestingEnvironmentController.php
+resources/views/for_testing_only
+app/Console/Commands/dev_test
+*.orig
+vendor-orig
+routes/test_routes.php
+start.bat
