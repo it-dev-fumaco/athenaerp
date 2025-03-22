@@ -4523,6 +4523,7 @@ class MainController extends Controller
                     ->orWhere('ps.sales_order', 'like', "%{$search}%")
                     ->orWhere('ps.name', 'like', "%{$search}%")
                     ->orWhere('dr.name', 'like', "%{$search}%")
+                    ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
             })
             ->whereIn('dri.warehouse', $allowed_warehouses)
@@ -4568,6 +4569,7 @@ class MainController extends Controller
                     ->orWhere('ste.customer_1', 'like', "%{$search}%")
                     ->orWhere('ste.sales_order_no', 'like', "%{$search}%")
                     ->orWhere('ste.name', 'like', "%{$search}%")
+                    ->orWhere('ste.so_customer_name', 'like', "%{$search}%")
                     ->orWhere('sted.name', 'like', "%{$search}%");
             })
             ->select([
@@ -4613,6 +4615,7 @@ class MainController extends Controller
                     ->orWhere('ps.sales_order', 'like', "%{$search}%")
                     ->orWhere('ps.name', 'like', "%{$search}%")
                     ->orWhere('dr.name', 'like', "%{$search}%")
+                    ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
             })
             ->select([
