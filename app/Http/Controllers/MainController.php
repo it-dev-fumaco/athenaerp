@@ -1370,30 +1370,60 @@ class MainController extends Controller
     }
 
     // /material_transfer
+    // 2025-03-29 Pagination Update
     public function view_material_transfer(Request $request){
         if(!$request->arr){
             return view('material_transfer');
         }
-        
+
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
+        $page = $request->page;
+        $search = $request->search;
+        $selected_warehouse = $request->warehouse;
 
         $q1 = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $allowed_warehouses)->whereNotin('transfer_as', ['Consignment', 'Sample Item', 'For Return'])
+            ->when($search, function ($q) use ($search) {
+                return $q->where(function ($query) use ($search) {
+                    $query->where('sted.item_code', 'LIKE', "%$search%")
+                        ->orWhere('sted.description', 'LIKE', "%$search%")
+                        ->orWhere('ste.sales_order_no', 'LIKE', "%$search%")
+                        ->orWhere('ste.material_request', 'LIKE', "%$search%")
+                        ->orWhere('ste.so_customer_name', 'LIKE', "%$search%");
+                });
+            })
+            ->when($selected_warehouse, function ($q) use ($selected_warehouse) {
+                return $q->where('sted.s_warehouse', $selected_warehouse);
+            })
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
 
-        $q = DB::table('tabStock Entry as ste')
+        $q2 = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer')
             ->whereIn('t_warehouse', $allowed_warehouses)->whereIn('transfer_as', ['For Return', 'Internal Transfer', 'Pull Out Item'])
+            ->when($search, function ($q) use ($search) {
+                return $q->where(function ($query) use ($search) {
+                    $query->where('sted.item_code', 'LIKE', "%$search%")
+                        ->orWhere('sted.description', 'LIKE', "%$search%")
+                        ->orWhere('ste.sales_order_no', 'LIKE', "%$search%")
+                        ->orWhere('ste.material_request', 'LIKE', "%$search%")
+                        ->orWhere('ste.so_customer_name', 'LIKE', "%$search%");
+                });
+            })
+            ->when($selected_warehouse, function ($q) use ($selected_warehouse) {
+                return $q->where('sted.s_warehouse', $selected_warehouse);
+            })
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")->union($q1)->get();
+            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")->union($q1)->paginate(20, ['*'], 'page', $page);
 
-        $item_codes = array_values(array_unique(array_column($q->toArray(), 'item_code')));
-        $s_warehouses = array_values(array_unique(array_column($q->toArray(), 's_warehouse')));
+        $q = $q2->items();
+
+        $item_codes = array_values(array_unique(array_column($q, 'item_code')));
+        $s_warehouses = array_values(array_unique(array_column($q, 's_warehouse')));
 
         if (count($item_codes) > 0) {
             // get reserved qty per item
@@ -1425,8 +1455,8 @@ class MainController extends Controller
                 ->select(DB::raw('CONCAT(at.item_code, REPLACE(at.source_warehouse, " ", "")) as id'), DB::raw('sum(at.issued_qty) as issued_qty'))
                 ->groupBy('at.item_code', 'at.source_warehouse')->pluck('issued_qty', 'id');
 
-            $material_requests = array_unique(array_column($q->toArray(), 'material_request'));
-            $sales_orders = array_unique(array_column($q->toArray(), 'sales_order_no'));
+            $material_requests = array_unique(array_column($q, 'material_request'));
+            // $sales_orders = array_unique(array_column($q->toArray(), 'sales_order_no'));
 
             $references = DB::table('tabMaterial Request')->whereIn('name', $material_requests)->pluck('customer', 'name');
 

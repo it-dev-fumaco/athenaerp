@@ -129,6 +129,15 @@
 										</tr>
 									</tbody>
 								</table>
+
+								<div class="text-center p-3">
+									<button id="load-more-btn" class="btn btn-primary" ng-click="loadData()" ng-if="hasMore && !custom_loading_spinner">
+										Load More
+									</button>
+									<div id="load-more-spinner" class="spinner-border text-primary" role="status" ng-if="custom_loading_spinner">
+										<span class="sr-only">Loading...</span>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -306,19 +315,53 @@
 	});
 
 	var app = angular.module('myApp', []);
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
-		$http.get("/get_parent_warehouses").then(function (response) {
+	app.controller('stockCtrl', function($scope, $http) {
+		$scope.mt = [];
+		$scope.page = 1;
+		$scope.hasMore = true;
+		$scope.custom_loading_spinner = false;
+		$scope.fltr = '';
+		$scope.searchText = '';
+
+		$http.get("/get_parent_warehouses").then(function(response) {
 			$scope.wh = response.data.wh;
 		});
-		
-		$scope.loadData = function(){
-		$scope.custom_loading_spinner = true;
-			$http.get("/material_transfer?arr=1").then(function (response) {
-				$scope.mt = response.data.records;
+
+		$scope.loadData = function(reset = false) {
+			if (reset) {
+				$scope.mt = [];
+				$scope.page = 1;
+				$scope.hasMore = true;
+			}
+
+			if (!$scope.hasMore) return;
+
+			$scope.custom_loading_spinner = true;
+			$http.get("/material_transfer", {
+				params: {
+					arr: 1,
+					page: $scope.page,
+					search: $scope.fltr,
+					warehouse: $scope.searchText
+				}
+			}).then(function(response) {
+				let newRecords = response.data.records;
+
+				if (newRecords.length === 0) {
+					$scope.hasMore = false;
+				} else {
+					$scope.mt = $scope.mt.concat(newRecords);
+					$scope.page++;
+				}
+
 				$scope.custom_loading_spinner = false;
 			});
-		}
-		
+		};
+
+		$scope.$watchGroup(['fltr', 'searchText'], function() {
+			$scope.loadData(true);
+		});
+
 		$scope.loadData();
 	});
 </script>
