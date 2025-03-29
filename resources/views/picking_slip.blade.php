@@ -28,7 +28,7 @@
 									<div class="form-group">
 										<select class="form-control" ng-model="searchText">
 											<option value="">All Warehouses</option>
-											<option ng-repeat="y in wh">@{{ y.name }}</option>
+											<option ng-repeat="y in wh" value="@{{ y.name }}">@{{ y.name }}</option>
 										</select>
 									</div>
 								</div>
@@ -408,53 +408,60 @@
     });
 
     var app = angular.module('myApp', []);
-    app.controller('stockCtrl', function($scope, $http) {
-        $scope.ps = [];
-        $scope.currentPage = 1;
-        $scope.hasMore = true;
-        $scope.custom_loading_spinner_1 = false;
+	app.controller('stockCtrl', function ($scope, $http) {
+		$scope.ps = [];
+		$scope.currentPage = 1;
+		$scope.hasMore = true;
+		$scope.custom_loading_spinner_1 = false;
 		$scope.fltr = "";
+		$scope.searchText = "";
 
-        $http.get("/get_parent_warehouses").then(function(response) {
-            $scope.wh = response.data.wh;
-        });
+		$http.get("/get_parent_warehouses").then(function (response) {
+			$scope.wh = response.data.wh;
+		});
 
-        $scope.loadData = function(loadMore = false) {
-            if (!loadMore) {
-                $scope.ps = [];
-                $scope.currentPage = 1;
-                $scope.hasMore = true;
-            }
-            $scope.custom_loading_spinner_1 = true;
+		$scope.loadData = function (loadMore = false) {
+			if (!loadMore) {
+				$scope.ps = [];
+				$scope.currentPage = 1;
+				$scope.hasMore = true;
+			}
+			$scope.custom_loading_spinner_1 = true;
 
-            $http.get("/view_deliveries?arr=1&page=" + $scope.currentPage + "&search=" + encodeURIComponent($scope.fltr)).then(function(response) {
-                if (response.data.picking.length > 0) {
-                    $scope.ps = $scope.ps.concat(response.data.picking);
-                    $scope.currentPage++;
-                    $scope.hasMore = $scope.currentPage <= response.data.pagination.last_page;
-                } else {
-                    $scope.hasMore = false;
-                }
-                $scope.custom_loading_spinner_1 = false;
-            }).catch(function() {
-                $scope.custom_loading_spinner_1 = false;
-            });
-        };
+			$http.get("/view_deliveries", {
+				params: {
+					arr: 1,
+					page: $scope.currentPage,
+					search: $scope.fltr,
+					warehouse: $scope.searchText
+				}
+			}).then(function (response) {
+				if (response.data.picking.length > 0) {
+					$scope.ps = $scope.ps.concat(response.data.picking);
+					$scope.currentPage++;
+					$scope.hasMore = $scope.currentPage <= response.data.pagination.last_page;
+				} else {
+					$scope.hasMore = false;
+				}
+				$scope.custom_loading_spinner_1 = false;
+			}).catch(function () {
+				$scope.custom_loading_spinner_1 = false;
+			});
+		};
 
-        $scope.loadMore = function() {
-            if ($scope.hasMore) {
-                $scope.loadData(true);
-            }
-        };
+		$scope.loadMore = function () {
+			if ($scope.hasMore) {
+				$scope.loadData(true);
+			}
+		};
 
-		$scope.$watch('fltr', function(newVal, oldVal) {
-			if (newVal !== oldVal) {
+		$scope.$watchGroup(['fltr', 'searchText'], function (newValues, oldValues) {
+			if (newValues !== oldValues) {
 				$scope.loadData(false);
 			}
 		});
 
-        $scope.loadData(); // Initial load
-    });
-
+		$scope.loadData();
+	});
 </script>
 @endsection

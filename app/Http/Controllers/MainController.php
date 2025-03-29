@@ -4646,6 +4646,7 @@ class MainController extends Controller
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
         $search = $request->search;
+        $selected_warehouse = $request->warehouse;
     
         // Picking Slip - SINGLE ITEMS
         $pickingSlipQuery = DB::table('tabPacking Slip as ps')
@@ -4666,6 +4667,9 @@ class MainController extends Controller
                     ->orWhere('dr.name', 'like', "%{$search}%")
                     ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
+            })
+            ->when($selected_warehouse, function($query) use ($selected_warehouse) {
+                return $query->where('dri.warehouse', $selected_warehouse);
             })
             ->whereIn('dri.warehouse', $allowed_warehouses)
             ->select([
@@ -4713,6 +4717,9 @@ class MainController extends Controller
                     ->orWhere('ste.so_customer_name', 'like', "%{$search}%")
                     ->orWhere('sted.name', 'like', "%{$search}%");
             })
+            ->when($selected_warehouse, function($query) use ($selected_warehouse) {
+                return $query->where('sted.s_warehouse', $selected_warehouse);
+            })
             ->select([
                 'ste.delivery_date',
                 DB::raw('NULL as sales_order'),
@@ -4758,6 +4765,9 @@ class MainController extends Controller
                     ->orWhere('dr.name', 'like', "%{$search}%")
                     ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
+            })
+            ->when($selected_warehouse, function($query) use ($selected_warehouse) {
+                return $query->where('pi.warehouse', $selected_warehouse);
             })
             ->select([
                 'dr.delivery_date',
