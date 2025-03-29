@@ -1229,125 +1229,111 @@ class MainController extends Controller
     }
 
     // /material_transfer_for_manufacture
+    // 2025-03-29 Pagination Update
     public function view_material_transfer_for_manufacture(Request $request){
-        if(!$request->arr){
+        if (!$request->arr) {
             return view('material_transfer_for_manufacture');
         }
-        
+
         $user = Auth::user()->frappe_userid;
         $allowed_warehouses = $this->user_allowed_warehouse($user);
 
+        // Get paginated stock entries
+        $perPage = $request->input('per_page', 20);
+        $page = $request->input('page', 1);
+
+        $search = $request->search;
+        $selected_warehouse = $request->warehouse;
+
         $q = DB::table('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer for Manufacture')
+            ->where('ste.docstatus', 0)
+            ->where('purpose', 'Material Transfer for Manufacture')
             ->where('ste.transfer_as', '!=', 'For Return')
             ->whereIn('s_warehouse', $allowed_warehouses)
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.work_order', 'ste.creation', 'ste.so_customer_name')
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($query) use ($search) {
+                    $query->where('sted.item_code', 'LIKE', "%$search%")
+                        ->orWhere('sted.description', 'LIKE', "%$search%")
+                        ->orWhere('ste.sales_order_no', 'LIKE', "%$search%")
+                        ->orWhere('ste.material_request', 'LIKE', "%$search%")
+                        ->orWhere('ste.so_customer_name', 'LIKE', "%$search%")
+                        ->orWhere('ste.work_order', 'LIKE', "%$search%");
+                });
+            })
+            ->when($selected_warehouse, function ($q) use ($selected_warehouse) {
+                $q->where('sted.s_warehouse', $selected_warehouse);
+            })
+            ->select(
+                'sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 
+                'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 
+                'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 
+                'ste.owner', 'ste.material_request', 'ste.work_order', 'ste.creation', 
+                'ste.so_customer_name'
+            )
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        $item_codes = array_unique(array_column($q->toArray(), 'item_code'));
-        $item_codes_arr = [];
-        foreach ($item_codes as $item_code) {
-            array_push($item_codes_arr, $item_code);
-        }
-        $s_warehouses = array_unique(array_column($q->toArray(), 's_warehouse'));
-        $s_warehouses_arr = [];
-        foreach ($s_warehouses as $s_warehouse) {
-            array_push($s_warehouses_arr, $s_warehouse);
-        }
+        $item_codes = array_unique($q->pluck('item_code')->toArray());
+        $s_warehouses = array_unique($q->pluck('s_warehouse')->toArray());
+        $work_orders = array_unique($q->pluck('work_order')->toArray());
 
-        $work_orders = array_unique(array_column($q->toArray(), 'work_order'));
-        $work_orders_arr = [];
-        foreach ($work_orders as $work_order) {
-            array_push($work_orders_arr, $work_order);
-        }
+        $work_order_delivery_date = DB::table('tabWork Order')
+            ->whereIn('name', $work_orders)
+            ->pluck('delivery_date', 'name');
 
-        $work_order_delivery_date = DB::table('tabWork Order')->whereIn('name', $work_orders_arr)->pluck('delivery_date', 'name');
-
-        $item_actual_qty = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
-            ->whereIn('tabBin.item_code', $item_codes_arr)->whereIn('tabBin.warehouse', $s_warehouses_arr)
+        $item_actual_qty = DB::table('tabBin')
+            ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
+            ->whereIn('tabBin.item_code', $item_codes)
+            ->whereIn('tabBin.warehouse', $s_warehouses)
             ->where('tabWarehouse.disabled', 0)
             ->selectRaw('SUM(actual_qty) as actual_qty, CONCAT(item_code, "-", warehouse) as item')
-            ->groupBy('item_code', 'warehouse')->get();
+            ->groupBy('item_code', 'warehouse')
+            ->pluck('actual_qty', 'item');
 
-        $item_actual_qty = collect($item_actual_qty)->groupBy('item')->toArray();
+        $stock_reservation = StockReservation::whereIn('item_code', $item_codes)
+            ->whereIn('warehouse', $s_warehouses)
+            ->whereIn('status', ['Active', 'Partially Issued'])
+            ->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
+            ->groupBy('item_code', 'warehouse')
+            ->pluck('total_reserved_qty', 'item');
 
-        $stock_reservation = StockReservation::whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
-            ->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
-            ->groupBy('item_code', 'warehouse')->get();
-        $stock_reservation = collect($stock_reservation)->groupBy('item')->toArray();
-
-        $ste_total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
-            ->whereIn('item_code', $item_codes_arr)->whereIn('s_warehouse', $s_warehouses_arr)
+        $ste_total_issued = DB::table('tabStock Entry Detail')
+            ->where('docstatus', 0)
+            ->where('status', 'Issued')
+            ->whereIn('item_code', $item_codes)
+            ->whereIn('s_warehouse', $s_warehouses)
             ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
-            ->groupBy('item_code', 's_warehouse')->get();
-        $ste_total_issued = collect($ste_total_issued)->groupBy('item')->toArray();
+            ->groupBy('item_code', 's_warehouse')
+            ->pluck('total_issued', 'item');
 
-        $at_total_issued = DB::table('tabAthena Transactions as at')
-            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-            ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
-            ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes_arr)
-            ->whereIn('psi.item_code', $item_codes_arr)->whereIn('at.source_warehouse', $s_warehouses_arr)
-            ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
-            ->groupBy('at.item_code', 'at.source_warehouse')
-            ->get();
+        $part_nos_query = DB::table('tabItem Supplier')
+            ->whereIn('parent', $item_codes)
+            ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))
+            ->groupBy('parent')
+            ->pluck('supplier_part_nos', 'parent');
 
-        $at_total_issued = collect($at_total_issued)->groupBy('item')->toArray();
+        $parent_warehouses = DB::table('tabWarehouse')
+            ->where('disabled', 0)
+            ->whereIn('name', $s_warehouses)
+            ->pluck('parent_warehouse', 'name');
 
-        $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes_arr)
-            ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
-
-        $parent_warehouses = DB::table('tabWarehouse')->where('disabled', 0)->whereIn('name', $s_warehouses_arr)->pluck('parent_warehouse', 'name');
-
+        // Process the paginated records
         $list = [];
         foreach ($q as $d) {
-            $reserved_qty = 0;
-            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $stock_reservation)) {
-                $reserved_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse][0]['total_reserved_qty'];
-            }
+            $reserved_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse] ?? 0;
+            $issued_qty = ($ste_total_issued[$d->item_code . '-' . $d->s_warehouse] ?? 0);
+            $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse] ?? 0;
 
-            $consumed_qty = 0;
-            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $stock_reservation)) {
-                $consumed_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse][0]['total_consumed_qty'];
-            }
-
-            $reserved_qty = $reserved_qty - $consumed_qty;
-
-            $issued_qty = 0;
-            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $ste_total_issued)) {
-                $issued_qty = $ste_total_issued[$d->item_code . '-' . $d->s_warehouse][0]->total_issued;
-            }
-
-            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $at_total_issued)) {
-                $issued_qty += $at_total_issued[$d->item_code . '-' . $d->s_warehouse][0]->total_issued;
-            }
-
-            $actual_qty = 0;
-            if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $item_actual_qty)) {
-                $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse][0]->actual_qty;
-            }
-
-            // $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
-            // $actual_qty = $actual_qty > 0 ? $actual_qty : 0;
-
-            $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
-
-            $part_nos = Arr::exists($part_nos_query, $d->item_code) ? $part_nos_query[$d->item_code] : 0;
-
+            $ref_no = $d->material_request ?: $d->sales_order_no;
+            $part_nos = $part_nos_query[$d->item_code] ?? null;
             $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
-
-            $parent_warehouse = (Arr::exists($parent_warehouses, $d->s_warehouse)) ? $parent_warehouses[$d->s_warehouse] : null;
-
-            $delivery_date = (Arr::exists($work_order_delivery_date, $d->work_order)) ? $work_order_delivery_date[$d->work_order] : null;
-            $order_status = null;
+            $parent_warehouse = $parent_warehouses[$d->s_warehouse] ?? null;
+            $delivery_date = $work_order_delivery_date[$d->work_order] ?? null;
 
             $list[] = [
                 'customer' => $d->so_customer_name,
-                'order_status' => $order_status,
+                'order_status' => null,
                 'item_code' => $d->item_code,
                 'description' => $d->description,
                 's_warehouse' => $d->s_warehouse,
@@ -1365,13 +1351,168 @@ class MainController extends Controller
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->work_order,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                'delivery_date' => ($delivery_date) ? Carbon::parse($delivery_date)->format('M-d-Y') : null,
-                'delivery_status' => ($delivery_date) ? ((Carbon::parse($delivery_date) < Carbon::now()) ? 'late' : null) : null
+                'delivery_date' => $delivery_date ? Carbon::parse($delivery_date)->format('M-d-Y') : null,
+                'delivery_status' => $delivery_date && Carbon::parse($delivery_date) < Carbon::now() ? 'late' : null
             ];
         }
-        
-        return response()->json(['records' => $list]);
+
+        return response()->json([
+            'records' => $list,
+            'pagination' => [
+                'current_page' => $q->currentPage(),
+                'per_page' => $q->perPage(),
+                'total' => $q->total(),
+                'last_page' => $q->lastPage(),
+                'next_page_url' => $q->nextPageUrl(),
+                'prev_page_url' => $q->previousPageUrl(),
+            ],
+        ]);
     }
+
+    // Original Code
+    // public function view_material_transfer_for_manufacture(Request $request){
+    //     if(!$request->arr){
+    //         return view('material_transfer_for_manufacture');
+    //     }
+        
+    //     $user = Auth::user()->frappe_userid;
+    //     $allowed_warehouses = $this->user_allowed_warehouse($user);
+
+    //     $q = DB::table('tabStock Entry as ste')
+    //         ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+    //         ->where('ste.docstatus', 0)->where('purpose', 'Material Transfer for Manufacture')
+    //         ->where('ste.transfer_as', '!=', 'For Return')
+    //         ->whereIn('s_warehouse', $allowed_warehouses)
+    //         ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.work_order', 'ste.creation', 'ste.so_customer_name')
+    //         ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
+    //         ->get();
+
+    //     $item_codes = array_unique(array_column($q->toArray(), 'item_code'));
+    //     $item_codes_arr = [];
+    //     foreach ($item_codes as $item_code) {
+    //         array_push($item_codes_arr, $item_code);
+    //     }
+    //     $s_warehouses = array_unique(array_column($q->toArray(), 's_warehouse'));
+    //     $s_warehouses_arr = [];
+    //     foreach ($s_warehouses as $s_warehouse) {
+    //         array_push($s_warehouses_arr, $s_warehouse);
+    //     }
+
+    //     $work_orders = array_unique(array_column($q->toArray(), 'work_order'));
+    //     $work_orders_arr = [];
+    //     foreach ($work_orders as $work_order) {
+    //         array_push($work_orders_arr, $work_order);
+    //     }
+
+    //     $work_order_delivery_date = DB::table('tabWork Order')->whereIn('name', $work_orders_arr)->pluck('delivery_date', 'name');
+
+    //     $item_actual_qty = DB::table('tabBin')->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
+    //         ->whereIn('tabBin.item_code', $item_codes_arr)->whereIn('tabBin.warehouse', $s_warehouses_arr)
+    //         ->where('tabWarehouse.disabled', 0)
+    //         ->selectRaw('SUM(actual_qty) as actual_qty, CONCAT(item_code, "-", warehouse) as item')
+    //         ->groupBy('item_code', 'warehouse')->get();
+
+    //     $item_actual_qty = collect($item_actual_qty)->groupBy('item')->toArray();
+
+    //     $stock_reservation = StockReservation::whereIn('item_code', $item_codes_arr)->whereIn('warehouse', $s_warehouses_arr)
+    //         ->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
+    //         ->groupBy('item_code', 'warehouse')->get();
+    //     $stock_reservation = collect($stock_reservation)->groupBy('item')->toArray();
+
+    //     $ste_total_issued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
+    //         ->whereIn('item_code', $item_codes_arr)->whereIn('s_warehouse', $s_warehouses_arr)
+    //         ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
+    //         ->groupBy('item_code', 's_warehouse')->get();
+    //     $ste_total_issued = collect($ste_total_issued)->groupBy('item')->toArray();
+
+    //     $at_total_issued = DB::table('tabAthena Transactions as at')
+    //         ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+    //         ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+    //         ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+    //         ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+    //         ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
+    //         ->where('psi.status', 'Issued')->whereIn('at.item_code', $item_codes_arr)
+    //         ->whereIn('psi.item_code', $item_codes_arr)->whereIn('at.source_warehouse', $s_warehouses_arr)
+    //         ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
+    //         ->groupBy('at.item_code', 'at.source_warehouse')
+    //         ->get();
+
+    //     $at_total_issued = collect($at_total_issued)->groupBy('item')->toArray();
+
+    //     $part_nos_query = DB::table('tabItem Supplier')->whereIn('parent', $item_codes_arr)
+    //         ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))->groupBy('parent')->pluck('supplier_part_nos', 'parent');
+
+    //     $parent_warehouses = DB::table('tabWarehouse')->where('disabled', 0)->whereIn('name', $s_warehouses_arr)->pluck('parent_warehouse', 'name');
+
+    //     $list = [];
+    //     foreach ($q as $d) {
+    //         $reserved_qty = 0;
+    //         if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $stock_reservation)) {
+    //             $reserved_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse][0]['total_reserved_qty'];
+    //         }
+
+    //         $consumed_qty = 0;
+    //         if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $stock_reservation)) {
+    //             $consumed_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse][0]['total_consumed_qty'];
+    //         }
+
+    //         $reserved_qty = $reserved_qty - $consumed_qty;
+
+    //         $issued_qty = 0;
+    //         if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $ste_total_issued)) {
+    //             $issued_qty = $ste_total_issued[$d->item_code . '-' . $d->s_warehouse][0]->total_issued;
+    //         }
+
+    //         if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $at_total_issued)) {
+    //             $issued_qty += $at_total_issued[$d->item_code . '-' . $d->s_warehouse][0]->total_issued;
+    //         }
+
+    //         $actual_qty = 0;
+    //         if (array_key_exists($d->item_code . '-' . $d->s_warehouse, $item_actual_qty)) {
+    //             $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse][0]->actual_qty;
+    //         }
+
+    //         // $actual_qty = $actual_qty - ($issued_qty + $reserved_qty);
+    //         // $actual_qty = $actual_qty > 0 ? $actual_qty : 0;
+
+    //         $ref_no = ($d->material_request) ? $d->material_request : $d->sales_order_no;
+
+    //         $part_nos = Arr::exists($part_nos_query, $d->item_code) ? $part_nos_query[$d->item_code] : 0;
+
+    //         $owner = ucwords(str_replace('.', ' ', explode('@', $d->owner)[0]));
+
+    //         $parent_warehouse = (Arr::exists($parent_warehouses, $d->s_warehouse)) ? $parent_warehouses[$d->s_warehouse] : null;
+
+    //         $delivery_date = (Arr::exists($work_order_delivery_date, $d->work_order)) ? $work_order_delivery_date[$d->work_order] : null;
+    //         $order_status = null;
+
+    //         $list[] = [
+    //             'customer' => $d->so_customer_name,
+    //             'order_status' => $order_status,
+    //             'item_code' => $d->item_code,
+    //             'description' => $d->description,
+    //             's_warehouse' => $d->s_warehouse,
+    //             't_warehouse' => $d->t_warehouse,
+    //             'uom' => $d->uom,
+    //             'name' => $d->name,
+    //             'owner' => $owner,
+    //             'parent' => $d->parent,
+    //             'part_nos' => $part_nos,
+    //             'qty' => $d->qty,
+    //             'validate_item_code' => $d->validate_item_code,
+    //             'status' => $d->status,
+    //             'balance' => $actual_qty,
+    //             'ref_no' => $ref_no,
+    //             'parent_warehouse' => $parent_warehouse,
+    //             'production_order' => $d->work_order,
+    //             'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
+    //             'delivery_date' => ($delivery_date) ? Carbon::parse($delivery_date)->format('M-d-Y') : null,
+    //             'delivery_status' => ($delivery_date) ? ((Carbon::parse($delivery_date) < Carbon::now()) ? 'late' : null) : null
+    //         ];
+    //     }
+        
+    //     return response()->json(['records' => $list]);
+    // }
 
     // /material_transfer
     public function view_material_transfer(Request $request){

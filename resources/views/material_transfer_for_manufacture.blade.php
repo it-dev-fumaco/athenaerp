@@ -21,14 +21,14 @@
 								</div>
 								<div class="col-xl-3 col-lg-5 col-md-5">
 									<div class="form-group">
-										<input type="text" class="form-control" placeholder="Search" ng-model="fltr" autofocus>
+										<input type="text" class="form-control" placeholder="Search" ng-model="fltr" ng-change="searchData()"  autofocus>
 									</div>
 								</div>
 								<div class="col-xl-2 col-lg-2 col-md-2">
 									<div class="form-group">
-										<select class="form-control" ng-model="searchText">
-											<option></option>
-											<option ng-repeat="y in wh">@{{ y.name }}</option>
+										<select class="form-control" ng-model="searchText" ng-change="searchData()">
+											<option value="">All Warehouses</option>
+											<option ng-repeat="y in wh" value="@{{ y.name }}">@{{ y.name }}</option>
 										</select>
 									</div>
 								</div>
@@ -145,6 +145,14 @@
 										</tr>
 									</tbody>
 								</table>
+
+								<!-- Load More Button -->
+								<div class="text-center p-3">
+                                    <button id="load-more-btn" class="btn btn-primary" ng-click="loadMore()">Load More</button>
+                                    <div id="load-more-spinner" class="spinner-border text-primary d-none" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                </div>
 							</div>
 						</div>
 					</div>
@@ -324,20 +332,58 @@
 	});
 	
 	var app = angular.module('myApp', []);
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
+	app.controller('stockCtrl', function ($scope, $http) {
+		$scope.mtfm = [];
+		$scope.currentPage = 1;
+		$scope.isLoading = false;
+		$scope.hasMore = true;
+		$scope.fltr = "";
+		$scope.searchText = "";
+
 		$http.get("/get_parent_warehouses").then(function (response) {
 			$scope.wh = response.data.wh;
 		});
-		
-		$scope.loadData = function(){
-			$scope.custom_loading_spinner_1 = true;
-			$http.get("/material_transfer_for_manufacture?arr=1").then(function (response) {
-				$scope.mtfm = response.data.records;
-				$scope.custom_loading_spinner_1 = false;
-			});
-		}
 
-		$scope.loadData();
+		$scope.loadMore = function (reset = false) {
+			if ($scope.isLoading || (!$scope.hasMore && !reset)) return;
+
+			if (reset) {
+				$scope.mtfm = [];
+				$scope.currentPage = 1;
+				$scope.hasMore = true;
+			}
+
+			$scope.isLoading = true;
+			document.getElementById('load-more-btn').classList.add('d-none');
+			document.getElementById('load-more-spinner').classList.remove('d-none');
+
+			$http.get("/material_transfer_for_manufacture", {
+				params: { 
+					arr: 1, 
+					page: $scope.currentPage,
+					search: $scope.fltr,
+					warehouse: $scope.searchText
+				}
+			}).then(function (response) {
+				if (response.data.records.length > 0) {
+					$scope.mtfm = $scope.mtfm.concat(response.data.records);
+					$scope.currentPage++;
+				} else {
+					$scope.hasMore = false;
+					document.getElementById('load-more-btn').classList.add('d-none');
+				}
+			}).finally(function () {
+				$scope.isLoading = false;
+				document.getElementById('load-more-btn').classList.remove('d-none');
+				document.getElementById('load-more-spinner').classList.add('d-none');
+			});
+		};
+
+		$scope.searchData = function () {
+			$scope.loadMore(true);
+		};
+
+		$scope.loadMore();
 	});
 </script>
 @endsection
