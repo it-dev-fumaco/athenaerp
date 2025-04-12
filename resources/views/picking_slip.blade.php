@@ -420,9 +420,8 @@
 			$scope.wh = response.data.wh;
 		});
 
-		$scope.loadData = function (loadMore = false) {
+		$scope.loadData = function (loadMore = false, reset_table = false) {
 			if (!loadMore) {
-				$scope.ps = [];
 				$scope.currentPage = 1;
 				$scope.hasMore = true;
 			}
@@ -436,6 +435,10 @@
 					warehouse: $scope.searchText
 				}
 			}).then(function (response) {
+				if(reset_table) {
+					$scope.ps = [];
+					$scope.ps.length = 0;
+				}
 				if (response.data.picking.length > 0) {
 					$scope.ps = $scope.ps.concat(response.data.picking);
 					$scope.currentPage++;
@@ -456,8 +459,10 @@
 		};
 
 		$scope.$watchGroup(['fltr', 'searchText'], function (newValues, oldValues) {
+			$scope.ps = [];
+			$scope.ps.length = 0;
 			if (newValues !== oldValues) {
-				$scope.loadData(false);
+				$scope.loadData(false, true);
 			}
 		});
 
