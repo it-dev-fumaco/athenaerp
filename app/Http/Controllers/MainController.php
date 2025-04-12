@@ -1321,9 +1321,10 @@ class MainController extends Controller
         // Process the paginated records
         $list = [];
         foreach ($q as $d) {
-            $reserved_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse] ?? 0;
-            $issued_qty = ($ste_total_issued[$d->item_code . '-' . $d->s_warehouse] ?? 0);
-            $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse] ?? 0;
+            // $reserved_qty = $stock_reservation[$d->item_code . '-' . $d->s_warehouse] ?? 0;
+            // $issued_qty = ($ste_total_issued[$d->item_code . '-' . $d->s_warehouse] ?? 0);
+            // $actual_qty = $item_actual_qty[$d->item_code . '-' . $d->s_warehouse] ?? 0;
+            $available_qty = $this->get_available_qty($d->item_code, $d->s_warehouse);
 
             $ref_no = $d->material_request ?: $d->sales_order_no;
             $part_nos = $part_nos_query[$d->item_code] ?? null;
@@ -1346,7 +1347,7 @@ class MainController extends Controller
                 'qty' => $d->qty,
                 'validate_item_code' => $d->validate_item_code,
                 'status' => $d->status,
-                'balance' => $actual_qty,
+                'balance' => $available_qty,
                 'ref_no' => $ref_no,
                 'parent_warehouse' => $parent_warehouse,
                 'production_order' => $d->work_order,
