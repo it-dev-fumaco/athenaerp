@@ -4170,7 +4170,7 @@ class ConsignmentController extends Controller
             }
 
             $frappe_userid = $user_details->wh_user->name;
-            $assigned_warehouses = $user_details->wh_user->assigned_warehouses;
+            $assigned_warehouses = collect($user_details->wh_user->assigned_warehouses)->pluck('warehouse');
 
             $warehouses_entry = $request->warehouses;
 
