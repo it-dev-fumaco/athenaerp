@@ -1282,30 +1282,30 @@ class MainController extends Controller
             ->whereIn('name', $work_orders)
             ->pluck('delivery_date', 'name');
 
-        $item_actual_qty = DB::table('tabBin')
-            ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
-            ->whereIn('tabBin.item_code', $item_codes)
-            ->whereIn('tabBin.warehouse', $s_warehouses)
-            ->where('tabWarehouse.disabled', 0)
-            ->selectRaw('SUM(actual_qty) as actual_qty, CONCAT(item_code, "-", warehouse) as item')
-            ->groupBy('item_code', 'warehouse')
-            ->pluck('actual_qty', 'item');
+        // $item_actual_qty = DB::table('tabBin')
+        //     ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
+        //     ->whereIn('tabBin.item_code', $item_codes)
+        //     ->whereIn('tabBin.warehouse', $s_warehouses)
+        //     ->where('tabWarehouse.disabled', 0)
+        //     ->selectRaw('SUM(actual_qty) as actual_qty, CONCAT(item_code, "-", warehouse) as item')
+        //     ->groupBy('item_code', 'warehouse')
+        //     ->pluck('actual_qty', 'item');
 
-        $stock_reservation = StockReservation::whereIn('item_code', $item_codes)
-            ->whereIn('warehouse', $s_warehouses)
-            ->whereIn('status', ['Active', 'Partially Issued'])
-            ->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
-            ->groupBy('item_code', 'warehouse')
-            ->pluck('total_reserved_qty', 'item');
+        // $stock_reservation = StockReservation::whereIn('item_code', $item_codes)
+        //     ->whereIn('warehouse', $s_warehouses)
+        //     ->whereIn('status', ['Active', 'Partially Issued'])
+        //     ->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
+        //     ->groupBy('item_code', 'warehouse')
+        //     ->pluck('total_reserved_qty', 'item');
 
-        $ste_total_issued = DB::table('tabStock Entry Detail')
-            ->where('docstatus', 0)
-            ->where('status', 'Issued')
-            ->whereIn('item_code', $item_codes)
-            ->whereIn('s_warehouse', $s_warehouses)
-            ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
-            ->groupBy('item_code', 's_warehouse')
-            ->pluck('total_issued', 'item');
+        // $ste_total_issued = DB::table('tabStock Entry Detail')
+        //     ->where('docstatus', 0)
+        //     ->where('status', 'Issued')
+        //     ->whereIn('item_code', $item_codes)
+        //     ->whereIn('s_warehouse', $s_warehouses)
+        //     ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
+        //     ->groupBy('item_code', 's_warehouse')
+        //     ->pluck('total_issued', 'item');
 
         $part_nos_query = DB::table('tabItem Supplier')
             ->whereIn('parent', $item_codes)
