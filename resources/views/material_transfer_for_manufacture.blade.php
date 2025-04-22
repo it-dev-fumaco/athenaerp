@@ -383,6 +383,11 @@
 			$scope.loadMore(true);
 		};
 
+		$scope.loadData = function () {
+			$scope.loadMore(true);
+		};
+
+
 		$scope.loadMore();
 	});
 </script>
