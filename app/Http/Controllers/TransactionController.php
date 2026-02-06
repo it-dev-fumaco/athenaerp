@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use DB;
 use Exception;
-use Auth;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -73,16 +73,15 @@ class TransactionController extends Controller
 
             $sales_person = DB::table('tabSales Order')->where('name', $steDetails->sales_order_no)->pluck('sales_person')->first();
 
-            $reserved_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)
+            $reservation_totals = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)
                 ->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)
                 ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
-                ->whereIn('status', ['Active', 'Partially Issued'])->sum('reserve_qty');
+                ->whereIn('status', ['Active', 'Partially Issued'])
+                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty')
+                ->first();
 
-            $consumed_qty = DB::table('tabStock Reservation')->where('item_code', $steDetails->item_code)
-                ->where('warehouse', $steDetails->s_warehouse)->where('sales_person', $sales_person)
-                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
-                ->whereIn('status', ['Active', 'Partially Issued'])->sum('consumed_qty');
-            
+            $reserved_qty = $reservation_totals ? ($reservation_totals->reserved_qty ?? 0) : 0;
+            $consumed_qty = $reservation_totals ? ($reservation_totals->consumed_qty ?? 0) : 0;
             $remaining_reserved = $reserved_qty - $consumed_qty;
             $remaining_reserved = $remaining_reserved > 0 ? $remaining_reserved : 0;
 
@@ -151,7 +150,10 @@ class TransactionController extends Controller
         
             DB::commit();
 
-            $this->submit_stock_entry($steDetails->parent_se);
+            $submit_result = $this->submit_stock_entry($steDetails->parent_se, 1);
+            if (is_array($submit_result) && ($submit_result['error'] ?? 0)) {
+                return response()->json(['status' => 0, 'message' => $submit_result['modal_message']], 500);
+            }
 
             if($request->deduct_reserve == 1) {
                 return response()->json(['status' => 1, 'message' => "Item $steDetails->item_code has been deducted from reservation."]);

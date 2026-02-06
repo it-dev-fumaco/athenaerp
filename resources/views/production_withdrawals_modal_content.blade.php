@@ -18,6 +18,10 @@
                 <input type="hidden" name="has_reservation" value="{{ ($data['stock_reservation']) ? 1 : 0 }}">
                 <input type="hidden" name="deduct_reserve" value="0">
                 <div class="box-body" style="font-size: 12pt;">
+                    @php
+                        $work_order_missing = ($data['work_order_status_label'] ?? null) === 'Missing';
+                        $disable_checkout = ($data['work_order_docstatus'] ?? null) === 2 || $work_order_missing;
+                    @endphp
                     <div class="row">
                         <div class="col-md-6 form-group">
                             <label>Barcode</label>
@@ -40,12 +44,36 @@
                                     <dl>
                                         <dt>Available Qty</dt>
                                         <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
+                                        <dt class="mt-1">Work Order:</dt>
+                                        <dd>
+                                            <span>{{ $data['work_order'] ? $data['work_order'] : '-' }}</span>
+                                            @if($data['work_order_status_label'])
+                                                @php
+                                                    $wo_badge = ($data['work_order_docstatus'] ?? null) === 2 ? 'badge-danger' : ($work_order_missing ? 'badge-warning' : 'badge-success');
+                                                @endphp
+                                                <span class="badge {{ $wo_badge }}">{{ $data['work_order_status_label'] }}</span>
+                                            @endif
+                                        </dd>
                                         <dt class="mt-1">Reference No:</dt>
                                         <dd>{{ $data['ref_no'] }}</dd>
                                     </dl>
                                 </div>
                             </div>
                         </div>
+                        @if(($data['work_order_docstatus'] ?? null) === 2)
+                        <div class="col-md-12 mt-2">
+                            <div class="callout callout-danger p-2 m-0">
+                                <h6 class="m-0 font-weight-bold"><i class="icon fas fa-exclamation-triangle"></i> Production Order is cancelled. Checkout is disabled.</h6>
+                            </div>
+                        </div>
+                        @endif
+                        @if($work_order_missing)
+                        <div class="col-md-12 mt-2">
+                            <div class="callout callout-warning p-2 m-0">
+                                <h6 class="m-0 font-weight-bold"><i class="icon fas fa-exclamation-triangle"></i> Work Order is missing. Checkout is disabled.</h6>
+                            </div>
+                        </div>
+                        @endif
                         @if($data['stock_reservation'])
                         <div class="col-md-12 mt-2 p-2">
                             <div class="callout callout-info p-1 m-0">
@@ -81,7 +109,7 @@
                 ><i class="fa fa-ban"></i> CANCEL</button>
             @else
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-                <button type="button" class="btn btn-primary btn-lg" id="btn-check-out"><i class="fa fa-check"></i> CHECK OUT</button>
+                <button type="button" class="btn btn-primary btn-lg" id="btn-check-out" {{ $disable_checkout ? 'disabled' : '' }}><i class="fa fa-check"></i> CHECK OUT</button>
             @endif
         </div>
     </div>
