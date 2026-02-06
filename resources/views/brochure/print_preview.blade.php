@@ -629,9 +629,15 @@
             $(document).on('click', '#download-btn', function (){
                 var project = $(this).data('proj');
                 var file = $(this).data('file');
+                if (!project || !file) {
+                    showNotification("danger", "Missing file details for download.", "fa fa-info");
+                    return;
+                }
+                var projectEncoded = encodeURIComponent(project);
+                var fileEncoded = encodeURIComponent(file);
                 $.ajax({
 					type: 'get',
-					url: '/download/' + project + '/' + file,
+					url: '/download/' + projectEncoded + '/' + fileEncoded,
 					success: function(response){
                         if(response.success == 1){
                             var orig_name = (response.name_from_db);
@@ -640,10 +646,23 @@
                             downloadLink.download = response.new_name;
                             document.body.appendChild(downloadLink);
                             downloadLink.click();
+                            downloadLink.remove();
                         }else{
     						showNotification("danger", response.message, "fa fa-info");
                         }
 					},
+                    error: function(xhr){
+                        if (xhr && xhr.status === 401) {
+                            var fallbackLink = document.createElement('a');
+                            fallbackLink.href = '{{ asset('storage/brochures') }}/' + projectEncoded + '/' + fileEncoded;
+                            fallbackLink.download = file;
+                            document.body.appendChild(fallbackLink);
+                            fallbackLink.click();
+                            fallbackLink.remove();
+                        } else {
+                            showNotification("danger", "Download failed. Please try again.", "fa fa-info");
+                        }
+                    }
 				});
             });
 
