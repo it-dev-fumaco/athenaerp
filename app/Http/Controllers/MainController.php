@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConsignmentStockEntry;
-use DB;
 use Exception;
-use Mail;
-use Auth;
-use Webp;
+use Buglinjo\LaravelWebp\Facades\Webp;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use ZipArchive;
 
 use Carbon\Carbon;
@@ -1721,6 +1721,18 @@ class MainController extends Controller
             throw new \ErrorException('Stock Entry not found.');
         }
 
+        $work_order_docstatus = null;
+        $work_order_status_label = null;
+        if($q->work_order){
+            $work_order = DB::table('tabWork Order')->where('name', $q->work_order)->select('name', 'docstatus')->first();
+            if($work_order){
+                $work_order_docstatus = $work_order->docstatus;
+                $work_order_status_label = $work_order_docstatus === 2 ? 'Cancelled' : ($work_order_docstatus === 1 ? 'Submitted' : 'Draft');
+            }else{
+                $work_order_status_label = 'Missing';
+            }
+        }
+
         $ref_no = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
 
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
@@ -1754,6 +1766,9 @@ class MainController extends Controller
         $data = [
             'name' => $q->name,
             'purpose' => $q->purpose,
+            'work_order' => $q->work_order,
+            'work_order_docstatus' => $work_order_docstatus,
+            'work_order_status_label' => $work_order_status_label,
             's_warehouse' => $q->s_warehouse,
             't_warehouse' => $q->t_warehouse,
             'available_qty' => $available_qty,
@@ -2841,10 +2856,10 @@ class MainController extends Controller
     public function get_athena_transactions(Request $request, $item_code){
         $user_group = Auth::user()->user_group;
 
-        $req_wh_user = str_replace('null', null, $request->wh_user);
-        $req_src_wh = str_replace('null', null, $request->src_wh);
-        $req_trg_wh = str_replace('null', null, $request->trg_wh);
-        $req_ath_dates = str_replace('null', null, $request->ath_dates);
+        $req_wh_user = $request->wh_user === 'null' ? null : $request->wh_user;
+        $req_src_wh = $request->src_wh === 'null' ? null : $request->src_wh;
+        $req_trg_wh = $request->trg_wh === 'null' ? null : $request->trg_wh;
+        $req_ath_dates = $request->ath_dates === 'null' ? null : $request->ath_dates;
 
         $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->where('status', 'Issued')
             ->when($req_wh_user, function($q) use ($request){
@@ -4773,7 +4788,7 @@ class MainController extends Controller
             $itemDetails = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')->where('ir.name', $id)->first();
             
             if(!$itemDetails){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $itemDetails->item_code . '</b> not found.']);
+                return response()->json(['status' => 0, 'message' => 'Item not found.']);
             }
     
             if($itemDetails->is_stock_item == 0){
@@ -5763,8 +5778,13 @@ class MainController extends Controller
                         // Save new images in DB
                         if(isset($images_arr[$item_code])){
                             foreach($images_arr[$item_code] as $a => $image){
+                                if (empty($image['image'])) {
+                                    continue;
+                                }
                                 $a = $a + 1;
-                                $jpg = explode('-', $image['image'])[0].$a.'-'.str_replace(explode('-', $image['image'])[0].'-', null, $image['image']);
+                                $image_name = $image['image'];
+                                $image_prefix = explode('-', $image_name)[0];
+                                $jpg = $image_prefix.$a.'-'.str_replace($image_prefix.'-', '', $image_name);
                                 $webp = explode('.', $jpg)[0].'.webp';
         
                                 $new_images[] = [
