@@ -994,6 +994,10 @@ trait Comparison
             return $this->year === (int) $tester;
         }
 
+        if (preg_match('/^(?:Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|September|Oct|October|Nov|November|Dec|December)$/i', $tester)) {
+            return $this->isSameMonth(static::parse($tester), false);
+        }
+
         if (preg_match('/^\d{3,}-\d{1,2}$/', $tester)) {
             return $this->isSameMonth(static::parse($tester));
         }
@@ -1022,12 +1026,12 @@ trait Comparison
             return $current->startOfMinute()->eq($other);
         }
 
-        if (preg_match('/\d(h|am|pm)$/', $tester)) {
+        if (preg_match('/\d(?:h|am|pm)$/', $tester)) {
             return $current->startOfHour()->eq($other);
         }
 
         if (preg_match(
-            '/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d+$/i',
+            '/^(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d+)?$/i',
             $tester
         )) {
             return $current->startOfMonth()->eq($other->startOfMonth());

@@ -4,7 +4,8 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 trait ERPTrait{
     private function erpOperation($method, $doctype, $name = null, $body = [], $system_generated = false){
@@ -26,9 +27,33 @@ trait ERPTrait{
                 'Authorization' => "token $erp_api_key:$erp_api_secret_key"
             ])->$method($url, $body);
 
-            return json_decode($data, true);
+            if ($data->failed()) {
+                Log::warning('ERP request failed', [
+                    'url' => $url,
+                    'method' => $method,
+                    'status' => $data->status(),
+                    'body' => $data->body(),
+                ]);
+            }
+
+            $result = $data->json();
+            if (is_array($result) && isset($result['exception'])) {
+                Log::warning('ERP exception', [
+                    'url' => $url,
+                    'method' => $method,
+                    'exception' => $result['exception'],
+                    'message' => $result['message'] ?? null,
+                ]);
+            }
+
+            return $result;
         } catch (\Throwable $th) {
-            // throw $th;
+            Log::error('ERP request error', [
+                'method' => $method,
+                'doctype' => $doctype,
+                'name' => $name,
+                'message' => $th->getMessage(),
+            ]);
             return ['error' => 1, 'message' => $th->getMessage()];
         }
     }

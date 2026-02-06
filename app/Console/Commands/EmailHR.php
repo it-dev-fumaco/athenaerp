@@ -5,8 +5,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Mail;
-use DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 
 class EmailHR extends Command
 {
@@ -90,7 +90,7 @@ class EmailHR extends Command
                 ->groupBy('owner', 'promodiser', 'branch_warehouse')
                 ->get();
 
-            $submitted_report = collect($report_details)->filter(function ($q){
+            $submitted_report = collect($report_details)->filter(function (object $q){
                 return Carbon::parse($q->last_audit) >= Carbon::now()->startOfMonth();
             })->groupBy(['owner', 'branch_warehouse']);
             $report_details = collect($report_details)->groupBy(['owner', 'branch_warehouse']);
@@ -121,5 +121,7 @@ class EmailHR extends Command
                 } catch (\Throwable $th) {}
             }
         }
+
+        return self::SUCCESS;
     }
 }

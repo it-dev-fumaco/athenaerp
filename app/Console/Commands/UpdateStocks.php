@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 class UpdateStocks extends Command
 {
@@ -78,5 +78,7 @@ class UpdateStocks extends Command
         if (count($cste_names) > 0) {
             DB::table('tabConsignment Stock Entry')->whereIn('name', $cste_names)->update(['status' => 'Completed']);
         }
+
+        return self::SUCCESS;
     }
 }

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConsignmentStockEntry;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Exception;
-use Mail;
-use Auth;
-use Webp;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
+use Buglinjo\LaravelWebp\Facades\Webp;
 use ZipArchive;
 
 use Carbon\Carbon;
@@ -421,6 +421,7 @@ class MainController extends Controller
         return view('consignment.index_consignment_supervisor', compact('duration', 'pending_to_receive', 'beginning_inv_percentage', 'promodisers', 'active_consignment_branches', 'consignment_branches', 'consignment_branches_with_beginning_inventory', 'total_stock_transfers', 'total_pending_inventory_audit', 'total_consignment_orders', 'cutoff_filters', 'sales_report_included_years'));
     }
 
+    // @intelephense-ignore-next-line
     public function search_results(Request $request){
         $search_str = explode(' ', $request->searchString);
 
@@ -852,6 +853,7 @@ class MainController extends Controller
             }
 
             foreach($sub_items as $a){
+                /** @var object $a */
                 if(!in_array($a->item_group_name, session()->get('igs_array'))){
                     session()->push('igs_array', $a->item_group_name);
                 }
@@ -1704,7 +1706,7 @@ class MainController extends Controller
 
             DB::commit();
             return redirect()->back();
-        }catch(\Exception $e){
+        }catch(Exception $e){
             DB::rollback();
         }
     }
@@ -2225,7 +2227,7 @@ class MainController extends Controller
             DB::commit();
 
             return $item_status;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
         }
     }
@@ -2468,9 +2470,9 @@ class MainController extends Controller
             }
 
             return view('form_warehouse_location', compact('warehouses', 'item_code'));
-        } catch (\ErrorException $th) {
+        } catch (ErrorException $th) {
             return response()->json(['status' => 0, 'message' => $th->getMessage()], 400);
-        } catch (\Exception $th) { // handle actual errors
+        } catch (Exception $th) { // handle actual errors
             return response()->json(['status' => 0, 'message' => `Something went wrong. Please try again.`], 400);
         }
     }
@@ -2675,7 +2677,12 @@ class MainController extends Controller
                 $total_issued = $total_issued_ste + $total_isset_at;
                 $remaining_reserved = $total_reserved - $total_consumed;
             
-                $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
+                $actual_stock = $actual_stocks[$a->item_code][0] ?? null;
+                if (is_array($actual_stock)) {
+                    $actual_stock = (object) $actual_stock;
+                }
+                /** @var object|null $actual_stock */
+                $actual_qty = $actual_stock->actual_qty ?? 0;
                 $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
                 $available_qty = $available_qty > 0 ? $available_qty : 0;
             
@@ -2711,7 +2718,12 @@ class MainController extends Controller
                     $total_issued = $total_issued_ste + $total_isset_at;
                     $remaining_reserved = $total_reserved - $total_consumed;
             
-                    $actual_qty = isset($actual_stocks[$a->item_code]) ? $actual_stocks[$a->item_code][0]->actual_qty : 0;
+                    $actual_stock = $actual_stocks[$a->item_code][0] ?? null;
+                    if (is_array($actual_stock)) {
+                        $actual_stock = (object) $actual_stock;
+                    }
+                    /** @var object|null $actual_stock */
+                    $actual_qty = $actual_stock->actual_qty ?? 0;
                     $available_qty = $actual_qty - ($total_issued + $remaining_reserved); // get available qty by subtracting the sum of reserved qty and draft issued picking slip/dr's to the actual qty
                     $available_qty = $available_qty > 0 ? $available_qty : 0;
             
@@ -2841,10 +2853,14 @@ class MainController extends Controller
     public function get_athena_transactions(Request $request, $item_code){
         $user_group = Auth::user()->user_group;
 
-        $req_wh_user = str_replace('null', null, $request->wh_user);
-        $req_src_wh = str_replace('null', null, $request->src_wh);
-        $req_trg_wh = str_replace('null', null, $request->trg_wh);
-        $req_ath_dates = str_replace('null', null, $request->ath_dates);
+        $req_wh_user = str_replace('null', '', (string) $request->wh_user);
+        $req_wh_user = $req_wh_user !== '' ? $req_wh_user : null;
+        $req_src_wh = str_replace('null', '', (string) $request->src_wh);
+        $req_src_wh = $req_src_wh !== '' ? $req_src_wh : null;
+        $req_trg_wh = str_replace('null', '', (string) $request->trg_wh);
+        $req_trg_wh = $req_trg_wh !== '' ? $req_trg_wh : null;
+        $req_ath_dates = str_replace('null', '', (string) $request->ath_dates);
+        $req_ath_dates = $req_ath_dates !== '' ? $req_ath_dates : null;
 
         $logs = DB::table('tabAthena Transactions')->where('item_code', $item_code)->where('status', 'Issued')
             ->when($req_wh_user, function($q) use ($request){
@@ -3524,7 +3540,7 @@ class MainController extends Controller
             }
 
             return ['success' => true, 'message' => 'Stock ledger entries created.'];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -3651,7 +3667,7 @@ class MainController extends Controller
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['success' => 0, "error" => $e->getMessage(), 'id' => $stock_entry]);
         }
     }
@@ -3736,7 +3752,7 @@ class MainController extends Controller
             DB::table('tabGL Entry')->insert($gl_entry);
 
             return ['success' => true, 'message' => 'GL Entries created.'];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
 	}
@@ -3915,7 +3931,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['error' => 0, 'modal_title' => 'Item Received', 'modal_message' => 'Item has been received.']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => 'There was a problem creating transaction.']);
@@ -4523,6 +4539,7 @@ class MainController extends Controller
                     ->orWhere('ps.sales_order', 'like', "%{$search}%")
                     ->orWhere('ps.name', 'like', "%{$search}%")
                     ->orWhere('dr.name', 'like', "%{$search}%")
+                    ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
             })
             ->whereIn('dri.warehouse', $allowed_warehouses)
@@ -4568,6 +4585,7 @@ class MainController extends Controller
                     ->orWhere('ste.customer_1', 'like', "%{$search}%")
                     ->orWhere('ste.sales_order_no', 'like', "%{$search}%")
                     ->orWhere('ste.name', 'like', "%{$search}%")
+                    ->orWhere('ste.so_customer_name', 'like', "%{$search}%")
                     ->orWhere('sted.name', 'like', "%{$search}%");
             })
             ->select([
@@ -4613,6 +4631,7 @@ class MainController extends Controller
                     ->orWhere('ps.sales_order', 'like', "%{$search}%")
                     ->orWhere('ps.name', 'like', "%{$search}%")
                     ->orWhere('dr.name', 'like', "%{$search}%")
+                    ->orWhere('dr.customer', 'like', "%{$search}%")
                     ->orWhere('psi.name', 'like', "%{$search}%");
             })
             ->select([
@@ -4770,7 +4789,7 @@ class MainController extends Controller
             $itemDetails = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')->where('ir.name', $id)->first();
             
             if(!$itemDetails){
-                return response()->json(['status' => 0, 'message' => 'Item  <b>' . $itemDetails->item_code . '</b> not found.']);
+                return response()->json(['status' => 0, 'message' => 'Item <b>' . $id . '</b> not found.']);
             }
     
             if($itemDetails->is_stock_item == 0){
@@ -4828,7 +4847,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['status' => 1, 'message' => 'Material Request for <b>' . $itemDetails->item_code . '</b> has been created.']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
@@ -4995,7 +5014,7 @@ class MainController extends Controller
             DB::commit();
 
             return response()->json(['status' => 1, 'message' => 'Item <b>' . $driDetails->item_code . '</b> has been returned.']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
             
             return response()->json(['status' => 0, 'message' => 'Error creating transaction. Please contact your system administrator.']);
@@ -5603,7 +5622,7 @@ class MainController extends Controller
 
         $attributes_query = DB::table('tabItem Variant Attribute')->whereIn('parent', $item_codes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
 
-        $attribute_names = collect($attributes_query)->map(function ($q){
+        $attribute_names = collect($attributes_query)->map(function (object $q){
             return $q->attribute;
         })->unique();
 
@@ -5682,7 +5701,7 @@ class MainController extends Controller
             DB::commit();
 
             return redirect()->back()->with('success', 'Item prices has been updated.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             return redirect()->back()->with('error', 'There was a problem updating prices. Please try again.');
@@ -5752,6 +5771,7 @@ class MainController extends Controller
                         if(isset($athena_images[$item_code])){
                             $new_idx = isset($images_arr[$item_code]) ? count($images_arr[$item_code]) : 0;
                             foreach($athena_images[$item_code] as $i => $ath){
+                                /** @var object $ath */
                                 $i = $i + 1;
                                 DB::table('tabItem Images')->where('parent', $item_code)->where('name', $ath->name)->update(['idx' => $new_idx + $i]);
                             }
@@ -5761,7 +5781,7 @@ class MainController extends Controller
                         if(isset($images_arr[$item_code])){
                             foreach($images_arr[$item_code] as $a => $image){
                                 $a = $a + 1;
-                                $jpg = explode('-', $image['image'])[0].$a.'-'.str_replace(explode('-', $image['image'])[0].'-', null, $image['image']);
+                                $jpg = explode('-', $image['image'])[0].$a.'-'.str_replace(explode('-', $image['image'])[0].'-', '', $image['image']);
                                 $webp = explode('.', $jpg)[0].'.webp';
         
                                 $new_images[] = [
@@ -5795,7 +5815,7 @@ class MainController extends Controller
                 return redirect()->back()->with('success', 'E-Commerce Image(s) Imported');
             }
             return redirect()->back();
-        }catch(\Exception $e){
+        }catch(Exception $e){
             DB::rollback();
         
             if(Storage::disk('public')->exists('/export/')){
@@ -5931,7 +5951,12 @@ class MainController extends Controller
 
         $stocks = [];
         foreach($items as $item){
-            $description = isset($grouped[$item]) ? $grouped[$item][0]->description : null;
+            $bundle_item = $grouped[$item][0] ?? null;
+            if (is_array($bundle_item)) {
+                $bundle_item = (object) $bundle_item;
+            }
+            /** @var object|null $bundle_item */
+            $description = $bundle_item->description ?? null;
             $details = $this->get_item_stock_levels($item, $request);
 
             unset($details['consignment_warehouses']);
@@ -6096,7 +6121,7 @@ class MainController extends Controller
             ->select('a.address_title', 'a.name', 'a.address_line1', 'a.address_line2', 'a.city')->limit(10)
             ->get();
 
-        $customer_details = collect($customer_details)->map(function ($customer){
+        $customer_details = collect($customer_details)->map(function (object $customer){
             $customer->address_display = trim($customer->address_line1);
             if($customer->address_line2){
                 $customer->address_display .= ", $customer->address_line2";

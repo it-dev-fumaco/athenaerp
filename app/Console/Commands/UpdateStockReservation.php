@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class UpdateStockReservation extends Command
@@ -56,6 +56,6 @@ class UpdateStockReservation extends Command
             info("an error occured while updating stock reservation");
         }
         
-        return 0;
+        return self::SUCCESS;
     }
 }

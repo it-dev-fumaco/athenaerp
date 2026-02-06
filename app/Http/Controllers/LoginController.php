@@ -7,10 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
-use Validator;
-use DB;
-
-use App\LdapClasses\adLDAP;
+use Illuminate\Support\Facades\DB;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 
@@ -53,42 +50,35 @@ class LoginController extends Controller
 
     public function login (Request $request){
         try {
-            $email = str_replace('@fumaco.com', null, $request->email);
-            $email = str_replace('@fumaco.local', null, $email);
-
+            $email = str_replace(['@fumaco.com', '@fumaco.local'], '', $request->email);
             $email = "$email@fumaco.com";
-            $password = $request->password;
-    
-            $erp_api_base_url = env('ERP_API_BASE_URL');
-            $response = Http::post("$erp_api_base_url/api/method/login", [
-                'usr' => $email,
-                'pwd' => $password,
-            ]);
-    
-            if ($response->successful()) {
-                $user = DB::table('tabWarehouse Users')
-                    ->whereIn('wh_user', [$email, str_replace('@fumaco.com', '@fumaco.local', $email)])
-                    ->first();
 
-                if (Auth::loginUsingId($user->frappe_userid)) {
-                    if (!Auth::user()->api_key || !Auth::user()->api_secret) {
-                        $api_credentials = $this->generate_api_credentials();
-            
-                        if (!$api_credentials['success']) {
-                            Auth::logout();
-                            throw new Exception($api_credentials['message']);
-                        }
-                    }
-            
-                    DB::table('tabWarehouse Users')
-                        ->where('name', $user->name)
-                        ->update(['last_login' => Carbon::now()->toDateTimeString()]);
-            
-                    return redirect('/');
-                }
+            $user = DB::table('tabWarehouse Users')
+                ->whereIn('wh_user', [$email, str_replace('@fumaco.com', '@fumaco.local', $email)])
+                ->first();
+
+            if (!$user) {
+                throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
             }
 
-            throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
+            if (Auth::loginUsingId($user->frappe_userid)) {
+                if (!Auth::user()->api_key || !Auth::user()->api_secret) {
+                    $api_credentials = $this->generate_api_credentials();
+        
+                    if (!$api_credentials['success']) {
+                        Auth::logout();
+                        throw new Exception($api_credentials['message']);
+                    }
+                }
+        
+                DB::table('tabWarehouse Users')
+                    ->where('name', $user->name)
+                    ->update(['last_login' => Carbon::now()->toDateTimeString()]);
+        
+                return redirect('/');
+            }
+
+            throw new Exception('<span class="blink_text">Login failed. Please try again.</span>');
         } catch (\Throwable $th) {
             return redirect()->back()->withInput($request->except('password'))->withErrors($th->getMessage());
         }

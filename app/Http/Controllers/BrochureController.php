@@ -7,14 +7,14 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriterXlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Illuminate\Support\Str;
-use Storage;
-use Auth;
-use DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon; 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Support\Facades\File;
-use Webp;
+use Buglinjo\LaravelWebp\Facades\Webp;
 
 use App\Traits\GeneralTrait;
 
@@ -234,14 +234,14 @@ class BrochureController extends Controller
 				$row = $request->row;
 				$column = null;
 				for ($col = 1; $col <= $highestColumnIndex; $col++) {
-					$value = $sheet->getCellByColumnAndRow($col, 4)->getValue();
+					$value = $sheet->getCell([$col, 4])->getValue();
 					if ($value == $request->column) {
 						$column = $col;
 						break;
 					}
 				}
 				
-				$sheet->setCellValueByColumnAndRow($column, $row, $filename);
+				$sheet->setCellValue([$column, $row], $filename);
 	
 				$writer = new WriterXlsx($spreadsheet);
 				$writer->save($excel_file);
@@ -296,7 +296,7 @@ class BrochureController extends Controller
 
 		$headerRowArr = [];
 		for ($col = 1; $col <= $highestColumnIndex; $col++) {
-			$value = $sheet->getCellByColumnAndRow($col, 4)->getValue();
+			$value = $sheet->getCell($col, 4)->getValue();
 
 			$headerRowArr[$col] = $value;
 		}
@@ -306,7 +306,7 @@ class BrochureController extends Controller
 		for ($row = 5; $row <= $highestRow; $row++) {
 			$result = $images = [];
 			for ($col = 5; $col <= $highestColumnIndex; $col++) {
-				$value = $sheet->getCellByColumnAndRow($col, $row)->getValue();
+				$value = $sheet->getCell($col, $row)->getValue();
 				if(array_key_exists($col, $headerRowArr)){
 					$result[] = [
 						'attribute_name' => $headerRowArr[$col],
@@ -316,22 +316,22 @@ class BrochureController extends Controller
 					$attrib[$headerRowArr[$col]] = $value != '-' ? $value : null;
 
 					if ($headerRowArr[$col] == 'Image 1') {
-						$images['image1'] = $sheet->getCellByColumnAndRow($col, $row)->getValue();
+						$images['image1'] = $sheet->getCell($col, $row)->getValue();
 					}
 					if ($headerRowArr[$col] == 'Image 2') {
-						$images['image2'] = $sheet->getCellByColumnAndRow($col, $row)->getValue();
+						$images['image2'] = $sheet->getCell($col, $row)->getValue();
 					}
 					if ($headerRowArr[$col] == 'Image 3') {
-						$images['image3'] = $sheet->getCellByColumnAndRow($col, $row)->getValue();
+						$images['image3'] = $sheet->getCell($col, $row)->getValue();
 					}
 				}
 			}
 
-			$item_name = $sheet->getCellByColumnAndRow(1, $row)->getValue();
+			$item_name = $sheet->getCell(1, $row)->getValue();
 
 			// for ajax table
 			$attrib['Item Name'] = $item_name;
-			$attrib['Fitting Type'] = $sheet->getCellByColumnAndRow(2, $row)->getValue() != '-' ? $sheet->getCellByColumnAndRow(2, $row)->getValue() : null;
+			$attrib['Fitting Type'] = $sheet->getCell(2, $row)->getValue() != '-' ? $sheet->getCellByColumnAndRow(2, $row)->getValue() : null;
 			$attrib['Description'] = $sheet->getCellByColumnAndRow(3, $row)->getValue() != '-' ? $sheet->getCellByColumnAndRow(3, $row)->getValue() : null;
 			$attrib['Location'] = $sheet->getCellByColumnAndRow(4, $row)->getValue() != '-' ? $sheet->getCellByColumnAndRow(4, $row)->getValue() : null;
 			// for ajax table
@@ -583,7 +583,14 @@ class BrochureController extends Controller
 
 				$item_code = $details['item_code'];
 
-				$item_details = isset($item_details_group[$item_code]) ? $item_details_group[$item_code][0] : [];
+				$item_details = isset($item_details_group[$item_code]) ? $item_details_group[$item_code][0] : null;
+				if (is_array($item_details)) {
+					$item_details = (object) $item_details;
+				}
+				if (!$item_details) {
+					continue;
+				}
+				/** @var object $item_details */
 				$attributes = isset($attribute_group[$item_code]) ? $attribute_group[$item_code] : [];
 				$current_item_images = isset($current_item_images_group[$item_code]) ? $current_item_images_group[$item_code] : [];
 				$brochure_images = isset($brochure_images_group[$item_code]) ? $brochure_images_group[$item_code] : [];
@@ -594,6 +601,7 @@ class BrochureController extends Controller
 				$attrib = [];
 				$attributes_arr = [];
 				foreach ($attributes as $att) {
+					/** @var object $att */
 					$attrib[$att->attribute] = $att->attribute_value;
 					$attributes_arr[] = [
 						'attribute_name' => $att->attr_name ? $att->attr_name : $att->attribute,
@@ -603,6 +611,7 @@ class BrochureController extends Controller
 
 				$current_images = [];
 				foreach ($current_item_images as $e) {
+					/** @var object $e */
 					$filename = $e->image_path;
 					$base64 = $this->base64_image("/img/$filename");
 	

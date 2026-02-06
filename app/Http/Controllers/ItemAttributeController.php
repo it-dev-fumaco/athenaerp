@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Validator;
 use Auth;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Session;
 use App\LdapClasses\adLDAP;
 use Illuminate\Support\Str;

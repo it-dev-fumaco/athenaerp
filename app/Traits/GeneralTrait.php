@@ -5,7 +5,7 @@ namespace App\Traits;
 use Mail;
 use App\Models\StockEntry;
 use Illuminate\Database\Eloquent\Builder;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Auth;
 use Exception;

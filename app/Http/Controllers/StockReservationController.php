@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\StockReservation;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Auth;
 use Illuminate\Pagination\LengthAwarePaginator;

@@ -8,7 +8,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Auth;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Storage;
 use Cache;
 use Mail;
