@@ -8,13 +8,14 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriterXlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
-use Auth;
-use DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon; 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Support\Facades\File;
-use Webp;
+use Buglinjo\LaravelWebp\Facades\Webp;
 
 use App\Traits\GeneralTrait;
 
@@ -702,7 +703,6 @@ class BrochureController extends Controller
 				$filepath = null;
 				if(isset($brochure_images[$i])){
 					$filepath = $brochure_images[$i]->image_path.$brochure_images[$i]->image_filename;
-					$filepath = asset($filepath);
 					// $base64 = $this->base64_image($filepath);
 				}
 				$images['image'.$row] = [
@@ -771,18 +771,35 @@ class BrochureController extends Controller
 	}
 
 	public function uploadImageForStandard(Request $request) {
-		DB::beginTransaction();
 		try {
+			Log::info('uploadImageForStandard started', [
+				'project' => $request->project,
+				'item_code' => $request->item_code,
+				'image_idx' => $request->image_idx,
+				'existing' => (bool) $request->existing,
+				'has_file' => $request->hasFile('selected-file'),
+				'original_name' => $request->hasFile('selected-file') ? $request->file('selected-file')->getClientOriginalName() : null,
+			]);
+
 			$project = $request->project;
 			$item_code = $request->item_code;
 			$transaction_date = Carbon::now()->toDateTimeString();
+			$transaction_started = false;
+			$storedFilename = null;
+			$image_path = null;
+			$filename = null;
+
 			if ($request->existing) {
 				$filename = $request->selected_image;
-				$webpFilename = explode('.', $filename)[0].".webp";
+				$base = pathinfo($filename, PATHINFO_FILENAME);
+				$webpFilename = $base . '.webp';
 				$image_path = 'img/';
+				$storedFilename = Storage::disk('public')->exists($image_path . $webpFilename)
+					? $webpFilename
+					: $filename;
 			}
 
-			if($request->hasFile('selected-file')){
+			if ($request->hasFile('selected-file')) {
 				$file = $request->file('selected-file');
 				$allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
 	
@@ -806,24 +823,55 @@ class BrochureController extends Controller
                 // Storage::putFileAs($image_path, $file, $jpegFilename);
 
                 // Create and save the WebP version
-				if (strtolower($file_ext) != 'webp') {
-					$webp = Webp::make($file);
+				$should_cleanup_webp = false;
+				try {
+					if (strtolower($file_ext) != 'webp') {
+						$webp = Webp::make($file);
 
-					if(!File::exists(public_path('temp'))){
-						File::makeDirectory(public_path('temp'), 0755, true);
+						if(!File::exists(public_path('temp'))){
+							File::makeDirectory(public_path('temp'), 0755, true);
+						}
+
+						$webp_path = public_path("temp/$webpFilename");
+						$webp->save($webp_path);
+						$should_cleanup_webp = true;
+					} else {
+						$webp_path = $file->getPathname();
 					}
+		
+					$web_stream = fopen($webp_path, 'r');
+					Storage::disk('public')->put("$image_path$webpFilename", $web_stream);
+					if (is_resource($web_stream)) {
+						fclose($web_stream);
+					}
+					$storedFilename = $webpFilename;
 
-					$webp_path = public_path("temp/$webpFilename");
-					$webp->save($webp_path);
-				} else {
-					$webp_path = $file;
+					if ($should_cleanup_webp && File::exists($webp_path)) {
+						unlink($webp_path);
+					}
+				} catch (\Throwable $e) {
+					Log::warning('WebP conversion failed, saving original image', [
+						'error' => $e->getMessage(),
+						'original_name' => $filenamewithextension,
+					]);
+
+					$storedFilename = "$filename.$extension";
+					$fallback_stream = fopen($file->getPathname(), 'r');
+					Storage::disk('public')->put("$image_path$storedFilename", $fallback_stream);
+					if (is_resource($fallback_stream)) {
+						fclose($fallback_stream);
+					}
 				}
-	
-				$web_contents = file_get_contents($webp_path);
-				Storage::put("$image_path$webpFilename", $web_contents);
-
-				unlink($webp_path);
+			} elseif (!$request->existing) {
+				return response()->json(['status' => 0, 'message' => 'No image was provided.']);
 			}
+
+			if (!$storedFilename || !$image_path) {
+				return response()->json(['status' => 0, 'message' => 'Image upload failed. Please try again.']);
+			}
+
+			DB::beginTransaction();
+			$transaction_started = true;
 
 			$existing_image_idx = DB::table('tabItem Brochure Image')->where('parent', $item_code)->where('idx', $request->image_idx)->first();
 			if ($existing_image_idx) {
@@ -831,7 +879,7 @@ class BrochureController extends Controller
 					'modified' => $transaction_date,
 					'modified_by' => Auth::user()->wh_user,
 					'idx' => $request->image_idx,
-					'image_filename' => $webpFilename
+					'image_filename' => $storedFilename
 				]);
 			} else {
 				DB::table('tabItem Brochure Image')->insert([
@@ -842,7 +890,7 @@ class BrochureController extends Controller
 					'owner' => Auth::user()->wh_user,
 					'parent' => $item_code,
 					'idx' => $request->image_idx,
-					'image_filename' => $webpFilename,
+					'image_filename' => $storedFilename,
 					'image_path' => "storage/$image_path"
 				]);
 			}
@@ -863,11 +911,27 @@ class BrochureController extends Controller
 
 			DB::commit();
 
-			$data_src = "storage/$image_path/$webpFilename";
+			$data_src = "storage/$image_path$storedFilename";
+
+			Log::info('uploadImageForStandard success', [
+				'item_code' => $item_code,
+				'image_idx' => $request->image_idx,
+				'image_path' => $data_src,
+			]);
 
 			return response()->json(['status' => 1, 'message' => 'Image uploaded.', 'src' => $data_src]);
 		} catch (\Throwable $e) {
-			DB::rollback();
+			if ($transaction_started) {
+				DB::rollback();
+			}
+			Log::error('uploadImageForStandard failed', [
+				'error' => $e->getMessage(),
+				'project' => $request->project,
+				'item_code' => $request->item_code,
+				'image_idx' => $request->image_idx,
+				'existing' => (bool) $request->existing,
+				'has_file' => $request->hasFile('selected-file'),
+			]);
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 		}
 	}
