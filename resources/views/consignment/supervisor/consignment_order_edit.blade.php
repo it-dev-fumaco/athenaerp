@@ -51,10 +51,11 @@
                                        
                                         <div class="col-6 text-right">
                                             @php
-                                                $erp_url = env('ERP_API_BASE_URL');
-                                                $print_url = "$erp_url/printview?doctype=Material%20Request&name=$details->name&trigger_print=1&format=Material%20Request%20Format&no_letterhead=0&letterhead=FUMACO%20Plant%202&settings=%7B%7D&_lang=en";
+                                                $erpUrl = env('ERP_API_BASE_URL');
+                                                // Omit trigger_print=1 to avoid tab closing when user cancels print dialog
+                                                $printUrl = "$erpUrl/printview?doctype=Material%20Request&name=$details->name&format=Material%20Request%20Format&no_letterhead=0&letterhead=FUMACO%20Plant%202&settings=%7B%7D&_lang=en";
                                             @endphp
-                                            <a href="{{ $print_url }}" target="_blank" class="btn btn-success btn-sm" ><i class="fas fa-print"></i> Print</a>
+                                            <a href="{{ $printUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-sm"><i class="fas fa-print"></i> Print</a>
 
                                             @if (in_array($details->consignment_status, ['Draft', 'For Approval']) && $details->docstatus == 0)
                                                 <button class="btn btn-secondary btn-sm" name="consignment_status" value="{{ $details->consignment_status }}" type="submit"><i class="fas fa-save"></i> Save</button>
@@ -153,14 +154,14 @@
                                             </select>
                                         </div>
                                         @php
-                                            $required_by = $details->required_by ? Carbon\Carbon::parse($details->required_by)->format('Y-M-d') : null;
-                                            $address_display = trim($details->address_line1);
+                                            $requiredBy = $details->required_by ? Carbon\Carbon::parse($details->required_by)->format('Y-M-d') : null;
+                                            $addressDisplay = trim($details->address_line1);
                                             if($details->address_line2){
-                                                $address_display .= ", $details->address_line2";
+                                                $addressDisplay .= ", $details->address_line2";
                                             }
 
                                             if($details->city_town){
-                                                $address_display .= ", $details->city_town";
+                                                $addressDisplay .= ", $details->city_town";
                                             }
                                         @endphp
                                         <div class="col-3 mb-4">
@@ -169,7 +170,7 @@
                                         </div>
                                         <div class="col-3 mb-4">
                                             <small for="requiredByInput" class="form-label font-weight-bold">Required By</small>
-                                            <input type="text" name="required_by" class="form-control form-control-sm date-range" value="{{ $required_by }}" id="requiredByInput">
+                                            <input type="text" name="required_by" class="form-control form-control-sm date-range" value="{{ $requiredBy }}" id="requiredByInput">
                                         </div>
                                         <div class="col-6 mb-4">
                                             <small for="projectInput" class="form-label font-weight-bold">Project</small>
@@ -181,7 +182,7 @@
                                         </div>
                                         <div class="col-6 offset-6 mb-4">
                                             <small for="addressDisplayInput" class="form-label font-weight-bold">Address Display</small>
-                                            <textarea readonly class="form-control form-control-sm" rows="3" id="addressDisplayInput">{{ $address_display }}</textarea>
+                                            <textarea readonly class="form-control form-control-sm" rows="3" id="addressDisplayInput">{{ $addressDisplay }}</textarea>
                                         </div>
                                     </div>
                                     <div class="row">

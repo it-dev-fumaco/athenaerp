@@ -17,7 +17,7 @@
                                     <div class="form-group m-0 font-responsive">
                                         <select name="ig" class="form-control form-control-sm" id="ig">
                                             <option value="">Select Item Group</option>
-                                            @foreach ($item_groups as $ig)
+                                            @foreach ($itemGroups as $ig)
                                             <option value="{{ $ig->name }}" data-isgroup="{{ $ig->is_group }}">{{ $ig->name }}</option>
                                             @endforeach
                                         </select>

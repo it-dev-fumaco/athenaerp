@@ -94,19 +94,21 @@ class adLDAPUtils {
     }
     
     /**
-    * Escape strings for the use in LDAP filters
-    * 
-    * DEVELOPERS SHOULD BE DOING PROPER FILTERING IF THEY'RE ACCEPTING USER INPUT
-    * Ported from Perl's Net::LDAP::Util escape_filter_value
-    *
-    * @param string $str The string the parse
-    * @author Port by Andreas Gohr <andi@splitbrain.org>
-    * @return string
-    */
+     * Escape strings for the use in LDAP filters
+     *
+     * DEVELOPERS SHOULD BE DOING PROPER FILTERING IF THEY'RE ACCEPTING USER INPUT
+     * Ported from Perl's Net::LDAP::Util escape_filter_value
+     * PHP 7.0+ removed preg_replace /e modifier; uses preg_replace_callback.
+     *
+     * @param string $str The string to parse
+     * @return string
+     */
     public function ldapSlashes($str){
-        return preg_replace('/([\x00-\x1F\*\(\)\\\\])/e',
-                            '"\\\\\".join("",unpack("H2","$1"))',
-                            $str);
+        return preg_replace_callback('/([\x00-\x1F\*\(\)\\\\])/',
+            function ($matches) {
+                return '\\' . str_pad(dechex(ord($matches[1])), 2, '0', STR_PAD_LEFT);
+            },
+            $str);
     }
     
     /**
@@ -119,22 +121,22 @@ class adLDAPUtils {
     {
         $strGUID = str_replace('-', '', $strGUID);
 
-        $octet_str = '\\' . substr($strGUID, 6, 2);
-        $octet_str .= '\\' . substr($strGUID, 4, 2);
-        $octet_str .= '\\' . substr($strGUID, 2, 2);
-        $octet_str .= '\\' . substr($strGUID, 0, 2);
-        $octet_str .= '\\' . substr($strGUID, 10, 2);
-        $octet_str .= '\\' . substr($strGUID, 8, 2);
-        $octet_str .= '\\' . substr($strGUID, 14, 2);
-        $octet_str .= '\\' . substr($strGUID, 12, 2);
-        //$octet_str .= '\\' . substr($strGUID, 16, strlen($strGUID));
+        $octetStr = '\\' . substr($strGUID, 6, 2);
+        $octetStr .= '\\' . substr($strGUID, 4, 2);
+        $octetStr .= '\\' . substr($strGUID, 2, 2);
+        $octetStr .= '\\' . substr($strGUID, 0, 2);
+        $octetStr .= '\\' . substr($strGUID, 10, 2);
+        $octetStr .= '\\' . substr($strGUID, 8, 2);
+        $octetStr .= '\\' . substr($strGUID, 14, 2);
+        $octetStr .= '\\' . substr($strGUID, 12, 2);
+        //$octetStr .= '\\' . substr($strGUID, 16, strlen($strGUID));
         for ($i=16; $i<=(strlen($strGUID)-2); $i++) {
             if (($i % 2) == 0) {
-                $octet_str .= '\\' . substr($strGUID, $i, 2);
+                $octetStr .= '\\' . substr($strGUID, $i, 2);
             }
         }
         
-        return $octet_str;
+        return $octetStr;
     }
     
     /**
@@ -144,15 +146,15 @@ class adLDAPUtils {
     * @return string
     */
      public function getTextSID($binsid) {
-        $hex_sid = bin2hex($binsid);
-        $rev = hexdec(substr($hex_sid, 0, 2));
-        $subcount = hexdec(substr($hex_sid, 2, 2));
-        $auth = hexdec(substr($hex_sid, 4, 12));
+        $hexSid = bin2hex($binsid);
+        $rev = hexdec(substr($hexSid, 0, 2));
+        $subcount = hexdec(substr($hexSid, 2, 2));
+        $auth = hexdec(substr($hexSid, 4, 12));
         $result = "$rev-$auth";
 
         for ($x=0;$x < $subcount; $x++) {
             $subauth[$x] =
-                hexdec($this->littleEndian(substr($hex_sid, 16 + ($x * 8), 8)));
+                hexdec($this->littleEndian(substr($hexSid, 16 + ($x * 8), 8)));
                 $result .= "-" . $subauth[$x];
         }
 
@@ -183,22 +185,22 @@ class adLDAPUtils {
     */
     public function binaryToText($bin) 
     {
-        $hex_guid = bin2hex($bin); 
-        $hex_guid_to_guid_str = ''; 
+        $hexGuid = bin2hex($bin); 
+        $hexGuidToGuidStr = ''; 
         for($k = 1; $k <= 4; ++$k) { 
-            $hex_guid_to_guid_str .= substr($hex_guid, 8 - 2 * $k, 2); 
+            $hexGuidToGuidStr .= substr($hexGuid, 8 - 2 * $k, 2); 
         } 
-        $hex_guid_to_guid_str .= '-'; 
+        $hexGuidToGuidStr .= '-'; 
         for($k = 1; $k <= 2; ++$k) { 
-            $hex_guid_to_guid_str .= substr($hex_guid, 12 - 2 * $k, 2); 
+            $hexGuidToGuidStr .= substr($hexGuid, 12 - 2 * $k, 2); 
         } 
-        $hex_guid_to_guid_str .= '-'; 
+        $hexGuidToGuidStr .= '-'; 
         for($k = 1; $k <= 2; ++$k) { 
-            $hex_guid_to_guid_str .= substr($hex_guid, 16 - 2 * $k, 2); 
+            $hexGuidToGuidStr .= substr($hexGuid, 16 - 2 * $k, 2); 
         } 
-        $hex_guid_to_guid_str .= '-' . substr($hex_guid, 16, 4); 
-        $hex_guid_to_guid_str .= '-' . substr($hex_guid, 20); 
-        return strtoupper($hex_guid_to_guid_str);   
+        $hexGuidToGuidStr .= '-' . substr($hexGuid, 16, 4); 
+        $hexGuidToGuidStr .= '-' . substr($hexGuid, 20); 
+        return strtoupper($hexGuidToGuidStr);   
     }
     
     /**

@@ -1,7 +1,7 @@
 
-@if ($report_type == 'lazada_orders')
+@if ($reportType == 'lazada_orders')
 @php
-if ($export_excel == 1){
+if ($exportExcel == 1){
     header("Content-Disposition: attachment; filename=Lazada Orders.xls");
     header("Content-Type: application/vnd.ms-excel");
 }
@@ -53,9 +53,9 @@ if ($export_excel == 1){
 </table>    
 @endif
 
-@if ($report_type == 'withdrawals')
+@if ($reportType == 'withdrawals')
 @php
-if ($export_excel == 1){
+if ($exportExcel == 1){
     header("Content-Disposition: attachment; filename=Production Order - Withdrawals.xls");
     header("Content-Type: application/vnd.ms-excel");
 }
@@ -105,9 +105,9 @@ if ($export_excel == 1){
 @endif
 
 
-@if ($report_type == 'sales_orders')
+@if ($reportType == 'sales_orders')
 @php
-if ($export_excel == 1){
+if ($exportExcel == 1){
     header("Content-Disposition: attachment; filename=Sales Orders.xls");
     header("Content-Type: application/vnd.ms-excel");
 }
@@ -156,9 +156,9 @@ if ($export_excel == 1){
 
 
 
-@if ($report_type == 'summary')
+@if ($reportType == 'summary')
 @php
-if ($export_excel == 1){
+if ($exportExcel == 1){
     header("Content-Disposition: attachment; filename=Sales Report Summary.xls");
     header("Content-Type: application/vnd.ms-excel");
 }

@@ -27,7 +27,7 @@
     </textarea>
 </div>
 <div class="d-flex flex-row justify-content-center mt-3">
-    <input type="hidden" name="item_code" value="{{ $item_code }}">
+    <input type="hidden" name="item_code" value="{{ $itemCode }}">
     <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Preview Changes</button>
 </div>
 <style>

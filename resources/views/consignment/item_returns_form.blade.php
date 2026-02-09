@@ -33,7 +33,7 @@
                                         <div id="target-warehouse-container">
                                             <select name="target_warehouse" id="target-warehouse" class="form-control" style="font-size: 9pt">
                                                 <option value="">Select a Branch</option>
-                                                @foreach ($assigned_consignment_store as $store)
+                                                @foreach ($assignedConsignmentStore as $store)
                                                     <option value="{{ $store }}">{{ $store }}</option>
                                                 @endforeach
                                             </select>
@@ -114,10 +114,10 @@
                                                                         </tr>
                                                                     </table>
                                                                     @php
-                                                                        $sales_return_reason = ['Return from Customer', 'Misplaced Item', 'Change Item'];
+                                                                        $salesReturnReason = ['Return from Customer', 'Misplaced Item', 'Change Item'];
                                                                     @endphp
                                                                     <select id="sales-return-reason" class="form-control" style="font-size: 10pt;">
-                                                                        @foreach ($sales_return_reason as $reason)
+                                                                        @foreach ($salesReturnReason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
                                                                         @endforeach
                                                                     </select>
@@ -407,7 +407,7 @@
                             description + 
                         '</div>' +
                         '<select class="form-control mt-2" name="item[' + item_code + '][reason]" style="font-size: 10pt;" required>' +
-                            @foreach ($sales_return_reason as $reason)
+                            @foreach ($salesReturnReason as $reason)
                                 '<option value="{{ $reason }}" ' + (selected_reason == '{{ $reason }}' ? 'selected' : '') + '>{{ $reason }}</option>' +
                             @endforeach
                         '</select>' +

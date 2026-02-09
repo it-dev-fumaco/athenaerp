@@ -1,23 +1,23 @@
-@if (count($delivery_report) > 0)
+@if (count($deliveryReport) > 0)
 @php
-    $ste_details = collect($delivery_report)->first();
+    $steDetails = collect($deliveryReport)->first();
     $status = "Pending";
-    if($ste_details && $ste_details->item_status == 'Issued' && Carbon\Carbon::now() > $ste_details->delivery_date){
+    if($steDetails && $steDetails->item_status == 'Issued' && Carbon\Carbon::now() > $steDetails->delivery_date){
         $status = 'Delivered';
     }
 
-    $delivery_status = collect($delivery_report)->map(function($q){
+    $deliveryStatus = collect($deliveryReport)->map(function($q){
         return $q->consignment_status ? 1 : 0;
     })->min();
 @endphp
 <div class="row">
-<form action="/promodiser/receive/{{ $ste_details->name }}" id="receive-form" class="w-100" method="get">
+<form action="/promodiser/receive/{{ $steDetails->name }}" id="receive-form" class="w-100" method="get">
     <div class="container text-center">
         <br>
-        <h5 class="text-center font-responsive font-weight-bold m-0">{{ $ste_details->t_warehouse }}</h5>
-        <small class="d-block text-center mb-2">{{ $ste_details->name }} | Delivery Date: {{ Carbon\Carbon::parse($ste_details->delivery_date)->format('M d, Y') }}</small>
-        @if ($ste_details->consignment_status == 'Received')
-            <small class="d-block"><b>Date Received:</b> {{ Carbon\Carbon::parse($ste_details->consignment_date_received)->format('M d, Y - h:i a') }}</small>
+        <h5 class="text-center font-responsive font-weight-bold m-0">{{ $steDetails->t_warehouse }}</h5>
+        <small class="d-block text-center mb-2">{{ $steDetails->name }} | Delivery Date: {{ Carbon\Carbon::parse($steDetails->delivery_date)->format('M d, Y') }}</small>
+        @if ($steDetails->consignment_status == 'Received')
+            <small class="d-block"><b>Date Received:</b> {{ Carbon\Carbon::parse($steDetails->consignment_date_received)->format('M d, Y - h:i a') }}</small>
         @endif
         <div class="callout callout-info text-center">
             <small><i class="fas fa-info-circle"></i> Once items are received, stocks will be automatically added to your current inventory.</small>
@@ -29,9 +29,9 @@
                 <th class="text-center p-1 align-middle" style="width: 30%">Rate</th>
             </thead>
             <tbody>
-                @foreach ($delivery_report as $item)
+                @foreach ($deliveryReport as $item)
                 @php
-                    $img = isset($item_images[$item->item_code]) ? $item_images[$item->item_code] : $item_images['no_img'];
+                    $img = isset($itemImages[$item->item_code]) ? $itemImages[$item->item_code] : $itemImages['no_img'];
                 @endphp
                 <tr>
                     <td class="text-left p-1 align-middle" style="border-bottom: 0 !important;">
@@ -66,7 +66,7 @@
             </tbody>
         </table>
         <div class="row p-2">
-            @if ($status == 'Delivered' && $delivery_status == 0)
+            @if ($status == 'Delivered' && $deliveryStatus == 0)
                 <input type="checkbox" name="update_price" class="d-none" readonly>
                 <input type="checkbox" name="receive_delivery" class="d-none" checked readonly>
                 <button type="submit" class="btn btn-primary w-100 submit-once">Receive</button>
@@ -88,10 +88,10 @@
                                 </button>
                             </div>
                             <div class="modal-body">
-                                Cancel {{ $ste_details->name }}?
+                                Cancel {{ $steDetails->name }}?
                             </div>
                             <div class="modal-footer">
-                                <a href="/promodiser/cancel/received/{{ $ste_details->name }}" class="btn btn-primary w-100 submit-once">Confirm</a>
+                                <a href="/promodiser/cancel/received/{{ $steDetails->name }}" class="btn btn-primary w-100 submit-once">Confirm</a>
                             </div>
                         </div>
                     </div>

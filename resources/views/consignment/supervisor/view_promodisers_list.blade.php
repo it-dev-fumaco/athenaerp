@@ -71,8 +71,8 @@
                                         </td>
                                         <td class="text-center p-0 align-middle">
                                             @foreach ($row['stores'] as $store)
-                                            <span class="d-block border-bottom p-1 {{ in_array($store, array_keys($stores_with_beginning_inventory)) ? 'bg-success' : 'bg-gray' }}">
-                                                {!! array_key_exists($store, $stores_with_beginning_inventory) ? \Carbon\Carbon::parse($stores_with_beginning_inventory[$store])->format('m-d-Y') : '&nbsp;' !!}
+                                            <span class="d-block border-bottom p-1 {{ in_array($store, array_keys($storesWithBeginningInventory)) ? 'bg-success' : 'bg-gray' }}">
+                                                {!! array_key_exists($store, $storesWithBeginningInventory) ? \Carbon\Carbon::parse($storesWithBeginningInventory[$store])->format('m-d-Y') : '&nbsp;' !!}
                                             </span>
                                             @endforeach
                                         </td>
@@ -100,7 +100,7 @@
                                     @endforelse
                                 </tbody>
                             </table>
-                            <div class="float-left m-2">Total: <b>{{ $total_promodisers }}</b></div>
+                            <div class="float-left m-2">Total: <b>{{ $totalPromodisers }}</b></div>
                         </div>
                     </div>
                 </div>

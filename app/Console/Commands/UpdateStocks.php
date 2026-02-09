@@ -38,45 +38,45 @@ class UpdateStocks extends Command
      */
     public function handle()
     {
-        $submitted_pullouts = DB::table('tabConsignment Stock Entry as cste')
+        $submittedPullouts = DB::table('tabConsignment Stock Entry as cste')
             ->join('tabStock Entry as ste', 'ste.name', 'cste.references')
             ->where('cste.status', 'Pending')->whereIn('cste.purpose', ['Pull Out', 'Store Transfer'])
             ->where('ste.docstatus', 1)->select('cste.name', 'cste.source_warehouse')->get();
 
-        $cste_names = collect($submitted_pullouts)->pluck('name');
-        $cste_items = DB::table('tabConsignment Stock Entry as cste')
+        $csteNames = collect($submittedPullouts)->pluck('name');
+        $csteItems = DB::table('tabConsignment Stock Entry as cste')
             ->join('tabConsignment Stock Entry Detail as csted', 'cste.name', 'csted.parent')
-            ->whereIn('csted.parent', $cste_names)->get();
+            ->whereIn('csted.parent', $csteNames)->get();
 
-        $source_warehouses = collect($submitted_pullouts)->pluck('source_warehouse');
-        $item_codes = collect($cste_items)->pluck('item_code');
+        $sourceWarehouses = collect($submittedPullouts)->pluck('source_warehouse');
+        $itemCodes = collect($csteItems)->pluck('item_code');
 
-        $bin = DB::table('tabBin')->whereIn('warehouse', $source_warehouses)
-            ->whereIn('item_code', $item_codes)->select('name', 'warehouse', 'item_code', 'consigned_qty', 'stock_uom')->get();
+        $bin = DB::table('tabBin')->whereIn('warehouse', $sourceWarehouses)
+            ->whereIn('item_code', $itemCodes)->select('name', 'warehouse', 'item_code', 'consigned_qty', 'stock_uom')->get();
 
-        $bin_array = [];
+        $binArray = [];
         foreach($bin as $b){
-            $bin_array[$b->warehouse][$b->item_code] = [
+            $binArray[$b->warehouse][$b->item_code] = [
                 'consigned_qty' => $b->consigned_qty,
                 'name' => $b->name
             ];
         }
 
-        foreach($cste_items as $item) {
+        foreach($csteItems as $item) {
             if ($item->purpose == 'Pull Out') {
-                $bin_name = isset($bin_array[$item->source_warehouse][$item->item_code]) ? $bin_array[$item->source_warehouse][$item->item_code]['name'] : null;
-                if ($bin_name) {
-                    $current_consigned_qty = isset($bin_array[$item->source_warehouse][$item->item_code]) ? $bin_array[$item->source_warehouse][$item->item_code]['consigned_qty'] : 0;
-                    $consigned_qty_after_transaction = $current_consigned_qty -  $item->qty;
-                    $consigned_qty_after_transaction = $consigned_qty_after_transaction < 0 ? 0 : $consigned_qty_after_transaction;
+                $binName = isset($binArray[$item->source_warehouse][$item->item_code]) ? $binArray[$item->source_warehouse][$item->item_code]['name'] : null;
+                if ($binName) {
+                    $currentConsignedQty = isset($binArray[$item->source_warehouse][$item->item_code]) ? $binArray[$item->source_warehouse][$item->item_code]['consigned_qty'] : 0;
+                    $consignedQtyAfterTransaction = $currentConsignedQty -  $item->qty;
+                    $consignedQtyAfterTransaction = $consignedQtyAfterTransaction < 0 ? 0 : $consignedQtyAfterTransaction;
     
-                    DB::table('tabBin')->where('name', $bin_name)->update(['consigned_qty' => $consigned_qty_after_transaction]);
+                    DB::table('tabBin')->where('name', $binName)->update(['consigned_qty' => $consignedQtyAfterTransaction]);
                 }
             }
         }
 
-        if (count($cste_names) > 0) {
-            DB::table('tabConsignment Stock Entry')->whereIn('name', $cste_names)->update(['status' => 'Completed']);
+        if (count($csteNames) > 0) {
+            DB::table('tabConsignment Stock Entry')->whereIn('name', $csteNames)->update(['status' => 'Completed']);
         }
 
         return self::SUCCESS;

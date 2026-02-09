@@ -71,7 +71,7 @@
                                     <div class="d-none">
                                         <select class="form-control warehouse-selection selection w-100" id="warehouses-select">
                                             <option value="" disabled selected>Select a warehouse</option>
-                                            @foreach ($consignment_stores as $store)
+                                            @foreach ($consignmentStores as $store)
                                                 <option value="{{ $store }}">{{ $store }}</option>
                                             @endforeach
                                         </select>

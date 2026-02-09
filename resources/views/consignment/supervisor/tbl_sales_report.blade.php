@@ -4,21 +4,21 @@
                 <thead>
                     <tr>
                         <th class="bg-navy">Branch / Store</th>
-                        @foreach ($included_dates as $transaction_date)
-                        <th class="bg-navy">{{ $transaction_date }}</th>
+                        @foreach ($includedDates as $transactionDate)
+                        <th class="bg-navy">{{ $transactionDate }}</th>
                         @endforeach
                         <th class="bg-navy">Total Sales</th> 
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($warehouses_with_data as $warehouse)
+                    @forelse ($warehousesWithData as $warehouse)
                     <tr>
                         <td class="bg-white">{{ $warehouse }}</td>
-                        @foreach ($included_dates as $sale_date)
+                        @foreach ($includedDates as $saleDate)
                         @php
-                            $sale_amount = isset($report[$warehouse][$sale_date]) ? '₱ ' . number_format($report[$warehouse][$sale_date], 2)  : '--';
+                            $saleAmount = isset($report[$warehouse][$saleDate]) ? '₱ ' . number_format($report[$warehouse][$saleDate], 2)  : '--';
                         @endphp
-                        <td class="bg-white">{{ $sale_amount }}</td>
+                        <td class="bg-white">{{ $saleAmount }}</td>
                         @endforeach
                         <td class="bg-white">{{ '₱ ' . number_format(collect($report[$warehouse])->sum(), 2) }}</td>
                     </tr>

@@ -45,7 +45,7 @@
 									<div class="row m-0 p-0">
 										<div class="col-8">
 											@php
-												$promodiser_restriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+												$promodiserRestriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
 											@endphp
 											<button class="float-left btn text-left pt-0 d-block d-xl-none" data-toggle="modal" data-target="#mobile-filters-modal">
 												<p class="card-title mt-2 ml-0" style="font-size: 10pt !important">
@@ -90,9 +90,9 @@
 															</div>
 															<div class="tree container"><!-- Item Group -->
 																<ul style="padding-left: 0 !important">
-																	@foreach (array_keys($item_groups) as $item)
+																	@foreach (array_keys($itemGroups) as $item)
 																		@php
-																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
+																			$lvl2 = isset($itemGroupArray[$item]['lvl2']) ? $itemGroupArray[$item]['lvl2'] : [];
 																		@endphp
 																		<li>
 																			<span class="w-100 {{ !$lvl2 ? 'p-2' : 'p-0' }}" style="border: none !important">
@@ -117,7 +117,7 @@
 											</div><!-- modal -->
 										</div>
 										<div class="col-4 text-right">
-											<p class="font-weight-bold m-1 font-responsive d-inline total">TOTAL: <span class="badge badge-info font-responsive total">{{ number_format($total_items) }}</span></p>
+											<p class="font-weight-bold m-1 font-responsive d-inline total">TOTAL: <span class="badge badge-info font-responsive total">{{ number_format($totalItems) }}</span></p>
 										</div>
 									</div>
 									
@@ -133,28 +133,28 @@
 															<select id="item-class-filter" class="btn btn-default"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-{{ $promodiser_restriction ? 2 : 3 }} col-xl-2 mx-auto pb-2 pb-xl-0">
+													<div class="col-12 col-md-{{ $promodiserRestriction ? 2 : 3 }} col-xl-2 mx-auto pb-2 pb-xl-0">
 														<div class="form-group text-left m-0 w-100 mx-auto" id="warehouse-filter-parent" style="font-size: 10pt;">
 															<select name="warehouse" id="warehouse-filter" class="form-control"></select>
 														</div>
 													</div>
-													<div class="col-12 col-md-{{ $promodiser_restriction ? 2 : 3 }} col-xl-2 mx-auto">
+													<div class="col-12 col-md-{{ $promodiserRestriction ? 2 : 3 }} col-xl-2 mx-auto">
 														<div class="form-group text-left m-0 w-100 mx-auto pb-2 pb-xl-0" id="brand-filter-parent" style="font-size: 10pt;">
 															<select name="brand" id="brand-filter" class="form-control"></select>
 														</div>
 													</div>
-													@if (!$promodiser_restriction)
-													<div class="col-12 col-md-2 col-xl-{{ $promodiser_restriction ? 2 : 4 }} mx-auto checkbox-container">
+													@if (!$promodiserRestriction)
+													<div class="col-12 col-md-2 col-xl-{{ $promodiserRestriction ? 2 : 4 }} mx-auto checkbox-container">
 														<div class="row">
 															<div class="form-group m-0r col-12 m-0">
 																@php
-																	$check_qty = 1;
+																	$checkQty = 1;
 																	if(request('check_qty')){
-																		$check_qty = request('check_qty') == 'on' ? 1 : 0;
+																		$checkQty = request('check_qty') == 'on' ? 1 : 0;
 																	}
 																@endphp
 																<label style="white-space: nowrap">
-																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ $check_qty == 1 ? 'checked' : null }} >
+																	<input type="checkbox" class="minimal cb-2" id="cb-2" {{ $checkQty == 1 ? 'checked' : null }} >
 																	
 																	<span style="font-size: 12px;">Hide out of stock</span>
 																</label>
@@ -162,7 +162,7 @@
 														</div>
 													</div>
 													@endif
-													@if ($promodiser_restriction)
+													@if ($promodiserRestriction)
 														<div class="col-6 col-md-3 col-xl-2 mx-auto text-center">
 															<div class="form-group m-0r">
 																<label style="white-space: nowrap">
@@ -187,14 +187,14 @@
 										</div>
 									</div>
 									<div class="row">
-										<div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}" style="max-height: 85vh">
+										<div class="col-2 d-none {{ $itemGroups ? 'd-xl-block' : null }}" style="max-height: 85vh">
 											<div class="card mb-3 pt-0" style="max-height: 100% !important; overflow-y: auto">
 												<div class="tab-content" style="min-height: 100% !important">
 													<div class="tree container"><!-- Item Group -->
 														<ul style="padding-left: 0 !important" >
-															@foreach (array_keys($item_groups) as $item)
+															@foreach (array_keys($itemGroups) as $item)
 																@php
-																	$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
+																	$lvl2 = isset($itemGroupArray[$item]['lvl2']) ? $itemGroupArray[$item]['lvl2'] : [];
 																@endphp
 																<li class="{{ !$lvl2 ? 'p-2' : 'p-0' }}">
 																	<span class="p-0 w-75 tree-item" style="border: none !important">
@@ -215,10 +215,10 @@
 												</div>
 											</div>
 										</div>
-										{{-- <div class="col-2 d-none {{ $item_groups ? 'd-xl-block' : null }}">
+										{{-- <div class="col-2 d-none {{ $itemGroups ? 'd-xl-block' : null }}">
 											<div class="card mb-3 pt-0">
 												@php
-													$category = collect(array_keys($item_groups))->chunk(3);
+													$category = collect(array_keys($itemGroups))->chunk(3);
 												@endphp
 												<div class="tab-content">
 													@for($i = 0; $i < count($category); $i++)
@@ -227,7 +227,7 @@
 																<ul style="padding-left: 0 !important" >
 																	@foreach ($category[$i] as $item)
 																		@php
-																			$lvl2 = isset($item_group_array[$item]['lvl2']) ? $item_group_array[$item]['lvl2'] : [];
+																			$lvl2 = isset($itemGroupArray[$item]['lvl2']) ? $itemGroupArray[$item]['lvl2'] : [];
 																		@endphp
 																		<li class="{{ !$lvl2 ? 'p-2' : 'p-0' }}">
 																			<span class="p-0 w-75 tree-item" style="border: none !important">
@@ -250,9 +250,9 @@
 												</div>
 											</div>
 										</div> --}}
-										<div class="col-12 col-xl-{{ $item_groups ? '10' : '12' }}">
+										<div class="col-12 col-xl-{{ $itemGroups ? '10' : '12' }}">
 											<div class="container-fluid m-0">
-												@forelse ($item_list as $row)
+												@forelse ($itemList as $row)
 													<div class="mb-1"></div>
 													<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
 														<div class="row m-0">
@@ -283,7 +283,7 @@
 															<div class="col-6 p-1">
 																<div class="col-md-12 m-0 text-justify" >
 																	<span class="font-italic item-class" >{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span>
-																	@if (in_array($row['name'], $bundled_items))
+																	@if (in_array($row['name'], $bundledItems))
 																		&nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
 																	@endif
 																	<br/>
@@ -301,7 +301,7 @@
 																	@if ($row['part_nos'])
 																		<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																	@endif
-																	@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
+																	@if (in_array($userDepartment, $allowedDepartment) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0)
 																	<p class="mt-3 mb-2">
 																		<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
 																		<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
@@ -339,19 +339,19 @@
 																				<td class="text-center">
 																					@php
 																						if($inv['available_qty'] == 0){
-																							$uom_badge = 'secondary';
+																							$uomBadge = 'secondary';
 																						}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
-																							$uom_badge = 'warning';
+																							$uomBadge = 'warning';
 																						}else{
-																							$uom_badge = 'success';
+																							$uomBadge = 'success';
 																						}
 																					@endphp
-																					<span class="badge badge-{{ $uom_badge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
+																					<span class="badge badge-{{ $uomBadge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
 																				</td>
 																			</tr>
 																		@endforeach
 																	</table>
-																@elseif(!in_array($row['name'], $bundled_items))
+																@elseif(!in_array($row['name'], $bundledItems))
 																	<div class="h-75 d-flex align-items-center">
 																		<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																	</div>
@@ -385,10 +385,10 @@
 																								@continue
 																							@endif
 																							@php
-																								$max_actual_qty = collect($row['consignment_warehouses'])->max('actual_qty');
-																								$max_consigned_qty = collect($row['consignment_warehouses'])->max('consigned_qty');
+																								$maxActualQty = collect($row['consignment_warehouses'])->max('actual_qty');
+																								$maxConsignedQty = collect($row['consignment_warehouses'])->max('consigned_qty');
 																							@endphp
-																							@if (($max_actual_qty * 1) > 0 || ($max_consigned_qty * 1) > 0)
+																							@if (($maxActualQty * 1) > 0 || ($maxConsignedQty * 1) > 0)
 																								<tr>
 																									<td class="consignment-name p-2">
 																										{{ $con['warehouse'] }}
@@ -441,12 +441,12 @@
 															</div>
 															<div class="col-9 col-lg-10 col-xl-9">
 																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span>
-																@if (in_array($row['name'], $bundled_items))
+																@if (in_array($row['name'], $bundledItems))
 																	&nbsp;<span class="badge badge-info font-italic d-none d-md-inline p-0" style="font-size: 8pt;">&nbsp;Product Bundle&nbsp;</span>
 																@endif
 																<br/>
 																<span class="text-justify item-name">
-																	@if (in_array($row['name'], $bundled_items))
+																	@if (in_array($row['name'], $bundledItems))
 																		<i class="fas fa-box-open text-info d-md-none"></i>
 																	@endif
 																	<span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}
@@ -464,7 +464,7 @@
 																@if ($row['part_nos'])
 																	<span class="text-justify item-name"><b>Part No(s)</b> {{ $row['part_nos'] }} </span>
 																@endif
-																@if (in_array($user_department, $allowed_department) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0) 
+																@if (in_array($userDepartment, $allowedDepartment) && !in_array(Auth::user()->user_group, ['Manager', 'Director']) && $row['default_price'] > 0) 
 																<p class="mt-3 mb-2">
 																	<span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($row['default_price'], 2, '.', ',') }}</span>
 																	<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
@@ -500,19 +500,19 @@
 																					<td class="text-center">
 																						@php
 																							if($inv['available_qty'] == 0){
-																								$uom_badge = 'secondary';
+																								$uomBadge = 'secondary';
 																							}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
-																								$uom_badge = 'warning';
+																								$uomBadge = 'warning';
 																							}else{
-																								$uom_badge = 'success';
+																								$uomBadge = 'success';
 																							}
 																						@endphp
-																						<span class="badge badge-{{ $uom_badge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
+																						<span class="badge badge-{{ $uomBadge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
 																					</td>
 																				</tr>
 																			@endforeach
 																		</table>
-																	@elseif(!in_array($row['name'], $bundled_items))
+																	@elseif(!in_array($row['name'], $bundledItems))
 																		<div class="h-100 d-flex align-items-center">
 																			<p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
 																		</div>
@@ -547,10 +547,10 @@
 																									@continue
 																								@endif
 																								@php
-																									$max_actual_qty = collect($row['consignment_warehouses'])->max('actual_qty');
-																									$max_consigned_qty = collect($row['consignment_warehouses'])->max('consigned_qty');
+																									$maxActualQty = collect($row['consignment_warehouses'])->max('actual_qty');
+																									$maxConsignedQty = collect($row['consignment_warehouses'])->max('consigned_qty');
 																								@endphp
-																								@if (($max_actual_qty * 1) > 0 || ($max_consigned_qty * 1) > 0)
+																								@if (($maxActualQty * 1) > 0 || ($maxConsignedQty * 1) > 0)
 																									<tr>
 																										<td class="consignment-name p-2">
 																											{{ $con['warehouse'] }}
@@ -613,19 +613,19 @@
 																				<td class="text-center">
 																					@php
 																						if($inv['available_qty'] == 0){
-																							$uom_badge = 'secondary';
+																							$uomBadge = 'secondary';
 																						}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
-																							$uom_badge = 'warning';
+																							$uomBadge = 'warning';
 																						}else{
-																							$uom_badge = 'success';
+																							$uomBadge = 'success';
 																						}
 																					@endphp
-																					<span class="badge badge-{{ $uom_badge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
+																					<span class="badge badge-{{ $uomBadge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
 																				</td>
 																			</tr>
 																		@endforeach
 																	</table>
-																@elseif(!in_array($row['name'], $bundled_items))
+																@elseif(!in_array($row['name'], $bundledItems))
 																	<p class="text-center pt-2 font-responsive">No Available Stock on All Warehouses</p>
 																@endif
 																
@@ -658,10 +658,10 @@
 																								@continue
 																							@endif
 																							@php
-																								$max_actual_qty = collect($row['consignment_warehouses'])->max('actual_qty');
-																								$max_consigned_qty = collect($row['consignment_warehouses'])->max('consigned_qty');
+																								$maxActualQty = collect($row['consignment_warehouses'])->max('actual_qty');
+																								$maxConsignedQty = collect($row['consignment_warehouses'])->max('consigned_qty');
 																							@endphp
-																							@if (($max_actual_qty * 1) > 0 || ($max_consigned_qty * 1) > 0)
+																							@if (($maxActualQty * 1) > 0 || ($maxConsignedQty * 1) > 0)
 																								<tr>
 																									<td class="consignment-name p-2">
 																										{{ $con['warehouse'] }}

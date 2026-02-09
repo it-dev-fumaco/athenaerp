@@ -13,7 +13,8 @@ class SalesOrderItem extends Model
     protected $primaryKey = 'name';
     public $timestamps = false;
     protected $keyType = 'string';
-    public function sales_order(){
+    public function salesOrder()
+    {
         return $this->hasOne(SalesOrder::class, 'parent', 'name');
     }
 }

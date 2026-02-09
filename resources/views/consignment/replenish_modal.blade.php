@@ -1,11 +1,11 @@
 @php
-    $is_promodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
-    $owner = explode('.', explode('@', $stock_entry->owner)[0]);
+    $isPromodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
+    $owner = explode('.', explode('@', $stockEntry->owner)[0]);
 
-    $stock_entry->owner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
-    $stock_entry->creation = Carbon\Carbon::parse($stock_entry->creation)->format('M. d, Y h:i a');
+    $stockEntry->owner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
+    $stockEntry->creation = Carbon\Carbon::parse($stockEntry->creation)->format('M. d, Y h:i a');
 
-    switch ($stock_entry->status) {
+    switch ($stockEntry->status) {
         case 'Pending':
             $badge = 'primary';
             break;
@@ -27,16 +27,16 @@
 <div class="modal-body text-left" style="max-height: 70vh; overflow: auto">
     <div class="row">
         <div class="col-6">
-            <span class="d-block">ID: <b>{{ $stock_entry->name }}</b></span>
-            <span class="d-block">Branch: <b>{{ $stock_entry->target_warehouse }}</b></span>
+            <span class="d-block">ID: <b>{{ $stockEntry->name }}</b></span>
+            <span class="d-block">Branch: <b>{{ $stockEntry->target_warehouse }}</b></span>
         </div>
         <div class="col-6">
-            <span class="d-block">Requested by: <b>{{ $stock_entry->owner }}</b></span>
-            <span class="d-block">Requested on: <b>{{ $stock_entry->creation }}</b></span>
+            <span class="d-block">Requested by: <b>{{ $stockEntry->owner }}</b></span>
+            <span class="d-block">Requested on: <b>{{ $stockEntry->creation }}</b></span>
         </div>
     </div>
     <div class="row pt-2">
-        <form id="form-{{ $stock_entry->name }}" action="/consignment/replenish/{{ $stock_entry->name }}/approve" method="post">
+        <form id="form-{{ $stockEntry->name }}" action="/consignment/replenish/{{ $stockEntry->name }}/approve" method="post">
             <table class="table table-bordered table-striped">
                 <colgroup>
                     <col style="width: 30%">
@@ -56,10 +56,10 @@
                     <th class="text-center">Status</th>
                     <th class="text-center">Issue</th>
                 </tr>
-                @foreach ($stock_entry->items as $item)
+                @foreach ($stockEntry->items as $item)
                     @php
-                        $item_code = $item->item_code;
-                        $image = isset($item_images[$item_code]) ? "img/".$item_images[$item_code] : '/icon/no_img.png';
+                        $itemCode = $item->item_code;
+                        $image = isset($itemImages[$itemCode]) ? "img/".$itemImages[$itemCode] : '/icon/no_img.png';
 
                         if(Storage::disk('public')->exists(explode('.', $image)[0].'.webp')){
                             $image = explode('.', $image)[0].'.webp';
@@ -68,7 +68,7 @@
                         $item->price = '₱ '.number_format($item->price, 2);
                         $item->qty = number_format($item->qty);
 
-                        $warehouses = isset($inventory[$item_code]) ? $inventory[$item_code] : [];
+                        $warehouses = isset($inventory[$itemCode]) ? $inventory[$itemCode] : [];
 
                         switch ($item->status) {
                             case 'Pending':
@@ -93,7 +93,7 @@
                                     <img src="{{ asset("storage/$image") }}" class="w-100">
                                 </div>
                                 <div class="col-10 text-left">
-                                    <b>{{ $item_code }}</b> - <span>{{ strip_tags($item->item_description) }}</span>
+                                    <b>{{ $itemCode }}</b> - <span>{{ strip_tags($item->item_description) }}</span>
                                     <div class="container-fluid mt-2">
                                         <div class="p-0">
                                         </div>
@@ -102,7 +102,7 @@
                             </div>
                         </td>
                         <td class="text-center select-parent-container">
-                            <select name="items[{{ $item_code }}][source_warehouse]" class="warehouse-select form-control" style="font-size: 9pt">
+                            <select name="items[{{ $itemCode }}][source_warehouse]" class="warehouse-select form-control" style="font-size: 9pt">
                                 <option value="" disabled selected>Select Source Warehouse</option>
                                 @foreach ($warehouses as $warehouse)
                                     <option value="{{ $warehouse->warehouse }}">
@@ -111,7 +111,7 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td class="text-center">{{ $stock_entry->target_warehouse }}</td>
+                        <td class="text-center">{{ $stockEntry->target_warehouse }}</td>
                         <td class="text-center"><b>{{ $item->price }}</b></td>
                         <td class="text-center">
                             <b class="d-block">{{ $item->qty }}</b>
@@ -119,7 +119,7 @@
                         </td>
                         <td class="text-center"><span class="badge badge-{{ $badge }}">{{ $item->status }}</span></td>
                         <td class="text-center">
-                            <input type="checkbox" name="items[{{ $item_code }}][issue]">
+                            <input type="checkbox" name="items[{{ $itemCode }}][issue]">
                         </td>
                     </tr>
                 @endforeach
@@ -128,10 +128,10 @@
     </div>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-sm btn-secondary close-modal" data-target="#view-{{ $stock_entry->name }}">Close</button>
-    @if ($stock_entry->status == 'Pending')
-        <button type="button" class="btn btn-sm btn-success submit-once submit-btn" data-id="{{ $stock_entry->name }}" data-issue="selected"><i class="fas fa-check"></i> Issue Selected Items</button>
-        <button type="button" class="btn btn-sm btn-success submit-once submit-btn" data-id="{{ $stock_entry->name }}" data-issue="all"><i class="fas fa-check"></i> Issue All Items</button>
+    <button type="button" class="btn btn-sm btn-secondary close-modal" data-target="#view-{{ $stockEntry->name }}">Close</button>
+    @if ($stockEntry->status == 'Pending')
+        <button type="button" class="btn btn-sm btn-success submit-once submit-btn" data-id="{{ $stockEntry->name }}" data-issue="selected"><i class="fas fa-check"></i> Issue Selected Items</button>
+        <button type="button" class="btn btn-sm btn-success submit-once submit-btn" data-id="{{ $stockEntry->name }}" data-issue="all"><i class="fas fa-check"></i> Issue All Items</button>
     @endif
 </div>
 

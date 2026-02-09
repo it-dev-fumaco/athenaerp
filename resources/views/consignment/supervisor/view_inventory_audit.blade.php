@@ -34,19 +34,19 @@
                             <div class="d-flex flex-row">
                                 <div class="p-1 col-3">
                                     <small class="d-block">Recent Period:</small>
-                                    <span class="d-block font-weight-bold text-center">{{ $displayed_data['recent_period'] }}</span>
+                                    <span class="d-block font-weight-bold text-center">{{ $displayedData['recent_period'] }}</span>
                                 </div>
                                 <div class="p-1 col-3" style="border-left: 10px solid #2E86C1;">
                                     <small class="d-block" style="font-size: 8pt;">Stores Submitted</small>
-                                    <h5 class="d-block font-weight-bold m-0">{{ $displayed_data['stores_submitted'] }}</h5>
+                                    <h5 class="d-block font-weight-bold m-0">{{ $displayedData['stores_submitted'] }}</h5>
                                 </div>
                                 <div class="p-1 col-3" style="border-left: 10px solid #E67E22;">
                                     <small class="d-block" style="font-size: 8pt;">Stores Pending</small>
-                                    <h5 class="d-block font-weight-bold m-0">{{ $displayed_data['stores_pending'] }}</h5>
+                                    <h5 class="d-block font-weight-bold m-0">{{ $displayedData['stores_pending'] }}</h5>
                                 </div>
                                 <div class="p-1 col-3" style="border-left: 10px solid #27AE60;">
                                     <small class="d-block">Total Sales</small>
-                                    <h4 class="d-block font-weight-bold m-0">{{ $displayed_data['total_sales'] }}</h4>
+                                    <h4 class="d-block font-weight-bold m-0">{{ $displayedData['total_sales'] }}</h4>
                                 </div>
                             </div>
                             <form id="inventory-audit-history-form" method="GET">
@@ -58,7 +58,7 @@
                                     </div>
                                     <div class="p-1 col-3 col-lg-3">
                                         <select class="form-control inventory-audit-history-filter year form-control-sm" name="year">
-                                            @foreach ($select_year as $year)
+                                            @foreach ($selectYear as $year)
                                             <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
                                             @endforeach
                                         </select>

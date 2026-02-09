@@ -30,4 +30,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'erp' => [
+        'api_base_url' => env('ERP_API_BASE_URL'),
+        'api_key' => env('ERP_API_KEY'),
+        'api_secret_key' => env('ERP_API_SECRET_KEY'),
+    ],
+
 ];

@@ -18,7 +18,8 @@ class ConsignmentStockEntry extends Model
         return $this->hasMany(ConsignmentStockEntryDetail::class, 'parent', 'name');
     }
 
-    public function stock_entry(){
+    public function stockEntry()
+    {
         return $this->hasOne(StockEntry::class, 'name', 'references');
     }
 }

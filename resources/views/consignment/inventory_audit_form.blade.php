@@ -29,10 +29,10 @@
                             <form action="/submit_inventory_audit_form" method="POST" autocomplete="off" id="inventory-report-entry-form">
                                 @csrf
                                 <div id="input-values" class="d-none">
-                                    <input type="text" name="transaction_date" value="{{ $transaction_date }}">
+                                    <input type="text" name="transaction_date" value="{{ $transactionDate }}">
                                     <input type="text" name="branch_warehouse" value="{{ $branch }}">
-                                    <input type="text" name="audit_date_from" value="{{ $inventory_audit_from }}">
-                                    <input type="text" name="audit_date_to" value="{{ $transaction_date }}">
+                                    <input type="text" name="audit_date_from" value="{{ $inventoryAuditFrom }}">
+                                    <input type="text" name="audit_date_to" value="{{ $transactionDate }}">
                                 </div>
                                 <div class="form-group m-2">
                                     <input type="text" class="form-control text-center mb-1 d-none" id="duration">
@@ -47,7 +47,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse ($item_classification as $class => $items)
+                                        @forelse ($itemClassification as $class => $items)
                                             <tr>
                                                 <td colspan="3" class="p-0">
                                                     <div class="bg-navy p-2">
@@ -58,11 +58,11 @@
                                             @forelse ($items as $row)
                                             @php
                                                 $id = $row->item_code;
-                                                $img = array_key_exists($row->item_code, $item_images) ? "/img/" . $item_images[$row->item_code][0]->image_path : "/icon/no_img.png";
-                                                $img_webp = array_key_exists($row->item_code, $item_images) ? "/img/" . explode('.',$item_images[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
-                                                $consigned_qty = array_key_exists($row->item_code, $consigned_stocks) ? ($consigned_stocks[$row->item_code] * 1) : 0;
+                                                $img = array_key_exists($row->item_code, $itemImages) ? "/img/" . $itemImages[$row->item_code][0]->image_path : "/icon/no_img.png";
+                                                $imgWebp = array_key_exists($row->item_code, $itemImages) ? "/img/" . explode('.',$itemImages[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+                                                $consignedQty = array_key_exists($row->item_code, $consignedStocks) ? ($consignedStocks[$row->item_code] * 1) : 0;
 
-                                                $img_count = array_key_exists($row->item_code, $item_images) ? count($item_images[$row->item_code]) : 0;
+                                                $imgCount = array_key_exists($row->item_code, $itemImages) ? count($itemImages[$row->item_code]) : 0;
 
                                                 $qty = null;
                                                 if(session()->has('error')) {
@@ -77,7 +77,7 @@
                                                             <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
                                                             <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
                                                                 <picture>
-                                                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="" width="40" height="40">
+                                                                    <source srcset="{{ asset('storage'.$imgWebp) }}" type="image/webp" alt="" width="40" height="40">
                                                                     <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="" width="40" height="40">
                                                                     <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
                                                                 </picture>
@@ -90,8 +90,8 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center p-1 align-middle font-weight-bold" style="border-bottom: 0 !important;">
-                                                    <span class="d-block item-consigned-qty">{{ $consigned_qty }}</span>
-                                                    <span class="d-none orig-item-consigned-qty">{{ $consigned_qty }}</span>
+                                                    <span class="d-block item-consigned-qty">{{ $consignedQty }}</span>
+                                                    <span class="d-none orig-item-consigned-qty">{{ $consignedQty }}</span>
                                                 </td>
                                                 <td class="text-justify p-0 align-middle" style="border-bottom: 0 !important;">
                                                     <div class="d-flex flex-row justify-content-center align-items-center">
@@ -130,7 +130,7 @@
                                     </tbody>
                                 </table>
                                 <div class="m-3">
-                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ $item_count <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
+                                    <button type="button" id="submit-form" class="btn btn-primary btn-block" {{ $itemCount <= 0 ? 'disabled' : ''  }}><i class="fas fa-check"></i> SUBMIT</button>
                                 </div>
                             </form>
                         </div>
@@ -153,7 +153,7 @@
             <div class="modal-body">
                 <form></form>
                 <p class="text-center mt-0">
-                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your current physical count of quantity per item as of <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                    <span class="d-block">Click <strong>"CONFIRM"</strong> to submit your current physical count of quantity per item as of <strong><u>{{ \Carbon\Carbon::parse($transactionDate)->format('F d, Y') }}</u></strong>.</span>
                 </p>
                 <div class="text-center mb-3 mt-2" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
@@ -188,7 +188,7 @@
             <div class="modal-body">
                 <form></form>
                 <p class="text-center mt-0">
-                    <span class="d-block">Enter your current physical count of quantity per item as of <strong><u>{{ \Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</u></strong>.</span>
+                    <span class="d-block">Enter your current physical count of quantity per item as of <strong><u>{{ \Carbon\Carbon::parse($transactionDate)->format('F d, Y') }}</u></strong>.</span>
                 </p>
                 <div class="text-center mb-3 mt-3" style="font-size: 9pt;">
                     <span class="d-block font-weight-bolder mt-4">{{ $branch }}</span>
@@ -339,9 +339,9 @@
         @endif
 
         @php
-            $explode_duration = explode(' - ', $duration);
-            $startDate = isset($explode_duration[0]) ? $explode_duration[0] : Carbon\Carbon::now()->format('Y-M-d');
-            $endDate = isset($explode_duration[1]) ? $explode_duration[1] : Carbon\Carbon::now()->format('Y-M-d');
+            $explodeDuration = explode(' - ', $duration);
+            $startDate = isset($explodeDuration[0]) ? $explodeDuration[0] : Carbon\Carbon::now()->format('Y-M-d');
+            $endDate = isset($explodeDuration[1]) ? $explodeDuration[1] : Carbon\Carbon::now()->format('Y-M-d');
         @endphp
 
         $("#duration").daterangepicker({
@@ -375,11 +375,11 @@
         });
 
         $("#duration").on('cancel.daterangepicker', function (ev, picker) {
-            var duration = '{{ Carbon\Carbon::parse($inventory_audit_from)->addDays(1)->format("Y-M-d")." to ".Carbon\Carbon::parse($transaction_date)->format("Y-M-d") }}';
+            var duration = '{{ Carbon\Carbon::parse($inventoryAuditFrom)->addDays(1)->format("Y-M-d")." to ".Carbon\Carbon::parse($transactionDate)->format("Y-M-d") }}';
             $(this).val(duration);
             
-            $('#input-values input[name=audit_date_from]').val('{{ $inventory_audit_from }}');
-            $('#input-values input[name=audit_date_to]').val('{{ $transaction_date }}');
+            $('#input-values input[name=audit_date_from]').val('{{ $inventoryAuditFrom }}');
+            $('#input-values input[name=audit_date_to]').val('{{ $transactionDate }}');
             
             $('#confirmation-modal .cutoff-period').text('{{ $duration }}');
         });

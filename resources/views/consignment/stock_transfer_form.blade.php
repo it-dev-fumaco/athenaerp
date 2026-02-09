@@ -35,9 +35,9 @@
                                             <div class="container">
                                                 <label for="source_warehouse">Source Warehouse</label>
                                                 <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
-                                                    <option value="" disabled {{ count($assigned_consignment_stores) > 1 ? 'selected' : null }}>Select Source Warehouse</option>
-                                                    @foreach ($assigned_consignment_stores as $store)
-                                                        <option value="{{ $store }}" {{ count($assigned_consignment_stores) == 1 ? 'selected' : null }}>{{ $store }}</option>
+                                                    <option value="" disabled {{ count($assignedConsignmentStores) > 1 ? 'selected' : null }}>Select Source Warehouse</option>
+                                                    @foreach ($assignedConsignmentStores as $store)
+                                                        <option value="{{ $store }}" {{ count($assignedConsignmentStores) == 1 ? 'selected' : null }}>{{ $store }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -56,9 +56,9 @@
                                             <div class="container">
                                                 <label for="source_warehouse">Source Warehouse</label>
                                                 <select name="source_warehouse" id='src-warehouse' class="form-control" required style="font-size: 9pt">
-                                                    <option value="" disabled {{ count($assigned_consignment_stores) > 1 ? 'selected' : null }}>Select Source Warehouse</option>
-                                                    @foreach ($assigned_consignment_stores as $store)
-                                                        <option value="{{ $store }}" {{ count($assigned_consignment_stores) == 1 ? 'selected' : null }}>{{ $store }}</option>
+                                                    <option value="" disabled {{ count($assignedConsignmentStores) > 1 ? 'selected' : null }}>Select Source Warehouse</option>
+                                                    @foreach ($assignedConsignmentStores as $store)
+                                                        <option value="{{ $store }}" {{ count($assignedConsignmentStores) == 1 ? 'selected' : null }}>{{ $store }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -152,10 +152,10 @@
                                                                     <div class="mb-2 pr-2 pl-2 pt-0 pb-2 {{ !in_array($action, ['For Return']) ? 'd-none' : null }}">
                                                                         <label for="sales-return-reason" style="font-size: 11px;">Reason <span class="text-danger">*</span></label>
                                                                         @php
-                                                                            $sales_return_reason = ['Defective', 'Pull Out Item'];
+                                                                            $salesReturnReason = ['Defective', 'Pull Out Item'];
                                                                         @endphp
                                                                         <select id="sales-return-reason" class="form-control" style="font-size: 11px;" {{ ($action == 'For Return') ? 'required' : '' }}>
-                                                                            @foreach ($sales_return_reason as $reason)
+                                                                            @foreach ($salesReturnReason as $reason)
                                                                             <option value="{{ $reason }}">{{ $reason }}</option>
                                                                             @endforeach
                                                                         </select>
@@ -515,7 +515,7 @@
                             '<div class="d-none">' + description + '</div>' +
                             '<label class="d-block text-left mb-0 mt-1">Reason <span class="text-danger">*</span></label>' +
                             '<select class="form-control mb-2" name="item[' + item_code + '][reason]" style="font-size: 10pt;" required>' +
-                                @foreach ($sales_return_reason as $reason)
+                                @foreach ($salesReturnReason as $reason)
                                     '<option value="{{ $reason }}" ' + (selected_reason == '{{ $reason }}' ? 'selected' : '') + '>{{ $reason }}</option>' + 
                                 @endforeach
                             '</select>' +

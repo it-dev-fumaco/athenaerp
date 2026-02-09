@@ -628,11 +628,14 @@ class adLDAP {
     public function connect() 
     {
         // Connect to the AD/LDAP server as the username/password
+        // PHP 8.0+ deprecated ldap_connect($host, $port); use single URI string instead
         $domainController = $this->randomController();
         if ($this->useSSL) {
-            $this->ldapConnection = ldap_connect("ldaps://" . $domainController, $this->adPort);
+            $uri = "ldaps://" . $domainController . ":" . $this->adPort;
+            $this->ldapConnection = ldap_connect($uri);
         } else {
-            $this->ldapConnection = ldap_connect($domainController, $this->adPort);
+            $uri = "ldap://" . $domainController . ":" . $this->adPort;
+            $this->ldapConnection = ldap_connect($uri);
         }
                
         // Set some ldap options for talking to AD

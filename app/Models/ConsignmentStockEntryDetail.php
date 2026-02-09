@@ -14,7 +14,8 @@ class ConsignmentStockEntryDetail extends Model
     public $timestamps = false;
     protected $keyType = 'string';
 
-    public function item_details(){
+    public function itemDetails()
+    {
         return $this->hasOne(Item::class, 'item_code', 'item_code');
     }
 }

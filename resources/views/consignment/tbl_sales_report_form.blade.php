@@ -46,10 +46,10 @@
                                 @csrf
                                 <h5 class="font-responsive font-weight-bold text-center m-2 text-uppercase d-block" id="branch-name">{{ $branch }}</h5>
                                 @php
-                                    $total_sales = $report ? $report->total_amount : 0;
+                                    $totalSales = $report ? $report->total_amount : 0;
                                 @endphp
                                 <p class="text-center p-0 m-0" style="font-size: 9pt">Total Sales for the month of <span class="font-weight-bold">{{ $month . ' ' . $year }}</span></p>
-                                <span class="text-center d-block font-weight-bold mb-2" style="font-size: 14px;">₱ {{ number_format($total_sales, 2) }}</span>
+                                <span class="text-center d-block font-weight-bold mb-2" style="font-size: 14px;">₱ {{ number_format($totalSales, 2) }}</span>
 
                                 @if ($report)
                                     @if ($report->status == 'Submitted')
@@ -87,7 +87,7 @@
                                     </thead>
                                     @for($day = 1; $day <= $days; $day++)
                                     @php
-                                        $amount = isset($sales_per_day[$day]) ? $sales_per_day[$day] : 0;
+                                        $amount = isset($salesPerDay[$day]) ? $salesPerDay[$day] : 0;
                                     @endphp
                                     <tr>
                                         <td class="text-center">

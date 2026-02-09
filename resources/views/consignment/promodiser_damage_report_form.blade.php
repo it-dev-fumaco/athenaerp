@@ -33,7 +33,7 @@
                                             <div class="col-8">
                                                 <select name="branch" id="branch" class="form-control form-control-sm">
                                                     <option value="" disabled selected>Select a Branch</option>
-                                                    @foreach ($assigned_consignment_store as $store)
+                                                    @foreach ($assignedConsignmentStore as $store)
                                                         <option value="{{ $store }}">{{ $store }}</option>
                                                     @endforeach 
                                                 </select>

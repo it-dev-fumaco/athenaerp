@@ -14,8 +14,9 @@ class AssignedWarehouses extends Model
     protected $keyType = 'string';
     protected $table = 'tabAssigned Consignment Warehouse';
 
-    public function assigned_warehouse(){
-        return $this->belongsTo(Warehouse::class, 'name', 'warehouse');
+    public function assignedWarehouse()
+    {
+        return $this->belongsTo(Warehouse::class, 'warehouse', 'name');
     }
 
     public function user(){

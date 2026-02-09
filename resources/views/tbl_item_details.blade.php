@@ -3,93 +3,93 @@
         <div class="box box-solid mt-2">
             <div class="row">
                 @php
-                    $img_1 = (array_key_exists(0, $item_images)) ? '/img/' . $item_images[0] : '/icon/no_img.png';
-                    $img_1_name = isset($item_images[0]) ? $item_images[0] :  null;
-                    $img_1_webp = (array_key_exists(0, $item_images)) ? '/img/' . explode('.', $item_images[0])[0].'.webp' : '/icon/no_img.webp';
-                    $img_1_alt = (array_key_exists(0, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_1)[0], '-') : null;
-                    
-                    $img_2 = (array_key_exists(1, $item_images)) ? '/img/' . $item_images[1] : '/icon/no_img.png';
-                    $img_2_name = isset($item_images[1]) ? $item_images[1] :  null;
-                    $img_2_webp = (array_key_exists(1, $item_images)) ? '/img/' . explode('.', $item_images[1])[0].'.webp' : '/icon/no_img.webp';
-                    $img_2_alt = (array_key_exists(1, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_2)[0], '-') : null;
-                    
-                    $img_3 = (array_key_exists(2, $item_images)) ? '/img/' . $item_images[2] : '/icon/no_img.png';
-                    $img_3_name = isset($item_images[2]) ? $item_images[2] :  null;
-                    $img_3_webp = (array_key_exists(2, $item_images)) ? '/img/' . explode('.', $item_images[2])[0].'.webp' : '/icon/no_img.webp';
-                    $img_3_alt = (array_key_exists(2, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_3)[0], '-') : null;
-                    
-                    $img_4 = (array_key_exists(3, $item_images)) ? '/img/' . $item_images[3] : '/icon/no_img.png';
-                    $img_4_name = isset($item_images[3]) ? $item_images[3] :  null;
-                    $img_4_webp = (array_key_exists(3, $item_images)) ? '/img/' . explode('.', $item_images[3])[0].'.webp' : '/icon/no_img.webp';
-                    $img_4_alt = (array_key_exists(3, $item_images)) ? Illuminate\Support\Str::slug(explode('.', $img_4)[0], '-') : null;
+                    $img1 = data_get($itemImages, 0) ? '/img/' . $itemImages[0] : '/icon/no_img.png';
+                    $img1Name = data_get($itemImages, 0);
+                    $img1Webp = data_get($itemImages, 0) ? '/img/' . explode('.', $itemImages[0])[0].'.webp' : '/icon/no_img.webp';
+                    $img1Alt = data_get($itemImages, 0) ? Illuminate\Support\Str::slug(explode('.', $img1)[0], '-') : null;
+
+                    $img2 = data_get($itemImages, 1) ? '/img/' . $itemImages[1] : '/icon/no_img.png';
+                    $img2Name = data_get($itemImages, 1);
+                    $img2Webp = data_get($itemImages, 1) ? '/img/' . explode('.', $itemImages[1])[0].'.webp' : '/icon/no_img.webp';
+                    $img2Alt = data_get($itemImages, 1) ? Illuminate\Support\Str::slug(explode('.', $img2)[0], '-') : null;
+
+                    $img3 = data_get($itemImages, 2) ? '/img/' . $itemImages[2] : '/icon/no_img.png';
+                    $img3Name = data_get($itemImages, 2);
+                    $img3Webp = data_get($itemImages, 2) ? '/img/' . explode('.', $itemImages[2])[0].'.webp' : '/icon/no_img.webp';
+                    $img3Alt = data_get($itemImages, 2) ? Illuminate\Support\Str::slug(explode('.', $img3)[0], '-') : null;
+
+                    $img4 = data_get($itemImages, 3) ? '/img/' . $itemImages[3] : '/icon/no_img.png';
+                    $img4Name = data_get($itemImages, 3);
+                    $img4Webp = data_get($itemImages, 3) ? '/img/' . explode('.', $itemImages[3])[0].'.webp' : '/icon/no_img.webp';
+                    $img4Alt = data_get($itemImages, 3) ? Illuminate\Support\Str::slug(explode('.', $img4)[0], '-') : null;
                 @endphp
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-12">
-                            <a href="{{ asset('storage/') . $img_1 }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                {{-- <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}"> --}}
-                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_1_name)[0].'.webp'))
-                                    <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
-                                @elseif(!Storage::disk('public')->exists('/img/'.$img_1_name))
-                                    <img src="{{ asset('storage/') .''. $img_1_webp }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
+                            <a href="{{ asset('storage/') . $img1 }}" data-toggle="lightbox" data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
+                                {{-- <img src="{{ asset('storage/') .''. $img1 }}" alt="{{ $img1Alt }}" class="img-responsive {{ data_get($itemImages, 0) ? null : '' }}" style="width: 100% !important; {{ data_get($itemImages, 0) ? null : 'min-height: 200px' }}"> --}}
+                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img1Name)[0].'.webp'))
+                                    <img src="{{ asset('storage/') .''. $img1 }}" alt="{{ $img1Alt }}" class="img-responsive {{ data_get($itemImages, 0) ? null : '' }}" style="width: 100% !important; {{ data_get($itemImages, 0) ? null : 'min-height: 200px' }}">
+                                @elseif(!Storage::disk('public')->exists('/img/'.$img1Name))
+                                    <img src="{{ asset('storage/') .''. $img1Webp }}" alt="{{ $img1Alt }}" class="img-responsive {{ data_get($itemImages, 0) ? null : '' }}" style="width: 100% !important; {{ data_get($itemImages, 0) ? null : 'min-height: 200px' }}">
                                 @else
                                     <picture>
-                                        <source srcset="{{ asset('storage'.$img_1_webp) }}" type="image/webp" class="img-responsive">
-                                        <source srcset="{{ asset('storage'.$img_1) }}" type="image/jpeg" class="img-responsive">
-                                            <img src="{{ asset('storage/') .''. $img_1 }}" alt="{{ $img_1_alt }}" class="img-responsive {{ array_key_exists(0, $item_images) ? null : '' }}" style="width: 100% !important; {{ array_key_exists(0, $item_images) ? null : 'min-height: 200px' }}">
+                                        <source srcset="{{ asset('storage'.$img1Webp) }}" type="image/webp" class="img-responsive">
+                                        <source srcset="{{ asset('storage'.$img1) }}" type="image/jpeg" class="img-responsive">
+                                            <img src="{{ asset('storage/') .''. $img1 }}" alt="{{ $img1Alt }}" class="img-responsive {{ data_get($itemImages, 0) ? null : '' }}" style="width: 100% !important; {{ data_get($itemImages, 0) ? null : 'min-height: 200px' }}">
                                     </picture>
                                 @endif
                             </a>
                         </div>
                         <div class="col-4 mt-2">
-                            <a href="{{ asset('storage/'.$img_2) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                {{-- <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
-                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_2_name)[0].'.webp'))
-                                    <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                @elseif(!Storage::disk('public')->exists('/img/'.$img_2_name))
-                                    <img src="{{ asset('storage/') .''. $img_2_webp }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                            <a href="{{ asset('storage/'.$img2) }}" data-toggle="lightbox" data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
+                                {{-- <img src="{{ asset('storage/') .''. $img2 }}" alt="{{ $img2Alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
+                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img2Name)[0].'.webp'))
+                                    <img src="{{ asset('storage/') .''. $img2 }}" alt="{{ $img2Alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                @elseif(!Storage::disk('public')->exists('/img/'.$img2Name))
+                                    <img src="{{ asset('storage/') .''. $img2Webp }}" alt="{{ $img2Alt }}" class="img-responsive hover" style="width: 100% !important;">
                                 @else
                                     <picture>
-                                        <source srcset="{{ asset('storage'.$img_2_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
-                                        <source srcset="{{ asset('storage'.$img_2) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
-                                        <img src="{{ asset('storage/') .''. $img_2 }}" alt="{{ $img_2_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                        <source srcset="{{ asset('storage'.$img2Webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+                                        <source srcset="{{ asset('storage'.$img2) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+                                        <img src="{{ asset('storage/') .''. $img2 }}" alt="{{ $img2Alt }}" class="img-responsive hover" style="width: 100% !important;">
                                     </picture>
                                 @endif
                             </a>
                         </div>
                         <div class="col-4 mt-2"> 
-                            <a href="{{ asset('storage/'.$img_3) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
-                                {{-- <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
-                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_3_name)[0].'.webp'))
-                                    <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                @elseif(!Storage::disk('public')->exists('/img/'.$img_3_name))
-                                    <img src="{{ asset('storage/') .''. $img_3_webp }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                            <a href="{{ asset('storage/'.$img3) }}" data-toggle="lightbox" data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
+                                {{-- <img src="{{ asset('storage/') .''. $img3 }}" alt="{{ $img3Alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
+                                @if(!Storage::disk('public')->exists('/img/'.explode('.', $img3Name)[0].'.webp'))
+                                    <img src="{{ asset('storage/') .''. $img3 }}" alt="{{ $img3Alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                @elseif(!Storage::disk('public')->exists('/img/'.$img3Name))
+                                    <img src="{{ asset('storage/') .''. $img3Webp }}" alt="{{ $img3Alt }}" class="img-responsive hover" style="width: 100% !important;">
                                 @else
                                     <picture>
-                                        <source srcset="{{ asset('storage'.$img_3_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
-                                        <source srcset="{{ asset('storage'.$img_3) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
-                                        <img src="{{ asset('storage/') .''. $img_3 }}" alt="{{ $img_3_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                        <source srcset="{{ asset('storage'.$img3Webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+                                        <source srcset="{{ asset('storage'.$img3) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+                                        <img src="{{ asset('storage/') .''. $img3 }}" alt="{{ $img3Alt }}" class="img-responsive hover" style="width: 100% !important;">
                                     </picture>
                                 @endif
                             </a>
                         </div>
                         <div class="col-4 mt-2">
-                            <a href="{{ asset('storage'.$img_4) }}" data-toggle="lightbox" data-gallery="{{ $item_details->name }}" data-title="{{ $item_details->name }}">
+                            <a href="{{ asset('storage'.$img4) }}" data-toggle="lightbox" data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
                                 <div class="text-white">
-                                    {{-- <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
-                                    @if(!Storage::disk('public')->exists('/img/'.explode('.', $img_4_name)[0].'.webp'))
-                                        <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
-                                    @elseif(!Storage::disk('public')->exists('/img/'.$img_3_name))
-                                        <img src="{{ asset('storage/') .''. $img_4_webp }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                    {{-- <img src="{{ asset('storage/') .''. $img4 }}" alt="{{ $img4Alt }}" class="img-responsive hover" style="width: 100% !important;"> --}}
+                                    @if(!Storage::disk('public')->exists('/img/'.explode('.', $img4Name)[0].'.webp'))
+                                        <img src="{{ asset('storage/') .''. $img4 }}" alt="{{ $img4Alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                    @elseif(!Storage::disk('public')->exists('/img/'.$img3Name))
+                                        <img src="{{ asset('storage/') .''. $img4Webp }}" alt="{{ $img4Alt }}" class="img-responsive hover" style="width: 100% !important;">
                                     @else
                                         <picture>
-                                            <source srcset="{{ asset('storage'.$img_4_webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
-                                            <source srcset="{{ asset('storage'.$img_4) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
-                                            <img src="{{ asset('storage/') .''. $img_4 }}" alt="{{ $img_4_alt }}" class="img-responsive hover" style="width: 100% !important;">
+                                            <source srcset="{{ asset('storage'.$img4Webp) }}" type="image/webp" class="img-responsive hover" style="width: 100% !important;">
+                                            <source srcset="{{ asset('storage'.$img4) }}" type="image/jpeg" class="img-responsive hover" style="width: 100% !important;">
+                                            <img src="{{ asset('storage/') .''. $img4 }}" alt="{{ $img4Alt }}" class="img-responsive hover" style="width: 100% !important;">
                                         </picture>
                                     @endif
                                     
-                                    @if(count($item_images) > 4)
+                                    @if(count($itemImages) > 4)
                                         <div class="card-img-overlay text-center">
                                             <h5 class="card-title m-1 font-weight-bold">MORE</h5>
                                         </div>
@@ -98,32 +98,32 @@
                             </a>
                         </div>
                         <div class="col-md-12 text-center pt-3">
-                            <button class="btn btn-primary btn-sm upload-item-image" data-item-code="{{ $item_details->name }}">Upload Image(s)</button>
+                            <button class="btn btn-primary btn-sm upload-item-image" data-item-code="{{ $itemDetails->name }}">Upload Image(s)</button>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-9">
                     <br class="d-block d-md-none"/>
                     <dl>
-                        <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $item_details->name }}</span> {{ $item_details->brand }}</dt>
-                        <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                        <dt class="responsive-item-code" style="font-size: 14pt;"><span id="selected-item-code">{{ $itemDetails->name }}</span> {{ $itemDetails->brand }}</dt>
+                        <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $itemDetails->description !!}</dd>
                     </dl>
                     <div class="d-block d-lg-none">
                         <p class="mt-2 mb-2 text-center">
-                            @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
-                                <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                            @if(!in_array($userGroup, ['Warehouse Personnel']) && $defaultPrice > 0)
+                                <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
                                 <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
                             @endif
-                            @if (in_array($user_group, ['Manager', 'Director']) && $minimum_selling_price > 0)
-                                <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
+                            @if (in_array($userGroup, ['Manager', 'Director']) && $minimumSellingPrice > 0)
+                                <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
                                 <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
                             @endif
                         </p>
                     </div>
                     <div class="card-header border-bottom-0 p-1">
                         <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> Stock Level</h3>
-                        @if(in_array($user_group, ['Warehouse Personnel', 'Inventory Manager']))
-                            <button class="btn btn-primary p-1 float-right" id="warehouse-location-btn" data-item-code="{{ $item_details->name }}" style="font-size: 12px;">Update Warehouse Location</button>
+                        @if(in_array($userGroup, ['Warehouse Personnel', 'Inventory Manager']))
+                            <button class="btn btn-primary p-1 float-right" id="warehouse-location-btn" data-item-code="{{ $itemDetails->name }}" style="font-size: 12px;">Update Warehouse Location</button>
                         @endif
                     </div>
                     <div class="box box-solid p-0">
@@ -141,7 +141,7 @@
                                             <th scope="col" class="font-responsive text-center p-1">Available</th>
                                         </tr>
                                     </thead>
-                                    @forelse ($site_warehouses as $stock)
+                                    @forelse ($siteWarehouses as $stock)
                                     <tr>
                                         <td class="p-1 font-responsive">
                                             {{ $stock['warehouse'] }}
@@ -163,17 +163,17 @@
                                     </tr>
                                     @endforelse
                                 </table>
-                                @if(count($consignment_warehouses) > 0)
+                                @if(count($consignmentWarehouses) > 0)
                                     <div class="text-center">
-                                        <a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcww{{ $item_details->name }}" style="font-size: 12px;">View Consignment Warehouse</a>
+                                        <a href="#" class="btn btn-primary uppercase p-1" data-toggle="modal" data-target="#vcww{{ $itemDetails->name }}" style="font-size: 12px;">View Consignment Warehouse</a>
                                     </div>
 
-                                    <div class="modal fade" id="vcww{{ $item_details->name }}" tabindex="-1" role="dialog">
+                                    <div class="modal fade" id="vcww{{ $itemDetails->name }}" tabindex="-1" role="dialog">
                                         <div class="modal-dialog" role="document">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h4 class="modal-title">{{ $item_details->name }} - Consignment Warehouse(s) </h4>
-                                                    <button type="button" class="close" onclick="close_modal('#vcww{{ $item_details->name }}')" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                                    <h4 class="modal-title">{{ $itemDetails->name }} - Consignment Warehouse(s) </h4>
+                                                    <button type="button" class="close" onclick="close_modal('#vcww{{ $itemDetails->name }}')" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                                 </div>
                                                 <form></form>
                                                 <div class="modal-body">
@@ -184,7 +184,7 @@
                                                             <th class="text-center">Warehouse</th>
                                                             <th class="text-center">Available Qty</th>
                                                         </tr>
-                                                        @forelse($consignment_warehouses as $con)
+                                                        @forelse($consignmentWarehouses as $con)
                                                         <tr>
                                                             <td>
                                                                 {{ $con['warehouse'] }}
@@ -202,7 +202,7 @@
                                                     </table>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-default" onclick="close_modal('#vcww{{ $item_details->name }}')">Close</button>
+                                                    <button type="button" class="btn btn-default" onclick="close_modal('#vcww{{ $itemDetails->name }}')">Close</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -219,12 +219,12 @@
         <div class="box box-solid">
             <div class="box-body table-responsive no-padding">
                 <p class="mt-2 mb-2 text-center">
-                    @if(!in_array($user_group, ['Warehouse Personnel']) && $default_price > 0)
-                        <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                    @if(!in_array($userGroup, ['Warehouse Personnel']) && $defaultPrice > 0)
+                        <span class="d-block font-weight-bold" style="font-size: 17pt;">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
                         <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
                     @endif
-                    @if (in_array($user_group, ['Manager', 'Director']) && $minimum_selling_price > 0)
-                        <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
+                    @if (in_array($userGroup, ['Manager', 'Director']) && $minimumSellingPrice > 0)
+                        <span class="d-block font-weight-bold" style="font-size: 15pt;">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
                         <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
                     @endif
                 </p>
@@ -239,47 +239,47 @@
     <div class="d-block d-lg-none col-12">
         <div class="box box-solid">
             @php
-                $variants = collect($co_variants)->chunk(5);
+                $variants = collect($coVariants)->chunk(5);
             @endphp
             <div class="divs tab-content">
                 @for($i = 0; $i < count($variants); $i++)
                     <div id="mob-variant-page-{{ $i + 1 }}" class="mob-tab tab-pane {{ $i == 0 ? 'active' : null }}">
                         @php
-                            $first_item_name = \Illuminate\Support\Str::limit($item_details->item_name, 30, $end='...')
+                            $firstItemName = \Illuminate\Support\Str::limit($itemDetails->item_name, 30, $end='...')
                         @endphp
-                        <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $item_details->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt;border-bottom: 2px solid #28A745; color: #28A745;"><b>{{ $item_details->name }}</b> - {{ $first_item_name }} <i class="fa fa-chevron-down float-right"></i></button>
+                        <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $itemDetails->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt;border-bottom: 2px solid #28A745; color: #28A745;"><b>{{ $itemDetails->name }}</b> - {{ $firstItemName }} <i class="fa fa-chevron-down float-right"></i></button>
                             
-                        <div class="collapse multi-collapse show" id="variant-data-{{ $item_details->name }}">
+                        <div class="collapse multi-collapse show" id="variant-data-{{ $itemDetails->name }}">
                             <table class="table" style="font-size: 9pt;">
-                                @foreach ($attribute_names as $attribute_name)
+                                @foreach ($attributeNames as $attributeName)
                                     <tr>
                                         @php
-                                            $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                            $attributeValue = collect($attributes)->where('parent', $itemDetails->name)->where('attribute', $attributeName)->pluck('attribute_value')->first();
                                         @endphp
-                                        <td>{{ $attribute_name }}</td>
-                                        <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                        <td>{{ $attributeName }}</td>
+                                        <td>{{ $attributeValue ? $attributeValue : 'n/a' }}</td>
                                     </tr>
                                 @endforeach
                             </table>
                         </div>
                         @foreach ($variants[$i] as $variant)
-                            @if ($item_details->name == $variant->name)
+                            @if ($itemDetails->name == $variant->name)
                                 @continue
                             @endif
                             @php
-                                $item_name = \Illuminate\Support\Str::limit($variant->item_name, 30, $end='...')
+                                $itemName = \Illuminate\Support\Str::limit($variant->item_name, 30, $end='...')
                             @endphp
-                            <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $variant->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt; border-bottom: 1px solid #C4C4C4"><b>{{ $variant->name }}</b> - {{ $item_name }} <i class="fa fa-chevron-down float-right"></i></button>
+                            <button class="btn w-100 text-left mb-3" type="button" data-toggle="collapse" data-target="#variant-data-{{ $variant->name }}" aria-expanded="false" aria-controls="multiCollapseExample2" style="font-size: 9pt; border-bottom: 1px solid #C4C4C4"><b>{{ $variant->name }}</b> - {{ $itemName }} <i class="fa fa-chevron-down float-right"></i></button>
                             
                             <div class="collapse multi-collapse" id="variant-data-{{ $variant->name }}">
                                 <table class="table" style="font-size: 9pt;">
-                                    @foreach ($attribute_names as $attribute_name)
+                                    @foreach ($attributeNames as $attributeName)
                                         <tr>
                                             @php
-                                                $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                                $attributeValue = collect($attributes)->where('parent', $variant->name)->where('attribute', $attributeName)->pluck('attribute_value')->first();
                                             @endphp
-                                            <td>{{ $attribute_name }}</td>
-                                            <td>{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                            <td>{{ $attributeName }}</td>
+                                            <td>{{ $attributeValue ? $attributeValue : 'n/a' }}</td>
                                         </tr>
                                     @endforeach
                                 </table>
@@ -295,7 +295,7 @@
     <div class="d-none d-lg-block col-12 mt-2">
         <div class="box box-solid">
             @php
-                $variants = collect($co_variants)->chunk(5);
+                $variants = collect($coVariants)->chunk(5);
             @endphp
             <div class="tab-content" style="overflow-x: auto; white-space: nowrap;">
                 @for($i = 0; $i < count($variants); $i++)
@@ -303,37 +303,37 @@
                         <table id="variants-table" class="table table-bordered" style="font-size: 10pt;">
                             <tr>
                                 <th class="text-center">Item Code</th>
-                                @foreach ($attribute_names as $attribute_name)
-                                    <th class="text-center">{{ $attribute_name }}</th>
+                                @foreach ($attributeNames as $attributeName)
+                                    <th class="text-center">{{ $attributeName }}</th>
                                 @endforeach
                                 <th class="text-center">Price</th>
                             </tr>
                             <tr class="highlight-row">
-                                <td class="text-center table-highlight pb-3 pt-3">{{ $item_details->name }}</td>
-                                @foreach($attribute_names as $attribute_name)
+                                <td class="text-center table-highlight pb-3 pt-3">{{ $itemDetails->name }}</td>
+                                @foreach($attributeNames as $attributeName)
                                     @php
-                                        $attribute_value = collect($attributes)->where('parent', $item_details->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                        $attributeValue = collect($attributes)->where('parent', $itemDetails->name)->where('attribute', $attributeName)->pluck('attribute_value')->first();
                                     @endphp
-                                    <td class="text-center table-highlight pb-3 pt-3">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                    <td class="text-center table-highlight pb-3 pt-3">{{ $attributeValue ? $attributeValue : 'n/a' }}</td>
                                 @endforeach
-                                <td class="text-center table-highlight pb-3 pt-3">{{ $default_price > 0 ? '₱ ' . number_format($default_price, 2, '.', ',') : 'n/a' }}</td>
+                                <td class="text-center table-highlight pb-3 pt-3">{{ $defaultPrice > 0 ? '₱ ' . number_format($defaultPrice, 2, '.', ',') : 'n/a' }}</td>
                             </tr>
                             @foreach ($variants[$i] as $variant)
-                                @if ($item_details->name == $variant->name)
+                                @if ($itemDetails->name == $variant->name)
                                     @continue
                                 @endif
                                 <tr style="font-size: 9pt;">
                                     <td class="text-center">{{ $variant->name }}</td>
-                                    @foreach ($attribute_names as $attribute_name)
+                                    @foreach ($attributeNames as $attributeName)
                                         @php
-                                            $attribute_value = collect($attributes)->where('parent', $variant->name)->where('attribute', $attribute_name)->pluck('attribute_value')->first();
+                                            $attributeValue = collect($attributes)->where('parent', $variant->name)->where('attribute', $attributeName)->pluck('attribute_value')->first();
                                         @endphp
-                                        <td class="text-center">{{ $attribute_value ? $attribute_value : 'n/a' }}</td>
+                                        <td class="text-center">{{ $attributeValue ? $attributeValue : 'n/a' }}</td>
                                     @endforeach
                                     @php
                                         $price = 0;
-                                        if(isset($variants_price_arr[$variant->name])){
-                                            $price = $variants_price_arr[$variant->name][0];
+                                        if(isset($variantsPriceArr[$variant->name])){
+                                            $price = $variantsPriceArr[$variant->name][0];
                                         }
                                     @endphp
                                     <td class="text-center">{{ $price > 0 ? '₱ ' . number_format($price, 2, '.', ',') : 'n/a' }}</td>
@@ -366,7 +366,7 @@
         }
         </style>
         <div class="d-flex flex-row flex-nowrap overflow-auto">
-            @forelse($item_alternatives as $a)
+            @forelse($itemAlternatives as $a)
             <div class="custom-body m-1">
                 <div class="card card-default">
                     <div class="card-body p-0">
@@ -375,7 +375,7 @@
                                 <div class="pt-2 pb-2 pr-1 pl-1">
                                     @php
                                         $img = ($a['item_alternative_image']) ? '/img/' . explode('.', $a['item_alternative_image'])[0].'.jpg' : '/icon/no_img.jpg';
-                                        $img_webp = ($a['item_alternative_image']) ? '/img/' . explode('.', $a['item_alternative_image'])[0].'.webp' : '/icon/no_img.webp';
+                                        $imgWebp = ($a['item_alternative_image']) ? '/img/' . explode('.', $a['item_alternative_image'])[0].'.webp' : '/icon/no_img.webp';
                                     @endphp
                                     <a href="{{ asset('storage' . $img) }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
                                         {{-- <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80"> --}}
@@ -385,14 +385,14 @@
                                             <img src="{{ asset('storage/') .''. $img }}" class="rounded" width="80" height="80">
                                         @else
                                             <picture>
-                                                <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="rounded" width="80" height="80">
+                                                <source srcset="{{ asset('storage'.$imgWebp) }}" type="image/webp" class="rounded" width="80" height="80">
                                                 <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="rounded" width="80" height="80">
                                                 <img src="{{ asset('storage'.$img) }}" class="rounded" width="80" height="80">
                                             </picture>
                                         @endif
                                     </a>
                                 </div>
-                                <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $item_details->item_classification }}">
+                                <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $itemDetails->item_classification }}">
                                     <div class="p-1 text-justify">
                                         <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
                                         <small class="font-italic font-responsive" style="font-size: 9pt;">{{ \Illuminate\Support\Str::limit($a['description'], $limit = 78, $end = '...') }}</small>

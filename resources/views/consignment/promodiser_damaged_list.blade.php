@@ -37,7 +37,7 @@
                                         <th class="text-center p-1 align-middle" style="width: 75%">Item Code</th>
                                         <th class="text-center p-1 align-middle" style="width: 25%">Action</th>
                                     </thead>
-                                    @forelse ($damaged_arr as $i => $item)
+                                    @forelse ($damagedArr as $i => $item)
                                         <tr>
                                             <td class="text-center p-1 align-middle" style="width: 75%">
                                                 <div class="d-none"><!-- For Search -->
@@ -161,7 +161,7 @@
                                </table>
                                <div class="mt-3 ml-3 clearfix pagination" style="display: block;">
                                     <div class="col-md-4 float-right">
-                                        {{ $damaged_items->links() }}
+                                        {{ $damagedItems->links() }}
                                     </div>
                                 </div>
                             </div>

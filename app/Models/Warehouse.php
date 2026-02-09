@@ -16,7 +16,23 @@ class Warehouse extends Model
 
     protected $table = 'tabWarehouse';
 
-    public function bin(){
+    public function bin()
+    {
         return $this->hasMany(Bin::class, 'warehouse', 'name');
+    }
+
+    /**
+     * Scope to get warehouses allowed for a user (by frappe_userid).
+     *
+     * @param Builder $query
+     */
+    public function scopeForUser($query, string $frappeUserid)
+    {
+        $parentWarehouses = WarehouseAccess::query()
+            ->where('parent', $frappeUserid)
+            ->pluck('warehouse');
+
+        return $query->where('disabled', 0)
+            ->whereIn('parent_warehouse', $parentWarehouses);
     }
 }

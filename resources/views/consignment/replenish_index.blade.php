@@ -49,7 +49,7 @@
                                                     <select name="branch" class="form-control form-control-sm select-filter">
                                                         <option value="" disabled selected>Select a Branch</option>
                                                         <option value="">Select all</option>
-                                                        @foreach ($assigned_consignment_stores as $store)
+                                                        @foreach ($assignedConsignmentStores as $store)
                                                             <option value="{{ $store }}">{{ $store }}</option>
                                                         @endforeach 
                                                     </select>

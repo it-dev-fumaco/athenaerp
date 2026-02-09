@@ -13,11 +13,13 @@ class DeliveryNoteItem extends Model
     protected $primaryKey = 'name';
     public $timestamps = false;
     protected $keyType = 'string';
-    public function delivery_note(){
+    public function deliveryNote()
+    {
         return $this->belongsTo(DeliveryNote::class, 'parent', 'name');
     }
 
-    public function packed_items(){
+    public function packedItems()
+    {
         return $this->belongsTo(PackedItem::class, 'parent_detail_docname', 'name');
     }
 }

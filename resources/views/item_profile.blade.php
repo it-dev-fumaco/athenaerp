@@ -37,7 +37,7 @@
                         </a>
                     </li>
                     @endif
-                    @if (in_array($user_group, ['Manager', 'Director']))
+                    @if (in_array($userGroup, ['Manager', 'Director']))
                     <li class="nav-item">
                         <a class="nav-link" id="get-purchase-history" data-toggle="tab" href="#purchase-history">
                             <span class="d-none d-lg-block">Purchase Rate History</span>
@@ -57,7 +57,7 @@
                 <div class="d-none">
                     <form action="/add_to_brochure_list" id="add-to-brochure-form" method="post">
                         @csrf
-                        <input type="text" name="item_codes[]" value="{{ $item_details->name }}">
+                        <input type="text" name="item_codes[]" value="{{ $itemDetails->name }}">
                     </form>
                 </div>
                 <div class="tab-content">
@@ -69,15 +69,15 @@
                                         @if(Auth::check() and in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
                                             <select class="form-control csm-filter" name="store" id="consignment-store-select"></select>
                                         @else
-                                            @if (count($consignment_branches) > 1)
+                                            @if (count($consignmentBranches) > 1)
                                             <select class="form-control csm-filter" name="store">
-                                                @foreach ($consignment_branches as $store)
+                                                @foreach ($consignmentBranches as $store)
                                                 <option value="{{ $store }}">{{ $store }}</option>
                                                 @endforeach
                                             </select>
                                             @endif
-                                            @if ((count($consignment_branches) == 1))
-                                                <input type="hidden" class="csm-filter" name="store" value="{{ $consignment_branches[0] }}">
+                                            @if ((count($consignmentBranches) == 1))
+                                                <input type="hidden" class="csm-filter" name="store" value="{{ $consignmentBranches[0] }}">
                                             @endif
                                         @endif
                                     </div>
@@ -103,24 +103,24 @@
                                 <div class="box box-solid mt-2">
                                     <div class="row">
                                         @php
-                                            if (!$item_details->item_brochure_description) {
-                                                $item_brochure_description = $item_details->description;
-                                                $exploded_description = explode(",", strip_tags($item_brochure_description));
-                                                $item_brochure_description = (isset($exploded_description[0]) ? $exploded_description[0] : '') . (isset($exploded_description[1]) ? ", " . $exploded_description[1] : '');
+                                            if (!$itemDetails->item_brochure_description) {
+                                                $itemBrochureDescription = $itemDetails->description;
+                                                $explodedDescription = explode(",", strip_tags($itemBrochureDescription));
+                                                $itemBrochureDescription = (isset($explodedDescription[0]) ? $explodedDescription[0] : '') . (isset($explodedDescription[1]) ? ", " . $explodedDescription[1] : '');
                                             } else {
-                                                $item_brochure_description = strip_tags($item_details->item_brochure_description);
+                                                $itemBrochureDescription = strip_tags($itemDetails->item_brochure_description);
                                             }
 
-                                            if (!$item_details->item_brochure_name) {
-                                                $item_brochure_name = $item_details->item_name;
-                                                $exploded_item_name = explode("-", strip_tags($item_brochure_name));
-                                                $exploded_item_name1 = (isset($exploded_item_name[0]) ? $exploded_item_name[0] : '');
-                                                $exploded_item_name2 = (isset($exploded_item_name[1]) ? '-' . $exploded_item_name[1] : '');
-                                                $exploded_item_name3 = (isset($exploded_item_name[2]) ? '-' . $exploded_item_name[2] : '');
-                                                $exploded_item_name4 = (isset($exploded_item_name[3]) ? '-' . $exploded_item_name[3] : '');
-                                                $item_brochure_name = $exploded_item_name1 . $exploded_item_name2 . $exploded_item_name3 . $exploded_item_name4;
+                                            if (!$itemDetails->item_brochure_name) {
+                                                $itemBrochureName = $itemDetails->item_name;
+                                                $explodedItemName = explode("-", strip_tags($itemBrochureName));
+                                                $explodedItemName1 = (isset($explodedItemName[0]) ? $explodedItemName[0] : '');
+                                                $explodedItemName2 = (isset($explodedItemName[1]) ? '-' . $explodedItemName[1] : '');
+                                                $explodedItemName3 = (isset($explodedItemName[2]) ? '-' . $explodedItemName[2] : '');
+                                                $explodedItemName4 = (isset($explodedItemName[3]) ? '-' . $explodedItemName[3] : '');
+                                                $itemBrochureName = $explodedItemName1 . $explodedItemName2 . $explodedItemName3 . $explodedItemName4;
                                             } else {
-                                                $item_brochure_name = strip_tags($item_details->item_brochure_name);
+                                                $itemBrochureName = strip_tags($itemDetails->item_brochure_name);
                                             }
                                         @endphp
                                         <div class="d-md-none mb-2 col-12">
@@ -130,16 +130,16 @@
                                                 </a>
                                               
                                                 <div class="dropdown-menu" style="font-size: 9pt;">
-                                                    <a class="dropdown-item {{ !$bundled ? 'print-brochure-btn' : null }} generate-brochure-dropdown" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">
+                                                    <a class="dropdown-item {{ !$bundled ? 'print-brochure-btn' : null }} generate-brochure-dropdown" href="#" data-item-code="{{ $itemDetails->name }}" data-item-name="{{ $itemBrochureName }}" data-item-description="{{ $itemBrochureDescription }}">
                                                         <i class="fas fa-print pb-1"></i> Print Brochure Now
                                                     </a>
-                                                    <a class="dropdown-item {{ !$bundled ? 'generate-multiple-brochure' : null }} generate-brochure-dropdown" href="#" data-item-code="{{ $item_details->name }}">
+                                                    <a class="dropdown-item {{ !$bundled ? 'generate-multiple-brochure' : null }} generate-brochure-dropdown" href="#" data-item-code="{{ $itemDetails->name }}">
                                                         <i class="fas fa-file-pdf pb-1"></i> Generate Multiple
                                                     </a>
-                                                    <a class="dropdown-item upload-item-image" href="#" data-item-code="{{ $item_details->name }}">
+                                                    <a class="dropdown-item upload-item-image" href="#" data-item-code="{{ $itemDetails->name }}">
                                                         <i class="fas fa-camera pb-1"></i> Upload Image
                                                     </a>
-                                                    <a class="dropdown-item edit-warehouse-location-btn" href="#" data-item-code="{{ $item_details->name }}">
+                                                    <a class="dropdown-item edit-warehouse-location-btn" href="#" data-item-code="{{ $itemDetails->name }}">
                                                         <i class="fas fa-warehouse pb-1"></i> Location
                                                     </a>
                                                     @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
@@ -148,7 +148,7 @@
                                                         </a>
                                                     @endif
                                                     @if (in_array(Auth::user()->user_group, ['Director']))
-                                                    <a class="dropdown-item" href="#" href="/item_form/{{ $item_details->name }}">
+                                                    <a class="dropdown-item" href="#" href="/item_form/{{ $itemDetails->name }}">
                                                         <i class="fa fa-info pb-1"></i> Update Attribute
                                                     </a>
                                                     @endif
@@ -157,19 +157,19 @@
                                         </div>
                                         <div class="col-md-3 col-lg-3 pl-2 pr-2 pb-2 pt-0">
                                             <div class="row pb-2" style="border-bottom: solid 3px #2E86C1">
-                                                @if (count($item_images) > 0)
+                                                @if (count($itemImages) > 0)
                                                     @for($i = 0; $i <= 3; $i++)
-                                                        @isset($item_images[$i])
+                                                        @isset($itemImages[$i])
                                                             @php
-                                                                $image = $item_images[$i];
-                                                                $alt = Illuminate\Support\Str::slug($item_brochure_description, '-');
+                                                                $image = $itemImages[$i];
+                                                                $alt = Illuminate\Support\Str::slug($itemBrochureDescription, '-');
                                                             @endphp
                                                             <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }}" style="{{ $i > 0 ? 'height: 75px;' : null }}">
-                                                                <a href="{{ $image }}" class="view-images" data-item-code="{{ $item_details->name }}" data-idx="{{ $i }}">
+                                                                <a href="{{ $image }}" class="view-images" data-item-code="{{ $itemDetails->name }}" data-idx="{{ $i }}">
                                                                     <picture>
                                                                         <img src="{{ $image }}" alt="{{ $alt }}" class="img-responsive hover" style="width: 100%; height: 100%;">
                                                                     </picture>
-                                                                    @if($i == 3 && count($item_images) > 4)
+                                                                    @if($i == 3 && count($itemImages) > 4)
                                                                         <div class="card-img-overlay text-center">
                                                                             <h5 class="card-title m-1 font-weight-bold" style="color: #fff; text-shadow: 2px 2px 8px #000;">MORE</h5>
                                                                         </div>
@@ -180,7 +180,7 @@
                                                     @endfor
                                                 @else
                                                     <div class="col-12">
-                                                        <img src="{{ $no_img }}" class="img-responsive hover" style="width: 100%; height: 100%;">
+                                                        <img src="{{ $noImg }}" class="img-responsive hover" style="width: 100%; height: 100%;">
                                                     </div>
                                                 @endif
                                             </div>
@@ -188,15 +188,15 @@
                                         <div class="col-md-9 col-lg-9">
                                             <div class="row">
                                                 <div class="col-12 col-md-8 col-lg-12">
-                                                    <span id="selected-item-code" class="d-none">{{ $item_details->name }}</span>
+                                                    <span id="selected-item-code" class="d-none">{{ $itemDetails->name }}</span>
                                                     <dl class="ml-3">
                                                         <dt class="responsive-item-code" style="font-size: 14pt;">
-                                                            {{ $item_details->name.' '.$item_details->brand }}
+                                                            {{ $itemDetails->name.' '.$itemDetails->brand }}
                                                             @if ($bundled)
                                                                 &nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
                                                             @endif
                                                         </dt>
-                                                        <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $item_details->description !!}</dd>
+                                                        <dd class="responsive-description" style="font-size: 11pt;" class="text-justify mb-2">{!! $itemDetails->description !!}</dd>
                                                     </dl>
                                                     <div id="item-information-container"></div>
                                                 </div>
@@ -207,14 +207,14 @@
                                                         </a>
                                                       
                                                         <div class="dropdown-menu" aria-labelledby="dropdownMenuLink" style="font-size: 9pt;">
-                                                            <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">Print Now</a>
-                                                            <a class="dropdown-item generate-multiple-brochure" href="#" data-item-code="{{ $item_details->name }}">Generate Multiple</a>
+                                                            <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $itemDetails->name }}" data-item-name="{{ $itemBrochureName }}" data-item-description="{{ $itemBrochureDescription }}">Print Now</a>
+                                                            <a class="dropdown-item generate-multiple-brochure" href="#" data-item-code="{{ $itemDetails->name }}">Generate Multiple</a>
                                                         </div>
                                                     </div>
-                                                    <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                    <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $itemDetails->name }}" style="font-size: 8pt !important">
                                                         <i class="fas fa-camera pb-1"></i> Upload Image
                                                     </a>
-                                                    <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                    <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $itemDetails->name }}" style="font-size: 8pt !important">
                                                         <i class="fas fa-warehouse pb-1"></i> Location
                                                     </a>
                                                     @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
@@ -223,7 +223,7 @@
                                                     </a> 
                                                     @endif
                                                     @if (in_array(Auth::user()->user_group, ['Director']))
-                                                    <a class="btn btn-app m-2 d-block pb-5"  href="/item_form/{{ $item_details->name }}" style="font-size: 8pt !important">
+                                                    <a class="btn btn-app m-2 d-block pb-5"  href="/item_form/{{ $itemDetails->name }}" style="font-size: 8pt !important">
                                                         <i class="fa fa-info pb-1"></i> Update Attribute
                                                     </a> 
                                                     @endif
@@ -231,30 +231,30 @@
                                             </div>
                                             <div class="d-block ml-3">
                                                 <p class="mt-2 mb-2 text-1center">
-                                                    @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director']) && $default_price > 0) 
-                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                                                    @if (in_array($userDepartment, $allowedDepartment) && !in_array($userGroup, ['Manager', 'Director']) && $defaultPrice > 0) 
+                                                    <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
                                                     <span class="d-block responsive-description" style="font-size: 11pt;">Standard Selling Price</span>
-                                                    @if ($is_tax_included_in_rate)
+                                                    @if ($isTaxIncludedInRate)
                                                     <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
                                                     @endif
                                                     @endif
 
-                                                    @if (in_array($user_group, ['Manager', 'Director']))
-                                                        @if ($default_price > 0)
-                                                        <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                                                    @if (in_array($userGroup, ['Manager', 'Director']))
+                                                        @if ($defaultPrice > 0)
+                                                        <span class="d-block font-weight-bold mt-3" style="font-size: 17pt;">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
                                                         <span class="d-block" style="font-size: 11pt;">Standard Selling Price</span>
-                                                        @if ($is_tax_included_in_rate)
+                                                        @if ($isTaxIncludedInRate)
                                                         <small class="text-muted font-italic" style="font-size: 7.5pt;">* VAT inclusive</small>
                                                         @endif
                                                         @endif
-                                                        @if ($minimum_selling_price > 0)
-                                                        <span class="d-block font-weight-bold mt-3" style="font-size: 15pt;">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
+                                                        @if ($minimumSellingPrice > 0)
+                                                        <span class="d-block font-weight-bold mt-3" style="font-size: 15pt;">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
                                                         <span class="d-block" style="font-size: 9pt;">Minimum Selling Price</span>
                                                         @endif
-                                                        @if ($last_purchase_rate > 0)
-                                                        <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($last_purchase_rate, 2, '.', ',') }}</span>
+                                                        @if ($lastPurchaseRate > 0)
+                                                        <span class="d-block font-weight-bold mt-3" style="font-size: 11pt;">{{ '₱ ' . number_format($lastPurchaseRate, 2, '.', ',') }}</span>
                                                         <span class="d-inline-block" style="font-size: 9pt;">Last Purchase Rate</span>
-                                                        <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $last_purchase_date }}</span>
+                                                        <span class="d-inline-block font-weight-bold font-italic" style="font-size: 9pt;">- {{ $lastPurchaseDate }}</span>
                                                         @endif
                                                         @if ($avgPurchaseRate > 0)
                                                         <span class="d-block font-weight-bold avg-purchase-rate-div mt-3" style="font-size: 11pt;">{{ $avgPurchaseRate }}</span>
@@ -267,9 +267,9 @@
                                                 <div class="card-header border-bottom-0 p-1 ml-3">
                                                     <h3 class="card-title m-0 font-responsive">
                                                         @php
-                                                            $stock_title = $bundled ? 'Bundled Items' : 'Stock Level'
+                                                            $stockTitle = $bundled ? 'Bundled Items' : 'Stock Level'
                                                         @endphp
-                                                        <i class="fa fa-box-open"></i> {!! $stock_title !!}
+                                                        <i class="fa fa-box-open"></i> {!! $stockTitle !!}
                                                     </h3>
                                                 </div>
                                                 <div class="box box-solid p-0 ml-3">
@@ -287,7 +287,7 @@
                                         </div>
                                         <div class="col-12 d-block d-lg-none">
                                             <div class="card-header border-bottom-0 p-1 ml-3">
-                                                <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> {!! $stock_title !!}</h3>
+                                                <h3 class="card-title m-0 font-responsive"><i class="fa fa-box-open"></i> {!! $stockTitle !!}</h3>
                                             </div>
                                             <div class="box box-solid p-0 ml-3 overflow-auto">
                                                 <div class="box-header with-border">
@@ -307,14 +307,14 @@
                                             </a>
                                           
                                             <div class="dropdown-menu" aria-labelledby="dropdownMenuLink" style="font-size: 9pt;">
-                                                <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $item_details->name }}" data-item-name="{{ $item_brochure_name }}" data-item-description="{{ $item_brochure_description }}">Print Now</a>
-                                                <a class="dropdown-item generate-multiple-brochure" href="#" data-item-code="{{ $item_details->name }}">Generate Multiple</a>
+                                                <a class="dropdown-item print-brochure-btn" href="#" data-item-code="{{ $itemDetails->name }}" data-item-name="{{ $itemBrochureName }}" data-item-description="{{ $itemBrochureDescription }}">Print Now</a>
+                                                <a class="dropdown-item generate-multiple-brochure" href="#" data-item-code="{{ $itemDetails->name }}">Generate Multiple</a>
                                             </div>
                                         </div>
-                                        <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $item_details->name }}">
+                                        <a class="btn btn-app m-2 d-block upload-item-image pb-5" data-item-code="{{ $itemDetails->name }}">
                                             <i class="fas fa-camera pb-1"></i> Upload Image
                                         </a>
-                                        <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $item_details->name }}">
+                                        <a class="btn btn-app m-2 d-block edit-warehouse-location-btn pb-5" data-item-code="{{ $itemDetails->name }}">
                                             <i class="fas fa-warehouse pb-1"></i> Location
                                         </a>
                                         @if (!in_array(Auth::user()->user_group, ['User', 'Promodiser']))
@@ -323,7 +323,7 @@
                                         </a> 
                                         @endif
                                         @if (in_array(Auth::user()->user_group, ['Director']))
-                                        <a class="btn btn-app m-2 d-block pb-5" href="/item_form/{{ $item_details->name }}">
+                                        <a class="btn btn-app m-2 d-block pb-5" href="/item_form/{{ $itemDetails->name }}">
                                             <i class="fa fa-info pb-1"></i> Update Attribute
                                         </a>
                                         @endif
@@ -332,7 +332,7 @@
                             </div>
                             
                             @if (!$bundled)
-                                @if (count($co_variants) > 0)
+                                @if (count($coVariants) > 0)
                                     <div class="col-12">
                                         <div class="card-header border-bottom-0">
                                             <h3 class="card-title font-responsive mt-5"><i class="fas fa-project-diagram"></i> Variants</h3>
@@ -346,14 +346,14 @@
                                                         <thead>
                                                             <tr>
                                                                 <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
-                                                                @foreach ($attribute_names as $attribute_name)
-                                                                <th scope="col" class="text-center align-middle" style="width: 350px;">{{ $attribute_name }}</th>
+                                                                @foreach ($attributeNames as $attributeName)
+                                                                <th scope="col" class="text-center align-middle" style="width: 350px;">{{ $attributeName }}</th>
                                                                 @endforeach
                                                                 <th scope="col" class="text-center align-middle">Stock Availability</th>
-                                                                @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
+                                                                @if (in_array($userDepartment, $allowedDepartment) && !in_array($userGroup, ['Manager', 'Director'])) 
                                                                 <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
                                                                 @endif
-                                                                @if (in_array($user_group, ['Manager', 'Director']))
+                                                                @if (in_array($userGroup, ['Manager', 'Director']))
                                                                 <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Cost</th>
                                                                 <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Min. Selling Price</th>
                                                                 <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
@@ -362,31 +362,31 @@
                                                         </thead>
                                                         <tbody>
                                                             <tr class="highlight-row">
-                                                                <th scope="row" class="text-center align-middle" style="background-color: #001F3F !important;">{{ $item_details->name }}</th>
-                                                                @foreach ($attribute_names as $attribute_name)
-                                                                <td class="text-center align-middle">{{ array_key_exists($attribute_name, $item_attributes) ? $item_attributes[$attribute_name] : null }}</td>
+                                                                <th scope="row" class="text-center align-middle" style="background-color: #001F3F !important;">{{ $itemDetails->name }}</th>
+                                                                @foreach ($attributeNames as $attributeName)
+                                                                <td class="text-center align-middle">{{ data_get($itemAttributes, $attributeName) }}</td>
                                                                 @endforeach
                                                                 <td class="text-center align-middle text-nowrap variants-table">
-                                                                    <span class="badge badge-{{ ($item_stock_available > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($item_stock_available > 0) ? 'In Stock' : 'Unavailable' }}</span>
+                                                                    <span class="badge badge-{{ ($itemStockAvailable > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($itemStockAvailable > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                                 </td>
-                                                                @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
+                                                                @if (in_array($userDepartment, $allowedDepartment) && !in_array($userGroup, ['Manager', 'Director'])) 
                                                                 <td class="text-center align-middle text-nowrap">
-                                                                    @if ($default_price > 0)
-                                                                    {{ '₱ ' . number_format($default_price, 2, '.', ',') }}
+                                                                    @if ($defaultPrice > 0)
+                                                                    {{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}
                                                                     @else
                                                                     --
                                                                     @endif
                                                                 </td>
                                                                 @endif
-                                                                @if (in_array($user_group, ['Manager', 'Director']))
+                                                                @if (in_array($userGroup, ['Manager', 'Director']))
                                                                 <td class="text-center align-middle text-nowrap">
-                                                                    @if ($manual_rate)
+                                                                    @if ($manualRate)
                                                                     <center>
                                                                         <span class="entered-price d-none">0.00</span>
-                                                                        <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $item_details->name }}-computed-price">
+                                                                        <form action="/update_item_price/{{ $itemDetails->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $itemDetails->name }}-computed-price">
                                                                             @csrf
                                                                             <div class="input-group" style="width: 120px;">
-                                                                                <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $item_rate }}" required>
+                                                                                <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $itemRate }}" required>
                                                                                 <div class="input-group-append">
                                                                                     <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
                                                                                 </div>
@@ -394,12 +394,12 @@
                                                                         </form>
                                                                     </center>
                                                                     @else
-                                                                    @if ($item_rate > 0)
-                                                                        {{ '₱ ' . number_format($item_rate, 2, '.', ',') }}
+                                                                    @if ($itemRate > 0)
+                                                                        {{ '₱ ' . number_format($itemRate, 2, '.', ',') }}
                                                                     @else
                                                                     <center>
                                                                         <span class="entered-price d-none">0.00</span>
-                                                                        <form action="/update_item_price/{{ $item_details->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $item_details->name }}-computed-price">
+                                                                        <form action="/update_item_price/{{ $itemDetails->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $itemDetails->name }}-computed-price">
                                                                             @csrf
                                                                             <div class="input-group" style="width: 120px;">
                                                                                 <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
@@ -413,48 +413,45 @@
                                                                     @endif
                                                                 </td>
                                                                 <td class="text-center align-middle text-nowrap">
-                                                                    @if ($minimum_selling_price > 0)
-                                                                    <span id="{{ $item_details->name }}-computed-price-min">{{ '₱ ' . number_format($minimum_selling_price, 2, '.', ',') }}</span>
+                                                                    @if ($minimumSellingPrice > 0)
+                                                                    <span id="{{ $itemDetails->name }}-computed-price-min">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
                                                                     @else
-                                                                    <span id="{{ $item_details->name }}-computed-price-min">--</span>
+                                                                    <span id="{{ $itemDetails->name }}-computed-price-min">--</span>
                                                                     @endif
                                                                 </td>
                                                                 <td class="text-center align-middle text-nowrap">
-                                                                    @if ($default_price > 0)
-                                                                    <span id="{{ $item_details->name }}-computed-price">{{ '₱ ' . number_format($default_price, 2, '.', ',') }}</span>
+                                                                    @if ($defaultPrice > 0)
+                                                                    <span id="{{ $itemDetails->name }}-computed-price">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
                                                                     @else
-                                                                    <span id="{{ $item_details->name }}-computed-price">--</span>
+                                                                    <span id="{{ $itemDetails->name }}-computed-price">--</span>
                                                                     @endif
                                                                 </td>
                                                                 @endif
                                                             </tr>
-                                                            @foreach ($co_variants as $variant)
+                                                            @foreach ($coVariants as $variant)
                                                             <tr class="variants-table">
                                                                 <td class="text-center align-middle font-weight-bold text-dark" style="background-color: #CCD1D1;">
                                                                     <a href="/get_item_details/{{ $variant->name }}">{{ $variant->name }}</a>
                                                                 </td>
-                                                                @foreach ($attribute_names as $attribute_name)
+                                                                @foreach ($attributeNames as $attributeName)
                                                                 @php
-                                                                    $attr_val = null;
-                                                                    if (array_key_exists($variant->name, $attributes)) {
-                                                                        $attr_val = array_key_exists($attribute_name, $attributes[$variant->name]) ? $attributes[$variant->name][$attribute_name] : null;
-                                                                    }
+                                                                    $attrVal = data_get($attributes, "{$variant->name}.{$attributeName}");
                                                                 @endphp
-                                                                <td class="text-center align-middle p-2">{{ $attr_val }}</td>
+                                                                <td class="text-center align-middle p-2">{{ $attrVal }}</td>
                                                                 @endforeach
                                                                 @php
-                                                                    $avail_stock = array_key_exists($variant->name, $actual_variant_stocks) ? $actual_variant_stocks[$variant->name] : 0;
+                                                                    $availStock = data_get($actualVariantStocks, $variant->name, 0);
                                                                 @endphp
                                                                 <td class="text-center align-middle text-nowrap variants-table">
-                                                                    <span class="badge badge-{{ ($avail_stock > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($avail_stock > 0) ? 'In Stock' : 'Unavailable' }}</span>
+                                                                    <span class="badge badge-{{ ($availStock > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($availStock > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                                 </td>
                                                                 @php
                                                                     $price = 0;
-                                                                    if(array_key_exists($variant->name, $variants_price_arr)){
-                                                                        $price = $variants_price_arr[$variant->name];
+                                                                    if(Arr::exists($variantsPriceArr ?? [], $variant->name)){
+                                                                        $price = $variantsPriceArr[$variant->name];
                                                                     }
                                                                 @endphp
-                                                                @if (in_array($user_department, $allowed_department) && !in_array($user_group, ['Manager', 'Director'])) 
+                                                                @if (in_array($userDepartment, $allowedDepartment) && !in_array($userGroup, ['Manager', 'Director'])) 
                                                                 <td class="text-center align-middle text-nowrap">
                                                                     @if ($price > 0)
                                                                     {{ '₱ ' . number_format($price, 2, '.', ',') }}
@@ -463,19 +460,13 @@
                                                                     @endif
                                                                 </td>
                                                                 @endif
-                                                                @if (in_array($user_group, ['Manager', 'Director']))
+                                                                @if (in_array($userGroup, ['Manager', 'Director']))
                                                                 <td class="text-center align-middle text-nowrap">
                                                                     @php
-                                                                        $cost = 0;
-                                                                        if(array_key_exists($variant->name, $variants_cost_arr)){
-                                                                            $cost = $variants_cost_arr[$variant->name];
-                                                                        }
-                                                                        $is_manual = 0;
-                                                                        if(array_key_exists($variant->name, $manual_price_input)){
-                                                                            $is_manual = $manual_price_input[$variant->name];
-                                                                        }
+                                                                        $cost = data_get($variantsCostArr, $variant->name, 0);
+                                                                        $isManual = data_get($manualPriceInput, $variant->name, 0);
                                                                     @endphp
-                                                                    @if ($is_manual)
+                                                                    @if ($isManual)
                                                                     <center>
                                                                         <span class="entered-price d-none">0.00</span>
                                                                         <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
@@ -510,8 +501,8 @@
                                                                 <td class="text-center align-middle text-nowrap">
                                                                     @php
                                                                         $minprice = 0;
-                                                                        if(array_key_exists($variant->name, $variants_min_price_arr)){
-                                                                            $minprice = $variants_min_price_arr[$variant->name];
+                                                                        if(Arr::exists($variantsMinPriceArr ?? [], $variant->name)){
+                                                                            $minprice = $variantsMinPriceArr[$variant->name];
                                                                         }
                                                                     @endphp
                                                                     @if ($minprice > 0)
@@ -536,7 +527,7 @@
                                             </div>
                                         </div>
                                         <div class="m-2">
-                                            {{ $co_variants->links('pagination::bootstrap-4') }}
+                                            {{ $coVariants->links('pagination::bootstrap-4') }}
                                         </div>
                                     </div>
                                 @endif
@@ -546,7 +537,7 @@
                                         <h3 class="card-title font-responsive mb-3 mt-5"><i class="fas fa-filter"></i> Item Alternatives</h3>
                                     </div>
                                     <div class="d-flex flex-row flex-nowrap overflow-auto">
-                                        @forelse($item_alternatives as $a)
+                                        @forelse($itemAlternatives as $a)
                                             <div class="custom-body m-1">
                                                 <div class="card card-default">
                                                     <div class="card-body p-0">
@@ -644,7 +635,7 @@
                             </div>
                         </div>
                     </div>
-                    @if (in_array($user_group, ['Manager', 'Director']))
+                    @if (in_array($userGroup, ['Manager', 'Director']))
                     <div id="purchase-history" class="container-fluid tab-pane bg-white overflow-auto">
                         <div id="purchase-history-div" class="p-3 col-12"></div>
                     </div>
@@ -870,7 +861,7 @@
 @section('script')
     <script>
         const bundled = parseInt('{{ $bundled ? 1 : 0 }}')
-        get_item_stock_levels('{{ $item_details->name }}');
+        get_item_stock_levels('{{ $itemDetails->name }}');
         $(document).on('submit', '#edit-warehouse-location-form', function (e) {
             e.preventDefault();
             $.ajax({
@@ -935,7 +926,7 @@
         function load_item_information(){
             $.ajax({
                 type: 'GET',
-                url: '/get_item_details/{{ $item_details->name }}',
+                url: '/get_item_details/{{ $itemDetails->name }}',
                 success: function(response){
                     $('#item-information-container').html(response);
                 },
@@ -955,7 +946,7 @@
         })
 
         function get_athena_transactions(page){
-            var item_code = '{{ $item_details->name }}';
+            var item_code = '{{ $itemDetails->name }}';
             var ath_src = $('#ath-src-warehouse-filter').val();
             var ath_trg = $('#ath-to-warehouse-filter').val();
             var ath_user = $('#warehouse-user-filter').val();
@@ -974,7 +965,7 @@
         })
 
         function get_stock_reservation(tbl, page){
-            var item_code = '{{ $item_details->name }}';
+            var item_code = '{{ $itemDetails->name }}';
             $.ajax({
                 type: 'GET',
                 url: '/get_stock_reservation/' + item_code + '?' + tbl + '=' + page,
@@ -1073,7 +1064,7 @@
         })
 
         function get_stock_ledger(page){
-            var item_code = '{{ $item_details->name }}';
+            var item_code = '{{ $itemDetails->name }}';
             var erp_user = $('#erp-warehouse-user-filter').val();
             var erp_wh = $('#erp-warehouse-filter').val();
             var erp_d = $('#erp_dates').val();
@@ -1104,14 +1095,14 @@
             get_stock_ledger(page);
         });
 
-        @if (in_array($user_group, ['Manager', 'Director']))
+        @if (in_array($userGroup, ['Manager', 'Director']))
             $(document).on('click', '#get-purchase-history', function (e){
                 get_purchase_history();
             })
         @endif
 
         function get_purchase_history(page){
-            var item_code = '{{ $item_details->name }}';
+            var item_code = '{{ $itemDetails->name }}';
             $.ajax({
                 type: 'GET',
                 url: '/purchase_rate_history/' + item_code + '?page=' + page,
@@ -1244,7 +1235,7 @@
 
         // load();
         function load(page) {
-            var item_code = '{{ $item_details->name }}';
+            var item_code = '{{ $itemDetails->name }}';
             var branch_warehouse = $('.csm-filter').eq(0).val();
             var date_range = $('#consignment-date-range').val();
             var user = $('#consignment-user-select').val();
@@ -1303,7 +1294,7 @@
         $('#consignment-user-select').select2({
             placeholder: "Select a user",
             ajax: {
-                url: "/consignment_stock_movement/{{ $item_details->name }}?get_users=1",
+                url: "/consignment_stock_movement/{{ $itemDetails->name }}?get_users=1",
                 method: 'GET',
                 dataType: 'json',
                 data: function (data) {
@@ -1334,7 +1325,7 @@
             @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
                 $(".csm-filter").empty().trigger('change');
             @endif
-            @if (count($consignment_branches) > 1 && Auth::user()->user_group == 'Promodiser')
+            @if (count($consignmentBranches) > 1 && Auth::user()->user_group == 'Promodiser')
                 $(".csm-filter").val($(".csm-filter option:first").val());
             @endif
             load();

@@ -2,46 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Auth;
+use App\Models\Item;
+use App\Models\ItemAttributeValue;
+use App\Models\ItemVariantAttribute;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
+    public function index($itemCode)
+    {
+        $itemDetails = Item::find($itemCode);
 
-    public function index($item_code) {
-        $item_details = DB::table('tabItem')->where('name', $item_code)->first();
-
-        return view('update_item_form', compact('item_code', 'item_details'));
+        return view('update_item_form', compact('itemCode', 'itemDetails'));
     }
 
-    public function saveItem(Request $request) {
+    public function saveItem(Request $request)
+    {
         DB::beginTransaction();
         try {
             if ($request->item_code) {
-                $item_details = DB::table('tabItem')->where('name', $request->item_code)->first();
-                if ($item_details) {
+                $itemDetails = Item::find($request->item_code);
+                if ($itemDetails) {
                     $updatedData = [];
-                    if ($request->item_name != $item_details->item_name) {
+                    if ($request->item_name != $itemDetails->item_name) {
                         $updatedData['item_name'] = $request->item_name;
                     }
 
-                    $original_description = preg_replace('/\s+/', ' ', $item_details->description);
-                    $request_description = preg_replace('/\s+/', ' ', $request->description);
-                    if (strip_tags($original_description) != strip_tags($request_description)) {
-                        $updatedData['description'] = $request_description;
+                    $originalDescription = preg_replace('/\s+/', ' ', $itemDetails->description);
+                    $requestDescription = preg_replace('/\s+/', ' ', $request->description);
+                    if (strip_tags($originalDescription) != strip_tags($requestDescription)) {
+                        $updatedData['description'] = $requestDescription;
                     }
 
-                    if ($request->is_stock_item != $item_details->is_stock_item) {
+                    if ($request->is_stock_item != $itemDetails->is_stock_item) {
                         $updatedData['is_stock_item'] = $request->is_stock_item ?? 0;
                     }
 
                     if ($updatedData) {
-                        DB::table('tabItem')->where('name', $request->item_code)->update($updatedData);
+                        $itemDetails->update($updatedData);
                     }
-
                 }
             }
 
@@ -51,52 +53,52 @@ class ItemController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
 
-            return response()->json(['message' => "An error occured. Please contact your system administrator."], 500);
+            return response()->json(['message' => 'An error occurred. Please contact your system administrator.'], 500);
         }
     }
 
-    public function getAttributeValues($attributeName, Request $request) {
-        $search_str = explode(' ', $request->search);
+    public function getAttributeValues($attributeName, Request $request)
+    {
+        $searchTerms = explode(' ', $request->search);
 
-        $data = DB::table('tabItem Attribute Value')
-            ->where('parent', $attributeName)
-            ->when($request->search, function ($query) use ($search_str, $request) {
-                return $query->where(function($q) use ($search_str, $request) {
-                    foreach ($search_str as $str) {
-                        $q->where('attribute_value', 'LIKE', "%$str%");
-                    }
-                });
-            })
-            ->orderBy('idx')->paginate(15)->onEachSide(1);;
+        $data = ItemAttributeValue::query()
+            ->forAttribute($attributeName)
+            ->searchByValue($request->search)
+            ->orderBy('idx')
+            ->paginate(15)
+            ->onEachSide(1);
 
         return view('item_attributes_values_list', compact('data'));
     }
 
-    public function saveItemAttribute(Request $request) {
+    public function saveItemAttribute(Request $request)
+    {
         DB::beginTransaction();
         try {
-            $exists = DB::table('tabItem Attribute Value')->where('attribute_value', $request->attribute_value)
-                ->where('parent', $request->attribute)->exists();
+            $exists = ItemAttributeValue::query()
+                ->forAttribute($request->attribute)
+                ->where('attribute_value', $request->attribute_value)
+                ->exists();
 
             if ($exists) {
                 return response()->json(['message' => "Attribute value $request->attribute_value already exists."], 400);
             }
 
-            $idx = DB::table('tabItem Attribute Value')->where('parent', $request->attribute)->max('idx');
+            $maxIndex = ItemAttributeValue::forAttribute($request->attribute)->max('idx') ?? 0;
 
-            DB::table('tabItem Attribute Value')->insert([
+            ItemAttributeValue::create([
                 'name' => 'athena' . uniqid(),
                 'creation' => Carbon::now()->toDateTimeString(),
                 'modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
-                'idx' => $idx++,
+                'idx' => $maxIndex + 1,
                 'attribute_value' => $request->attribute_value,
                 'abbr' => $request->abbreviation,
                 'parent' => $request->attribute,
                 'parentfield' => 'item_attribute_values',
-                'parenttype' => 'Item Attribute'
+                'parenttype' => 'Item Attribute',
             ]);
 
             DB::commit();
@@ -105,82 +107,80 @@ class ItemController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
 
-            return response()->json(['message' => "An error occured. Please contact your system administrator."], 500);
+            return response()->json(['message' => 'An error occurred. Please contact your system administrator.'], 500);
         }
     }
 
-    public function deleteItemAttribute(Request $request) {
+    public function deleteItemAttribute(Request $request)
+    {
         DB::beginTransaction();
         try {
-            DB::table('tabItem Attribute Value')->where('name', $request->attribute_value_name)->delete();
+            ItemAttributeValue::where('name', $request->attribute_value_name)->delete();
 
             DB::commit();
-            
-            return response()->json(['message' => "Attribute value has been deleted."], 200);
+
+            return response()->json(['message' => 'Attribute value has been deleted.'], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
 
-            return response()->json(['message' => "An error occured. Please contact your system administrator."], 500);
+            return response()->json(['message' => 'An error occurred. Please contact your system administrator.'], 500);
         }
     }
 
-    public function getItemAttributes($item_code) {
-        $item_attributes = [];
-        if ($item_code) {
-            $item_attributes = DB::table('tabItem Variant Attribute')->where('parent', $item_code)
-                ->select('name', 'attribute', 'attribute_value', 'idx')->orderBy('idx')->get();
+    public function getItemAttributes($itemCode)
+    {
+        $itemAttributes = [];
+        if ($itemCode) {
+            $itemAttributes = ItemVariantAttribute::where('parent', $itemCode)
+                ->select('name', 'attribute', 'attribute_value', 'idx')
+                ->orderBy('idx')
+                ->get();
         }
 
-        return view('item_attributes_list', compact('item_attributes', 'item_code'));
+        return view('item_attributes_list', compact('itemAttributes', 'itemCode'));
     }
 
-    public function updateItemVariant(Request $request) {
+    public function updateItemVariant(Request $request)
+    {
         DB::beginTransaction();
         try {
             $itemCode = $request->item_code;
-            $oldVariantAttributes = DB::table('tabItem Variant Attribute')
-                ->where('parent', $itemCode)->pluck('attribute_value', 'name')->toArray();
+            $oldVariantAttributes = ItemVariantAttribute::where('parent', $itemCode)
+                ->pluck('attribute_value', 'name')
+                ->toArray();
 
             $oldAttributeValue = $oldVariantAttributes[$request->name];
             $newAttributeValue = $request->attribute_value;
 
             if ($newAttributeValue == $oldAttributeValue) {
-                return response()->json(['message' => "The selected attribute value is the same as the current."], 200);
+                return response()->json(['message' => 'The selected attribute value is the same as the current.'], 200);
             }
 
-            // get item code parent template
-            $templateItem = DB::table('tabItem')->where('name', $itemCode)->first()->variant_of;
-            // get all variants
-            $itemVariants = DB::table('tabItem as i')->join('tabItem Variant Attribute as iva', 'i.name', 'iva.parent')
-                ->where('i.variant_of', $templateItem)
-                ->select('i.name as item_code', 'attribute_value')->get()->groupBy('item_code');
+            $item = Item::find($itemCode);
+            $templateItem = $item->variant_of;
 
-            $itemVariants = collect($itemVariants)->mapWithKeys(function ($items, $key) {
-                return [$key => collect($items)->pluck('attribute_value')->all()];
-            });
+            $itemVariants = Item::where('variant_of', $templateItem)
+                ->with('variantAttributes')
+                ->get()
+                ->mapWithKeys(fn($i) => [$i->name => $i->variantAttributes->pluck('attribute_value')->all()]);
 
             $oldVariantAttributes = array_values($oldVariantAttributes);
             $newVariantAttributes = $oldVariantAttributes;
 
-            // remove old attribute value
             $oldAttrIndex = array_search($oldAttributeValue, $oldVariantAttributes);
             unset($oldVariantAttributes[$oldAttrIndex]);
 
-            // add new attribute value
             array_push($newVariantAttributes, $newAttributeValue);
 
-            // check for duplicate items with the same attribute
-            $matchingKey = collect($itemVariants)->first(function ($attributes, $key) use ($newVariantAttributes) {
+            $duplicateItem = $itemVariants->filter(function ($attributes) use ($newVariantAttributes) {
                 return empty(array_diff($attributes, $newVariantAttributes)) && empty(array_diff($newVariantAttributes, $attributes));
-            });
-            
-            if ($matchingKey) {
-                $duplicateItem = array_search($matchingKey, $itemVariants->toArray());
+            })->keys()->first();
 
+            if ($duplicateItem) {
                 return response()->json(['message' => "Unable to update item attributes. Item variant $duplicateItem already exists with the same attributes."], 200);
-            } 
+            }
 
-            DB::table('tabItem Variant Attribute')->where('name', $request->name)->update([
+            ItemVariantAttribute::where('name', $request->name)->update([
                 'attribute_value' => $request->attribute_value,
                 'modified' => Carbon::now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
@@ -188,11 +188,11 @@ class ItemController extends Controller
 
             DB::commit();
 
-            return response()->json(['message' => "Attribute value has been updated."], 200);
+            return response()->json(['message' => 'Attribute value has been updated.'], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
 
-            return response()->json(['message' => "An error occured. Please contact your system administrator."], 500);
+            return response()->json(['message' => 'An error occurred. Please contact your system administrator.'], 500);
         }
     }
 }

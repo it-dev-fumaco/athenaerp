@@ -14,7 +14,12 @@ class StockEntry extends Model
     protected $primaryKey = 'name';
     public $timestamps = false;
     protected $keyType = 'string';
-    
+
+    protected $fillable = [
+        'item_status', 'docstatus', 'modified', 'modified_by', 'fg_completed_qty',
+        'posting_date', 'posting_time', 'total_amount', 'total_outgoing_value', 'total_incoming_value',
+    ];
+
     public function ledger(){
         return $this->hasMany(StockLedgerEntry::class, 'voucher_no', 'name');
     }

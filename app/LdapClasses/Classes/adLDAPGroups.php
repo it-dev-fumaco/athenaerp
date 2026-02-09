@@ -167,16 +167,16 @@ class adLDAPGroups {
         if (!is_array($attributes["container"])){ return "Container attribute must be an array."; }
         $attributes["container"] = array_reverse($attributes["container"]);
 
-        //$member_array = array();
-        //$member_array[0] = "cn=user1,cn=Users,dc=yourdomain,dc=com";
-        //$member_array[1] = "cn=administrator,cn=Users,dc=yourdomain,dc=com";
+        //$memberArray = array();
+        //$memberArray[0] = "cn=user1,cn=Users,dc=yourdomain,dc=com";
+        //$memberArray[1] = "cn=administrator,cn=Users,dc=yourdomain,dc=com";
         
         $add = array();
         $add["cn"] = $attributes["group_name"];
         $add["samaccountname"] = $attributes["group_name"];
         $add["objectClass"] = "Group";
         $add["description"] = $attributes["description"];
-        //$add["member"] = $member_array; UNTESTED
+        //$add["member"] = $memberArray; UNTESTED
 
         $container = "OU=" . implode(",OU=", $attributes["container"]);
         $result = ldap_add($this->adldap->getLdapConnection(), "CN=" . $add["cn"] . ", " . $container . "," . $this->adldap->getBaseDn(), $add);

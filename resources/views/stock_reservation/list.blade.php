@@ -28,10 +28,10 @@
             }
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager', 'Director'])) ? 'disabled' : '';
-            $attr_cancelled = ($row->status == 'Cancelled') ? 'disabled' : '';
+            $attrCancelled = ($row->status == 'Cancelled') ? 'disabled' : '';
 
-            $reserved_qty = (floor($row->reserve_qty) != $row->reserve_qty * 1) ? number_format($row->reserve_qty, 4) : $row->reserve_qty * 1;
-            $consumed_qty = (floor($row->consumed_qty) != $row->consumed_qty * 1) ? number_format($row->consumed_qty, 4) : $row->consumed_qty * 1;
+            $reservedQty = (floor($row->reserve_qty) != $row->reserve_qty * 1) ? number_format($row->reserve_qty, 4) : $row->reserve_qty * 1;
+            $consumedQty = (floor($row->consumed_qty) != $row->consumed_qty * 1) ? number_format($row->consumed_qty, 4) : $row->consumed_qty * 1;
         @endphp
         <tr>
             <td class="text-center align-middle p-1">
@@ -39,8 +39,8 @@
                 <small>{{ $row->name }}</small>
                 <div class="col-10 d-md-none mx-auto">
                     @if (in_array($row->status, ['Active', 'Partially Issued']))
-                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
-                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                        <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attrCancelled }}>Update</button>
+                        <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attrCancelled }}>Cancel</button>
                     @else
                         <br>
                         No Actions Available
@@ -49,17 +49,17 @@
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
                 <center><span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row->status }}</span></center><br/>
-                <span><b>Reserved Qty:</b> {{ ($reserved_qty).' '.$row->stock_uom }}</span><br>
-                <span><b>Issued Qty:</b> {{ ($consumed_qty).' '.$row->stock_uom }}</span><br>
+                <span><b>Reserved Qty:</b> {{ ($reservedQty).' '.$row->stock_uom }}</span><br>
+                <span><b>Issued Qty:</b> {{ ($consumedQty).' '.$row->stock_uom }}</span><br>
                 <span><b>Warehouse:</b> {{ $row->warehouse }}</span><br>
                 <span><b>Created by:</b> {{ $row->created_by }}</span><br>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ ($reserved_qty) }}</span>
+                <span class="font-weight-bold">{{ ($reservedQty) }}</span>
                 <small>{{ $row->stock_uom }}</small>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ ($consumed_qty) }}</span>
+                <span class="font-weight-bold">{{ ($consumedQty) }}</span>
                 <small>{{ $row->stock_uom }}</small>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row->warehouse }}</td>
@@ -69,8 +69,8 @@
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row->created_by }}</td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">
                 @if (in_array($row->status, ['Active', 'Partially Issued']))
-                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Update</button>
-                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attr_cancelled }}>Cancel</button>
+                    <button type="button" class="btn btn-info btn-sm edit-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attrCancelled }}>Update</button>
+                    <button type="button" class="btn btn-danger btn-sm cancel-stock-reservation-btn" data-reservation-id="{{ $row->name }}" {{ $attr }} {{ $attrCancelled }}>Cancel</button>
                 @else
                     No Actions Available
                 @endif
@@ -79,7 +79,7 @@
         @endforeach
     </tbody>
 </table>
-<div class="box-footer clearfix" id="stock-reservations-pagination-1" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
+<div class="box-footer clearfix" id="stock-reservations-pagination-1" data-item-code="{{ $itemCode }}" style="font-size: 16pt;">
 	{{ $webList->links() }}
 </div>
 @endif
@@ -116,8 +116,8 @@
 
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager', 'Director'])) ? 'disabled' : '';
 
-            $reserved_qty = (floor($row1->reserve_qty) != $row1->reserve_qty * 1) ? number_format($row1->reserve_qty, 4) : $row1->reserve_qty * 1;
-            $consumed_qty = (floor($row1->consumed_qty) != $row1->consumed_qty * 1) ? number_format($row1->consumed_qty, 4) : $row1->consumed_qty * 1;
+            $reservedQty = (floor($row1->reserve_qty) != $row1->reserve_qty * 1) ? number_format($row1->reserve_qty, 4) : $row1->reserve_qty * 1;
+            $consumedQty = (floor($row1->consumed_qty) != $row1->consumed_qty * 1) ? number_format($row1->consumed_qty, 4) : $row1->consumed_qty * 1;
         @endphp
         <tr>
             <td class="text-center align-middle p-1">
@@ -135,18 +135,18 @@
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
                 <center><span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row1->status }}</span></center><br/>
-                <span><b>Reserved Qty:</b> {{ ($reserved_qty).' '.$row1->stock_uom }}</span><br>
-                <span><b>Issued Qty:</b> {{ ($consumed_qty).' '.$row1->stock_uom }}</span><br>
+                <span><b>Reserved Qty:</b> {{ ($reservedQty).' '.$row1->stock_uom }}</span><br>
+                <span><b>Issued Qty:</b> {{ ($consumedQty).' '.$row1->stock_uom }}</span><br>
                 <span><b>Warehouse:</b> {{ $row1->warehouse }}</span><br>
                 <span><b>Branch:</b> {{ $row1->consignment_warehouse }}</span><br>
                 <span><b>Created by:</b> {{ $row1->created_by }}</span>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ ($reserved_qty) }}</span>
+                <span class="font-weight-bold">{{ ($reservedQty) }}</span>
                 <small>{{ $row1->stock_uom }}</small>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ ($consumed_qty) }}</span>
+                <span class="font-weight-bold">{{ ($consumedQty) }}</span>
                 <small>{{ $row1->stock_uom }}</small>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row1->warehouse }}</td>
@@ -167,7 +167,7 @@
         @endforeach
     </tbody>
 </table>
-<div class="box-footer clearfix" id="stock-reservations-pagination-2" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
+<div class="box-footer clearfix" id="stock-reservations-pagination-2" data-item-code="{{ $itemCode }}" style="font-size: 16pt;">
 	{{ $consignmentList->links() }}
 </div>
 @endif
@@ -204,8 +204,8 @@
             
             $attr = (!in_array(Auth::user()->user_group, ['Inventory Manager', 'Director'])) ? 'disabled' : '';
 
-            $reserved_qty = (floor($row2->reserve_qty) != $row2->reserve_qty * 1) ? number_format($row2->reserve_qty, 4) : $row2->reserve_qty * 1;
-            $consumed_qty = (floor($row2->consumed_qty) != $row2->consumed_qty * 1) ? number_format($row2->consumed_qty, 4) : $row2->consumed_qty * 1;
+            $reservedQty = (floor($row2->reserve_qty) != $row2->reserve_qty * 1) ? number_format($row2->reserve_qty, 4) : $row2->reserve_qty * 1;
+            $consumedQty = (floor($row2->consumed_qty) != $row2->consumed_qty * 1) ? number_format($row2->consumed_qty, 4) : $row2->consumed_qty * 1;
         @endphp
         <tr>
             <td class="text-center align-middle p-1">
@@ -223,19 +223,19 @@
             </td>
             <td class="d-md-none font-responsive" style="width: 70%">
                 <center><span class="badge badge-{{ $badge }}" style="font-size: 10pt;">{{ $row2->status }}</span></center><br/>
-                <span><b>Reserved Qty:</b> {{ ($reserved_qty).' '.$row2->stock_uom }}</span><br>
-                <span><b>Issued Qty:</b> {{ ($consumed_qty).' '.$row2->stock_uom }}</span><br>
+                <span><b>Reserved Qty:</b> {{ ($reservedQty).' '.$row2->stock_uom }}</span><br>
+                <span><b>Issued Qty:</b> {{ ($consumedQty).' '.$row2->stock_uom }}</span><br>
                 <span><b>Warehouse:</b> {{ $row2->warehouse }}</span><br>
                 <span><b>Sales Person:</b> {{ $row2->sales_person }}</span><br>
                 <span><b>Validity:</b> {{ ($row2->valid_until) ? $row2->valid_until : '-' }}</span><br>
                 <span><b>Created by:</b> {{ $row2->created_by }}</span>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ ($reserved_qty) }}</span>
+                <span class="font-weight-bold">{{ ($reservedQty) }}</span>
                 <small>{{ $row2->stock_uom }}</small>
             </td>
             <td class="text-center align-middle text-break p-1 d-none d-sm-table-cell">
-                <span class="font-weight-bold">{{ ($consumed_qty) }}</span>
+                <span class="font-weight-bold">{{ ($consumedQty) }}</span>
                 <small>{{ $row2->stock_uom }}</small>
             </td>
             <td class="text-center align-middle p-1 d-none d-sm-table-cell">{{ $row2->warehouse }}</td>
@@ -262,11 +262,11 @@
     </tbody>
 </table>
 
-<div class="box-footer clearfix" id="stock-reservations-pagination-3" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
+<div class="box-footer clearfix" id="stock-reservations-pagination-3" data-item-code="{{ $itemCode }}" style="font-size: 16pt;">
 	{{ $inhouseList->links() }}
 </div>
 
-@if (count($pending_arr) > 0)
+@if (count($paginatedPendingItems) > 0)
     <h6 class="font-weight-bold text-uppercase font-responsive"><i class="fas fa-box"></i> Pending to Submit Stock Entries</h6>
     <table class="table table-hover table-bordered table-sm stock-ledger-table-font" style="font-size: 9pt !important;">
         <thead>
@@ -281,7 +281,7 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($pending_arr as $row)
+            @forelse($paginatedPendingItems as $row)
                 <tr>
                     <td class="text-center p-2">
                         <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row['date'])) }}</span>
@@ -301,7 +301,7 @@
         </tbody>
     </table>
 
-    <div class="box-footer clearfix" id="pending-arr-pagination" data-item-code="{{ $item_code }}" style="font-size: 16pt;">
-        {{ $pending_arr->links() }}
+    <div class="box-footer clearfix" id="pending-arr-pagination" data-item-code="{{ $itemCode }}" style="font-size: 16pt;">
+        {{ $paginatedPendingItems->links() }}
     </div>
 @endif

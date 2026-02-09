@@ -59,7 +59,7 @@ class adLDAPUsers {
     * 
     * @param string $username A user's AD username
     * @param string $password A user's AD password
-    * @param bool optional $prevent_rebind
+    * @param bool optional $preventRebind
     * @return bool
     */
     public function authenticate($username, $password, $preventRebind = false) {
@@ -105,11 +105,11 @@ class adLDAPUsers {
         //$add["name"][0]=$attributes["firstname"]." ".$attributes["surname"];
 
         // Set the account control attribute
-        $control_options = array("NORMAL_ACCOUNT");
+        $controlOptions = array("NORMAL_ACCOUNT");
         if (!$attributes["enabled"]) { 
-            $control_options[] = "ACCOUNTDISABLE"; 
+            $controlOptions[] = "ACCOUNTDISABLE"; 
         }
-        $add["userAccountControl"][0] = $this->accountControl($control_options);
+        $add["userAccountControl"][0] = $this->accountControl($controlOptions);
         
         // Determine the container
         $attributes["container"] = array_reverse($attributes["container"]);

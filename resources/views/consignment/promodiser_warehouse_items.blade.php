@@ -11,9 +11,9 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
                         <div class="card-header text-center p-2">
-                            @if (count($assigned_consignment_stores) > 1)
+                            @if (count($assignedConsignmentStores) > 1)
                                 <select id="warehouse" class="form-control">
-                                    @foreach ($assigned_consignment_stores as $store)
+                                    @foreach ($assignedConsignmentStores as $store)
                                         <option value="{{ $store }}" {{ $store == $branch ? 'selected' : null }}>{{ $store }}</option>
                                     @endforeach
                                 </select>
@@ -39,7 +39,7 @@
                                         <th class="text-center align-middle p-1">Price</th>
                                     </tr>
                                 </thead>
-                                @forelse ($inv_summary as $item)
+                                @forelse ($invSummary as $item)
                                 @php
                                     $img = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no_img.png';
                                     if(Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')){

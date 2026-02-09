@@ -31,11 +31,11 @@
                                     <th class="text-center align-middle p-1" style="width: 21%;">AUDIT QTY</th>
                                 </thead>
                                 <tbody>
-                                    @foreach ($item_classification as $item_class => $items)
+                                    @foreach ($itemClassification as $itemClass => $items)
                                     <tr>
                                         <td colspan="3" class="p-0">
                                             <div class="bg-navy p-2">
-                                                <span style="font-weight: bold; font-size: 10pt;">{{ $item_class }}</span>
+                                                <span style="font-weight: bold; font-size: 10pt;">{{ $itemClass }}</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -75,10 +75,10 @@
                                 <span class="d-block font-responsive">Total: <b>{{ count($list) }}</b></span>
                                 @php
                                     $promodiser = collect($list)->pluck('promodiser')->first();
-                                    $transaction_date = collect($list)->pluck('transaction_date')->first();
-                                    $transaction_date = $transaction_date ? Carbon\Carbon::parse($transaction_date)->format('M d, Y') : null;
+                                    $transactionDate = collect($list)->pluck('transaction_date')->first();
+                                    $transactionDate = $transactionDate ? Carbon\Carbon::parse($transactionDate)->format('M d, Y') : null;
                                 @endphp
-                                <small class="d-block mt-3">Submitted By: <b>{{ $promodiser.' - '.$transaction_date }}</b></small>
+                                <small class="d-block mt-3">Submitted By: <b>{{ $promodiser.' - '.$transactionDate }}</b></small>
                             </div>
                         </div>
                     </div>

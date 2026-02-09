@@ -11,7 +11,7 @@
             <th scope="col" class="font-responsive text-center p-1">Available</th>
         </tr>
     </thead>
-    @forelse ($site_warehouses as $sw => $stock)
+    @forelse ($siteWarehouses as $sw => $stock)
     <tr>
         <td class="p-1 font-responsive align-middle">
             {{ $stock['warehouse'] }}
@@ -40,17 +40,17 @@
     </tr>
     @endforelse
 </table>
-@if(count($consignment_warehouses) > 0)
+@if(count($consignmentWarehouses) > 0)
     <div class="text-center">
-        <a href="#" class="btn btn-primary uppercase p-1 responsive-description" data-toggle="modal" data-target="#vcww{{ $item_details->name }}" style="font-size: 12px;"><i class="fas fa-warehouse"></i> Consignment Warehouse(s)</a>
+        <a href="#" class="btn btn-primary uppercase p-1 responsive-description" data-toggle="modal" data-target="#vcww{{ $itemDetails->name }}" style="font-size: 12px;"><i class="fas fa-warehouse"></i> Consignment Warehouse(s)</a>
     </div>
 
-    <div class="modal fade" id="vcww{{ $item_details->name }}" tabindex="-1" role="dialog">
+    <div class="modal fade" id="vcww{{ $itemDetails->name }}" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">{{ $item_details->name }} - Consignment Warehouse(s) </h4>
-                    <button type="button" class="close" onclick="close_modal('#vcww{{ $item_details->name }}')" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">{{ $itemDetails->name }} - Consignment Warehouse(s) </h4>
+                    <button type="button" class="close" onclick="close_modal('#vcww{{ $itemDetails->name }}')" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </div>
                 <form></form>
                 <div class="modal-body">
@@ -59,9 +59,9 @@
                         <col style="width: 30%;">
                         <thead>
                             <th class="text-center responsive-description p-1 align-middle">Warehouse</th>
-                            <th class="text-center responsive-description p-1 align-middle">Available Qty ({{ collect($consignment_warehouses)->sum('actual_qty') }})</th>
+                            <th class="text-center responsive-description p-1 align-middle">Available Qty ({{ collect($consignmentWarehouses)->sum('actual_qty') }})</th>
                         </thead>
-                        @forelse($consignment_warehouses as $con)
+                        @forelse($consignmentWarehouses as $con)
                         <tr>
                             <td class="responsive-description p-1 align-middle">
                                 {{ $con['warehouse'] }}
@@ -81,7 +81,7 @@
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" onclick="close_modal('#vcww{{ $item_details->name }}')">Close</button>
+                    <button type="button" class="btn btn-default" onclick="close_modal('#vcww{{ $itemDetails->name }}')">Close</button>
                 </div>
             </div>
         </div>

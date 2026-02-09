@@ -10,7 +10,7 @@
 		<div class="container-fluid">
 			<div class="row pt-3">
 				<div class="col-sm-12">
-                    <h6 class="title m-1">Item Variants of <b>{{ $variant_of }}</b></h6>
+                    <h6 class="title m-1">Item Variants of <b>{{ $variantOf }}</b></h6>
                     <div style="position: absolute; right: 70px; top: -10px;">
                         <img src="{{ asset('storage/icon/back.png') }}" style="width: 35px; cursor: pointer;" id="back-btn">
                     </div>
@@ -39,47 +39,44 @@
                                             <table class="table table-bordered table-hover table-striped table-sm" style="font-size: 9pt;">
                                                 <thead>
                                                     <th class="text-center align-middle p-1">Item Code</th>
-                                                    @foreach ($attribute_names as $attr_name)
-                                                    <th class="text-center align-middle p-1" style="width: 350px !important;">{{ $attr_name }}</th>
+                                                    @foreach ($attributeNames as $attrName)
+                                                    <th class="text-center align-middle p-1" style="width: 350px !important;">{{ $attrName }}</th>
                                                     @endforeach
                                                     <th class="text-center align-middle p-1" style="width: 350px !important;">Cost</th>
                                                     <th class="text-center align-middle p-1" style="width: 350px !important;">Min. Selling Price</th>
                                                     <th class="text-center align-middle p-1" style="width: 350px !important;">Standard Price</th>
                                                 </thead>
                                                 <tbody>
-                                                    @forelse ($item_codes as $item_code)
+                                                    @forelse ($itemCodes as $itemCode)
                                                     <tr>
-                                                        <td class="text-center align-middle p-1 font-weight-bold">{{ $item_code }}</td>
-                                                        @foreach ($attribute_names as $attr)
+                                                        <td class="text-center align-middle p-1 font-weight-bold">{{ $itemCode }}</td>
+                                                        @foreach ($attributeNames as $attr)
                                                         @php
-                                                        $attr_val = null;
-                                                        if (array_key_exists($item_code, $attributes)) {
-                                                            $attr_val = array_key_exists($attr, $attributes[$item_code]) ? $attributes[$item_code][$attr] : null;
-                                                        }
+                                                        $attrVal = data_get($attributes, "{$itemCode}.{$attr}");
                                                         @endphp
-                                                        <td class="text-center align-middle p-1">{{ $attr_val }}</td>
+                                                        <td class="text-center align-middle p-1">{{ $attrVal }}</td>
                                                         @endforeach
                                                         <td class="text-center text-nowrap align-middle p-2">
-                                                            @if ($prices[$item_code]['rate'] > 0)
-                                                            {{ '₱ ' . number_format($prices[$item_code]['rate'], 2, '.', ',') }}
+                                                            @if ($prices[$itemCode]['rate'] > 0)
+                                                            {{ '₱ ' . number_format($prices[$itemCode]['rate'], 2, '.', ',') }}
                                                             @else
                                                             <center>
                                                                 <div class="form-group m-0 text-center" style="width: 100px;">
-                                                                    <input type="text" class="form-control form-control-sm" name="price[{{ $item_code }}]" placeholder="0.00">
+                                                                    <input type="text" class="form-control form-control-sm" name="price[{{ $itemCode }}]" placeholder="0.00">
                                                                 </div>
                                                             </center>
                                                             @endif
                                                         </td>
                                                         <td class="text-center text-nowrap align-middle p-1">
-                                                            @if ($prices[$item_code]['minimum'] > 0)
-                                                            {{ '₱ ' . number_format($prices[$item_code]['minimum'], 2, '.', ',') }}
+                                                            @if ($prices[$itemCode]['minimum'] > 0)
+                                                            {{ '₱ ' . number_format($prices[$itemCode]['minimum'], 2, '.', ',') }}
                                                             @else
                                                             --
                                                             @endif
                                                         </td>
                                                         <td class="text-center text-nowrap align-middle p-1">
-                                                            @if ($prices[$item_code]['standard'] > 0)
-                                                            {{ '₱ ' . number_format($prices[$item_code]['standard'], 2, '.', ',') }}
+                                                            @if ($prices[$itemCode]['standard'] > 0)
+                                                            {{ '₱ ' . number_format($prices[$itemCode]['standard'], 2, '.', ',') }}
                                                             @else
                                                             --
                                                             @endif

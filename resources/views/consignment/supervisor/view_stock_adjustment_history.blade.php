@@ -10,7 +10,7 @@
         <th class="d-none d-sm-table-cell">Status</th>
         <th>Action</th>
     </tr>
-    @forelse ($stock_adjustments_array as $stock)
+    @forelse ($stockAdjustmentsArray as $stock)
         <tr>
             <td class="text-justify text-xl-center">
                 <b>{{ $stock->title ? $stock->title : $stock->name }}</b>
@@ -154,5 +154,5 @@
     @endforelse
 </table>
 <div class="float-right" id="stock-adjustment-history-pagination" style="font-size: 10pt;">
-	{{ $stock_adjustments->links() }}
+	{{ $stockAdjustments->links() }}
 </div>

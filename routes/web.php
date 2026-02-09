@@ -1,11 +1,18 @@
 <?php
 use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\ConsignmentController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\ItemAttributeController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemProfileController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MainController;
+use App\Http\Controllers\MaterialTransferController;
+use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SelectFilterController;
 use App\Http\Controllers\StockReservationController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Middleware\CheckConnectionMiddleware;
@@ -23,13 +30,13 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
-    Route::get('/login', [LoginController::class, 'view_login'])->name('login');
+    Route::get('/login', [LoginController::class, 'viewLogin'])->name('login');
     Route::get('/login_user', function () {
         return redirect('/login');
     });
     Route::post('/login_user', [LoginController::class, 'login']);
 
-    Route::get('/update', [ItemAttributeController::class, 'update_login'])->name('update_login');
+    Route::get('/update', [ItemAttributeController::class, 'updateLogin'])->name('update_login');
     Route::post('/U_login_user', [ItemAttributeController::class, 'login']);
 
     Route::group(['middleware' => 'auth'], function(){
@@ -46,10 +53,10 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::post('/generate_sales_order', [ConsignmentController::class, 'createSalesOrder']);
 
         // ERP
-        Route::get('/customers', [MainController::class, 'get_customers']);
-        Route::get('/erp_projects', [MainController::class, 'get_erp_projects']);
-        Route::get('/customer_address', [MainController::class, 'get_customer_address']);
-        Route::get('/branch_warehouses', [MainController::class, 'get_branch_warehouses']);
+        Route::get('/customers', [MainController::class, 'getCustomers']);
+        Route::get('/erp_projects', [MainController::class, 'getErpProjects']);
+        Route::get('/customer_address', [MainController::class, 'getCustomerAddress']);
+        Route::get('/branch_warehouses', [MainController::class, 'getBranchWarehouses']);
 
         // standard product brochure printing
         Route::get('/generate_brochure', [BrochureController::class, 'generateBrochure']);
@@ -62,12 +69,12 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/generate_multiple_brochures', [BrochureController::class, 'generateMultipleBrochures']);
         
         // routes for item attribute updating
-        Route::post('/update_attribute', [ItemAttributeController::class, 'item_attribute_update']);
-        Route::get('/search', [ItemAttributeController::class, 'item_attribute_search']);
-        Route::get('/update_form', [ItemAttributeController::class, 'update_attrib_form']);
-        Route::get('/add_form/{item_code}', [ItemAttributeController::class, 'add_attrib_form']);
-        Route::get('/attribute_dropdown', [ItemAttributeController::class, 'item_attribute_dropdown']);
-        Route::post('/insert_attribute', [ItemAttributeController::class, 'item_attribute_insert']);
+        Route::post('/update_attribute', [ItemAttributeController::class, 'itemAttributeUpdate']);
+        Route::get('/search', [ItemAttributeController::class, 'itemAttributeSearch']);
+        Route::get('/update_form', [ItemAttributeController::class, 'updateAttribForm']);
+        Route::get('/add_form/{item_code}', [ItemAttributeController::class, 'addAttribForm']);
+        Route::get('/attribute_dropdown', [ItemAttributeController::class, 'itemAttributeDropdown']);
+        Route::post('/insert_attribute', [ItemAttributeController::class, 'itemAttributeInsert']);
         Route::get('/signout', [ItemAttributeController::class, 'signout']);
         Route::get('/getAttributes', [ItemAttributeController::class, 'getAttributes']);
         Route::get('/viewParentItemDetails', [ItemAttributeController::class, 'viewParentItemDetails']);
@@ -76,112 +83,112 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         
         
         Route::get('/', [MainController::class, 'index']);
-        Route::get('/search_results', [MainController::class, 'search_results']);
-        Route::get('/search_results_images', [MainController::class, 'search_results_images']);
-        Route::get('/dashboard_data', [MainController::class, 'dashboard_data']);
-        Route::get('/import_from_ecommerce', [MainController::class, 'import_from_ecommerce']);
-        Route::post('/import_images', [MainController::class, 'import_images']);
+        Route::get('/search_results', [SearchController::class, 'searchResults']);
+        Route::get('/search_results_images', [SearchController::class, 'searchResultsImages']);
+        Route::get('/dashboard_data', [MainController::class, 'dashboardData']);
+        Route::get('/import_from_ecommerce', [MainController::class, 'importFromEcommerce']);
+        Route::post('/import_images', [MainController::class, 'importImages']);
         
         Route::get('/logout', [LoginController::class, 'logout']);
             
-        Route::get('/material_issue', [MainController::class, 'view_material_issue']);
-        Route::get('/material_transfer_for_manufacture', [MainController::class, 'view_material_transfer_for_manufacture']);
-        Route::get('/material_transfer', [MainController::class, 'view_material_transfer']);
-        Route::post('/submit_internal_transfer', [MainController::class, 'submit_internal_transfer']);
-        Route::get('/picking_slip', [MainController::class, 'view_picking_slip']);
-        Route::post('/checkout_picking_slip', [TransactionController::class, 'checkout_picking_slip']);
-        Route::get('/production_to_receive', [MainController::class, 'view_production_to_receive']);
-        Route::get('/recently_received_items', [MainController::class, 'recently_received_items']);
+        Route::get('/material_issue', [MaterialTransferController::class, 'viewMaterialIssue']);
+        Route::get('/material_transfer_for_manufacture', [MaterialTransferController::class, 'viewMaterialTransferForManufacture']);
+        Route::get('/material_transfer', [MaterialTransferController::class, 'viewMaterialTransfer']);
+        Route::post('/submit_internal_transfer', [MaterialTransferController::class, 'submitInternalTransfer']);
+        Route::get('/picking_slip', [DeliveryController::class, 'viewPickingSlip']);
+        Route::post('/checkout_picking_slip', [TransactionController::class, 'checkoutPickingSlip']);
+        Route::get('/production_to_receive', [ProductionController::class, 'viewProductionToReceive']);
+        Route::get('/recently_received_items', [MainController::class, 'recentlyReceivedItems']);
 
         Route::prefix('/in_transit')->group(function(){
-            Route::get('/', [MainController::class, 'feedbacked_in_transit']);
-            Route::post('/receive/{id}', [MainController::class, 'receive_transit_stocks']);
-            Route::post('/transfer/{id}', [MainController::class, 'transfer_transit_stocks']);
+            Route::get('/', [MainController::class, 'feedbackedInTransit']);
+            Route::post('/receive/{id}', [MainController::class, 'receiveTransitStocks']);
+            Route::post('/transfer/{id}', [MainController::class, 'transferTransitStocks']);
         });
 
         // Route::get('/cancel_transaction_modal', 'MainController@cancel_transaction_modal');
-        Route::post('/cancel_transaction', [MainController::class, 'cancel_athena_transaction']);
-        Route::get('/cancel_issued_item', [MainController::class, 'cancel_issued_item']);
+        Route::post('/cancel_transaction', [MainController::class, 'cancelAthenaTransaction']);
+        Route::get('/cancel_issued_item', [MainController::class, 'cancelIssuedItem']);
 
         // JQUERY
-        Route::get('/count_ste_for_issue/{purpose}', [MainController::class, 'count_ste_for_issue']);
-        Route::get('/count_ps_for_issue', [MainController::class, 'count_ps_for_issue']);
-        Route::get('/count_production_to_receive', [MainController::class, 'count_production_to_receive']);
+        Route::get('/count_ste_for_issue/{purpose}', [MainController::class, 'countSteForIssue']);
+        Route::get('/count_ps_for_issue', [MainController::class, 'countPsForIssue']);
+        Route::get('/count_production_to_receive', [ProductionController::class, 'countProductionToReceive']);
 
-        Route::get('/load_suggestion_box', [MainController::class, 'load_suggestion_box']);
+        Route::get('/load_suggestion_box', [SearchController::class, 'loadSuggestionBox']);
         Route::get('/sales_report', [ReportController::class, 'salesReport']);
         Route::get('/sales_summary_report/{year}', [ReportController::class, 'salesReportSummary']);
 
-        Route::get('/get_select_filters', [MainController::class, 'get_select_filters']);
+        Route::get('/get_select_filters', [SelectFilterController::class, 'getSelectFilters']);
 
-        Route::get('/get_parent_warehouses', [MainController::class, 'get_parent_warehouses']);
-        Route::get('/get_pending_item_request_for_issue', [MainController::class, 'get_pending_item_request_for_issue']);
-        Route::get('/get_items_for_return', [MainController::class, 'get_items_for_return']);
-        Route::get('/get_dr_return', [MainController::class, 'get_dr_return']);
-        Route::get('/get_mr_sales_return', [MainController::class, 'get_mr_sales_return']);
+        Route::get('/get_parent_warehouses', [SelectFilterController::class, 'getParentWarehouses']);
+        Route::get('/get_pending_item_request_for_issue', [MainController::class, 'getPendingItemRequestForIssue']);
+        Route::get('/get_items_for_return', [MainController::class, 'getItemsForReturn']);
+        Route::get('/get_dr_return', [MainController::class, 'getDrReturn']);
+        Route::get('/get_mr_sales_return', [MainController::class, 'getMrSalesReturn']);
 
-        Route::get('/feedback_details/{id}', [MainController::class, 'feedback_details']);
-        Route::post('/feedback_submit', [MainController::class, 'feedback_submit']);
-        Route::get('/get_ste_details/{id}', [MainController::class, 'get_ste_details']);
-        Route::get('/get_ps_details/{id}', [MainController::class, 'get_ps_details']);
-        Route::get('/get_dr_return_details/{id}', [MainController::class, 'get_dr_return_details']);
+        Route::get('/feedback_details/{id}', [MainController::class, 'feedbackDetails']);
+        Route::post('/feedback_submit', [MainController::class, 'feedbackSubmit']);
+        Route::get('/get_ste_details/{id}', [MaterialTransferController::class, 'getSteDetails']);
+        Route::get('/get_ps_details/{id}', [MainController::class, 'getPsDetails']);
+        Route::get('/get_dr_return_details/{id}', [DeliveryController::class, 'getDrReturnDetails']);
 
-        Route::get('/get_item_details/{item_code}', [MainController::class, 'get_item_details']);
-        Route::get('/get_athena_transactions/{item_code}', [MainController::class, 'get_athena_transactions']);
-        Route::get('/get_stock_ledger/{item_code}', [MainController::class, 'get_stock_ledger']);
-        Route::get('/form_warehouse_location/{item_code}', [MainController::class, 'form_warehouse_location']);
-        Route::get('/get_item_stock_levels/{item_code}', [MainController::class, 'get_item_stock_levels']);
-        Route::get('/get_item_stock_levels/bundled/{item_code}', [MainController::class, 'get_bundled_item_stock_levels']);
-        Route::post('/edit_warehouse_location', [MainController::class, 'edit_warehouse_location']);
-        Route::post('/save_item_information/{item_code}', [MainController::class, 'save_item_information']);
+        Route::get('/get_item_details/{item_code}', [ItemProfileController::class, 'getItemDetails']);
+        Route::get('/get_athena_transactions/{item_code}', [MainController::class, 'getAthenaTransactions']);
+        Route::get('/get_stock_ledger/{item_code}', [MainController::class, 'getStockLedger']);
+        Route::get('/form_warehouse_location/{item_code}', [ItemProfileController::class, 'formWarehouseLocation']);
+        Route::get('/get_item_stock_levels/{item_code}', [ItemProfileController::class, 'getItemStockLevels']);
+        Route::get('/get_item_stock_levels/bundled/{item_code}', [ItemProfileController::class, 'getBundledItemStockLevels']);
+        Route::post('/edit_warehouse_location', [ItemProfileController::class, 'editWarehouseLocation']);
+        Route::post('/save_item_information/{item_code}', [ItemProfileController::class, 'saveItemInformation']);
 
-        Route::get('/print_barcode/{item_code}', [MainController::class, 'print_barcode']);
+        Route::get('/print_barcode/{item_code}', [ItemProfileController::class, 'printBarcode']);
 
-        Route::post('/checkout_ste_item', [MainController::class, 'checkout_ste_item']);
-        Route::post('/checkout_picking_slip_item', [MainController::class, 'checkout_picking_slip_item']);
-        Route::post('/submit_dr_sales_return', [MainController::class, 'submit_dr_sales_return']);
+        Route::post('/checkout_ste_item', [MainController::class, 'checkoutSteItem']);
+        Route::post('/checkout_picking_slip_item', [MainController::class, 'checkoutPickingSlipItem']);
+        Route::post('/submit_dr_sales_return', [DeliveryController::class, 'submitDrSalesReturn']);
 
-        Route::get('/submit_stock_entry/{id}', [MainController::class, 'submit_stock_entry']);
+        Route::get('/submit_stock_entry/{id}', [MainController::class, 'submitStockEntry']);
 
-        Route::post('/upload_item_image', [MainController::class, 'upload_item_image']);
-        Route::get('/load_item_images/{item_code}', [MainController::class, 'load_item_images']);
+        Route::post('/upload_item_image', [ItemProfileController::class, 'uploadItemImage']);
+        Route::get('/load_item_images/{item_code}', [ItemProfileController::class, 'loadItemImages']);
 
-        Route::post('/update_stock_entry', [MainController::class, 'update_stock_entry']);
+        Route::post('/update_stock_entry', [MaterialTransferController::class, 'updateStockEntry']);
 
         Route::get('/returns', [MainController::class, 'returns']);
-        Route::post('/submit_sales_return', [MainController::class, 'submit_sales_return']);
-        Route::post('/submit_dr_sales_return_api', [MainController::class, 'submit_dr_sales_return_api']);
+        Route::post('/submit_sales_return', [MainController::class, 'submitSalesReturn']);
+        Route::post('/submit_dr_sales_return_api', [DeliveryController::class, 'submitDrSalesReturnApi']);
         Route::get('/replacements', [MainController::class, 'replacements']);
         Route::get('/receipts', [MainController::class, 'receipts']);
 
         // stock reservation
-        Route::get('/warehouses', [MainController::class, 'get_warehouses']);
-        Route::get('/warehouses_with_stocks', [StockReservationController::class, 'get_warehouse_with_stocks']);
-        Route::get('/sales_persons', [MainController::class, 'get_sales_persons']);
-        Route::get('/projects', [MainController::class, 'get_projects']);
-        Route::post('/create_reservation', [StockReservationController::class, 'create_reservation']);
-        Route::post('/cancel_reservation', [StockReservationController::class, 'cancel_reservation']);
-        Route::post('/update_reservation', [StockReservationController::class, 'update_reservation']);
-        Route::get('/get_stock_reservation_details/{id}', [StockReservationController::class, 'get_stock_reservation_details']);
-        Route::get('/get_stock_reservation/{item_code?}', [StockReservationController::class, 'get_stock_reservation']);
-        Route::get('/get_item_images/{item_code}', [MainController::class, 'get_item_images']);
-        Route::get('/get_low_stock_level_items', [MainController::class, 'get_low_stock_level_items']);
-        Route::get('/allowed_parent_warehouses', [MainController::class, 'allowed_parent_warehouses']);
-        Route::get('/get_purchase_receipt_details/{id}', [MainController::class, 'get_purchase_receipt_details']);
-        Route::post('/update_received_item', [MainController::class, 'update_received_item']);
+        Route::get('/warehouses', [SelectFilterController::class, 'getWarehouses']);
+        Route::get('/warehouses_with_stocks', [StockReservationController::class, 'getWarehouseWithStocks']);
+        Route::get('/sales_persons', [SelectFilterController::class, 'getSalesPersons']);
+        Route::get('/projects', [SelectFilterController::class, 'getProjects']);
+        Route::post('/create_reservation', [StockReservationController::class, 'createReservation']);
+        Route::post('/cancel_reservation', [StockReservationController::class, 'cancelReservation']);
+        Route::post('/update_reservation', [StockReservationController::class, 'updateReservation']);
+        Route::get('/get_stock_reservation_details/{id}', [StockReservationController::class, 'getStockReservationDetails']);
+        Route::get('/get_stock_reservation/{item_code?}', [StockReservationController::class, 'getStockReservation']);
+        Route::get('/get_item_images/{item_code}', [ItemProfileController::class, 'getItemImages']);
+        Route::get('/get_low_stock_level_items', [MainController::class, 'getLowStockLevelItems']);
+        Route::get('/allowed_parent_warehouses', [MainController::class, 'allowedParentWarehouses']);
+        Route::get('/get_purchase_receipt_details/{id}', [MainController::class, 'getPurchaseReceiptDetails']);
+        Route::post('/update_received_item', [MainController::class, 'updateReceivedItem']);
         Route::get('/inv_accuracy/{year}', [MainController::class, 'invAccuracyChart']);
         // Route::get('/get_recently_added_items', 'MainController@get_recently_added_items');
-        Route::get('/get_reserved_items', [MainController::class, 'get_reserved_items']);
-        Route::get('/get_available_qty/{item_code}/{warehouse}', [MainController::class, 'get_available_qty']);
-        Route::get('/validate_if_reservation_exists', [MainController::class, 'validate_if_reservation_exists']);
-        Route::post('/submit_sales_return', [MainController::class, 'submit_sales_return']);
-        Route::get('/view_deliveries', [MainController::class, 'view_deliveries']);
-        Route::get('/get_athena_logs', [MainController::class, 'get_athena_logs']);
+        Route::get('/get_reserved_items', [MainController::class, 'getReservedItems']);
+        Route::get('/get_available_qty/{item_code}/{warehouse}', [MainController::class, 'getAvailableQty']);
+        Route::get('/validate_if_reservation_exists', [MainController::class, 'validateIfReservationExists']);
+        Route::post('/submit_sales_return', [MainController::class, 'submitSalesReturn']);
+        Route::get('/view_deliveries', [DeliveryController::class, 'viewDeliveries']);
+        Route::get('/get_athena_logs', [DeliveryController::class, 'getAthenaLogs']);
         // Route::post('/submit_transaction', 'MainController@submit_transaction');
-        Route::post('/submit_transaction', [TransactionController::class, 'submit_transaction']);
-        Route::get('/create_material_request/{id}', [MainController::class, 'create_material_request']);
-        Route::get('/consignment_warehouses', [MainController::class, 'consignment_warehouses']);
-        Route::post('/create_feedback', [MainController::class, 'create_feedback']);
+        Route::post('/submit_transaction', [TransactionController::class, 'submitTransaction']);
+        Route::get('/create_material_request/{id}', [MainController::class, 'createMaterialRequest']);
+        Route::get('/consignment_warehouses', [MainController::class, 'consignmentWarehouses']);
+        Route::post('/create_feedback', [MainController::class, 'createFeedback']);
         Route::get('/consignment_sales/{warehouse}', [MainController::class, 'consignmentSalesReport']);
         Route::get('/purchase_rate_history/{item_code}', [MainController::class, 'purchaseRateHistory']);
         Route::post('/update_item_price/{item_code}', [MainController::class, 'updateItemCost']);
@@ -211,17 +218,17 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
             Route::post('/promodiser/damage_report/submit', [ConsignmentController::class, 'submitDamagedItem']);
             Route::post('/generate_stock_transfer_entry', [ConsignmentController::class, 'generateStockTransferEntry']);
             Route::post('/consignment_read_file', [ConsignmentController::class, 'readFile']);
-            Route::post('/assign_barcodes', [ConsignmentController::class, 'assign_barcodes']);
+            Route::post('/assign_barcodes', [ConsignmentController::class, 'assignBarcodes']);
 
             Route::prefix('/consignment')->group(function(){
                 Route::prefix('/replenish')->group(function(){
-                    Route::get('/', [ConsignmentController::class, 'replenish_index']);
-                    Route::post('/', [ConsignmentController::class, 'replenish_submit']);
-                    Route::get('/form/{id?}', [ConsignmentController::class, 'replenish_form']);
-                    Route::post('/{id}', [ConsignmentController::class, 'replenish_update']);
-                    Route::get('/modal/{id}', [ConsignmentController::class, 'replenish_modal_contents']);
-                    Route::post('/{id}/approve', [ConsignmentController::class, 'replenish_approve']);
-                    Route::get('/{id}/delete', [ConsignmentController::class, 'replenish_delete']);
+                    Route::get('/', [ConsignmentController::class, 'replenishIndex']);
+                    Route::post('/', [ConsignmentController::class, 'replenishSubmit']);
+                    Route::get('/form/{id?}', [ConsignmentController::class, 'replenishForm']);
+                    Route::post('/{id}', [ConsignmentController::class, 'replenishUpdate']);
+                    Route::get('/modal/{id}', [ConsignmentController::class, 'replenishModalContents']);
+                    Route::post('/{id}/approve', [ConsignmentController::class, 'replenishApprove']);
+                    Route::get('/{id}/delete', [ConsignmentController::class, 'replenishDelete']);
                 });
             });
 
@@ -285,12 +292,24 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         Route::get('/view_consignment_deliveries', [ConsignmentController::class, 'viewDeliveries']);
 
-        Route::get('/consignment_import_tool', [ConsignmentController::class, 'import_tool']);
-        Route::get('/consignment_select_values', [ConsignmentController::class, 'select_values']);
-        Route::get('/consignment/branches', [ConsignmentController::class, 'consignment_branches']);
-        Route::get('/consignment/export/{branch}', [ConsignmentController::class, 'export_to_excel']);
+        Route::get('/consignment_import_tool', [ConsignmentController::class, 'importTool']);
+        Route::get('/consignment_select_values', [ConsignmentController::class, 'selectValues']);
+        Route::get('/consignment/branches', [ConsignmentController::class, 'consignmentBranches']);
+        Route::get('/consignment/export/{branch}', [ConsignmentController::class, 'exportToExcel']);
 
-        Route::get('/user_manual', [MainController::class, 'get_manuals']);
+        Route::get('/user_manual', [MainController::class, 'getManuals']);
+        Route::get('/user_manual/beginning_inventory', [GuideController::class, 'beginningInventory']);
+        Route::get('/user_manual/sales_report_entry', [GuideController::class, 'salesReportEntry']);
+        Route::get('/user_manual/stock_transfer', [GuideController::class, 'stockTransfer']);
+        Route::get('/user_manual/damaged_items', [GuideController::class, 'damagedItems']);
+        Route::get('/user_manual/stock_receiving', [GuideController::class, 'stockReceiving']);
+        Route::get('/user_manual/inventory_audit', [GuideController::class, 'inventoryAudit']);
+        Route::get('/user_manual/consignment_dashboard', [GuideController::class, 'consignmentDashboard']);
+        Route::get('/user_manual/beginning_entries', [GuideController::class, 'beginningEntries']);
+        Route::get('/user_manual/inventory_report', [GuideController::class, 'inventoryReport']);
+        Route::get('/user_manual/inventory_summary', [GuideController::class, 'inventorySummary']);
+        Route::get('/user_manual/stock_to_receive', [GuideController::class, 'stockToReceive']);
+        Route::get('/user_manual/consignment_stock_transfer', [GuideController::class, 'consignmentStockTransfer']);
 
         Route::get('/consignment_ledger', [ConsignmentController::class, 'consignmentLedger']);
         Route::get('/get_item_list', [ConsignmentController::class, 'getErpItems']);
@@ -305,5 +324,5 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/download/{project}/{filename}', [BrochureController::class, 'downloadBrochure']);
     Route::post('/remove_image', [BrochureController::class, 'removeImage']);
 
-    Route::get('/download_image/{file}', [MainController::class, 'download_image']);
+    Route::get('/download_image/{file}', [MainController::class, 'downloadImage']);
 });

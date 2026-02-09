@@ -81,7 +81,7 @@
                                                     <div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
                                                         <select name="store" class="form-control filters-font consignment-store-select">
                                                             <option value="" disabled {{ !request('store') ? 'selected' : null }}>Select a store</option>
-                                                            @foreach ($consignment_stores as $store)
+                                                            @foreach ($consignmentStores as $store)
                                                             <option value="{{ $store }}" {{ request('store') == $store ? 'selected' : null }}>{{ $store }}</option>
                                                             @endforeach
                                                         </select>
@@ -106,7 +106,7 @@
                                             <th class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">Status</th>
                                             <th class="font-responsive align-middle p-2 text-center last-ro1w">Action</th>
                                         </thead>
-                                        @forelse ($inv_arr as $inv)
+                                        @forelse ($invArr as $inv)
                                             @php
                                                 switch ($inv->status) {
                                                     case 'Approved':
@@ -120,7 +120,7 @@
                                                         break;
                                                 }
 
-                                                $modal_form = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval' ? '/approve_beginning_inv/'.$inv->name : '/stock_adjust/submit/'.$inv->name;
+                                                $modalForm = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval' ? '/approve_beginning_inv/'.$inv->name : '/stock_adjust/submit/'.$inv->name;
                                             @endphp
                                             <tr>
                                                 <td class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">
@@ -146,7 +146,7 @@
                                                     <div class="modal fade" id="{{ $inv->name }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                         <div class="modal-dialog modal-xl" role="document">
                                                             <div class="modal-content">
-                                                                <form action="{{ $modal_form }}" method="post">
+                                                                <form action="{{ $modalForm }}" method="post">
                                                                     @csrf
                                                                     <div class="modal-header bg-navy">
                                                                         <h6 class="modal-title">{{ $inv->branch_warehouse }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $inv->status }}</span></h6>
@@ -177,7 +177,7 @@
                                                                             <div class="pt-0 pr-2 pl-2 pb-2 col-12 col-lg-4 col-xl-4 text-left">
                                                                                 @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval')
                                                                                 @php
-                                                                                    $status_selection = [
+                                                                                    $statusSelection = [
                                                                                         ['title' => 'Approve', 'value' => 'Approved'],
                                                                                         ['title' => 'Cancel', 'value' => 'Cancelled']
                                                                                     ];
@@ -186,7 +186,7 @@
                                                                                 <div class="input-group">
                                                                                     <select class="custom-select font-responsive" name="status">
                                                                                         <option value="" selected disabled>Select a status</option>
-                                                                                        @foreach ($status_selection as $status)
+                                                                                        @foreach ($statusSelection as $status)
                                                                                         <option value="{{ $status['value'] }}">{{ $status['title'] }}</option>
                                                                                         @endforeach
                                                                                     </select>
@@ -500,7 +500,7 @@
                                         @endforelse
                                     </table>
                                     <div class="float-right mt-4">
-                                        {{ $beginning_inventory->appends(request()->input())->links('pagination::bootstrap-4') }}
+                                        {{ $beginningInventory->appends(request()->input())->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="stock-adjustment-content" role="tabpanel" aria-labelledby="stock-adjustment-tab" style="font-size: 9pt;">
@@ -532,7 +532,7 @@
                                         <div class="col-3">
                                             <select id="activity-logs-user" class="form-control" style="font-size: 9pt;">
                                                 <option value="" selected disabled>Select a User</option>
-                                                @foreach ($activity_logs_users as $user)
+                                                @foreach ($activityLogsUsers as $user)
                                                     <option value="{{ $user }}">{{ $user }}</option>
                                                 @endforeach
                                             </select>

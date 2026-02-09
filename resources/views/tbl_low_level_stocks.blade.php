@@ -1,5 +1,5 @@
 <div class="float-right mr-3 mt-1 mb-1 low-lvl-stock-total">
-    Total: <span class="badge badge-info">{{ $low_level_stocks->total() }}</span>
+    Total: <span class="badge badge-info">{{ $lowLevelStocks->total() }}</span>
 </div>
 <table class="table table-bordered table-hover m-0">
     <col class="low-lvl-stk-tbl-item-desc"><!-- Item Description -->
@@ -17,7 +17,7 @@
         <th class="text-center align-middle d-none d-lg-table-cell">Action</th>
     </thead>
     <tbody>
-        @forelse ($low_level_stocks as $n => $row)
+        @forelse ($lowLevelStocks as $n => $row)
         <tr>
             <td class="text-justify p-2 align-middle font-responsive">
                 <div class="row">
@@ -90,5 +90,5 @@
     </tbody>
 </table>
 <div class="card-footer clearfix" id="low-level-stocks-pagination" style="font-size: 12pt;">
-	{{ $low_level_stocks->links() }}
+	{{ $lowLevelStocks->links() }}
 </div>

@@ -13,14 +13,14 @@
                 @forelse ($result as $r)
                     @php
                         $mreq = isset($r->mreq->name) ? $r->mreq->name : '-';
-                        $target_warehouse = $r->to_warehouse ?? collect($r->items)->pluck('t_warehouse')->first();
+                        $targetWarehouse = $r->to_warehouse ?? collect($r->items)->pluck('t_warehouse')->first();
                     @endphp
                     <tr>
                         <td class="text-center align-middle">
                             {{ $r->name }} <br>
                             {{ $r->created_by }}
                         </td>
-                        <td class="text-center align-middle">{{ $target_warehouse }}</td>
+                        <td class="text-center align-middle">{{ $targetWarehouse }}</td>
                         <td class="text-center align-middle">{{ $mreq }}</td>
                         <td class="text-center align-middle">{{ $r->delivery_date }}</td>
                         <td class="text-center align-middle">

@@ -10,10 +10,10 @@
 		</tr>
 	</thead>
 
-	@forelse ($item_list as $row)
+	@forelse ($itemList as $row)
 	@php
-		 $count_wh = count($row['item_inventory']);
-		 $rowspan = ($count_wh > 0) ? ($count_wh + 2) : 3;
+		 $countWh = count($row['item_inventory']);
+		 $rowspan = ($countWh > 0) ? ($countWh + 2) : 3;
 	@endphp
 	<tbody>
 		<tr>

@@ -8,11 +8,11 @@
                 <td style="width: 50%;">  
                     <p style="display:block;line-height:8px;">Reference No.: <b>{{ $id }}</b></p>
                     <p style="display:block;line-height:8px;">Status: <b>{{ $status }}</b></p>
-                    <p style="display:block;line-height:8px;">Date: <b>{{ Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</b></p>
+                    <p style="display:block;line-height:8px;">Date: <b>{{ Carbon\Carbon::parse($transactionDate)->format('F d, Y') }}</b></p>
                 </td>
                 <td style="width: 50%;">
-                    <p style="display:block;line-height:8px;">Source Warehouse: <b>{{ $source_warehouse }}</b></p>
-                    <p style="display:block;line-height:8px;">Target Warehouse: <b>{{ $target_warehouse }}</b></p>
+                    <p style="display:block;line-height:8px;">Source Warehouse: <b>{{ $sourceWarehouse }}</b></p>
+                    <p style="display:block;line-height:8px;">Target Warehouse: <b>{{ $targetWarehouse }}</b></p>
                 </td>
             </tr>
         </table>
@@ -35,11 +35,11 @@
                             <img src="{{ asset('storage/img/'.$image) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" alt="User Image" style="width: 100%;">
                         </div>
                         <div style="display: inline-block; float: right; width: 89%;">
-                            <b>{{ $item_code }}</b> - {!! $description !!}
+                            <b>{{ $itemCode }}</b> - {!! $description !!}
                         </div>
                     </td>
                     <td style="border: 1px solid black;text-align:center;">
-                        <b>{{ (float)$transfer_qty }}</b> <br>
+                        <b>{{ (float)$transferQty }}</b> <br>
                         {{ $uom }}
                     </td>
                 </tr>    

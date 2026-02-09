@@ -1,5 +1,5 @@
 <div class="float-left consignment-total">
-    Total: <span class="badge badge-info" style="font-size: 10pt;">{{ $consignment_stocks->total() }}</span>
+    Total: <span class="badge badge-info" style="font-size: 10pt;">{{ $consignmentStocks->total() }}</span>
 </div>
 <table class="table table-bordered m-0 table-striped" style="font-size: 10pt;">
     <thead>
@@ -12,27 +12,28 @@
         </tr>    
     </thead>
     <tbody>
-        @forelse ($consignment_stocks as $row)
+        @forelse ($consignmentStocks as $row)
         <tr>
             <td class="text-justify align-middle">
                 <div class="d-flex row">        
                     <div class="col-3 col-xl-1">
                         @php
-                            $item_image = isset($item_image_paths[$row->item_code]) ? $item_image_paths[$row->item_code][0]->image_path : null;
-                            $img_webp = ($item_image) ? "/img/" . explode('.',$item_image)[0].'.webp' : "/icon/no_img.webp";
-                            $img = ($item_image) ? "/img/" . $item_image : "/icon/no_img.png";
-                            $stock_qty = $row->actual_qty * 1;
+                            $itemImage = data_get($itemImagePaths, "{$row->item_code}.0.image_path");
+                            $imgWebp = ($itemImage) ? "/img/" . explode('.',$itemImage)[0].'.webp' : "/icon/no_img.webp";
+                            $img = ($itemImage) ? "/img/" . $itemImage : "/icon/no_img.png";
+                            $stockQty = $row->actual_qty * 1;
 
-                            $price_list_rate = array_key_exists($row->item_code, $price_list_rates) ? '₱ ' . number_format($price_list_rates[$row->item_code][0]->price_list_rate, 2, '.', ',') : '-';
+                            $rate = data_get($priceListRates, "{$row->item_code}.0.price_list_rate");
+                            $priceListRate = $rate ? '₱ ' . number_format($rate, 2, '.', ',') : '-';
                         @endphp
                         <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
-                            @if(!Storage::disk('public')->exists('/img/'.explode('.', $item_image)[0].'.webp'))
+                            @if(!Storage::disk('public')->exists('/img/'.explode('.', $itemImage)[0].'.webp'))
                                 <img class="w-100" src="{{ asset('storage/') }}{{ $img }}">
-                            @elseif(!Storage::disk('public')->exists('/img/'.$item_image))
-                                <img class="w-100" src="{{ asset('storage/') }}{{ $img_webp }}">
+                            @elseif(!Storage::disk('public')->exists('/img/'.$itemImage))
+                                <img class="w-100" src="{{ asset('storage/') }}{{ $imgWebp }}">
                             @else
                                 <picture>
-                                    <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" class="w-100">
+                                    <source srcset="{{ asset('storage'.$imgWebp) }}" type="image/webp" class="w-100">
                                     <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="w-100">
                                     <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
                                 </picture>
@@ -47,13 +48,13 @@
                             </tr>
                             <tr>
                                 <td class="p-1 text-center">
-                                    @if ($stock_qty > 0)
-                                        <span class="badge badge-success">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
+                                    @if ($stockQty > 0)
+                                        <span class="badge badge-success">{{ number_format($stockQty) . ' ' . $row->stock_uom }}</span>
                                     @else
-                                        <span class="badge badge-danger">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
+                                        <span class="badge badge-danger">{{ number_format($stockQty) . ' ' . $row->stock_uom }}</span>
                                     @endif
                                 </td>
-                                <td class="p-1 text-center font-weight-bold">{{ $price_list_rate }}</td>
+                                <td class="p-1 text-center font-weight-bold">{{ $priceListRate }}</td>
                             </tr>
                         </table>
                     </div>
@@ -67,13 +68,13 @@
             <td class="text-center align-middle font-weight-bold d-none d-sm-table-cell">{{ $row->item_group }}</td>
             <td class="text-center align-middle font-weight-bold d-none d-sm-table-cell">{{ $row->item_classification }}</td>
             <td class="text-center align-middle d-none d-sm-table-cell" style="font-size: 13pt;">
-                @if ($stock_qty > 0)
-                <span class="badge badge-success">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
+                @if ($stockQty > 0)
+                <span class="badge badge-success">{{ number_format($stockQty) . ' ' . $row->stock_uom }}</span>
                 @else
-                <span class="badge badge-danger">{{ number_format($stock_qty) . ' ' . $row->stock_uom }}</span>
+                <span class="badge badge-danger">{{ number_format($stockQty) . ' ' . $row->stock_uom }}</span>
                 @endif
             </td>
-            <td class="text-center align-middle d-none d-sm-table-cell font-weight-bold" style="white-space: nowrap !important">{{ $price_list_rate }}</td>
+            <td class="text-center align-middle d-none d-sm-table-cell font-weight-bold" style="white-space: nowrap !important">{{ $priceListRate }}</td>
         </tr>
         @empty
         <tr>
@@ -84,12 +85,12 @@
 </table>
 
 <div class="mt-3 c-store-pagination" data-el="{{ Illuminate\Support\Str::slug($warehouse, '-') }}" data-warehouse="{{ $warehouse }}">
-    {{ $consignment_stocks->links() }}
+    {{ $consignmentStocks->links() }}
 </div>
 
 <script>
     $(document).ready(function(){
-        $('#item-qty-{{ Illuminate\Support\Str::slug($warehouse, "-") }}').text('{{ number_format($consignment_stocks->total(), 0) }}');
-        $('#stock-qty-{{ Illuminate\Support\Str::slug($warehouse, "-") }}').text('{{ number_format($total_stocks, 0) }}');
+        $('#item-qty-{{ Illuminate\Support\Str::slug($warehouse, "-") }}').text('{{ number_format($consignmentStocks->total(), 0) }}');
+        $('#stock-qty-{{ Illuminate\Support\Str::slug($warehouse, "-") }}').text('{{ number_format($totalStocks, 0) }}');
     });
 </script>

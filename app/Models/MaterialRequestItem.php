@@ -14,7 +14,8 @@ class MaterialRequestItem extends Model
     public $timestamps = false;
     protected $keyType = 'string';
 
-    public function parent_doctype(){
+    public function parentDoctype()
+    {
         return $this->belongsTo(MaterialRequest::class, 'parent', 'name');
     }
 

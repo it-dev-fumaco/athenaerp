@@ -366,6 +366,11 @@
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
 						$('#ps-modal form button').removeAttr('disabled');
+						var msg = 'An error occurred. Please try again.';
+						if (jqXHR.responseJSON) {
+							msg = jqXHR.responseJSON.message || jqXHR.responseJSON.modal_message || jqXHR.responseJSON.exc || msg;
+						}
+						showNotification("danger", msg, "fa fa-info");
 					}
 				});
 			}

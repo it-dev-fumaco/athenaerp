@@ -18,7 +18,8 @@ class ERPUser extends Model
         return $this->hasOne(UserSocialLogin::class, 'parent', 'name');
     }
 
-    public function wh_user(){
+    public function whUser()
+    {
         return $this->hasOne(User::class, 'wh_user', 'name');
     }
 }

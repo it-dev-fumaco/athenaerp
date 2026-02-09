@@ -41,7 +41,7 @@
 												<div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
 													<select name="store" class="form-control filters-font">
 														<option value="" disabled {{ !request('store') ? 'selected' : null }}>Select a store</option>
-														@foreach ($consignment_stores as $store)
+														@foreach ($consignmentStores as $store)
 														<option value="{{ $store }}" {{ request('store') == $store ? 'selected' : null }}>{{ $store }}</option>
 														@endforeach
 													</select>
@@ -69,7 +69,7 @@
 									<th class="p-1 text-center align-middle last-row">Action</th>
 								</thead>
 								<tbody>
-								@forelse ($inv_arr as $inv)
+								@forelse ($invArr as $inv)
 									@php
 										$badge = 'secondary';
 										if($inv['status'] == 'For Approval'){
@@ -80,7 +80,7 @@
 											$badge = 'secondary';
 										}
 
-										$modal_form = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
+										$modalForm = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv['status'] == 'For Approval' ? '/approve_beginning_inv/'.$inv['name'] : '/stock_adjust/submit/'.$inv['name'];
 									@endphp
 									<tr>
 										<td class="p-2 text-center align-middle d-none d-lg-table-cell">
@@ -115,7 +115,7 @@
 											<div class="modal fade" id="{{ $inv['name'] }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 												<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
 													<div class="modal-content">
-														<form action="{{ $modal_form }}" id="{{ $inv['name'] }}-form" method="post">
+														<form action="{{ $modalForm }}" id="{{ $inv['name'] }}-form" method="post">
 															@csrf
 															<div class="modal-header bg-navy">
 																<div class="row text-left">
@@ -179,9 +179,9 @@
 																						@endif
 																					</div>
 																					@php
-																						$allowed_users = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local'];
+																						$allowedUsers = ['jave.kulong@fumaco.local', 'albert.gregorio@fumaco.local', 'clynton.manaois@fumaco.local', 'arjie.villanueva@fumaco.local', 'jefferson.ignacio@fumaco.local'];
 																					@endphp
-																					@if (in_array(Auth::user()->wh_user, $allowed_users) || in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
+																					@if (in_array(Auth::user()->wh_user, $allowedUsers) || in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']))
 																						<div class="col-3 p-0 {{ $inv['status'] != 'Approved' ? 'd-none' : null }}">
 																							<button type="button" class="btn btn-primary btn-xs allow-edit" data-inv="{{ $inv['name'] }}" data-target="{{ $inv['name'].'-'.$item['item_code'] }}"><i class="fa fa-edit"></i></button>
 																						</div>
@@ -273,7 +273,7 @@
 								
 						  </table>
 						  <div class="float-right mt-4">
-								{{ $beginning_inventory->appends(request()->query())->links('pagination::bootstrap-4') }}
+								{{ $beginningInventory->appends(request()->query())->links('pagination::bootstrap-4') }}
 						  </div>
 						
 						  </div>
@@ -361,7 +361,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : $earliest_date }}';
+            var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : $earliestDate }}';
             var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : Carbon\Carbon::now()->format("Y-M-d") }}';
 
             $('#date-filter').daterangepicker({

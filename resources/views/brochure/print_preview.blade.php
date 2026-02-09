@@ -290,7 +290,7 @@
         @php
             $a = 1;
         @endphp
-        @foreach ($table_of_contents as $index => $toc)
+        @foreach ($tableOfContents as $index => $toc)
             @if (!$toc['id'] && !$toc['text'])
                 @continue
             @endif
@@ -332,40 +332,40 @@
                         <div style="display: block; padding-top: 5px !important; clear: both; margin-left: -2px !important;">
                             <div style="width: 44%; float: left; padding: 2px !important;">
                                 @php
-                                    $img1_actual = $img1_temp = null;
-                                    $img1_src = $img2_src = $img3_src = '#';
+                                    $img1Actual = $img1Temp = null;
+                                    $img1Src = $img2Src = $img3Src = '#';
                                     if (isset($row['images']['image1']) && $row['images']['image1']) {
-                                        $img1_actual = null;
-                                        $img1_temp = 'd-none';
-                                        $img1_src = asset('/storage/brochures/' . $row['images']['image1']);
+                                        $img1Actual = null;
+                                        $img1Temp = 'd-none';
+                                        $img1Src = asset('/storage/brochures/' . $row['images']['image1']);
                                     } else {
-                                        $img1_actual = 'd-none';
-                                        $img1_temp = null;
+                                        $img1Actual = 'd-none';
+                                        $img1Temp = null;
                                     }
 
-                                    $img2_actual = $img2_temp = null;
+                                    $img2Actual = $img2Temp = null;
                                     if (isset($row['images']['image2']) && $row['images']['image2']) {
-                                        $img2_actual = null;
-                                        $img2_temp = 'd-none';
-                                        $img2_src = asset('/storage/brochures/' . $row['images']['image2']);
+                                        $img2Actual = null;
+                                        $img2Temp = 'd-none';
+                                        $img2Src = asset('/storage/brochures/' . $row['images']['image2']);
                                     } else {
-                                        $img2_actual = 'd-none';
-                                        $img2_temp = null;
+                                        $img2Actual = 'd-none';
+                                        $img2Temp = null;
                                     }
 
-                                    $img3_actual = $img3_temp = null;
+                                    $img3Actual = $img3Temp = null;
                                     if (isset($row['images']['image3']) && $row['images']['image3']) {
-                                        $img3_actual = null;
-                                        $img3_temp = 'd-none';
-                                        $img3_src = asset('/storage/brochures/' . $row['images']['image3']);
+                                        $img3Actual = null;
+                                        $img3Temp = 'd-none';
+                                        $img3Src = asset('/storage/brochures/' . $row['images']['image3']);
                                     } else {
-                                        $img3_actual = 'd-none';
-                                        $img3_temp = null;
+                                        $img3Actual = 'd-none';
+                                        $img3Temp = null;
                                     }
                                 @endphp
                                 {{-- 1 --}}
-                                <div class="img-cont {{ $img1_actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-01-actual">
-                                    <img src="{{ $img1_src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-01-image">
+                                <div class="img-cont {{ $img1Actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-01-actual">
+                                    <img src="{{ $img1Src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-01-image">
                                     <div class="custom-overlay"></div>
                                     <div class="custom-hover-button">
                                         <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 1" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-01">
@@ -373,7 +373,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="upload-image-placeholder {{ $img1_temp }}" id="item-{{ $r }}-01" style="margin-bottom: 20px !important;">
+                                <div class="upload-image-placeholder {{ $img1Temp }}" id="item-{{ $r }}-01" style="margin-bottom: 20px !important;">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
@@ -383,8 +383,8 @@
                                     </div>
                                 </div>
                                 {{-- 2 --}}
-                                <div class="img-cont {{ $img2_actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-02-actual">
-                                    <img src="{{ $img2_src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-02-image">
+                                <div class="img-cont {{ $img2Actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-02-actual">
+                                    <img src="{{ $img2Src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-02-image">
                                     <div class="custom-overlay"></div>
                                     <div class="custom-hover-button">
                                         <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 2" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-02">
@@ -392,7 +392,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="upload-image-placeholder {{ $img2_temp }}" id="item-{{ $r }}-02" style="margin-bottom: 20px !important;">
+                                <div class="upload-image-placeholder {{ $img2Temp }}" id="item-{{ $r }}-02" style="margin-bottom: 20px !important;">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
@@ -402,8 +402,8 @@
                                     </div>
                                 </div>
                                 {{-- 3 --}}
-                                <div class="img-cont {{ $img3_actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-03-actual">
-                                    <img src="{{ $img3_src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-03-image">
+                                <div class="img-cont {{ $img3Actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-03-actual">
+                                    <img src="{{ $img3Src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-03-image">
                                     <div class="custom-overlay"></div>
                                     <div class="custom-hover-button">
                                         <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 3" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-03">
@@ -411,7 +411,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="upload-image-placeholder {{ $img3_temp }}" id="item-{{ $r }}-03" style="margin-bottom: 20px !important;">
+                                <div class="upload-image-placeholder {{ $img3Temp }}" id="item-{{ $r }}-03" style="margin-bottom: 20px !important;">
                                     <div class="upload-btn-wrapper">
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>

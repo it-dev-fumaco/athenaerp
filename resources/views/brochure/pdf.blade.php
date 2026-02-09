@@ -73,8 +73,8 @@
         </style>
     </head>
     @php
-        $fumaco_logo = storage_path('app/public/fumaco_logo.png');
-        $fumaco_logo = asset('storage/fumaco_logo.png');
+        $fumacoLogo = storage_path('app/public/fumaco_logo.png');
+        $fumacoLogo = asset('storage/fumaco_logo.png');
         $margin = '1.2in';
         $rows = 1;
         if(strlen($project) > 29){
@@ -89,7 +89,7 @@
         <table style="width: 100% !important; border-collapse: collapse;"> 
             <tr>
                 <td style="width: 43%; padding: 0 !important; vertical-align: top !important">
-                    <img src="{{ $fumaco_logo }}" alt="" style="width: 230px;">
+                    <img src="{{ $fumacoLogo }}" alt="" style="width: 230px;">
                 </td>
                 <td style="width: 55%; font-size: 11pt;">
                     <p style="text-transform: uppercase !important; margin: 0; line-height: .75rem;">
@@ -105,7 +105,7 @@
         <table style="width: 100% !important; border-collapse: collapse;">
             <tr>
                 <td style="width: 28%; vertical-align: top; padding-top: 15px;">
-                    <img src="{{ $fumaco_logo }}" style="width: 80%;">
+                    <img src="{{ $fumacoLogo }}" style="width: 80%;">
                 </td>
                 <td style="width: 15%;font-size: .6rem; padding: 0 15px 10px 0 !important; line-height: .5rem;">
                     www.fumaco.com
@@ -138,9 +138,9 @@
                     @for ($i = 1; $i <= 3; $i++)
                         @php
                             $img = null;
-                            $img_exists = 0;
+                            $imgExists = 0;
                             if (isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
-                                if (isset($is_standard) && $is_standard) {
+                                if (isset($isStandard) && $isStandard) {
                                     $img = isset($row['images']['image'.$i]['filepath']) ? $row['images']['image'.$i]['filepath'] : null;
                                 }else{
                                     $img = public_path('storage/brochures/'.$row['images']['image'.$i]);

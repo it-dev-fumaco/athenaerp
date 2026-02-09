@@ -25,7 +25,7 @@
                                 <div class="info-box bg-gradient-info m-0">
                                     <div class="info-box-content p-0">
                                         <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_pending_inventory_audit) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($totalPendingInventoryAudit) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
                                             <div class="p-1 text-left col-8">Inventory Report</div>
                                         </div>
                                     </div>
@@ -37,7 +37,7 @@
                                 <div class="info-box bg-gradient-primary m-0">
                                     <div class="info-box-content p-0">
                                         <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($pending_to_receive) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending Item(s)</small></div>
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($pendingToReceive) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending Item(s)</small></div>
                                             <div class="p-1 text-left col-8">To Receive</div>
                                         </div>
                                     </div>
@@ -50,7 +50,7 @@
                                 <div class="info-box bg-gradient-warning m-0">
                                     <div class="info-box-content p-0">
                                         <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_stock_transfers) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">For Approval</small></div>
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($totalStockTransfers) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">For Approval</small></div>
                                             <div class="p-1 text-left col-8">Stock Transfers</div>
                                         </div>
                                     </div>
@@ -62,7 +62,7 @@
                                 <div class="info-box bg-gradient-secondary m-0">
                                     <div class="info-box-content p-0">
                                         <div class="d-flex flex-row p-0 m-0 align-items-center justify-content-around">
-                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($total_consignment_orders) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
+                                            <div class="p-1 text-center col-4" style="font-size: 30px !important;">{{ number_format($totalConsignmentOrders) }} <small class="d-block" style="font-size: 8pt; margin-top: -5px;">Pending</small></div>
                                             <div class="p-1 text-left col-8">Consignment Orders</div>
                                         </div>
                                     </div>
@@ -86,8 +86,8 @@
                                                     <div class="text-center">
                                                         <a href="/consignment/branches" style="text-transform: none; text-decoration: none; color: #212545">
                                                             <p class="text-center m-0 font-responsive">
-                                                                <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($active_consignment_branches) }}</span>
-                                                                <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignment_branches) }}</span>
+                                                                <span class="d-inline-block font-weight-bolder" style="font-size: 1.2rem;">{{ count($activeConsignmentBranches) }}</span>
+                                                                <span class="d-inline-block text-muted" style="font-size: .8rem;">/ {{ count($consignmentBranches) }}</span>
                                                             </p>
                                                             <span class="d-block" style="font-size: 9pt;">Active Store</span>
                                                         </a>
@@ -108,7 +108,7 @@
                                                                 <div class="skills_section text-right m-0 p-0">
                                                                     <div class="skills-area m-0 p-0">
                                                                         <div class="single-skill w-100 mb-1">
-                                                                            <div class="circlechart" data-percentage="{{ $beginning_inv_percentage }}">
+                                                                            <div class="circlechart" data-percentage="{{ $beginningInvPercentage }}">
                                                                                 <svg class="circle-chart" viewBox="0 0 33.83098862 33.83098862"><circle class="circle-chart__background" cx="16.9" cy="16.9" r="15.9"></circle><circle class="circle-chart__circle success-stroke" stroke-dasharray="92,100" cx="16.9" cy="16.9" r="15.9"></circle></svg>
                                                                             </div>
                                                                         </div>
@@ -117,7 +117,7 @@
                                                             </div>
                                                             <div class="p-0 m-0">
                                                                 <div class="text-center">
-                                                                    <span class="d-block text-muted" style="font-size: 1.2rem;">{{ $consignment_branches_with_beginning_inventory }} / {{ count($consignment_branches) }}</span>
+                                                                    <span class="d-block text-muted" style="font-size: 1.2rem;">{{ $consignmentBranchesWithBeginningInventory }} / {{ count($consignmentBranches) }}</span>
                                                                     <span class="d-block" style="font-size: 8pt;">Beginning Inventory Completion</span>
                                                                 </div>
                                                             </div>

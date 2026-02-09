@@ -12,7 +12,7 @@
                     </h5>
                 </div>
                 <input type="hidden" name="child_tbl_id" value="{{ $data['name'] }}">
-                <input type="hidden" name="is_stock_entry" value="{{ ($is_stock_entry) ? 1 : 0 }}">
+                <input type="hidden" name="is_stock_entry" value="{{ ($isStockEntry) ? 1 : 0 }}">
                 <input type="hidden" name="has_reservation" value="0">
                 <div class="box-body" style="font-size: 12pt;">
                     <div class="row">

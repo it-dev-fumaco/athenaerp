@@ -12,7 +12,7 @@
                             <div class="pdf-body">
                                 <div style="disply: block; clear: both; color: #000">
                                     <div style="width: 43%; float: left; padding: 2px !important;">
-                                        <img src="{{ $fumaco_logo }}" width="230">
+                                        <img src="{{ $fumacoLogo }}" width="230">
                                     </div>
                                     <div style="width: 57%; float:left; text-transform: uppercase; font-size: 11pt;">
                                         <p>PROJECT: <b>{{ $data['project'] }}</b></p>
@@ -27,52 +27,52 @@
                                 <div style="display: block; padding-top: 5px !important; clear: both; margin-left: -2px !important;">
                                     <div style="width: 43%; float: left; padding: 2px !important;">
                                         @php
-                                            $img1_actual = $img1_temp = null;
-                                            $img1_src = $img2_src = $img3_src = '#';
-                                            $img1_id = $img2_id = $img3_id = null;
+                                            $img1Actual = $img1Temp = null;
+                                            $img1Src = $img2Src = $img3Src = '#';
+                                            $img1Id = $img2Id = $img3Id = null;
                                             if (isset($images['image1']['filepath']) && $images['image1']['filepath']) {
-                                                $img1_actual = null;
-                                                $img1_temp = 'd-none';
-                                                $img1_src = asset($images['image1']['filepath']);
-                                                $img1_id = $images['image1']['id'];
+                                                $img1Actual = null;
+                                                $img1Temp = 'd-none';
+                                                $img1Src = asset($images['image1']['filepath']);
+                                                $img1Id = $images['image1']['id'];
                                             } else {
-                                                $img1_actual = 'd-none';
-                                                $img1_temp = null;
+                                                $img1Actual = 'd-none';
+                                                $img1Temp = null;
                                             }
 
-                                            $img2_actual = $img2_temp = null;
+                                            $img2Actual = $img2Temp = null;
                                             if (isset($images['image2']['filepath']) && $images['image2']['filepath']) {
-                                                $img2_actual = null;
-                                                $img2_temp = 'd-none';
-                                                $img2_src = asset($images['image2']['filepath']);
-                                                $img2_id = $images['image2']['id'];
+                                                $img2Actual = null;
+                                                $img2Temp = 'd-none';
+                                                $img2Src = asset($images['image2']['filepath']);
+                                                $img2Id = $images['image2']['id'];
                                             } else {
-                                                $img2_actual = 'd-none';
-                                                $img2_temp = null;
+                                                $img2Actual = 'd-none';
+                                                $img2Temp = null;
                                             }
 
-                                            $img3_actual = $img3_temp = null;
+                                            $img3Actual = $img3Temp = null;
                                             if (isset($images['image3']['filepath']) && $images['image3']['filepath']) {
-                                                $img3_actual = null;
-                                                $img3_temp = 'd-none';
-                                                $img3_src = asset($images['image3']['filepath']);
-                                                $img3_id = $images['image3']['id'];
+                                                $img3Actual = null;
+                                                $img3Temp = 'd-none';
+                                                $img3Src = asset($images['image3']['filepath']);
+                                                $img3Id = $images['image3']['id'];
                                             } else {
-                                                $img3_actual = 'd-none';
-                                                $img3_temp = null;
+                                                $img3Actual = 'd-none';
+                                                $img3Temp = null;
                                             }
                                         @endphp
                                         {{-- 1 --}}
-                                        <div class="img-cont {{ $img1_actual }}" style="margin-bottom: 20px !important;" id="item-01-actual">
-                                            <img src="{{ $img1_src }}" width="230" style="border: 2px solid;" id="item-01-image">
+                                        <div class="img-cont {{ $img1Actual }}" style="margin-bottom: 20px !important;" id="item-01-actual">
+                                            <img src="{{ $img1Src }}" width="230" style="border: 2px solid;" id="item-01-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-01" data-id="{{ $img1_id }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-01" data-id="{{ $img1Id }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="upload-image-placeholder {{ $img1_temp }}" id="item-01" style="margin-bottom: 20px !important;" data-idx="1">
+                                        <div class="upload-image-placeholder {{ $img1Temp }}" id="item-01" style="margin-bottom: 20px !important;" data-idx="1">
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
@@ -82,16 +82,16 @@
                                             </div>
                                         </div>
                                         {{-- 2 --}}
-                                        <div class="img-cont {{ $img2_actual }}" style="margin-bottom: 20px !important;" id="item-02-actual">
-                                            <img src="{{ $img2_src }}" width="230" style="border: 2px solid;" id="item-02-image">
+                                        <div class="img-cont {{ $img2Actual }}" style="margin-bottom: 20px !important;" id="item-02-actual">
+                                            <img src="{{ $img2Src }}" width="230" style="border: 2px solid;" id="item-02-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-02" data-id="{{ $img2_id }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-02" data-id="{{ $img2Id }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="upload-image-placeholder {{ $img2_temp }}" id="item-02" style="margin-bottom: 20px !important;" data-idx="2">
+                                        <div class="upload-image-placeholder {{ $img2Temp }}" id="item-02" style="margin-bottom: 20px !important;" data-idx="2">
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
@@ -101,16 +101,16 @@
                                             </div>
                                         </div>
                                         {{-- 3 --}}
-                                        <div class="img-cont {{ $img3_actual }}" style="margin-bottom: 20px !important;" id="item-03-actual">
-                                            <img src="{{ $img3_src }}" width="230" style="border: 2px solid;" id="item-03-image">
+                                        <div class="img-cont {{ $img3Actual }}" style="margin-bottom: 20px !important;" id="item-03-actual">
+                                            <img src="{{ $img3Src }}" width="230" style="border: 2px solid;" id="item-03-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-03" data-id="{{ $img3_id }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-03" data-id="{{ $img3Id }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="upload-image-placeholder {{ $img3_temp }}" id="item-03" style="margin-bottom: 20px !important;" data-idx="3">
+                                        <div class="upload-image-placeholder {{ $img3Temp }}" id="item-03" style="margin-bottom: 20px !important;" data-idx="3">
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
@@ -297,19 +297,19 @@
                                     <input type="hidden" name="project" value="{{ $data['project'] }}">
                                     <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
                                     <input type="hidden" name="existing" value="1">
-                                    @if ($img_check)
+                                    @if ($imgCheck)
                                     <div class="row p-2">
-                                        @foreach ($current_images as $cii)
+                                        @foreach ($currentImages as $cii)
                                         @php
                                             $img = $cii['filepath'];
-                                            $img_webp = explode('.', $img)[0].'.webp';
+                                            $imgWebp = explode('.', $img)[0].'.webp';
                                         @endphp
                                         <div class="col-3 p-0">
                                             <label class="m-0 img-btn d-block">
                                                 <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>
                                                 <div class="c-img rounded">
                                                     <picture>
-                                                        <source srcset="{{ asset('storage/'.$img_webp) }}" type="image/webp" alt="{{ $img }}">
+                                                        <source srcset="{{ asset('storage/'.$imgWebp) }}" type="image/webp" alt="{{ $img }}">
                                                         <source srcset="{{ asset('storage/'.$img) }}" type="image/jpeg" alt="{{ $img }}">
                                                         <img src="{{ asset('storage/'.$img) }}" alt="{{ $img }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
                                                     </picture>

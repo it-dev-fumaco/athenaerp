@@ -15,15 +15,15 @@
         </tr>
     </thead>
     <tbody>
-        @foreach ($stocks as $item_code => $item)
+        @foreach ($stocks as $itemCode => $item)
             @foreach ($item['site_warehouses'] as $i => $stock)
                 <tr class="{{ $loop->parent->index % 2 === 0 ? 'even' : 'odd' }}">
                     @if ($loop->first)
                         <td rowspan={{ count($item['site_warehouses']) }} class="text-left p-1 justify-content-start align-items-center" style="font-size: 10pt;">
                             <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 100% !important">
-                                <a href="/get_item_details/{{ $item_code }}" class="text-decoration-none text-transform-none" style="color: inherit">
+                                <a href="/get_item_details/{{ $itemCode }}" class="text-decoration-none text-transform-none" style="color: inherit">
                                     <span>
-                                        &nbsp;<i class="fas fa-external-link-alt"></i>&nbsp;<b>{{ $item_code }}</b> - {{ strip_tags($item['description']) }}
+                                        &nbsp;<i class="fas fa-external-link-alt"></i>&nbsp;<b>{{ $itemCode }}</b> - {{ strip_tags($item['description']) }}
                                     </span>
                                 </a>
                             </div>

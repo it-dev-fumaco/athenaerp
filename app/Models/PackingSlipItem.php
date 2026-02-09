@@ -15,7 +15,8 @@ class PackingSlipItem extends Model
     protected $keyType = 'string';
     protected $table = 'tabPacking Slip Item';
 
-    public function parent_doctype(){
+    public function parentDoctype()
+    {
         return $this->belongsTo(PackingSlip::class, 'parent', 'name');
     }
 

@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col-4">
                 
-                @if ($item_details)
+                @if ($itemDetails)
                 <div class="card card-info card-outline">
                     <div class="card-body" style="font-size: 14px;">
                         <form action="/save_item_info" method="POST" id="updateItemInfo">
@@ -16,20 +16,20 @@
                             <h5 class="text-muted mb-3">Basic Information</h5>
                             <div class="form-group">
                                 <label for="item_name">Item Code</label>
-                                <input type="text" class="form-control" readonly id="item-code-input" value="{{ $item_code }}">
+                                <input type="text" class="form-control" readonly id="item-code-input" value="{{ $itemCode }}">
                             </div>
                             <div class="form-group">
-                                <input type="hidden" name="item_code" value="{{ $item_code }}">
+                                <input type="hidden" name="item_code" value="{{ $itemCode }}">
                                 <label for="item_name">Item Name</label>
-                                <textarea name="item_name" id="item_name" class="form-control" placeholder="Item Name" rows="4" required>{{ $item_details->item_name }}</textarea>
+                                <textarea name="item_name" id="item_name" class="form-control" placeholder="Item Name" rows="4" required>{{ $itemDetails->item_name }}</textarea>
                             </div>
                             <div class="form-group mt-3">
                                 <label for="item-description">Description</label>
-                                <textarea name="description" id="item-description" class="form-control" placeholder="Description" rows="7" required>{!! $item_details->description !!}</textarea>
+                                <textarea name="description" id="item-description" class="form-control" placeholder="Description" rows="7" required>{!! $itemDetails->description !!}</textarea>
                             </div>
                             <div class="form-group">
                                 <div class="custom-control custom-checkbox">
-                                    <input class="custom-control-input" type="checkbox" id="is-stock-item" value="1" name="is_stock_item" {{ $item_details->is_stock_item ? 'checked' : '' }}>
+                                    <input class="custom-control-input" type="checkbox" id="is-stock-item" value="1" name="is_stock_item" {{ $itemDetails->is_stock_item ? 'checked' : '' }}>
                                     <label for="is-stock-item" class="custom-control-label">Is Stock Item</label>
                                 </div>
                             </div>
@@ -286,7 +286,7 @@
                 $.ajax({
                     type: 'POST',
                     url: '/update_item_variant',
-                    data: {attribute_value: attrValue, name: selectVariantId, item_code: '{{ $item_code }}'},
+                    data: {attribute_value: attrValue, name: selectVariantId, item_code: '{{ $itemCode }}'},
                     success: function(response){
                         if (response.error) {
                             showNotification("danger", response.message, "fa fa-info");

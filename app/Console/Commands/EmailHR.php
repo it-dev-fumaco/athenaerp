@@ -41,80 +41,80 @@ class EmailHR extends Command
      */
     public function handle()
     {
-        $sales_report_deadline = DB::table('tabConsignment Sales Report Deadline')->first();
+        $salesReportDeadline = DB::table('tabConsignment Sales Report Deadline')->first();
 
-        $cutoff_1 = $sales_report_deadline ? $sales_report_deadline->{'1st_cutoff_date'} : 0;
-        $cutoff_2 = $sales_report_deadline ? $sales_report_deadline->{'2nd_cutoff_date'} : 0;
+        $cutoff1 = $salesReportDeadline ? $salesReportDeadline->{'1st_cutoff_date'} : 0;
+        $cutoff2 = $salesReportDeadline ? $salesReportDeadline->{'2nd_cutoff_date'} : 0;
 
-        if(in_array(Carbon::now()->format('d'), [$cutoff_1, $cutoff_2])){
-            $transaction_date = Carbon::now()->startOfMonth();
-            $start_date = Carbon::parse($transaction_date)->subMonth();
-            $end_date = Carbon::parse($transaction_date)->addMonths(2);
+        if(in_array(Carbon::now()->format('d'), [$cutoff1, $cutoff2])){
+            $transactionDate = Carbon::now()->startOfMonth();
+            $startDate = Carbon::parse($transactionDate)->subMonth();
+            $endDate = Carbon::parse($transactionDate)->addMonths(2);
 
-            $period = CarbonPeriod::create($start_date, '28 days' , $end_date);
+            $period = CarbonPeriod::create($startDate, '28 days' , $endDate);
 
-            $transaction_date = $transaction_date->format('Y-m-d');
-            $cutoff_period = [];
+            $transactionDate = $transactionDate->format('Y-m-d');
+            $cutoffPeriod = [];
             foreach ($period as $i => $date) {
-                $date1 = $date->day($cutoff_1);
-                if ($date1 >= $start_date && $date1 <= $end_date) {
-                    $cutoff_period[] = $date->format('Y-m-d');
+                $date1 = $date->day($cutoff1);
+                if ($date1 >= $startDate && $date1 <= $endDate) {
+                    $cutoffPeriod[] = $date->format('Y-m-d');
                 }
 
                 if($i == 0){
-                    $feb_cutoff = $cutoff_1 <= 28 ? $cutoff_1 : 28;
-                    $cutoff_period[] = $feb_cutoff.'-02-'.Carbon::now()->format('Y');
+                    $febCutoff = $cutoff1 <= 28 ? $cutoff1 : 28;
+                    $cutoffPeriod[] = $febCutoff.'-02-'.Carbon::now()->format('Y');
                 }
             }
 
-            $cutoff_period[] = $transaction_date;
+            $cutoffPeriod[] = $transactionDate;
             // sort array with given user-defined function
-            usort($cutoff_period, function ($time1, $time2) {
+            usort($cutoffPeriod, function ($time1, $time2) {
                 return strtotime($time1) - strtotime($time2);
             });
 
-            $transaction_date_index = array_search($transaction_date, $cutoff_period);
+            $transactionDateIndex = array_search($transactionDate, $cutoffPeriod);
             // set cutoff date
-            $period_from = Carbon::parse($cutoff_period[$transaction_date_index - 1])->startOfDay();
-            $period_to = Carbon::parse($cutoff_period[$transaction_date_index + 1])->endOfDay();
+            $periodFrom = Carbon::parse($cutoffPeriod[$transactionDateIndex - 1])->startOfDay();
+            $periodTo = Carbon::parse($cutoffPeriod[$transactionDateIndex + 1])->endOfDay();
 
-            $active_promodisers = DB::table('tabWarehouse Users as wu')
+            $activePromodisers = DB::table('tabWarehouse Users as wu')
                 ->join('tabAssigned Consignment Warehouse as acw', 'acw.parent', 'wu.frappe_userid')
                 ->join('tabWarehouse as w', 'w.warehouse_name', 'acw.warehouse_name')
                 ->where('wu.enabled', 1)->where('wu.user_group', 'Promodiser')->where('w.disabled', 0)
                 ->select('wu.full_name', 'wu.wh_user', 'acw.warehouse')
                 ->get();
 
-            $report_details = DB::table('tabConsignment Inventory Audit Report')
+            $reportDetails = DB::table('tabConsignment Inventory Audit Report')
                 ->select('owner', 'promodiser', 'branch_warehouse', DB::raw('max(transaction_date) as last_audit'))
                 ->groupBy('owner', 'promodiser', 'branch_warehouse')
                 ->get();
 
-            $submitted_report = collect($report_details)->filter(function (object $q){
+            $submittedReport = collect($reportDetails)->filter(function (object $q){
                 return Carbon::parse($q->last_audit) >= Carbon::now()->startOfMonth();
             })->groupBy(['owner', 'branch_warehouse']);
-            $report_details = collect($report_details)->groupBy(['owner', 'branch_warehouse']);
+            $reportDetails = collect($reportDetails)->groupBy(['owner', 'branch_warehouse']);
 
             $report = [];
-            foreach ($active_promodisers as $value) {
-                if(!isset($submitted_report[$value->wh_user][$value->warehouse]))
+            foreach ($activePromodisers as $value) {
+                if(!isset($submittedReport[$value->wh_user][$value->warehouse]))
                 $report[] = [
                     'full_name' => $value->full_name,
                     'email' => $value->wh_user,
                     'warehouse' => $value->warehouse,
-                    'last_audit' => isset($report_details[$value->wh_user][$value->warehouse]) ? $report_details[$value->wh_user][$value->warehouse][0]->last_audit : null
+                    'last_audit' => isset($reportDetails[$value->wh_user][$value->warehouse]) ? $reportDetails[$value->wh_user][$value->warehouse][0]->last_audit : null
                 ];
             }
 
-            $email_data = [
+            $emailData = [
                 'users' => collect($report)->groupBy('full_name'),
-                'cutoff_dates' => Carbon::parse($period_from)->format('F d, Y').' - '.Carbon::parse($period_to)->format('F d, Y')
+                'cutoff_dates' => Carbon::parse($periodFrom)->format('F d, Y').' - '.Carbon::parse($periodTo)->format('F d, Y')
             ];
 
             $receivers = ['hr@fumaco.local', 'consignment@fumaco.local'];
             foreach ($receivers as $receiver) {
                 try {
-                    Mail::mailer('local_mail')->send('mail_template.hr_promodiser_report', $email_data, function($message) use ($receiver){
+                    Mail::mailer('local_mail')->send('mail_template.hr_promodiser_report', $emailData, function($message) use ($receiver){
                         $message->to($receiver);
                         $message->subject('AthenaERP - Promodisers Monthly Report');
                     });

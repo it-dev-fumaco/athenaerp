@@ -1,6 +1,6 @@
 <table class="table" style='font-size: 10pt;'>
     <tbody>
-        @forelse ($ste_arr as $ste)
+        @forelse ($steArr as $ste)
         <tr>
             <td class="p-2">
                 <a href="#" data-toggle="modal" data-target="#{{ $ste->name }}-Modal">{{ $ste->to_warehouse }}</a>
@@ -139,7 +139,7 @@
     </tbody>
 </table>
 <div class="mt-3" id="delivery-report-pagination" style="font-size: 9pt">
-    {{ $delivery_report->appends(request()->query())->links('pagination::bootstrap-4') }}
+    {{ $deliveryReport->appends(request()->query())->links('pagination::bootstrap-4') }}
 </div>
 <script>
     function showNotification(color, message, icon){

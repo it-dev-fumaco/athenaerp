@@ -19,7 +19,7 @@
                                     <div class="col-12 col-xl-2 p-2 p-xl-3">
                                         <select name="store" class="form-control font-responsive">
                                             <option value="" disabled {{ !request('search') ? 'selected' : null }}>Select Store</option>
-                                            @foreach ($assigned_consignment_store as $store)
+                                            @foreach ($assignedConsignmentStore as $store)
                                                 <option value="{{ $store }}">{{ $store }}</option>
                                             @endforeach
                                         </select>
@@ -46,7 +46,7 @@
                                     <th class="font-responsive d-none d-sm-table-cell">Employee</th>
                                     <th class="font-responsive">Average Accuracy Rate</th>
                                 </tr>
-                                @forelse ($inv_audit as $audit)
+                                @forelse ($invAudit as $audit)
                                     <tr>
                                         <td>
                                             <span class="font-responsive" style="white-space: nowrap">{{ $audit->name }}</span>
@@ -71,7 +71,7 @@
                             </table>
                             <div class="mt-3 ml-3 clearfix pagination" style="display: block;">
                                 <div class="col-md-4 float-right">
-                                    {{ $inv_audit->links() }}
+                                    {{ $invAudit->links() }}
                                 </div>
                             </div>
                         </div>

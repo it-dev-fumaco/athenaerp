@@ -3,11 +3,11 @@
         <div class="col-md-12" style="margin-left:10%;margin-right:10%;">
             <h1><b>Inventory Audit Alert</b></h1>
             <br>
-            <p style="display:block;line-height: 15px; font-size: 14pt;">Cutoff Dates: <b>{{ $cutoff_period }}</b></p>
-            <p style="display:block;line-height: 15px; font-size: 14pt;">Audit Dates: <b>{{ $audit_period }}</b></p>
-            <p style="display:block;line-height: 15px; font-size: 14pt;">Branch Warehouse: <b>{{ $branch_warehouse }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 14pt;">Cutoff Dates: <b>{{ $cutoffPeriod }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 14pt;">Audit Dates: <b>{{ $auditPeriod }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 14pt;">Branch Warehouse: <b>{{ $branchWarehouse }}</b></p>
             <p style="display:block;line-height: 15px; font-size: 14pt;">Promodiser: <b>{{ Auth::user()->full_name }}</b></p>
-            <p style="display:block;line-height: 15px; font-size: 14pt;">Transaction Date: <b>{{ Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 14pt;">Transaction Date: <b>{{ Carbon\Carbon::parse($transactionDate)->format('F d, Y') }}</b></p>
             <p style="display:block;line-height: 15px; font-size: 14pt;">Reference Number: <b>{{ $reference }}</b></p>
             <br>
             <p style="display:block;line-height:8px;">For more details, please log in to <a href="https://athena.fumaco.org" target="_blank">https://athena.fumaco.org</a></p>
