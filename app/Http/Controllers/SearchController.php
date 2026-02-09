@@ -40,7 +40,10 @@ class SearchController extends Controller
         protected ItemSearchService $itemSearchService
     ) {}
 
-    public function searchResults(Request $request)
+    /**
+     * @return \Illuminate\View\View|string
+     */
+    public function searchResults(Request $request): \Illuminate\View\View|string
     {
         $items = $this->itemSearchService->search($request);
 
@@ -112,8 +115,8 @@ class SearchController extends Controller
         if ($request->searchString) {
             AthenaInventorySearchHistory::create([
                 'name' => uniqid(),
-                'creation' => Carbon::now(),
-                'modified' => Carbon::now(),
+                'creation' => now(),
+                'modified' => now(),
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'search_string' => $request->searchString,

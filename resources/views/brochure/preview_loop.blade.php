@@ -170,7 +170,10 @@
                             </div>
                             <form id="image-upload-form-1" action="/upload_image_for_standard_brochure" method="POST" autocomplete="off">
                                 @csrf
+                                <input type="hidden" id="item-image-order-1" name="image_idx">
                                 <input type="hidden" name="project" value="{{ $project }}" placeholder="project">
+                                <input type="hidden" name="item_code" id="item-code-selected">
+                                <input type="hidden" name="existing" value="1">
                                 <div id="brochure-images-container"></div>
                             </form>
                         </div>
@@ -392,16 +395,32 @@
 </style>
 
 <script>
-    $('#browse-file').change(function(e){
-        var fileName = e.target.files[0].name;
-        $('#browse-file-text').text(fileName);
+    $(document).on('click', '.upload-image-placeholder', function(e) {
+        e.preventDefault();
+        $('#item-image-order').val($(this).data('idx'));
+        $('#item-image-order-1').val($(this).data('idx'));
+        $('#item-image-container-id').val($(this).attr('id'));
+        $('#item-code-selected').val($(this).data('item-code'));
+        $('#select-file-modal').modal('show');
+    });
+
+    $(document).on('change', '#browse-file', function (e) {
+        var file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+        if (!file) {
+            $('#browse-file-text').text('Browse File');
+            $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+            $('#upload-btn').attr('disabled', true);
+            return;
+        }
+
+        $('#browse-file-text').text(file.name);
         $('#upload-btn').removeAttr('disabled');
         if (typeof (FileReader) != "undefined") {
             var reader = new FileReader();
             reader.onload = function (e) {
                 $('#img-preview').removeClass('d-none').attr('src', e.target.result);
             }
-            reader.readAsDataURL($(this)[0].files[0]);
+            reader.readAsDataURL(file);
         } else {
             showNotification("danger", "This browser does not support FileReader.", "fa fa-info");
         }
@@ -409,7 +428,7 @@
 
     $(document).on('hidden.bs.modal', '.modal', function () {
         $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
-        $('#browse-file-text').text('Browse Image');
+        $('#browse-file-text').text('Browse File');
         $('#image-upload-form-1')[0].reset();
         $('#image-upload-form')[0].reset();
 

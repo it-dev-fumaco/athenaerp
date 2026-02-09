@@ -54,7 +54,7 @@ class ProductionController extends Controller
                 ->get();
 
             foreach ($q as $row) {
-                $parentWarehouse = $this->get_warehouse_parent($row->fg_warehouse);
+                $parentWarehouse = $this->getWarehouseParent($row->fg_warehouse);
 
                 $owner = ucwords(str_replace('.', ' ', explode('@', $row->created_by)[0]));
 
@@ -78,7 +78,7 @@ class ProductionController extends Controller
                     'created_at' => Carbon::parse($row->created_at)->format('M-d-Y h:i A'),
                     'operation_name' => $operationName,
                     'delivery_date' => ($row->delivery_date) ? Carbon::parse($row->delivery_date)->format('M-d-Y') : null,
-                    'delivery_status' => ($row->delivery_date) ? ((Carbon::parse($row->delivery_date) < Carbon::now()) ? 'late' : null) : null
+                    'delivery_status' => ($row->delivery_date) ? ((Carbon::parse($row->delivery_date) < now()) ? 'late' : null) : null
                 ];
             }
         } catch (QueryException $e) {

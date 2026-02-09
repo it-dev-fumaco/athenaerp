@@ -23,7 +23,7 @@
                 $badge = 'info';
             }else if($row->reserve_qty == round($row->consumed_qty) && $row->status != 'Expired' || $row->status == 'Issued'){
                 $badge = 'success';
-            }else if($row->valid_until < Carbon\Carbon::today() || $row->status == 'Expired' || $row->status == 'Cancelled'){
+            }else if($row->valid_until < today() || $row->status == 'Expired' || $row->status == 'Cancelled'){
                 $badge = 'secondary';
             }
 
@@ -110,7 +110,7 @@
                 $badge = 'info';
             }else if($row1->reserve_qty == round($row1->consumed_qty) && $row1->status != 'Expired' || $row1->status == 'Issued'){
                 $badge = 'success';
-            }else if($row1->valid_until < Carbon\Carbon::today() || $row1->status == 'Expired' || $row1->status == 'Cancelled'){
+            }else if($row1->valid_until < today() || $row1->status == 'Expired' || $row1->status == 'Cancelled'){
                 $badge = 'secondary';
             }
 
@@ -198,7 +198,7 @@
                 $badge = 'info';
             }else if($row2->reserve_qty == round($row2->consumed_qty) && $row2->status != 'Expired' || $row2->status == 'Issued'){
                 $badge = 'success';
-            }else if($row2->valid_until < Carbon\Carbon::today() || $row2->status == 'Expired' || $row2->status == 'Cancelled'){
+            }else if($row2->valid_until < today() || $row2->status == 'Expired' || $row2->status == 'Cancelled'){
                 $badge = 'secondary';
             }
             

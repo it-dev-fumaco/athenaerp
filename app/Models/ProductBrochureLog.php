@@ -33,9 +33,9 @@ class ProductBrochureLog extends Model
     {
         return $query->uploads()
             ->when($search, fn ($q) => $q->where('project', 'like', "%{$search}%")->orWhere('filename', 'like', "%{$search}%"))
-            ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'project', 'filename', DB::raw('MIN(created_by) as created_by'))
+            ->select(DB::raw('MAX(transaction_date) as transaction_date'), DB::raw('MAX(creation) as creation'), 'project', 'filename', DB::raw('MIN(created_by) as created_by'))
             ->groupBy('project', 'filename')
-            ->orderBy('creation', 'desc')
+            ->orderByDesc(DB::raw('MAX(creation)'))
             ->limit($limit)
             ->get();
     }

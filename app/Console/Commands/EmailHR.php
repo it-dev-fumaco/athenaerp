@@ -46,8 +46,8 @@ class EmailHR extends Command
         $cutoff1 = $salesReportDeadline ? $salesReportDeadline->{'1st_cutoff_date'} : 0;
         $cutoff2 = $salesReportDeadline ? $salesReportDeadline->{'2nd_cutoff_date'} : 0;
 
-        if(in_array(Carbon::now()->format('d'), [$cutoff1, $cutoff2])){
-            $transactionDate = Carbon::now()->startOfMonth();
+        if(in_array(now()->format('d'), [$cutoff1, $cutoff2])){
+            $transactionDate = now()->startOfMonth();
             $startDate = Carbon::parse($transactionDate)->subMonth();
             $endDate = Carbon::parse($transactionDate)->addMonths(2);
 
@@ -63,7 +63,7 @@ class EmailHR extends Command
 
                 if($i == 0){
                     $febCutoff = $cutoff1 <= 28 ? $cutoff1 : 28;
-                    $cutoffPeriod[] = $febCutoff.'-02-'.Carbon::now()->format('Y');
+                    $cutoffPeriod[] = $febCutoff.'-02-'.now()->format('Y');
                 }
             }
 
@@ -91,7 +91,7 @@ class EmailHR extends Command
                 ->get();
 
             $submittedReport = collect($reportDetails)->filter(function (object $q){
-                return Carbon::parse($q->last_audit) >= Carbon::now()->startOfMonth();
+                return Carbon::parse($q->last_audit) >= now()->startOfMonth();
             })->groupBy(['owner', 'branch_warehouse']);
             $reportDetails = collect($reportDetails)->groupBy(['owner', 'branch_warehouse']);
 

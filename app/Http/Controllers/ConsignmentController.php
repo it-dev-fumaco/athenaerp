@@ -97,7 +97,7 @@ class ConsignmentController extends Controller
                         ->format('F d, Y');
 
                     return 'Deadline: ' . $firstCutoff;
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Handle invalid date format
                     return 'Invalid date format.';
                 }
@@ -219,7 +219,7 @@ class ConsignmentController extends Controller
                 throw new Exception('Price cannot be less than or equal to 0');
             }
 
-            $currentDateTime = Carbon::now();
+            $currentDateTime = now();
 
             $status = 'On Time';
             if ($currentDateTime->gt($periodTo)) {
@@ -498,7 +498,7 @@ class ConsignmentController extends Controller
 
             $response = $this->erpCall($method, 'Consignment Monthly Sales Report', $reference, $data);
 
-            if (!array_key_exists('data', $response)) {
+            if (!Arr::has($response, 'data')) {
                 $err = data_get($response, 'exception', 'An error occured while submitting Sales Report');
                 throw new Exception($err);
             }
@@ -1006,7 +1006,7 @@ class ConsignmentController extends Controller
             $stockEntry->to_warehouse = collect($targetWarehouses)->first();
 
             $status = 'Pending';
-            if ($stockEntry->item_status == 'Issued' && Carbon::parse($stockEntry->delivery_date)->lt(Carbon::now())) {
+            if ($stockEntry->item_status == 'Issued' && Carbon::parse($stockEntry->delivery_date)->lt(now())) {
                 $status = 'Delivered';
             }
 

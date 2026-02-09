@@ -25,7 +25,7 @@
                                         {{ session()->get('error') }}
                                     </div>
                                 @endif
-                                <h6 class="text-center mt-2 font-weight-bolder">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h6>
+                                <h6 class="text-center mt-2 font-weight-bolder">{{ now()->format('F d, Y') }}</h6>
                                 <form action="/promodiser/damage_report/submit" method="post">
                                     @csrf
                                     <div class="container">

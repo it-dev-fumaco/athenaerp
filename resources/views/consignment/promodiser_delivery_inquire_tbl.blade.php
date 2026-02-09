@@ -2,7 +2,7 @@
 @php
     $steDetails = collect($deliveryReport)->first();
     $status = "Pending";
-    if($steDetails && $steDetails->item_status == 'Issued' && Carbon\Carbon::now() > $steDetails->delivery_date){
+    if($steDetails && $steDetails->item_status == 'Issued' && now() > $steDetails->delivery_date){
         $status = 'Delivered';
     }
 

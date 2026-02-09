@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use ErrorException;
 use Exception;
 
 class MaterialTransferController extends Controller
@@ -149,41 +151,74 @@ class MaterialTransferController extends Controller
             ->get();
     }
 
-    /**
-     * @param  \Illuminate\Support\Collection  $entries
-     * @return array<string, mixed>
-     */
-    private function buildMaterialTransferLookupData($entries)
+    private function buildMaterialTransferLookupData(Collection $entries): array
     {
-        $itemCodesArr = array_values(array_unique(array_column($entries->toArray(), 'item_code')));
-        $sourceWarehousesArr = array_values(array_unique(array_column($entries->toArray(), 's_warehouse')));
-        $workOrdersArr = array_values(array_unique(array_column($entries->toArray(), 'work_order')));
+        $entriesArray = $entries->toArray();
+        $itemCodesArr = array_values(array_unique(array_column($entriesArray, 'item_code')));
+        $sourceWarehousesArr = array_values(array_unique(array_column($entriesArray, 's_warehouse')));
+        $workOrdersArr = array_values(array_unique(array_column($entriesArray, 'work_order')));
 
-        $itemActualQty = Bin::query()
+        return [
+            'itemActualQty' => $this->getItemActualQtyLookup($itemCodesArr, $sourceWarehousesArr),
+            'stockReservation' => $this->getStockReservationLookup($itemCodesArr, $sourceWarehousesArr),
+            'steTotalIssued' => $this->getSteTotalIssuedLookup($itemCodesArr, $sourceWarehousesArr),
+            'atTotalIssued' => $this->getAtTotalIssuedLookup($itemCodesArr, $sourceWarehousesArr),
+            'partNosQuery' => ItemSupplier::query()
+                ->whereIn('parent', $itemCodesArr)
+                ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))
+                ->groupBy('parent')
+                ->pluck('supplier_part_nos', 'parent'),
+            'parentWarehouses' => Warehouse::where('disabled', 0)->whereIn('name', $sourceWarehousesArr)->pluck('parent_warehouse', 'name'),
+            'workOrderDeliveryDate' => WorkOrder::whereIn('name', $workOrdersArr)->pluck('delivery_date', 'name'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function getItemActualQtyLookup(array $itemCodes, array $warehouses): array
+    {
+        return Bin::query()
             ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
-            ->whereIn('tabBin.item_code', $itemCodesArr)
-            ->whereIn('tabBin.warehouse', $sourceWarehousesArr)
+            ->whereIn('tabBin.item_code', $itemCodes)
+            ->whereIn('tabBin.warehouse', $warehouses)
             ->where('tabWarehouse.disabled', 0)
             ->selectRaw('SUM(actual_qty) as actual_qty, CONCAT(item_code, "-", warehouse) as item')
             ->groupBy('item_code', 'warehouse')
-            ->get();
+            ->get()
+            ->groupBy('item')
+            ->toArray();
+    }
 
-        $stockReservation = StockReservation::whereIn('item_code', $itemCodesArr)
-            ->whereIn('warehouse', $sourceWarehousesArr)
+    /** @return array<string, mixed> */
+    private function getStockReservationLookup(array $itemCodes, array $warehouses): array
+    {
+        return StockReservation::whereIn('item_code', $itemCodes)
+            ->whereIn('warehouse', $warehouses)
             ->whereIn('status', ['Active', 'Partially Issued'])
             ->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
             ->groupBy('item_code', 'warehouse')
-            ->get();
+            ->get()
+            ->groupBy('item')
+            ->toArray();
+    }
 
-        $steTotalIssued = StockEntryDetail::where('docstatus', 0)
+    /** @return array<string, mixed> */
+    private function getSteTotalIssuedLookup(array $itemCodes, array $warehouses): array
+    {
+        return StockEntryDetail::where('docstatus', 0)
             ->where('status', 'Issued')
-            ->whereIn('item_code', $itemCodesArr)
-            ->whereIn('s_warehouse', $sourceWarehousesArr)
+            ->whereIn('item_code', $itemCodes)
+            ->whereIn('s_warehouse', $warehouses)
             ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
             ->groupBy('item_code', 's_warehouse')
-            ->get();
+            ->get()
+            ->groupBy('item')
+            ->toArray();
+    }
 
-        $atTotalIssued = AthenaTransaction::query()
+    /** @return array<string, mixed> */
+    private function getAtTotalIssuedLookup(array $itemCodes, array $warehouses): array
+    {
+        return AthenaTransaction::query()
             ->from('tabAthena Transactions as at')
             ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
             ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
@@ -193,26 +228,14 @@ class MaterialTransferController extends Controller
             ->where('ps.docstatus', '<', 2)
             ->where('at.status', 'Issued')
             ->where('psi.status', 'Issued')
-            ->whereIn('at.item_code', $itemCodesArr)
-            ->whereIn('psi.item_code', $itemCodesArr)
-            ->whereIn('at.source_warehouse', $sourceWarehousesArr)
+            ->whereIn('at.item_code', $itemCodes)
+            ->whereIn('psi.item_code', $itemCodes)
+            ->whereIn('at.source_warehouse', $warehouses)
             ->selectRaw('SUM(at.issued_qty) as total_issued, CONCAT(at.item_code, "-", at.source_warehouse) as item')
             ->groupBy('at.item_code', 'at.source_warehouse')
-            ->get();
-
-        return [
-            'itemActualQty' => collect($itemActualQty)->groupBy('item')->toArray(),
-            'stockReservation' => collect($stockReservation)->groupBy('item')->toArray(),
-            'steTotalIssued' => collect($steTotalIssued)->groupBy('item')->toArray(),
-            'atTotalIssued' => collect($atTotalIssued)->groupBy('item')->toArray(),
-            'partNosQuery' => ItemSupplier::query()
-                ->whereIn('parent', $itemCodesArr)
-                ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))
-                ->groupBy('parent')
-                ->pluck('supplier_part_nos', 'parent'),
-            'parentWarehouses' => Warehouse::where('disabled', 0)->whereIn('name', $sourceWarehousesArr)->pluck('parent_warehouse', 'name'),
-            'workOrderDeliveryDate' => WorkOrder::whereIn('name', $workOrdersArr)->pluck('delivery_date', 'name'),
-        ];
+            ->get()
+            ->groupBy('item')
+            ->toArray();
     }
 
     /**
@@ -271,7 +294,7 @@ class MaterialTransferController extends Controller
                 'production_order' => $d->work_order,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                 'delivery_date' => ($deliveryDate) ? Carbon::parse($deliveryDate)->format('M-d-Y') : null,
-                'delivery_status' => ($deliveryDate) ? ((Carbon::parse($deliveryDate) < Carbon::now()) ? 'late' : null) : null
+                'delivery_status' => ($deliveryDate) ? ((Carbon::parse($deliveryDate) < now()) ? 'late' : null) : null
             ];
         }
 
@@ -433,7 +456,7 @@ class MaterialTransferController extends Controller
                 return $item->where('name', $childId);
             })->first();
 
-            $now = Carbon::now();
+            $now = now();
 
             if (!$stockEntry) {
                 throw new Exception('Record not found');
@@ -566,8 +589,8 @@ class MaterialTransferController extends Controller
 
             $response = $this->erpPut('Stock Entry', $stockEntry->name, collect($stockEntry)->toArray());
 
-            if (!array_key_exists('data', $response)) {
-                if (array_key_exists('exc_type', $response) && $response['exc_type'] == 'TimestampMismatchError') {
+            if (!Arr::has($response, 'data')) {
+                if (Arr::has($response, 'exc_type') && $response['exc_type'] == 'TimestampMismatchError') {
                     $stockEntry = $this->erpGet('Stock Entry', $stockEntry->name);
                     $stockEntry = $stockEntry['data'];
 
@@ -593,7 +616,7 @@ class MaterialTransferController extends Controller
 
                     $response = $this->erpPut('Stock Entry', $stockEntry['name'], collect($stockEntry)->toArray());
 
-                    if (!array_key_exists('data', $response)) {
+                    if (!Arr::has($response, 'data')) {
                         $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
                         throw new Exception($err);
                     }
@@ -623,7 +646,7 @@ class MaterialTransferController extends Controller
             ->first();
 
         if (!$q) {
-            throw new \ErrorException('Stock Entry not found.');
+            throw new ErrorException('Stock Entry not found.');
         }
 
         $refNo = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
@@ -731,7 +754,7 @@ class MaterialTransferController extends Controller
     public function generateStockEntry($productionOrder)
     {
         try {
-            $now = Carbon::now();
+            $now = now();
 
             $stockEntry = StockEntry::with('items')->where('docstatus', 0)->where('work_order', $productionOrder)->first();
             $stockEntryItems = collect($stockEntry->items)->groupBy('item_code');
@@ -833,7 +856,7 @@ class MaterialTransferController extends Controller
     {
         DB::beginTransaction();
         try {
-            $now = Carbon::now();
+            $now = now();
             $ste = StockEntry::query()->where('name', $request->ste_no)->first();
 
             $steItems = StockEntryDetail::query()->where('parent', $request->ste_no)->get();

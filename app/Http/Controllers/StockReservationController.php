@@ -47,7 +47,7 @@ class StockReservationController extends Controller
             }
 
             if ($request->type == 'In-house') {
-                if (Carbon::createFromFormat('Y-m-d', $request->valid_until) <= Carbon::now()) {
+                if (Carbon::createFromFormat('Y-m-d', $request->valid_until) <= now()) {
                     return ApiResponse::modal(false, 'Invalid Date', 'Validity date cannot be less than or equal to date today.', 422);
                 }
             }
@@ -75,7 +75,7 @@ class StockReservationController extends Controller
             $newId = str_pad($newId, 5, '0', STR_PAD_LEFT);
             $newId = 'STR-' . $newId;
 
-            $now = Carbon::now();
+            $now = now();
             $stockReservation = new StockReservation;
             $stockReservation->name = $newId;
             $stockReservation->creation = $now->toDateTimeString();
@@ -101,7 +101,7 @@ class StockReservationController extends Controller
                     $newReservedQty = $request->reserve_qty + $binDetails->website_reserved_qty;
 
                     $values = [
-                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified' => now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'website_reserved_qty' => $newReservedQty,
                     ];
@@ -200,7 +200,7 @@ class StockReservationController extends Controller
     {
         DB::connection('mysql')->beginTransaction();
         try {
-            $now = Carbon::now();
+            $now = now();
             $stockReservation = StockReservation::find($request->stock_reservation_id);
             $stockReservation->modified = $now->toDateTimeString();
             $stockReservation->modified_by = Auth::user()->wh_user;
@@ -218,7 +218,7 @@ class StockReservationController extends Controller
                     $newReservedQty = ($newReservedQty <= 0) ? 0 : $newReservedQty;
 
                     $values = [
-                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified' => now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'website_reserved_qty' => $newReservedQty,
                     ];
@@ -273,7 +273,7 @@ class StockReservationController extends Controller
             // total reserved qty = total reserved qty from stock reservation table + website reserved qty from tabbin table
             $totalReservedQty = $stockReservationQty + $binDetails->website_reserved_qty;
 
-            $now = Carbon::now();
+            $now = now();
             $stockReservation = StockReservation::find($request->id);
             $stockReservation->modified = $now->toDateTimeString();
             $stockReservation->modified_by = Auth::user()->wh_user;
@@ -303,7 +303,7 @@ class StockReservationController extends Controller
                     $newReservedQty = ($newReservedQty <= 0) ? 0 : $newReservedQty;
 
                     $values = [
-                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified' => now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
                         'website_reserved_qty' => $newReservedQty,
                     ];

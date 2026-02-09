@@ -36,6 +36,7 @@
  */
 namespace App\LdapClasses\Classes;
 
+use Illuminate\Support\Arr;
 use App\LdapClasses\adLDAP;
 
 /**
@@ -154,8 +155,8 @@ class adLDAPFolders {
     {
         if (!is_array($attributes)){ return "Attributes must be an array"; }
         if (!is_array($attributes["container"])) { return "Container attribute must be an array."; }
-        if (!array_key_exists("ou_name",$attributes)) { return "Missing compulsory field [ou_name]"; }
-        if (!array_key_exists("container",$attributes)) { return "Missing compulsory field [container]"; }
+        if (!Arr::has($attributes, "ou_name")) { return "Missing compulsory field [ou_name]"; }
+        if (!Arr::has($attributes, "container")) { return "Missing compulsory field [container]"; }
         
         $attributes["container"] = array_reverse($attributes["container"]);
 

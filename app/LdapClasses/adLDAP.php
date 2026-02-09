@@ -49,6 +49,7 @@
 
 namespace App\LdapClasses;
 
+use Illuminate\Support\Arr;
 use App\LdapClasses\Collections\adLDAPCollection;
 use App\LdapClasses\Classes\adLDAPGroups;
 use App\LdapClasses\Classes\adLDAPUsers;
@@ -183,7 +184,7 @@ class adLDAP {
     /**
     * Get the active LDAP Connection
     * 
-    * @return resource
+    * @return \LDAP\Connection|resource|false
     */
     public function getLdapConnection() {
         if ($this->ldapConnection) {
@@ -329,7 +330,7 @@ class adLDAP {
     * 
     * @var adLDAPComputers
     */
-    protected $computersClass;
+    protected $computerClass;
     
     /**
     * Get the computers class interface
@@ -382,7 +383,7 @@ class adLDAP {
     /**
     * Get the list of domain controllers
     * 
-    * @return void
+    * @return array
     */
     public function getDomainControllers()
     {
@@ -579,22 +580,22 @@ class adLDAP {
     function __construct($options = array()) {
         // You can specifically overide any of the default configuration options setup above
         if (count($options) > 0) {
-            if (array_key_exists("account_suffix",$options)){ $this->accountSuffix = $options["account_suffix"]; }
-            if (array_key_exists("base_dn",$options)){ $this->baseDn = $options["base_dn"]; }
-            if (array_key_exists("domain_controllers",$options)){ 
-                if (!is_array($options["domain_controllers"])) { 
+            if (Arr::has($options, "account_suffix")){ $this->accountSuffix = $options["account_suffix"]; }
+            if (Arr::has($options, "base_dn")){ $this->baseDn = $options["base_dn"]; }
+            if (Arr::has($options, "domain_controllers")){
+                if (!is_array($options["domain_controllers"])) {
                     throw new adLDAPException('[domain_controllers] option must be an array');
                 }
-                $this->domainControllers = $options["domain_controllers"]; 
+                $this->domainControllers = $options["domain_controllers"];
             }
-            if (array_key_exists("admin_username",$options)){ $this->adminUsername = $options["admin_username"]; }
-            if (array_key_exists("admin_password",$options)){ $this->adminPassword = $options["admin_password"]; }
-            if (array_key_exists("real_primarygroup",$options)){ $this->realPrimaryGroup = $options["real_primarygroup"]; }
-            if (array_key_exists("use_ssl",$options)){ $this->setUseSSL($options["use_ssl"]); }
-            if (array_key_exists("use_tls",$options)){ $this->useTLS = $options["use_tls"]; }
-            if (array_key_exists("recursive_groups",$options)){ $this->recursiveGroups = $options["recursive_groups"]; }
-            if (array_key_exists("ad_port",$options)){ $this->setPort($options["ad_port"]); } 
-            if (array_key_exists("sso",$options)) { 
+            if (Arr::has($options, "admin_username")){ $this->adminUsername = $options["admin_username"]; }
+            if (Arr::has($options, "admin_password")){ $this->adminPassword = $options["admin_password"]; }
+            if (Arr::has($options, "real_primarygroup")){ $this->realPrimaryGroup = $options["real_primarygroup"]; }
+            if (Arr::has($options, "use_ssl")){ $this->setUseSSL($options["use_ssl"]); }
+            if (Arr::has($options, "use_tls")){ $this->useTLS = $options["use_tls"]; }
+            if (Arr::has($options, "recursive_groups")){ $this->recursiveGroups = $options["recursive_groups"]; }
+            if (Arr::has($options, "ad_port")){ $this->setPort($options["ad_port"]); }
+            if (Arr::has($options, "sso")){ 
                 $this->setUseSSO($options["sso"]);
                 if (!$this->ldapSaslSupported()) {
                     $this->setUseSSO(false);
@@ -606,7 +607,7 @@ class adLDAP {
             throw new adLDAPException('No LDAP support for PHP.  See: http://www.php.net/ldap');
         }
 
-        return $this->connect();
+        $this->connect();
     }
 
     /**
@@ -659,8 +660,8 @@ class adLDAP {
                 }
             }
         }
-        if ($this->useSSO && $_SERVER['REMOTE_USER'] && $this->adminUsername === null && $_SERVER['KRB5CCNAME']) {
-            putenv("KRB5CCNAME=" . $_SERVER['KRB5CCNAME']);  
+        if ($this->useSSO && ($_SERVER['REMOTE_USER'] ?? null) && $this->adminUsername === null && ($_SERVER['KRB5CCNAME'] ?? null)) {
+            putenv("KRB5CCNAME=" . ($_SERVER['KRB5CCNAME'] ?? ''));  
             $this->ldapBind = @ldap_sasl_bind($this->ldapConnection, NULL, NULL, "GSSAPI"); 
             if (!$this->ldapBind){ 
                 throw new adLDAPException('Rebind to Active Directory failed. AD said: ' . $this->getLastError()); 
@@ -703,8 +704,8 @@ class adLDAP {
         if (empty($username) || empty($password)) { return false; }
         
         // Allow binding over SSO for Kerberos
-        if ($this->useSSO && $_SERVER['REMOTE_USER'] && $_SERVER['REMOTE_USER'] == $username && $this->adminUsername === NULL && $_SERVER['KRB5CCNAME']) { 
-            putenv("KRB5CCNAME=" . $_SERVER['KRB5CCNAME']);
+        if ($this->useSSO && ($_SERVER['REMOTE_USER'] ?? null) && ($_SERVER['REMOTE_USER'] ?? null) == $username && $this->adminUsername === NULL && ($_SERVER['KRB5CCNAME'] ?? null)) {
+            putenv("KRB5CCNAME=" . ($_SERVER['KRB5CCNAME'] ?? ''));
             $this->ldapBind = @ldap_sasl_bind($this->ldapConnection, NULL, NULL, "GSSAPI");
             if (!$this->ldapBind) {
                 throw new adLDAPException('Rebind to Active Directory failed. AD said: ' . $this->getLastError());
@@ -748,14 +749,15 @@ class adLDAP {
     * Get the RootDSE properties from a domain controller
     * 
     * @param array $attributes The attributes you wish to query e.g. defaultnamingcontext
-    * @return array
+    * @return array|false
     */
     public function getRootDse($attributes = array("*", "+")) {
-        if (!$this->ldapBind){ return (false); }
+        if (!$this->ldapBind){ return false; }
         
-        $sr = @ldap_read($this->ldapConnection, NULL, 'objectClass=*', $attributes);
+        $attrs = $attributes ?? ["*", "+"];
+        $sr = @ldap_read($this->ldapConnection, null, 'objectClass=*', $attrs);
         $entries = @ldap_get_entries($this->ldapConnection, $sr);
-        return $entries;
+        return is_array($entries) ? $entries : [];
     }
 
     /**
@@ -801,8 +803,8 @@ class adLDAP {
     * Schema
     * 
     * @param array $attributes Attributes to be queried
-    * @return array
-    */    
+    * @return array|false
+    */
     public function adldap_schema($attributes){
     
         // LDAP doesn't like NULL attributes, only set them if they have values
@@ -877,8 +879,8 @@ class adLDAP {
         }
         */
 
-        if (count($mod)==0){ return (false); }
-        return ($mod);
+        if (count($mod)==0){ return false; }
+        return $mod;
     }
     
     /**
@@ -894,7 +896,7 @@ class adLDAP {
             }
         }
         if ($encode === true && $key != 'password') {
-            $item = utf8_encode($item);   
+            $item = mb_convert_encoding($item, 'UTF-8', 'ISO-8859-1');
         }
     }
     
@@ -905,8 +907,8 @@ class adLDAP {
     */
     protected function randomController() 
     {
-        mt_srand(doubleval(microtime()) * 100000000); // For older PHP versions
-        /*if (sizeof($this->domainControllers) > 1) {
+        mt_srand((int) (microtime(true) * 1000000));
+        /*if (count($this->domainControllers) > 1) {
             $adController = $this->domainControllers[array_rand($this->domainControllers)]; 
             // Test if the controller is responding to pings
             $ping = $this->pingController($adController); 

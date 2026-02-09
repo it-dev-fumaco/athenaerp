@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\ItemAttributeValue;
 use App\Models\ItemVariantAttribute;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,8 +64,7 @@ class ItemController extends Controller
             ->forAttribute($attributeName)
             ->searchByValue($request->search)
             ->orderBy('idx')
-            ->paginate(15)
-            ->onEachSide(1);
+            ->paginate(15);
 
         return view('item_attributes_values_list', compact('data'));
     }
@@ -88,8 +86,8 @@ class ItemController extends Controller
 
             ItemAttributeValue::create([
                 'name' => 'athena' . uniqid(),
-                'creation' => Carbon::now()->toDateTimeString(),
-                'modified' => Carbon::now()->toDateTimeString(),
+                'creation' => now()->toDateTimeString(),
+                'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
@@ -182,7 +180,7 @@ class ItemController extends Controller
 
             ItemVariantAttribute::where('name', $request->name)->update([
                 'attribute_value' => $request->attribute_value,
-                'modified' => Carbon::now()->toDateTimeString(),
+                'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
             ]);
 

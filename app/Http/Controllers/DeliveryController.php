@@ -21,6 +21,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use ErrorException;
 use Exception;
 
 class DeliveryController extends Controller
@@ -237,7 +238,7 @@ class DeliveryController extends Controller
                 'type' => $d->type,
                 'classification' => $d->transfer_as ?? 'Customer Order',
                 'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
-                'delivery_status' => (Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null,
+                'delivery_status' => (Carbon::parse($d->delivery_date) < now()) ? 'late' : null,
             ];
         }
 
@@ -315,7 +316,7 @@ class DeliveryController extends Controller
             ->first();
 
         if (!$q) {
-            throw new \ErrorException('Delivery Note Item not found.');
+            throw new ErrorException('Delivery Note Item not found.');
         }
 
         $img = ItemImages::query()->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
@@ -355,7 +356,7 @@ class DeliveryController extends Controller
                 return $item->where('name', $childId);
             })->first();
 
-            $now = Carbon::now();
+            $now = now();
 
             if (!$deliveryNote) {
                 throw new Exception('Record not found');
@@ -406,7 +407,7 @@ class DeliveryController extends Controller
             }
 
             $response = $this->erpPut('Delivery Note', $deliveryNote->name, collect($deliveryNote)->toArray());
-            if (!array_key_exists('data', $response)) {
+            if (!Arr::has($response, 'data')) {
                 $err = $response['exception'] ?? 'An error occured while updating Delivery Note';
                 throw new Exception($err);
             }

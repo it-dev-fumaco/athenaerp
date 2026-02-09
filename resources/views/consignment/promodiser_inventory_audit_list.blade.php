@@ -30,7 +30,7 @@
                                                 </div>
                                                 <div class="col-3 p-0 d-flex flex-row justify-content-center align-items-center text-right">
                                                     @php
-                                                        $link = isset($row[0]['beginning_inventory_date']) && !$row[0]['beginning_inventory_date'] ? '/beginning_inventory' : '/view_inventory_audit_form/'.$store.'/'.Carbon\Carbon::now()->format('Y-m-d');
+                                                        $link = isset($row[0]['beginning_inventory_date']) && !$row[0]['beginning_inventory_date'] ? '/beginning_inventory' : '/view_inventory_audit_form/'.$store.'/'.now()->format('Y-m-d');
                                                     @endphp
                                                     <div class="p-0">
                                                         <a href="{{ $link }}" class="btn btn-primary btn-sm" style="font-size: 10pt;"><i class="fas fa-plus"></i> Create</a>

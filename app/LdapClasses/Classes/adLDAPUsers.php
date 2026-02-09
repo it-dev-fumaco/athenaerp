@@ -36,7 +36,9 @@
  */
 namespace App\LdapClasses\Classes;
 
+use Illuminate\Support\Arr;
 use App\LdapClasses\adLDAP;
+use App\LdapClasses\adLDAPException;
 use App\LdapClasses\Collections\adLDAPUserCollection;
 
 /**
@@ -77,18 +79,18 @@ class adLDAPUsers {
     public function create($attributes)
     {
         // Check for compulsory fields
-        if (!array_key_exists("username", $attributes)){ return "Missing compulsory field [username]"; }
-        if (!array_key_exists("firstname", $attributes)){ return "Missing compulsory field [firstname]"; }
-        if (!array_key_exists("surname", $attributes)){ return "Missing compulsory field [surname]"; }
-        if (!array_key_exists("email", $attributes)){ return "Missing compulsory field [email]"; }
-        if (!array_key_exists("container", $attributes)){ return "Missing compulsory field [container]"; }
+        if (!Arr::has($attributes, "username")){ return "Missing compulsory field [username]"; }
+        if (!Arr::has($attributes, "firstname")){ return "Missing compulsory field [firstname]"; }
+        if (!Arr::has($attributes, "surname")){ return "Missing compulsory field [surname]"; }
+        if (!Arr::has($attributes, "email")){ return "Missing compulsory field [email]"; }
+        if (!Arr::has($attributes, "container")){ return "Missing compulsory field [container]"; }
         if (!is_array($attributes["container"])){ return "Container attribute must be an array."; }
 
-        if (array_key_exists("password",$attributes) && (!$this->adldap->getUseSSL() && !$this->adldap->getUseTLS())){ 
+        if (Arr::has($attributes, "password") && (!$this->adldap->getUseSSL() && !$this->adldap->getUseTLS())){
             throw new adLDAPException('SSL must be configured on your webserver and enabled in the class to set passwords.');
         }
 
-        if (!array_key_exists("display_name", $attributes)) { 
+        if (!Arr::has($attributes, "display_name")) { 
             $attributes["display_name"] = $attributes["firstname"] . " " . $attributes["surname"]; 
         }
 
@@ -315,7 +317,7 @@ class adLDAPUsers {
     * Determine a user's password expiry date
     * 
     * @param string $username The username to query
-    * @param book $isGUID Is the username passed a GUID or a samAccountName
+    * @param bool $isGUID Is the username passed a GUID or a samAccountName
     * @requires bcmath http://www.php.net/manual/en/book.bc.php
     * @return array
     */
@@ -394,7 +396,7 @@ class adLDAPUsers {
     public function modify($username, $attributes, $isGUID = false)
     {
         if ($username === NULL) { return "Missing compulsory field [username]"; }
-        if (array_key_exists("password", $attributes) && !$this->adldap->getUseSSL() && !$this->adldap->getUseTLS()) { 
+        if (Arr::has($attributes, "password") && !$this->adldap->getUseSSL() && !$this->adldap->getUseTLS()) {
             throw new adLDAPException('SSL/TLS must be configured on your webserver and enabled in the class to set passwords.');
         }
 
@@ -408,12 +410,12 @@ class adLDAPUsers {
         $mod = $this->adldap->adldap_schema($attributes);
         
         // Check to see if this is an enabled status update
-        if (!$mod && !array_key_exists("enabled", $attributes)){ 
-            return false; 
+        if (!$mod && !Arr::has($attributes, "enabled")){
+            return false;
         }
-        
+
         // Set the account control attribute (only if specified)
-        if (array_key_exists("enabled", $attributes)){
+        if (Arr::has($attributes, "enabled")){
             if ($attributes["enabled"]){ 
                 $controlOptions = array("NORMAL_ACCOUNT"); 
             }
@@ -670,7 +672,7 @@ class adLDAPUsers {
     * Get the last logon time of any user as a Unix timestamp
     * 
     * @param string $username
-    * @return long $unixTimestamp
+    * @return int|string|false Unix timestamp, error message, or false
     */
     public function getLastLogon($username) {
         if (!$this->adldap->getLdapBind()) { return false; }

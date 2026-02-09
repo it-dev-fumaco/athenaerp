@@ -362,7 +362,7 @@
     <script>
         $(document).ready(function() {
             var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : $earliestDate }}';
-            var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : Carbon\Carbon::now()->format("Y-M-d") }}';
+            var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : now()->format("Y-M-d") }}';
 
             $('#date-filter').daterangepicker({
                 opens: 'left',

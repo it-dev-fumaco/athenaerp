@@ -9,7 +9,7 @@
     </thead>
     @foreach ($months as $index => $month)
     @php
-        if(Carbon\Carbon::now() <= Carbon\Carbon::parse($month.'-'.$requestYear)){
+        if(now() <= Carbon\Carbon::parse($month.'-'.$requestYear)){
             break;
         }
         $totalPerMonth = 0;

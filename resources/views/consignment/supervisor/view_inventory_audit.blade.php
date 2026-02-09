@@ -142,7 +142,7 @@
             e.preventDefault();
             $(".inventory-audit-history-filter.store").empty().trigger('change');
             $(".inventory-audit-history-filter.promodiser").val('').trigger('change');
-            $('.inventory-audit-history-filter.year').val('{{ Carbon\Carbon::now()->format("Y") }}').trigger('change');
+            $('.inventory-audit-history-filter.year').val('{{ now()->format("Y") }}').trigger('change');
             loadSubmittedInventoryAudit();
         });
 

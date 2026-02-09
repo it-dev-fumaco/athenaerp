@@ -262,7 +262,7 @@ trait GeneralTrait
             }
 
             return 1;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('GeneralTrait updateSteStatus failed', [
                 'id' => $id,
                 'message' => $e->getMessage(),
@@ -409,7 +409,7 @@ trait GeneralTrait
             $referenceNo = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
         }
        
-        $now = Carbon::now();
+        $now = now();
         
         $values = [
             'name' => uniqid(date('mdY')),
@@ -443,6 +443,39 @@ trait GeneralTrait
         if(!$existingLog){
             DB::table('tabAthena Transactions')->insert($values);
         }
+    }
+
+    /**
+     * Update stock reservation statuses (expired, partially issued, issued).
+     * Alias: update_reservation_status for backward compatibility.
+     */
+    public function updateReservationStatus(): void
+    {
+        DB::table('tabStock Reservation')
+            ->whereIn('status', ['Active', 'Partially Issued'])
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
+            ->where('valid_until', '<', now())
+            ->update(['status' => 'Expired']);
+
+        DB::table('tabStock Reservation')
+            ->whereNotIn('status', ['Cancelled', 'Issued', 'Expired'])
+            ->where('consumed_qty', '>', 0)
+            ->whereRaw('consumed_qty < reserve_qty')
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
+            ->update(['status' => 'Partially Issued']);
+
+        DB::table('tabStock Reservation')
+            ->whereNotIn('status', ['Cancelled', 'Expired', 'Issued'])
+            ->where('consumed_qty', '>', 0)
+            ->whereRaw('consumed_qty >= reserve_qty')
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
+            ->update(['status' => 'Issued']);
+    }
+
+    /** @deprecated Use updateReservationStatus() */
+    public function update_reservation_status(): void
+    {
+        $this->updateReservationStatus();
     }
 
     public function submitStockEntry($id, $systemGenerated = 0)

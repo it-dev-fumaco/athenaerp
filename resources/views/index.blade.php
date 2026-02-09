@@ -240,13 +240,13 @@
 															</div>
 															<ul class="pagination pagination-month justify-content-center m-2" id="athena-logs-pagination">
 																@php
-																	$now = Carbon\Carbon::now();
+																	$now = now();
 
-																	$start = (Clone $now)->subMonth(11);
+																	$start = (clone $now)->subMonths(11);
 
 																	$months = [];
 																	while($start->lessThanOrEqualTo($now)){
-																		$months[] = Clone $start;
+																		$months[] = clone $start;
 																		$start->addMonth();
 																	}
 																@endphp
@@ -488,7 +488,7 @@
 				});
 			}
 
-			get_athena_logs("{{ Carbon\Carbon::now()->format('F d, Y') }}");
+			get_athena_logs("{{ now()->format('F d, Y') }}");
 			function get_athena_logs(month) {
 				$.ajax({
 					type: "GET",

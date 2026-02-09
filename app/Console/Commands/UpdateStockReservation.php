@@ -41,7 +41,7 @@ class UpdateStockReservation extends Command
     {
         try {
             DB::table('tabStock Reservation')->whereIn('status', ['Active', 'Partially Issued'])
-                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->where('valid_until', '<', Carbon::now())->update(['status' => 'Expired']);
+                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->where('valid_until', '<', now())->update(['status' => 'Expired']);
             // update status partially issued
             DB::table('tabStock Reservation')
                 ->whereNotIn('status', ['Cancelled', 'Issued', 'Expired'])

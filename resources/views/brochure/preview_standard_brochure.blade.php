@@ -185,9 +185,9 @@
                             <div style="width: 420px !important;">
                                 @for ($i = 1; $i <= 3; $i++)
                                     @php
-                                        $img = isset($images['image'.$i]['filepath']) && $images['image'.$i]['filepath'] ? '/storage/brochures/'.$images['image'.$i]['filepath'] : null;
+                                        $img = isset($images['image'.$i]['filepath']) && $images['image'.$i]['filepath'] ? $images['image'.$i]['filepath'] : null;
                                     @endphp
-                                    <img id="item-0{{ $i }}-print-image" src="{{ asset($img) }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
+                                    <img id="item-0{{ $i }}-print-image" src="{{ $img ? asset($img) : '' }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
                                 @endfor
                                 &nbsp;
                             </div>
@@ -583,16 +583,23 @@
             $('#select-file-modal').modal('show');
         });
 
-        $('#browse-file').change(function(e){
-            var fileName = e.target.files[0].name;
-            $('#browse-file-text').text(fileName);
+        $(document).on('change', '#browse-file', function (e) {
+            var file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+            if (!file) {
+                $('#browse-file-text').text('Browse File');
+                $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+                $('#upload-btn').attr('disabled', true);
+                return;
+            }
+
+            $('#browse-file-text').text(file.name);
             $('#upload-btn').removeAttr('disabled');
             if (typeof (FileReader) != "undefined") {
                 var reader = new FileReader();
                 reader.onload = function (e) {
                     $('#img-preview').removeClass('d-none').attr('src', e.target.result);
                 }
-                reader.readAsDataURL($(this)[0].files[0]);
+                reader.readAsDataURL(file);
             } else {
                 showNotification("danger", "This browser does not support FileReader.", "fa fa-info");
             }
@@ -600,7 +607,7 @@
 
         $(document).on('hidden.bs.modal', '.modal', function () {
             $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
-            $('#browse-file-text').text('Browse Image');
+            $('#browse-file-text').text('Browse File');
             $('#image-upload-form-1')[0].reset();
             $('#image-upload-form')[0].reset();
 

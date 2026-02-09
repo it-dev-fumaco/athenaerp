@@ -2,10 +2,11 @@
 
 namespace App\Traits;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Frappe REST API integration.
@@ -180,9 +181,9 @@ trait ERPTrait
      */
     private function logErpErrorIfPresent(array $result, string $url, string $method): void
     {
-        $hasError = array_key_exists('exception', $result)
-            || array_key_exists('exc', $result)
-            || array_key_exists('exc_type', $result);
+        $hasError = Arr::has($result, 'exception')
+            || Arr::has($result, 'exc')
+            || Arr::has($result, 'exc_type');
 
         if ($hasError) {
             Log::warning('ERP exception', [
@@ -230,7 +231,7 @@ trait ERPTrait
         try {
             $loggedInUser = str_replace('fumaco.local', 'fumaco.com', Auth::user()->wh_user);
             $existingKey = $this->erpGet('User', $loggedInUser, [], true);
-            if (!array_key_exists('data', $existingKey)) { // Promodisers
+            if (!Arr::has($existingKey, 'data')) { // Promodisers
                 $loggedInUser = Auth::user()->wh_user;
                 $existingKey = $this->erpGet('User', $loggedInUser, [], true);
             }
@@ -243,14 +244,14 @@ trait ERPTrait
 
             $user = $this->erpPut('User', $loggedInUser, $tokens, true);
 
-            if (!array_key_exists('data', $user)) {
+            if (!Arr::has($user, 'data')) {
                 $error = data_get($user, 'exception', 'An error occured while generating API tokens');
                 throw new \Exception($error);
             }
 
             $warehouseUser = $this->erpPut('Warehouse Users', Auth::user()->name, $tokens, true);
 
-            if(!array_key_exists('data', $warehouseUser)){
+            if (!Arr::has($warehouseUser, 'data')) {
                 $error = data_get($warehouseUser, 'exception', 'An error occured while generating API tokens');
                 throw new \Exception($error);
             }

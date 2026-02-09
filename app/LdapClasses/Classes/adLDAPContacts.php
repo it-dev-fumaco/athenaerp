@@ -37,6 +37,7 @@
 
 namespace App\LdapClasses\Classes;
 
+use Illuminate\Support\Arr;
 use App\LdapClasses\adLDAP;
 use App\LdapClasses\Collections\adLDAPContactCollection;
 
@@ -65,9 +66,9 @@ class adLDAPContacts {
     public function create($attributes)
     {
         // Check for compulsory fields
-        if (!array_key_exists("display_name", $attributes)) { return "Missing compulsory field [display_name]"; }
-        if (!array_key_exists("email", $attributes)) { return "Missing compulsory field [email]"; }
-        if (!array_key_exists("container", $attributes)) { return "Missing compulsory field [container]"; }
+        if (!Arr::has($attributes, "display_name")) { return "Missing compulsory field [display_name]"; }
+        if (!Arr::has($attributes, "email")) { return "Missing compulsory field [email]"; }
+        if (!Arr::has($attributes, "container")) { return "Missing compulsory field [container]"; }
         if (!is_array($attributes["container"])) { return "Container attribute must be an array."; }
 
         // Translate the schema
@@ -193,7 +194,7 @@ class adLDAPContacts {
         if ($recursive === NULL) { $recursive = $this->adldap->getRecursiveGroups(); } //use the default option if they haven't set it
         
         // Get a list of the groups
-        $groups = $this->groups($distinguisedName, array("memberof"), $recursive);
+        $groups = $this->groups($distinguisedName, $recursive);
         
         // Return true if the specified group is in the group list
         if (in_array($group, $groups)){ 

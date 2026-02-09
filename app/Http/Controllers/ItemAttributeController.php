@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
 use App\LdapClasses\adLDAP;
+use App\LdapClasses\adLDAPException;
 use App\Models\Item;
 use App\Models\ItemAttribute;
 use App\Models\ItemAttributeValue;
@@ -15,8 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Exception;
-use Session;
-use Validator;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Session;
 
 class ItemAttributeController extends Controller
 {
@@ -286,8 +287,8 @@ class ItemAttributeController extends Controller
                     foreach ($variantsName as $v) {
                         $elog[] = [
                             'name' => uniqid(),
-                            'creation' => Carbon::now()->toDateTimeString(),
-                            'modified' => Carbon::now()->toDateTimeString(),
+                            'creation' => now()->toDateTimeString(),
+                            'modified' => now()->toDateTimeString(),
                             'modified_by' => Auth::user()->wh_user,
                             'owner' => Auth::user()->wh_user,
                             'docstatus' => 0,
@@ -302,8 +303,8 @@ class ItemAttributeController extends Controller
 
             $erpLogs[] = [
                 'name' => uniqid(),
-                'creation' => Carbon::now()->toDateTimeString(),
-                'modified' => Carbon::now()->toDateTimeString(),
+                'creation' => now()->toDateTimeString(),
+                'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
@@ -321,12 +322,12 @@ class ItemAttributeController extends Controller
             Item::where('name', $request->itemCode)->update($attribVal3);
             $act = [
                 'name' => uniqid(),
-                'creation' => Carbon::now()->toDateTimeString(),
+                'creation' => now()->toDateTimeString(),
                 'idx' => 0,
                 'docstatus' => 0,
                 'user' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
-                'transaction_date' => Carbon::now()->toDateTimeString(),
+                'transaction_date' => now()->toDateTimeString(),
                 'subject' => $attVal . $abbVal . 'of item ' . $itemDetails->variant_of,
                 'operation' => 'Update Attribute'
             ];
@@ -355,7 +356,7 @@ class ItemAttributeController extends Controller
     {
         DB::beginTransaction();
         try {
-            $now = Carbon::now()->toDateTimeString();
+            $now = now()->toDateTimeString();
             $data = [];
 
             $lastIdx = ItemVariantAttribute::where('parent', $request->parentItem)->max('idx');
@@ -426,7 +427,7 @@ class ItemAttributeController extends Controller
 
             foreach ($itemCodes as $n => $itemCode) {
                 Item::where('name', $itemCode)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'item_name' => $this->generateItemDescription($itemCode)['item_name'],
                     'description' => $this->generateItemDescription($itemCode)['description']
@@ -435,12 +436,12 @@ class ItemAttributeController extends Controller
 
             $act = [
                 'name' => uniqid(),
-                'creation' => Carbon::now()->toDateTimeString(),
+                'creation' => now()->toDateTimeString(),
                 'idx' => 0,
                 'docstatus' => 0,
                 'user' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
-                'transaction_date' => Carbon::now()->toDateTimeString(),
+                'transaction_date' => now()->toDateTimeString(),
                 'subject' => $request->attributeName . ' attribute has been added to ' . $request->parentItem,
                 'operation' => 'Add Attribute'
             ];
@@ -476,8 +477,8 @@ class ItemAttributeController extends Controller
             foreach ($add as $ad) {
                 $erpLogs[] = [
                     'name' => uniqid(),
-                    'creation' => Carbon::now()->toDateTimeString(),
-                    'modified' => Carbon::now()->toDateTimeString(),
+                    'creation' => now()->toDateTimeString(),
+                    'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
                     'docstatus' => 0,
@@ -608,8 +609,8 @@ class ItemAttributeController extends Controller
             foreach ($rmv as $r) {
                 $erpLogs[] = [
                     'name' => uniqid(),
-                    'creation' => Carbon::now()->toDateTimeString(),
-                    'modified' => Carbon::now()->toDateTimeString(),
+                    'creation' => now()->toDateTimeString(),
+                    'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
                     'docname' => $r['parent'],
@@ -629,7 +630,7 @@ class ItemAttributeController extends Controller
             $arr = [];
             foreach ($itemVariants as $itemCode) {
                 Item::where('name', $itemCode)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'item_name' => $this->generateItemDescription($itemCode)['item_name'],
                     'description' => $this->generateItemDescription($itemCode)['description']
@@ -638,12 +639,12 @@ class ItemAttributeController extends Controller
 
             $act = [
                 'name' => uniqid(),
-                'creation' => Carbon::now()->toDateTimeString(),
+                'creation' => now()->toDateTimeString(),
                 'idx' => 0,
                 'docstatus' => 0,
                 'user' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
-                'transaction_date' => Carbon::now()->toDateTimeString(),
+                'transaction_date' => now()->toDateTimeString(),
                 'subject' => $attribute . ' attribute has been removed from ' . $parentItemCode,
                 'operation' => 'Delete Attribute'
             ];
@@ -672,7 +673,7 @@ class ItemAttributeController extends Controller
             }
 
             Item::where('name', $itemCode)->update([
-                'modified' => Carbon::now()->toDateTimeString(),
+                'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'item_name' => $request->item_name,
                 'description' => $request->description
@@ -681,7 +682,7 @@ class ItemAttributeController extends Controller
             $itemVariants = Item::where('variant_of', $itemCode)->pluck('name');
             foreach ($itemVariants as $itemCode) {
                 Item::where('name', $itemCode)->update([
-                    'modified' => Carbon::now()->toDateTimeString(),
+                    'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'item_name' => $this->generateItemDescription($itemCode)['item_name'],
                     'description' => $this->generateItemDescription($itemCode)['description']

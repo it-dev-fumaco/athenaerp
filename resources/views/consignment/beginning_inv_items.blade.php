@@ -102,9 +102,9 @@
     <div class="m-2">
         @php
             if($invName) {
-                $transactionDate = $detail ? \Carbon\Carbon::parse($detail->transaction_date)->format('Y-m-d') : \Carbon\Carbon::now()->format('Y-m-d');
+                $transactionDate = $detail ? \Carbon\Carbon::parse($detail->transaction_date)->format('Y-m-d') : now()->format('Y-m-d');
             } else {
-                $transactionDate = \Carbon\Carbon::now()->format('Y-m-d');
+                $transactionDate = now()->format('Y-m-d');
             }
         @endphp
         <label for="transaction-date" style="font-size: 16px;">Transaction Date</label>

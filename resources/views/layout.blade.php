@@ -1974,7 +1974,7 @@
 								$('#available-qty-e').val(available_qty);
 							}
 						});
-						var now = new Date("{{ Carbon\Carbon::now()->format('Y-m-d') }}");
+						var now = new Date("{{ now()->format('Y-m-d') }}");
 						var date = new Date(data.valid_until);
 						var date_difference = date.getTime() - now.getTime();
 						var validity_in_days = date_difference > 0 ? date_difference / (1000 * 60 * 60 * 24) : 0;

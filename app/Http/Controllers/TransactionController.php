@@ -117,7 +117,7 @@ class TransactionController extends Controller
                 'qty' => $request->qty,
                 'issued_qty' => $request->qty,
                 'validate_item_code' => $request->barcode,
-                'date_modified' => Carbon::now()->toDateTimeString()
+                'date_modified' => now()->toDateTimeString()
             ];
 
             StockEntryDetail::where('name', $request->child_tbl_id)->update($values);
@@ -149,19 +149,22 @@ class TransactionController extends Controller
 
                     $data = [
                         'modified_by' => Auth::user()->wh_user,
-                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified' => now()->toDateTimeString(),
                         'consumed_qty' => $consumedQty
                     ];
 
                     StockReservation::where('name', $stockReservationDetails->name)->update($data);
                 }
 
-                $this->update_reservation_status();
+                $this->updateReservationStatus();
             }
 
             DB::commit();
 
-            $this->submitStockEntry($steDetails->parent_se);
+            $submitResult = $this->submitStockEntry($steDetails->parent_se, 1);
+            if (is_array($submitResult) && ($submitResult['error'] ?? 0)) {
+                return ApiResponse::failure($submitResult['modal_message'] ?? 'An error occurred.', 500);
+            }
 
             if ($request->deduct_reserve == 1) {
                 return ApiResponse::success("Item $steDetails->item_code has been deducted from reservation.");
@@ -259,7 +262,7 @@ class TransactionController extends Controller
             $values->items[$index]->session_user = Auth::user()->wh_user;
             $values->items[$index]->status = 'Issued';
             $values->items[$index]->barcode = $request->barcode;
-            $values->items[$index]->date_modified = Carbon::now()->toDateTimeString();
+            $values->items[$index]->date_modified = now()->toDateTimeString();
             $values->items[$index]->qty = (float) $values->items[$index]->qty;
             $values->net_weight_pkg = (float) $values->net_weight_pkg;
             $values->gross_weight_pkg = (float) $values->gross_weight_pkg;
@@ -289,14 +292,14 @@ class TransactionController extends Controller
 
                     $data = [
                         'modified_by' => Auth::user()->wh_user,
-                        'modified' => Carbon::now()->toDateTimeString(),
+                        'modified' => now()->toDateTimeString(),
                         'consumed_qty' => $consumedQty
                     ];
 
                     StockReservation::where('name', $stockReservationDetails->name)->update($data);
                 }
 
-                $this->update_reservation_status();
+                $this->updateReservationStatus();
             }
 
             $response = $this->erpPut('Packing Slip', $packingSlip->name, $values->toArray(), true);
@@ -329,7 +332,7 @@ class TransactionController extends Controller
     {
         DB::connection('mysql')->beginTransaction();
         try {
-            $now = Carbon::now();
+            $now = now();
 
             $packedItems = collect($packingSlip->items)->filter(function ($item) use ($request) {
                 return $item->packed && $item->packed->parent_item == $request->barcode;
@@ -390,7 +393,7 @@ class TransactionController extends Controller
 
                         $data = [
                             'modified_by' => Auth::user()->wh_user,
-                            'modified' => Carbon::now()->toDateTimeString(),
+                            'modified' => now()->toDateTimeString(),
                             'consumed_qty' => $consumedQty
                         ];
 

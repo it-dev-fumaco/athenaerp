@@ -49,7 +49,7 @@ class LoginController extends Controller
                     }
                 }
 
-                User::where('name', $user->name)->update(['last_login' => Carbon::now()->toDateTimeString()]);
+                User::where('name', $user->name)->update(['last_login' => now()->toDateTimeString()]);
 
                 return redirect('/');
             }

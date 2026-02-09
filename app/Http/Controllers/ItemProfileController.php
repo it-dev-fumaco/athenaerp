@@ -30,6 +30,8 @@ use App\Models\StockReservation;
 use App\Models\UOM;
 use App\Models\WarehouseAccess;
 use Buglinjo\LaravelWebp\Facades\Webp;
+use ErrorException;
+use Exception;
 use Illuminate\Support\Facades\File;
 
 class ItemProfileController extends Controller
@@ -49,13 +51,13 @@ class ItemProfileController extends Controller
             $warehouses = Bin::query()->whereIn('warehouse', $allowedWarehouses)->where('item_code', $itemCode)->select('warehouse', 'location')->get();
 
             if (count($warehouses) <= 0) {
-                throw new \ErrorException('Item <b>' . $itemCode . '</b> is not available on any warehouse.');
+                throw new ErrorException('Item <b>' . $itemCode . '</b> is not available on any warehouse.');
             }
 
             return view('form_warehouse_location', compact('warehouses', 'itemCode'));
-        } catch (\ErrorException $th) {
+        } catch (ErrorException $th) {
             return ApiResponse::failure($th->getMessage(), 400);
-        } catch (\Exception $th) {
+        } catch (Exception $th) {
             return ApiResponse::failure('Something went wrong. Please try again.', 400);
         }
     }
@@ -76,7 +78,7 @@ class ItemProfileController extends Controller
             DB::commit();
 
             return ApiResponse::success('Warehouse location updated.', ['item_code' => $request->item_code]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             return ApiResponse::failure('Something went wrong. Please contact your system administrator.');
@@ -403,7 +405,7 @@ class ItemProfileController extends Controller
             })
             ->delete();
 
-        $now = Carbon::now();
+        $now = now();
         if ($request->hasFile('item_image')) {
             $files = $request->file('item_image');
 

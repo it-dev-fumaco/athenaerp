@@ -141,7 +141,7 @@ class MainController extends Controller
                 $beginningInventoryStart = BeginningInventory::orderBy('transaction_date', 'asc')->value('transaction_date');
                 $beginningInventoryStartDate = $beginningInventoryStart ? Carbon::parse($beginningInventoryStart)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
 
-                $now = Carbon::now();
+                $now = now();
 
                 $branchesWithBeginningInventory = BeginningInventory::query()
                     ->whereIn('branch_warehouse', $assignedConsignmentStore)
@@ -283,7 +283,7 @@ class MainController extends Controller
         }
 
         $startDate = Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
-        $endDate = Carbon::now();
+        $endDate = now();
 
         $period = CarbonPeriod::create($startDate, '28 days', $endDate);
 
@@ -649,7 +649,7 @@ class MainController extends Controller
     {
         DB::beginTransaction();
         try {
-            $now = Carbon::now();
+            $now = now();
 
             $erpUpdate = [];
 
@@ -831,7 +831,7 @@ class MainController extends Controller
                 return $item->where('name', $childId);
             })->first();
 
-            $now = Carbon::now();
+            $now = now();
 
             if (!$stockEntry) {
                 throw new Exception('Record not found');
@@ -886,8 +886,8 @@ class MainController extends Controller
             }
 
             $response = $this->erpPut('Stock Entry', $stockEntry->name, collect($stockEntry)->toArray());
-            if (!array_key_exists('data', $response)) {
-                if (array_key_exists('exc_type', $response) && $response['exc_type'] == 'TimestampMismatchError') {
+            if (!Arr::has($response, 'data')) {
+                if (Arr::has($response, 'exc_type') && $response['exc_type'] == 'TimestampMismatchError') {
                     $stockEntryData = $this->erpGet('Stock Entry', $stockEntry->name);
                     $stockEntryData = $stockEntryData['data'] ?? null;
                     if ($stockEntryData) {
@@ -911,7 +911,7 @@ class MainController extends Controller
                         $response = $this->erpPut('Stock Entry', $stockEntryData['name'], $stockEntryData);
                     }
                 }
-                if (!array_key_exists('data', $response)) {
+                if (!Arr::has($response, 'data')) {
                     $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
                     throw new Exception($err);
                 }
@@ -1089,7 +1089,7 @@ class MainController extends Controller
     {
         DB::beginTransaction();
         try {
-            $now = Carbon::now();
+            $now = now();
             switch ($request->reference) {
                 case 'Stock Entry':
                     $q = StockEntryDetail::query()
@@ -1232,7 +1232,7 @@ class MainController extends Controller
             DB::commit();
 
             return ApiResponse::success('<b>' . $request->athena_transaction_number . '</b> has been cancelled.', ['item_code' => $request->itemCode]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('MainController cancelAthenaTransaction failed', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -1478,7 +1478,7 @@ class MainController extends Controller
         return DB::table('tabStock Reservation')
             ->where('type', 'In-house')
             ->where('status', 'Active')
-            ->whereDate('valid_until', '<=', Carbon::now())
+            ->whereDate('valid_until', '<=', now())
             ->update(['status' => 'Expired']);
     }
 
@@ -1667,7 +1667,7 @@ class MainController extends Controller
         $assignedConsignmentStore = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
 
         $from = $request->date ? Carbon::parse(explode(' - ', $request->date)[0]) : now()->subDays(30);
-        $to = $request->date ? Carbon::parse(explode(' - ', $request->date)[1]) : Carbon::now();
+        $to = $request->date ? Carbon::parse(explode(' - ', $request->date)[1]) : now();
 
         $invAudit = DB::table('tabMonthly Inventory Audit')
             ->whereIn('warehouse', $assignedConsignmentStore)
@@ -1789,7 +1789,7 @@ class MainController extends Controller
                 'parent_warehouse' => $parentWarehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                 'delivery_date' => ($d->delivery_date) ? Carbon::parse($d->delivery_date)->format('M-d-Y') : null,
-                'delivery_status' => ($d->delivery_date) ? ((Carbon::parse($d->delivery_date) < Carbon::now()) ? 'late' : null) : null
+                'delivery_status' => ($d->delivery_date) ? ((Carbon::parse($d->delivery_date) < now()) ? 'late' : null) : null
             ];
         }
 
@@ -1898,7 +1898,7 @@ class MainController extends Controller
                 if (in_array($stedStatus, ['Received', 'Issued'])) {
                     $dateConfirmed = Carbon::parse($d->date_modified);
                     $receivedBy = $d->session_user;
-                    $durationInTransit = Carbon::parse($dateConfirmed)->diff(Carbon::now())->days . ' Day(s)';
+                    $durationInTransit = Carbon::parse($dateConfirmed)->diff(now())->days . ' Day(s)';
                 }
 
                 $partNos = ItemSupplier::query()->where('parent', $d->item_code)->pluck('supplier_part_no');
@@ -2021,7 +2021,7 @@ class MainController extends Controller
                 ]
             ]);
 
-            if (!array_key_exists('data', $response)) {
+            if (!Arr::has($response, 'data')) {
                 return ApiResponse::failureLegacy('An error occured. Please try again.');
             }
 
@@ -2073,35 +2073,12 @@ class MainController extends Controller
     }
 
 
-    public function updateReservationStatus()
-    {
-        // update status expired
-        DB::table('tabStock Reservation')
-            ->whereIn('status', ['Active', 'Partially Issued'])
-            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
-            ->where('valid_until', '<', Carbon::now())
-            ->update(['status' => 'Expired']);
-        // update status partially issued
-        DB::table('tabStock Reservation')
-            ->whereNotIn('status', ['Cancelled', 'Issued', 'Expired'])
-            ->where('consumed_qty', '>', 0)
-            ->whereRaw('consumed_qty < reserve_qty')
-            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
-            ->update(['status' => 'Partially Issued']);
-        // update status issued
-        DB::table('tabStock Reservation')
-            ->whereNotIn('status', ['Cancelled', 'Expired', 'Issued'])
-            ->where('consumed_qty', '>', 0)
-            ->whereRaw('consumed_qty >= reserve_qty')
-            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
-            ->update(['status' => 'Issued']);
-    }
 
     public function createMaterialRequest($id)
     {
         DB::beginTransaction();
         try {
-            $now = Carbon::now();
+            $now = now();
             $latestMr = DB::table('tabMaterial Request')->max('name');
             $latestMrExploded = explode('-', $latestMr);
             $newId = $latestMrExploded[1] + 1;
@@ -2200,7 +2177,7 @@ class MainController extends Controller
     {
         DB::beginTransaction();
         try {
-            $now = Carbon::now();
+            $now = now();
             $productionOrder = $request->production_order;
             $existingSteTransfer = StockEntry::where('work_order', $productionOrder)
                 ->where('purpose', 'Material Transfer for Manufacture')
@@ -2419,7 +2396,7 @@ class MainController extends Controller
         for ($i = 1; $i <= $monthNow; $i++) {
             $monthIndex = $monthNames[$i];
             $monthI = $monthNameShort[$i];
-            $result[$monthI] = array_key_exists($monthIndex, $query) ? $query[$monthIndex] : 0;
+            $result[$monthI] = Arr::get($query, $monthIndex, 0);
         }
 
         return [
@@ -2655,7 +2632,7 @@ class MainController extends Controller
             $rate = 0;
             $standardPrice = 0;
             $minPrice = 0;
-            if (array_key_exists($rowName, $lastPurchaseOrderRates)) {
+            if (Arr::has($lastPurchaseOrderRates, $rowName)) {
                 $poItem = $lastPurchaseOrderRates[$rowName][0] ?? null;
                 $supplierGroup = $poItem ? (is_array($poItem) ? ($poItem['supplier_group'] ?? null) : $poItem->supplier_group) : null;
                 if ($supplierGroup == 'Imported') {
@@ -2677,7 +2654,7 @@ class MainController extends Controller
                 $dRate = ($rate * $standardPriceComputation) * 1.12;
             }
 
-            $standardPrice = array_key_exists($rowName, $websitePrices) ? $websitePrices[$rowName] : $dRate;
+            $standardPrice = Arr::get($websitePrices, $rowName, $dRate);
 
             $prices[$rowName] = [
                 'rate' => $rate,
@@ -2734,7 +2711,7 @@ class MainController extends Controller
 
                 $file->storeAs('/public/export/', 'imported_athena_images.zip');
 
-                $now = Carbon::now();
+                $now = now();
                 $zip = new ZipArchive;
                 if (Storage::disk('public')->exists('/export/imported_athena_images.zip') and $zip->open(storage_path('/app/public/export/imported_athena_images.zip')) === TRUE) {
                     $zip->extractTo(storage_path('/app/public/export/'));
@@ -2755,7 +2732,7 @@ class MainController extends Controller
 
                     if (!in_array($imageExtension, ['webp', 'WEBP', 'zip', 'ZIP'])) {
                         return [
-                            'item_code' => isset(explode('-', $imageName)[1]) ? explode('-', $imageName)[1] : null,
+                            'item_code' => Arr::get(explode('-', $imageName), 1),
                             'image' => $image
                         ];
                     }
@@ -2787,8 +2764,13 @@ class MainController extends Controller
                         // Save new images in DB
                         if (isset($imagesArr[$itemCode])) {
                             foreach ($imagesArr[$itemCode] as $a => $image) {
+                                if (empty($image['image'])) {
+                                    continue;
+                                }
                                 $a = $a + 1;
-                                $jpg = explode('-', $image['image'])[0] . $a . '-' . str_replace(explode('-', $image['image'])[0] . '-', '', $image['image']);
+                                $imageName = $image['image'];
+                                $imagePrefix = explode('-', $imageName)[0];
+                                $jpg = $imagePrefix . $a . '-' . str_replace($imagePrefix . '-', '', $imageName);
                                 $webp = explode('.', $jpg)[0] . '.webp';
 
                                 $newImages[] = [
@@ -2850,8 +2832,6 @@ class MainController extends Controller
         imagejpeg($image);
         $jpgData = ob_get_contents();
         ob_end_clean();
-
-        imagedestroy($image);
 
         $name = explode('.', $webp)[0];
 

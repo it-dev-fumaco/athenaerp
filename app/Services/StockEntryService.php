@@ -23,7 +23,7 @@ class StockEntryService
     public function createStockLedgerEntry(string $stockEntryName): array
     {
         try {
-            $now = Carbon::now();
+            $now = now();
             $stockEntryQry = StockEntry::query()->where('name', $stockEntryName)->first();
 
             $stockEntryDetail = StockEntryDetail::query()->where('parent', $stockEntryName)->get();
@@ -193,7 +193,7 @@ class StockEntryService
     public function updateBin(string $stockEntryName): array
     {
         try {
-            $now = Carbon::now();
+            $now = now();
 
             $latestId = DB::connection('mysql')->table('tabBin')->where('name', 'like', '%BINM%')->max('name');
             $latestId = ($latestId) ? $latestId : 0;
@@ -321,7 +321,7 @@ class StockEntryService
     public function createGlEntry(string $stockEntryName): array
     {
         try {
-            $now = Carbon::now();
+            $now = now();
             $stockEntryQry = StockEntry::query()->where('name', $stockEntryName)->first();
             $stockEntryDetail = StockEntryDetail::query()
                 ->where('parent', $stockEntryName)
