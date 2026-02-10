@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Consignment;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\AssignedWarehouses;
-use App\Models\Bin;
 use App\Models\BeginningInventory;
+use App\Models\Bin;
 use App\Models\ConsignmentDamagedItems;
 use App\Models\ConsignmentInventoryAuditReport;
 use App\Models\ConsignmentInventoryAuditReportItem;
@@ -21,13 +21,13 @@ use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Arr;
+use Exception;
 
 class ConsignmentInventoryAuditController extends Controller
 {

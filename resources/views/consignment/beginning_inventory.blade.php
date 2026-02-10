@@ -41,7 +41,9 @@
                                 </div>
                             </div>
                             @endif
-                            <div id="beginning-inventory"></div>
+                            <div class="responsive-table-wrap">
+                                <div id="beginning-inventory"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -53,10 +55,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         .select2-selection__rendered {
             line-height: 34px !important;
             text-align: left !important;

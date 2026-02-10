@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class EmailHR extends Command
 {
@@ -46,12 +46,12 @@ class EmailHR extends Command
         $cutoff1 = $salesReportDeadline ? $salesReportDeadline->{'1st_cutoff_date'} : 0;
         $cutoff2 = $salesReportDeadline ? $salesReportDeadline->{'2nd_cutoff_date'} : 0;
 
-        if(in_array(now()->format('d'), [$cutoff1, $cutoff2])){
+        if (in_array(now()->format('d'), [$cutoff1, $cutoff2])) {
             $transactionDate = now()->startOfMonth();
             $startDate = Carbon::parse($transactionDate)->subMonth();
             $endDate = Carbon::parse($transactionDate)->addMonths(2);
 
-            $period = CarbonPeriod::create($startDate, '28 days' , $endDate);
+            $period = CarbonPeriod::create($startDate, '28 days', $endDate);
 
             $transactionDate = $transactionDate->format('Y-m-d');
             $cutoffPeriod = [];
@@ -61,9 +61,9 @@ class EmailHR extends Command
                     $cutoffPeriod[] = $date->format('Y-m-d');
                 }
 
-                if($i == 0){
+                if ($i == 0) {
                     $febCutoff = $cutoff1 <= 28 ? $cutoff1 : 28;
-                    $cutoffPeriod[] = $febCutoff.'-02-'.now()->format('Y');
+                    $cutoffPeriod[] = $febCutoff . '-02-' . now()->format('Y');
                 }
             }
 
@@ -81,7 +81,9 @@ class EmailHR extends Command
             $activePromodisers = DB::table('tabWarehouse Users as wu')
                 ->join('tabAssigned Consignment Warehouse as acw', 'acw.parent', 'wu.frappe_userid')
                 ->join('tabWarehouse as w', 'w.warehouse_name', 'acw.warehouse_name')
-                ->where('wu.enabled', 1)->where('wu.user_group', 'Promodiser')->where('w.disabled', 0)
+                ->where('wu.enabled', 1)
+                ->where('wu.user_group', 'Promodiser')
+                ->where('w.disabled', 0)
                 ->select('wu.full_name', 'wu.wh_user', 'acw.warehouse')
                 ->get();
 
@@ -90,35 +92,36 @@ class EmailHR extends Command
                 ->groupBy('owner', 'promodiser', 'branch_warehouse')
                 ->get();
 
-            $submittedReport = collect($reportDetails)->filter(function (object $q){
+            $submittedReport = collect($reportDetails)->filter(function (object $q) {
                 return Carbon::parse($q->last_audit) >= now()->startOfMonth();
             })->groupBy(['owner', 'branch_warehouse']);
             $reportDetails = collect($reportDetails)->groupBy(['owner', 'branch_warehouse']);
 
             $report = [];
             foreach ($activePromodisers as $value) {
-                if(!isset($submittedReport[$value->wh_user][$value->warehouse]))
-                $report[] = [
-                    'full_name' => $value->full_name,
-                    'email' => $value->wh_user,
-                    'warehouse' => $value->warehouse,
-                    'last_audit' => isset($reportDetails[$value->wh_user][$value->warehouse]) ? $reportDetails[$value->wh_user][$value->warehouse][0]->last_audit : null
-                ];
+                if (!isset($submittedReport[$value->wh_user][$value->warehouse]))
+                    $report[] = [
+                        'full_name' => $value->full_name,
+                        'email' => $value->wh_user,
+                        'warehouse' => $value->warehouse,
+                        'last_audit' => isset($reportDetails[$value->wh_user][$value->warehouse]) ? $reportDetails[$value->wh_user][$value->warehouse][0]->last_audit : null
+                    ];
             }
 
             $emailData = [
                 'users' => collect($report)->groupBy('full_name'),
-                'cutoff_dates' => Carbon::parse($periodFrom)->format('F d, Y').' - '.Carbon::parse($periodTo)->format('F d, Y')
+                'cutoff_dates' => Carbon::parse($periodFrom)->format('F d, Y') . ' - ' . Carbon::parse($periodTo)->format('F d, Y')
             ];
 
             $receivers = ['hr@fumaco.local', 'consignment@fumaco.local'];
             foreach ($receivers as $receiver) {
                 try {
-                    Mail::mailer('local_mail')->send('mail_template.hr_promodiser_report', $emailData, function($message) use ($receiver){
+                    Mail::mailer('local_mail')->send('mail_template.hr_promodiser_report', $emailData, function ($message) use ($receiver) {
                         $message->to($receiver);
                         $message->subject('AthenaERP - Promodisers Monthly Report');
                     });
-                } catch (\Throwable $th) {}
+                } catch (\Throwable $th) {
+                }
             }
         }
 

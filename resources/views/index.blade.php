@@ -62,13 +62,13 @@
 												</div>
 											</div>
 										</div>
-										<div class="col-xl-4">
+										<div class="col-xl-4 min-width-0">
 											<div class="row">
-												<div class="col-xl-12">
-													<div class="card card-info card-outline font-responsive">
-														<div class="card-header">
-															<h3 class="card-title font-weight-bold">Inventory Accuracy</h3>
-															<div class="card-tools">
+												<div class="col-xl-12 min-width-0">
+													<div class="card card-info card-outline font-responsive inv-accuracy-card">
+														<div class="card-header d-flex flex-nowrap justify-content-between align-items-center">
+															<h3 class="card-title font-weight-bold text-truncate mb-0 mr-2">Inventory Accuracy</h3>
+															<div class="card-tools flex-shrink-0">
 																<button type="button" class="btn btn-tool" data-card-widget="collapse">
 																	<i class="fas fa-minus"></i>
 																</button>
@@ -77,7 +77,7 @@
 																</button>
 															</div>
 														</div>
-														<div class="card-body p-2">
+														<div class="card-body p-2 overflow-x-auto">
 															<div id="dashboard-inv-accuracy" data-initial-month="{{ (int) now()->format('n') }}" data-initial-year="{{ date('Y') }}"></div>
 														</div>
 													</div>

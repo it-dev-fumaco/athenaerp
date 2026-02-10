@@ -235,7 +235,8 @@
     }
     .upload-image-placeholder {
         border: 2px dashed #d5d8dc;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
         height: 230px;
         border-radius: 13px;
         display: block;
@@ -244,7 +245,8 @@
         position: relative;
         overflow: hidden;
         display: block;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
         height: 230px;
         top: 0;
         left: 0;
@@ -283,7 +285,8 @@
     }
     .img-cont {
         position: relative;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
     }
     .custom-overlay {
         position: absolute;

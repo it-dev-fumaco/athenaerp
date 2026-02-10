@@ -35,7 +35,8 @@
       }
       .custom-card {
         background-color: #FFF;
-        width: 500px;
+        width: 100%;
+        max-width: 500px;
         border-radius: 0.5rem;
         box-shadow: 0px 5px 20px rgba(49, 104, 146, 0.25);
       }
@@ -113,14 +114,19 @@
 <style>
   .recent-sidebar {
     position: fixed;
-    width: 400px;
+    width: min(400px, 92vw);
+    max-width: 400px;
     top:0;
     right: 0;
     bottom: 0;
     background: #fff;
     border-left: 1px solid  #abb2b9 ;
-    overflow-y:auto;
-    overflow-x:hidden;
+    overflow-y: auto;
+    overflow-x: auto;
+  }
+  @media (max-width: 767.98px) {
+    .recent-sidebar { width: 100%; max-width: 100%; }
+    .col-10 { flex: 0 0 100%; max-width: 100%; }
   }
 </style>
 

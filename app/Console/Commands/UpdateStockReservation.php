@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class UpdateStockReservation extends Command
 {
@@ -40,22 +39,30 @@ class UpdateStockReservation extends Command
     public function handle()
     {
         try {
-            DB::table('tabStock Reservation')->whereIn('status', ['Active', 'Partially Issued'])
-                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->where('valid_until', '<', now())->update(['status' => 'Expired']);
+            DB::table('tabStock Reservation')
+                ->whereIn('status', ['Active', 'Partially Issued'])
+                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
+                ->where('valid_until', '<', now())
+                ->update(['status' => 'Expired']);
             // update status partially issued
             DB::table('tabStock Reservation')
                 ->whereNotIn('status', ['Cancelled', 'Issued', 'Expired'])
-                ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty < reserve_qty')
-                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->update(['status' => 'Partially Issued']);
+                ->where('consumed_qty', '>', 0)
+                ->whereRaw('consumed_qty < reserve_qty')
+                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
+                ->update(['status' => 'Partially Issued']);
             // update status issued
-            DB::table('tabStock Reservation')->whereNotIn('status', ['Cancelled', 'Expired', 'Issued'])
-                ->where('consumed_qty', '>', 0)->whereRaw('consumed_qty >= reserve_qty')
-                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])->update(['status' => 'Issued']);
+            DB::table('tabStock Reservation')
+                ->whereNotIn('status', ['Cancelled', 'Expired', 'Issued'])
+                ->where('consumed_qty', '>', 0)
+                ->whereRaw('consumed_qty >= reserve_qty')
+                ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
+                ->update(['status' => 'Issued']);
         } catch (\Throwable $th) {
             // throw $th;
-            info("an error occured while updating stock reservation");
+            info('an error occured while updating stock reservation');
         }
-        
+
         return self::SUCCESS;
     }
 }

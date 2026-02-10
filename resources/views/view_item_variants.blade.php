@@ -35,16 +35,16 @@
                                     
                                     <form action="/update_rate" method="POST" autocomplete="off">
                                         @csrf
-                                        <div class="table-responsive" id="example">
+                                        <div class="table-responsive responsive-table-wrap" id="example">
                                             <table class="table table-bordered table-hover table-striped table-sm" style="font-size: 9pt;">
                                                 <thead>
                                                     <th class="text-center align-middle p-1">Item Code</th>
                                                     @foreach ($attributeNames as $attrName)
-                                                    <th class="text-center align-middle p-1" style="width: 350px !important;">{{ $attrName }}</th>
+                                                    <th class="text-center align-middle p-1 variants-th-attr">{{ $attrName }}</th>
                                                     @endforeach
-                                                    <th class="text-center align-middle p-1" style="width: 350px !important;">Cost</th>
-                                                    <th class="text-center align-middle p-1" style="width: 350px !important;">Min. Selling Price</th>
-                                                    <th class="text-center align-middle p-1" style="width: 350px !important;">Standard Price</th>
+                                                    <th class="text-center align-middle p-1 variants-th-price">Cost</th>
+                                                    <th class="text-center align-middle p-1 variants-th-price">Min. Selling Price</th>
+                                                    <th class="text-center align-middle p-1 variants-th-price">Standard Price</th>
                                                 </thead>
                                                 <tbody>
                                                     @forelse ($itemCodes as $itemCode)
@@ -61,7 +61,7 @@
                                                             {{ '₱ ' . number_format($prices[$itemCode]['rate'], 2, '.', ',') }}
                                                             @else
                                                             <center>
-                                                                <div class="form-group m-0 text-center" style="width: 100px;">
+                                                                <div class="form-group m-0 text-center input-group-price">
                                                                     <input type="text" class="form-control form-control-sm" name="price[{{ $itemCode }}]" placeholder="0.00">
                                                                 </div>
                                                             </center>
@@ -105,6 +105,9 @@
 </div>
 
 <style>
+    .variants-th-attr { min-width: 100px; }
+    .variants-th-price { min-width: 90px; }
+    .input-group-price { width: 100px; max-width: 100%; }
     #example tr > *:first-child {
         position: -webkit-sticky;
         position: sticky;

@@ -1,11 +1,10 @@
 <template>
-  <div class="box">
+  <div class="box inv-accuracy-widget">
     <form autocomplete="off">
-      <div class="text-center">Monthly Inventory Accuracy:
+      <div class="d-flex flex-wrap align-items-center justify-content-center mb-2">Monthly Inventory Accuracy:
         <select
           v-model="selectedMonth"
-          class="filter-inv-accuracy"
-          style="width: 15%;"
+          class="filter-inv-accuracy form-control form-control-sm mx-1"
           @change="loadData"
         >
           <option value="">-</option>
@@ -13,25 +12,21 @@
         </select>
         <select
           v-model="selectedYear"
-          class="filter-inv-accuracy"
-          style="width: 15%;"
+          class="filter-inv-accuracy form-control form-control-sm mx-1"
           @change="loadData"
         >
           <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
         </select>
       </div>
     </form>
-    <table class="table table-bordered mt-2" id="monthly-inv-chart">
-      <col style="width: 30%;">
-      <col style="width: 30%;">
-      <col style="width: 20%;">
-      <col style="width: 20%;">
+    <div class="responsive-table-wrap">
+    <table class="table table-bordered table-sm mt-2" id="monthly-inv-chart">
       <thead>
         <tr>
-          <th class="text-center pr-0 pl-0 align-middle">Classification</th>
-          <th class="text-center pr-0 pl-0 align-middle">Warehouse</th>
-          <th class="text-center pr-0 pl-0 align-middle">Accuracy</th>
-          <th class="text-center pr-0 pl-0 align-middle">Target</th>
+          <th class="text-center pr-1 pl-1 align-middle">Classification</th>
+          <th class="text-center pr-1 pl-1 align-middle">Warehouse</th>
+          <th class="text-center pr-1 pl-1 align-middle">Accuracy</th>
+          <th class="text-center pr-1 pl-1 align-middle">Target</th>
         </tr>
       </thead>
       <tbody class="item-classification">
@@ -59,6 +54,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
   </div>
 </template>
 

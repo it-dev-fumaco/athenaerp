@@ -200,7 +200,7 @@
                                                     </dl>
                                                     <div id="item-information-container"></div>
                                                 </div>
-                                                <div class="d-none d-md-block d-lg-none col-4">
+                                                <div class="d-none d-md-block d-lg-none col-4 item-profile-actions-col px-2">
                                                     <div class="dropdown show">
                                                         <a class="btn btn-app m-2 d-block pb-5 dropdown-toggle generate-brochure-dropdown" href="#" role="button" id="dropdownMenuLink" data-toggle="{{ !$bundled ? 'dropdown' : null }}" aria-haspopup="true" aria-expanded="false" disabled="disabled">
                                                             <i class="fas fa-print pb-1"></i> Generate Brochure
@@ -298,9 +298,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-none d-lg-block col-lg-2 pr-2">
-                                <div class="box box-solid h-100 pr-0s">
-                                    <div class="col-sm-12 col-md-12 col-lg-10 offset-lg-2 col-xl-10 offset-xl-2">
+                            <div class="d-none d-lg-block col-lg-2 pr-2 pl-0 item-profile-actions-col">
+                                <div class="box box-solid h-100 item-profile-actions-box">
+                                    <div class="item-profile-actions-buttons px-2">
                                         <div class="dropdown show">
                                             <a class="btn btn-app m-2 d-block pb-5 dropdown-toggle generate-brochure-dropdown" href="#" role="button" id="dropdownMenuLink" data-toggle="{{ !$bundled ? 'dropdown' : null }}" aria-haspopup="true" aria-expanded="false">
                                                 <i class="fas fa-print pb-1"></i> Generate Brochure
@@ -341,22 +341,22 @@
                                     <div class="container col-12 mt-2">
                                         <div class="row">
                                             <div class="col-md-12">
-                                                <div id="example" class="overflow-auto">
+                                                <div id="example" class="responsive-table-wrap overflow-auto">
                                                     <table class="table table-sm table-bordered table-striped variants-table">
                                                         <thead>
                                                             <tr>
                                                                 <th scope="col" class="text-center align-middle" style="background-color: #CCD1D1;">Item Code</th>
                                                                 @foreach ($attributeNames as $attributeName)
-                                                                <th scope="col" class="text-center align-middle" style="width: 350px;">{{ $attributeName }}</th>
+                                                                <th scope="col" class="text-center align-middle variants-th-attr">{{ $attributeName }}</th>
                                                                 @endforeach
                                                                 <th scope="col" class="text-center align-middle">Stock Availability</th>
                                                                 @if (in_array($userDepartment, $allowedDepartment) && !in_array($userGroup, ['Manager', 'Director'])) 
-                                                                <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
+                                                                <th scope="col" class="text-center text-nowrap align-middle variants-th-price">Standard Price</th>
                                                                 @endif
                                                                 @if (in_array($userGroup, ['Manager', 'Director']))
-                                                                <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Cost</th>
-                                                                <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Min. Selling Price</th>
-                                                                <th scope="col" class="text-center text-nowrap align-middle" style="width: 300px;">Standard Price</th>
+                                                                <th scope="col" class="text-center text-nowrap align-middle variants-th-price">Cost</th>
+                                                                <th scope="col" class="text-center text-nowrap align-middle variants-th-price">Min. Selling Price</th>
+                                                                <th scope="col" class="text-center text-nowrap align-middle variants-th-price">Standard Price</th>
                                                                 @endif
                                                             </tr>
                                                         </thead>
@@ -385,7 +385,7 @@
                                                                         <span class="entered-price d-none">0.00</span>
                                                                         <form action="/update_item_price/{{ $itemDetails->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $itemDetails->name }}-computed-price">
                                                                             @csrf
-                                                                            <div class="input-group" style="width: 120px;">
+                                                                            <div class="input-group input-group-price">
                                                                                 <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $itemRate }}" required>
                                                                                 <div class="input-group-append">
                                                                                     <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
@@ -401,7 +401,7 @@
                                                                         <span class="entered-price d-none">0.00</span>
                                                                         <form action="/update_item_price/{{ $itemDetails->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $itemDetails->name }}-computed-price">
                                                                             @csrf
-                                                                            <div class="input-group" style="width: 120px;">
+                                                                            <div class="input-group input-group-price">
                                                                                 <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
                                                                                 <div class="input-group-append">
                                                                                     <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
@@ -471,7 +471,7 @@
                                                                         <span class="entered-price d-none">0.00</span>
                                                                         <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
                                                                             @csrf
-                                                                            <div class="input-group" style="width: 120px;">
+                                                                            <div class="input-group input-group-price">
                                                                                 <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" value="{{ $cost }}" required>
                                                                                 <div class="input-group-append">
                                                                                     <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
@@ -487,7 +487,7 @@
                                                                         <span class="entered-price d-none">0.00</span>
                                                                         <form action="/update_item_price/{{ $variant->name }}" method="POST" autocomplete="off" class="update-price-form" data-id="{{ $variant->name }}-computed-price">
                                                                             @csrf
-                                                                            <div class="input-group" style="width: 120px;">
+                                                                            <div class="input-group input-group-price">
                                                                                 <input type="text" class="form-control form-control-sm" name="price" placeholder="0.00" required>
                                                                                 <div class="input-group-append">
                                                                                     <button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-check"></i></button>
@@ -532,11 +532,12 @@
                                     </div>
                                 @endif
 
-                                <div class="col-md-12">
+                                <div class="col-md-12 item-alternatives-section min-width-0">
                                     <div class="card-header border-bottom-0">
                                         <h3 class="card-title font-responsive mb-3 mt-5"><i class="fas fa-filter"></i> Item Alternatives</h3>
                                     </div>
-                                    <div class="d-flex flex-row flex-nowrap overflow-auto">
+                                    <div class="item-alternatives-scroll">
+                                        <div class="d-flex flex-row flex-nowrap">
                                         @forelse($itemAlternatives as $a)
                                             <div class="custom-body m-1">
                                                 <div class="card card-default">
@@ -566,6 +567,7 @@
                                                 <h5 class="text-center font-responsive">No Item Alternative(s)</h5>
                                             </div>
                                         @endforelse
+                                        </div>
                                     </div>
                                 </div>
                             @endif
@@ -684,9 +686,12 @@
             z-index: -1;
         }
         .custom-body {
-            min-width: 406px;
+            min-width: 0;
             max-width: 406px;
         }
+        .variants-th-attr { min-width: 100px; }
+        .variants-th-price { min-width: 90px; }
+        .input-group-price { width: 120px; max-width: 100%; }
 
         .table-highlight{
             border: 2px solid rgba(0, 31, 63, 0.3) !important;
@@ -772,6 +777,9 @@
         @media (max-width: 767.98px) {
             #example tr > *:first-child {
                 min-width: 5rem;
+            }
+            .custom-body {
+                max-width: 100%;
             }
             .back-btn{
                 right: 0;

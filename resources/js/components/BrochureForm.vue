@@ -64,7 +64,7 @@
               </button>
 
               <div ref="modalRef" class="modal fade" id="product-list-modal" tabindex="-1">
-                <div class="modal-dialog" style="min-width: 90% !important">
+                <div class="modal-dialog modal-item-inquiry" style="max-width: 95%; width: 95%;">
                   <div class="modal-content">
                     <div class="modal-header">
                       <h4 class="modal-title">{{ fileName }}</h4>

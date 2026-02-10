@@ -127,13 +127,13 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" id="transactions-form" action="/submit_sales_return">
 		@csrf
-		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
 	</form>
 </div>
 <div class="modal fade" id="dr-modal">
 	<form method="POST" action="/submit_dr_sales_return_api">
 		@csrf
-		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
 	</form>
 </div>
 

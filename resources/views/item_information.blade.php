@@ -14,7 +14,7 @@
     </dd>
 </dl>
 <div class="modal fade" id="item-information-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document" style="min-width: 30%;">
+    <div class="modal-dialog modal-warehouse-location" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Edit Package Dimension</h5>

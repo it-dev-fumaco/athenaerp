@@ -14,12 +14,12 @@ use App\Models\Warehouse;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Exception;
 
 class ConsignmentReplenishController extends Controller
 {
@@ -204,7 +204,7 @@ class ConsignmentReplenishController extends Controller
             $warehouse->whereIn('parent_warehouse', $allowedWarehouses);
         })->whereRaw("item_code IN ('$flattenItemCodes')")->select('warehouse', 'item_code')->get();
 
-        $itemWarehousePairs = $inventory->map(fn ($item) => [$item->item_code, $item->warehouse])->unique()->values()->toArray();
+        $itemWarehousePairs = $inventory->map(fn($item) => [$item->item_code, $item->warehouse])->unique()->values()->toArray();
         $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
         $inventory = collect($inventory)->map(function ($item) use ($availableQtyMap) {

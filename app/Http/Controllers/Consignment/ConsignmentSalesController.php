@@ -10,13 +10,13 @@ use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Arr;
+use Exception;
 
 class ConsignmentSalesController extends Controller
 {

@@ -5,7 +5,7 @@
 <form method="POST" action="{{ $submitUrl }}">
     @csrf
     <input type="hidden" value="{{ $refdoc }}" name="reference_doctype">
-    <div class="modal-dialog" style="min-width: 35% !important;">
+    <div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;">
         <div class="modal-content">
             <div class="modal-header {{ $data['status'] == 'For Checking' ? 'bg-primary' : 'bg-info' }}">
                 @if ($data['status'] == 'For Checking')

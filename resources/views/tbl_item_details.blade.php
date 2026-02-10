@@ -354,18 +354,23 @@
             @endif
         </div>
     </div>
-    <div class="col-md-12">
+    <div class="col-md-12 item-alternatives-section min-width-0">
         <div class="card-header border-bottom-0">
             <h3 class="card-title font-responsive"><i class="fas fa-filter"></i> Item Alternatives</h3>
         </div>
 
         <style>
         .custom-body {
-            min-width: 406px;
+            min-width: 280px;
             max-width: 406px;
+            flex-shrink: 0;
+        }
+        @media (max-width: 767.98px) {
+            .custom-body { min-width: 240px; max-width: 100%; }
         }
         </style>
-        <div class="d-flex flex-row flex-nowrap overflow-auto">
+        <div class="item-alternatives-scroll">
+            <div class="d-flex flex-row flex-nowrap">
             @forelse($itemAlternatives as $a)
             <div class="custom-body m-1">
                 <div class="card card-default">
@@ -410,6 +415,7 @@
                 <h5 class="text-center font-responsive">No Item Alternative(s)</h5>
             </div>
             @endforelse
+            </div>
         </div>
     </div>
 </div>

@@ -12,12 +12,12 @@ use App\Models\Item;
 use App\Models\ItemImages;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Arr;
+use Exception;
 
 class ConsignmentStockTransferController extends Controller
 {
@@ -241,7 +241,7 @@ class ConsignmentStockTransferController extends Controller
 
             $itemCodes = array_filter(collect($request->item_code)->unique()->toArray());
             $transferQty = collect($request->item)->map(function ($item) {
-                return is_array($item) ? array_map(fn ($v) => preg_replace('/[^0-9 .]/', '', (string) $v), $item) : preg_replace('/[^0-9 .]/', '', (string) $item);
+                return is_array($item) ? array_map(fn($v) => preg_replace('/[^0-9 .]/', '', (string) $v), $item) : preg_replace('/[^0-9 .]/', '', (string) $item);
             });
             $purpose = $request->transfer_as == 'Pull Out' ? 'Pull Out' : 'Store-to-Store Transfer';
 

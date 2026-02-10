@@ -67,10 +67,7 @@
     .modal{
         background-color: rgba(0,0,0,0.4);
     }
-    table {
-        table-layout: fixed;
-        width: 100%;   
-    }
+    table { width: 100%; }
 
     @media (max-width: 575.98px) {
         #second-row{

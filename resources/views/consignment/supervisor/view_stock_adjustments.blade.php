@@ -555,10 +555,7 @@
 
 @section('style')
     <style>
-        table .items-table{
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table .items-table { width: 100%; }
         .morectnt span {
             display: none;
         }

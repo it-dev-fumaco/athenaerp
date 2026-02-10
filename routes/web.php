@@ -1,18 +1,18 @@
 <?php
-use App\Http\Controllers\BrochureController;
-use App\Http\Controllers\ConsignmentController;
+use App\Http\Controllers\Consignment\ConsignmentBeginningInventoryController;
+use App\Http\Controllers\Consignment\ConsignmentInventoryAuditController;
+use App\Http\Controllers\Consignment\ConsignmentPromodiserController;
 use App\Http\Controllers\Consignment\ConsignmentReplenishController;
 use App\Http\Controllers\Consignment\ConsignmentSalesController;
-use App\Http\Controllers\Consignment\ConsignmentInventoryAuditController;
 use App\Http\Controllers\Consignment\ConsignmentStockAdjustmentController;
 use App\Http\Controllers\Consignment\ConsignmentStockTransferController;
-use App\Http\Controllers\Consignment\ConsignmentBeginningInventoryController;
-use App\Http\Controllers\Consignment\ConsignmentPromodiserController;
+use App\Http\Controllers\BrochureController;
+use App\Http\Controllers\ConsignmentController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\ItemAttributeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemProfileController;
-use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MainController;
 use App\Http\Controllers\MaterialTransferController;
@@ -26,17 +26,17 @@ use App\Http\Middleware\CheckConnectionMiddleware;
 use Illuminate\Support\Facades\Route;
 
 /*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
+ * |--------------------------------------------------------------------------
+ * | Web Routes
+ * |--------------------------------------------------------------------------
+ * |
+ * | Here is where you can register web routes for your application. These
+ * | routes are loaded by the RouteServiceProvider within a group which
+ * | contains the "web" middleware group. Now create something great!
+ * |
+ */
 
-Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
+Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
     Route::get('/login', [LoginController::class, 'viewLogin'])->name('login');
     Route::get('/login_user', function () {
         return redirect('/login');
@@ -46,7 +46,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
     Route::get('/update', [ItemAttributeController::class, 'updateLogin'])->name('update_login');
     Route::post('/U_login_user', [ItemAttributeController::class, 'login']);
 
-    Route::group(['middleware' => 'auth'], function(){
+    Route::group(['middleware' => 'auth'], function () {
         Route::get('/item_form/{item_code}', [ItemController::class, 'index']);
         Route::get('/item_attribute_values/{attributeName}', [ItemController::class, 'getAttributeValues']);
         Route::get('/item_attribute/{item_code}', [ItemController::class, 'getItemAttributes']);
@@ -74,7 +74,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/remove_from_brochure_list/{key}', [BrochureController::class, 'removeFromBrochureList']);
         Route::get('/count_brochures', [BrochureController::class, 'countBrochures']);
         Route::get('/generate_multiple_brochures', [BrochureController::class, 'generateMultipleBrochures']);
-        
+
         // routes for item attribute updating
         Route::post('/update_attribute', [ItemAttributeController::class, 'itemAttributeUpdate']);
         Route::get('/search', [ItemAttributeController::class, 'itemAttributeSearch']);
@@ -87,17 +87,16 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/viewParentItemDetails', [ItemAttributeController::class, 'viewParentItemDetails']);
         Route::post('/deleteItemAttribute/{parentItemCode}', [ItemAttributeController::class, 'deleteItemAttribute']);
         Route::post('/updateParentItem/{item_code}', [ItemAttributeController::class, 'updateParentItem']);
-        
-        
+
         Route::get('/', [MainController::class, 'index']);
         Route::get('/search_results', [SearchController::class, 'searchResults']);
         Route::get('/search_results_images', [SearchController::class, 'searchResultsImages']);
         Route::get('/dashboard_data', [MainController::class, 'dashboardData']);
         Route::get('/import_from_ecommerce', [MainController::class, 'importFromEcommerce']);
         Route::post('/import_images', [MainController::class, 'importImages']);
-        
+
         Route::get('/logout', [LoginController::class, 'logout']);
-            
+
         Route::get('/material_issue', [MaterialTransferController::class, 'viewMaterialIssue']);
         Route::get('/material_transfer_for_manufacture', [MaterialTransferController::class, 'viewMaterialTransferForManufacture']);
         Route::get('/material_transfer', [MaterialTransferController::class, 'viewMaterialTransfer']);
@@ -107,7 +106,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/production_to_receive', [ProductionController::class, 'viewProductionToReceive']);
         Route::get('/recently_received_items', [MainController::class, 'recentlyReceivedItems']);
 
-        Route::prefix('/in_transit')->group(function(){
+        Route::prefix('/in_transit')->group(function () {
             Route::get('/', [MainController::class, 'feedbackedInTransit']);
             Route::post('/receive/{id}', [MainController::class, 'receiveTransitStocks']);
             Route::post('/transfer/{id}', [MainController::class, 'transferTransitStocks']);
@@ -206,7 +205,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::post('/update_rate', [MainController::class, 'updateRate']);
 
         // Consignment Forms
-        Route::group(['middleware' => 'checkConnection'], function(){
+        Route::group(['middleware' => 'checkConnection'], function () {
             Route::post('/approve_beginning_inv/{id}', [ConsignmentBeginningInventoryController::class, 'approveBeginningInventory']);
             Route::post('/adjust_stocks', [ConsignmentStockAdjustmentController::class, 'adjustStocks']);
             Route::post('/add_promodiser_submit', [ConsignmentPromodiserController::class, 'addPromodiser']);
@@ -227,8 +226,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
             Route::post('/consignment_read_file', [ConsignmentController::class, 'readFile']);
             Route::post('/assign_barcodes', [ConsignmentController::class, 'assignBarcodes']);
 
-            Route::prefix('/consignment')->group(function(){
-                Route::prefix('/replenish')->group(function(){
+            Route::prefix('/consignment')->group(function () {
+                Route::prefix('/replenish')->group(function () {
                     Route::get('/', [ConsignmentReplenishController::class, 'index']);
                     Route::post('/', [ConsignmentReplenishController::class, 'submit']);
                     Route::get('/form/{id?}', [ConsignmentReplenishController::class, 'form']);
@@ -260,7 +259,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/stock_transfer/cancel/{id}', [ConsignmentStockTransferController::class, 'cancel']);
 
         Route::get('/item_return/form', [ConsignmentStockTransferController::class, 'itemReturnForm']);
-        
+
         Route::get('/beginning_inventory_list', [ConsignmentBeginningInventoryController::class, 'beginningInventoryList']);
         Route::get('/beginning_inventory/{inv?}', [ConsignmentBeginningInventoryController::class, 'beginningInventory']);
         Route::get('/beginning_inv_items/{action}/{branch}/{id?}', [ConsignmentBeginningInventoryController::class, 'beginningInvItems']);
@@ -270,23 +269,23 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
         Route::get('/promodiser/inquire_delivery', [ConsignmentPromodiserController::class, 'promodiserInquireDelivery']);
         Route::get('/consignment/pending_to_receive', [ConsignmentPromodiserController::class, 'pendingToReceive']);
         Route::get('/sales_report_deadline', [ConsignmentSalesController::class, 'salesReportDeadline']);
-        Route::get('/validate_beginning_inventory', [ConsignmentBeginningInventoryController::class, 'checkBeginningInventory']); 
-        Route::get('/promodiser/damage_report/form', [ConsignmentPromodiserController::class, 'promodiserDamageForm']); 
-        Route::get('/damage_report/list', [ConsignmentPromodiserController::class, 'damagedItems']); 
+        Route::get('/validate_beginning_inventory', [ConsignmentBeginningInventoryController::class, 'checkBeginningInventory']);
+        Route::get('/promodiser/damage_report/form', [ConsignmentPromodiserController::class, 'promodiserDamageForm']);
+        Route::get('/damage_report/list', [ConsignmentPromodiserController::class, 'damagedItems']);
         Route::get('/damaged/return/{id}', [ConsignmentPromodiserController::class, 'returnDamagedItem']);
-        Route::get('/beginning_inv/get_received_items/{branch}', [ConsignmentBeginningInventoryController::class, 'getReceivedItems']); 
+        Route::get('/beginning_inv/get_received_items/{branch}', [ConsignmentBeginningInventoryController::class, 'getReceivedItems']);
         Route::get('/stocks_report/list', [ConsignmentStockTransferController::class, 'report'])->name('stock_report_list');
         Route::get('/damaged_items_list', [ConsignmentPromodiserController::class, 'viewDamagedItemsList']);
         Route::get('/countStockTransfer/{purpose}', [ConsignmentStockTransferController::class, 'count']);
 
-        Route::get('/inventory_items/{branch}', [ConsignmentController::class, 'inventoryItems']); 
+        Route::get('/inventory_items/{branch}', [ConsignmentController::class, 'inventoryItems']);
 
         Route::get('/inventory_audit', [ConsignmentInventoryAuditController::class, 'viewInventoryAuditList']);
         Route::get('/consignment_stores', [ConsignmentController::class, 'consignmentStores']);
         Route::get('/submitted_inventory_audit', [ConsignmentInventoryAuditController::class, 'getSubmittedInvAudit']);
         Route::get('/view_inventory_audit_items/{branch}/{from}/{to}', [ConsignmentInventoryAuditController::class, 'viewInventoryAuditItems']);
         Route::get('/pending_submission_inventory_audit', [ConsignmentInventoryAuditController::class, 'getPendingSubmissionInventoryAudit']);
-        Route::get('/sales_report_list/{branch}', [ConsignmentSalesController::class, 'viewSalesReportList']);        
+        Route::get('/sales_report_list/{branch}', [ConsignmentSalesController::class, 'viewSalesReportList']);
 
         Route::get('/view_sales_report', [ConsignmentPromodiserController::class, 'viewSalesReport']);
 

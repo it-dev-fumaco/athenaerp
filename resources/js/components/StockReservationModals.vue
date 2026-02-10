@@ -4,7 +4,7 @@
     <div class="modal fade" id="add-stock-reservation-modal" tabindex="-1">
       <form id="stock-reservation-form" method="POST" action="/create_reservation" autocomplete="off" @submit="handleSubmit">
         <input type="hidden" name="_token" :value="csrfToken">
-        <div class="modal-dialog" style="min-width: 40%;">
+        <div class="modal-dialog modal-generic-narrow" style="min-width: 40%; max-width: 95%;">
           <div class="modal-content">
             <div class="modal-header">
               <h4 class="modal-title">New Stock Reservation</h4>
@@ -108,7 +108,7 @@
       <form id="edit-reservation-form" method="POST" action="/update_reservation" autocomplete="off" @submit="handleSubmit">
         <input type="hidden" name="_token" :value="csrfToken">
         <input type="hidden" name="id" v-model="editForm.id">
-        <div class="modal-dialog" style="min-width: 40%;">
+        <div class="modal-dialog modal-generic-narrow" style="min-width: 40%; max-width: 95%;">
           <div class="modal-content">
             <div class="modal-header">
               <h4 class="modal-title">Edit Stock Reservation</h4>
@@ -203,7 +203,7 @@
       <form id="cancel-reservation-form" method="POST" action="/cancel_reservation" autocomplete="off" @submit="handleSubmit">
         <input type="hidden" name="_token" :value="csrfToken">
         <input type="hidden" name="stock_reservation_id" v-model="cancelReservationId">
-        <div class="modal-dialog" style="min-width: 40%;">
+        <div class="modal-dialog modal-generic-narrow" style="min-width: 40%; max-width: 95%;">
           <div class="modal-content">
             <div class="modal-header">
               <h4 class="modal-title">Cancel Stock Reservation</h4>

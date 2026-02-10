@@ -172,7 +172,7 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="container-fluid mt-2">
+                                    <div class="container-fluid mt-2 responsive-table-wrap">
                                         <table class="table" id="items-table" style="font-size: 11px;">
                                             <thead class="text-uppercase bg-light">
                                                 <th class="text-center p-2" style="width: 35%">Item Code</th>
@@ -210,10 +210,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         .morectnt span {
             display: none;
         }

@@ -19,15 +19,15 @@ use App\Models\Warehouse;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Exception;
 
 class ConsignmentPromodiserController extends Controller
 {
@@ -169,13 +169,17 @@ class ConsignmentPromodiserController extends Controller
             $sourceWarehouses = collect($steItems)->pluck('s_warehouse')->push($defaultSourceWarehouse)->filter()->unique();
             $targetWarehouses = collect($steItems)->pluck('t_warehouse')->push($request->target_warehouse)->push($defaultTargetWarehouse)->filter()->unique();
 
-            $targetWarehouseDetails = Bin::whereIn('warehouse', $targetWarehouses)->whereIn('item_code', $itemCodes)
+            $targetWarehouseDetails = Bin::whereIn('warehouse', $targetWarehouses)
+                ->whereIn('item_code', $itemCodes)
                 ->select('name', 'warehouse', 'item_code', 'actual_qty', 'consigned_qty', 'consignment_price', 'modified', 'modified_by')
-                ->get()->groupBy(['warehouse', 'item_code']);
+                ->get()
+                ->groupBy(['warehouse', 'item_code']);
 
-            $sourceWarehouseDetails = Bin::whereIn('warehouse', $sourceWarehouses)->whereIn('item_code', $itemCodes)
+            $sourceWarehouseDetails = Bin::whereIn('warehouse', $sourceWarehouses)
+                ->whereIn('item_code', $itemCodes)
                 ->select('name', 'warehouse', 'item_code', 'actual_qty', 'consigned_qty', 'consignment_price', 'modified', 'modified_by')
-                ->get()->groupBy(['warehouse', 'item_code']);
+                ->get()
+                ->groupBy(['warehouse', 'item_code']);
 
             $validateStocks = collect($steItems)->map(function ($item) use ($sourceWarehouseDetails, $targetWarehouseDetails, $request, $defaultSourceWarehouse, $defaultTargetWarehouse) {
                 $sourceWarehouse = $item['s_warehouse'] ?? $defaultSourceWarehouse;
@@ -808,7 +812,8 @@ class ConsignmentPromodiserController extends Controller
             ->whereHas('whUser', fn($user) => $user->where('user_group', 'Promodiser'))
             ->with('social', fn($user) => $user->select('parent', 'userid'))
             ->with('whUser', function ($user) {
-                $user->select('wh_user', 'name', 'frappe_userid', 'full_name', 'frappe_userid', 'enabled')
+                $user
+                    ->select('wh_user', 'name', 'frappe_userid', 'full_name', 'frappe_userid', 'enabled')
                     ->with('assignedWarehouses', fn($warehouse) => $warehouse->select('parent', 'name', 'warehouse', 'warehouse_name'));
             })
             ->select('name', 'full_name')
@@ -872,7 +877,8 @@ class ConsignmentPromodiserController extends Controller
                 ->where('enabled', 1)
                 ->with('social', fn($u) => $u->select('parent', 'userid'))
                 ->with('whUser', function ($u) {
-                    $u->select('wh_user', 'name', 'frappe_userid', 'user_group', 'modified', 'modified_by', 'price_list')
+                    $u
+                        ->select('wh_user', 'name', 'frappe_userid', 'user_group', 'modified', 'modified_by', 'price_list')
                         ->with('assignedWarehouses', fn($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
                 })
                 ->select('name', 'full_name')
@@ -929,7 +935,8 @@ class ConsignmentPromodiserController extends Controller
         $userDetails = ERPUser::where('name', $id)
             ->where('enabled', 1)
             ->with('whUser', function ($user) {
-                $user->select('wh_user', 'name', 'frappe_userid', 'enabled')
+                $user
+                    ->select('wh_user', 'name', 'frappe_userid', 'enabled')
                     ->with('assignedWarehouses', fn($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
             })
             ->select('name', 'full_name')
@@ -956,7 +963,8 @@ class ConsignmentPromodiserController extends Controller
             $userDetails = ERPUser::where('name', $id)
                 ->where('enabled', 1)
                 ->with('whUser', function ($user) {
-                    $user->select('wh_user', 'name', 'frappe_userid', 'user_group', 'modified', 'modified_by', 'price_list')
+                    $user
+                        ->select('wh_user', 'name', 'frappe_userid', 'user_group', 'modified', 'modified_by', 'price_list')
                         ->with('assignedWarehouses', fn($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
                 })
                 ->select('name', 'full_name')

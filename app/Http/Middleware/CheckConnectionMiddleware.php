@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Closure;
 
 class CheckConnectionMiddleware
 {
@@ -21,7 +21,7 @@ class CheckConnectionMiddleware
             DB::getPdo();
             return $next($request);
         } catch (\Throwable $th) {
-            if($request->ajax()){
+            if ($request->ajax()) {
                 return response()->json([
                     'success' => 0,
                     'status' => 0,

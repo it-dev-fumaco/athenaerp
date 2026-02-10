@@ -31,14 +31,19 @@
             }
             #table-of-contents-sidebar {
                 position: fixed;
-                width: 280px;
+                width: min(280px, 92vw);
+                max-width: 280px;
                 top:0;
                 left: 0;
                 bottom: 0;
                 background: #fff;
                 border-right: 1px solid  #abb2b9 ;
-                overflow-y:auto;
-                overflow-x:hidden;
+                overflow-y: auto;
+                overflow-x: auto;
+            }
+            @media (max-width: 767.98px) {
+                #table-of-contents-sidebar { width: 100%; max-width: 100%; }
+                .page-container, #print-area { margin-left: 0 !important; }
             }
             #toc-links { 
                 margin: 10px;
@@ -93,7 +98,8 @@
             }
             .upload-image-placeholder {
                 border: 2px dashed #d5d8dc;
-                width: 230px;
+                width: 100%;
+                max-width: 230px;
                 height: 230px;
                 border-radius: 13px;
                 display: block;
@@ -102,7 +108,8 @@
                 position: relative;
                 overflow: hidden;
                 display: block;
-                width: 230px;
+                width: 100%;
+                max-width: 230px;
                 height: 230px;
                 top: 0;
                 left: 0;
@@ -141,7 +148,8 @@
             }
             .img-cont {
                 position: relative;
-                width: 230px;
+                width: 100%;
+                max-width: 230px;
             }
             .custom-overlay {
                 position: absolute;
@@ -463,7 +471,7 @@
         <div class="print-container print-page">
             <div style="display: block">
                 <div class="left-container">
-                    <div style="width: 430px !important;">
+                    <div class="brochure-print-block brochure-print-logo" style="width: 430px !important; max-width: 100%;">
                         <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%">
                     </div>
                 </div>
@@ -479,7 +487,7 @@
             <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
             <div style="display: block; width: 100%; float: left; margin-bottom: 5px;">
                 <div class="left-container">
-                    <div style="width: 420px !important;">
+                    <div class="brochure-print-block brochure-print-images" style="width: 420px !important; max-width: 100%;">
                         @for ($i = 1; $i <= 3; $i++)
                             @php
                                 $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? '/storage/brochures/'.$row['images']['image'.$i] : null;

@@ -166,7 +166,7 @@
                 <div class="print-container print-page">
                     <div style="display: block">
                         <div class="left-container">
-                            <div style="width: 430px !important;">
+                            <div style="width: 430px !important; max-width: 100%;">
                                 <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%">
                             </div>
                         </div>
@@ -182,7 +182,7 @@
                     <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
                     <div style="display: block; width: 100%; float: left; margin-bottom: 5px;">
                         <div class="left-container">
-                            <div style="width: 420px !important;">
+                            <div style="width: 420px !important; max-width: 100%;">
                                 @for ($i = 1; $i <= 3; $i++)
                                     @php
                                         $img = isset($images['image'.$i]['filepath']) && $images['image'.$i]['filepath'] ? $images['image'.$i]['filepath'] : null;
@@ -377,7 +377,8 @@
     }
     .upload-image-placeholder {
         border: 2px dashed #d5d8dc;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
         height: 230px;
         border-radius: 13px;
         display: block;
@@ -386,7 +387,8 @@
         position: relative;
         overflow: hidden;
         display: block;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
         height: 230px;
         top: 0;
         left: 0;
@@ -425,7 +427,8 @@
     }
     .img-cont {
         position: relative;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
     }
     .custom-overlay {
         position: absolute;

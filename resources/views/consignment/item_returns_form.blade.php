@@ -133,7 +133,7 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="container-fluid p-1 mt-2">
+                                    <div class="container-fluid p-1 mt-2 responsive-table-wrap">
                                         <table class="table table-striped" id='items-table' style="font-size: 9pt">
                                             <colgroup>
                                                 <col style="width: 35%">
@@ -177,10 +177,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         .morectnt span {
             display: none;
         }

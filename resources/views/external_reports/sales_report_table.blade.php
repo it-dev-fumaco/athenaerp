@@ -163,7 +163,10 @@ if ($exportExcel == 1){
     header("Content-Type: application/vnd.ms-excel");
 }
 @endphp
-<table class="table table-bordered" border="1" style="width: 2790px;">
+@if ($exportExcel != 1)
+<div class="responsive-table-wrap">
+@endif
+<table class="table table-bordered" border="1" @if($exportExcel == 1) style="width: 2790px;" @else style="width: max-content; min-width: 100%;" @endif>
     <thead>
         <tr>
             <th class="text-center align-middle p-1 text-uppercase" rowspan="2" style="width: 100px;">Item Code</th>
@@ -203,4 +206,7 @@ if ($exportExcel == 1){
         @endforeach
     </tbody>
 </table>
+@if ($exportExcel != 1)
+</div>
+@endif
 @endif

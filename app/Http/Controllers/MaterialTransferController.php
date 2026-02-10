@@ -79,7 +79,7 @@ class MaterialTransferController extends Controller
             ->pluck('full_name', 'name')
             ->toArray();
 
-        $itemWarehousePairs = $entries->map(fn ($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();
+        $itemWarehousePairs = $entries->map(fn($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();
         $actualQtyMap = $this->getActualQtyBulk($itemWarehousePairs);
         $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
         $parentWarehouses = $this->getWarehouseParentsBulk($warehouses);
@@ -173,7 +173,9 @@ class MaterialTransferController extends Controller
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     private function getItemActualQtyLookup(array $itemCodes, array $warehouses): array
     {
         return Bin::query()
@@ -188,7 +190,9 @@ class MaterialTransferController extends Controller
             ->toArray();
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     private function getStockReservationLookup(array $itemCodes, array $warehouses): array
     {
         return StockReservation::whereIn('item_code', $itemCodes)
@@ -201,7 +205,9 @@ class MaterialTransferController extends Controller
             ->toArray();
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     private function getSteTotalIssuedLookup(array $itemCodes, array $warehouses): array
     {
         return StockEntryDetail::where('docstatus', 0)
@@ -215,7 +221,9 @@ class MaterialTransferController extends Controller
             ->toArray();
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     private function getAtTotalIssuedLookup(array $itemCodes, array $warehouses): array
     {
         return AthenaTransaction::query()
@@ -766,7 +774,7 @@ class MaterialTransferController extends Controller
                 throw new Exception('No item(s) found');
             }
 
-            $itemWarehousePairs = $productionOrderItems->map(fn ($item) => [$item->item_code, $item->source_warehouse])->unique()->values()->toArray();
+            $itemWarehousePairs = $productionOrderItems->map(fn($item) => [$item->item_code, $item->source_warehouse])->unique()->values()->toArray();
             $actualQtyMap = $this->getActualQtyBulk($itemWarehousePairs);
 
             $stockEntryDetail = [];
@@ -850,7 +858,6 @@ class MaterialTransferController extends Controller
             return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
-
 
     public function updateStockEntry(UpdateStockEntryRequest $request)
     {

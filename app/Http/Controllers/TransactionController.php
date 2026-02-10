@@ -349,8 +349,8 @@ class TransactionController extends Controller
                 ->whereNotIn('name', $packedItemNames)
                 ->count();
 
-            $itemsWithPacked = collect($packingSlip->items)->filter(fn ($item) => $item->packed);
-            $itemWarehousePairs = $itemsWithPacked->map(fn ($item) => [$item->item_code, $item->packed->warehouse])->unique()->values()->toArray();
+            $itemsWithPacked = collect($packingSlip->items)->filter(fn($item) => $item->packed);
+            $itemWarehousePairs = $itemsWithPacked->map(fn($item) => [$item->item_code, $item->packed->warehouse])->unique()->values()->toArray();
             $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
             foreach ($packingSlip->items as $item) {

@@ -14,14 +14,14 @@ use App\Models\ItemImages;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Exception;
 
 class ConsignmentBeginningInventoryController extends Controller
 {

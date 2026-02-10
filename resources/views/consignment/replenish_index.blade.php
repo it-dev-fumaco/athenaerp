@@ -42,10 +42,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         input[type=number] {
             -moz-appearance: textfield;
         }

@@ -351,10 +351,7 @@
 </div>
 @endforeach
 <style>
-    table {
-        table-layout: fixed;
-        width: 100%;   
-    }
+    table { width: 100%; }
     .morectnt span {
         display: none;
     }

@@ -731,13 +731,10 @@
 </div>
 
 <style>
-	html,body{
-		width: 100% !important;
-		height: 100% !important;
-		margin: 0px !important;
-		padding: 0px !important;
-		overflow-x: hidden !important; 
-		position:relative;
+	/* Avoid overflow-x: hidden on html/body so wide tables can scroll; contain only the search page content */
+	.content.p-0.m-0 {
+		overflow-x: clip;
+		position: relative;
 	}
 	.itemClassContainer{
 		min-height: 1px;
@@ -790,7 +787,8 @@
 		max-width: 100%;
 	}
 	.search-thumbnail{
-		width: 200px;
+		max-width: 200px;
+		width: 100%;
 	}
 	.item-class{
 		font-size: 12px;
@@ -833,7 +831,8 @@
 	.modal.left .modal-dialog{
 		position: fixed;
 		margin: auto;
-		width: 320px !important;
+		width: min(320px, 92vw) !important;
+		max-width: 320px;
 		height: 100%;
 		-webkit-transform: translate3d(0%, 0, 0);
 		    -ms-transform: translate3d(0%, 0, 0);
@@ -1051,7 +1050,7 @@
 			font-size: 10pt !important;
 		}
 		.modal.left .modal-dialog{
-			width: 240px;
+			width: min(240px, 92vw) !important;
 		}
 		.filter-container{
 			text-align: left !important;

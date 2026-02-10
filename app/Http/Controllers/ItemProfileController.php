@@ -4,15 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
 use App\Http\Resources\ItemResource;
-use App\Services\ItemProfileService;
-use App\Traits\GeneralTrait;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-
 use App\Models\AssignedWarehouses;
 use App\Models\AthenaTransaction;
 use App\Models\Bin;
@@ -29,10 +20,18 @@ use App\Models\StockEntryDetail;
 use App\Models\StockReservation;
 use App\Models\UOM;
 use App\Models\WarehouseAccess;
+use App\Services\ItemProfileService;
+use App\Traits\GeneralTrait;
 use Buglinjo\LaravelWebp\Facades\Webp;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Arr;
 use ErrorException;
 use Exception;
-use Illuminate\Support\Facades\File;
 
 class ItemProfileController extends Controller
 {
@@ -40,8 +39,7 @@ class ItemProfileController extends Controller
 
     public function __construct(
         protected ItemProfileService $itemProfileService
-    ) {
-    }
+    ) {}
 
     public function formWarehouseLocation($itemCode)
     {
@@ -70,7 +68,9 @@ class ItemProfileController extends Controller
 
             if ($locations) {
                 foreach ($locations as $warehouse => $location) {
-                    Bin::query()->where('warehouse', $warehouse)->where('item_code', $request->item_code)
+                    Bin::query()
+                        ->where('warehouse', $warehouse)
+                        ->where('item_code', $request->item_code)
                         ->update(['location' => strtoupper($location)]);
                 }
             }
@@ -138,20 +138,30 @@ class ItemProfileController extends Controller
             return $this->base64Image("/img/$image");
         });
 
-        $noImg = $this->base64Image("/icon/no_img.png");
+        $noImg = $this->base64Image('/icon/no_img.png');
 
         $itemAlternatives = [];
-        $productionItemAlternatives = DB::table('tabWork Order Item as p')->join('tabItem as i', 'p.item_alternative_for', 'i.name')
-            ->where('p.item_code', $itemDetails->name)->where('p.item_alternative_for', '!=', $itemDetails->name)->where('i.stock_uom', $itemDetails->stock_uom)
-            ->select('i.item_code', 'i.description')->orderBy('p.modified', 'desc')->get()->toArray();
+        $productionItemAlternatives = DB::table('tabWork Order Item as p')
+            ->join('tabItem as i', 'p.item_alternative_for', 'i.name')
+            ->where('p.item_code', $itemDetails->name)
+            ->where('p.item_alternative_for', '!=', $itemDetails->name)
+            ->where('i.stock_uom', $itemDetails->stock_uom)
+            ->select('i.item_code', 'i.description')
+            ->orderBy('p.modified', 'desc')
+            ->get()
+            ->toArray();
 
         $productionItemAlternativeItemCodes = array_column($productionItemAlternatives, 'item_code');
         $itemAlternativeImages = ItemImages::query()->whereIn('parent', $productionItemAlternativeItemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
-        $productionItemAltActualStock = Bin::query()->whereIn('item_code', $productionItemAlternativeItemCodes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')
-            ->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+        $productionItemAltActualStock = Bin::query()
+            ->whereIn('item_code', $productionItemAlternativeItemCodes)
+            ->selectRaw('SUM(actual_qty) as actual_qty, item_code')
+            ->groupBy('item_code')
+            ->pluck('actual_qty', 'item_code')
+            ->toArray();
         foreach ($productionItemAlternatives as $a) {
             $a = (object) $a;
-            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? "/img/" . $itemAlternativeImages[$a->item_code] : "/icon/no_img.png";
+            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/' . $itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
             $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $a->item_code, 0);
@@ -182,23 +192,27 @@ class ItemProfileController extends Controller
             $steIssuedQuery = StockEntryDetail::query()->where('docstatus', 0)->whereIn('item_code', $alternativeItemCodes)->where('status', 'Issued')->selectRaw('SUM(qty) as qty, item_code')->groupBy('item_code')->get();
             $alternativesIssuedSte = collect($steIssuedQuery)->groupBy('item_code');
 
-            $atIssuedQuery = AthenaTransaction::query()->from('tabAthena Transactions as at')
+            $atIssuedQuery = AthenaTransaction::query()
+                ->from('tabAthena Transactions as at')
                 ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
                 ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)
-                ->where('psi.status', 'Issued')->where('at.status', 'Issued')
+                ->where('dr.docstatus', 0)
+                ->where('ps.docstatus', '<', 2)
+                ->where('psi.status', 'Issued')
+                ->where('at.status', 'Issued')
                 ->whereIn('at.item_code', $alternativeItemCodes)
                 ->whereRaw('psi.item_code = at.item_code')
-                ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')->groupBy('at.item_code')
+                ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')
+                ->groupBy('at.item_code')
                 ->get();
             $alternativesIssuedAt = collect($atIssuedQuery)->groupBy('item_code');
 
             $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
             foreach ($q as $a) {
-                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? "/img/" . $itemAlternativeImages[$a->item_code] : "/icon/no_img.png";
+                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/' . $itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
                 $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                 $totalReserved = $totalConsumed = 0;
@@ -232,12 +246,16 @@ class ItemProfileController extends Controller
             }
 
             if (count($itemAlternatives) <= 0) {
-                $q = Item::query()->where('item_classification', $itemDetails->item_classification)
-                    ->where('name', '!=', $itemDetails->name)->limit(100)->orderBy('modified', 'desc')->get();
+                $q = Item::query()
+                    ->where('item_classification', $itemDetails->item_classification)
+                    ->where('name', '!=', $itemDetails->name)
+                    ->limit(100)
+                    ->orderBy('modified', 'desc')
+                    ->get();
                 $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
                 foreach ($q as $a) {
-                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? "/img/" . $itemAlternativeImages[$a->item_code] : "/icon/no_img.png";
+                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/' . $itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
                     $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                     $totalReserved = $totalConsumed = 0;
@@ -282,17 +300,34 @@ class ItemProfileController extends Controller
                     $itemCustomCost[$row->name] = $row->custom_item_cost;
                 }
 
-                $variantsLastPurchaseOrder = PurchaseOrder::query()->from('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-                    ->where('po.docstatus', 1)->whereIn('poi.item_code', $variantItemCodes)->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')->orderBy('po.creation', 'desc')->get();
+                $variantsLastPurchaseOrder = PurchaseOrder::query()
+                    ->from('tabPurchase Order as po')
+                    ->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
+                    ->where('po.docstatus', 1)
+                    ->whereIn('poi.item_code', $variantItemCodes)
+                    ->select('poi.base_rate', 'poi.item_code', 'po.supplier_group')
+                    ->orderBy('po.creation', 'desc')
+                    ->get();
 
-                $variantsLastLandedCostVoucher = LandedCostVoucher::query()->from('tabLanded Cost Voucher as a')->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
-                    ->where('a.docstatus', 1)->whereIn('b.item_code', $variantItemCodes)->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')->orderBy('transaction_date', 'desc')->get();
+                $variantsLastLandedCostVoucher = LandedCostVoucher::query()
+                    ->from('tabLanded Cost Voucher as a')
+                    ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
+                    ->where('a.docstatus', 1)
+                    ->whereIn('b.item_code', $variantItemCodes)
+                    ->select('a.creation', 'b.item_code', 'b.rate', 'b.valuation_rate', DB::raw('ifnull(a.posting_date, a.creation) as transaction_date'), 'a.posting_date')
+                    ->orderBy('transaction_date', 'desc')
+                    ->get();
 
                 $variantsLastPurchaseOrderRates = collect($variantsLastPurchaseOrder)->groupBy('item_code')->toArray();
                 $variantsLastLandedCostVoucherRates = collect($variantsLastLandedCostVoucher)->groupBy('item_code')->toArray();
 
-                $variantsWebsitePrices = ItemPrice::query()->where('price_list', 'Website Price List')->where('selling', 1)
-                    ->whereIn('item_code', $variantItemCodes)->orderBy('modified', 'desc')->pluck('price_list_rate', 'item_code')->toArray();
+                $variantsWebsitePrices = ItemPrice::query()
+                    ->where('price_list', 'Website Price List')
+                    ->where('selling', 1)
+                    ->whereIn('item_code', $variantItemCodes)
+                    ->orderBy('modified', 'desc')
+                    ->pluck('price_list_rate', 'item_code')
+                    ->toArray();
 
                 foreach ($variantItemCodes as $variant) {
                     $variantsDefaultPrice = 0;
@@ -359,7 +394,7 @@ class ItemProfileController extends Controller
                         return ApiResponse::failureLegacy(str_replace('_', ' ', $dimension) . ' must be a number.');
                     }
 
-                    if ((float)$value <= 0) {
+                    if ((float) $value <= 0) {
                         return ApiResponse::failureLegacy(str_replace('_', ' ', $dimension) . ' cannot be less than 0.');
                     }
                 }
@@ -389,7 +424,8 @@ class ItemProfileController extends Controller
     public function uploadItemImage(Request $request)
     {
         $existingImages = $request->existing_images ? $request->existing_images : [];
-        $removedImages = ItemImages::query()->where('parent', $request->item_code)
+        $removedImages = ItemImages::query()
+            ->where('parent', $request->item_code)
             ->when($existingImages, function ($query) use ($existingImages) {
                 $query->whereNotIn('name', $existingImages);
             })
@@ -399,7 +435,8 @@ class ItemProfileController extends Controller
             Storage::delete('/img/' . $img);
         }
 
-        ItemImages::query()->where('parent', $request->item_code)
+        ItemImages::query()
+            ->where('parent', $request->item_code)
             ->when($existingImages, function ($query) use ($existingImages) {
                 $query->whereNotIn('name', $existingImages);
             })
@@ -497,17 +534,23 @@ class ItemProfileController extends Controller
         $allowWarehouse = [];
         $isPromodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
         if ($isPromodiser) {
-            $allowedParentWarehouseForPromodiser = WarehouseAccess::query()->from('tabWarehouse Access as wa')
+            $allowedParentWarehouseForPromodiser = WarehouseAccess::query()
+                ->from('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.parent_warehouse')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('wa.parent', Auth::user()->name)
+                ->where('w.is_group', 0)
                 ->where('w.stock_warehouse', 1)
-                ->pluck('w.name')->toArray();
+                ->pluck('w.name')
+                ->toArray();
 
-            $allowedWarehouseForPromodiser = WarehouseAccess::query()->from('tabWarehouse Access as wa')
+            $allowedWarehouseForPromodiser = WarehouseAccess::query()
+                ->from('tabWarehouse Access as wa')
                 ->join('tabWarehouse as w', 'wa.warehouse', 'w.name')
-                ->where('wa.parent', Auth::user()->name)->where('w.is_group', 0)
+                ->where('wa.parent', Auth::user()->name)
+                ->where('w.is_group', 0)
                 ->where('w.stock_warehouse', 1)
-                ->pluck('w.name')->toArray();
+                ->pluck('w.name')
+                ->toArray();
 
             $consignmentStores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse')->toArray();
 
@@ -515,11 +558,14 @@ class ItemProfileController extends Controller
             $allowWarehouse = array_merge($allowWarehouse, $consignmentStores);
         }
 
-        $itemInventory = Bin::query()->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')->where('item_code', $itemCode)
+        $itemInventory = Bin::query()
+            ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
+            ->where('item_code', $itemCode)
             ->when($isPromodiser, function ($query) use ($allowWarehouse) {
                 return $query->whereIn('warehouse', $allowWarehouse);
             })
-            ->where('stock_warehouse', 1)->where('tabWarehouse.disabled', 0)
+            ->where('stock_warehouse', 1)
+            ->where('tabWarehouse.disabled', 0)
             ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
             ->get();
 
@@ -530,27 +576,41 @@ class ItemProfileController extends Controller
         $atIssued = [];
         if (count($stockWarehouses) > 0) {
             $stockReserves = StockReservation::where('item_code', $itemCode)
-                ->whereIn('warehouse', $stockWarehouses)->whereIn('status', ['Active', 'Partially Issued'])
+                ->whereIn('warehouse', $stockWarehouses)
+                ->whereIn('status', ['Active', 'Partially Issued'])
                 ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, warehouse')
-                ->groupBy('warehouse')->get();
+                ->groupBy('warehouse')
+                ->get();
 
             $stockReserves = collect($stockReserves)->groupBy('warehouse')->toArray();
 
-            $steIssued = StockEntryDetail::query()->where('docstatus', 0)->where('status', 'Issued')
-                ->where('item_code', $itemCode)->whereIn('s_warehouse', $stockWarehouses)
-                ->selectRaw('SUM(qty) as qty, s_warehouse')->groupBy('s_warehouse')
-                ->pluck('qty', 's_warehouse')->toArray();
+            $steIssued = StockEntryDetail::query()
+                ->where('docstatus', 0)
+                ->where('status', 'Issued')
+                ->where('item_code', $itemCode)
+                ->whereIn('s_warehouse', $stockWarehouses)
+                ->selectRaw('SUM(qty) as qty, s_warehouse')
+                ->groupBy('s_warehouse')
+                ->pluck('qty', 's_warehouse')
+                ->toArray();
 
-            $atIssued = AthenaTransaction::query()->from('tabAthena Transactions as at')
+            $atIssued = AthenaTransaction::query()
+                ->from('tabAthena Transactions as at')
                 ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
                 ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-                ->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('at.status', 'Issued')
-                ->where('psi.status', 'Issued')->where('at.item_code', $itemCode)
-                ->where('psi.item_code', $itemCode)->whereIn('at.source_warehouse', $stockWarehouses)
-                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')->groupBy('at.source_warehouse')
-                ->pluck('qty', 'source_warehouse')->toArray();
+                ->where('dr.docstatus', 0)
+                ->where('ps.docstatus', '<', 2)
+                ->where('at.status', 'Issued')
+                ->where('psi.status', 'Issued')
+                ->where('at.item_code', $itemCode)
+                ->where('psi.item_code', $itemCode)
+                ->whereIn('at.source_warehouse', $stockWarehouses)
+                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')
+                ->groupBy('at.source_warehouse')
+                ->pluck('qty', 'source_warehouse')
+                ->toArray();
         }
 
         $siteWarehouses = [];
@@ -569,7 +629,7 @@ class ItemProfileController extends Controller
 
             $actualQty = $value->actual_qty;
             $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
-            if ($value->parent_warehouse == "P2 Consignment Warehouse - FI" && !$isPromodiser) {
+            if ($value->parent_warehouse == 'P2 Consignment Warehouse - FI' && !$isPromodiser) {
                 $consignmentWarehouses[] = [
                     'warehouse' => $value->warehouse,
                     'location' => $value->location,
@@ -580,7 +640,7 @@ class ItemProfileController extends Controller
                     'stock_uom' => $value->stock_uom,
                 ];
             } else {
-                if (Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == "P2 Consignment Warehouse - FI") {
+                if (Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == 'P2 Consignment Warehouse - FI') {
                     $availableQty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
                 }
 

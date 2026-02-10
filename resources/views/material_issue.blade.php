@@ -138,7 +138,7 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
-		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
 	</form>
 </div>
 <div class="modal fade" id="cancel-ste-modal">

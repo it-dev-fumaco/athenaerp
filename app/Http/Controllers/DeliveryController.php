@@ -17,10 +17,10 @@ use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Arr;
 use ErrorException;
 use Exception;
 
@@ -205,7 +205,7 @@ class DeliveryController extends Controller
             ->pluck('full_name', 'wh_user');
 
         $warehouseNames = collect($paginatedData->items())
-            ->map(fn ($d) => $d->warehouse ?? $d->s_warehouse ?? null)
+            ->map(fn($d) => $d->warehouse ?? $d->s_warehouse ?? null)
             ->filter()
             ->unique()
             ->values()

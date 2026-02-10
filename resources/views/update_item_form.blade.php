@@ -4,7 +4,7 @@
 ])
 
 @section('content')
-    <div class="container p-1 p-md-3" style="min-width: 80%;">
+    <div class="container p-1 p-md-3" style="max-width: 100%;">
         <div class="row">
             <div class="col-4">
                 

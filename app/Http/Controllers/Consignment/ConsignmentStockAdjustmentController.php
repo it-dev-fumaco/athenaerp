@@ -17,14 +17,14 @@ use App\Models\StockEntry;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Arr;
+use Exception;
 
 class ConsignmentStockAdjustmentController extends Controller
 {
@@ -36,7 +36,8 @@ class ConsignmentStockAdjustmentController extends Controller
         $now = now();
 
         $hasStockEntry = StockEntry::whereHas('items', function ($query) use ($now, $transactionDate, $itemCode, $branch) {
-            $query->where('item_code', $itemCode)
+            $query
+                ->where('item_code', $itemCode)
                 ->whereBetween('consignment_date_received', [$transactionDate, $now])
                 ->where('s_warehouse', $branch);
         })

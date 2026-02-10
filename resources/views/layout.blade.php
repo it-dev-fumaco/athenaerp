@@ -228,7 +228,8 @@
 		}
 		#suggesstion-box {
 			position:absolute;
-			width: 95%;
+			width: 100%;
+			max-width: 100%;
 			display:none;
 			overflow:hidden;
 			padding: 0;
@@ -508,7 +509,8 @@
 			position: absolute;
 			right: 10px;
 			top: 20px;
-			width: 280px;
+			width: min(280px, 92vw);
+			max-width: min(280px, 92vw);
 			max-height: 360px;
 			z-index: 999;
 			display: none;
@@ -709,7 +711,7 @@
 	<!-- /.content-wrapper -->
 
 	<div class="modal fade" id="view-item-details-modal" tabindex="-1" role="dialog" aria-labelledby="ItemDetails">
-		<div class="modal-dialog" role="document" style="min-width: 90%;">
+		<div class="modal-dialog modal-lg modal-item-inquiry" role="document" style="max-width: 95%;">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title responsive-modal-title">Item Inquiry</h4>
@@ -869,7 +871,7 @@
 	</div>
 
 	<div class="modal fade" id="warehouseLocationModal" tabindex="-1" role="dialog" aria-labelledby="warehouseLocationModalLabel" aria-hidden="true">
-		<div class="modal-dialog" role="document" style="min-width: 30%;">
+		<div class="modal-dialog modal-warehouse-location" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title" id="warehouseLocationModalLabel">Edit Warehouse Location</h5>
@@ -959,7 +961,7 @@
 	<div id="stock-reservation-modals-app"></div>
 
 	<div class="modal fade" id="print-brochure-modal">
-		<div class="modal-dialog" style="max-width: 90% !important">
+		<div class="modal-dialog modal-print-brochure" style="max-width: 90% !important">
 			<div class="modal-content">
 				<div class="modal-body">
 					<div class="row p-0 m-0">

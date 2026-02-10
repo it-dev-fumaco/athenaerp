@@ -171,6 +171,7 @@
                                             </div>
                                         </div>
                                         <div class="row">
+                                            <div class="responsive-table-wrap w-100">
                                             <table class="table table-striped" id="selected-items-table" style="font-size: 9pt;">
                                                 <thead>
                                                     <th class="font-responsive text-center p-1 align-middle">Item Code</th>
@@ -274,6 +275,7 @@
                                                     @endforelse
                                                 </tbody>
                                             </table>
+                                            </div>
                                             <div class="col-12 text-right">
                                                 <div class="m-2">
                                                     @if (!$materialRequest || $materialRequest->consignment_status == 'Draft')
@@ -349,10 +351,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         input[type=number] {
             -moz-appearance: textfield;
         }
