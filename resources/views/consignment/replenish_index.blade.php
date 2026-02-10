@@ -29,54 +29,7 @@
                                         {{ session()->get('error') }}
                                     </div>
                                 @endif
-                                <div class="container-fluid">
-                                    @php
-                                        $statuses = ['Draft', 'For Approval', 'Approved', 'Delivered', 'Cancelled'];
-                                    @endphp
-                                    <div class="row">
-                                        <div class="col-12 p-2">
-                                            <div class="row">
-                                                <div class="col-8 p-2">
-                                                    <input type="text" name="search" placeholder="Search..." class="form-control form-control-sm">
-                                                </div>
-                                                <div class="col-4 p-2">
-                                                    <button class="btn btn-sm btn-primary search w-100"><i class="fa fa-search"></i> Search</button>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="row additional-filters" style='display: none'>
-                                                <div class="col-8 p-2">
-                                                    <select name="branch" class="form-control form-control-sm select-filter">
-                                                        <option value="" disabled selected>Select a Branch</option>
-                                                        <option value="">Select all</option>
-                                                        @foreach ($assignedConsignmentStores as $store)
-                                                            <option value="{{ $store }}">{{ $store }}</option>
-                                                        @endforeach 
-                                                    </select>
-                                                </div>
-                                                <div class="col-4 p-2">
-                                                    <select name="status" class="form-control form-control-sm select-filter">
-                                                        <option value="" disabled selected>Status</option>
-                                                        <option value="">Select all</option>
-                                                        @foreach ($statuses as $status)
-                                                            <option value="{{ $status }}">{{ $status }}</option>
-                                                        @endforeach 
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        
-                                            <div class="row">
-                                                <div class="col-12 p-2">
-                                                    <a id="toggle-filters" class="text-primary text-underline" style="font-size: 9pt">Advanced Filters...</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div id="replenish-tbl" class="col-12">
-                                            <div class="d-flex justify-content-center align-items-center p-5">
-                                                <div class="spinner-border"></div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div id="consignment-replenish" data-stores='@json($assignedConsignmentStores)' data-statuses='@json(["Draft", "For Approval", "Approved", "Delivered", "Cancelled"])'></div>
                                 </div>
                             </div>
                         </div>
@@ -103,62 +56,4 @@
 @endsection
 
 @section('script')
-<script>
-    $(document).ready(function () {
-        const showNotification = (color, message, icon) => {
-            $.notify({
-                icon: icon,
-                message: message
-            }, {
-                type: color,
-                timer: 500,
-                z_index: 1060,
-                placement: {
-                    from: 'top',
-                    align: 'center'
-                }
-            });
-        };
-
-        const load = (page = 1) => {
-            const branch = $('select[name="branch"]').val();
-            const status = $('select[name="status"]').val();
-            const search = $('input[name="search"]').val();
-
-            $.ajax({
-                type: 'GET',
-                url: '/consignment/replenish',
-                data: { page, branch, status, search },
-                success: (response) => {
-                    $('#replenish-tbl').html(response);
-                },
-                error: (xhr, textStatus, errorThrown) => {
-                    showNotification("danger", xhr.responseJSON.message, "fa fa-info");
-                }
-            });
-        };
-
-        load();
-
-        $(document).on('click', '#pagination a', function (event) {
-            event.preventDefault();
-            const page = $(this).attr('href').split('page=')[1];
-            load(page);
-        });
-
-        $(document).on('change', '.select-filter', function (e) {
-            e.preventDefault();
-            load();
-        })
-
-        $(document).on('click', '.search', function (e) {
-            e.preventDefault();
-            load();
-        });
-
-        $(document).on('click', '#toggle-filters', function () {
-            $('.additional-filters').slideToggle();
-        });
-    });
-</script>
 @endsection

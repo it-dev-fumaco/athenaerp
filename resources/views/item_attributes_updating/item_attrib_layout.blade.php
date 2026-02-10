@@ -124,6 +124,8 @@
         <script src="{{ asset('/js/angular.min.js') }}"></script>
         <script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
 
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+
         @yield('script')
     </body>
 </html>

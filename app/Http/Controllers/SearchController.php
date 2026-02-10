@@ -407,6 +407,21 @@ class SearchController extends Controller
 
         $itemGroupArray = $this->itemGroupTree(1, $itemGroups, $all, $arr);
 
+        if ($request->expectsJson()) {
+            $showPrice = in_array($userDepartment, $allowedDepartment) || in_array(Auth::user()->user_group, ['Manager', 'Director']);
+            return response()->json([
+                'data' => $itemList,
+                'meta' => [
+                    'current_page' => $items->currentPage(),
+                    'last_page' => $items->lastPage(),
+                    'total' => $items->total(),
+                    'path' => $items->path(),
+                ],
+                'bundled_items' => $bundledItems,
+                'show_price' => $showPrice,
+            ]);
+        }
+
         return view('search_results', compact('itemList', 'items', 'all', 'itemGroups', 'itemGroupArray', 'breadcrumbs', 'totalItems', 'root', 'allowedDepartment', 'userDepartment', 'bundledItems', 'noImgPlaceholder'));
     }
 

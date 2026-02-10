@@ -193,6 +193,71 @@ class StockReservationController extends Controller
         $paginatedPendingItems = new LengthAwarePaginator($currentPageItems, count($itemCollection), $perPage);
         $paginatedPendingItems->setPath($request->url());
 
+        if ($request->expectsJson()) {
+            $canEdit = in_array(Auth::user()->user_group, ['Inventory Manager', 'Director']);
+            $serializeReservation = function ($row) {
+                $badge = 'secondary';
+                if ($row->status === 'Active') {
+                    $badge = 'primary';
+                } elseif ((round($row->consumed_qty) > 0 && $row->consumed_qty < $row->reserve_qty) || $row->status === 'Partially Issued') {
+                    $badge = 'info';
+                } elseif (($row->reserve_qty == round($row->consumed_qty) && $row->status !== 'Expired') || $row->status === 'Issued') {
+                    $badge = 'success';
+                }
+                $reservedQty = (floor($row->reserve_qty) != $row->reserve_qty * 1) ? number_format($row->reserve_qty, 4) : $row->reserve_qty * 1;
+                $consumedQty = (floor($row->consumed_qty) != $row->consumed_qty * 1) ? number_format($row->consumed_qty, 4) : $row->consumed_qty * 1;
+                return [
+                    'name' => $row->name,
+                    'creation' => $row->creation,
+                    'status' => $row->status,
+                    'reserve_qty' => $row->reserve_qty,
+                    'consumed_qty' => $row->consumed_qty,
+                    'stock_uom' => $row->stock_uom,
+                    'warehouse' => $row->warehouse,
+                    'created_by' => $row->created_by,
+                    'consignment_warehouse' => $row->consignment_warehouse ?? '',
+                    'sales_person' => $row->sales_person ?? '',
+                    'valid_until' => $row->valid_until ?? '',
+                    'badge' => $badge,
+                    'reserved_qty_formatted' => $reservedQty,
+                    'consumed_qty_formatted' => $consumedQty,
+                ];
+            };
+            $serializePending = function ($row) {
+                return [
+                    'id' => $row['id'],
+                    'warehouse' => $row['warehouse'],
+                    'qty' => $row['qty'],
+                    'uom' => $row['uom'],
+                    'owner' => $row['owner'],
+                    'issued_by' => $row['issued_by'],
+                    'issued_at' => $row['issued_at'],
+                    'date' => $row['date'],
+                ];
+            };
+            $basePath = $request->url();
+            return response()->json([
+                'item_code' => $itemCode,
+                'can_edit' => $canEdit,
+                'web' => [
+                    'data' => collect($webList->items())->map($serializeReservation)->values()->all(),
+                    'meta' => ['current_page' => $webList->currentPage(), 'last_page' => $webList->lastPage(), 'total' => $webList->total(), 'path' => $basePath],
+                ],
+                'consignment' => [
+                    'data' => collect($consignmentList->items())->map($serializeReservation)->values()->all(),
+                    'meta' => ['current_page' => $consignmentList->currentPage(), 'last_page' => $consignmentList->lastPage(), 'total' => $consignmentList->total(), 'path' => $basePath],
+                ],
+                'inhouse' => [
+                    'data' => collect($inhouseList->items())->map($serializeReservation)->values()->all(),
+                    'meta' => ['current_page' => $inhouseList->currentPage(), 'last_page' => $inhouseList->lastPage(), 'total' => $inhouseList->total(), 'path' => $basePath],
+                ],
+                'pending' => [
+                    'data' => collect($paginatedPendingItems->items())->map($serializePending)->values()->all(),
+                    'meta' => ['current_page' => $paginatedPendingItems->currentPage(), 'last_page' => $paginatedPendingItems->lastPage(), 'total' => $paginatedPendingItems->total(), 'path' => $basePath],
+                ],
+            ]);
+        }
+
         return view('stock_reservation.list', compact('consignmentList', 'webList', 'inhouseList', 'itemCode', 'paginatedPendingItems'));
     }
 

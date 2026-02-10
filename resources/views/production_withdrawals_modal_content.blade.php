@@ -46,8 +46,8 @@
                                         <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
                                         <dt class="mt-1">Work Order:</dt>
                                         <dd>
-                                            <span>{{ $data['work_order'] ? $data['work_order'] : '-' }}</span>
-                                            @if($data['work_order_status_label'])
+                                            <span>{{ data_get($data, 'work_order') ?: '-' }}</span>
+                                            @if(data_get($data, 'work_order_status_label'))
                                                 @php
                                                     $wo_badge = ($data['work_order_docstatus'] ?? null) === 2 ? 'badge-danger' : ($work_order_missing ? 'badge-warning' : 'badge-success');
                                                 @endphp

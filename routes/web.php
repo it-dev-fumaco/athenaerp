@@ -1,6 +1,13 @@
 <?php
 use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\ConsignmentController;
+use App\Http\Controllers\Consignment\ConsignmentReplenishController;
+use App\Http\Controllers\Consignment\ConsignmentSalesController;
+use App\Http\Controllers\Consignment\ConsignmentInventoryAuditController;
+use App\Http\Controllers\Consignment\ConsignmentStockAdjustmentController;
+use App\Http\Controllers\Consignment\ConsignmentStockTransferController;
+use App\Http\Controllers\Consignment\ConsignmentBeginningInventoryController;
+use App\Http\Controllers\Consignment\ConsignmentPromodiserController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\ItemAttributeController;
 use App\Http\Controllers\ItemController;
@@ -200,97 +207,97 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function(){
 
         // Consignment Forms
         Route::group(['middleware' => 'checkConnection'], function(){
-            Route::post('/approve_beginning_inv/{id}', [ConsignmentController::class, 'approveBeginningInventory']);
-            Route::post('/adjust_stocks', [ConsignmentController::class, 'adjustStocks']);
-            Route::post('/add_promodiser_submit', [ConsignmentController::class, 'addPromodiser']);
-            Route::post('/edit_promodiser_submit/{id}', [ConsignmentController::class, 'editPromodiser']);
-            Route::post('/submit_monthly_sales_form', [ConsignmentController::class, 'submitMonthlySaleForm']);
-            Route::post('/submit_inventory_audit_form', [ConsignmentController::class, 'submitInventoryAuditForm']);
-            Route::post('/stock_transfer/submit', [ConsignmentController::class, 'stockTransferSubmit']);
-            Route::post('/stock_adjust/submit/{id}', [ConsignmentController::class, 'submitStockAdjustment']);
-            Route::get('/cancel_stock_adjustment/{id}', [ConsignmentController::class, 'cancelStockAdjustment']);
-            Route::post('/item_return/submit', [ConsignmentController::class, 'itemReturnSubmit']);
-            Route::post('/save_beginning_inventory', [ConsignmentController::class, 'saveBeginningInventory']);
-            Route::get('/cancel_beginning_inventory/{id}', [ConsignmentController::class, 'cancelDraftBeginningInventory']);
-            Route::post('/update_beginning_inventory/{id}', [ConsignmentController::class, 'updateDraftBeginningInventory']);
-            Route::get('/promodiser/receive/{id}', [ConsignmentController::class, 'promodiserReceiveDelivery']);
-            Route::get('/promodiser/cancel/received/{id}', [ConsignmentController::class, 'promodiserCancelReceivedDelivery']);
-            Route::post('/promodiser/damage_report/submit', [ConsignmentController::class, 'submitDamagedItem']);
-            Route::post('/generate_stock_transfer_entry', [ConsignmentController::class, 'generateStockTransferEntry']);
+            Route::post('/approve_beginning_inv/{id}', [ConsignmentBeginningInventoryController::class, 'approveBeginningInventory']);
+            Route::post('/adjust_stocks', [ConsignmentStockAdjustmentController::class, 'adjustStocks']);
+            Route::post('/add_promodiser_submit', [ConsignmentPromodiserController::class, 'addPromodiser']);
+            Route::post('/edit_promodiser_submit/{id}', [ConsignmentPromodiserController::class, 'editPromodiser']);
+            Route::post('/submit_monthly_sales_form', [ConsignmentSalesController::class, 'submitMonthlySaleForm']);
+            Route::post('/submit_inventory_audit_form', [ConsignmentInventoryAuditController::class, 'submitInventoryAuditForm']);
+            Route::post('/stock_transfer/submit', [ConsignmentStockTransferController::class, 'submit']);
+            Route::post('/stock_adjust/submit/{id}', [ConsignmentStockAdjustmentController::class, 'submitStockAdjustment']);
+            Route::get('/cancel_stock_adjustment/{id}', [ConsignmentStockAdjustmentController::class, 'cancelStockAdjustment']);
+            Route::post('/item_return/submit', [ConsignmentStockTransferController::class, 'itemReturnSubmit']);
+            Route::post('/save_beginning_inventory', [ConsignmentBeginningInventoryController::class, 'saveBeginningInventory']);
+            Route::get('/cancel_beginning_inventory/{id}', [ConsignmentBeginningInventoryController::class, 'cancelDraftBeginningInventory']);
+            Route::post('/update_beginning_inventory/{id}', [ConsignmentBeginningInventoryController::class, 'updateDraftBeginningInventory']);
+            Route::get('/promodiser/receive/{id}', [ConsignmentPromodiserController::class, 'promodiserReceiveDelivery']);
+            Route::get('/promodiser/cancel/received/{id}', [ConsignmentPromodiserController::class, 'promodiserCancelReceivedDelivery']);
+            Route::post('/promodiser/damage_report/submit', [ConsignmentPromodiserController::class, 'submitDamagedItem']);
+            Route::post('/generate_stock_transfer_entry', [ConsignmentStockTransferController::class, 'generateStockTransferEntry']);
             Route::post('/consignment_read_file', [ConsignmentController::class, 'readFile']);
             Route::post('/assign_barcodes', [ConsignmentController::class, 'assignBarcodes']);
 
             Route::prefix('/consignment')->group(function(){
                 Route::prefix('/replenish')->group(function(){
-                    Route::get('/', [ConsignmentController::class, 'replenishIndex']);
-                    Route::post('/', [ConsignmentController::class, 'replenishSubmit']);
-                    Route::get('/form/{id?}', [ConsignmentController::class, 'replenishForm']);
-                    Route::post('/{id}', [ConsignmentController::class, 'replenishUpdate']);
-                    Route::get('/modal/{id}', [ConsignmentController::class, 'replenishModalContents']);
-                    Route::post('/{id}/approve', [ConsignmentController::class, 'replenishApprove']);
-                    Route::get('/{id}/delete', [ConsignmentController::class, 'replenishDelete']);
+                    Route::get('/', [ConsignmentReplenishController::class, 'index']);
+                    Route::post('/', [ConsignmentReplenishController::class, 'submit']);
+                    Route::get('/form/{id?}', [ConsignmentReplenishController::class, 'form']);
+                    Route::post('/{id}', [ConsignmentReplenishController::class, 'update']);
+                    Route::get('/modal/{id}', [ConsignmentReplenishController::class, 'modalContents']);
+                    Route::post('/{id}/approve', [ConsignmentReplenishController::class, 'approve']);
+                    Route::get('/{id}/delete', [ConsignmentReplenishController::class, 'delete']);
                 });
             });
 
-            Route::get('/consignment_order/{id}/edit', [ConsignmentController::class, 'editConsignmentOrder']);
-            Route::post('/consignment_order/{id}/update', [ConsignmentController::class, 'updateConsignmentOrder']);
+            Route::get('/consignment_order/{id}/edit', [ConsignmentReplenishController::class, 'editConsignmentOrder']);
+            Route::post('/consignment_order/{id}/update', [ConsignmentReplenishController::class, 'updateConsignmentOrder']);
         });
 
         // Consignment Supervisor
-        Route::get('/beginning_inv_list', [ConsignmentController::class, 'beginningInventoryApproval']);
-        Route::get('/consignment_sales_report', [ConsignmentController::class, 'salesReport']);
-        Route::get('/get_consignment_warehouses', [ConsignmentController::class, 'getConsignmentWarehouses']);
-        Route::get('/stock_adjustment_history', [ConsignmentController::class, 'viewStockAdjustmentHistory']);
-        Route::get('/stock_adjustment_form', [ConsignmentController::class, 'viewStockAdjustmentForm']);
-        Route::get('/add_promodiser', [ConsignmentController::class, 'addPromodiserForm']);
-        Route::get('/edit_promodiser/{id}', [ConsignmentController::class, 'editPromodiserForm']);
+        Route::get('/beginning_inv_list', [ConsignmentBeginningInventoryController::class, 'beginningInventoryApproval']);
+        Route::get('/consignment_sales_report', [ConsignmentSalesController::class, 'salesReport']);
+        Route::get('/get_consignment_warehouses', [ConsignmentPromodiserController::class, 'getConsignmentWarehouses']);
+        Route::get('/stock_adjustment_history', [ConsignmentStockAdjustmentController::class, 'viewStockAdjustmentHistory']);
+        Route::get('/stock_adjustment_form', [ConsignmentStockAdjustmentController::class, 'viewStockAdjustmentForm']);
+        Route::get('/add_promodiser', [ConsignmentPromodiserController::class, 'addPromodiserForm']);
+        Route::get('/edit_promodiser/{id}', [ConsignmentPromodiserController::class, 'editPromodiserForm']);
 
         // Promodisers
-        Route::get('/view_monthly_sales_form/{branch}/{date}', [ConsignmentController::class, 'viewMonthlySalesForm']);
-        Route::get('/view_inventory_audit_form/{branch}/{transaction_date}', [ConsignmentController::class, 'viewInventoryAuditForm']);
-        Route::get('/stock_transfer/form', [ConsignmentController::class, 'stockTransferForm']);
-        Route::get('/stock_transfer/list', [ConsignmentController::class, 'stockTransferList'])->name('stock_transfers');
-        Route::get('/stock_transfer/cancel/{id}', [ConsignmentController::class, 'stockTransferCancel']);
+        Route::get('/view_monthly_sales_form/{branch}/{date}', [ConsignmentSalesController::class, 'viewMonthlySalesForm']);
+        Route::get('/view_inventory_audit_form/{branch}/{transaction_date}', [ConsignmentInventoryAuditController::class, 'viewInventoryAuditForm']);
+        Route::get('/stock_transfer/form', [ConsignmentStockTransferController::class, 'form']);
+        Route::get('/stock_transfer/list', [ConsignmentStockTransferController::class, 'list'])->name('stock_transfers');
+        Route::get('/stock_transfer/cancel/{id}', [ConsignmentStockTransferController::class, 'cancel']);
 
-        Route::get('/item_return/form', [ConsignmentController::class, 'itemReturnForm']);
+        Route::get('/item_return/form', [ConsignmentStockTransferController::class, 'itemReturnForm']);
         
-        Route::get('/beginning_inventory_list', [ConsignmentController::class, 'beginningInventoryList']);
-        Route::get('/beginning_inventory/{inv?}', [ConsignmentController::class, 'beginningInventory']);
-        Route::get('/beginning_inv_items/{action}/{branch}/{id?}', [ConsignmentController::class, 'beginningInvItems']);
-        Route::get('/get_items/{branch}', [ConsignmentController::class, 'getItems']);
-        Route::get('/cancel/approved_beginning_inv/{id}', [ConsignmentController::class, 'cancelApprovedBeginningInventory']);
-        Route::get('/promodiser/delivery_report/{type}', [ConsignmentController::class, 'promodiserDeliveryReport']);
-        Route::get('/promodiser/inquire_delivery', [ConsignmentController::class, 'promodiserInquireDelivery']);
-        Route::get('/consignment/pending_to_receive', [ConsignmentController::class, 'pendingToReceive']);
-        Route::get('/sales_report_deadline', [ConsignmentController::class, 'salesReportDeadline']);
-        Route::get('/validate_beginning_inventory', [ConsignmentController::class, 'checkBeginningInventory']); 
-        Route::get('/promodiser/damage_report/form', [ConsignmentController::class, 'promodiserDamageForm']); 
-        Route::get('/damage_report/list', [ConsignmentController::class, 'damagedItems']); 
-        Route::get('/damaged/return/{id}', [ConsignmentController::class, 'returnDamagedItem']);
-        Route::get('/beginning_inv/get_received_items/{branch}', [ConsignmentController::class, 'getReceivedItems']); 
-        Route::get('/stocks_report/list', [ConsignmentController::class, 'stockTransferReport'])->name('stock_report_list');
-        Route::get('/damaged_items_list', [ConsignmentController::class, 'viewDamagedItemsList']);
-        Route::get('/countStockTransfer/{purpose}', [ConsignmentController::class, 'countStockTransfer']);
+        Route::get('/beginning_inventory_list', [ConsignmentBeginningInventoryController::class, 'beginningInventoryList']);
+        Route::get('/beginning_inventory/{inv?}', [ConsignmentBeginningInventoryController::class, 'beginningInventory']);
+        Route::get('/beginning_inv_items/{action}/{branch}/{id?}', [ConsignmentBeginningInventoryController::class, 'beginningInvItems']);
+        Route::get('/get_items/{branch}', [ConsignmentBeginningInventoryController::class, 'getItems']);
+        Route::get('/cancel/approved_beginning_inv/{id}', [ConsignmentBeginningInventoryController::class, 'cancelApprovedBeginningInventory']);
+        Route::get('/promodiser/delivery_report/{type}', [ConsignmentPromodiserController::class, 'promodiserDeliveryReport']);
+        Route::get('/promodiser/inquire_delivery', [ConsignmentPromodiserController::class, 'promodiserInquireDelivery']);
+        Route::get('/consignment/pending_to_receive', [ConsignmentPromodiserController::class, 'pendingToReceive']);
+        Route::get('/sales_report_deadline', [ConsignmentSalesController::class, 'salesReportDeadline']);
+        Route::get('/validate_beginning_inventory', [ConsignmentBeginningInventoryController::class, 'checkBeginningInventory']); 
+        Route::get('/promodiser/damage_report/form', [ConsignmentPromodiserController::class, 'promodiserDamageForm']); 
+        Route::get('/damage_report/list', [ConsignmentPromodiserController::class, 'damagedItems']); 
+        Route::get('/damaged/return/{id}', [ConsignmentPromodiserController::class, 'returnDamagedItem']);
+        Route::get('/beginning_inv/get_received_items/{branch}', [ConsignmentBeginningInventoryController::class, 'getReceivedItems']); 
+        Route::get('/stocks_report/list', [ConsignmentStockTransferController::class, 'report'])->name('stock_report_list');
+        Route::get('/damaged_items_list', [ConsignmentPromodiserController::class, 'viewDamagedItemsList']);
+        Route::get('/countStockTransfer/{purpose}', [ConsignmentStockTransferController::class, 'count']);
 
         Route::get('/inventory_items/{branch}', [ConsignmentController::class, 'inventoryItems']); 
 
-        Route::get('/inventory_audit', [ConsignmentController::class, 'viewInventoryAuditList']);
+        Route::get('/inventory_audit', [ConsignmentInventoryAuditController::class, 'viewInventoryAuditList']);
         Route::get('/consignment_stores', [ConsignmentController::class, 'consignmentStores']);
-        Route::get('/submitted_inventory_audit', [ConsignmentController::class, 'getSubmittedInvAudit']);
-        Route::get('/view_inventory_audit_items/{branch}/{from}/{to}', [ConsignmentController::class, 'viewInventoryAuditItems']);
-        Route::get('/pending_submission_inventory_audit', [ConsignmentController::class, 'getPendingSubmissionInventoryAudit']);
-        Route::get('/sales_report_list/{branch}', [ConsignmentController::class, 'viewSalesReportList']);        
+        Route::get('/submitted_inventory_audit', [ConsignmentInventoryAuditController::class, 'getSubmittedInvAudit']);
+        Route::get('/view_inventory_audit_items/{branch}/{from}/{to}', [ConsignmentInventoryAuditController::class, 'viewInventoryAuditItems']);
+        Route::get('/pending_submission_inventory_audit', [ConsignmentInventoryAuditController::class, 'getPendingSubmissionInventoryAudit']);
+        Route::get('/sales_report_list/{branch}', [ConsignmentSalesController::class, 'viewSalesReportList']);        
 
-        Route::get('/view_sales_report', [ConsignmentController::class, 'viewSalesReport']);
+        Route::get('/view_sales_report', [ConsignmentPromodiserController::class, 'viewSalesReport']);
 
-        Route::get('/get_activity_logs', [ConsignmentController::class, 'activityLogs']);
-        Route::get('/view_promodisers', [ConsignmentController::class, 'viewPromodisersList']);
-        Route::get('/get_audit_deliveries', [ConsignmentController::class, 'getAuditDeliveries']);
-        Route::get('/get_audit_returns', [ConsignmentController::class, 'getAuditReturns']);
+        Route::get('/get_activity_logs', [ConsignmentPromodiserController::class, 'activityLogs']);
+        Route::get('/view_promodisers', [ConsignmentPromodiserController::class, 'viewPromodisersList']);
+        Route::get('/get_audit_deliveries', [ConsignmentPromodiserController::class, 'getAuditDeliveries']);
+        Route::get('/get_audit_returns', [ConsignmentPromodiserController::class, 'getAuditReturns']);
 
         Route::get('/consignment_dashboard', [MainController::class, 'viewConsignmentDashboard']);
 
-        Route::get('/view_consignment_deliveries', [ConsignmentController::class, 'viewDeliveries']);
+        Route::get('/view_consignment_deliveries', [ConsignmentPromodiserController::class, 'viewDeliveries']);
 
         Route::get('/consignment_import_tool', [ConsignmentController::class, 'importTool']);
         Route::get('/consignment_select_values', [ConsignmentController::class, 'selectValues']);

@@ -337,6 +337,14 @@ class ItemAttributeController extends Controller
 
             DB::commit();
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Attribute Updated! <b>' . $affectedRows . '</b> transactions updated.',
+                    'redirect' => '/search?item_code=' . $request->itemCode,
+                ]);
+            }
+
             return redirect('/search?item_code=' . $request->itemCode)->with('success', 'Attribute Updated! <b>' . $affectedRows . '</b> transactions updated.');
         } catch (Exception $e) {
             DB::rollback();

@@ -5,6 +5,7 @@
 
 @section('content')
     <div class="container-fluid align-center">
+        <div id="item-attribute-update-form-app"></div>
         <div class="modal fade" id="preloader-modal" data-backdrop="static" data-keyboard="false">
             <div class="modal-dialog">
                 <div class="modal-content">

@@ -91,7 +91,7 @@
                                         <button class="btn btn-sm btn-secondary" id="consignment-reset">Reset Filters</button>
                                     </div>
                                     <div class="col-12 overflow-auto">
-                                        <div id="consignment-ledger-content"></div>
+                                        <div id="item-profile-consignment-stock-movement" data-item-code="{{ $itemDetails->name }}"></div>
                                     </div>
                                 </div>
                             </div>
@@ -591,11 +591,7 @@
                         <div class="col-md-2" style="display: inline-block">
                             <button class="btn btn-secondary font-responsive btn-sm" id="athReset">Reset Filters</button>
                         </div>
-                        <div id="athena-transactions" class="col-12 overflow-auto">
-                            <div class="container d-flex justify-content-center align-items-center p-5">
-                                <div class="spinner-border"></div>
-                            </div>
-                        </div>
+						<div id="item-profile-athena-transactions" class="col-12 overflow-auto" data-item-code="{{ $itemDetails->name }}"></div>
                     </div>
         
                     <div id="history" class="container-fluid tab-pane bg-white p-2">
@@ -629,15 +625,11 @@
                                 <div class="box-body table-responsive no-padding font-responsive" id="stock-ledger-table"></div>
                             </div>
                         </div>
-                        <div id="stock-ledger" class="col-12 overflow-auto">
-                            <div class="container d-flex justify-content-center align-items-center p-5">
-                                <div class="spinner-border"></div>
-                            </div>
-                        </div>
+                        <div id="item-profile-stock-ledger" class="col-12 overflow-auto" data-item-code="{{ $itemDetails->name }}"></div>
                     </div>
                     @if (in_array($userGroup, ['Manager', 'Director']))
                     <div id="purchase-history" class="container-fluid tab-pane bg-white overflow-auto">
-                        <div id="purchase-history-div" class="p-3 col-12"></div>
+                        <div id="item-profile-purchase-history" class="p-3 col-12" data-item-code="{{ $itemDetails->name }}"></div>
                     </div>
                     @endif
                     <div class="container-fluid tab-pane bg-white" id="tab_4">
@@ -652,11 +644,11 @@
                                 <div class="float-right m-2">
                                     <button class="btn btn-primary font-responsive btn-sm" id="add-stock-reservation-btn" {{ $attr }}>New Stock Reservation</button>
                                 </div>
-                                <div class="box-body table-responsive no-padding font-responsive" id="stock-reservation-table">
-                                    <div class="container d-flex justify-content-center align-items-center p-5">
-                                        <div class="spinner-border"></div>
-                                    </div>
-                                </div>
+                                <div
+                                    id="item-profile-stock-reservation"
+                                    class="box-body table-responsive no-padding font-responsive"
+                                    data-item-code="{{ $itemDetails->name }}"
+                                ></div>
                             </div>
                         </div>
                     </div>
@@ -942,107 +934,8 @@
         });
 
         $(document).on('click', '#get-athena-transactions', function (e){
-            get_athena_transactions();
+            document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
         })
-
-        function get_athena_transactions(page){
-            var item_code = '{{ $itemDetails->name }}';
-            var ath_src = $('#ath-src-warehouse-filter').val();
-            var ath_trg = $('#ath-to-warehouse-filter').val();
-            var ath_user = $('#warehouse-user-filter').val();
-            var ath_drange = $('#ath_dates').val();
-            $.ajax({
-                type: 'GET',
-                url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
-                success: function(response){
-                    $('#athena-transactions').html(response);
-                }
-            });
-        }
-
-        $(document).on('click', '#get-stock-reservations', function (e){
-            get_stock_reservation();
-        })
-
-        function get_stock_reservation(tbl, page){
-            var item_code = '{{ $itemDetails->name }}';
-            $.ajax({
-                type: 'GET',
-                url: '/get_stock_reservation/' + item_code + '?' + tbl + '=' + page,
-                success: function(response){
-                    $('#stock-reservation-table').html(response);
-                }
-            });
-        }
-
-        $(document).on('click', '#stock-reservations-pagination-1 a', function(event){
-            event.preventDefault();
-            var page = $(this).attr('href').split('page=')[1];
-            get_stock_reservation(page);
-        });
-
-        $('#stock-reservation-form').submit(function(e){
-            e.preventDefault();
-
-            $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: $(this).serialize(),
-                success: function(response){
-                    if (response.error) {
-                        showNotification("danger", response.modal_message, "fa fa-info");
-                    }else{
-                        get_stock_reservation();
-                        showNotification("success", response.modal_message, "fa fa-check");
-                        $('#add-stock-reservation-modal').modal('hide');
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                }
-            });
-        });
-
-        $('#edit-reservation-form').submit(function(e){
-            e.preventDefault();
-
-            $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: $(this).serialize(),
-                success: function(response){
-                    if (response.error) {
-                        showNotification("danger", response.modal_message, "fa fa-info");
-                    }else{
-                        get_stock_reservation();
-                        showNotification("success", response.modal_message, "fa fa-check");
-                        $('#edit-stock-reservation-modal').modal('hide');
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                }
-            });
-        });
-
-        $('#cancel-reservation-form').submit(function(e){
-            e.preventDefault();
-
-            $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: $(this).serialize(),
-                success: function(response){
-                    if (response.error) {
-                        showNotification("danger", response.modal_message, "fa fa-info");
-                    }else{
-                        get_stock_reservation();
-                        showNotification("success", response.modal_message, "fa fa-check");
-                        $('#cancel-stock-reservation-modal').modal('hide');
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                }
-            });
-        });
 
         function showNotification(color, message, icon){
             $.notify({
@@ -1060,63 +953,26 @@
         }
 
         $(document).on('click', '#get-stock-ledger', function (e){
-            get_stock_ledger(1);
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
         })
 
-        function get_stock_ledger(page){
-            var item_code = '{{ $itemDetails->name }}';
-            var erp_user = $('#erp-warehouse-user-filter').val();
-            var erp_wh = $('#erp-warehouse-filter').val();
-            var erp_d = $('#erp_dates').val();
-            $.ajax({
-                type: 'GET',
-                url: '/get_stock_ledger/' + item_code + '?page=' + page + '&wh_user=' + erp_user + '&erp_wh=' + erp_wh + '&erp_d=' + erp_d,
-                success: function(response){
-                    $('#stock-ledger').html(response);
-                }
-            });
-        }
-
         $('#erp_dates').on('change', function(e){ 
-            get_stock_ledger();
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
         });
 
         $(document).on('select2:select', '#erp-warehouse-user-filter', function(e){
-            get_stock_ledger();
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
         });
 
         $(document).on('select2:select', '#erp-warehouse-filter', function(e){
-        	get_stock_ledger();
-        });
-
-        $(document).on('click', '#stock-ledger-pagination a', function(event){
-            event.preventDefault();
-            var page = $(this).attr('href').split('page=')[1];
-            get_stock_ledger(page);
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
         });
 
         @if (in_array($userGroup, ['Manager', 'Director']))
             $(document).on('click', '#get-purchase-history', function (e){
-                get_purchase_history();
+                document.dispatchEvent(new CustomEvent('item-profile-purchase-history-refresh'));
             })
         @endif
-
-        function get_purchase_history(page){
-            var item_code = '{{ $itemDetails->name }}';
-            $.ajax({
-                type: 'GET',
-                url: '/purchase_rate_history/' + item_code + '?page=' + page,
-                success: function(response){
-                    $('#purchase-history-div').html(response);
-                }
-            });
-        }
-
-        $(document).on('click', '#purchase-history-pagination a', function(event){
-            event.preventDefault();
-            var page = $(this).attr('href').split('page=')[1];
-            get_purchase_history(page);
-        });
 
         $("#ath_dates").daterangepicker({
             autoUpdateInput: false,
@@ -1138,12 +994,12 @@
 
         $("#ath_dates").on('apply.daterangepicker', function (ev, picker) {
             $(this).val(picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD'));
-            get_athena_transactions();
+            document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
         });
 
         $("#ath_dates").on('cancel.daterangepicker', function (ev, picker) {
             $(this).val('');
-            get_athena_transactions();
+            document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
         });
 
         $("#ath_dates").val('');
@@ -1168,12 +1024,12 @@
 
         $("#erp_dates").on('apply.daterangepicker', function (ev, picker) {
             $(this).val(picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD'));
-            get_stock_ledger();
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
         });
 
         $("#erp_dates").on('cancel.daterangepicker', function (ev, picker) {
             $(this).val('');
-            get_stock_ledger();
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
         });
 
         $("#erp_dates").val('');
@@ -1185,7 +1041,7 @@
             $('#warehouse-user-filter').empty();
             $('#ath_dates').val('');
             $("#ath_dates").attr("placeholder","Select Date Range");
-            get_athena_transactions();
+            document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
         });
 
         $('#erpReset').click(function(){
@@ -1193,7 +1049,7 @@
             $('#erp-warehouse-user-filter').empty();
             $("#erp_dates").val('');
             $("#erp_dates").attr("placeholder","Select Date Range");
-            get_stock_ledger();
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
         })
 
         $('#resetAll').click(function(){
@@ -1230,34 +1086,7 @@
         });
 
         $(document).on('change', '.csm-filter', function(e){
-            load();
-        });
-
-        // load();
-        function load(page) {
-            var item_code = '{{ $itemDetails->name }}';
-            var branch_warehouse = $('.csm-filter').eq(0).val();
-            var date_range = $('#consignment-date-range').val();
-            var user = $('#consignment-user-select').val();
-
-            $.ajax({
-                type: "GET",
-                url: "/consignment_stock_movement/" + item_code + "?page=" + page,
-                data: {
-                    branch_warehouse,
-                    date_range: date_range,
-                    user: user
-                },
-                success: function (response) {
-                    $('#consignment-ledger-content').html(response);
-                }
-            });
-        }
-
-        $(document).on('click', '#consignment-stock-movement-pagination a', function(event){
-            event.preventDefault();
-            var page = $(this).attr('href').split('page=')[1];
-            load(page);
+            document.dispatchEvent(new CustomEvent('item-profile-consignment-stock-movement-refresh'));
         });
 
         $(".date-range").daterangepicker({
@@ -1280,12 +1109,12 @@
 
         $(".date-range").on('apply.daterangepicker', function (ev, picker) {
             $(this).val(picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD'));
-            load();
+            document.dispatchEvent(new CustomEvent('item-profile-consignment-stock-movement-refresh'));
         });
 
         $(".date-range").on('cancel.daterangepicker', function (ev, picker) {
             $(this).val('');
-            load();
+            document.dispatchEvent(new CustomEvent('item-profile-consignment-stock-movement-refresh'));
         });
 
         $(".date-range").val('');
@@ -1312,11 +1141,11 @@
         });
 
         $(document).on('select2:select', '#consignment-user-select', function(e){
-            load();
+            document.dispatchEvent(new CustomEvent('item-profile-consignment-stock-movement-refresh'));
         });
 
         $(document).on('click', '#get-consignment-stock-movement', function (e){
-            load();
+            document.dispatchEvent(new CustomEvent('item-profile-consignment-stock-movement-refresh'));
         })
 
         $(document).on('click', '#consignment-reset', function (){
@@ -1328,7 +1157,7 @@
             @if (count($consignmentBranches) > 1 && Auth::user()->user_group == 'Promodiser')
                 $(".csm-filter").val($(".csm-filter option:first").val());
             @endif
-            load();
+            document.dispatchEvent(new CustomEvent('item-profile-consignment-stock-movement-refresh'));
         });
     </script>
 @endsection

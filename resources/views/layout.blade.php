@@ -6,27 +6,28 @@
 	<title>{{ $namePage }} - {{ Auth::check() ? Auth::user()->full_name : null }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
+	@vite(['resources/css/app.css', 'resources/js/app.js'])
 	{{--  <!-- Google Font: Source Sans Pro -->  --}}
-	<link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
-	<link rel="stylesheet" href="{{ asset('/updated/icons/font-awesome.min.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/custom/font.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/icons/font-awesome.min.css') }}">
 	{{--  <!-- Font Awesome Icons -->  --}}
-	<link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/plugins/fontawesome-free/css/all.min.css') }}">
 	{{--  <!-- Ekko Lightbox -->  --}}
-	<link rel="stylesheet" href="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/plugins/ekko-lightbox/ekko-lightbox.css') }}">
 	{{--  <!-- Theme style -->  --}}
-	<link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/dist/css/adminlte.min.css') }}">
 	<!-- Select2 -->
-	<link rel="stylesheet" href="{{ asset('/updated/plugins/select2/css/select2.min.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/plugins/select2/css/select2.min.css') }}">
 	<!-- iCheck for checkboxes and radio inputs -->
-	<link rel="stylesheet" href="{{ asset('/updated/plugins/iCheck/all.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/plugins/iCheck/all.css') }}">
 	<link rel="stylesheet" type="text/css" href="{{ asset('css/daterangepicker.css') }}" />
 	<!-- fullCalendar -->
-	<link rel="stylesheet" href="{{ asset('/updated/plugins/fullcalendar/main.css') }}">
+	<link rel="stylesheet" href="{{ asset('updated/plugins/fullcalendar/main.css') }}">
 	<!-- datepicker -->
 	<script type="text/javascript" src="{{ asset('js/datetimepicker/jquery.min.js') }}"></script>
 
-	<link href="{{ asset('/bootstrap-extensions/css/bootstrap-table.min.css') }}" rel="stylesheet">
-	<link href="{{ asset('/bootstrap-extensions/css/bootstrap-table-fixed-columns.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('bootstrap-extensions/css/bootstrap-table.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('bootstrap-extensions/css/bootstrap-table-fixed-columns.min.css') }}" rel="stylesheet">
 
 	<style>
 		* {
@@ -955,244 +956,7 @@
 		</form>
 	</div>
 
-
-	<div class="modal fade" id="add-stock-reservation-modal">
-		<form id="stock-reservation-form" method="POST" action="/create_reservation" autocomplete="off">
-			@csrf
-			<div class="modal-dialog" style="min-width: 40%;">
-		  		<div class="modal-content">
-					<div class="modal-header">
-						<h4 class="modal-title">New Stock Reservation</h4>
-			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-					<div class="modal-body">
-						<div class="row m-2">
-							<div class="col-md-6">
-								<div class="form-group">
-									<label for="">Item Code</label>
-									<input type="text" class="form-control" name="item_code" id="item-code-c" readonly>
-								</div>
-								<div class="form-group">
-									<label for="">Description</label>
-									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-c" readonly></textarea>
-								</div>
-								<div class="form-group">
-									<label for="">Notes</label>
-									<textarea rows="4" class="form-control" name="notes" style="height: 124px;"></textarea>
-								</div>
-								<div class="form-group for-in-house-type d-none">
-									<label for="validity-c">Validity in Day(s)</label>
-									<input type="number" class="form-control" id="validity-c" min="0" value="0">
-								</div>
-							</div>
-							<div class="col-md-6">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="form-group">
-											<label for="">Warehouse</label>
-											<select class="form-control" name="warehouse" id="select-warehouse-c"></select>
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
-											<label for="">Reserve Qty</label>
-											<input type="text" name="reserve_qty" class="form-control" value="0">
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
-											<label for="" class="d-block">Available Qty</label>
-											<span id="warehouse-badge" class="badge badge-danger">
-												<span id="available-qty-c-text">0</span>
-												<span id="stock-uom-c-text"></span>
-											</span>
-											<input type="hidden" class="form-control" id="available-qty-c" value="0">
-										</div>
-									</div>
-									<div class="col-md-6 d-none">
-										<div class="form-group">
-											<label for="">Stock UoM</label>
-											<input type="hidden" name="stock_uom" class="form-control" id="stock-uom-c" readonly>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group">
-											<label for="">Reservation Type</label>
-											<select name="type" class="form-control" id="select-type-c" required>
-												<option value="">Select Type</option>
-												<option value="In-house">In-house</option>
-												<option value="Consignment">Consignment</option>
-												<option value="Website Stocks">Website Stocks</option>
-											</select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-in-house-type d-none">
-											<label for="">Sales Person</label>
-											<select class="form-control" name="sales_person" id="select-sales-person-c"></select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-consignment d-none">
-											<label for="">Branch Warehouse</label>
-											<select class="form-control" name="consignment_warehouse" id="select-branch-warehouse-c"></select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-in-house-type d-none">
-											<label for="">Project</label>
-											<select class="form-control" name="project" id="select-project-c"></select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-in-house-type d-none">
-											<label>Valid until</label>
-											<input type="text" name="valid_until" class="form-control" id="date-valid-until-c">
-										</div>
-									</div>
-								</div>                                        
-							</div>
-						</div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> SAVE</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
-
-	<div class="modal fade" id="edit-stock-reservation-modal">
-		<form id="edit-reservation-form" method="POST" action="/update_reservation" autocomplete="off">
-			@csrf
-			<div class="modal-dialog" style="min-width: 40%;">
-		  		<div class="modal-content">
-					<div class="modal-header">
-						<h4 class="modal-title">Edit Stock Reservation</h4>
-			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-					<div class="modal-body">
-						<div class="row m-2">
-							<div class="col-md-6">
-								<div class="form-group">
-									<input type="hidden" name="id" id="stock-reservation-id-e">
-									<label for="">Item Code</label>
-									<input type="text" class="form-control" name="item_code" id="item-code-e" readonly>
-								</div>
-								<div class="form-group">
-									<label for="">Description</label>
-									<textarea rows="4" name="description" class="form-control" style="height: 124px;" id="description-e" readonly></textarea>
-								</div>
-								<div class="form-group">
-									<label for="">Notes</label>
-									<textarea rows="4" class="form-control" name="notes" id="notes-e" style="height: 124px;"></textarea>
-								</div>
-								<div class="form-group for-in-house-type d-none">
-									<label for="validity-e">Validity in Day(s)</label>
-									<input type="number" class="form-control" id="validity-e" min="0" value="0">
-								</div>
-							</div>
-							<div class="col-md-6">
-								<div class="row">
-									<div class="col-md-12">
-										<div class="form-group">
-											<label for="">Warehouse</label>
-											<select class="form-control" id="select-warehouse-e" readonly></select>
-											<input type="hidden" class="form-control" name="warehouse" id="warehouse-e">
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
-											<label for="">Reserve Qty</label>
-											<input type="text" name="reserve_qty" class="form-control" value="0" id="reserve-qty-e">
-										</div>
-									</div>
-									<div class="col-md-6">
-										<div class="form-group">
-											<label for="" class="d-block">Available Qty</label>
-											<span class="badge badge-danger">
-												<span id="available-qty-e-text">0</span>
-												<span id="stock-uom-e-text" style="word-wrap: break-word !important; white-space: normal !important"></span>
-											</span>
-											<input type="hidden" class="form-control" name="available_qty" id="available-qty-e" value="0" readonly>
-										</div>
-									</div>
-									<div class="col-md-6 d-none">
-										<div class="form-group">
-											<label for="">Stock UoM</label>
-											<input type="text" name="stock_uom" class="form-control" id="stock-uom-e" readonly>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group">
-											<label for="">Reservation Type</label>
-											<select name="type" class="form-control" id="select-type-e" readonly>
-												<option value="">Select Type</option>
-												<option value="In-house">In-house</option>
-												<option value="Consignment">Consignment</option>
-												<option value="Website Stocks">Website Stocks</option>
-											</select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-in-house-type d-none">
-											<label for="">Sales Person</label>
-											<select class="form-control" name="sales_person" id="select-sales-person-e"></select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-consignment d-none">
-											<label for="">Branch Warehouse</label>
-											<select class="form-control" name="consignment_warehouse" id="select-branch-warehouse-e"></select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-in-house-type d-none">
-											<label for="">Project</label>
-											<select class="form-control" name="project" id="select-project-e"></select>
-										</div>
-									</div>
-									<div class="col-md-12">
-										<div class="form-group for-in-house-type d-none">
-											<label>Valid until</label>
-											<input type="text" name="valid_until" class="form-control" id="date-valid-until-e">
-										</div>
-									</div>
-								</div>                                        
-							</div>
-						</div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> UPDATE</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
-
-	<div class="modal fade" id="cancel-stock-reservation-modal">
-		<form id="cancel-reservation-form" method="POST" action="/cancel_reservation" autocomplete="off">
-			@csrf
-			<div class="modal-dialog" style="min-width: 40%;">
-		  		<div class="modal-content">
-					<div class="modal-header">
-						<h4 class="modal-title">Cancel Stock Reservation</h4>
-			  			<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-					<div class="modal-body">
-						<input type="hidden" name="stock_reservation_id">
-						<h5 class="text-center">Cancel Stock Reservation No. <span class="font-weight-bold reservation-id">-</span>?</h5>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> CLOSE</button>
-						<button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> CONFIRM</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
+	<div id="stock-reservation-modals-app"></div>
 
 	<div class="modal fade" id="print-brochure-modal">
 		<div class="modal-dialog" style="max-width: 90% !important">
@@ -1295,36 +1059,36 @@
 </div>
 <!-- REQUIRED SCRIPTS -->
 <!-- jQuery -->
-<script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
-<script src="{{ asset('/updated/plugins/jquery-ui/jquery-ui.js') }}"></script>
+<script src="{{ asset('updated/plugins/jquery/jquery.min.js') }}"></script>
+<script src="{{ asset('updated/plugins/jquery-ui/jquery-ui.js') }}"></script>
 <!-- Bootstrap 4 -->
-<script src="{{ asset('/updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <!-- Ekko Lightbox -->
-<script src="{{ asset('/updated/plugins/ekko-lightbox/ekko-lightbox.min.js') }}"></script>
+<script src="{{ asset('updated/plugins/ekko-lightbox/ekko-lightbox.min.js') }}"></script>
 <!-- AdminLTE App -->
-<script src="{{ asset('/updated/dist/js/adminlte.min.js') }}"></script>
+<script src="{{ asset('updated/dist/js/adminlte.min.js') }}"></script>
 
-<script src="{{ asset('/updated/plugins/daterangepicker/daterangepicker.js') }}"></script>
-<script src="{{ asset('/updated/plugins/inputmask/jquery.inputmask.min.js') }}"></script>
+<script src="{{ asset('updated/plugins/daterangepicker/daterangepicker.js') }}"></script>
+<script src="{{ asset('updated/plugins/inputmask/jquery.inputmask.min.js') }}"></script>
 <!-- Select2 -->
-<script src="{{ asset('/updated/plugins/select2/js/select2.full.js') }}"></script>
+<script src="{{ asset('updated/plugins/select2/js/select2.full.js') }}"></script>
 <!-- bootstrap datepicker -->
-<script src="{{ asset('/updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
+<script src="{{ asset('updated/plugins/datepicker/bootstrap-datepicker.js') }}"></script>
 <!-- iCheck 1.0.1 -->
-<script src="{{ asset('/updated/plugins/iCheck/icheck.min.js') }}"></script>
+<script src="{{ asset('updated/plugins/iCheck/icheck.min.js') }}"></script>
 <!-- ChartJS -->
-<script src="{{ asset('/updated/plugins/chart.js/Chart.min.js') }}"></script>
-<script src="{{ asset('/js/angular.min.js') }}"></script>
-<script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
+<script src="{{ asset('updated/plugins/chart.js/Chart.min.js') }}"></script>
+<script src="{{ asset('js/angular.min.js') }}"></script>
+<script src="{{ asset('js/bootstrap-notify.js') }}"></script>
 <!-- jquery-validation -->
-<script src="{{ asset('/updated/plugins/jquery-validation/jquery.validate.min.js') }}"></script>
-<script src="{{ asset('/updated/plugins/jquery-validation/additional-methods.min.js') }}"></script>
+<script src="{{ asset('updated/plugins/jquery-validation/jquery.validate.min.js') }}"></script>
+<script src="{{ asset('updated/plugins/jquery-validation/additional-methods.min.js') }}"></script>
 <!-- datepicker -->
 <script type="text/javascript" src="{{ asset('js/datetimepicker/moment.min.js') }}"></script>
 <script type="text/javascript" src="{{ asset('js/datetimepicker/daterangepicker.min.js') }}"></script>
 
-<script src="{{ asset('/bootstrap-extensions/js/bootstrap-table.min.js') }}"></script>
-<script src="{{ asset('/bootstrap-extensions/js/bootstrap-table-fixed-columns.min.js') }}"></script>
+<script src="{{ asset('bootstrap-extensions/js/bootstrap-table.min.js') }}"></script>
+<script src="{{ asset('bootstrap-extensions/js/bootstrap-table-fixed-columns.min.js') }}"></script>
 	@yield('script')
 
 	<script>
@@ -1488,44 +1252,12 @@
 					success: function(response){
 						if (response.status) {
 							showNotification("success", response.message, "fa fa-check");
-							get_low_stock_level_items();
+							document.dispatchEvent(new CustomEvent('low-level-stocks-refresh'));
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-					}
-				});
-			});
-
-			$(document).on('select2:select', '#select-warehouse-c', function(e){
-				var data = e.params.data;
-				var warehouse = data.id;
-				var item_code = $('#item-code-c').val();
-
-				$.ajax({
-					type: 'GET',
-					url: '/get_available_qty/' + item_code + '/' + warehouse,
-					success: function(response){
-						$('#available-qty-c').val(response);
-						var badge_color = (response > 0) ? 'badge-success' : 'badge-danger';
-						$('#available-qty-c-text').text(response).parent().removeClass('badge-danger badge-success').addClass(badge_color);
-					}
-				});
-			});
-
-			$(document).on('select2:select', '#select-warehouse-e', function(e){
-				var data = e.params.data;
-				var warehouse = data.id;
-				var item_code = $('#item-code-e').val();
-
-				$.ajax({
-					type: 'GET',
-					url: '/get_available_qty/' + item_code + '/' + warehouse,
-					success: function(response){
-						$('#available-qty-e').val(response);
-						var badge_color = (response > 0) ? 'badge-success' : 'badge-danger';
-						$('#available-qty-e-text').text(response).parent().removeClass('badge-danger badge-success').addClass(badge_color);
 					}
 				});
 			});
@@ -1596,26 +1328,6 @@
 				$('#search-form').submit();
 			});
 
-			function get_low_stock_level_items(page) {
-				$.ajax({
-					type: "GET",
-					url: "/get_low_stock_level_items?page=" + page,
-					success: function (data) {
-						$('#low-level-stock-table').html(data);
-					}
-				});
-			}
-
-			function get_reserved_items(page) {
-				$.ajax({
-					type: "GET",
-					url: "/get_reserved_items?page=" + page,
-					success: function (data) {
-						$('#reserved-items-div').html(data);
-					}
-				});
-			}
-			
 			$('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
 				checkboxClass: 'icheckbox_minimal-blue',
 				radioClass: 'iradio_minimal-blue'
@@ -1649,352 +1361,6 @@
 				$('#search-form').submit();
 			});
 			// Show only the items that are in the assigned branch - Promodiser
-
-			$(document).on('click', '.cancel-stock-reservation-btn', function(e){
-				e.preventDefault();
-				var reservation_id = $(this).data('reservation-id');
-				$('#cancel-stock-reservation-modal .reservation-id').text(reservation_id);
-				$('#cancel-stock-reservation-modal input[name="stock_reservation_id"]').val(reservation_id);
-				$('#cancel-stock-reservation-modal').modal('show');
-			});
-
-			$('#add-stock-reservation-btn').click(function(e){
-				e.preventDefault();
-				$('#select-warehouse-c').val(null).trigger('change');
-				$('#select-sales-person-c').val(null).trigger('change');
-				$('#select-branch-warehouse-c').val(null).trigger('change');
-				$('#select-project-c').val(null).trigger('change');
-				$('#available-qty-c').val(0);
-				$('#available-qty-c-text').text(0);
-				$('#warehouse-badge').removeClass('badge-success');
-				$('#warehouse-badge').addClass('badge-danger');
-				$("#date-valid-until-c").datepicker("update", new Date());
-				$.ajax({
-					type: "GET",
-					url: "/get_item_details/" + $('#selected-item-code').text() + "?json=true",
-					dataType: 'json',
-					contentType: 'application/json',
-					success: function (data) {
-						$('#item-code-c').val(data.name);
-						$('#description-c').val(data.description);
-						$('#stock-uom-c').val(data.stock_uom);
-						$('#stock-uom-c-text').text(data.stock_uom);
-						$('#add-stock-reservation-modal').modal('show');
-					}
-				});
-			});
-
-			$('#select-warehouse-e').select2({
-				dropdownParent: $('#edit-stock-reservation-modal'),
-				placeholder: 'Select Warehouse',
-				ajax: {
-					url: '/warehouses_with_stocks',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							item_code: $('#item-code-e').val(),
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$('#select-type-e').change(function(){
-				if($(this).val()) {
-					if($(this).val() == 'In-house') {
-						$('.for-in-house-type').removeClass('d-none');
-						$('.for-online-shop-type').addClass('d-none');
-						$('.for-consignment').addClass('d-none');
-					} else if ($(this).val() == 'Consignment') {
-						$('.for-in-house-type').addClass('d-none');
-						$('.for-online-shop-type').addClass('d-none');
-						$('.for-consignment').removeClass('d-none');
-					} else {
-						$('.for-in-house-type').addClass('d-none');
-						$('.for-online-shop-type').removeClass('d-none');
-						$('.for-consignment').addClass('d-none');
-					}
-				}
-			});
-
-			$('#select-project-e').select2({
-				dropdownParent: $('#edit-stock-reservation-modal'),
-				placeholder: 'Select Project',
-				ajax: {
-					url: '/projects',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$('#select-branch-warehouse-e').select2({
-				dropdownParent: $('#edit-stock-reservation-modal'),
-				placeholder: 'Select Branch',
-				ajax: {
-					url: '/consignment_warehouses',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$('#select-sales-person-e').select2({
-				dropdownParent: $('#edit-stock-reservation-modal'),
-				placeholder: 'Select Sales Person',
-				ajax: {
-					url: '/sales_persons',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$('#select-warehouse-c').select2({
-				dropdownParent: $('#add-stock-reservation-modal'),
-				placeholder: 'Select Warehouse',
-				ajax: {
-					url: '/warehouses_with_stocks',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							item_code: $('#item-code-c').val(),
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$('#select-branch-warehouse-c').select2({
-				dropdownParent: $('#add-stock-reservation-modal'),
-				placeholder: 'Select Branch',
-				ajax: {
-					url: '/consignment_warehouses',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$('#select-type-c').change(function(){
-				if($(this).val()) {
-					if($(this).val() == 'In-house') {
-						$('.for-in-house-type').removeClass('d-none');
-						$('.for-online-shop-type').addClass('d-none');
-						$('.for-consignment').addClass('d-none');
-						$('#select-sales-person-c').prop('required', true);
-						$('#select-project-c').prop('required', true);
-						$('#select-branch-warehouse-c').prop('required', false);
-					} else if ($(this).val() == 'Consignment') {
-						$('.for-in-house-type').addClass('d-none');
-						$('.for-online-shop-type').addClass('d-none');
-						$('.for-consignment').removeClass('d-none');
-						$('#select-sales-person-c').prop('required', false);
-						$('#select-project-c').prop('required', false);
-						$('#select-branch-warehouse-c').prop('required', true);
-					} else {
-						$('.for-in-house-type').addClass('d-none');
-						$('.for-online-shop-type').removeClass('d-none');
-						$('.for-consignment').addClass('d-none');
-						$('#select-sales-person-c').prop('required', false);
-						$('#select-project-c').prop('required', false);
-						$('#select-branch-warehouse-c').prop('required', false);
-					}
-				}
-			});
-
-			$('#select-project-c').select2({
-				dropdownParent: $('#add-stock-reservation-modal'),
-				placeholder: 'Select Project',
-				ajax: {
-					url: '/projects',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$('#select-sales-person-c').select2({
-				dropdownParent: $('#add-stock-reservation-modal'),
-				placeholder: 'Select Sales Person',
-				ajax: {
-					url: '/sales_persons',
-					method: 'GET',
-					dataType: 'json',
-					data: function (data) {
-						return {
-							q: data.term // search term
-						};
-					},
-					processResults: function (response) {
-						return {
-							results:response
-						};
-					},
-					cache: true
-				}
-			});
-
-			$("#validity-c").bind('keyup mouseup', function () {
-				var newdate = new Date();
-				newdate.setDate(newdate.getDate() + parseInt($(this).val()));
-				$('#date-valid-until-c').datepicker('setDate', newdate);
-			});
-
-			$("#validity-e").bind('keyup mouseup', function () {
-				var newdate = new Date();
-				newdate.setDate(newdate.getDate() + parseInt($(this).val()));
-				$('#date-valid-until-e').datepicker('setDate', newdate);
-			});
-
-			$('#date-valid-until-c').datepicker({
-				startDate: new Date(),
-				format: 'yyyy-mm-dd',
-				autoclose: true
-			});
-
-			$('#date-valid-until-e').datepicker({
-				startDate: new Date(),
-				format: 'yyyy-mm-dd',
-				autoclose: true
-			});
-
-			$(document).on('click', '.edit-stock-reservation-btn', function(e){
-				e.preventDefault();
-				$.ajax({
-					type: "GET",
-					url: "/get_stock_reservation_details/" + $(this).data('reservation-id'),
-					dataType: 'json',
-					contentType: 'application/json',
-					success: function (data) {
-						var selected_warehouse = $('#select-warehouse-e');
-						var selected_warehouse_option = new Option(data.warehouse, data.warehouse, true, true);
-						selected_warehouse.append(selected_warehouse_option).trigger('change');
-						selected_warehouse.select2({disabled:'readonly'});
-						if(data.consignment_warehouse) {
-							var selected_branch = $('#select-branch-warehouse-e');
-							var selected_branch_option = new Option(data.consignment_warehouse, data.consignment_warehouse, true, true);
-							selected_branch.append(selected_branch_option).trigger('change');
-							selected_branch.select2({disabled:'readonly'});
-						}
-						if(data.sales_person) {
-							var selected_sales_person = $('#select-sales-person-e');
-							var selected_sales_person_option = new Option(data.sales_person, data.sales_person, true, true);
-							selected_sales_person.append(selected_sales_person_option).trigger('change');
-						}
-						if(data.project) {
-							var selected_project = $('#select-project-e');
-							var selected_project_option = new Option(data.project, data.project, true, true);
-							selected_project.append(selected_project_option).trigger('change');
-						}
-						if(data.type == 'In-house') {
-							$('.for-in-house-type').removeClass('d-none');
-							$('.for-online-shop-type').addClass('d-none');
-							$('.for-consignment').addClass('d-none');
-						} else if (data.type == 'Consignment') {
-							$('.for-in-house-type').addClass('d-none');
-							$('.for-online-shop-type').addClass('d-none');
-							$('.for-consignment').removeClass('d-none');
-						} else {
-							$('.for-in-house-type').addClass('d-none');
-							$('.for-online-shop-type').removeClass('d-none');
-							$('.for-consignment').addClass('d-none');
-						}
-						$.ajax({
-							type: 'GET',
-							url: '/get_available_qty/' + data.item_code + '/' + data.warehouse,
-							success: function(response){
-								var available_qty = parseInt(response); // + (data.reserve_qty - data.consumed_qty);
-								var badge_color = (available_qty > 0) ? 'badge-success' : 'badge-danger';
-								$('#available-qty-e-text').text(available_qty).parent().removeClass('badge-danger badge-success').addClass(badge_color);
-								$('#available-qty-e').val(available_qty);
-							}
-						});
-						var now = new Date("{{ now()->format('Y-m-d') }}");
-						var date = new Date(data.valid_until);
-						var date_difference = date.getTime() - now.getTime();
-						var validity_in_days = date_difference > 0 ? date_difference / (1000 * 60 * 60 * 24) : 0;
-						validity_in_days = Math.floor(validity_in_days) > 0 ? Math.floor(validity_in_days) : 0;
-						$('#stock-reservation-id-e').val(data.name);
-						$('#warehouse-e').val(data.warehouse);
-						$('#item-code-e').val(data.item_code);
-						$('#description-e').val(data.description);
-						$('#stock-uom-e').val(data.stock_uom);
-						$('#stock-uom-e-text').text(data.stock_uom);
-						$('#notes-e').val(data.notes);
-						$('#select-type-e').val(data.type);
-						$('#reserve-qty-e').val(data.reserve_qty);
-						$('#status-e').val(data.status);
-						$('#date-valid-until-e').val(data.valid_until);
-						$('#validity-e').val(validity_in_days);
-						$('#edit-stock-reservation-modal').modal('show');
-					}
-				});
-			});
 
 			$(document).on('click', '.view-images', function(event) {
                 event.preventDefault();
@@ -2100,7 +1466,7 @@
 						if (response.status) {
 							showNotification("success", response.message, "fa fa-check");
 							$('.cancel-modal').modal('hide');
-							get_athena_transactions(response.item_code);
+							document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
 						}else{
 							showNotification("danger", response.message, "fa fa-info");
 						}
@@ -2108,61 +1474,6 @@
 				});
 			});
 
-			function get_athena_transactions(item_code, page){
-				if(item_code){
-					var ath_src = $('#ath-src-warehouse-filter').val();
-					var ath_trg = $('#ath-to-warehouse-filter').val();
-					var ath_user = $('#warehouse-user-filter').val();
-					var ath_drange = $('#ath_dates').val();
-					$.ajax({
-						type: 'GET',
-						url: '/get_athena_transactions/' + item_code + '?page=' + page + '&wh_user=' + ath_user + '&src_wh=' + ath_src + '&trg_wh=' + ath_trg + '&ath_dates=' + ath_drange,
-						success: function(response){
-							$('#athena-transactions').html(response);
-						}
-					});
-				}
-			}
-
-			$(document).on('click', '#low-level-stocks-pagination a', function(event){
-				event.preventDefault();
-				var page = $(this).attr('href').split('page=')[1];
-				get_low_stock_level_items(page);
-			});
-
-			$(document).on('click', '#reserved-items-pagination a', function(event){
-				event.preventDefault();
-				var page = $(this).attr('href').split('page=')[1];
-				get_reserved_items(page);
-			});
-
-			$(document).on('click', '#stock-reservations-pagination-1 a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation('tbl_1', page);
-			});
-
-			$(document).on('click', '#stock-reservations-pagination-2 a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation('tbl_2', page);
-			});
-
-			$(document).on('click', '#stock-reservations-pagination-3 a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('tbl_3=')[1];
-				get_stock_reservation('tbl_3', page);
-			});
-
-			$(document).on('click', '#pending-arr-pagination a', function(event){
-				event.preventDefault();
-				var page = $(this).attr('href').split('page=')[1];
-				get_stock_reservation('page', page);
-			});
-			
 			$(document).on('click', '.upload-item-image', function(e){
 				e.preventDefault();
 				$('.img_upload').remove();
@@ -2284,15 +1595,7 @@
 				  }
 				});
 			}
-			// Transactions Warehouse Users Filter
-			// Athena Transactions Pagination
-			$(document).on('click', '#athena-transactions-pagination a', function(event){
-				event.preventDefault();
-				var item_code = $(this).closest('div').data('item-code');
-				var page = $(this).attr('href').split('page=')[1];//+ath_user_filter+ath_src_wh;
-				get_athena_transactions(item_code, page);
-			});
-			
+			// Athena Transactions: pagination handled by ItemProfileAthenaTransactions.vue (delegated click on container)
 			//Athena Warehouse Users
 			$('#warehouse-user-filter').select2({//athena warehouse users
 				dropdownParent: $('#warehouse-user-filter-parent'),
@@ -2316,8 +1619,7 @@
 			});
 
 			$(document).on('select2:select', '#warehouse-user-filter', function(e){
-				var item_code = $('#selected-item-code').text();
-				get_athena_transactions(item_code);
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
 			});
 			//Athena Warehouse Users
 			//Athena Source Warehouse
@@ -2343,8 +1645,7 @@
 			});
 
 			$(document).on('select2:select', '#ath-src-warehouse-filter', function(e){
-				var item_code = $('#selected-item-code').text();
-				get_athena_transactions(item_code);
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
 			});
 			//Athena Source Warehouse
 			//Athena Target Warehouse
@@ -2370,14 +1671,12 @@
 			});
 
 			$(document).on('select2:select', '#ath-to-warehouse-filter', function(e){
-				var item_code = $('#selected-item-code').text();
-				get_athena_transactions(item_code);
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
 			});
 			//Athena Target Warehouse
 			//Athena Month
 			$('#ath_dates').on('change', function(e){ 
-				var item_code = $('#selected-item-code').text();
-				get_athena_transactions(item_code);
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
 			})
 			//Athena Month
 			// ERP Warehouse Users

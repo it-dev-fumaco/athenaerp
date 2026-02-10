@@ -250,6 +250,8 @@
 												</div>
 											</div>
 										</div> --}}
+										<div id="search-results-app">
+										<div id="search-results-list">
 										<div class="col-12 col-xl-{{ $itemGroups ? '10' : '12' }}">
 											<div class="container-fluid m-0">
 												@forelse ($itemList as $row)
@@ -712,6 +714,9 @@
 												</div>
 											</div>
 										</div>
+										</div><!-- #search-results-list -->
+										</div><!-- #search-results-app -->
+										<script>window.__SEARCH_RESULTS_INITIAL_HTML__ = document.getElementById('search-results-list') && document.getElementById('search-results-list').innerHTML;</script>
 									</div>
 									
 								</div><!-- Card End -->

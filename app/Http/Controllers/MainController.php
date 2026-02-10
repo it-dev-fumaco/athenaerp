@@ -2819,13 +2819,13 @@ class MainController extends Controller
         $webpPath = storage_path("app/public/img/$webp");
 
         if (!file_exists($webpPath)) {
-            return response()->json(['message' => 'File not found'], 404);
+            return ApiResponse::failure('File not found', 404);
         }
 
         $image = imagecreatefromwebp($webpPath);
 
         if (!$image) {
-            return response()->json(['message' => 'Failed to convert the image'], 500);
+            return ApiResponse::failure('Failed to convert the image', 500);
         }
 
         ob_start();
