@@ -1051,10 +1051,9 @@
   <footer class="main-footer font-responsive">
     <!-- To the right -->
     <div class="float-right d-none d-sm-inline">
-		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong class="copyright">Copyright &copy; 2023 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong class="copyright">Copyright &copy; {{ now()->year }} <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 <!-- REQUIRED SCRIPTS -->

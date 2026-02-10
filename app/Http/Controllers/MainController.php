@@ -42,6 +42,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseUsers;
 use App\Models\WorkOrder;
+use App\Models\WorkOrderItem;
 use App\Services\CutoffDateService;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
@@ -507,7 +508,8 @@ class MainController extends Controller
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'For Return', 'Returned') ASC")
             ->get();
 
-        $warehouseNames = collect($mrSalesReturn)->pluck('t_warehouse')
+        $warehouseNames = collect($mrSalesReturn)
+            ->pluck('t_warehouse')
             ->merge(collect($drSalesReturn)->pluck('warehouse'))
             ->merge(collect($consignmentReturn)->pluck('t_warehouse'))
             ->unique()
@@ -751,7 +753,7 @@ class MainController extends Controller
         if ($isBundle) {
             $query = PackedItem::query()->where('parent_detail_docname', $q->dri_name)->get();
 
-            $itemWarehousePairs = $query->map(fn ($row) => [$row->item_code, $row->warehouse])->unique()->values()->toArray();
+            $itemWarehousePairs = $query->map(fn($row) => [$row->item_code, $row->warehouse])->unique()->values()->toArray();
             $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
             $soDetails = SalesOrder::query()->where('name', $q->sales_order)->first();
@@ -1029,12 +1031,27 @@ class MainController extends Controller
 
         $steRemarks = collect($steRemarks)->groupBy('name')->toArray();
 
+        // Batch load reference docs by type to avoid N+1
+        $psRef = ['Packing Slip', 'Picking Slip'];
+        $refsByType = [];
+        foreach ($logs as $row) {
+            $referenceType = (in_array($row->reference_type, $psRef)) ? 'Packing Slip' : $row->reference_type;
+            $refsByType[$referenceType] = ($refsByType[$referenceType] ?? []) + [$row->reference_parent => true];
+        }
+        $referencesByType = [];
+        foreach ($refsByType as $referenceType => $ids) {
+            $ids = array_keys($ids);
+            $referencesByType[$referenceType] = DB::table('tab' . $referenceType)
+                ->whereIn('name', $ids)
+                ->get()
+                ->keyBy('name');
+        }
+
         $list = [];
         foreach ($logs as $row) {
-            $psRef = ['Packing Slip', 'Picking Slip'];
             $referenceType = (in_array($row->reference_type, $psRef)) ? 'Packing Slip' : $row->reference_type;
 
-            $existingReferenceNo = DB::table('tab' . $referenceType)->where('name', $row->reference_parent)->first();
+            $existingReferenceNo = data_get($referencesByType, "{$referenceType}.{$row->reference_parent}");
             if (!$existingReferenceNo) {
                 $status = 'DELETED';
             } else {
@@ -1047,16 +1064,17 @@ class MainController extends Controller
                 }
             }
 
-            $remarks = [];
             $remarks = Arr::get($steRemarks, $row->reference_parent, []);
             if (count($remarks) > 0) {
-                if ($remarks[0]->purpose == 'Material Issue') {
-                    $remarks = $remarks[0]->issue_as;
-                } elseif ($remarks[0]->purpose == 'Material Transfer') {
-                    $remarks = $remarks[0]->transfer_as;
-                } elseif ($remarks[0]->purpose == 'Material Receipt') {
-                    $remarks = $remarks[0]->receive_as;
-                } elseif ($remarks[0]->purpose == 'Material Transfer for Manufacture') {
+                $firstRemark = $remarks[0];
+                $purpose = data_get($firstRemark, 'purpose');
+                if ($purpose == 'Material Issue') {
+                    $remarks = data_get($firstRemark, 'issue_as');
+                } elseif ($purpose == 'Material Transfer') {
+                    $remarks = data_get($firstRemark, 'transfer_as');
+                } elseif ($purpose == 'Material Receipt') {
+                    $remarks = data_get($firstRemark, 'receive_as');
+                } elseif ($purpose == 'Material Transfer for Manufacture') {
                     $remarks = 'Materials Withdrawal';
                 } else {
                     $remarks = '-';
@@ -1243,7 +1261,6 @@ class MainController extends Controller
         }
     }
 
-
     public function getStockLedger(Request $request, $itemCode)
     {
         $warehouseUser = [];
@@ -1375,33 +1392,47 @@ class MainController extends Controller
 
     public function update_production_order_items($productionOrder)
     {
-        if ($productionOrder) {
-            $productionOrderItems = DB::table('tabWork Order Item')->where('parent', $productionOrder)->get();
-            foreach ($productionOrderItems as $row) {
-                $transferredQty = StockEntry::query()
-                    ->from('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->where('ste.work_order', $productionOrder)
-                    ->where('ste.purpose', 'Material Transfer for Manufacture')
-                    ->where('ste.docstatus', 1)
-                    ->where('item_code', $row->item_code)
-                    ->sum('qty');
+        if (!$productionOrder) {
+            return;
+        }
 
-                $returnedQty = DB::connection('mysql')
-                    ->table('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.transfer_as', 'For Return')
-                    ->where('ste.work_order', $productionOrder)
-                    ->where('sted.item_code', $row->item_code)
-                    ->where('ste.docstatus', 1)
-                    ->sum('sted.qty');
+        $productionOrderItems = WorkOrderItem::where('parent', $productionOrder)->get();
+        if ($productionOrderItems->isEmpty()) {
+            return;
+        }
 
-                DB::table('tabWork Order Item')
-                    ->where('parent', $productionOrder)
-                    ->where('item_code', $row->item_code)
-                    ->update(['transferred_qty' => $transferredQty, 'returned_qty' => $returnedQty]);
-            }
+        $itemCodes = $productionOrderItems->pluck('item_code')->unique()->values()->all();
+
+        $transferredQtyByItem = StockEntry::query()
+            ->from('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.work_order', $productionOrder)
+            ->where('ste.purpose', 'Material Transfer for Manufacture')
+            ->where('ste.docstatus', 1)
+            ->whereIn('sted.item_code', $itemCodes)
+            ->selectRaw('sted.item_code, sum(sted.qty) as qty')
+            ->groupBy('sted.item_code')
+            ->pluck('qty', 'item_code');
+
+        $returnedQtyByItem = DB::connection('mysql')
+            ->table('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.purpose', 'Material Transfer')
+            ->where('ste.transfer_as', 'For Return')
+            ->where('ste.work_order', $productionOrder)
+            ->whereIn('sted.item_code', $itemCodes)
+            ->where('ste.docstatus', 1)
+            ->selectRaw('sted.item_code, sum(sted.qty) as qty')
+            ->groupBy('sted.item_code')
+            ->pluck('qty', 'item_code');
+
+        foreach ($productionOrderItems as $row) {
+            $transferredQty = (float) ($transferredQtyByItem[$row->item_code] ?? 0);
+            $returnedQty = (float) ($returnedQtyByItem[$row->item_code] ?? 0);
+
+            WorkOrderItem::where('parent', $productionOrder)
+                ->where('item_code', $row->item_code)
+                ->update(['transferred_qty' => $transferredQty, 'returned_qty' => $returnedQty]);
         }
     }
 
@@ -1497,7 +1528,7 @@ class MainController extends Controller
 
         $itemImages = ItemImages::query()->whereIn('parent', collect($query)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
 
-        $itemWarehousePairs = $query->map(fn ($a) => [$a->item_code, $a->warehouse])->unique()->values()->toArray();
+        $itemWarehousePairs = $query->map(fn($a) => [$a->item_code, $a->warehouse])->unique()->values()->toArray();
         $actualQtyMap = $this->getActualQtyBulk($itemWarehousePairs);
 
         $lowStockPairs = [];
@@ -1522,7 +1553,8 @@ class MainController extends Controller
                 ->where(function ($q) use ($lowStockPairs) {
                     foreach ($lowStockPairs as $pair) {
                         $q->orWhere(function ($sub) use ($pair) {
-                            $sub->where('mri.item_code', $pair['item_code'])
+                            $sub
+                                ->where('mri.item_code', $pair['item_code'])
                                 ->where('mri.warehouse', $pair['warehouse']);
                         });
                     }
@@ -1544,7 +1576,7 @@ class MainController extends Controller
             if ($actualQty <= $a->warehouse_reorder_level) {
                 $existingMr = $existingMrMap[$key] ?? null;
 
-                $itemImage = isset($itemImages[$a->item_code]) ? '/img/' . $itemImages[$a->item_code] : '/icon/no_img.webp';
+                $itemImage = Arr::get($itemImages, $a->item_code) ? '/img/' . $itemImages[$a->item_code] : '/icon/no_img.webp';
                 $itemImage = $this->base64Image($itemImage);
 
                 $lowLevelStocks[] = [
@@ -1600,7 +1632,7 @@ class MainController extends Controller
         $list = [];
         foreach ($q as $row) {
             // $itemImagePath = ItemImages::query()->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
-            $image = isset($itemImages[$row->item_code]) ? '/img/' . $itemImages[$row->item_code] : '/icon/no_icon.png';
+            $image = Arr::get($itemImages, $row->item_code) ? '/img/' . $itemImages[$row->item_code] : '/icon/no_icon.png';
             $image = $this->base64Image($image);
 
             $list[] = [
@@ -1746,7 +1778,7 @@ class MainController extends Controller
             ->pluck('full_name', 'wh_user')
             ->toArray();
 
-        $itemWarehousePairs = $q->map(fn ($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();
+        $itemWarehousePairs = $q->map(fn($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();
         $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
         $parentWarehouses = $this->getWarehouseParentsBulk($warehouses);
@@ -1810,9 +1842,9 @@ class MainController extends Controller
             // Get List of Transfered from In Transit to Finished Goods
             $stesToFg = StockEntry::query()->where('docstatus', '<', 2)->where('company', 'FUMACO Inc.')->where('from_warehouse', 'Goods in Transit - FI')->where('to_warehouse', 'Finished Goods - FI')->where('purpose', 'Material Transfer')->get()->groupBy('docstatus');
 
-            $transferredToFg = isset($stesToFg[1]) ? collect($stesToFg[1])->pluck('name')->unique() : [];
+            $transferredToFg = data_get($stesToFg, 1) ? collect($stesToFg[1])->pluck('name')->unique() : [];
             $draftFg = [];
-            if (isset($stesToFg[0])) {
+            if (Arr::has($stesToFg, 0)) {
                 $draftFg = collect($stesToFg[0])->groupBy('reference_no')->map(function ($group) {
                     return $group[0];
                 });
@@ -1884,7 +1916,7 @@ class MainController extends Controller
                 $feedbackDate = Carbon::parse($d->modified)->format('M. d, Y - h:i A');
                 $feedbackQty = 0;
                 $feedbackBy = null;
-                if (isset($mesFeedbackLogs[$d->ste_name])) {
+                if (Arr::has($mesFeedbackLogs, $d->ste_name)) {
                     $feedbackDetails = $mesFeedbackLogs[$d->ste_name][0];
                     $feedbackDate = Carbon::parse($feedbackDetails->feedback_date)->format('M. d, Y - h:i A');
                     $feedbackQty = $feedbackDetails->feedbacked_qty;
@@ -1904,7 +1936,7 @@ class MainController extends Controller
                 $partNos = ItemSupplier::query()->where('parent', $d->item_code)->pluck('supplier_part_no');
                 $partNos = implode(', ', $partNos->toArray());
 
-                $owner = isset($owners[$d->owner]) ? $owners[$d->owner] : $d->owner;
+                $owner = Arr::get($owners, $d->owner, $d->owner);
                 $owner = ucwords(str_replace('.', ' ', explode('@', $owner)[0]));
                 $feedbackBy = ucwords(str_replace('.', ' ', explode('@', $feedbackBy)[0]));
                 $receivedBy = ucwords(str_replace('.', ' ', explode('@', $receivedBy)[0]));
@@ -1927,7 +1959,7 @@ class MainController extends Controller
                     'sted_name' => $stedName,
                     'soi_name' => $d->soi_name,
                     'customer' => $d->customer,
-                    'reference_to_fg' => $stedStatus == 'Issued' && isset($draftFg[$d->soi_name]) ? $draftFg[$d->soi_name]->name : null
+                    'reference_to_fg' => $stedStatus == 'Issued' ? optional(data_get($draftFg, $d->soi_name))->name : null
                 ];
             }
         }
@@ -2071,8 +2103,6 @@ class MainController extends Controller
             return ApiResponse::failureLegacy('An error occured. Please try again.');
         }
     }
-
-
 
     public function createMaterialRequest($id)
     {
@@ -2327,8 +2357,8 @@ class MainController extends Controller
             $feedbackLogId = DB::connection('mysql_mes')->table('feedbacked_logs')->insertGetId($feedbackedTimelogs, 'feedbacked_log_id');
 
             $stockEntryResponse = $this->erpPost('Stock Entry', $stockEntryData);
-            if (!isset($stockEntryResponse['data'])) {
-                $err = isset($stockEntryResponse['exception']) ? $stockEntryResponse['exception'] : 'An error occured while creating stock entry';
+            if (!Arr::has($stockEntryResponse, 'data')) {
+                $err = Arr::get($stockEntryResponse, 'exception', 'An error occured while creating stock entry');
                 throw new Exception($err);
             }
 
@@ -2351,9 +2381,9 @@ class MainController extends Controller
                 'transaction_date' => $now->toDateTimeString(),
                 'warehouse_user' => Auth::user()->wh_user,
                 'issued_qty' => $filteredItem['qty'],
-                'remarks' => isset($stockEntryData['remarks']) ? $stockEntryData['remarks'] : null,
-                'source_warehouse' => isset($filteredItem['s_warehouse']) ? $filteredItem['s_warehouse'] : null,
-                'target_warehouse' => isset($filteredItem['t_warehouse']) ? $filteredItem['t_warehouse'] : null,
+                'remarks' => data_get($stockEntryData, 'remarks'),
+                'source_warehouse' => data_get($filteredItem, 's_warehouse'),
+                'target_warehouse' => data_get($filteredItem, 't_warehouse'),
                 'description' => $filteredItem['description'],
                 'reference_no' => $stockEntryData['sales_order_no'] ?? $stockEntryData['material_request'],
                 'creation' => $now->toDateTimeString(),
@@ -2727,8 +2757,8 @@ class MainController extends Controller
                     $image = explode('/', $filePath)[1];
 
                     $exploded = explode('.', $image);
-                    $imageName = isset($exploded[0]) ? $exploded[0] : null;
-                    $imageExtension = isset($exploded[1]) ? $exploded[1] : null;
+                    $imageName = Arr::get($exploded, 0);
+                    $imageExtension = Arr::get($exploded, 1);
 
                     if (!in_array($imageExtension, ['webp', 'WEBP', 'zip', 'ZIP'])) {
                         return [
@@ -2752,8 +2782,8 @@ class MainController extends Controller
 
                     foreach ($itemCodes as $itemCode) {
                         // Update order sequence of existing images
-                        if (isset($athenaImages[$itemCode])) {
-                            $newIdx = isset($imagesArr[$itemCode]) ? count($imagesArr[$itemCode]) : 0;
+                        if (Arr::has($athenaImages, $itemCode)) {
+                            $newIdx = count(Arr::get($imagesArr, $itemCode, []));
                             foreach ($athenaImages[$itemCode] as $i => $ath) {
                                 /** @var object $ath */
                                 $i = $i + 1;
@@ -2762,7 +2792,7 @@ class MainController extends Controller
                         }
 
                         // Save new images in DB
-                        if (isset($imagesArr[$itemCode])) {
+                        if (Arr::has($imagesArr, $itemCode)) {
                             foreach ($imagesArr[$itemCode] as $a => $image) {
                                 if (empty($image['image'])) {
                                     continue;
