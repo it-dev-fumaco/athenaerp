@@ -108,8 +108,12 @@ class Item extends Model
     /**
      * Scope for variant siblings (same parent).
      */
-    public function scopeVariantSiblings($query, string $variantOf, ?string $excludeName = null): Builder
+    public function scopeVariantSiblings($query, ?string $variantOf, ?string $excludeName = null): Builder
     {
+        if ($variantOf === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
         $q = $query->where('variant_of', $variantOf);
         if ($excludeName) {
             $q->where('name', '!=', $excludeName);
