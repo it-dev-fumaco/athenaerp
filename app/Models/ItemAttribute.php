@@ -10,8 +10,12 @@ class ItemAttribute extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabItem Attribute';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 }

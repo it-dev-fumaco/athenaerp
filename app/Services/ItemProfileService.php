@@ -18,8 +18,6 @@ class ItemProfileService
     /**
      * Get price-related data for an item (last purchase, landed cost, website price, etc.).
      *
-     * @param string $itemCode
-     * @param Item|null $itemDetails
      * @return array{itemRate: float, minimumSellingPrice: float, defaultPrice: float, lastPurchaseRate: float, manualRate: int, lastPurchaseDate: string|null, websitePrice: array|object|null, avgPurchaseRate: string, isTaxIncludedInRate: float, minimumPriceComputation: float, standardPriceComputation: float}
      */
     public function getItemPrices(string $itemCode, ?Item $itemDetails = null): array
@@ -35,7 +33,7 @@ class ItemProfileService
         $websitePrice = [];
         $avgPurchaseRate = '₱ 0.00';
 
-        if (!in_array($userDepartment, $allowedDepartment) && !in_array($userGroup, ['Manager', 'Director'])) {
+        if (! in_array($userDepartment, $allowedDepartment) && ! in_array($userGroup, ['Manager', 'Director'])) {
             return [
                 'itemRate' => $itemRate,
                 'minimumSellingPrice' => $minimumSellingPrice,
@@ -129,6 +127,6 @@ class ItemProfileService
 
         $avgRate = $result->avg_rate ?? 0;
 
-        return '₱ ' . number_format($avgRate, 2);
+        return '₱ '.number_format($avgRate, 2);
     }
 }

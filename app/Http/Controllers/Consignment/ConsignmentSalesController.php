@@ -10,17 +10,17 @@ use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Arr;
-use Exception;
 
 class ConsignmentSalesController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
 
     public function viewSalesReportList($branch, Request $request)
     {
@@ -60,10 +60,10 @@ class ConsignmentSalesController extends Controller
 
             if ($cutoffDay && $request->has('month') && $request->has('year')) {
                 try {
-                    $firstCutoff = Carbon::createFromFormat('m/d/Y', $request->month . '/' . $cutoffDay . '/' . $request->year)
+                    $firstCutoff = Carbon::createFromFormat('m/d/Y', $request->month.'/'.$cutoffDay.'/'.$request->year)
                         ->format('F d, Y');
 
-                    return 'Deadline: ' . $firstCutoff;
+                    return 'Deadline: '.$firstCutoff;
                 } catch (Exception $e) {
                     return 'Invalid date format.';
                 }
@@ -99,13 +99,13 @@ class ConsignmentSalesController extends Controller
             $salesPerDay = [];
             foreach ($request->day as $day => $detail) {
                 $amount = preg_replace('/[^0-9 .]/', '', $detail['amount']);
-                if (!is_numeric($amount)) {
+                if (! is_numeric($amount)) {
                     return redirect()->back()->with('error', 'Amount should be a number.');
                 }
                 $salesPerDay[$day] = (float) $amount;
             }
 
-            $transactionMonth = new Carbon('last day of ' . $request->month . ' ' . $request->year);
+            $transactionMonth = new Carbon('last day of '.$request->month.' '.$request->year);
             $cutoffDate = app(CutoffDateService::class)->getCutoffPeriod($transactionMonth)[1];
 
             $status = isset($request->draft) && $request->draft ? 'Draft' : 'Submitted';
@@ -125,7 +125,7 @@ class ConsignmentSalesController extends Controller
                     'year' => $request->year,
                     'status' => $status,
                     'submission_status' => $submissionStatus,
-                    'date_submitted' => $dateSubmitted
+                    'date_submitted' => $dateSubmitted,
                 ];
 
                 $recipient = str_replace('.local', '.com', Auth::user()->wh_user);
@@ -154,22 +154,23 @@ class ConsignmentSalesController extends Controller
                 'status' => $status,
                 'submission_status' => $submissionStatus,
                 'date_submitted' => $dateSubmitted,
-                'submitted_by' => $submittedBy
+                'submitted_by' => $submittedBy,
             ];
 
             $response = $this->erpCall($method, 'Consignment Monthly Sales Report', $reference, $data);
 
-            if (!Arr::has($response, 'data')) {
+            if (! Arr::has($response, 'data')) {
                 $err = data_get($response, 'exception', 'An error occured while submitting Sales Report');
                 throw new Exception($err);
             }
 
-            return redirect()->back()->with('success', 'Sales Report for the month of <b>' . $request->month . '</b> has been ' . ($salesReport ? 'updated!' : 'added!'));
+            return redirect()->back()->with('success', 'Sales Report for the month of <b>'.$request->month.'</b> has been '.($salesReport ? 'updated!' : 'added!'));
         } catch (Exception $th) {
             Log::error('ConsignmentSalesController submitMonthlySaleForm failed', [
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             return redirect()->back()->with('error', $th->getMessage());
         }
     }
@@ -204,7 +205,7 @@ class ConsignmentSalesController extends Controller
             $monthIndex = array_search($details->month, $monthsArray);
             $salesPerDay = collect(json_decode($details->sales_per_day));
             foreach ($salesPerDay as $day => $amount) {
-                $saleDate = Carbon::parse($details->fiscal_year . '-' . $monthIndex . '-' . $day)->format('Y-m-d');
+                $saleDate = Carbon::parse($details->fiscal_year.'-'.$monthIndex.'-'.$day)->format('Y-m-d');
                 if (in_array($saleDate, $includedDates)) {
                     $report[$details->warehouse][$saleDate] = $amount;
                 }

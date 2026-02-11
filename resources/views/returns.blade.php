@@ -82,7 +82,7 @@
 													<span class="badge badge-warning" ng-if="r.status === 'For Return'">@{{ r.status }}</span>
 													<i class="fas fa-arrow-right ml-3 mr-2"></i> @{{ r.t_warehouse }}
 												</div>
-												<span class="d-block">@{{ r.description }}</span>
+												<span class="d-block" ng-bind-html="trustAsHtml(r.description)"></span>
 												<small class="d-none d-lg-block mt-2" ng-hide="r.owner == null"><b>Requested by:</b> @{{ r.owner }}</small>
 												<div class="table-reponsive d-block d-lg-none">
 													<table class="table">
@@ -348,7 +348,8 @@
 	});
 
 	var app = angular.module('myApp', []);
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
+	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
+        $scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
         $http.get("/get_parent_warehouses").then(function (response) {
 			$scope.wh = response.data.wh;
         });

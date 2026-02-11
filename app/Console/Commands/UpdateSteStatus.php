@@ -41,6 +41,7 @@ class UpdateSteStatus extends Command
     public function handle()
     {
         $result = $this->updateSteStatus();
+
         return $result ? self::SUCCESS : self::FAILURE;
     }
 }

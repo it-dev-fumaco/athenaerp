@@ -224,7 +224,7 @@
                                                                     <div class="p-1 col-5 col-xl-7 m-0" style="font-size: 9pt">
                                                                         <span class="font-weight-bold font-responsive item-code">{{ $itemCode }}</span>
                                                                         <div class="p-1 d-none d-xl-block" style="font-size: 9.5pt !important;">
-                                                                            {{ strip_tags($item->description) }}
+                                                                            {!! $item->description !!}
                                                                         </div>
                                                                     </div>
                                                                     <div class="p-0 col-4 col-xl-2">
@@ -247,7 +247,7 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="p-1 item-description d-xl-none" style="font-size: 9.5pt !important;">
-                                                                    {{ strip_tags($item->description) }}
+                                                                    {!! $item->description !!}
                                                                 </div>
                                                                 <div class="p-1">
                                                                     @php
@@ -495,7 +495,7 @@
                 $('#item-selection-table').removeClass('d-none')
                 $('#item-selection-table .item-code').text(data.id)
                 $('#item-selection-table .img-thumbnail').attr('src', data.img)
-                $('#item-selection-table .item-description').text(data.description)
+                $('#item-selection-table .item-description').html(data.description)
 
                 truncate_description();
             });

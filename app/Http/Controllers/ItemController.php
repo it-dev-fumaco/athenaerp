@@ -85,7 +85,7 @@ class ItemController extends Controller
             $maxIndex = ItemAttributeValue::forAttribute($request->attribute)->max('idx') ?? 0;
 
             ItemAttributeValue::create([
-                'name' => 'athena' . uniqid(),
+                'name' => 'athena'.uniqid(),
                 'creation' => now()->toDateTimeString(),
                 'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
@@ -160,7 +160,7 @@ class ItemController extends Controller
             $itemVariants = Item::where('variant_of', $templateItem)
                 ->with('variantAttributes')
                 ->get()
-                ->mapWithKeys(fn($i) => [$i->name => $i->variantAttributes->pluck('attribute_value')->all()]);
+                ->mapWithKeys(fn ($i) => [$i->name => $i->variantAttributes->pluck('attribute_value')->all()]);
 
             $oldVariantAttributes = array_values($oldVariantAttributes);
             $newVariantAttributes = $oldVariantAttributes;

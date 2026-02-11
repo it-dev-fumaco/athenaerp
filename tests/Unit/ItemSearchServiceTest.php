@@ -2,8 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Services\ItemSearchService;
-use Illuminate\Http\Request;
 use Tests\TestCase;
 
 class ItemSearchServiceTest extends TestCase

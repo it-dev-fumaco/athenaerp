@@ -3,66 +3,51 @@
 namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
-use App\Models\ActivityLog;
 use App\Models\AssignedWarehouses;
 use App\Models\BeginningInventory;
-use App\Models\Bin;
-use App\Models\ConsignmentDamagedItems;
-use App\Models\ConsignmentInventoryAuditReport;
-use App\Models\ConsignmentInventoryAuditReportItem;
 use App\Models\ConsignmentItemBarcode;
-use App\Models\ConsignmentMonthlySalesReport;
-use App\Models\ConsignmentSalesReportDeadline;
 use App\Models\ConsignmentStockAdjustment;
-use App\Models\ConsignmentStockAdjustmentItem;
-use App\Models\ConsignmentStockEntry;
-use App\Models\ConsignmentStockEntryDetail;
 use App\Models\Customer;
-use App\Models\ERPUser;
 use App\Models\GLEntry;
 use App\Models\Item;
-use App\Models\ItemImages;
-use App\Models\MaterialRequest;
 use App\Models\Project;
 use App\Models\StockEntry;
 use App\Models\StockEntryDetail;
 use App\Models\StockLedgerEntry;
-use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseUsers;
-use App\Services\CutoffDateService;
+use App\Pipelines\ConsignmentLedgerPipeline;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
-use Exception;
 
 class ConsignmentController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
+
+    public function __construct(
+        protected ConsignmentLedgerPipeline $consignmentLedgerPipeline
+    ) {}
 
     // /consignment_stores
     public function consignmentStores(Request $request)
     {
         if ($request->ajax()) {
             if ($request->has('assigned_to_me') && $request->assigned_to_me == 1) {  // only get warehouses assigned to the promodiser
-                return AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->where('warehouse', 'LIKE', '%' . $request->q . '%')->select('warehouse as id', 'warehouse as text')->limit(20)->orderBy('warehouse', 'asc')->get();
+                return AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->where('warehouse', 'LIKE', '%'.$request->q.'%')->select('warehouse as id', 'warehouse as text')->limit(20)->orderBy('warehouse', 'asc')->get();
             } else {  // get all warehouses
                 return Warehouse::where('parent_warehouse', 'P2 Consignment Warehouse - FI')
                     ->where('is_group', 0)
                     ->where('disabled', 0)
-                    ->where('name', 'LIKE', '%' . $request->q . '%')
+                    ->where('name', 'LIKE', '%'.$request->q.'%')
                     ->select('name as id', 'warehouse_name as text')
                     ->limit(20)
                     ->orderBy('warehouse_name', 'asc')
@@ -103,154 +88,35 @@ class ConsignmentController extends Controller
             ->when($request->q, function ($query) use ($request, $searchTerms) {
                 return $query->where(function ($subQuery) use ($searchTerms, $request) {
                     foreach ($searchTerms as $term) {
-                        $subQuery->where('description', 'LIKE', '%' . $term . '%');
+                        $subQuery->where('description', 'LIKE', '%'.$term.'%');
                     }
 
-                    $subQuery->orWhere('item_code', 'LIKE', '%' . $request->q . '%');
+                    $subQuery->orWhere('item_code', 'LIKE', '%'.$request->q.'%');
                 });
             })
-            ->select('item_code as id', DB::raw('CONCAT(item_code, "-", description) as text '))
+            ->select('item_code as id', 'description')
             ->orderBy('item_code', 'asc')
             ->limit(8)
-            ->get();
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'text' => $item->id.' - '.strip_tags($item->description),
+                'description' => $item->description,
+            ]);
     }
 
     public function consignmentLedger(Request $request)
     {
-        if ($request->ajax()) {
-            $branchWarehouse = $request->branch_warehouse;
-            $itemCode = $request->item_code;
-
-            $result = $itemDescriptions = [];
-            if ($branchWarehouse) {
-                $itemOpeningStock = BeginningInventory::query()
-                    ->from('tabConsignment Beginning Inventory as cb')
-                    ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
-                    ->where('cb.status', 'Approved')
-                    ->where('branch_warehouse', $branchWarehouse)
-                    ->when($itemCode, function ($query) use ($itemCode) {
-                        return $query->where('cbi.item_code', $itemCode);
-                    })
-                    ->select('cbi.item_code', 'cbi.opening_stock', 'cb.transaction_date', 'cb.branch_warehouse', 'cb.name', 'cb.owner', 'cbi.item_description')
-                    ->orderBy('cb.transaction_date', 'asc')
-                    ->get();
-
-                foreach ($itemOpeningStock as $r) {
-                    $result[$r->item_code][$r->transaction_date][] = [
-                        'qty' => number_format($r->opening_stock),
-                        'type' => 'Beginning Inventory',
-                        'transaction_date' => $r->transaction_date,
-                        'reference' => $r->name,
-                        'owner' => $r->owner
-                    ];
-
-                    $itemDescriptions[$r->item_code] = $r->item_description;
-                }
-
-                $beginningInventoryStart = BeginningInventory::query()
-                    ->where('branch_warehouse', $branchWarehouse)
-                    ->orderBy('transaction_date', 'asc')
-                    ->pluck('transaction_date')
-                    ->first();
-
-                $beginningInventoryStartDate = $beginningInventoryStart ? Carbon::parse($beginningInventoryStart)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
-
-                $itemReceive = StockEntry::query()
-                    ->from('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->when($beginningInventoryStartDate, function ($query) use ($beginningInventoryStartDate) {
-                        return $query->whereDate('ste.delivery_date', '>=', $beginningInventoryStartDate);
-                    })
-                    ->when($itemCode, function ($query) use ($itemCode) {
-                        return $query->where('sted.item_code', $itemCode);
-                    })
-                    ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
-                    ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.docstatus', 1)
-                    ->where('sted.consignment_status', 'Received')
-                    ->where('sted.t_warehouse', $branchWarehouse)
-                    ->select('ste.name', 'sted.t_warehouse', 'sted.consignment_date_received', 'sted.item_code', 'sted.transfer_qty', 'sted.consignment_received_by', 'sted.description')
-                    ->orderBy('sted.consignment_date_received', 'desc')
-                    ->get();
-
-                foreach ($itemReceive as $a) {
-                    $dateReceived = Carbon::parse($a->consignment_date_received)->format('Y-m-d');
-                    $result[$a->item_code][$dateReceived][] = [
-                        'qty' => number_format($a->transfer_qty),
-                        'type' => 'Stocks Received',
-                        'transaction_date' => $dateReceived,
-                        'reference' => $a->name,
-                        'owner' => $a->consignment_received_by
-                    ];
-
-                    $itemDescriptions[$a->item_code] = $a->description;
-                }
-
-                $itemTransferred = StockEntry::query()
-                    ->from('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->when($beginningInventoryStartDate, function ($query) use ($beginningInventoryStartDate) {
-                        return $query->whereDate('ste.delivery_date', '>=', $beginningInventoryStartDate);
-                    })
-                    ->when($itemCode, function ($query) use ($itemCode) {
-                        return $query->where('sted.item_code', $itemCode);
-                    })
-                    ->whereIn('ste.transfer_as', ['Store Transfer'])
-                    ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.docstatus', 1)
-                    ->where('sted.s_warehouse', $branchWarehouse)
-                    ->select('ste.name', 'sted.t_warehouse', 'sted.creation', 'sted.item_code', 'sted.transfer_qty', 'ste.owner', 'sted.description')
-                    ->orderBy('sted.creation', 'desc')
-                    ->get();
-
-                foreach ($itemTransferred as $v) {
-                    $dateTransferred = Carbon::parse($v->creation)->format('Y-m-d');
-                    $result[$v->item_code][$dateTransferred][] = [
-                        'qty' => number_format($v->transfer_qty),
-                        'type' => 'Store Transfer',
-                        'transaction_date' => $dateTransferred,
-                        'reference' => $v->name,
-                        'owner' => $v->owner
-                    ];
-
-                    $itemDescriptions[$v->item_code] = $v->description;
-                }
-
-                $itemReturned = StockEntry::query()
-                    ->from('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->when($beginningInventoryStartDate, function ($query) use ($beginningInventoryStartDate) {
-                        return $query->whereDate('ste.delivery_date', '>=', $beginningInventoryStartDate);
-                    })
-                    ->when($itemCode, function ($query) use ($itemCode) {
-                        return $query->where('sted.item_code', $itemCode);
-                    })
-                    ->whereIn('ste.transfer_as', ['For Return'])
-                    ->where('ste.purpose', 'Material Transfer')
-                    ->where('ste.docstatus', 1)
-                    ->where('sted.s_warehouse', $branchWarehouse)
-                    ->select('ste.name', 'sted.t_warehouse', 'sted.creation', 'sted.item_code', 'sted.transfer_qty', 'ste.owner', 'sted.description')
-                    ->orderBy('sted.creation', 'desc')
-                    ->get();
-
-                foreach ($itemReturned as $a) {
-                    $dateReturned = Carbon::parse($a->creation)->format('Y-m-d');
-                    $result[$a->item_code][$dateReturned][] = [
-                        'qty' => number_format($a->transfer_qty),
-                        'type' => 'Stocks Returned',
-                        'transaction_date' => $dateReturned,
-                        'reference' => $a->name,
-                        'owner' => $a->owner
-                    ];
-
-                    $itemDescriptions[$a->item_code] = $a->description;
-                }
-            }
-
-            return view('consignment.tbl_consignment_ledger', compact('result', 'branchWarehouse', 'itemDescriptions'));
+        if (! $request->ajax()) {
+            return view('consignment.consignment_ledger');
         }
 
-        return view('consignment.consignment_ledger');
+        $passable = (object) [
+            'branchWarehouse' => $request->branch_warehouse,
+            'itemCode' => $request->item_code,
+        ];
+
+        return $this->consignmentLedgerPipeline->run($passable);
     }
 
     public function consignmentStockMovement($itemCode, Request $request)
@@ -288,7 +154,7 @@ class ConsignmentController extends Controller
                     'branch_warehouse' => $r->branch_warehouse,
                     'reference' => $r->name,
                     'owner' => $r->owner,
-                    'creation' => $r->creation
+                    'creation' => $r->creation,
                 ];
             }
 
@@ -332,7 +198,7 @@ class ConsignmentController extends Controller
                 $dateReceived = Carbon::parse($a->consignment_date_received)->format('Y-m-d');
 
                 $owner = $a->child_received_by;
-                if (!$owner) {
+                if (! $owner) {
                     $owner = $a->parent_received_by ? $a->parent_received_by : $a->modified_by;
                 }
 
@@ -343,7 +209,7 @@ class ConsignmentController extends Controller
                     'branch_warehouse' => $a->t_warehouse,
                     'reference' => $a->name,
                     'owner' => $owner,
-                    'creation' => $a->creation
+                    'creation' => $a->creation,
                 ];
             }
 
@@ -373,13 +239,13 @@ class ConsignmentController extends Controller
             foreach ($itemTransferred as $v) {
                 $dateTransferred = Carbon::parse($v->creation)->format('Y-m-d');
                 $result[] = [
-                    'qty' => '-' . number_format($v->transfer_qty),
+                    'qty' => '-'.number_format($v->transfer_qty),
                     'type' => 'Store Transfer',
                     'transaction_date' => $dateTransferred,
                     'branch_warehouse' => $v->s_warehouse,
                     'reference' => $v->name,
                     'owner' => $v->owner,
-                    'creation' => $v->creation
+                    'creation' => $v->creation,
                 ];
             }
 
@@ -409,13 +275,13 @@ class ConsignmentController extends Controller
             foreach ($itemReturned as $a) {
                 $dateReturned = Carbon::parse($a->creation)->format('Y-m-d');
                 $result[] = [
-                    'qty' => '-' . number_format($a->transfer_qty),
+                    'qty' => '-'.number_format($a->transfer_qty),
                     'type' => 'Stocks Returned',
                     'transaction_date' => $dateReturned,
                     'branch_warehouse' => $a->s_warehouse,
                     'reference' => $a->name,
                     'owner' => $a->owner,
-                    'creation' => $a->creation
+                    'creation' => $a->creation,
                 ];
             }
 
@@ -445,7 +311,7 @@ class ConsignmentController extends Controller
                     'branch_warehouse' => $sa->warehouse,
                     'reference' => $sa->name,
                     'owner' => $sa->owner,
-                    'creation' => $sa->creation
+                    'creation' => $sa->creation,
                 ];
             }
         }
@@ -453,14 +319,14 @@ class ConsignmentController extends Controller
         if ($request->get_users == 1) {
             $all[] = [
                 'id' => 'Select All',
-                'text' => 'Select All'
+                'text' => 'Select All',
             ];
 
             $users = collect($result)->map(function ($row) {
                 if ($row['owner']) {
                     return [
                         'id' => $row['owner'],
-                        'text' => $row['owner']
+                        'text' => $row['owner'],
                     ];
                 }
             })->filter()->unique();
@@ -521,7 +387,7 @@ class ConsignmentController extends Controller
                 }
 
                 $glEntry[] = [
-                    'name' => 'ath' . uniqid(),
+                    'name' => 'ath'.uniqid(),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
@@ -599,7 +465,7 @@ class ConsignmentController extends Controller
                     }
 
                     $sData[] = [
-                        'name' => 'ath' . uniqid(),
+                        'name' => 'ath'.uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
@@ -647,7 +513,7 @@ class ConsignmentController extends Controller
                     }
 
                     $tData[] = [
-                        'name' => 'ath' . uniqid(),
+                        'name' => 'ath'.uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
@@ -680,14 +546,14 @@ class ConsignmentController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
-                        'posting_datetime' => $now->format('Y-m-d H:i:s')
+                        'posting_datetime' => $now->format('Y-m-d H:i:s'),
                     ];
                 }
 
                 $stockLedgerEntry = array_merge($sData, $tData);
 
                 $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
-                if (!$existing) {
+                if (! $existing) {
                     DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stockLedgerEntry);
                 }
             } else {
@@ -706,7 +572,7 @@ class ConsignmentController extends Controller
                     }
 
                     $tData[] = [
-                        'name' => 'ath' . uniqid(),
+                        'name' => 'ath'.uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
@@ -739,12 +605,12 @@ class ConsignmentController extends Controller
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * $row->valuation_rate,
                         'posting_date' => $now->format('Y-m-d'),
-                        'posting_datetime' => $now->format('Y-m-d H:i:s')
+                        'posting_datetime' => $now->format('Y-m-d H:i:s'),
                     ];
                 }
 
                 $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $row->parent)->exists();
-                if (!$existing) {
+                if (! $existing) {
                     DB::connection('mysql')->table('tabStock Ledger Entry')->insert($tData);
                 }
             }
@@ -778,7 +644,7 @@ class ConsignmentController extends Controller
                 }
 
                 $data[] = [
-                    'name' => 'cn' . uniqid(),
+                    'name' => 'cn'.uniqid(),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
@@ -814,7 +680,7 @@ class ConsignmentController extends Controller
                     'batch_no' => $r->batch_no,
                     'stock_value_difference' => ($r->actual_qty * $r->valuation_rate) * -1,
                     'posting_date' => $r->posting_date,
-                    'posting_datetime' => $now->format('Y-m-d H:i:s')
+                    'posting_datetime' => $now->format('Y-m-d H:i:s'),
                 ];
             }
 
@@ -837,7 +703,7 @@ class ConsignmentController extends Controller
             $data = [];
             foreach ($sle as $r) {
                 $data[] = [
-                    'name' => 'ge' . uniqid(),
+                    'name' => 'ge'.uniqid(),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
@@ -861,7 +727,7 @@ class ConsignmentController extends Controller
                     'voucher_type' => $r->voucher_type,
                     '_comments' => null,
                     'is_advance' => $r->is_advance,
-                    'remarks' => 'On cancellation of ' . $r->voucher_no,
+                    'remarks' => 'On cancellation of '.$r->voucher_no,
                     'account_currency' => $r->account_currency,
                     'debit_in_account_currency' => $r->credit_in_account_currency,
                     '_user_tags' => null,
@@ -904,7 +770,7 @@ class ConsignmentController extends Controller
     {
         $customer = Customer::query()
             ->when($request->q, function ($query) use ($request) {
-                return $query->where('name', 'like', '%' . $request->q . '%');
+                return $query->where('name', 'like', '%'.$request->q.'%');
             })
             ->select('name as id', 'name as text')
             ->limit(15)
@@ -912,7 +778,7 @@ class ConsignmentController extends Controller
             ->get();
         $project = Project::query()
             ->when($request->q, function ($query) use ($request) {
-                return $query->where('name', 'like', '%' . $request->q . '%');
+                return $query->where('name', 'like', '%'.$request->q.'%');
             })
             ->select('name as id', 'name as text')
             ->limit(15)
@@ -921,7 +787,7 @@ class ConsignmentController extends Controller
 
         return response()->json([
             'customer' => $customer,
-            'project' => $project
+            'project' => $project,
         ]);
     }
 
@@ -932,10 +798,10 @@ class ConsignmentController extends Controller
             $project = $request->project;
             $branch = $request->branch;
             $customerPurchaseOrder = $request->cpo;
-            $path = request()->file('selected_file')->storeAs('tmp', request()->file('selected_file')->getClientOriginalName() . uniqid(), 'local');
+            $path = request()->file('selected_file')->storeAs('tmp', request()->file('selected_file')->getClientOriginalName().uniqid(), 'local');
 
-            $path = storage_path() . '/app/' . $path;
-            $reader = new ReaderXlsx();
+            $path = storage_path().'/app/'.$path;
+            $reader = new ReaderXlsx;
             $spreadsheet = $reader->load($path);
 
             $sheet = $spreadsheet->getActiveSheet();
@@ -946,10 +812,10 @@ class ConsignmentController extends Controller
 
             $sheetArr = [];
             for ($row = 1; $row <= $highestRow; $row++) {
-                $sheetArr['barcode'][] = trim($sheet->getCell('A' . $row)->getValue());
-                $sheetArr['description'][] = trim($sheet->getCell('B' . $row)->getValue());
-                $sheetArr['sold'][] = (float) $sheet->getCell('C' . $row)->getValue();
-                $sheetArr['amount'][] = (float) $sheet->getCell('D' . $row)->getValue();
+                $sheetArr['barcode'][] = trim($sheet->getCell('A'.$row)->getValue());
+                $sheetArr['description'][] = trim($sheet->getCell('B'.$row)->getValue());
+                $sheetArr['sold'][] = (float) $sheet->getCell('C'.$row)->getValue();
+                $sheetArr['amount'][] = (float) $sheet->getCell('D'.$row)->getValue();
             }
 
             $itemDetails = Item::query()
@@ -963,7 +829,7 @@ class ConsignmentController extends Controller
 
             $items = [];
             foreach ($sheetArr['barcode'] as $i => $barcode) {
-                if (!$i) {
+                if (! $i) {
                     continue;
                 }
 
@@ -984,7 +850,7 @@ class ConsignmentController extends Controller
 
                 $description = isset($sheetArr['description'][$i]) && $sheetArr['description'][$i] != '' ? $sheetArr['description'][$i] : ($active ? $defaultDescription : null);
 
-                if (!$description) {
+                if (! $description) {
                     continue;
                 }
 
@@ -1053,8 +919,8 @@ class ConsignmentController extends Controller
             foreach ($requestItems as $i => $item) {
                 $row = $i + 1;
                 $itemCode = $item['item_code'];
-                if (!$itemCode) {
-                    return ApiResponse::failure('Unable to find item code for Row #' . $row);
+                if (! $itemCode) {
+                    return ApiResponse::failure('Unable to find item code for Row #'.$row);
                 }
 
                 $itemClassification = Arr::get($itemsClassification, $itemCode);
@@ -1073,7 +939,7 @@ class ConsignmentController extends Controller
                 'charge_type' => 'On Net Total',
                 'account_head' => 'Output tax - FI',
                 'description' => 'Output tax',
-                'rate' => 12
+                'rate' => 12,
             ];
 
             $salesOrderData = [
@@ -1087,12 +953,12 @@ class ConsignmentController extends Controller
                 'order_type_1' => 'Vatable',
                 'sales_type' => 'Sales on Consignment',
                 'sales_person' => 'Plant 2',
-                'custom_remarks' => 'Generated from AthenaERP Consignment Sales Report Import Tool. Created by: ' . $currentUser,
+                'custom_remarks' => 'Generated from AthenaERP Consignment Sales Report Import Tool. Created by: '.$currentUser,
                 'branch_warehouse' => $request->branch_warehouse,
                 'project' => $request->project,
                 'items' => $salesOrderItemData,
                 'taxes' => $salesTaxes,
-                'payment_terms_template' => 'CASH'
+                'payment_terms_template' => 'CASH',
             ];
 
             $erpApiBaseUrl = config('services.erp.api_base_url');
@@ -1100,7 +966,8 @@ class ConsignmentController extends Controller
 
             if (isset($response['data']['name'])) {
                 $salesOrder = $response['data']['name'];
-                return ApiResponse::success('Sales Order <a href="' . $erpApiBaseUrl . '/app/sales-order/' . $salesOrder . '" target="_blank">' . $salesOrder . '</a> has been created.');
+
+                return ApiResponse::success('Sales Order <a href="'.$erpApiBaseUrl.'/app/sales-order/'.$salesOrder.'" target="_blank">'.$salesOrder.'</a> has been created.');
             }
 
             return ApiResponse::failure(data_get($response, 'message', 'Something went wrong. Please contact your system administrator.'));
@@ -1123,12 +990,12 @@ class ConsignmentController extends Controller
             $barcodes = $request->barcode;
             $itemCodes = $request->item_code;
             foreach ($barcodes as $b => $barcode) {
-                if (!$itemCodes[$b]) {
-                    return ApiResponse::failure('Please select item code for <b>' . $barcode . '</b>.');
+                if (! $itemCodes[$b]) {
+                    return ApiResponse::failure('Please select item code for <b>'.$barcode.'</b>.');
                 }
 
                 if (isset($assignedBarcodes[$barcode])) {
-                    return ApiResponse::failure('Barcode <b>' . $barcode . '</b> is already assigned to item <b>' . $assignedBarcodes[$barcode] . '</b>');
+                    return ApiResponse::failure('Barcode <b>'.$barcode.'</b> is already assigned to item <b>'.$assignedBarcodes[$barcode].'</b>');
                 }
 
                 $insertArr[] = [
@@ -1143,13 +1010,14 @@ class ConsignmentController extends Controller
                     'parentfield' => 'barcodes',
                     'parenttype' => 'Item',
                     'customer' => $request->customer,
-                    'barcode' => $barcode
+                    'barcode' => $barcode,
                 ];
             }
 
             ConsignmentItemBarcode::query()->insert($insertArr);
 
             DB::commit();
+
             return ApiResponse::success('Success!');
         } catch (\Throwable $th) {
             Log::error('ConsignmentController updateItemBarcodes failed', [
@@ -1239,8 +1107,8 @@ class ConsignmentController extends Controller
 
         $latestId = 0;
         if ($latestRecord) {
-            if (!$latestRecord->title) {
-                $lastSerialName = DB::table($table)->where('name', 'like', '%' . strtolower($series) . '-000%')->orderBy('creation', 'desc')->pluck('name')->first();
+            if (! $latestRecord->title) {
+                $lastSerialName = DB::table($table)->where('name', 'like', '%'.strtolower($series).'-000%')->orderBy('creation', 'desc')->pluck('name')->first();
 
                 $latestId = $lastSerialName ? explode('-', $lastSerialName)[1] : 0;
             } else {
@@ -1250,7 +1118,7 @@ class ConsignmentController extends Controller
 
         $newId = $latestId + 1;
         $newId = str_pad($newId, $count, 0, STR_PAD_LEFT);
-        $newId = strtoupper($series) . '-' . $newId;
+        $newId = strtoupper($series).'-'.$newId;
 
         return $newId;
     }

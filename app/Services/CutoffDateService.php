@@ -11,7 +11,7 @@ class CutoffDateService
     /**
      * Get cutoff period [from, to] for a given transaction date.
      *
-     * @param Carbon|string $transactionDate
+     * @param  Carbon|string  $transactionDate
      * @return array{Carbon, Carbon} [periodFrom, periodTo]
      */
     public function getCutoffPeriod($transactionDate): array
@@ -47,7 +47,7 @@ class CutoffDateService
     /**
      * Get cutoff display info for dashboard (durationFrom, durationTo, due).
      *
-     * @param Carbon|string|null $transactionDate Defaults to now()
+     * @param  Carbon|string|null  $transactionDate  Defaults to now()
      * @return array{durationFrom: string, durationTo: string, due: string, periodFrom: Carbon, periodTo: Carbon}
      */
     public function getCutoffDisplayInfo($transactionDate = null): array
@@ -58,7 +58,7 @@ class CutoffDateService
         return [
             'durationFrom' => $periodFrom->copy()->addDay()->format('d-m-Y'),
             'durationTo' => $periodTo->format('d-m-Y'),
-            'due' => 'Due: ' . $periodTo->format('M d, Y'),
+            'due' => 'Due: '.$periodTo->format('M d, Y'),
             'periodFrom' => $periodFrom,
             'periodTo' => $periodTo,
         ];
@@ -78,7 +78,7 @@ class CutoffDateService
             }
             if ($monthIndex == 0) {
                 $febCutoff = $cutoffDay <= 28 ? $cutoffDay : 28;
-                $cutoffPeriod[] = $febCutoff . '-02-' . now()->format('Y');
+                $cutoffPeriod[] = $febCutoff.'-02-'.now()->format('Y');
             }
         }
 

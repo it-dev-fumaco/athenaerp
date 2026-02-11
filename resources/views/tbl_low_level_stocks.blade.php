@@ -31,7 +31,7 @@
                             <span class="d-block1 font-weight-bold text-dark item-code">{{ $row['item_code'] }}</span>
                             <span class="d-none item-description">{{ $row['description'] }}</span>
                         </a>
-                        <small class="font-italic">{!! \Illuminate\Support\Str::limit($row['description'], $limit = 50, $end = '...') !!}</small>
+                        <small class="font-italic">{!! \Illuminate\Support\Str::limit($row['description'], 50, '...') !!}</small>
                         <div class="d-block d-lg-none">
                             <b>Warehouse: </b><small class="warehouse">{{ $row['warehouse'] }}</small>
                         </div>

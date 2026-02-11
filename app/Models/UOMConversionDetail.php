@@ -10,9 +10,13 @@ class UOMConversionDetail extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
+
     protected $table = 'tabUOM Conversion Detail';
 
     public function item()

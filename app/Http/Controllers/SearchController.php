@@ -14,22 +14,19 @@ use App\Models\ItemPrice;
 use App\Models\ItemReorder;
 use App\Models\ItemSupplier;
 use App\Models\LandedCostVoucher;
-use App\Models\MaterialRequest;
 use App\Models\ProductBundle;
 use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
 use App\Models\Singles;
 use App\Models\StockEntryDetail;
 use App\Models\StockReservation;
 use App\Models\WarehouseAccess;
 use App\Services\ItemSearchService;
 use App\Traits\GeneralTrait;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class SearchController extends Controller
@@ -40,9 +37,6 @@ class SearchController extends Controller
         protected ItemSearchService $itemSearchService
     ) {}
 
-    /**
-     * @return \Illuminate\View\View|string
-     */
     public function searchResults(Request $request): \Illuminate\View\View|string
     {
         $items = $this->itemSearchService->search($request);
@@ -99,7 +93,7 @@ class SearchController extends Controller
             $selectedGroup = ItemGroup::where('item_group_name', $request->group)->first();
             if ($selectedGroup) {
                 session()->forget('breadcrumbs');
-                if (!session()->has('breadcrumbs')) {
+                if (! session()->has('breadcrumbs')) {
                     session()->put('breadcrumbs', []);
                 }
 
@@ -120,7 +114,7 @@ class SearchController extends Controller
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'search_string' => $request->searchString,
-                'total_result' => $totalItems
+                'total_result' => $totalItems,
             ]);
         }
 
@@ -258,7 +252,7 @@ class SearchController extends Controller
             $consignmentWarehouses = [];
             $itemInventoryArr = Arr::get($itemInventory, $row->item_code, []);
             foreach ($itemInventoryArr as $value) {
-                $binKey = $value->item_code . '-' . $value->warehouse;
+                $binKey = $value->item_code.'-'.$value->warehouse;
                 $reservedQty = Arr::get($stockReservation, "{$binKey}.0.total_reserved_qty", 0);
 
                 $consumedQty = Arr::get($stockReservation, "{$binKey}.0.total_consumed_qty", 0);
@@ -276,7 +270,7 @@ class SearchController extends Controller
                 $issuedReservedQty = ($reservedQty + $issuedQty) - $consumedQty;
 
                 $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
-                if ($value->parent_warehouse == 'P2 Consignment Warehouse - FI' && !$isPromodiser) {
+                if ($value->parent_warehouse == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {
                     $consignmentWarehouses[] = [
                         'warehouse' => $value->warehouse,
                         'location' => $value->location,
@@ -286,7 +280,7 @@ class SearchController extends Controller
                         'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
                         'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouseReorderLevel,
-                        'parent_warehouse' => $value->parent_warehouse
+                        'parent_warehouse' => $value->parent_warehouse,
                     ];
                 } else {
                     if (Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == 'P2 Consignment Warehouse - FI') {
@@ -302,7 +296,7 @@ class SearchController extends Controller
                         'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
                         'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
                         'warehouse_reorder_level' => $warehouseReorderLevel,
-                        'parent_warehouse' => $value->parent_warehouse
+                        'parent_warehouse' => $value->parent_warehouse,
                     ];
                 }
             }
@@ -345,10 +339,10 @@ class SearchController extends Controller
                 $row->package_width > 0 ||
                 $row->package_height > 0
             ) {
-                $packageDimension = '<span class="text-muted">Net Weight:</span> <b>' . ($row->weight_per_unit > 0 ? (float) $row->weight_per_unit . ' ' . $row->weight_uom : '-') . '</b>, ';
-                $packageDimension .= '<span class="text-muted">Length:</span> <b>' . ($row->package_length > 0 ? (float) $row->package_length . ' ' . $row->package_dimension_uom : '-') . '</b>, ';
-                $packageDimension .= '<span class="text-muted">Width:</span>  <b>' . ($row->package_width > 0 ? (float) $row->package_width . ' ' . $row->package_dimension_uom : '-') . '</b>, ';
-                $packageDimension .= '<span class="text-muted">Height:</span> <b>' . ($row->package_height > 0 ? (float) $row->package_height . ' ' . $row->package_dimension_uom : '-') . '</b>';
+                $packageDimension = '<span class="text-muted">Net Weight:</span> <b>'.($row->weight_per_unit > 0 ? (float) $row->weight_per_unit.' '.$row->weight_uom : '-').'</b>, ';
+                $packageDimension .= '<span class="text-muted">Length:</span> <b>'.($row->package_length > 0 ? (float) $row->package_length.' '.$row->package_dimension_uom : '-').'</b>, ';
+                $packageDimension .= '<span class="text-muted">Width:</span>  <b>'.($row->package_width > 0 ? (float) $row->package_width.' '.$row->package_dimension_uom : '-').'</b>, ';
+                $packageDimension .= '<span class="text-muted">Height:</span> <b>'.($row->package_height > 0 ? (float) $row->package_height.' '.$row->package_dimension_uom : '-').'</b>';
             }
 
             $itemList[] = [
@@ -362,7 +356,7 @@ class SearchController extends Controller
                 'item_inventory' => $siteWarehouses,
                 'consignment_warehouses' => $consignmentWarehouses,
                 'default_price' => $defaultPrice,
-                'package_dimension' => $packageDimension
+                'package_dimension' => $packageDimension,
             ];
         }
 
@@ -372,7 +366,7 @@ class SearchController extends Controller
             ->when(array_filter($request->all()), function ($query) use ($igs, $request) {
                 $query
                     ->whereIn('item_group_name', $igs)
-                    ->orWhere('item_group_name', 'LIKE', '%' . $request->searchString . '%');
+                    ->orWhere('item_group_name', 'LIKE', '%'.$request->searchString.'%');
             })
             ->select('name', 'item_group_name', 'parent_item_group', 'is_group', 'old_parent', 'order_no')
             ->orderByRaw('LENGTH(order_no) ASC')
@@ -388,12 +382,12 @@ class SearchController extends Controller
         if ($subItems) {
             $igsCollection = collect($itemGroup)->groupBy('item_group_name');
             session()->forget('igs_array');
-            if (!session()->has('igs_array')) {
+            if (! session()->has('igs_array')) {
                 session()->put('igs_array', []);
             }
 
             foreach ($subItems as $a) {
-                if (!in_array($a->item_group_name, session()->get('igs_array'))) {
+                if (! in_array($a->item_group_name, session()->get('igs_array'))) {
                     session()->push('igs_array', $a->item_group_name);
                 }
 
@@ -409,6 +403,7 @@ class SearchController extends Controller
 
         if ($request->expectsJson()) {
             $showPrice = in_array($userDepartment, $allowedDepartment) || in_array(Auth::user()->user_group, ['Manager', 'Director']);
+
             return response()->json([
                 'data' => $itemList,
                 'meta' => [
@@ -433,6 +428,7 @@ class SearchController extends Controller
         if ($rootParent) {
             $this->breadcrumbs($rootParent);
         }
+
         return 1;
     }
 
@@ -441,11 +437,12 @@ class SearchController extends Controller
         $itemGroup = Arr::get($igsCollection, "{$parent}.0", []);
         $itemGroups = session()->get('igs_array');
         if ($itemGroup) {
-            if (!in_array($itemGroup->item_group_name, $itemGroups)) {
+            if (! in_array($itemGroup->item_group_name, $itemGroups)) {
                 session()->push('igs_array', $itemGroup->item_group_name);
             }
 
             $this->checkItemGroupTree($itemGroup->parent_item_group, $igsCollection);
+
             return 1;
         }
     }
@@ -462,12 +459,12 @@ class SearchController extends Controller
                     if ($nextLevel) {
                         $nxt = $this->itemGroupTree($currentLvl, $nextLevel, $all, $igsArray);
                         $lvlArr[$lvl[0]->name] = [
-                            'lvl' . $currentLvl => $nxt,
+                            'lvl'.$currentLvl => $nxt,
                             'is_group' => $lvl[0]->is_group,
                         ];
                     } else {
                         $lvlArr[$lvl[0]->name] = [
-                            'lvl' . $currentLvl => $nextLevel,
+                            'lvl'.$currentLvl => $nextLevel,
                             'is_group' => $lvl[0]->is_group,
                         ];
                     }
@@ -479,12 +476,12 @@ class SearchController extends Controller
                 if ($nextLevel) {
                     $nxt = $this->itemGroupTree($currentLvl, $nextLevel, $all);
                     $lvlArr[$lvl[0]->name] = [
-                        'lvl' . $currentLvl => $nxt,
+                        'lvl'.$currentLvl => $nxt,
                         'is_group' => $lvl[0]->is_group,
                     ];
                 } else {
                     $lvlArr[$lvl[0]->name] = [
-                        'lvl' . $currentLvl => $nextLevel,
+                        'lvl'.$currentLvl => $nextLevel,
                         'is_group' => $lvl[0]->is_group,
                     ];
                 }
@@ -507,11 +504,11 @@ class SearchController extends Controller
             $imgArr = [
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $itemImages[$currentKey]->image_path)[0]),
-                'orig_image_path' => asset('storage/') . '/img/' . $img,
-                'orig_path' => Storage::disk('public')->exists('/img/' . $img) ? 1 : 0,
-                'webp_image_path' => asset('storage/') . '/img/' . explode('.', $img)[0] . '.webp',
-                'webp_path' => Storage::disk('public')->exists('/img/' . explode('.', $img)[0]) ? 1 : 0,
-                'current_img_key' => $currentKey
+                'orig_image_path' => asset('storage/').'/img/'.$img,
+                'orig_path' => Storage::disk('public')->exists('/img/'.$img) ? 1 : 0,
+                'webp_image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
+                'webp_path' => Storage::disk('public')->exists('/img/'.explode('.', $img)[0]) ? 1 : 0,
+                'current_img_key' => $currentKey,
             ];
 
             return $imgArr;

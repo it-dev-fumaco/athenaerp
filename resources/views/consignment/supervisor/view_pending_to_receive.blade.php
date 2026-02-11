@@ -99,7 +99,7 @@
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">
-                                                    <span class="d-block"><b>{{ $i->item_code }}</b> {{ strip_tags($i->description) }}</span>
+                                                    <span class="d-block"><b>{{ $i->item_code }}</b> {!! $i->description !!}</span>
                                                 </div>
                                             </div>
                                         </td>

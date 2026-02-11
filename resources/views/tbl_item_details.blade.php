@@ -365,6 +365,12 @@
             max-width: 406px;
             flex-shrink: 0;
         }
+        .item-alternative-description {
+            max-height: 5.5em;
+            overflow-y: auto;
+            display: block;
+        }
+        .item-alternative-description p { margin-bottom: 0.25em; }
         @media (max-width: 767.98px) {
             .custom-body { min-width: 240px; max-width: 100%; }
         }
@@ -400,7 +406,7 @@
                                 <a href="#" class="view-item-details text-dark" data-item-code="{{ $a['item_code'] }}" data-item-classification="{{ $itemDetails->item_classification }}">
                                     <div class="p-1 text-justify">
                                         <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
-                                        <small class="font-italic font-responsive" style="font-size: 9pt;">{{ \Illuminate\Support\Str::limit($a['description'], $limit = 78, $end = '...') }}</small>
+                                        <small class="font-italic font-responsive item-alternative-description" style="font-size: 9pt;">{!! $a['description'] !!}</small>
                                         <br>
                                         <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                     </div>

@@ -17,18 +17,18 @@ use App\Models\StockEntry;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
-use Exception;
 
 class ConsignmentStockAdjustmentController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
 
     private function checkItemTransactions(string $itemCode, string $branch, $date, ?string $csaId = null): array
     {
@@ -76,7 +76,7 @@ class ConsignmentStockAdjustmentController extends Controller
         try {
             $adjustmentDetails = ConsignmentStockAdjustment::find($id);
 
-            if (!$adjustmentDetails) {
+            if (! $adjustmentDetails) {
                 return redirect()->back()->with('error', 'Stock adjustment record not found.');
             }
 
@@ -86,7 +86,7 @@ class ConsignmentStockAdjustmentController extends Controller
 
             $adjustedItems = ConsignmentStockAdjustmentItem::where('parent', $adjustmentDetails->name)->get();
 
-            if (!$adjustedItems->isNotEmpty()) {
+            if (! $adjustedItems->isNotEmpty()) {
                 return redirect()->back()->with('error', 'Items not found.');
             }
 
@@ -94,21 +94,21 @@ class ConsignmentStockAdjustmentController extends Controller
                 $hasTransactions = $this->checkItemTransactions($item->item_code, $adjustmentDetails->warehouse, $adjustmentDetails->creation, $id);
 
                 if (collect($hasTransactions)->max() > 0) {
-                    return redirect()->back()->with('error', 'Cannot cancel stock adjustment record. Item ' . $item->item_code . ' has existing transaction(s).');
+                    return redirect()->back()->with('error', 'Cannot cancel stock adjustment record. Item '.$item->item_code.' has existing transaction(s).');
                 }
 
                 Bin::where('item_code', $item->item_code)->where('warehouse', $adjustmentDetails->warehouse)->update([
                     'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'consigned_qty' => $item->previous_qty,
-                    'consignment_price' => $item->previous_price
+                    'consignment_price' => $item->previous_price,
                 ]);
             }
 
             ConsignmentStockAdjustment::where('name', $id)->update([
                 'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'status' => 'Cancelled'
+                'status' => 'Cancelled',
             ]);
 
             $logs = [
@@ -119,7 +119,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => 'Stock Adjustment ' . $adjustmentDetails->name . ' has been cancelled by ' . Auth::user()->full_name . ' at ' . now()->toDateTimeString(),
+                'subject' => 'Stock Adjustment '.$adjustmentDetails->name.' has been cancelled by '.Auth::user()->full_name.' at '.now()->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => now()->toDateTimeString(),
                 'reference_doctype' => 'Consignment Stock Adjustment',
@@ -132,9 +132,11 @@ class ConsignmentStockAdjustmentController extends Controller
             ActivityLog::insert($logs);
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Stock Adjustment Cancelled.');
         } catch (Exception $e) {
             DB::rollback();
+
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
@@ -176,9 +178,9 @@ class ConsignmentStockAdjustmentController extends Controller
 
                 $item->reason = $item->remarks;
 
-                $item->image = Arr::exists($itemImages, $itemCode) ? '/img/' . $itemImages[$itemCode] : '/icon/no_img.png';
-                if (Storage::disk('public')->exists(explode('.', $item->image)[0] . '.webp')) {
-                    $item->image = explode('.', $item->image)[0] . '.webp';
+                $item->image = Arr::exists($itemImages, $itemCode) ? '/img/'.$itemImages[$itemCode] : '/icon/no_img.png';
+                if (Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')) {
+                    $item->image = explode('.', $item->image)[0].'.webp';
                 }
 
                 return $item;
@@ -196,6 +198,7 @@ class ConsignmentStockAdjustmentController extends Controller
     public function viewStockAdjustmentForm()
     {
         $item = Bin::query()->join('tabItem', 'tabItem.name', 'tabBin.item_code')->select('tabItem.*')->orderByDesc('tabBin.creation')->first();
+
         return view('consignment.supervisor.adjust_stocks', compact('item'));
     }
 
@@ -203,7 +206,7 @@ class ConsignmentStockAdjustmentController extends Controller
     {
         $stateBeforeUpdate = [];
         try {
-            if (!$request->warehouse) {
+            if (! $request->warehouse) {
                 throw new Exception('Please select a warehouse');
             }
 
@@ -212,7 +215,7 @@ class ConsignmentStockAdjustmentController extends Controller
             $itemCodes = $request->item_codes;
             $input = $request->item;
 
-            if (!$itemCodes || !$input) {
+            if (! $itemCodes || ! $input) {
                 throw new Exception('Please select an Item.');
             }
 
@@ -225,7 +228,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 ->select('item_code', 'description', 'stock_uom')
                 ->get();
 
-            if (!$itemDetails->isNotEmpty()) {
+            if (! $itemDetails->isNotEmpty()) {
                 throw new Exception('No items found.');
             }
 
@@ -234,7 +237,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 $itemCode = $item->item_code;
                 $bin = collect($item->bin)->first();
 
-                if (!$bin) {
+                if (! $bin) {
                     continue;
                 }
 
@@ -255,7 +258,7 @@ class ConsignmentStockAdjustmentController extends Controller
                     $update['consigned_qty'] = $newStock;
                     $activityLogs[$branch][$itemCode]['quantity'] = [
                         'previous' => $bin->consigned_qty,
-                        'new' => $newStock
+                        'new' => $newStock,
                     ];
                 }
 
@@ -263,19 +266,19 @@ class ConsignmentStockAdjustmentController extends Controller
                     $update['consignment_price'] = $newPrice;
                     $activityLogs[$branch][$itemCode]['price'] = [
                         'previous' => $bin->consignment_price,
-                        'new' => $newPrice
+                        'new' => $newPrice,
                     ];
                 }
 
                 $itemRemarks = $input[$itemCode]['remarks'] ?? null;
 
-                if (!$update) {
+                if (! $update) {
                     continue;
                 }
 
                 $binResponse = $this->erpPut('Bin', $binId, $update);
 
-                if (!isset($binResponse['data'])) {
+                if (! isset($binResponse['data'])) {
                     throw new Exception($binResponse['exception']);
                 }
 
@@ -287,7 +290,7 @@ class ConsignmentStockAdjustmentController extends Controller
                     'new_qty' => $newStock,
                     'previous_price' => $bin->consignment_price,
                     'new_price' => $newPrice,
-                    'remarks' => $itemRemarks
+                    'remarks' => $itemRemarks,
                 ];
             }
 
@@ -297,12 +300,12 @@ class ConsignmentStockAdjustmentController extends Controller
                 'transaction_date' => $now->toDateString(),
                 'transaction_time' => $now->toTimeString(),
                 'remarks' => $request->notes,
-                'items' => $consignmentItems
+                'items' => $consignmentItems,
             ];
 
             $consignmentResponse = $this->erpPost('Consignment Stock Adjustment', $consignmentData);
 
-            if (!isset($consignmentResponse['data'])) {
+            if (! isset($consignmentResponse['data'])) {
                 throw new Exception($consignmentResponse['exception']);
             }
 
@@ -316,7 +319,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => 'Stock Adjustment for ' . $request->warehouse . ' has been created by ' . Auth::user()->full_name . ' at ' . $now->toDateTimeString(),
+                'subject' => 'Stock Adjustment for '.$request->warehouse.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
                 'reference_doctype' => 'Consignment Stock Adjustment',
@@ -324,7 +327,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
-                'data' => json_encode($activityLogs, true)
+                'data' => json_encode($activityLogs, true),
             ]);
 
             // Send Email Notification to assigned Promodisers
@@ -346,7 +349,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 'created_by' => Auth::user()->wh_user,
                 'created_at' => now()->format('M d, Y h:i A'),
                 'logs' => $activityLogs,
-                'notes' => $request->notes
+                'notes' => $request->notes,
             ];
 
             if ($promodisers->isNotEmpty()) {
@@ -363,6 +366,7 @@ class ConsignmentStockAdjustmentController extends Controller
             }
 
             session()->flash('success', 'Warehouse Stocks Adjusted.');
+
             return redirect('/beginning_inv_list');
         } catch (\Throwable $e) {
             Log::error('ConsignmentStockAdjustmentController adjustStocks failed', [
@@ -370,6 +374,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             $this->revertChanges($stateBeforeUpdate);
+
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
@@ -384,7 +389,7 @@ class ConsignmentStockAdjustmentController extends Controller
             $now = now();
 
             $beginningInventory = BeginningInventory::find($id);
-            if (!$beginningInventory) {
+            if (! $beginningInventory) {
                 return redirect()->back()->with('error', 'Record not found or has been deleted.');
             }
 
@@ -430,7 +435,7 @@ class ConsignmentStockAdjustmentController extends Controller
                     $binArray = $binStockArray = $binPriceArray = [];
                     $updateArray = [
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user
+                        'modified_by' => Auth::user()->wh_user,
                     ];
 
                     if ($previousStock != $openingQty) {
@@ -450,7 +455,7 @@ class ConsignmentStockAdjustmentController extends Controller
                         $binStockArray = array_merge($binStockArray, ['consignment_price' => $price]);
                         $cbiPriceArray = [
                             'price' => $price,
-                            'amount' => $price * $openingQty
+                            'amount' => $price * $openingQty,
                         ];
 
                         $activityLogsData[$itemCode]['previous_price'] = $previousPrice;
@@ -474,14 +479,14 @@ class ConsignmentStockAdjustmentController extends Controller
                 'docstatus' => 0,
                 'idx' => 0,
                 'content' => 'Consignment Activity Log',
-                'subject' => 'Stock Adjustment for ' . $beginningInventory->branch_warehouse . ' has been created by ' . Auth::user()->full_name . ' at ' . $now->toDateTimeString(),
+                'subject' => 'Stock Adjustment for '.$beginningInventory->branch_warehouse.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'communication_date' => $now->toDateTimeString(),
                 'reference_doctype' => 'Stock Adjustment',
                 'reference_name' => $id,
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
-                'data' => json_encode($activityLogsData, true)
+                'data' => json_encode($activityLogsData, true),
             ]);
 
             $grandTotal = BeginningInventoryItem::where('parent', $id)->sum('amount');
@@ -490,10 +495,11 @@ class ConsignmentStockAdjustmentController extends Controller
                 'modified' => $now,
                 'modified_by' => Auth::user()->wh_user,
                 'grand_total' => $grandTotal,
-                'remarks' => $request->remarks
+                'remarks' => $request->remarks,
             ]);
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Warehouse Stocks Adjusted.');
         } catch (\Throwable $e) {
             Log::error('ConsignmentStockAdjustmentController submitStockAdjustment failed', [

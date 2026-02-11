@@ -84,7 +84,7 @@
 													<i class="fas fa-arrow-right ml-2 mr-2"></i> 
 													<span>@{{ x.t_warehouse }}</span>
 												</div>
-												<span class="d-block" style="word-break: break-word !important">@{{ x.description }}</span>
+												<span class="d-block" style="word-break: break-word !important" ng-bind-html="trustAsHtml(x.description)"></span>
 												<span class="d-none d-lg-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
 												<small class="d-none d-lg-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 												<div class="d-block d-lg-none"><br/>
@@ -324,7 +324,8 @@
 	});
 	
 	var app = angular.module('myApp', []);
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
+	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
+		$scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
 		$http.get("/get_parent_warehouses").then(function (response) {
 			$scope.wh = response.data.wh;
 		});

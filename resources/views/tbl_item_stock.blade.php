@@ -61,7 +61,7 @@
                     <div class="col-12 col-sm-9 col-xl-11">
                         <span class="font-weight-bold"><a href="/get_item_details/{{ $row->item_code }}" style="color: inherit !important" target="_blank">{{ $row->item_code }}</a></span>
                         <span class="d-inline d-sm-none"><br>{{ $row->item_classification.' - '.$row->item_group }}</span>
-                        <span class="d-block">{!! strip_tags($row->description) !!}</span>
+                        <span class="d-block">{!! $row->description !!}</span>
                     </div>
                 </div>
             </td>

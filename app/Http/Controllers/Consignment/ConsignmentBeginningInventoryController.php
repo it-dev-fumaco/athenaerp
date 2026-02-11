@@ -14,18 +14,18 @@ use App\Models\ItemImages;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Exception;
 
 class ConsignmentBeginningInventoryController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
 
     // /validate_beginning_inventory
     public function checkBeginningInventory(Request $request)
@@ -36,8 +36,8 @@ class ConsignmentBeginningInventoryController extends Controller
             ->where('status', 'Approved')
             ->exists();
 
-        if (!$existingInventory) {
-            return ApiResponse::failure('No beginning inventory entry found on <br>' . Carbon::parse($request->date)->format('F d, Y'));
+        if (! $existingInventory) {
+            return ApiResponse::failure('No beginning inventory entry found on <br>'.Carbon::parse($request->date)->format('F d, Y'));
         }
 
         return ApiResponse::success('Beginning inventory found.');
@@ -82,8 +82,8 @@ class ConsignmentBeginningInventoryController extends Controller
             $beginningInventory = BeginningInventory::with('items')
                 ->when($request->search, function ($query) use ($request) {
                     return $query
-                        ->where('name', 'LIKE', '%' . $request->search . '%')
-                        ->orWhere('owner', 'LIKE', '%' . $request->search . '%');
+                        ->where('name', 'LIKE', '%'.$request->search.'%')
+                        ->orWhere('owner', 'LIKE', '%'.$request->search.'%');
                 })
                 ->when($request->date, function ($query) use ($fromDate, $toDate) {
                     return $query->whereDate('transaction_date', '>=', $fromDate)->whereDate('transaction_date', '<=', $toDate);
@@ -134,9 +134,9 @@ class ConsignmentBeginningInventoryController extends Controller
                     $consignmentDetails = $bin[$itemCode][0];
                     $price = $item->status == 'For Approval' ? $item->price : $consignmentDetails->consignment_price;
 
-                    $item->image = isset($consignmentDetails->defaultImage->image_path) ? '/img/' . $consignmentDetails->defaultImage->image_path : '/icon/no_img.png';
-                    if (Storage::disk('public')->exists(explode('.', $item->image)[0] . '.webp')) {
-                        $item->image = explode('.', $item->image)[0] . '.webp';
+                    $item->image = isset($consignmentDetails->defaultImage->image_path) ? '/img/'.$consignmentDetails->defaultImage->image_path : '/icon/no_img.png';
+                    if (Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')) {
+                        $item->image = explode('.', $item->image)[0].'.webp';
                     }
                 }
 
@@ -177,7 +177,7 @@ class ConsignmentBeginningInventoryController extends Controller
                 return redirect()->back()->with('error', 'Please Enter an Item');
             }
 
-            if (!$branch) {
+            if (! $branch) {
                 return redirect()->back()->with('error', 'Inventory record not found.');
             }
 
@@ -185,14 +185,14 @@ class ConsignmentBeginningInventoryController extends Controller
 
             $updateValues = [
                 'modified_by' => Auth::user()->wh_user,
-                'modified' => $now
+                'modified' => $now,
             ];
 
             if ($request->has('status') && in_array($request->status, ['Approved', 'Cancelled'])) {
                 $updateValues['status'] = $request->status;
             }
 
-            if ($request->status == 'Approved' || !$request->has('status')) {
+            if ($request->status == 'Approved' || ! $request->has('status')) {
                 BeginningInventoryItem::where('parent', $id)->whereNotIn('item_code', $itemCodes)->delete();
 
                 $items = BeginningInventoryItem::where('parent', $id)->get();
@@ -208,11 +208,12 @@ class ConsignmentBeginningInventoryController extends Controller
                 foreach ($itemCodes as $i => $itemCode) {
                     if (isset($items[$itemCode]) && $items[$itemCode][0]->status != 'For Approval') {
                         $skippedItems = collect($skippedItems)->merge($itemCode)->toArray();
+
                         continue;
                     }
 
                     $price = isset($prices[$itemCode]) ? preg_replace('/[^0-9 .]/', '', $prices[$itemCode][0]) * 1 : 0;
-                    if (!$price) {
+                    if (! $price) {
                         return redirect()->back()->with('error', 'Item price cannot be empty');
                     }
 
@@ -222,14 +223,14 @@ class ConsignmentBeginningInventoryController extends Controller
                                 'consigned_qty' => isset($qty[$itemCode]) ? $qty[$itemCode][0] : 0,
                                 'consignment_price' => $price,
                                 'modified' => $now,
-                                'modified_by' => Auth::user()->wh_user
+                                'modified_by' => Auth::user()->wh_user,
                             ]);
                         } else {
                             $latestBin = Bin::where('name', 'like', '%bin/%')->max('name');
                             $latestBinExploded = explode('/', $latestBin);
                             $binId = (($latestBin) ? $latestBinExploded[1] : 0) + 1;
                             $binId = str_pad($binId, 7, '0', STR_PAD_LEFT);
-                            $binId = 'BIN/' . $binId;
+                            $binId = 'BIN/'.$binId;
 
                             Bin::insert([
                                 'name' => $binId,
@@ -244,7 +245,7 @@ class ConsignmentBeginningInventoryController extends Controller
                                 'stock_uom' => isset($itemDetails[$itemCode]) ? $itemDetails[$itemCode][0]->stock_uom : null,
                                 'valuation_rate' => $price,
                                 'consigned_qty' => isset($qty[$itemCode]) ? $qty[$itemCode][0] : 0,
-                                'consignment_price' => $price
+                                'consignment_price' => $price,
                             ]);
                         }
                     }
@@ -263,7 +264,7 @@ class ConsignmentBeginningInventoryController extends Controller
                     } else {
                         $itemQty = isset($qty[$itemCode]) ? preg_replace('/[^0-9 .]/', '', $qty[$itemCode][0]) : 0;
 
-                        if (!$itemQty) {
+                        if (! $itemQty) {
                             return redirect()->back()->with('error', 'Opening qty cannot be empty');
                         }
 
@@ -284,7 +285,7 @@ class ConsignmentBeginningInventoryController extends Controller
                             'modified' => $now,
                             'modified_by' => Auth::user()->wh_user,
                             'parentfield' => 'items',
-                            'parenttype' => 'Consignment Beginning Inventory'
+                            'parenttype' => 'Consignment Beginning Inventory',
                         ];
 
                         if ($request->has('status') && $request->status == 'Approved') {
@@ -319,10 +320,10 @@ class ConsignmentBeginningInventoryController extends Controller
 
             DB::commit();
             if ($request->ajax()) {
-                return ApiResponse::success('Beginning Inventory for ' . $branch . ' was ' . ($request->has('status') ? $request->status : 'Updated') . '.');
+                return ApiResponse::success('Beginning Inventory for '.$branch.' was '.($request->has('status') ? $request->status : 'Updated').'.');
             }
 
-            return redirect()->back()->with('success', 'Beginning Inventory for ' . $branch . ' was ' . ($request->has('status') ? $request->status : 'Updated') . '.');
+            return redirect()->back()->with('success', 'Beginning Inventory for '.$branch.' was '.($request->has('status') ? $request->status : 'Updated').'.');
         } catch (Exception $e) {
             Log::error('ConsignmentBeginningInventoryController approveBeginningInventory failed', [
                 'message' => $e->getMessage(),
@@ -344,7 +345,7 @@ class ConsignmentBeginningInventoryController extends Controller
         try {
             $inventory = BeginningInventory::find($id);
 
-            if (!$inventory) {
+            if (! $inventory) {
                 return redirect()->back()->with('error', 'Beginning inventory record does not exist.');
             }
 
@@ -360,7 +361,7 @@ class ConsignmentBeginningInventoryController extends Controller
                     Bin::where('warehouse', $inventory->branch_warehouse)->where('item_code', $item->item_code)->update([
                         'modified' => now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => 0
+                        'consigned_qty' => 0,
                     ]);
 
                     $activityLogsData[$item->item_code]['opening_stock'] = (float) $item->opening_stock;
@@ -370,7 +371,7 @@ class ConsignmentBeginningInventoryController extends Controller
             $updateValues = [
                 'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'status' => 'Cancelled'
+                'status' => 'Cancelled',
             ];
 
             BeginningInventory::where('name', $id)->update($updateValues);
@@ -384,7 +385,7 @@ class ConsignmentBeginningInventoryController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => 'Approved Beginning Inventory Record for ' . $inventory->branch_warehouse . ' has been cancelled by ' . $inventory->owner . ' at ' . now()->toDateTimeString(),
+                'subject' => 'Approved Beginning Inventory Record for '.$inventory->branch_warehouse.' has been cancelled by '.$inventory->owner.' at '.now()->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => now()->toDateTimeString(),
                 'reference_doctype' => 'Beginning Inventory',
@@ -392,18 +393,19 @@ class ConsignmentBeginningInventoryController extends Controller
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
-                'data' => json_encode($activityLogsData ?? [], true)
+                'data' => json_encode($activityLogsData ?? [], true),
             ]);
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Beginning Inventory for ' . $inventory->branch_warehouse . ' was cancelled.');
+            return redirect()->back()->with('success', 'Beginning Inventory for '.$inventory->branch_warehouse.' was cancelled.');
         } catch (Exception $e) {
             Log::error('ConsignmentBeginningInventoryController cancelApprovedBeginningInventory failed', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
             DB::rollback();
+
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
@@ -424,7 +426,7 @@ class ConsignmentBeginningInventoryController extends Controller
         if ($inv) {
             $invRecord = BeginningInventory::where('name', $inv)->where('status', 'For Approval')->first();
 
-            if (!$invRecord) {
+            if (! $invRecord) {
                 return redirect()->back()->with('error', 'Inventory Record Not Found.');
             }
         }
@@ -446,10 +448,10 @@ class ConsignmentBeginningInventoryController extends Controller
             ->when($request->q, function ($query) use ($request, $searchStr) {
                 return $query->where(function ($subQuery) use ($searchStr, $request) {
                     foreach ($searchStr as $str) {
-                        $subQuery->where('item.description', 'LIKE', '%' . $str . '%');
+                        $subQuery->where('item.description', 'LIKE', '%'.$str.'%');
                     }
 
-                    $subQuery->orWhere('item.item_code', 'LIKE', '%' . $request->q . '%');
+                    $subQuery->orWhere('item.item_code', 'LIKE', '%'.$request->q.'%');
                 });
             })
             ->select('item.item_code', 'item.description', 'item.item_image_path', 'item.item_classification', 'item.stock_uom')
@@ -472,17 +474,17 @@ class ConsignmentBeginningInventoryController extends Controller
 
             $itemsArr[] = [
                 'id' => $item->item_code,
-                'text' => $item->item_code . ' - ' . strip_tags($item->description),
+                'text' => $item->item_code.' - '.strip_tags($item->description),
                 'description' => strip_tags($item->description),
                 'classification' => $item->item_classification,
                 'image' => $image,
                 'alt' => Str::slug(strip_tags($item->description), '-'),
-                'uom' => $item->stock_uom
+                'uom' => $item->stock_uom,
             ];
         }
 
         return response()->json([
-            'items' => $itemsArr
+            'items' => $itemsArr,
         ]);
     }
 
@@ -517,7 +519,7 @@ class ConsignmentBeginningInventoryController extends Controller
                         'stock_uom' => $inv->stock_uom,
                         'opening_stock' => $inv->opening_stock * 1,
                         'stocks_displayed' => $inv->stocks_displayed * 1,
-                        'price' => $inv->price * 1
+                        'price' => $inv->price * 1,
                     ];
                 }
             } else {
@@ -539,7 +541,7 @@ class ConsignmentBeginningInventoryController extends Controller
                         'stock_uom' => $item->stock_uom,
                         'opening_stock' => 0,
                         'stocks_displayed' => 0,
-                        'price' => 0
+                        'price' => 0,
                     ];
                 }
             }
@@ -569,7 +571,7 @@ class ConsignmentBeginningInventoryController extends Controller
     public function saveBeginningInventory(Request $request)
     {
         try {
-            if (!$request->branch) {
+            if (! $request->branch) {
                 return redirect()->back()->with('error', 'Please select a store');
             }
 
@@ -583,7 +585,7 @@ class ConsignmentBeginningInventoryController extends Controller
             $itemCodes = collect(array_filter($itemCodes))->unique();
             $branch = $request->branch;
 
-            if (!$itemCodes) {
+            if (! $itemCodes) {
                 return redirect()->back()->with('error', 'Please select an item to save');
             }
 
@@ -592,9 +594,10 @@ class ConsignmentBeginningInventoryController extends Controller
             $hasOpeningStock = array_filter($openingStock);
             $hasPrice = array_filter($price);
 
-            if ($maxOpeningStock <= 0 || $maxPrice <= 0 || !$hasOpeningStock || !$hasPrice) {
-                $nullValue = ($maxOpeningStock <= 0 || !$hasOpeningStock) ? 'Opening Stock' : 'Price';
-                return redirect()->back()->with('error', 'Please input values to ' . $nullValue);
+            if ($maxOpeningStock <= 0 || $maxPrice <= 0 || ! $hasOpeningStock || ! $hasPrice) {
+                $nullValue = ($maxOpeningStock <= 0 || ! $hasOpeningStock) ? 'Opening Stock' : 'Price';
+
+                return redirect()->back()->with('error', 'Please input values to '.$nullValue);
             }
 
             $now = now();
@@ -622,16 +625,16 @@ class ConsignmentBeginningInventoryController extends Controller
                 'branch_warehouse' => $branch,
                 'transaction_date' => $now->toDateTimeString(),
                 'remarks' => $request->remarks,
-                'items' => $items
+                'items' => $items,
             ];
 
             $response = $this->erpPost('Consignment Beginning Inventory', $body);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception('An error occured. Please try again.');
             }
 
-            $subject = 'For Approval Beginning Inventory Entry for ' . $branch . ' has been created by ' . Auth::user()->full_name . ' at ' . $now;
+            $subject = 'For Approval Beginning Inventory Entry for '.$branch.' has been created by '.Auth::user()->full_name.' at '.$now;
             $logs = [
                 'docstatus' => 0,
                 'subject' => $subject,
@@ -658,7 +661,7 @@ class ConsignmentBeginningInventoryController extends Controller
         try {
             $response = $this->erpDelete('Consignment Beginning Inventory', $beginningInventoryId);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception('An error occured.');
             }
 
@@ -682,7 +685,7 @@ class ConsignmentBeginningInventoryController extends Controller
             $itemCodes = collect(array_filter($itemCodes))->unique();
             $branch = $request->branch;
 
-            if (!$itemCodes) {
+            if (! $itemCodes) {
                 return redirect()->back()->with('error', 'Please select an item to save');
             }
 
@@ -691,9 +694,10 @@ class ConsignmentBeginningInventoryController extends Controller
             $hasOpeningStock = array_filter($openingStock);
             $hasPrice = array_filter($price);
 
-            if ($maxOpeningStock <= 0 || $maxPrice <= 0 || !$hasOpeningStock || !$hasPrice) {
-                $nullValue = ($maxOpeningStock <= 0 || !$hasOpeningStock) ? 'Opening Stock' : 'Price';
-                return redirect()->back()->with('error', 'Please input values to ' . $nullValue);
+            if ($maxOpeningStock <= 0 || $maxPrice <= 0 || ! $hasOpeningStock || ! $hasPrice) {
+                $nullValue = ($maxOpeningStock <= 0 || ! $hasOpeningStock) ? 'Opening Stock' : 'Price';
+
+                return redirect()->back()->with('error', 'Please input values to '.$nullValue);
             }
 
             $items = Item::whereIn('name', $itemCodes)->select('name', 'item_code', 'description', 'stock_uom')->get();
@@ -716,12 +720,12 @@ class ConsignmentBeginningInventoryController extends Controller
             $body = [
                 'branch_warehouse' => $branch,
                 'remarks' => $request->remarks,
-                'items' => $items
+                'items' => $items,
             ];
 
             $response = $this->erpPut('Consignment Beginning Inventory', $id, $body);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception('An error occured. Please try again.');
             }
 
@@ -745,10 +749,10 @@ class ConsignmentBeginningInventoryController extends Controller
             ->when($request->q, function ($query) use ($request, $searchStr) {
                 return $query->where(function ($subQuery) use ($searchStr, $request) {
                     foreach ($searchStr as $str) {
-                        $subQuery->where('item.description', 'LIKE', '%' . $str . '%');
+                        $subQuery->where('item.description', 'LIKE', '%'.$str.'%');
                     }
 
-                    $subQuery->orWhere('item.item_code', 'LIKE', '%' . $request->q . '%');
+                    $subQuery->orWhere('item.item_code', 'LIKE', '%'.$request->q.'%');
                 });
             })
             ->when(Auth::user()->user_group == 'Promodiser', function ($query) use ($branch) {
@@ -784,7 +788,7 @@ class ConsignmentBeginningInventoryController extends Controller
 
         $itemsArr = [];
         foreach ($itemCodes as $itemCode) {
-            if (!isset($items[$itemCode])) {
+            if (! isset($items[$itemCode])) {
                 continue;
             }
 
@@ -796,14 +800,14 @@ class ConsignmentBeginningInventoryController extends Controller
 
             $itemsArr[] = [
                 'id' => $itemCode,
-                'text' => $itemCode . ' - ' . strip_tags($item->description),
+                'text' => $itemCode.' - '.strip_tags($item->description),
                 'description' => strip_tags($item->description),
                 'max' => $max,
                 'uom' => $item->stock_uom,
-                'price' => '₱ ' . number_format($item->consignment_price, 2),
+                'price' => '₱ '.number_format($item->consignment_price, 2),
                 'transaction_date' => isset($inventory[$itemCode]) ? $inventory[$itemCode][0]->transaction_date : null,
                 'img' => $img,
-                'alt' => Str::slug(explode('.', $img)[0], '-')
+                'alt' => Str::slug(explode('.', $img)[0], '-'),
             ];
         }
 

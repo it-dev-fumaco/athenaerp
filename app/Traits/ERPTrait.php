@@ -35,7 +35,7 @@ trait ERPTrait
         return [
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-            'Authorization' => 'token ' . $apiKey . ':' . $apiSecret,
+            'Authorization' => 'token '.$apiKey.':'.$apiSecret,
             'Accept-Language' => 'en',
         ];
     }
@@ -48,7 +48,7 @@ trait ERPTrait
      * @param  string|null  $name  Document name for read/update/delete
      * @param  array  $payload  For GET: query params (fields, filters, etc). For POST/PUT: request body
      * @param  bool  $systemGenerated  Use system API key vs logged-in user's key
-     * @return array  Frappe response with 'data' key; 'exception' or 'exc' on error
+     * @return array Frappe response with 'data' key; 'exception' or 'exc' on error
      */
     private function erpOperation($method, $doctype, $name = null, $payload = [], $systemGenerated = false)
     {
@@ -56,7 +56,7 @@ trait ERPTrait
             $erpApiBaseUrl = config('services.erp.api_base_url');
             $url = rtrim("$erpApiBaseUrl/api/resource/$doctype", '/');
             if ($name) {
-                $url .= '/' . $name;
+                $url .= '/'.$name;
             }
 
             $http = Http::withHeaders($this->getErpHeaders($systemGenerated));
@@ -102,7 +102,7 @@ trait ERPTrait
      * @param  string  $doctype  Frappe DocType
      * @param  array  $params  Query params: fields, filters, or_filters, order_by, limit_start, limit_page_length
      * @param  bool  $systemGenerated  Use system API key
-     * @return array  Response with 'data' array of records
+     * @return array Response with 'data' array of records
      */
     public function erpList(string $doctype, array $params = [], bool $systemGenerated = false): array
     {
@@ -167,7 +167,7 @@ trait ERPTrait
      * @param  string|null  $name  Document name for put; null for post
      * @param  array  $data  Request body
      * @param  bool  $systemGenerated  Use system API key
-     * @return array  Frappe response
+     * @return array Frappe response
      */
     public function erpCall(string $method, string $doctype, ?string $name, array $data, bool $systemGenerated = false): array
     {
@@ -196,21 +196,23 @@ trait ERPTrait
         }
     }
 
-    public function revertChanges($stateBeforeUpdate){
+    public function revertChanges($stateBeforeUpdate)
+    {
         DB::connection('mysql')->beginTransaction();
         try {
             foreach ($stateBeforeUpdate as $doctype => $values) {
-                foreach($values as $id => $value){
-                    if(!is_array($value) && !is_object($value)){
+                foreach ($values as $id => $value) {
+                    if (! is_array($value) && ! is_object($value)) {
                         DB::connection('mysql')->table("tab$doctype")->where('name', $id)->delete();
-                    }else{
+                    } else {
                         $value = collect($value)->except(['name', 'owner', 'creation', 'docstatus', 'doctype', 'parent', 'parentfield', 'parenttype'])->toArray();
                         DB::connection('mysql')->table("tab$doctype")->where('name', $id)->update($value);
                     }
                 }
             }
-    
+
             DB::connection('mysql')->commit();
+
             return 1;
         } catch (\Throwable $th) {
             Log::error('ERP revertChanges failed', [
@@ -218,11 +220,13 @@ trait ERPTrait
                 'trace' => $th->getTraceAsString(),
             ]);
             DB::connection('mysql')->rollBack();
+
             return 0;
         }
     }
 
-    public function generateRandomString($length = 15) {
+    public function generateRandomString($length = 15)
+    {
         return \Illuminate\Support\Str::random($length);
     }
 
@@ -231,7 +235,7 @@ trait ERPTrait
         try {
             $loggedInUser = str_replace('fumaco.local', 'fumaco.com', Auth::user()->wh_user);
             $existingKey = $this->erpGet('User', $loggedInUser, [], true);
-            if (!Arr::has($existingKey, 'data')) { // Promodisers
+            if (! Arr::has($existingKey, 'data')) { // Promodisers
                 $loggedInUser = Auth::user()->wh_user;
                 $existingKey = $this->erpGet('User', $loggedInUser, [], true);
             }
@@ -239,19 +243,19 @@ trait ERPTrait
 
             $tokens = [
                 'api_key' => $existingKey ?? $this->generateRandomString(),
-                'api_secret' => $this->generateRandomString()
+                'api_secret' => $this->generateRandomString(),
             ];
 
             $user = $this->erpPut('User', $loggedInUser, $tokens, true);
 
-            if (!Arr::has($user, 'data')) {
+            if (! Arr::has($user, 'data')) {
                 $error = data_get($user, 'exception', 'An error occured while generating API tokens');
                 throw new \Exception($error);
             }
 
             $warehouseUser = $this->erpPut('Warehouse Users', Auth::user()->name, $tokens, true);
 
-            if (!Arr::has($warehouseUser, 'data')) {
+            if (! Arr::has($warehouseUser, 'data')) {
                 $error = data_get($warehouseUser, 'exception', 'An error occured while generating API tokens');
                 throw new \Exception($error);
             }
@@ -260,7 +264,7 @@ trait ERPTrait
             $user->api_key = $tokens['api_key'];
             $user->api_secret = $tokens['api_secret'];
             $user->save();
-            
+
             return ['success' => 1, 'message' => 'API Credentials Created!'];
         } catch (\Exception $th) {
             Log::error('ERP generateApiCredentials failed', [
@@ -268,6 +272,7 @@ trait ERPTrait
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             return ['success' => 0, 'message' => $th->getMessage()];
         }
     }

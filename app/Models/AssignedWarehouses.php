@@ -8,10 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class AssignedWarehouses extends Model
 {
     use HasFactory;
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
+
     protected $table = 'tabAssigned Consignment Warehouse';
 
     public function assignedWarehouse()
@@ -19,7 +24,8 @@ class AssignedWarehouses extends Model
         return $this->belongsTo(Warehouse::class, 'warehouse', 'name');
     }
 
-    public function user(){
+    public function user()
+    {
         return $this->belongsTo(User::class, 'parent', 'name');
     }
 }

@@ -8,249 +8,41 @@ use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteItem;
 use App\Models\Item;
 use App\Models\ItemImages;
-use App\Models\ItemSupplier;
-use App\Models\PackingSlip;
-use App\Models\StockEntry;
 use App\Models\StockLedgerEntry;
-use App\Models\User;
+use App\Pipelines\ViewDeliveriesPipeline;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
+use ErrorException;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Arr;
-use ErrorException;
-use Exception;
 
 class DeliveryController extends Controller
 {
     use ERPTrait, GeneralTrait;
 
+    public function __construct(
+        protected ViewDeliveriesPipeline $viewDeliveriesPipeline
+    ) {}
+
     public function viewDeliveries(Request $request)
     {
-        if (!$request->arr) {
+        if (! $request->arr) {
             return view('picking_slip');
         }
 
-        $allowedWarehouses = $this->getAllowedWarehouseIds();
-        $search = $request->search;
+        $passable = (object) [
+            'allowedWarehouses' => $this->getAllowedWarehouseIds(),
+            'search' => $request->search ?? '',
+            'page' => (int) $request->input('page', 1),
+            'getWarehouseParentsBulk' => fn (array $warehouseNames) => $this->getWarehouseParentsBulk($warehouseNames),
+        ];
 
-        // Picking Slip - SINGLE ITEMS
-        $pickingSlipQuery = PackingSlip::query()
-            ->from('tabPacking Slip as ps')
-            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
-            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
-            ->whereRaw('dri.item_code = psi.item_code')
-            ->where([
-                'dr.docstatus' => 0,
-                'ps.docstatus' => 0
-            ])
-            ->where(function ($query) use ($search) {
-                $query
-                    ->where('psi.item_code', 'like', "%{$search}%")
-                    ->orWhere('psi.description', 'like', "%{$search}%")
-                    ->orWhere('dr.customer', 'like', "%{$search}%")
-                    ->orWhere('ps.sales_order', 'like', "%{$search}%")
-                    ->orWhere('ps.name', 'like', "%{$search}%")
-                    ->orWhere('dr.name', 'like', "%{$search}%")
-                    ->orWhere('psi.name', 'like', "%{$search}%");
-            })
-            ->whereIn('dri.warehouse', $allowedWarehouses)
-            ->select([
-                'dr.delivery_date',
-                'ps.sales_order',
-                DB::raw('NULL as sales_order_no'),
-                'psi.name AS id',
-                'psi.status',
-                'ps.name',
-                'ps.delivery_note',
-                'psi.item_code',
-                'psi.description',
-                DB::raw('SUM(dri.qty) as qty'),
-                'dri.uom',
-                'dri.warehouse',
-                'psi.owner',
-                'dr.customer',
-                'ps.creation',
-                DB::raw('NULL as parent_item'),
-                DB::raw('NULL as piName'),
-                DB::raw('NULL as piQty'),
-                DB::raw('NULL as piWarehouse'),
-                DB::raw('NULL as piUom'),
-                DB::raw('"picking_slip" as type')
-            ])
-            ->groupBy([
-                'dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name',
-                'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom',
-                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'
-            ])
-            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC");
-
-        // Stock Entry
-        $stockEntryQuery = StockEntry::query()
-            ->from('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', '=', 'sted.parent')
-            ->where('ste.docstatus', 0)
-            ->where('purpose', 'Material Transfer')
-            ->whereIn('s_warehouse', $allowedWarehouses)
-            ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
-            ->where(function ($query) use ($search) {
-                $query
-                    ->where('sted.item_code', 'like', "%{$search}%")
-                    ->orWhere('sted.description', 'like', "%{$search}%")
-                    ->orWhere('ste.customer_1', 'like', "%{$search}%")
-                    ->orWhere('ste.sales_order_no', 'like', "%{$search}%")
-                    ->orWhere('ste.name', 'like', "%{$search}%")
-                    ->orWhere('ste.so_customer_name', 'like', "%{$search}%")
-                    ->orWhere('sted.name', 'like', "%{$search}%");
-            })
-            ->select([
-                'ste.delivery_date',
-                DB::raw('NULL as sales_order'),
-                'ste.sales_order_no',
-                'sted.name AS id',
-                'sted.status',
-                'ste.name',
-                DB::raw('NULL as delivery_note'),
-                'sted.item_code',
-                'sted.description',
-                'sted.qty',
-                'sted.uom',
-                'sted.s_warehouse as warehouse',
-                'sted.owner',
-                'ste.customer_1 as customer',
-                'ste.creation',
-                DB::raw('NULL as parent_item'),
-                DB::raw('NULL as piName'),
-                DB::raw('NULL as piQty'),
-                DB::raw('NULL as piWarehouse'),
-                DB::raw('NULL as piUom'),
-                DB::raw('"stock_entry" as type')
-            ])
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
-
-        // Product Bundles
-        $productBundleQuery = PackingSlip::query()
-            ->from('tabPacking Slip as ps')
-            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
-            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
-            ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
-            ->where([
-                'dr.docstatus' => 0,
-                'ps.docstatus' => 0
-            ])
-            ->whereIn('dri.warehouse', $allowedWarehouses)
-            ->where(function ($query) use ($search) {
-                $query
-                    ->where('pi.item_code', 'like', "%{$search}%")
-                    ->orWhere('pi.description', 'like', "%{$search}%")
-                    ->orWhere('dr.customer', 'like', "%{$search}%")
-                    ->orWhere('ps.sales_order', 'like', "%{$search}%")
-                    ->orWhere('ps.name', 'like', "%{$search}%")
-                    ->orWhere('dr.name', 'like', "%{$search}%")
-                    ->orWhere('psi.name', 'like', "%{$search}%");
-            })
-            ->select([
-                'dr.delivery_date',
-                'ps.sales_order',
-                DB::raw('NULL as sales_order_no'),
-                'psi.name AS id',
-                'psi.status',
-                'ps.name',
-                'ps.delivery_note',
-                'pi.item_code',
-                'pi.description',
-                'pi.qty as qty',
-                'pi.uom',
-                'pi.warehouse',
-                'psi.owner',
-                'dr.customer',
-                'ps.creation',
-                'pi.parent_item',
-                'pi.name as piName',
-                'pi.qty as piQty',
-                'pi.warehouse as piWarehouse',
-                'pi.uom as piUom',
-                DB::raw('"packed_item" as type')
-            ])
-            ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC");
-
-        // Union everything together
-        $unionQuery = $pickingSlipQuery
-            ->unionAll($stockEntryQuery)
-            ->unionAll($productBundleQuery);
-
-        // Apply pagination
-        $paginatedData = DB::table(DB::raw("({$unionQuery->toSql()}) as sub"))
-            ->orderByRaw("FIELD(status, 'For Checking', 'Issued') ASC")
-            ->mergeBindings($unionQuery->getQuery())
-            ->paginate(20);
-
-        // Gather all item codes and owners
-        $itemCodes = collect($paginatedData->items())->pluck('item_code')->unique();
-        $owners = collect($paginatedData->items())->pluck('owner')->unique();
-
-        // Fetch supplier part numbers in bulk
-        $supplierPartNos = ItemSupplier::query()
-            ->whereIn('parent', $itemCodes)
-            ->pluck('supplier_part_no', 'parent');
-
-        // Fetch owners' full names in bulk (tabWarehouse Users uses wh_user, not email)
-        $ownerNames = User::query()
-            ->whereIn('wh_user', $owners)
-            ->pluck('full_name', 'wh_user');
-
-        $warehouseNames = collect($paginatedData->items())
-            ->map(fn($d) => $d->warehouse ?? $d->s_warehouse ?? null)
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
-        $parentWarehouses = $this->getWarehouseParentsBulk($warehouseNames);
-
-        $list = [];
-        foreach ($paginatedData->items() as $d) {
-            $partNos = $supplierPartNos->get($d->item_code, '');
-            $owner = $ownerNames->get($d->owner, null);
-            $warehouseKey = $d->warehouse ?? $d->s_warehouse ?? null;
-            $parentWarehouse = $warehouseKey ? Arr::get($parentWarehouses, $warehouseKey, null) : null;
-
-            $list[] = [
-                'owner' => $owner,
-                'warehouse' => $d->warehouse ?? $d->s_warehouse ?? null,
-                'customer' => $d->customer ?? $d->customer_1 ?? null,
-                'sales_order' => $d->sales_order ?? $d->sales_order_no ?? null,
-                'id' => $d->id,
-                'part_nos' => $partNos,
-                'status' => $d->status,
-                'name' => $d->name,
-                'delivery_note' => $d->delivery_note ?? null,
-                'item_code' => $d->item_code,
-                'description' => $d->description,
-                'qty' => $d->qty,
-                'stock_uom' => $d->uom ?? $d->stock_uom ?? null,
-                'parent_warehouse' => $parentWarehouse,
-                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
-                'type' => $d->type,
-                'classification' => $d->transfer_as ?? 'Customer Order',
-                'delivery_date' => Carbon::parse($d->delivery_date)->format('M-d-Y'),
-                'delivery_status' => (Carbon::parse($d->delivery_date) < now()) ? 'late' : null,
-            ];
-        }
-
-        return response()->json([
-            'picking' => $list,
-            'pagination' => [
-                'total' => $paginatedData->total(),
-                'per_page' => $paginatedData->perPage(),
-                'current_page' => $paginatedData->currentPage(),
-                'last_page' => $paginatedData->lastPage()
-            ]
-        ]);
+        return $this->viewDeliveriesPipeline->run($passable);
     }
 
     public function viewPickingSlip()
@@ -300,6 +92,7 @@ class DeliveryController extends Controller
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             return ApiResponse::failureLegacy('An error occured. Please contact the system administrator', 500, ['error' => $th->getMessage()]);
         }
     }
@@ -315,7 +108,7 @@ class DeliveryController extends Controller
             ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner', 'dr.docstatus')
             ->first();
 
-        if (!$q) {
+        if (! $q) {
             throw new ErrorException('Delivery Note Item not found.');
         }
 
@@ -335,16 +128,17 @@ class DeliveryController extends Controller
             'img' => $img,
             'item_code' => $q->item_code,
             'description' => $q->description,
-            'ref_no' => $q->against_sales_order . '<br>' . $q->name,
+            'ref_no' => $q->against_sales_order.'<br>'.$q->name,
             'stock_uom' => $q->stock_uom,
             'qty' => abs($q->qty * 1),
             'owner' => $owner,
             'status' => $q->item_status,
             'reference' => 'Delivery Note',
-            'docstatus' => $q->docstatus
+            'docstatus' => $q->docstatus,
         ];
 
         $isStockEntry = false;
+
         return view('return_modal_content', compact('data', 'isStockEntry'));
     }
 
@@ -358,7 +152,7 @@ class DeliveryController extends Controller
 
             $now = now();
 
-            if (!$deliveryNote) {
+            if (! $deliveryNote) {
                 throw new Exception('Record not found');
             }
 
@@ -372,11 +166,11 @@ class DeliveryController extends Controller
             $itemCode = $deliveryNoteItem->item_code;
             $itemDetails = Item::find($itemCode);
 
-            if (!$itemDetails) {
+            if (! $itemDetails) {
                 throw new Exception("Item <b>$itemCode</b> not found.");
             }
 
-            if (!$itemDetails->is_stock_item) {
+            if (! $itemDetails->is_stock_item) {
                 throw new Exception("Item <b>$itemCode</b> is not a stock item.");
             }
 
@@ -407,18 +201,20 @@ class DeliveryController extends Controller
             }
 
             $response = $this->erpPut('Delivery Note', $deliveryNote->name, collect($deliveryNote)->toArray());
-            if (!Arr::has($response, 'data')) {
+            if (! Arr::has($response, 'data')) {
                 $err = $response['exception'] ?? 'An error occured while updating Delivery Note';
                 throw new Exception($err);
             }
 
             $this->insertTransactionLog('Delivery Note', $request->child_tbl_id);
+
             return ApiResponse::success("Item <b>$itemCode</b> has been returned");
         } catch (\Throwable $th) {
             Log::error('DeliveryController updateDeliveryNote failed', [
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             return ApiResponse::failure('Error creating transaction. Please contact your system administrator.');
         }
     }
@@ -434,12 +230,12 @@ class DeliveryController extends Controller
                 ->select('dr.name as parent_dr', 'dr.*', 'dri.*', 'dri.item_status as per_item_status', 'dr.docstatus as dr_status')
                 ->first();
 
-            if (!$driDetails) {
+            if (! $driDetails) {
                 return ApiResponse::failure('Record not found.');
             }
 
             if (in_array($driDetails->per_item_status, ['Issued', 'Returned'])) {
-                return ApiResponse::failure('Item already ' . $driDetails->per_item_status . '.');
+                return ApiResponse::failure('Item already '.$driDetails->per_item_status.'.');
             }
 
             if ($driDetails->dr_status == 1) {
@@ -447,23 +243,23 @@ class DeliveryController extends Controller
             }
 
             $itemDetails = Item::query()->where('name', $driDetails->item_code)->first();
-            if (!$itemDetails) {
-                return ApiResponse::failure('Item  <b>' . $driDetails->item_code . '</b> not found.');
+            if (! $itemDetails) {
+                return ApiResponse::failure('Item  <b>'.$driDetails->item_code.'</b> not found.');
             }
 
             if ($itemDetails->is_stock_item == 0) {
-                return ApiResponse::failure('Item  <b>' . $driDetails->item_code . '</b> is not a stock item.');
+                return ApiResponse::failure('Item  <b>'.$driDetails->item_code.'</b> is not a stock item.');
             }
 
             if ($request->barcode != $itemDetails->item_code) {
-                return ApiResponse::failure('Invalid barcode for <b>' . $itemDetails->item_code . '</b>.');
+                return ApiResponse::failure('Invalid barcode for <b>'.$itemDetails->item_code.'</b>.');
             }
 
             $values = [
                 'session_user' => Auth::user()->wh_user,
                 'item_status' => 'Returned',
                 'barcode_return' => $request->barcode,
-                'date_modified' => now()->toDateTimeString()
+                'date_modified' => now()->toDateTimeString(),
             ];
 
             DeliveryNoteItem::query()->where('name', $request->child_tbl_id)->update($values);
@@ -473,7 +269,7 @@ class DeliveryController extends Controller
 
             DB::commit();
 
-            return ApiResponse::success('Item <b>' . $driDetails->item_code . '</b> has been returned.');
+            return ApiResponse::success('Item <b>'.$driDetails->item_code.'</b> has been returned.');
         } catch (Exception $e) {
             Log::error('DeliveryController updatePendingDrItemStatus (batch) failed', [
                 'message' => $e->getMessage(),

@@ -25,7 +25,7 @@
                     <span class="font-italic item-class">{{ row.item_classification }} - {{ row.item_group }}</span>
                     <span v-if="bundledItems.includes(row.name)" class="badge badge-info font-italic ml-1" style="font-size: 8pt;">Product Bundle</span>
                     <br/>
-                    <span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ row.name }}</b> - {{ stripTags(row.description) }}</span>
+                    <span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ row.name }}</b> - <span v-html="row.description"></span></span>
                     <template v-if="row.package_dimension">
                       <dl class="mt-3 mb-0">
                         <dt style="font-size: 9pt;" class="text-muted">Package Dimension</dt>

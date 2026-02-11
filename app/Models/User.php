@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
@@ -26,7 +25,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token', 'api_key', 'api_secret'
+        'password', 'remember_token', 'api_key', 'api_secret',
     ];
 
     /**
@@ -39,15 +38,16 @@ class User extends Authenticatable
     ];
 
     protected $table = 'tabWarehouse Users';
+
     protected $primaryKey = 'name';
+
     protected $keyType = 'string';
 
     public function setAttribute($key, $value)
     {
         $isRememberTokenAttribute = $key == $this->getRememberTokenName();
-        if (!$isRememberTokenAttribute)
-        {
-        parent::setAttribute($key, $value);
+        if (! $isRememberTokenAttribute) {
+            parent::setAttribute($key, $value);
         }
     }
 

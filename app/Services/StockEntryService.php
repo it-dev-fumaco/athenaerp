@@ -6,7 +6,6 @@ use App\Models\Bin;
 use App\Models\GLEntry;
 use App\Models\StockEntry;
 use App\Models\StockEntryDetail;
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +16,7 @@ class StockEntryService
     /**
      * Create stock ledger entries for a stock entry.
      *
-     * @param string $stockEntryName Stock entry name
+     * @param  string  $stockEntryName  Stock entry name
      * @return array{success: bool, message: string}
      */
     public function createStockLedgerEntry(string $stockEntryName): array
@@ -41,7 +40,7 @@ class StockEntryService
                     }
 
                     $sData[] = [
-                        'name' => 'ath' . uniqid(),
+                        'name' => 'ath'.uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
@@ -73,7 +72,7 @@ class StockEntryService
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => ($row->qty * ($row->valuation_rate ?? 0)) * -1,
                         'posting_date' => $now->format('Y-m-d'),
-                        'posting_datetime' => $now->format('Y-m-d H:i:s')
+                        'posting_datetime' => $now->format('Y-m-d H:i:s'),
                     ];
 
                     $binQry = DB::connection('mysql')->table('tabBin')->where('warehouse', $row->t_warehouse)
@@ -85,7 +84,7 @@ class StockEntryService
                     }
 
                     $tData[] = [
-                        'name' => 'ath' . uniqid(),
+                        'name' => 'ath'.uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
@@ -117,14 +116,14 @@ class StockEntryService
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => $row->qty * ($row->valuation_rate ?? 0),
                         'posting_date' => $now->format('Y-m-d'),
-                        'posting_datetime' => $now->format('Y-m-d H:i:s')
+                        'posting_datetime' => $now->format('Y-m-d H:i:s'),
                     ];
                 }
 
                 $stockLedgerEntry = array_merge($sData, $tData);
 
                 $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $stockEntryName)->exists();
-                if (!$existing) {
+                if (! $existing) {
                     DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stockLedgerEntry);
                 }
             } else {
@@ -136,7 +135,7 @@ class StockEntryService
                         ->where('item_code', $row->item_code)->first();
 
                     $stockLedgerEntry[] = [
-                        'name' => 'ath' . uniqid(),
+                        'name' => 'ath'.uniqid(),
                         'creation' => $now->toDateTimeString(),
                         'modified' => $now->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
@@ -168,12 +167,12 @@ class StockEntryService
                         'batch_no' => $row->batch_no,
                         'stock_value_difference' => ($row->s_warehouse) ? ($row->qty * ($row->valuation_rate ?? 0)) * -1 : $row->qty * ($row->valuation_rate ?? 0),
                         'posting_date' => $now->format('Y-m-d'),
-                        'posting_datetime' => $now->format('Y-m-d H:i:s')
+                        'posting_datetime' => $now->format('Y-m-d H:i:s'),
                     ];
                 }
 
                 $existing = DB::connection('mysql')->table('tabStock Ledger Entry')->where('voucher_no', $stockEntryName)->exists();
-                if (!$existing) {
+                if (! $existing) {
                     DB::connection('mysql')->table('tabStock Ledger Entry')->insert($stockLedgerEntry);
                 }
             }
@@ -187,7 +186,7 @@ class StockEntryService
     /**
      * Update bin quantities for a stock entry.
      *
-     * @param string $stockEntryName Stock entry name
+     * @param  string  $stockEntryName  Stock entry name
      * @return array{success: bool, message?: string}
      */
     public function updateBin(string $stockEntryName): array
@@ -197,7 +196,7 @@ class StockEntryService
 
             $latestId = DB::connection('mysql')->table('tabBin')->where('name', 'like', '%BINM%')->max('name');
             $latestId = ($latestId) ? $latestId : 0;
-            $latestIdExploded = explode("/", $latestId);
+            $latestIdExploded = explode('/', $latestId);
             $newId = Arr::exists($latestIdExploded, 1) ? $latestIdExploded[1] + 1 : 1;
 
             $stockEntryDetail = StockEntryDetail::query()->where('parent', $stockEntryName)->get();
@@ -206,10 +205,10 @@ class StockEntryService
                 if ($row->s_warehouse) {
                     $binQry = Bin::query()->where('warehouse', $row->s_warehouse)
                         ->where('item_code', $row->item_code)->first();
-                    if (!$binQry) {
+                    if (! $binQry) {
                         $newId = $newId + 1;
                         $newId = str_pad($newId, 7, '0', STR_PAD_LEFT);
-                        $id = 'BINM/' . $newId;
+                        $id = 'BINM/'.$newId;
 
                         $bin = [
                             'name' => $id,
@@ -257,10 +256,10 @@ class StockEntryService
                 if ($row->t_warehouse) {
                     $binQry = Bin::query()->where('warehouse', $row->t_warehouse)
                         ->where('item_code', $row->item_code)->first();
-                    if (!$binQry) {
+                    if (! $binQry) {
                         $newId = $newId + 1;
                         $newId = str_pad($newId, 7, '0', STR_PAD_LEFT);
-                        $id = 'BINM/' . $newId;
+                        $id = 'BINM/'.$newId;
 
                         $bin = [
                             'name' => $id,
@@ -315,7 +314,7 @@ class StockEntryService
     /**
      * Create GL entries for a stock entry.
      *
-     * @param string $stockEntryName Stock entry name
+     * @param  string  $stockEntryName  Stock entry name
      * @return array{success: bool, message: string}
      */
     public function createGlEntry(string $stockEntryName): array
@@ -350,7 +349,7 @@ class StockEntryService
                 }
 
                 $glEntry[] = [
-                    'name' => 'ath' . uniqid(),
+                    'name' => 'ath'.uniqid(),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,

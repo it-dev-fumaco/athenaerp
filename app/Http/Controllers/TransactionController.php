@@ -12,12 +12,11 @@ use App\Models\StockReservation;
 use App\Models\WorkOrder;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
-use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class TransactionController extends Controller
 {
@@ -34,7 +33,7 @@ class TransactionController extends Controller
                 ->select('se.name as parent_se', 'se.*', 'se.owner as requested_by', 'sed.*', 'sed.status as per_item_status', 'se.docstatus as se_status', 'se.material_request as mreq')
                 ->first();
 
-            if (!$steDetails) {
+            if (! $steDetails) {
                 return ApiResponse::failure('Record not found.', 500);
             }
 
@@ -47,7 +46,7 @@ class TransactionController extends Controller
             }
 
             $itemDetails = Item::find($steDetails->item_code);
-            if (!$itemDetails) {
+            if (! $itemDetails) {
                 return ApiResponse::failure("Item  <b> $steDetails->item_code </b> not found.", 500);
             }
 
@@ -68,13 +67,13 @@ class TransactionController extends Controller
             }
 
             if ($steDetails->purpose != 'Material Transfer for Manufacture' && $request->qty > $steDetails->qty) {
-                return ApiResponse::failure('Qty cannot be greater than ' . ($steDetails->qty * 1) . '.', 500);
+                return ApiResponse::failure('Qty cannot be greater than '.($steDetails->qty * 1).'.', 500);
             }
 
             $availableQty = $this->getAvailableQty($steDetails->item_code, $steDetails->s_warehouse);
             if ($steDetails->purpose != 'Material Receipt' && $request->deduct_reserve == 0) {
                 if ($request->qty > $availableQty) {
-                    return ApiResponse::failure('Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Available qty is <b>' . $availableQty . '</b>, you need <b>' . $request->qty . '</b>.', 500);
+                    return ApiResponse::failure('Qty not available for <b> '.$steDetails->item_code.'</b> in <b>'.$steDetails->s_warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->qty.'</b>.', 500);
                 }
             }
 
@@ -98,14 +97,14 @@ class TransactionController extends Controller
             $remainingReserved = $remainingReserved > 0 ? $remainingReserved : 0;
 
             if ($request->qty > $remainingReserved && $request->deduct_reserve == 1) {  // For deduct from reserved, if requested qty is more than the reserved qty
-                return ApiResponse::failure('Qty not available for <b> ' . $steDetails->item_code . '</b> in <b>' . $steDetails->s_warehouse . '</b><br><br>Reserved qty is <b>' . $remainingReserved . '</b>, you need <b>' . $request->qty . '</b>.', 500);
+                return ApiResponse::failure('Qty not available for <b> '.$steDetails->item_code.'</b> in <b>'.$steDetails->s_warehouse.'</b><br><br>Reserved qty is <b>'.$remainingReserved.'</b>, you need <b>'.$request->qty.'</b>.', 500);
             }
 
             if ($steDetails->purpose == 'Material Transfer for Manufacture') {
                 $cancelledProductionOrder = WorkOrder::where('name', $steDetails->work_order)->where('docstatus', 2)->first();
 
                 if ($cancelledProductionOrder) {
-                    return ApiResponse::failure('Production Order ' . $cancelledProductionOrder->name . ' was cancelled. Please reload the page.', 500);
+                    return ApiResponse::failure('Production Order '.$cancelledProductionOrder->name.' was cancelled. Please reload the page.', 500);
                 }
             }
 
@@ -117,7 +116,7 @@ class TransactionController extends Controller
                 'qty' => $request->qty,
                 'issued_qty' => $request->qty,
                 'validate_item_code' => $request->barcode,
-                'date_modified' => now()->toDateTimeString()
+                'date_modified' => now()->toDateTimeString(),
             ];
 
             StockEntryDetail::where('name', $request->child_tbl_id)->update($values);
@@ -150,7 +149,7 @@ class TransactionController extends Controller
                     $data = [
                         'modified_by' => Auth::user()->wh_user,
                         'modified' => now()->toDateTimeString(),
-                        'consumed_qty' => $consumedQty
+                        'consumed_qty' => $consumedQty,
                     ];
 
                     StockReservation::where('name', $stockReservationDetails->name)->update($data);
@@ -201,7 +200,7 @@ class TransactionController extends Controller
 
         DB::connection('mysql')->beginTransaction();
         try {
-            if (!$packingSlip) {
+            if (! $packingSlip) {
                 return ApiResponse::failure('Record not found.');
             }
 
@@ -213,7 +212,7 @@ class TransactionController extends Controller
             $packingSlipItem = $packingSlipItem->first();
 
             if (in_array($packingSlipItem->status, ['Issued', 'Returned'])) {
-                return ApiResponse::failure('Item already ' . $packingSlipItem->status . '.');
+                return ApiResponse::failure('Item already '.$packingSlipItem->status.'.');
             }
 
             if ($packingSlip->docstatus == 1) {
@@ -221,22 +220,22 @@ class TransactionController extends Controller
             }
 
             $itemDetails = Item::find($packingSlipItem->item_code);
-            if (!$itemDetails) {
-                return ApiResponse::failure('Item  <b>' . $packingSlipItem->item_code . '</b> not found.');
+            if (! $itemDetails) {
+                return ApiResponse::failure('Item  <b>'.$packingSlipItem->item_code.'</b> not found.');
             }
 
             if ($itemDetails->disabled) {
-                return ApiResponse::failure('Item  <b>' . $packingSlipItem->item_code . '</b> is disabled.');
+                return ApiResponse::failure('Item  <b>'.$packingSlipItem->item_code.'</b> is disabled.');
             }
 
             if ($request->is_bundle == 0) {
                 if ($itemDetails->is_stock_item == 0) {
-                    return ApiResponse::failure('Item  <b>' . $packingSlipItem->item_code . '</b> is not a stock item.');
+                    return ApiResponse::failure('Item  <b>'.$packingSlipItem->item_code.'</b> is not a stock item.');
                 }
             }
 
             if ($request->barcode != $itemDetails->name) {
-                return ApiResponse::failure('Invalid barcode for <b>' . $itemDetails->name . '</b>.');
+                return ApiResponse::failure('Invalid barcode for <b>'.$itemDetails->name.'</b>.');
             }
 
             if ($request->qty <= 0) {
@@ -245,12 +244,12 @@ class TransactionController extends Controller
 
             $availableQty = $this->getAvailableQty($packingSlipItem->item_code, $request->warehouse);
             if ($request->qty > $availableQty && $request->is_bundle == false && $request->deduct_reserve == 0) {
-                return ApiResponse::failure('Qty not available for <b> ' . $packingSlipItem->item_code . '</b> in <b>' . $request->warehouse . '</b><br><br>Available qty is <b>' . $availableQty . '</b>, you need <b>' . $request->qty . '</b>.');
+                return ApiResponse::failure('Qty not available for <b> '.$packingSlipItem->item_code.'</b> in <b>'.$request->warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->qty.'</b>.');
             }
 
             $reservedQty = $this->getReservedQty($packingSlipItem->item_code, $request->warehouse);
             if ($request->qty > $reservedQty && $request->is_bundle == false && $request->deduct_reserve == 1) {
-                return ApiResponse::failure('Qty not available for <b> ' . $packingSlipItem->item_code . '</b> in <b>' . $request->warehouse . '</b><br><br>Available reserved qty is <b>' . $reservedQty . '</b>, you need <b>' . $request->qty . '</b>.');
+                return ApiResponse::failure('Qty not available for <b> '.$packingSlipItem->item_code.'</b> in <b>'.$request->warehouse.'</b><br><br>Available reserved qty is <b>'.$reservedQty.'</b>, you need <b>'.$request->qty.'</b>.');
             }
 
             $countPendingItems = PackingSlipItem::where('parent', $packingSlip->name)
@@ -276,6 +275,7 @@ class TransactionController extends Controller
             $values->items = collect($values->items)->map(function ($item) {
                 $item->net_weight = (float) $item->net_weight;
                 $item->qty = (float) $item->qty;
+
                 return $item;
             });
 
@@ -293,7 +293,7 @@ class TransactionController extends Controller
                     $data = [
                         'modified_by' => Auth::user()->wh_user,
                         'modified' => now()->toDateTimeString(),
-                        'consumed_qty' => $consumedQty
+                        'consumed_qty' => $consumedQty,
                     ];
 
                     StockReservation::where('name', $stockReservationDetails->name)->update($data);
@@ -303,7 +303,7 @@ class TransactionController extends Controller
             }
 
             $response = $this->erpPut('Packing Slip', $packingSlip->name, $values->toArray(), true);
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 $err = $response['exception'] ?? 'An error occured while updating picking slip';
                 throw new Exception($err);
             }
@@ -313,10 +313,10 @@ class TransactionController extends Controller
             DB::connection('mysql')->commit();
 
             if ($request->deduct_reserve == 1) {
-                return ApiResponse::success('Item ' . $itemDetails->name . ' has been deducted from reservation.');
+                return ApiResponse::success('Item '.$itemDetails->name.' has been deducted from reservation.');
             }
 
-            return ApiResponse::success('Item ' . $itemDetails->name . ' has been checked out.');
+            return ApiResponse::success('Item '.$itemDetails->name.' has been checked out.');
         } catch (Exception $e) {
             Log::error('TransactionController checkoutPickingSlip failed', [
                 'message' => $e->getMessage(),
@@ -349,8 +349,8 @@ class TransactionController extends Controller
                 ->whereNotIn('name', $packedItemNames)
                 ->count();
 
-            $itemsWithPacked = collect($packingSlip->items)->filter(fn($item) => $item->packed);
-            $itemWarehousePairs = $itemsWithPacked->map(fn($item) => [$item->item_code, $item->packed->warehouse])->unique()->values()->toArray();
+            $itemsWithPacked = collect($packingSlip->items)->filter(fn ($item) => $item->packed);
+            $itemWarehousePairs = $itemsWithPacked->map(fn ($item) => [$item->item_code, $item->packed->warehouse])->unique()->values()->toArray();
             $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
             foreach ($packingSlip->items as $item) {
@@ -360,7 +360,7 @@ class TransactionController extends Controller
                     $key = "{$item->item_code}-{$item->packed->warehouse}";
                     $availableQty = $availableQtyMap[$key] ?? 0;
                     if ($item->qty > $availableQty && $request->deduct_reserve == 0) {
-                        return ApiResponse::failure('Qty not available for <b> ' . $item->item_code . '</b> in <b>' . $item->warehouse . '</b><br><br>Available qty is <b>' . $availableQty . '</b>, you need <b>' . $item->qty . '</b>.');
+                        return ApiResponse::failure('Qty not available for <b> '.$item->item_code.'</b> in <b>'.$item->warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$item->qty.'</b>.');
                     }
 
                     if ($item->packed->parent_item === $request->barcode) {
@@ -394,7 +394,7 @@ class TransactionController extends Controller
                         $data = [
                             'modified_by' => Auth::user()->wh_user,
                             'modified' => now()->toDateTimeString(),
-                            'consumed_qty' => $consumedQty
+                            'consumed_qty' => $consumedQty,
                         ];
 
                         StockReservation::where('name', $stockReservationDetails->name)->update($data);
@@ -403,7 +403,7 @@ class TransactionController extends Controller
             }
 
             $response = $this->erpPut('Packing Slip', $packingSlip->name, collect($packingSlip)->toArray());
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 $err = $response['exception'] ?? 'An error occured while updating Packing Slip';
                 throw new Exception($err);
             }
@@ -419,6 +419,7 @@ class TransactionController extends Controller
                 'trace' => $th->getTraceAsString(),
             ]);
             DB::connection('mysql')->rollback();
+
             return ApiResponse::modal(false, 'Error', $th->getMessage(), 422);
         }
     }

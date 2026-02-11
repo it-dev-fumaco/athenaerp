@@ -204,7 +204,7 @@
                                                                 <input type="hidden" name="name[]" value="{{ $item->name }}">
                                                             </td>
                                                             <td class="text-justify description">
-                                                                <small>{!! strip_tags($item->description) !!}</small>
+                                                                <small>{!! $item->description !!}</small>
                                                             </td>
 
                                                             <td class="text-center">

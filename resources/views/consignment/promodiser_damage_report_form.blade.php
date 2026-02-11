@@ -236,7 +236,7 @@
 
             function clear_add_table(){
                 $('#item-code-display').text('');
-                $('#description-display').text('');
+                $('#description-display').empty();
                 $('#img-display').text('');
                 $('#webp-display').text('');
                 $('#alt-display').text('');
@@ -253,7 +253,7 @@
             $(document).on('select2:select', '#item-selection', function(e){
                 // Display
                 $('#item-code-display').text(e.params.data.id); // item code
-                $('#description-display').text(e.params.data.description); // description
+                $('#description-display').html(e.params.data.description); // description
                 $('#selected-item-price').text(e.params.data.price); // description
                 $('#new-img').attr('src', e.params.data.img); // image
 

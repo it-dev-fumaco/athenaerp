@@ -10,8 +10,12 @@ class ConsignmentSalesReportDeadline extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabConsignment Sales Report Deadline';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 }

@@ -12,7 +12,7 @@
         @if (in_array($item->name, $bundledItems))
           &nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
         @endif
-        <br><span style="font-size: 10pt;">{{ strip_tags($item->description) }}</span>
+        <br><span style="font-size: 10pt;">{!! $item->description !!}</span>
       </div>
       <div class="col-2 col-md-1 d-flex align-items-start justify-content-end">
         <a class="btn btn-default" href="/get_item_details/{{ $item->name }}">

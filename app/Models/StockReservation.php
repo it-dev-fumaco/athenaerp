@@ -11,9 +11,13 @@ class StockReservation extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabStock Reservation';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [

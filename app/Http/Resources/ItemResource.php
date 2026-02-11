@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Item resource - Frappe-compatible format (data wrapper).
+ *
  * @see https://docs.frappe.io/framework/user/en/api/rest
  */
 class ItemResource extends JsonResource

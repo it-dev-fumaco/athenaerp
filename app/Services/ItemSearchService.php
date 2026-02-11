@@ -16,8 +16,7 @@ class ItemSearchService
     /**
      * Build and execute item search query with filters.
      *
-     * @param Request $request Search request with searchString, classification, brand, wh, group, check_qty, assigned_to_me, assigned_items
-     * @return LengthAwarePaginator
+     * @param  Request  $request  Search request with searchString, classification, brand, wh, group, check_qty, assigned_to_me, assigned_items
      */
     public function search(Request $request): LengthAwarePaginator
     {
@@ -39,7 +38,7 @@ class ItemSearchService
             'tabItem.package_height',
             'tabItem.weight_uom',
             'tabItem.package_dimension_uom',
-            $request->wh ? 'd.warehouse' : null
+            $request->wh ? 'd.warehouse' : null,
         ];
         $selectColumns = array_filter($selectColumns);
 
@@ -86,7 +85,7 @@ class ItemSearchService
             })
             ->when($request->classification, fn ($query) => $query->where('tabItem.item_classification', $request->classification))
             ->when($request->brand, fn ($query) => $query->where('tabItem.brand', $request->brand))
-            ->when($checkQty && !$isPromodiser, function ($query) {
+            ->when($checkQty && ! $isPromodiser, function ($query) {
                 return $query->where(DB::raw('(SELECT SUM(`tabBin`.actual_qty) FROM `tabBin` JOIN tabWarehouse ON tabWarehouse.name = `tabBin`.warehouse WHERE `tabBin`.item_code = `tabItem`.name and `tabWarehouse`.stock_warehouse = 1)'), '>', 0);
             })
             ->when($request->assigned_to_me, function ($query) use ($itemCodesBasedOnWarehouseAssigned) {

@@ -21,17 +21,17 @@ use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Arr;
-use Exception;
 
 class ConsignmentInventoryAuditController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
 
     private function getCutoffDate($transactionDate): array
     {
@@ -67,7 +67,7 @@ class ConsignmentInventoryAuditController extends Controller
             $monthIndex = array_search($details->month, $monthsArray);
             $salesPerDay = collect(json_decode($details->sales_per_day));
             foreach ($salesPerDay as $day => $amount) {
-                $saleDate = Carbon::parse($details->fiscal_year . '-' . $monthIndex . '-' . $day)->format('Y-m-d');
+                $saleDate = Carbon::parse($details->fiscal_year.'-'.$monthIndex.'-'.$day)->format('Y-m-d');
                 if (in_array($saleDate, $includedDates)) {
                     $salesAmount += $amount;
                 }
@@ -83,7 +83,7 @@ class ConsignmentInventoryAuditController extends Controller
             ->where('branch_warehouse', $branch)
             ->max('audit_date_to');
 
-        if (!$lastInventoryDate) {
+        if (! $lastInventoryDate) {
             $lastInventoryDate = BeginningInventory::query()
                 ->where('status', 'Approved')
                 ->where('branch_warehouse', $branch)
@@ -99,7 +99,7 @@ class ConsignmentInventoryAuditController extends Controller
             $dateFrom = $dateFrom->addDay();
         }
 
-        $duration = $dateFrom->format('F d, Y') . ' - ' . Carbon::parse($inventoryAuditTo)->format('F d, Y');
+        $duration = $dateFrom->format('F d, Y').' - '.Carbon::parse($inventoryAuditTo)->format('F d, Y');
 
         $start = $dateFrom->format('Y-m-d');
         $end = Carbon::parse($inventoryAuditTo)->format('Y-m-d');
@@ -179,7 +179,7 @@ class ConsignmentInventoryAuditController extends Controller
             foreach ($binItems as $row) {
                 $itemCode = $row->item_code;
 
-                if (!Arr::exists($itemDetails, $itemCode)) {
+                if (! Arr::exists($itemDetails, $itemCode)) {
                     throw new Exception("Item $itemCode not found.");
                 }
 
@@ -201,14 +201,14 @@ class ConsignmentInventoryAuditController extends Controller
                     $soldArr[] = [
                         'item' => $itemCode,
                         'sold_qty' => $soldQty,
-                        'amount' => ((float) $price * (float) $soldQty)
+                        'amount' => ((float) $price * (float) $soldQty),
                     ];
                 }
 
                 $activityLogData[$itemCode] = [
                     'consigned_qty_before_transaction' => (float) $consignedQty,
                     'sold_qty' => $soldQty,
-                    'expected_qty_after_transaction' => (float) $qty
+                    'expected_qty_after_transaction' => (float) $qty,
                 ];
 
                 if ($consignedQty < (float) $qty) {
@@ -231,12 +231,12 @@ class ConsignmentInventoryAuditController extends Controller
                         'consigned_qty' => $row->consigned_qty,
                         'consignment_price' => $row->price,
                         'modified' => $row->modified,
-                        'modified_by' => $row->modified_by
+                        'modified_by' => $row->modified_by,
                     ];
 
                     $binResponse = $this->erpPut('Bin', $row->bin_id, $binUpdate);
 
-                    if (!isset($binResponse['data'])) {
+                    if (! isset($binResponse['data'])) {
                         throw new Exception($binResponse['exception']);
                     }
                 }
@@ -249,7 +249,7 @@ class ConsignmentInventoryAuditController extends Controller
                     'qty' => (float) $qty,
                     'price' => (float) $price,
                     'amount' => $iarAmount,
-                    'available_stock_on_transaction' => $consignedQty
+                    'available_stock_on_transaction' => $consignedQty,
                 ];
             }
 
@@ -267,12 +267,12 @@ class ConsignmentInventoryAuditController extends Controller
                 'cutoff_period_to' => $periodTo,
                 'audit_date_from' => $data['audit_date_from'],
                 'audit_date_to' => $data['audit_date_to'],
-                'items' => $items
+                'items' => $items,
             ];
 
             $iarResponse = $this->erpCall($method, 'Consignment Inventory Audit Report', $iarExistingRecord, $iarPayload);
 
-            if (!isset($iarResponse['data'])) {
+            if (! isset($iarResponse['data'])) {
                 throw new Exception($iarResponse['exception']);
             }
 
@@ -291,7 +291,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => 'Inventory Audit Report of ' . $data['branch_warehouse'] . ' for cutoff periods ' . $periodFrom . ' - ' . $periodTo . '  has been created by ' . Auth::user()->full_name . ' at ' . now()->toDateTimeString(),
+                'subject' => 'Inventory Audit Report of '.$data['branch_warehouse'].' for cutoff periods '.$periodFrom.' - '.$periodTo.'  has been created by '.Auth::user()->full_name.' at '.now()->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => now()->toDateTimeString(),
                 'reference_doctype' => 'Inventory Audit Report',
@@ -299,14 +299,14 @@ class ConsignmentInventoryAuditController extends Controller
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
-                'data' => json_encode($activityLogData, true)
+                'data' => json_encode($activityLogData, true),
             ]);
 
             try {
                 $emailData = [
                     'reference' => $referenceName,
-                    'cutoff_period' => $periodFrom . ' - ' . $periodTo,
-                    'audit_period' => $data['audit_date_from'] . ' - ' . $data['audit_date_to'],
+                    'cutoff_period' => $periodFrom.' - '.$periodTo,
+                    'audit_period' => $data['audit_date_from'].' - '.$data['audit_date_to'],
                     'branch_warehouse' => $data['branch_warehouse'],
                     'transaction_date' => $data['transaction_date'],
                 ];
@@ -324,7 +324,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'grand_total' => $soldArr ? collect($soldArr)->sum('amount') : 0,
                 'branch' => $data['branch_warehouse'],
                 'old_data' => $data,
-                'transaction_date' => $data['transaction_date']
+                'transaction_date' => $data['transaction_date'],
             ]);
         } catch (\Throwable $th) {
             Log::error('ConsignmentInventoryAuditController submitInventoryAuditForm failed', [
@@ -379,7 +379,7 @@ class ConsignmentInventoryAuditController extends Controller
             $salesReportDeadline = ConsignmentSalesReportDeadline::first();
             $cutoff1 = $salesReportDeadline ? $salesReportDeadline->{'1st_cutoff_date'} : 0;
 
-            $firstCutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') . '/' . $cutoff1 . '/' . $end->format('Y'))->endOfDay();
+            $firstCutoff = Carbon::createFromFormat('m/d/Y', $end->format('m').'/'.$cutoff1.'/'.$end->format('Y'))->endOfDay();
 
             if ($firstCutoff->gt($end)) {
                 $end = $firstCutoff;
@@ -416,7 +416,7 @@ class ConsignmentInventoryAuditController extends Controller
                         }
                     }
 
-                    $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . now()->format('F d, Y');
+                    $duration = Carbon::parse($start)->addDay()->format('F d, Y').' - '.now()->format('F d, Y');
                     if (Carbon::parse($start)->addDay()->startOfDay()->lte(now()->startOfDay())) {
                         if ($lastAuditDate->endOfDay()->lt($end) && $beginningInventoryTransactionDate) {
                             $pendingArr[] = [
@@ -431,7 +431,7 @@ class ConsignmentInventoryAuditController extends Controller
                     }
                 }
 
-                if (!$beginningInventoryTransactionDate || !$lastInventoryAuditDate) {
+                if (! $beginningInventoryTransactionDate || ! $lastInventoryAuditDate) {
                     $pendingArr[] = [
                         'store' => $store,
                         'beginning_inventory_date' => $beginningInventoryTransactionDate,
@@ -454,7 +454,7 @@ class ConsignmentInventoryAuditController extends Controller
         $previousCutoffStart = $previousCutoff[0];
         $previousCutoffEnd = $previousCutoff[1];
 
-        $previousCutoffDisplay = Carbon::parse($previousCutoffStart)->format('M. d, Y') . ' - ' . Carbon::parse($previousCutoffEnd)->format('M. d, Y');
+        $previousCutoffDisplay = Carbon::parse($previousCutoffStart)->format('M. d, Y').' - '.Carbon::parse($previousCutoffEnd)->format('M. d, Y');
         $previousCutoffSales = $this->getSalesAmount(Carbon::parse($previousCutoffStart)->format('Y-m-d'), Carbon::parse($previousCutoffEnd)->format('Y-m-d'), null);
 
         $consignmentBranches = User::query()
@@ -479,7 +479,7 @@ class ConsignmentInventoryAuditController extends Controller
             'recent_period' => $previousCutoffDisplay,
             'stores_submitted' => $storesWithSubmittedReport,
             'stores_pending' => $consignmentBranches - $storesWithSubmittedReport,
-            'total_sales' => '₱ ' . number_format($previousCutoffSales, 2)
+            'total_sales' => '₱ '.number_format($previousCutoffSales, 2),
         ];
 
         $promodisers = User::where('enabled', 1)->where('user_group', 'Promodiser')->pluck('full_name');
@@ -522,7 +522,7 @@ class ConsignmentInventoryAuditController extends Controller
                     'audit_date_to' => $row->audit_date_to,
                     'status' => $row->status,
                     'promodiser' => $row->promodiser,
-                    'date_submitted' => $row->transaction_date
+                    'date_submitted' => $row->transaction_date,
                 ];
             }
 
@@ -566,7 +566,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'branch_warehouse' => $row->branch_warehouse,
                 'total_items' => $totalItems,
                 'total_item_qty' => $totalItemQty,
-                'promodiser' => $row->promodiser
+                'promodiser' => $row->promodiser,
             ];
         }
 
@@ -580,7 +580,7 @@ class ConsignmentInventoryAuditController extends Controller
         if ($isPromodiser) {
             $assignedConsignmentStores = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->orderBy('warehouse', 'asc')->pluck('warehouse')->toArray();
 
-            if (!in_array($store, $assignedConsignmentStores)) {
+            if (! in_array($store, $assignedConsignmentStores)) {
                 return redirect('/')->with('error', 'No access to selected branch.');
             }
         }
@@ -617,7 +617,7 @@ class ConsignmentInventoryAuditController extends Controller
 
         $totalSales = $this->getSalesAmount(Carbon::parse($start)->startOfDay(), Carbon::parse($to)->endOfDay(), $store);
 
-        $duration = Carbon::parse($from)->format('F d, Y') . ' - ' . Carbon::parse($to)->format('F d, Y');
+        $duration = Carbon::parse($from)->format('F d, Y').' - '.Carbon::parse($to)->format('F d, Y');
 
         $itemCodes = $list->pluck('item_code');
 
@@ -664,7 +664,7 @@ class ConsignmentInventoryAuditController extends Controller
                 $openingQty = data_get($beginningInventory, "{$id}.0.opening_stock", 0);
             }
 
-            if (!$isPromodiser) {
+            if (! $isPromodiser) {
                 $description = explode(',', strip_tags($row->description));
 
                 $descriptionPart1 = Arr::exists($description, 0) ? trim($description[0]) : null;
@@ -672,7 +672,7 @@ class ConsignmentInventoryAuditController extends Controller
                 $descriptionPart3 = Arr::exists($description, 2) ? trim($description[2]) : null;
                 $descriptionPart4 = Arr::exists($description, 3) ? trim($description[3]) : null;
 
-                $displayedDescription = $descriptionPart1 . ', ' . $descriptionPart2 . ', ' . $descriptionPart3 . ', ' . $descriptionPart4;
+                $displayedDescription = $descriptionPart1.', '.$descriptionPart2.', '.$descriptionPart3.', '.$descriptionPart4;
             } else {
                 $displayedDescription = $row->description;
             }
@@ -687,7 +687,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'opening_qty' => number_format($openingQty),
                 'previous_qty' => number_format($row->available_stock_on_transaction),
                 'audit_qty' => number_format($row->qty),
-                'sold_qty' => isset($activityLogsData[$row->item_code]) ? collect($activityLogsData[$row->item_code])['sold_qty'] : 0
+                'sold_qty' => isset($activityLogsData[$row->item_code]) ? collect($activityLogsData[$row->item_code])['sold_qty'] : 0,
             ];
         }
 
@@ -715,11 +715,11 @@ class ConsignmentInventoryAuditController extends Controller
         $salesIncrease = true;
         $previousSalesRecord = 0;
         if ($nextRecord) {
-            $nextRecordLink = '/view_inventory_audit_items/' . $store . '/' . $nextRecord->audit_date_from . '/' . $nextRecord->audit_date_to;
+            $nextRecordLink = '/view_inventory_audit_items/'.$store.'/'.$nextRecord->audit_date_from.'/'.$nextRecord->audit_date_to;
         }
 
         if ($previousRecord) {
-            $previousRecordLink = '/view_inventory_audit_items/' . $store . '/' . $previousRecord->audit_date_from . '/' . $previousRecord->audit_date_to;
+            $previousRecordLink = '/view_inventory_audit_items/'.$store.'/'.$previousRecord->audit_date_from.'/'.$previousRecord->audit_date_to;
 
             $previousSalesRecord = $this->getSalesAmount(Carbon::parse($previousRecord->audit_date_from)->startOfDay(), Carbon::parse($previousRecord->audit_date_to)->endOfDay(), $store);
 
@@ -781,7 +781,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'reference' => $row->name,
                 'delivery_date' => Carbon::parse($row->delivery_date)->format('M. d, Y'),
                 'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A'),
-                'received_by' => $row->consignment_received_by
+                'received_by' => $row->consignment_received_by,
             ];
         }
 
@@ -793,7 +793,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
                 'qty' => $row->transfer_qty * 1,
                 'reference' => $row->name,
-                't_warehouse' => $row->t_warehouse
+                't_warehouse' => $row->t_warehouse,
             ];
         }
 
@@ -807,7 +807,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'reference' => $row->name,
                 't_warehouse' => $row->t_warehouse,
                 'date_received' => Carbon::parse($row->consignment_date_received)->format('M. d, Y h:i A'),
-                'received_by' => $row->consignment_received_by
+                'received_by' => $row->consignment_received_by,
             ];
         }
 
@@ -817,7 +817,7 @@ class ConsignmentInventoryAuditController extends Controller
                 'qty' => $row->qty * 1,
                 'transaction_date' => Carbon::parse($row->creation)->format('M. d, Y h:i A'),
                 'damage_description' => $row->damage_description,
-                'stock_uom' => $row->stock_uom
+                'stock_uom' => $row->stock_uom,
             ];
         }
 
@@ -871,7 +871,7 @@ class ConsignmentInventoryAuditController extends Controller
         $salesReportDeadline = ConsignmentSalesReportDeadline::first();
         $cutoff1 = $salesReportDeadline ? $salesReportDeadline->{'1st_cutoff_date'} : 0;
 
-        $firstCutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') . '/' . $cutoff1 . '/' . $end->format('Y'))->endOfDay();
+        $firstCutoff = Carbon::createFromFormat('m/d/Y', $end->format('m').'/'.$cutoff1.'/'.$end->format('Y'))->endOfDay();
 
         if ($firstCutoff->gt($end)) {
             $end = $firstCutoff;
@@ -910,11 +910,11 @@ class ConsignmentInventoryAuditController extends Controller
                     }
                 }
 
-                $duration = Carbon::parse($start)->addDay()->format('F d, Y') . ' - ' . now()->format('F d, Y');
+                $duration = Carbon::parse($start)->addDay()->format('F d, Y').' - '.now()->format('F d, Y');
                 $check = Carbon::parse($start)->between($periodFrom, $periodTo);
                 if (Carbon::parse($start)->addDay()->startOfDay()->lt(now()->startOfDay())) {
                     if ($lastAuditDate->endOfDay()->lt($end) && $beginningInventoryTransactionDate) {
-                        if (!$check) {
+                        if (! $check) {
                             $pending[] = [
                                 'store' => $store,
                                 'beginning_inventory_date' => $beginningInventoryTransactionDate,
@@ -928,14 +928,14 @@ class ConsignmentInventoryAuditController extends Controller
                 }
             }
 
-            if (!$beginningInventoryTransactionDate) {
+            if (! $beginningInventoryTransactionDate) {
                 $pending[] = [
                     'store' => $store,
                     'beginning_inventory_date' => $beginningInventoryTransactionDate,
                     'last_inventory_audit_date' => $lastInventoryAuditDate,
                     'duration' => $duration,
                     'is_late' => 0,
-                    'promodisers' => $promodisers
+                    'promodisers' => $promodisers,
                 ];
             }
         }

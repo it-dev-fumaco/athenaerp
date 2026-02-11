@@ -15,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(CutoffDateService::class, fn () => new CutoffDateService());
+        $this->app->singleton(CutoffDateService::class, fn () => new CutoffDateService);
     }
 
     /**

@@ -289,7 +289,7 @@
 																		&nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
 																	@endif
 																	<br/>
-																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! strip_tags($row['description']) !!}</span>
+																	<span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ $row['name'] }}</b> - {!! $row['description'] !!}</span>
 																	@if ($row['package_dimension'])
 																		<dl class="mt-3 mb-0">
 																			<dt style="font-size: 9pt;" class="text-muted ">Package Dimension</dt>
@@ -451,7 +451,7 @@
 																	@if (in_array($row['name'], $bundledItems))
 																		<i class="fas fa-box-open text-info d-md-none"></i>
 																	@endif
-																	<span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! strip_tags($row['description']) !!}
+																	<span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! $row['description'] !!}
 																</span>
 																@if ($row['package_dimension'])
 																	<dl class="mt-3 mb-0">

@@ -125,7 +125,7 @@
                                     </tr>
                                     <tr>
                                         <td colspan="3" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-                                            <span class="item-description">{!! strip_tags($item['description']) !!}</span>
+                                            <span class="item-description">{!! $item['description'] !!}</span>
                                         </td>
                                     </tr>
                                     @if (in_array($ste['transfer_type'], ['Pull Out']))

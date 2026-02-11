@@ -10,9 +10,13 @@ class ItemBrochureImage extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabItem Brochure Image';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     public function item()

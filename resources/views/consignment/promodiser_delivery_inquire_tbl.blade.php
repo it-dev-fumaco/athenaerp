@@ -58,7 +58,7 @@
                 </tr>
                 <tr>
                     <td colspan="3" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-                        <span class="item-description">{!! strip_tags($item->description) !!}</span> <br>
+                        <span class="item-description">{!! $item->description !!}</span> <br>
                         Amount: ₱ <span id="{{ $item->item_code }}-amount" min='1' class='font-weight-bold amount'>{{ number_format($item->transfer_qty * $item->basic_rate, 2) }}</span>
                     </td>
                 </tr>

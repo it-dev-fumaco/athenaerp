@@ -10,14 +10,12 @@ use App\Models\ItemAttribute;
 use App\Models\ItemAttributeValue;
 use App\Models\ItemVariantAttribute;
 use App\Models\User;
-use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Exception;
 
 class ItemAttributeController extends Controller
 {
@@ -34,9 +32,9 @@ class ItemAttributeController extends Controller
     {
         try {
             // validate the info, create rules for the inputs
-            $rules = array(
-                'email' => 'required'
-            );
+            $rules = [
+                'email' => 'required',
+            ];
 
             $validator = Validator::make($request->all(), $rules);
 
@@ -47,11 +45,11 @@ class ItemAttributeController extends Controller
                     ->withErrors($validator)
                     ->withInput($request->except('password'));
             } else {
-                $adldap = new adLDAP();
+                $adldap = new adLDAP;
                 $authUser = $adldap->user()->authenticate($request->email, $request->password);
 
                 if ($authUser == true) {
-                    $user = User::where('wh_user', $request->email . '@fumaco.local')->first();
+                    $user = User::where('wh_user', $request->email.'@fumaco.local')->first();
 
                     if ($user) {
                         // attempt to do the login
@@ -99,7 +97,7 @@ class ItemAttributeController extends Controller
     {
         $itemCode = $request->u_item_code;
 
-        if (!$itemCode) {
+        if (! $itemCode) {
             return redirect('/search');
         }
 
@@ -114,8 +112,8 @@ class ItemAttributeController extends Controller
             ->get();
 
         $itemDesc = Item::select('description', 'variant_of')->find($itemCode);
-        if (!$itemDesc) {
-            return redirect()->back()->with('notFound', 'Item code <b>' . $itemCode . '</b> not found.');
+        if (! $itemDesc) {
+            return redirect()->back()->with('notFound', 'Item code <b>'.$itemCode.'</b> not found.');
         }
         $parentItemCode = $itemDesc->variant_of;
 
@@ -135,7 +133,7 @@ class ItemAttributeController extends Controller
                 'attribute' => $attrib->attribute,
                 'attribute_value' => $attrib->attribute_value,
                 'abbr' => $abbreviation?->abbr,
-                'count' => $attributeCount
+                'count' => $attributeCount,
             ];
         }
 
@@ -145,7 +143,7 @@ class ItemAttributeController extends Controller
     public function addAttribForm(Request $request, $itemCode)
     {
         $itemDetails = Item::find(strtoupper($itemCode));
-        if (!$itemDetails) {
+        if (! $itemDetails) {
             return 'Item not found.';
         }
 
@@ -232,19 +230,19 @@ class ItemAttributeController extends Controller
                 $attrArr[] = [
                     'attribute_name' => $attribName[$i],
                     'attribute_value' => $newAttrib[$i],
-                    'item_code_with_same_attr' => $itemCodeWithSameAttr
+                    'item_code_with_same_attr' => $itemCodeWithSameAttr,
                 ];
 
                 if ($currentAttrib[$i] != $request->attrib[$i]) {
                     $attribVal = [
-                        'attribute_value' => $request->attrib[$i]
+                        'attribute_value' => $request->attrib[$i],
                     ];
 
                     $affectedRows += ItemVariantAttribute::where('attribute', $attribName[$i])
                         ->where('attribute_value', $currentAttrib[$i])
                         ->update($attribVal);
 
-                    $attVal .= $attribName[$i] . ' was changed from ' . $currentAttrib[$i] . ' to ' . $request->attrib[$i] . ', ';
+                    $attVal .= $attribName[$i].' was changed from '.$currentAttrib[$i].' to '.$request->attrib[$i].', ';
                 }
             }
 
@@ -253,7 +251,7 @@ class ItemAttributeController extends Controller
 
             if ($itemDuplicate) {
                 if (strtoupper($request->itemCode) != strtoupper($itemDuplicate)) {
-                    return ApiResponse::failure('Item Variant <b>' . $itemDuplicate . '</b> already exists with same attributes.');
+                    return ApiResponse::failure('Item Variant <b>'.$itemDuplicate.'</b> already exists with same attributes.');
                 }
             }
 
@@ -263,7 +261,7 @@ class ItemAttributeController extends Controller
             $erpLogs = [];
             for ($t = 0; $t < count($currentAbbr); $t++) {
                 if ($currentAbbr[$t] != $request->abbr[$t]) {
-                    $abbVal .= 'Abbreviation ' . $currentAbbr[$t] . ' was changed to ' . $request->abbr[$t] . ', ';
+                    $abbVal .= 'Abbreviation '.$currentAbbr[$t].' was changed to '.$request->abbr[$t].', ';
 
                     $abbrKey = DB::table('tabItem Attribute Value')->where('abbr', $currentAbbr[$t])->first();
                 }
@@ -273,7 +271,7 @@ class ItemAttributeController extends Controller
                 if ($currentAttrib[$h] != $request->attrib[$h]) {
                     $attribVal2 = [
                         'attribute_value' => $request->attrib[$h],
-                        'abbr' => $request->abbr[$h]
+                        'abbr' => $request->abbr[$h],
                     ];
                     $attKey = ItemAttributeValue::where('attribute_value', $currentAttrib[$h])->first();
 
@@ -282,7 +280,7 @@ class ItemAttributeController extends Controller
                         ->update($attribVal2);
 
                     $variantsName = ItemVariantAttribute::where('attribute', $attribName[$h])->where('attribute_value', $request->attrib[$h])->get();
-                    $attVal2 .= '[ "attributes", ' . ($h + 1) . ', "' . $attKey->name . '", [[ "attribute_value", "' . $currentAttrib[$h] . '", "' . $request->attrib[$h] . '" ]]],';
+                    $attVal2 .= '[ "attributes", '.($h + 1).', "'.$attKey->name.'", [[ "attribute_value", "'.$currentAttrib[$h].'", "'.$request->attrib[$h].'" ]]],';
 
                     foreach ($variantsName as $v) {
                         $elog[] = [
@@ -295,7 +293,7 @@ class ItemAttributeController extends Controller
                             'idx' => $v->idx,
                             'ref_doctype' => 'Item',
                             'docname' => $v->parent,
-                            'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ ' . rtrim($attVal2, ',') . ' ] }'
+                            'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ '.rtrim($attVal2, ',').' ] }',
                         ];
                     }
                 }
@@ -311,12 +309,12 @@ class ItemAttributeController extends Controller
                 'idx' => 0,
                 'ref_doctype' => 'Item',
                 'docname' => $request->itemCode,
-                'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ ' . rtrim($attVal2, ',') . ' ] }'
+                'data' => '{ "added": [], "changed": [], "removed": [], "row_changed": [ '.rtrim($attVal2, ',').' ] }',
             ];
 
             $attribVal3 = [
                 'item_name' => $this->generateItemDescription($request->itemCode)['item_name'],
-                'description' => $this->generateItemDescription($request->itemCode)['description']
+                'description' => $this->generateItemDescription($request->itemCode)['description'],
             ];
 
             Item::where('name', $request->itemCode)->update($attribVal3);
@@ -328,8 +326,8 @@ class ItemAttributeController extends Controller
                 'user' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'transaction_date' => now()->toDateTimeString(),
-                'subject' => $attVal . $abbVal . 'of item ' . $itemDetails->variant_of,
-                'operation' => 'Update Attribute'
+                'subject' => $attVal.$abbVal.'of item '.$itemDetails->variant_of,
+                'operation' => 'Update Attribute',
             ];
 
             $erpVal = DB::table('tabVersion')->insert($erpLogs);
@@ -340,12 +338,12 @@ class ItemAttributeController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Attribute Updated! <b>' . $affectedRows . '</b> transactions updated.',
-                    'redirect' => '/search?item_code=' . $request->itemCode,
+                    'message' => 'Attribute Updated! <b>'.$affectedRows.'</b> transactions updated.',
+                    'redirect' => '/search?item_code='.$request->itemCode,
                 ]);
             }
 
-            return redirect('/search?item_code=' . $request->itemCode)->with('success', 'Attribute Updated! <b>' . $affectedRows . '</b> transactions updated.');
+            return redirect('/search?item_code='.$request->itemCode)->with('success', 'Attribute Updated! <b>'.$affectedRows.'</b> transactions updated.');
         } catch (Exception $e) {
             DB::rollback();
 
@@ -372,11 +370,11 @@ class ItemAttributeController extends Controller
             $itemCodes = $request->data['itemCode'];
             $newAttrVals = (isset($request->data['newAttrVal'])) ? $request->data['newAttrVal'] : [];
 
-            if (!is_array($newAttrVals)) {
+            if (! is_array($newAttrVals)) {
                 $newAttrVals = array_values(explode('&&&', $newAttrVals));
             }
 
-            if (!is_array($itemCodes)) {
+            if (! is_array($itemCodes)) {
                 $itemCodes = array_values(explode('&&&', $itemCodes));
             }
 
@@ -401,7 +399,7 @@ class ItemAttributeController extends Controller
                         'attribute' => $request->attributeName,
                         'to_range' => 0,
                         'increment' => 0,
-                        'attribute_value' => $newAttrVal
+                        'attribute_value' => $newAttrVal,
                     ];
                 }
 
@@ -421,12 +419,12 @@ class ItemAttributeController extends Controller
                     'attribute' => $request->attributeName,
                     'to_range' => 0,
                     'increment' => 0,
-                    'attribute_value' => null
+                    'attribute_value' => null,
                 ];
 
                 ItemVariantAttribute::insert($data);
 
-                $message = 'Attribute <b>' . $request->attributeName . '</b> has been added to <b>' . count($data) . '</b> out of <b>' . count($data) . '</b> item(s).';
+                $message = 'Attribute <b>'.$request->attributeName.'</b> has been added to <b>'.count($data).'</b> out of <b>'.count($data).'</b> item(s).';
                 $displayCount = 0;
             } else {
                 $message = 'Item(s) has been updated.';
@@ -438,7 +436,7 @@ class ItemAttributeController extends Controller
                     'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'item_name' => $this->generateItemDescription($itemCode)['item_name'],
-                    'description' => $this->generateItemDescription($itemCode)['description']
+                    'description' => $this->generateItemDescription($itemCode)['description'],
                 ]);
             }
 
@@ -450,8 +448,8 @@ class ItemAttributeController extends Controller
                 'user' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'transaction_date' => now()->toDateTimeString(),
-                'subject' => $request->attributeName . ' attribute has been added to ' . $request->parentItem,
-                'operation' => 'Add Attribute'
+                'subject' => $request->attributeName.' attribute has been added to '.$request->parentItem,
+                'operation' => 'Add Attribute',
             ];
 
             $logs = DB::table('tabItem Attribute Update Activity Log')->insert($act);
@@ -478,7 +476,7 @@ class ItemAttributeController extends Controller
                     'parent' => $itemCodes[$x],
                     'parentfield' => 'attributes',
                     'parenttype' => 'Item',
-                    'to_range' => 0
+                    'to_range' => 0,
                 ];
             }
 
@@ -493,7 +491,7 @@ class ItemAttributeController extends Controller
                     'idx' => $ad['idx'],
                     'ref_doctype' => 'Item',
                     'docname' => $ad['parent'],
-                    'data' => '{ "added": [[ "attributes", ' . trim(json_encode($ad), '[]') . ' ]], "changed": [], "removed": [], "row_changed": [] }'
+                    'data' => '{ "added": [[ "attributes", '.trim(json_encode($ad), '[]').' ]], "changed": [], "removed": [], "row_changed": [] }',
                 ];
             }
 
@@ -512,6 +510,7 @@ class ItemAttributeController extends Controller
     public function signout()
     {
         Auth::logout();
+
         return redirect('/update');
     }
 
@@ -519,7 +518,7 @@ class ItemAttributeController extends Controller
     {
         return ItemAttribute::query()
             ->when($request->q, function ($query) use ($request) {
-                return $query->where('name', 'like', '%' . $request->q . '%');
+                return $query->where('name', 'like', '%'.$request->q.'%');
             })
             ->select('name as id', 'name as text')
             ->orderBy('modified', 'desc')
@@ -549,13 +548,13 @@ class ItemAttributeController extends Controller
                 }
 
                 $itemName = array_filter($abbrArr, function ($v) {
-                    return !in_array(strtolower($v), ['n/a', '-']);
+                    return ! in_array(strtolower($v), ['n/a', '-']);
                 });
-                $itemName = strip_tags($parentItemName) . '-' . implode('-', $itemName);
+                $itemName = strip_tags($parentItemName).'-'.implode('-', $itemName);
 
                 return [
                     'item_name' => Str::limit(strtoupper($itemName), 140, ''),
-                    'description' => strip_tags($parentItem->description) . ', ' . implode(', ', $attributeValues)
+                    'description' => strip_tags($parentItem->description).', '.implode(', ', $attributeValues),
                 ];
             }
         }
@@ -578,12 +577,12 @@ class ItemAttributeController extends Controller
             $attribute = $request->attribute;
             // check if item code exists
             $parentItemDetails = Item::find($parentItemCode);
-            if (!$parentItemDetails) {
-                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>' . $parentItemCode . '</b> not found.']);
+            if (! $parentItemDetails) {
+                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>'.$parentItemCode.'</b> not found.']);
             }
             // check if item code is a parent item
             if ($parentItemDetails->has_variants == 0) {
-                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>' . $parentItemCode . '</b> is not a parent/template item.']);
+                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>'.$parentItemCode.'</b> is not a parent/template item.']);
             }
             // get item variants
             $itemVariants = Item::where('variant_of', $parentItemCode)->pluck('name');
@@ -610,7 +609,7 @@ class ItemAttributeController extends Controller
                     'parent' => $par->parent,
                     'parentfield' => $par->parentfield,
                     'parenttype' => $par->parenttype,
-                    'to_range' => $par->to_range
+                    'to_range' => $par->to_range,
                 ];
             }
             // return $rmv;
@@ -625,7 +624,7 @@ class ItemAttributeController extends Controller
                     'ref_doctype' => 'Item',
                     'docstatus' => 0,
                     'idx' => 0,
-                    'data' => '{ "added": [], "changed": [], "removed": [[ "attributes", ' . trim(json_encode($r), '[]') . ' ]], "row_changed": [] }'
+                    'data' => '{ "added": [], "changed": [], "removed": [[ "attributes", '.trim(json_encode($r), '[]').' ]], "row_changed": [] }',
                 ];
             }
             $erpV = DB::table('tabVersion')->insert($erpLogs);
@@ -641,7 +640,7 @@ class ItemAttributeController extends Controller
                     'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'item_name' => $this->generateItemDescription($itemCode)['item_name'],
-                    'description' => $this->generateItemDescription($itemCode)['description']
+                    'description' => $this->generateItemDescription($itemCode)['description'],
                 ]);
             }
 
@@ -653,8 +652,8 @@ class ItemAttributeController extends Controller
                 'user' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'transaction_date' => now()->toDateTimeString(),
-                'subject' => $attribute . ' attribute has been removed from ' . $parentItemCode,
-                'operation' => 'Delete Attribute'
+                'subject' => $attribute.' attribute has been removed from '.$parentItemCode,
+                'operation' => 'Delete Attribute',
             ];
 
             // return $act;
@@ -663,7 +662,7 @@ class ItemAttributeController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->with(['status' => 1, 'message' => 'Attribute <b>' . $attribute . '</b> has been removed from the attribute list of <b>' . $parentItemCode . "</b> and it's variants. No. of item(s) updated: <b>" . $affectedRows . '</b>']);
+            return redirect()->back()->with(['status' => 1, 'message' => 'Attribute <b>'.$attribute.'</b> has been removed from the attribute list of <b>'.$parentItemCode."</b> and it's variants. No. of item(s) updated: <b>".$affectedRows.'</b>']);
         } catch (Exception $e) {
             DB::rollback();
 
@@ -676,15 +675,15 @@ class ItemAttributeController extends Controller
         DB::beginTransaction();
         try {
             $parentItemDetails = Item::find($itemCode);
-            if (!$parentItemDetails) {
-                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>' . $itemCode . '</b> not found.']);
+            if (! $parentItemDetails) {
+                return redirect()->back()->with(['status' => 0, 'message' => 'Item <b>'.$itemCode.'</b> not found.']);
             }
 
             Item::where('name', $itemCode)->update([
                 'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
                 'item_name' => $request->item_name,
-                'description' => $request->description
+                'description' => $request->description,
             ]);
 
             $itemVariants = Item::where('variant_of', $itemCode)->pluck('name');
@@ -693,13 +692,13 @@ class ItemAttributeController extends Controller
                     'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'item_name' => $this->generateItemDescription($itemCode)['item_name'],
-                    'description' => $this->generateItemDescription($itemCode)['description']
+                    'description' => $this->generateItemDescription($itemCode)['description'],
                 ]);
             }
 
             DB::commit();
 
-            return redirect()->back()->with(['status' => 1, 'message' => 'Item <b>' . $itemCode . '</b> has been updated. No. of item variant(s) updated: <b>' . count($itemVariants) . '</b>']);
+            return redirect()->back()->with(['status' => 1, 'message' => 'Item <b>'.$itemCode.'</b> has been updated. No. of item variant(s) updated: <b>'.count($itemVariants).'</b>']);
         } catch (Exception $e) {
             DB::rollback();
 

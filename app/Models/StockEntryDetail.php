@@ -10,9 +10,13 @@ class StockEntryDetail extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
+
     protected $table = 'tabStock Entry Detail';
 
     protected $fillable = [
@@ -25,7 +29,8 @@ class StockEntryDetail extends Model
         return $this->belongsTo(StockEntry::class, 'parent', 'name');
     }
 
-    public function defaultImage(){
+    public function defaultImage()
+    {
         return $this->hasOne(ItemImages::class, 'parent', 'item_code')->select('image_path', 'parent');
     }
 }

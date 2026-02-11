@@ -42,7 +42,7 @@ return [
         */
         'cwebp' => [
             // 'path' => '/usr/bin/cwebp',
-            'path' => env('WEBP_PATH')
+            'path' => env('WEBP_PATH'),
         ],
 
         /*

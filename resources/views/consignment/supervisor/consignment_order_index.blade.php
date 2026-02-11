@@ -24,7 +24,10 @@
                     </div>
                     <div class="card card-secondary card-outline">
                         <div class="card-body p-3">
-                            <div id="consignment-orders-supervisor" data-stores='@json($consignmentStores)' data-statuses='@json(["Draft", "For Approval", "Approved", "Delivered", "Cancelled"])'></div>
+                            @php
+                                $orderStatuses = ['Draft', 'For Approval', 'Approved', 'Delivered', 'Cancelled'];
+                            @endphp
+                            <div id="consignment-orders-supervisor" data-stores='@json($consignmentStores)' data-statuses='@json($orderStatuses)'></div>
                         </div>
                     </div>
                 </div>

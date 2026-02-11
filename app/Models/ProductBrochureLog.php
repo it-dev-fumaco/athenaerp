@@ -13,9 +13,13 @@ class ProductBrochureLog extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabProduct Brochure Log';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     /**
@@ -53,13 +57,25 @@ class ProductBrochureLog extends Model
         $months = now()->diffInMonths($parsedDate);
         $years = now()->diffInYears($parsedDate);
 
-        if ($seconds <= 59) return $seconds . 's ago';
-        if ($minutes <= 59) return $minutes . 'm ago';
-        if ($hours >= 1) return $hours . 'h ago';
-        if ($days >= 1) return $days . 'd ago';
-        if ($months >= 1) return $months . 'm ago';
-        if ($years >= 1) return $years . 'y ago';
+        if ($seconds <= 59) {
+            return $seconds.'s ago';
+        }
+        if ($minutes <= 59) {
+            return $minutes.'m ago';
+        }
+        if ($hours >= 1) {
+            return $hours.'h ago';
+        }
+        if ($days >= 1) {
+            return $days.'d ago';
+        }
+        if ($months >= 1) {
+            return $months.'m ago';
+        }
+        if ($years >= 1) {
+            return $years.'y ago';
+        }
 
-        return $minutes . 'm ago';
+        return $minutes.'m ago';
     }
 }

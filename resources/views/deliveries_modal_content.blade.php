@@ -35,7 +35,7 @@
                                 </div>
                                 <div class="col-8 mt-3">
                                     <span class="d-block font-weight-bold">{{ $data['item_code'] }}</span>
-                                    <small class="d-block text-justify">{{ $data['description'] }}</small>
+                                    <small class="d-block text-justify">{!! $data['description'] !!}</small>
                                     <dl>
                                         <dt>Available Qty</dt>
                                         <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>
@@ -137,7 +137,7 @@
                                         <span class="item_code_txt font-weight-bold"></span> 
                                         <p class="description"></p>
                                         <span class="font-weight-bold">{{ $data['item_code'] }}</span> <span class="badge badge-info {{ ($data['is_bundle'] === false) ? 'd-none' : '' }}" style="font-size: 11pt;">Product Bundle</span>
-                                        <small class="d-block text-justify">{{ strip_tags($data['description']) }}</small>
+                                        <small class="d-block text-justify">{!! $data['description'] !!}</small>
                                         <dl>
                                             <dt>UoM</dt>
                                             <dd>{{ $data['uom'] }}</dd>
@@ -205,7 +205,7 @@
                                         @foreach ($data['product_bundle_items'] as $row)
                                         <tr>
                                             <td class="text-justify align-middle">
-                                                <span class="font-weight-bold">{{ $row['item_code'] }}</span> <small>{{ strip_tags($row['description']) }}</small></td>
+                                                <span class="font-weight-bold">{{ $row['item_code'] }}</span> <small>{!! $row['description'] !!}</small></td>
                                             <td class="text-center align-middle">
                                                 <span class="d-block font-weight-bold">{{ $row['qty'] }}</span>
                                                 <small>{{ $row['uom'] }}</small>

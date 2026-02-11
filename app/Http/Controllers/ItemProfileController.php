@@ -15,7 +15,6 @@ use App\Models\ItemVariantAttribute;
 use App\Models\LandedCostVoucher;
 use App\Models\ProductBundle;
 use App\Models\PurchaseOrder;
-use App\Models\Singles;
 use App\Models\StockEntryDetail;
 use App\Models\StockReservation;
 use App\Models\UOM;
@@ -23,15 +22,14 @@ use App\Models\WarehouseAccess;
 use App\Services\ItemProfileService;
 use App\Traits\GeneralTrait;
 use Buglinjo\LaravelWebp\Facades\Webp;
-use Carbon\Carbon;
+use ErrorException;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
-use ErrorException;
-use Exception;
 
 class ItemProfileController extends Controller
 {
@@ -49,7 +47,7 @@ class ItemProfileController extends Controller
             $warehouses = Bin::query()->whereIn('warehouse', $allowedWarehouses)->where('item_code', $itemCode)->select('warehouse', 'location')->get();
 
             if (count($warehouses) <= 0) {
-                throw new ErrorException('Item <b>' . $itemCode . '</b> is not available on any warehouse.');
+                throw new ErrorException('Item <b>'.$itemCode.'</b> is not available on any warehouse.');
             }
 
             return view('form_warehouse_location', compact('warehouses', 'itemCode'));
@@ -89,7 +87,7 @@ class ItemProfileController extends Controller
     {
         $itemDetails = Item::query()->where('name', $itemCode)->first();
 
-        if (!$itemDetails) {
+        if (! $itemDetails) {
             abort(404);
         }
 
@@ -161,7 +159,7 @@ class ItemProfileController extends Controller
             ->toArray();
         foreach ($productionItemAlternatives as $a) {
             $a = (object) $a;
-            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/' . $itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
             $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $a->item_code, 0);
@@ -171,14 +169,14 @@ class ItemProfileController extends Controller
                     'item_code' => $a->item_code,
                     'description' => $a->description,
                     'item_alternative_image' => $itemAlternativeImage,
-                    'actual_stocks' => $actualStocks
+                    'actual_stocks' => $actualStocks,
                 ];
             }
         }
 
         $variantsPriceArr = $variantsCostArr = $variantsMinPriceArr = $actualVariantStocks = $manualPriceInput = $attributeNames = $attributes = $coVariants = $itemAttributes = [];
 
-        if (!$bundled) {
+        if (! $bundled) {
             $itemAttributes = ItemVariantAttribute::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
             $q = Item::query()->where('variant_of', $itemDetails->variant_of)->where('name', '!=', $itemDetails->name)->orderBy('modified', 'desc')->get();
             $alternativeItemCodes = collect($q)->pluck('name');
@@ -212,7 +210,7 @@ class ItemProfileController extends Controller
             $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
             foreach ($q as $a) {
-                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/' . $itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
                 $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                 $totalReserved = $totalConsumed = 0;
@@ -240,7 +238,7 @@ class ItemProfileController extends Controller
                         'item_code' => $a->item_code,
                         'description' => $a->description,
                         'item_alternative_image' => $itemAlternativeImage,
-                        'actual_stocks' => $availableQty
+                        'actual_stocks' => $availableQty,
                     ];
                 }
             }
@@ -255,7 +253,7 @@ class ItemProfileController extends Controller
                 $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
                 foreach ($q as $a) {
-                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/' . $itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
                     $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                     $totalReserved = $totalConsumed = 0;
@@ -283,7 +281,7 @@ class ItemProfileController extends Controller
                             'item_code' => $a->item_code,
                             'description' => $a->description,
                             'item_alternative_image' => $itemAlternativeImage,
-                            'actual_stocks' => $availableQty
+                            'actual_stocks' => $availableQty,
                         ];
                     }
                 }
@@ -389,13 +387,13 @@ class ItemProfileController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->except('_token') as $dimension => $value) {
-                if (!in_array($dimension, ['package_dimension_uom'])) {
-                    if (!is_numeric($value)) {
-                        return ApiResponse::failureLegacy(str_replace('_', ' ', $dimension) . ' must be a number.');
+                if (! in_array($dimension, ['package_dimension_uom'])) {
+                    if (! is_numeric($value)) {
+                        return ApiResponse::failureLegacy(str_replace('_', ' ', $dimension).' must be a number.');
                     }
 
                     if ((float) $value <= 0) {
-                        return ApiResponse::failureLegacy(str_replace('_', ' ', $dimension) . ' cannot be less than 0.');
+                        return ApiResponse::failureLegacy(str_replace('_', ' ', $dimension).' cannot be less than 0.');
                     }
                 }
             }
@@ -407,9 +405,11 @@ class ItemProfileController extends Controller
             Item::query()->where('name', $itemCode)->update($updateArr);
 
             DB::commit();
+
             return ApiResponse::successLegacy('Package dimension saved.');
         } catch (\Throwable $th) {
             DB::rollback();
+
             return ApiResponse::failureLegacy('An error occured. Please try again later.');
         }
     }
@@ -432,7 +432,7 @@ class ItemProfileController extends Controller
             ->pluck('image_path');
 
         foreach ($removedImages as $img) {
-            Storage::delete('/img/' . $img);
+            Storage::delete('/img/'.$img);
         }
 
         ItemImages::query()
@@ -458,7 +458,7 @@ class ItemProfileController extends Controller
 
                 $webp = Webp::make($file);
 
-                if (!File::exists(public_path('temp'))) {
+                if (! File::exists(public_path('temp'))) {
                     File::makeDirectory(public_path('temp'), 0755, true);
                 }
 
@@ -480,15 +480,15 @@ class ItemProfileController extends Controller
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => $webpFilename
+                    'image_path' => $webpFilename,
                 ];
             }
 
             ItemImages::query()->insert($itemImagesArr);
 
-            return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been uploaded.']);
+            return response()->json(['message' => 'Item image for '.$request->item_code.' has been uploaded.']);
         } else {
-            return response()->json(['message' => 'Item image for ' . $request->item_code . ' has been updated.']);
+            return response()->json(['message' => 'Item image for '.$request->item_code.' has been updated.']);
         }
     }
 
@@ -504,13 +504,13 @@ class ItemProfileController extends Controller
 
         $images = collect($images)->map(function ($image) {
             $image->image = $image->image_path;
-            $image->image_path = $image->image_path ? '/img/' . $image->image_path : '/icon/no_img.png';
+            $image->image_path = $image->image_path ? '/img/'.$image->image_path : '/icon/no_img.png';
 
             $image->original = 1;
-            if (Storage::disk('public')->exists(explode('.', $image->image_path)[0] . '.webp')) {
+            if (Storage::disk('public')->exists(explode('.', $image->image_path)[0].'.webp')) {
                 $image->original = 0;
-                $image->image = explode('.', $image->image)[0] . '.webp';
-                $image->image_path = explode('.', $image->image_path)[0] . '.webp';
+                $image->image = explode('.', $image->image)[0].'.webp';
+                $image->image_path = explode('.', $image->image_path)[0].'.webp';
             }
 
             return $image;
@@ -629,7 +629,7 @@ class ItemProfileController extends Controller
 
             $actualQty = $value->actual_qty;
             $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
-            if ($value->parent_warehouse == 'P2 Consignment Warehouse - FI' && !$isPromodiser) {
+            if ($value->parent_warehouse == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {
                 $consignmentWarehouses[] = [
                     'warehouse' => $value->warehouse,
                     'location' => $value->location,
@@ -662,7 +662,7 @@ class ItemProfileController extends Controller
 
         return [
             'consignment_warehouses' => $consignmentWarehouses,
-            'site_warehouses' => $siteWarehouses
+            'site_warehouses' => $siteWarehouses,
         ];
     }
 

@@ -10,8 +10,12 @@ class WarehouseAccess extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabWarehouse Access';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 }

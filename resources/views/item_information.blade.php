@@ -84,30 +84,34 @@
 </style>
 
 <script>
-    $(document).ready(function (){
-        $('.item-information-form').submit(function(e){
-            e.preventDefault();
-            var modal = $(this).data('modal-container');
+    (function(){
+        var $ = window.jQuery || window.$;
+        if (!$) return;
+        $(document).ready(function (){
+            $('#item-information-container .item-information-form').off('submit').on('submit', function(e){
+                e.preventDefault();
+                var modal = $(this).data('modal-container');
 
-            $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: $(this).serialize(),
-                success: function(response){
-                    if (response.success) {
-                        load_item_information();
-                        showNotification("success", response.message, "fa fa-check");
-                        $(modal).modal('hide');
-                    }else{
-                        showNotification("danger", response.message, "fa fa-info");
+                $.ajax({
+                    type: 'POST',
+                    url: $(this).attr('action'),
+                    data: $(this).serialize(),
+                    success: function(response){
+                        if (response.success) {
+                            if (typeof load_item_information === 'function') load_item_information();
+                            if (typeof showNotification === 'function') showNotification("success", response.message, "fa fa-check");
+                            $(modal).modal('hide');
+                        } else {
+                            if (typeof showNotification === 'function') showNotification("danger", response.message, "fa fa-info");
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        if (typeof showNotification === 'function') showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
                     }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    showNotification("danger", 'An error occured. Please try again.', "fa fa-info");
-                }
+                });
             });
-        });
 
-        $('#package_dimension_uom').select2();
-    });
+            $('#package_dimension_uom').select2();
+        });
+    })();
 </script>

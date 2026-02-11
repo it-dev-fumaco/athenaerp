@@ -10,11 +10,17 @@ class PackingSlip extends Model
     use HasFactory;
 
     protected $table = 'tabPacking Slip';
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
-    public function items(){
+
+    public function items()
+    {
         return $this->hasMany(PackingSlipItem::class, 'parent', 'name');
     }
 }

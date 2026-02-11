@@ -11,9 +11,13 @@ class ItemAttributeValue extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabItem Attribute Value';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -44,10 +48,11 @@ class ItemAttributeValue extends Model
      */
     public function scopeSearchByValue($query, ?string $search): Builder
     {
-        if (!$search) {
+        if (! $search) {
             return $query;
         }
         $searchTerms = explode(' ', $search);
+
         return $query->where(function ($subQuery) use ($searchTerms) {
             foreach ($searchTerms as $term) {
                 $subQuery->where('attribute_value', 'LIKE', "%{$term}%");

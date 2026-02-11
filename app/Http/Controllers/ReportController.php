@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\DeliveryNote;
 use App\Models\Item;
 use App\Models\StockEntry;
@@ -14,14 +13,14 @@ class ReportController extends Controller
 {
     public function salesReport(Request $request)
     {
-        if (!$request->report_type) {
+        if (! $request->report_type) {
             return view('external_reports.sales_report');
         }
 
         $exportExcel = $request->export;
 
-        $start = new Carbon('first day of January ' . $request->year);
-        $end = new Carbon('last day of December ' . $request->year);
+        $start = new Carbon('first day of January '.$request->year);
+        $end = new Carbon('last day of December '.$request->year);
 
         $reportType = $request->report_type;
 
@@ -117,7 +116,7 @@ class ReportController extends Controller
                     'month' => $month,
                     'lazada' => $lazadaOrdersQty,
                     'sales' => $salesOrdersQty,
-                    'withdrawals' => $withdrawalsQty
+                    'withdrawals' => $withdrawalsQty,
                 ];
             }
 
@@ -133,7 +132,7 @@ class ReportController extends Controller
                 'total_so_qty' => $totalSalesOrderQty,
                 'total_laz_qty' => $totalLazadaQty,
                 'total_ste_qty' => $totalStockEntryQty,
-                'overall_total' => $overallTotalQty
+                'overall_total' => $overallTotalQty,
             ];
         }
 

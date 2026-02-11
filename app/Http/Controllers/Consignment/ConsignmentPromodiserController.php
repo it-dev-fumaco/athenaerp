@@ -19,19 +19,19 @@ use App\Models\Warehouse;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Exception;
 
 class ConsignmentPromodiserController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
 
     // /promodiser/delivery_report/{type}
     public function promodiserDeliveryReport($type, Request $request)
@@ -62,8 +62,8 @@ class ConsignmentPromodiserController extends Controller
             ->orderByRaw("FIELD(consignment_status, '', 'Received') ASC")
             ->paginate(10);
 
-        $itemCodes = collect($deliveryReport->items())->flatMap(fn($stockEntry) => $stockEntry->items->pluck('item_code'))->unique()->values();
-        $targetWarehouses = collect($deliveryReport->items())->flatMap(fn($stockEntry) => $stockEntry->items->pluck('t_warehouse'))->unique()->values();
+        $itemCodes = collect($deliveryReport->items())->flatMap(fn ($stockEntry) => $stockEntry->items->pluck('item_code'))->unique()->values();
+        $targetWarehouses = collect($deliveryReport->items())->flatMap(fn ($stockEntry) => $stockEntry->items->pluck('t_warehouse'))->unique()->values();
 
         $itemPrices = Bin::whereIn('warehouse', $targetWarehouses)->whereIn('item_code', $itemCodes)->select('warehouse', 'consignment_price', 'item_code')->get()->groupBy(['item_code', 'warehouse']);
 
@@ -75,11 +75,12 @@ class ConsignmentPromodiserController extends Controller
                 $price = (float) $price;
 
                 $item->transfer_qty = (int) $item->transfer_qty;
-                $item->image = isset($item->defaultImage->image_path) ? '/img/' . $item->defaultImage->image_path : '/icon/no_img.png';
-                if (Storage::disk('public')->exists(explode('.', $item->image)[0] . '.webp')) {
-                    $item->image = explode('.', $item->image)[0] . '.webp';
+                $item->image = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no_img.png';
+                if (Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')) {
+                    $item->image = explode('.', $item->image)[0].'.webp';
                 }
                 $item->price = $price;
+
                 return $item;
             });
             $stockEntry->to_warehouse = collect($targetWarehouses)->first();
@@ -95,7 +96,7 @@ class ConsignmentPromodiserController extends Controller
 
         $blade = $request->ajax() ? 'delivery_report_tbl' : 'promodiser_delivery_report';
 
-        return view('consignment.' . $blade, compact('deliveryReport', 'steArr', 'type'));
+        return view('consignment.'.$blade, compact('deliveryReport', 'steArr', 'type'));
     }
 
     public function promodiserInquireDelivery(Request $request)
@@ -120,7 +121,7 @@ class ConsignmentPromodiserController extends Controller
                 ->get();
 
             $itemImages = ItemImages::whereIn('parent', collect($deliveryReport)->pluck('item_code'))->pluck('image_path', 'parent');
-            $itemImages = collect($itemImages)->map(fn($image) => $this->base64Image("img/$image"));
+            $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("img/$image"));
             $itemImages['no_img'] = $this->base64Image('icon/no_img.png');
 
             return view('consignment.promodiser_delivery_inquire_tbl', compact('deliveryReport', 'itemImages'));
@@ -136,7 +137,7 @@ class ConsignmentPromodiserController extends Controller
         try {
             $stockEntry = $this->erpGet('Stock Entry', $id);
 
-            if (!isset($stockEntry['data'])) {
+            if (! isset($stockEntry['data'])) {
                 throw new Exception('Stock Entry not found.');
             }
 
@@ -151,13 +152,13 @@ class ConsignmentPromodiserController extends Controller
                 $price = preg_replace('/[^0-9 .]/', '', $p);
                 $itemPrices[$itemCode] = $price;
                 if ($stockEntry['transfer_as'] != 'For Return') {
-                    if (!is_numeric($price) || $price <= 0) {
+                    if (! is_numeric($price) || $price <= 0) {
                         throw new Exception('Item prices cannot be less than or equal to 0.');
                     }
                 }
             }
 
-            if (!isset($stockEntry['to_warehouse']) && $stockEntry['items'][0]['t_warehouse']) {
+            if (! isset($stockEntry['to_warehouse']) && $stockEntry['items'][0]['t_warehouse']) {
                 $stockEntry['to_warehouse'] = $stockEntry['items'][0]['t_warehouse'];
             }
 
@@ -185,12 +186,13 @@ class ConsignmentPromodiserController extends Controller
                 $sourceWarehouse = $item['s_warehouse'] ?? $defaultSourceWarehouse;
                 $targetWarehouse = $item['t_warehouse'] ?? ($request->target_warehouse ?? $defaultTargetWarehouse);
                 $itemCode = $item['item_code'];
-                if (!isset($sourceWarehouseDetails[$sourceWarehouse][$itemCode])) {
+                if (! isset($sourceWarehouseDetails[$sourceWarehouse][$itemCode])) {
                     return "Item $itemCode does not exist in $sourceWarehouse";
                 }
-                if (!isset($targetWarehouseDetails[$targetWarehouse][$itemCode])) {
+                if (! isset($targetWarehouseDetails[$targetWarehouse][$itemCode])) {
                     return "Item $itemCode does not exist in $targetWarehouse";
                 }
+
                 return null;
             })->filter();
 
@@ -216,7 +218,7 @@ class ConsignmentPromodiserController extends Controller
                 $data[$srcBranch][$itemCode]['quantity'] = ['previous' => $sourceConsignedQty, 'transferred_qty' => $item['transfer_qty'], 'new' => $sourceUpdatedConsignedQty];
 
                 $binResponse = $this->erpPut('Bin', $sourceBinId, ['consigned_qty' => $sourceUpdatedConsignedQty]);
-                if (!isset($binResponse['data'])) {
+                if (! isset($binResponse['data'])) {
                     throw new Exception('An error occured while updating Bin.');
                 }
 
@@ -241,14 +243,14 @@ class ConsignmentPromodiserController extends Controller
 
                 $stateBeforeUpdate['Bin'][$targetBinId] = $targetBinDetails;
                 $binResponse = $this->erpPut('Bin', $targetBinId, $updateBin);
-                if (!isset($binResponse['data'])) {
-                    throw new Exception('Bin: ' . ($binResponse['exception'] ?? 'An error occured.'));
+                if (! isset($binResponse['data'])) {
+                    throw new Exception('Bin: '.($binResponse['exception'] ?? 'An error occured.'));
                 }
 
                 $expectedQtyAfterTransaction['target'][$targetBranch][$itemCode] = $targetUpdatedConsignedQty;
 
                 $steDetailsUpdate = ['status' => 'Issued'];
-                if (!isset($item['consignment_status']) || $item['consignment_status'] != 'Received') {
+                if (! isset($item['consignment_status']) || $item['consignment_status'] != 'Received') {
                     $steDetailsUpdate['consignment_status'] = 'Received';
                     $steDetailsUpdate['consignment_date_received'] = $now->toDateTimeString();
                     $steDetailsUpdate['consignment_received_by'] = Auth::user()->wh_user;
@@ -260,15 +262,15 @@ class ConsignmentPromodiserController extends Controller
 
                 $stateBeforeUpdate['Stock Entry Detail'][$item['name']] = $item;
                 $stockEntryDetailResponse = $this->erpPut('Stock Entry Detail', $item['name'], $steDetailsUpdate);
-                if (!isset($stockEntryDetailResponse['data'])) {
-                    throw new Exception('Stock Entry Detail: ' . ($stockEntryDetailResponse['exception'] ?? 'An error occured.'));
+                if (! isset($stockEntryDetailResponse['data'])) {
+                    throw new Exception('Stock Entry Detail: '.($stockEntryDetailResponse['exception'] ?? 'An error occured.'));
                 }
 
                 $receivedItems[] = [
                     'item_code' => $itemCode,
                     'qty' => $item['transfer_qty'],
                     'price' => $basicRate,
-                    'amount' => $basicRate * $item['transfer_qty']
+                    'amount' => $basicRate * $item['transfer_qty'],
                 ];
             }
 
@@ -303,7 +305,7 @@ class ConsignmentPromodiserController extends Controller
             $targetWarehouse = $request->target_warehouse ?? ($stockEntry['to_warehouse'] ?? collect($targetWarehouses)->first());
 
             $logs = [
-                'subject' => 'Stock Transfer from ' . $sourceWarehouse . ' to ' . $targetWarehouse . ' has been received by ' . Auth::user()->full_name . ' at ' . $now->toDateTimeString(),
+                'subject' => 'Stock Transfer from '.$sourceWarehouse.' to '.$targetWarehouse.' has been received by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
                 'reference_doctype' => 'Stock Entry',
@@ -311,7 +313,7 @@ class ConsignmentPromodiserController extends Controller
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
-                'data' => json_encode($data, true)
+                'data' => json_encode($data, true),
             ];
 
             $this->erpPost('Activity Log', $logs);
@@ -322,14 +324,14 @@ class ConsignmentPromodiserController extends Controller
                 'consignment_received_by' => Auth::user()->wh_user,
             ]);
 
-            if (!isset($stockEntryResponse['data'])) {
-                throw new Exception('Stock Entry: ' . ($stockEntryResponse['exception'] ?? 'An error occured.'));
+            if (! isset($stockEntryResponse['data'])) {
+                throw new Exception('Stock Entry: '.($stockEntryResponse['exception'] ?? 'An error occured.'));
             }
 
             $message = null;
             if (isset($request->receive_delivery)) {
                 $t = $stockEntry['transfer_as'] != 'For Return' ? 'your store inventory!' : (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) ? $targetWarehouse : 'Quarantine Warehouse!');
-                $message = collect($receivedItems)->sum('qty') . ' Item(s) is/are successfully received and added to ' . $t;
+                $message = collect($receivedItems)->sum('qty').' Item(s) is/are successfully received and added to '.$t;
             }
 
             $receivedItems['message'] = $message;
@@ -343,6 +345,7 @@ class ConsignmentPromodiserController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             $this->revertChanges($stateBeforeUpdate);
+
             return ApiResponse::failureLegacy($e->getMessage());
         }
     }
@@ -372,13 +375,13 @@ class ConsignmentPromodiserController extends Controller
             foreach ($receivedItems as $item) {
                 $branch = $stockEntry->to_warehouse ?: $item->t_warehouse;
                 if ($item->consignment_status != 'Received') {
-                    return redirect()->back()->with('error', $id . ' is not yet received.');
+                    return redirect()->back()->with('error', $id.' is not yet received.');
                 }
-                if (!isset($consignedQty[$branch][$item->item_code])) {
+                if (! isset($consignedQty[$branch][$item->item_code])) {
                     return redirect()->back()->with('error', 'Item not found.');
                 }
                 if ($consignedQty[$branch][$item->item_code]['consigned_qty'] < $item->transfer_qty) {
-                    return redirect()->back()->with('error', 'Cannot cancel received items.<br/> Available qty is ' . number_format($consignedQty[$branch][$item->item_code]['consigned_qty']) . ', received qty is ' . number_format($item->transfer_qty));
+                    return redirect()->back()->with('error', 'Cannot cancel received items.<br/> Available qty is '.number_format($consignedQty[$branch][$item->item_code]['consigned_qty']).', received qty is '.number_format($item->transfer_qty));
                 }
 
                 if ($stockEntry->transfer_as == 'Store Transfer') {
@@ -386,28 +389,28 @@ class ConsignmentPromodiserController extends Controller
                     Bin::where('item_code', $item->item_code)->where('warehouse', $srcBranch)->update([
                         'modified' => now()->toDateTimeString(),
                         'modified_by' => Auth::user()->wh_user,
-                        'consigned_qty' => $consignedQty[$srcBranch][$item->item_code]['consigned_qty'] + $item->transfer_qty
+                        'consigned_qty' => $consignedQty[$srcBranch][$item->item_code]['consigned_qty'] + $item->transfer_qty,
                     ]);
                 }
 
                 Bin::where('item_code', $item->item_code)->where('warehouse', $branch)->update([
                     'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
-                    'consigned_qty' => $consignedQty[$branch][$item->item_code]['consigned_qty'] - $item->transfer_qty
+                    'consigned_qty' => $consignedQty[$branch][$item->item_code]['consigned_qty'] - $item->transfer_qty,
                 ]);
 
                 StockEntryDetail::where('parent', $id)->where('item_code', $item->item_code)->update([
                     'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
                     'consignment_status' => null,
-                    'consignment_date_received' => null
+                    'consignment_date_received' => null,
                 ]);
 
                 $cancelledArr[] = [
                     'item_code' => $item->item_code,
                     'qty' => $item->transfer_qty,
                     'price' => $item->basic_rate,
-                    'amount' => $item->basic_rate * $item->transfer_qty
+                    'amount' => $item->basic_rate * $item->transfer_qty,
                 ];
             }
 
@@ -422,7 +425,7 @@ class ConsignmentPromodiserController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => 'Stock Transfer from ' . $sourceWarehouse . ' to ' . $targetWarehouse . ' has been cancelled by ' . Auth::user()->full_name . ' at ' . now()->toDateTimeString(),
+                'subject' => 'Stock Transfer from '.$sourceWarehouse.' to '.$targetWarehouse.' has been cancelled by '.Auth::user()->full_name.' at '.now()->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => now()->toDateTimeString(),
                 'reference_doctype' => 'Stock Entry',
@@ -437,6 +440,7 @@ class ConsignmentPromodiserController extends Controller
             $cancelledArr['action'] = 'canceled';
 
             DB::commit();
+
             return redirect()->back()->with('success', $cancelledArr);
         } catch (Exception $e) {
             Log::error('ConsignmentPromodiserController promodiserCancelReceivedDelivery failed', [
@@ -444,6 +448,7 @@ class ConsignmentPromodiserController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             DB::rollback();
+
             return redirect()->back()->with('error', 'An error occured. Please try again later');
         }
     }
@@ -451,7 +456,7 @@ class ConsignmentPromodiserController extends Controller
     // /consignment/pending_to_receive - redirect to view deliveries (fixes missing method)
     public function pendingToReceive(Request $request)
     {
-        return redirect('/view_consignment_deliveries' . ($request->query() ? '?' . http_build_query($request->query()) : ''));
+        return redirect('/view_consignment_deliveries'.($request->query() ? '?'.http_build_query($request->query()) : ''));
     }
 
     // /view_consignment_deliveries
@@ -466,15 +471,15 @@ class ConsignmentPromodiserController extends Controller
                 ->whereIn('transfer_as', ['Consignment', 'Store Transfer'])
                 ->where('purpose', 'Material Transfer')
                 ->where('docstatus', 1)
-                ->when($request->status == 'Received', fn($q) => $q->where('consignment_status', 'Received'))
-                ->when($request->status == 'To Receive', fn($q) => $q->where(fn($sq) => $sq->whereNull('consignment_status')->orWhere('consignment_status', 'To Receive')))
-                ->when($request->store, fn($q) => $q->where('to_warehouse', $request->store))
+                ->when($request->status == 'Received', fn ($q) => $q->where('consignment_status', 'Received'))
+                ->when($request->status == 'To Receive', fn ($q) => $q->where(fn ($sq) => $sq->whereNull('consignment_status')->orWhere('consignment_status', 'To Receive')))
+                ->when($request->store, fn ($q) => $q->where('to_warehouse', $request->store))
                 ->orderByRaw("FIELD(consignment_status, '', 'To Receive', 'Received') ASC")
                 ->orderByDesc('creation')
                 ->paginate(20);
 
-            $itemCodes = collect($list->items())->flatMap(fn($items) => $items->items->pluck('item_code'))->unique()->values();
-            $targetWarehouses = collect($list->items())->flatMap(fn($items) => $items->items->pluck('t_warehouse'))->unique()->values();
+            $itemCodes = collect($list->items())->flatMap(fn ($items) => $items->items->pluck('item_code'))->unique()->values();
+            $targetWarehouses = collect($list->items())->flatMap(fn ($items) => $items->items->pluck('t_warehouse'))->unique()->values();
 
             $itemDetails = Bin::with('item')
                 ->whereIn('item_code', $itemCodes)
@@ -485,15 +490,17 @@ class ConsignmentPromodiserController extends Controller
 
             $result = collect($list->items())->map(function ($stockEntry) use ($itemDetails) {
                 $stockEntry->items = collect($stockEntry->items)->map(function ($item) use ($itemDetails) {
-                    $item->image = $item->defaultImage ? '/img/' . $item->defaultImage->image_path : 'icon/no_img.png';
-                    if (Storage::disk('public')->exists('/img/' . explode('.', $item->image)[0] . '.webp')) {
-                        $item->image = explode('.', $item->image)[0] . '.webp';
+                    $item->image = $item->defaultImage ? '/img/'.$item->defaultImage->image_path : 'icon/no_img.png';
+                    if (Storage::disk('public')->exists('/img/'.explode('.', $item->image)[0].'.webp')) {
+                        $item->image = explode('.', $item->image)[0].'.webp';
                     }
                     $item->price = isset($itemDetails[$item->t_warehouse][$item->item_code]) ? (float) $itemDetails[$item->t_warehouse][$item->item_code][0]->consignment_price : 0;
                     $item->amount = $item->price * $item->qty;
+
                     return $item;
                 });
                 $stockEntry->created_by = optional($stockEntry->mreq)->owner ? ucwords(str_replace('.', ' ', explode('@', $stockEntry->mreq->owner)[0])) : null;
+
                 return $stockEntry;
             });
 
@@ -527,7 +534,7 @@ class ConsignmentPromodiserController extends Controller
             }
 
             $items = Item::whereIn('item_code', $itemCodes)
-                ->with('bin', fn($q) => $q->where('warehouse', $branch)->select('item_code', 'consigned_qty', 'stock_uom', 'warehouse'))
+                ->with('bin', fn ($q) => $q->where('warehouse', $branch)->select('item_code', 'consigned_qty', 'stock_uom', 'warehouse'))
                 ->select('item_code', 'description', 'stock_uom')
                 ->get();
 
@@ -536,12 +543,13 @@ class ConsignmentPromodiserController extends Controller
                 $itemCode = $item->item_code;
                 $consignedQty = $binDetails->consigned_qty;
 
-                if (!in_array($itemCode, $itemCodes)) {
+                if (! in_array($itemCode, $itemCodes)) {
                     return "Item $itemCode not found on $branch";
                 }
                 if (isset($damagedQty[$itemCode]) && $damagedQty[$itemCode] > $consignedQty) {
                     return "Damaged qty of Item $itemCode is more than its available qty on $branch";
                 }
+
                 return null;
             })->filter()->first();
 
@@ -565,12 +573,12 @@ class ConsignmentPromodiserController extends Controller
                     'qty' => $qty,
                     'stock_uom' => $uom,
                     'damage_description' => $reason[$itemCode] ?? 0,
-                    'promodiser' => Auth::user()->name
+                    'promodiser' => Auth::user()->name,
                 ];
 
                 $response = $this->erpPost('Consignment Damaged Item', $data);
 
-                if (!isset($response['data'])) {
+                if (! isset($response['data'])) {
                     throw new Exception($response['exception'] ?? 'An error occured.');
                 }
 
@@ -587,7 +595,7 @@ class ConsignmentPromodiserController extends Controller
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => $user,
-                'data' => json_encode($activityLogData ?? [], true)
+                'data' => json_encode($activityLogData ?? [], true),
             ];
 
             $this->erpPost('Activity Log', $logs);
@@ -612,7 +620,7 @@ class ConsignmentPromodiserController extends Controller
 
         $itemCodes = collect($damagedItems->items())->pluck('item_code');
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
-        $itemImages = collect($itemImages)->map(fn($image) => $this->base64Image("img/$image"));
+        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("img/$image"));
         $noImg = $this->base64Image('/icon/no_img.png');
 
         $damagedArr = [];
@@ -629,7 +637,7 @@ class ConsignmentPromodiserController extends Controller
                 'creation' => $item->creation,
                 'store' => $item->branch_warehouse,
                 'image' => $img,
-                'status' => $item->status
+                'status' => $item->status,
             ];
         }
 
@@ -640,14 +648,14 @@ class ConsignmentPromodiserController extends Controller
     public function viewDamagedItemsList(Request $request)
     {
         $list = ConsignmentDamagedItems::query()
-            ->when($request->search, fn($q) => $q->where('item_code', 'like', '%' . $request->search . '%')->orWhere('description', 'like', '%' . $request->search . '%'))
-            ->when($request->store, fn($q) => $q->where('branch_warehouse', $request->store))
+            ->when($request->search, fn ($q) => $q->where('item_code', 'like', '%'.$request->search.'%')->orWhere('description', 'like', '%'.$request->search.'%'))
+            ->when($request->store, fn ($q) => $q->where('branch_warehouse', $request->store))
             ->orderBy('creation', 'desc')
             ->paginate(20);
 
         $itemCodes = collect($list->items())->pluck('item_code');
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
-        $itemImages = collect($itemImages)->map(fn($image) => $this->base64Image("img/$image"));
+        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("img/$image"));
         $noImg = $this->base64Image('icon/no_img.png');
 
         $result = [];
@@ -679,7 +687,7 @@ class ConsignmentPromodiserController extends Controller
             $damagedItem = ConsignmentDamagedItems::find($id);
             $existingSource = Bin::where('warehouse', $damagedItem->branch_warehouse)->where('item_code', $damagedItem->item_code)->first();
 
-            if (!$damagedItem || !$existingSource) {
+            if (! $damagedItem || ! $existingSource) {
                 return redirect()->back()->with('error', 'Item not found.');
             }
 
@@ -692,13 +700,13 @@ class ConsignmentPromodiserController extends Controller
                 Bin::where('name', $existingTarget->name)->update([
                     'modified' => now()->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
-                    'consigned_qty' => $existingTarget->consigned_qty + $damagedItem->qty
+                    'consigned_qty' => $existingTarget->consigned_qty + $damagedItem->qty,
                 ]);
             } else {
                 $latestBin = Bin::where('name', 'like', '%bin/%')->max('name');
                 $latestBinExploded = explode('/', $latestBin);
                 $binId = str_pad((($latestBin ? $latestBinExploded[1] : 0) + 1), 7, '0', STR_PAD_LEFT);
-                $binId = 'BIN/' . $binId;
+                $binId = 'BIN/'.$binId;
 
                 Bin::insert([
                     'name' => $binId,
@@ -713,20 +721,20 @@ class ConsignmentPromodiserController extends Controller
                     'stock_uom' => $damagedItem->stock_uom,
                     'valuation_rate' => $existingSource->consignment_price,
                     'consigned_qty' => $damagedItem->qty,
-                    'consignment_price' => $existingSource->consignment_price
+                    'consignment_price' => $existingSource->consignment_price,
                 ]);
             }
 
             Bin::where('name', $existingSource->name)->update([
                 'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'consigned_qty' => $existingSource->consigned_qty - $damagedItem->qty
+                'consigned_qty' => $existingSource->consigned_qty - $damagedItem->qty,
             ]);
 
             ConsignmentDamagedItems::where('name', $id)->update([
                 'modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'status' => 'Returned'
+                'status' => 'Returned',
             ]);
 
             ActivityLog::insert([
@@ -737,7 +745,7 @@ class ConsignmentPromodiserController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'docstatus' => 0,
                 'idx' => 0,
-                'subject' => 'Damaged Item Report for ' . number_format($damagedItem->qty) . ' ' . $damagedItem->stock_uom . ' of ' . $damagedItem->item_code . ' from ' . $damagedItem->branch_warehouse . ' has been returned to Quarantine Warehouse - FI by ' . Auth::user()->full_name . ' at ' . now()->toDateTimeString(),
+                'subject' => 'Damaged Item Report for '.number_format($damagedItem->qty).' '.$damagedItem->stock_uom.' of '.$damagedItem->item_code.' from '.$damagedItem->branch_warehouse.' has been returned to Quarantine Warehouse - FI by '.Auth::user()->full_name.' at '.now()->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => now()->toDateTimeString(),
                 'reference_doctype' => 'Damaged Items',
@@ -748,9 +756,11 @@ class ConsignmentPromodiserController extends Controller
             ]);
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Item Returned.');
         } catch (Exception $e) {
             DB::rollback();
+
             return redirect()->back()->with('error', 'Something went wrong. Please try again later');
         }
     }
@@ -764,9 +774,9 @@ class ConsignmentPromodiserController extends Controller
             ->when($request->q, function ($query) use ($request, $searchStr) {
                 return $query->where(function ($subQuery) use ($searchStr, $request) {
                     foreach ($searchStr as $str) {
-                        $subQuery->where('name', 'LIKE', '%' . $str . '%');
+                        $subQuery->where('name', 'LIKE', '%'.$str.'%');
                     }
-                    $subQuery->orWhere('name', 'LIKE', '%' . $request->q . '%');
+                    $subQuery->orWhere('name', 'LIKE', '%'.$request->q.'%');
                 });
             })
             ->select('name as id', 'name as text')
@@ -791,9 +801,9 @@ class ConsignmentPromodiserController extends Controller
         $dates = $request->date ? explode(' to ', $request->date) : [];
 
         $logs = ActivityLog::where('content', 'Consignment Activity Log')
-            ->when($request->warehouse, fn($q) => $q->where('subject', 'like', "%$request->warehouse%"))
-            ->when($dates, fn($q) => $q->whereBetween('creation', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]))
-            ->when($request->user, fn($q) => $q->where('full_name', $request->user))
+            ->when($request->warehouse, fn ($q) => $q->where('subject', 'like', "%$request->warehouse%"))
+            ->when($dates, fn ($q) => $q->whereBetween('creation', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]))
+            ->when($request->user, fn ($q) => $q->where('full_name', $request->user))
             ->select('creation', 'subject', 'reference_name', 'full_name')
             ->orderBy('creation', 'desc')
             ->paginate(20);
@@ -804,17 +814,17 @@ class ConsignmentPromodiserController extends Controller
     // /view_promodisers
     public function viewPromodisersList()
     {
-        if (!in_array(Auth::user()->user_group, ['Director', 'Consignment Supervisor'])) {
+        if (! in_array(Auth::user()->user_group, ['Director', 'Consignment Supervisor'])) {
             return redirect('/');
         }
 
         $userDetails = ERPUser::where('enabled', 1)
-            ->whereHas('whUser', fn($user) => $user->where('user_group', 'Promodiser'))
-            ->with('social', fn($user) => $user->select('parent', 'userid'))
+            ->whereHas('whUser', fn ($user) => $user->where('user_group', 'Promodiser'))
+            ->with('social', fn ($user) => $user->select('parent', 'userid'))
             ->with('whUser', function ($user) {
                 $user
                     ->select('wh_user', 'name', 'frappe_userid', 'full_name', 'frappe_userid', 'enabled')
-                    ->with('assignedWarehouses', fn($warehouse) => $warehouse->select('parent', 'name', 'warehouse', 'warehouse_name'));
+                    ->with('assignedWarehouses', fn ($warehouse) => $warehouse->select('parent', 'name', 'warehouse', 'warehouse_name'));
             })
             ->select('name', 'full_name')
             ->get();
@@ -822,7 +832,7 @@ class ConsignmentPromodiserController extends Controller
         $totalPromodisers = count($userDetails);
 
         $result = collect($userDetails)->map(function ($user) {
-            $loginStatus = Cache::has('user-is-online-' . $user->name)
+            $loginStatus = Cache::has('user-is-online-'.$user->name)
                 ? '<span class="text-success font-weight-bold">ONLINE NOW</span>'
                 : ($user->last_login ? Carbon::parse($user->last_login)->format('F d, Y h:i A') : null);
 
@@ -831,7 +841,7 @@ class ConsignmentPromodiserController extends Controller
                 'promodiser_name' => $user->full_name,
                 'stores' => collect($user->whUser->assignedWarehouses)->pluck('warehouse'),
                 'login_status' => $loginStatus,
-                'enabled' => $user->whUser->enabled
+                'enabled' => $user->whUser->enabled,
             ];
         });
 
@@ -875,16 +885,16 @@ class ConsignmentPromodiserController extends Controller
 
             $userDetails = ERPUser::where('name', $user)
                 ->where('enabled', 1)
-                ->with('social', fn($u) => $u->select('parent', 'userid'))
+                ->with('social', fn ($u) => $u->select('parent', 'userid'))
                 ->with('whUser', function ($u) {
                     $u
                         ->select('wh_user', 'name', 'frappe_userid', 'user_group', 'modified', 'modified_by', 'price_list')
-                        ->with('assignedWarehouses', fn($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
+                        ->with('assignedWarehouses', fn ($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
                 })
                 ->select('name', 'full_name')
                 ->first();
 
-            if (!$userDetails) {
+            if (! $userDetails) {
                 return redirect()->back()->with('error', 'User not found.');
             }
 
@@ -896,7 +906,7 @@ class ConsignmentPromodiserController extends Controller
                 'price_list' => 'Consignment Price',
                 'wh_user' => $userDetails->name,
                 'full_name' => $userDetails->full_name,
-                'frappe_userid' => $frappeUserid
+                'frappe_userid' => $frappeUserid,
             ];
 
             $method = 'post';
@@ -915,7 +925,7 @@ class ConsignmentPromodiserController extends Controller
 
             $response = $this->erpCall($method, 'Warehouse Users', $reference, $data);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception($response['exception'] ?? 'An error occured.');
             }
             $this->erpPut('Warehouse Users', $response['data']['name'], ['frappe_userid' => $response['data']['name']]);
@@ -926,6 +936,7 @@ class ConsignmentPromodiserController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
         }
     }
@@ -937,12 +948,12 @@ class ConsignmentPromodiserController extends Controller
             ->with('whUser', function ($user) {
                 $user
                     ->select('wh_user', 'name', 'frappe_userid', 'enabled')
-                    ->with('assignedWarehouses', fn($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
+                    ->with('assignedWarehouses', fn ($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
             })
             ->select('name', 'full_name')
             ->first();
 
-        if (!$userDetails) {
+        if (! $userDetails) {
             return redirect()->back()->with('error', 'User not found');
         }
 
@@ -965,12 +976,12 @@ class ConsignmentPromodiserController extends Controller
                 ->with('whUser', function ($user) {
                     $user
                         ->select('wh_user', 'name', 'frappe_userid', 'user_group', 'modified', 'modified_by', 'price_list')
-                        ->with('assignedWarehouses', fn($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
+                        ->with('assignedWarehouses', fn ($w) => $w->select('parent', 'name', 'warehouse', 'warehouse_name'));
                 })
                 ->select('name', 'full_name')
                 ->first();
 
-            if (!$userDetails) {
+            if (! $userDetails) {
                 throw new Exception('User not found');
             }
 
@@ -993,18 +1004,20 @@ class ConsignmentPromodiserController extends Controller
 
             $response = $this->erpPut('Warehouse Users', $frappeUserid, $data);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception(data_get($response, 'exception', 'An error occured while updating user.'));
             }
 
             if ($request->ajax()) {
                 return ['success' => 1, 'message' => 'Promodiser details updated.'];
             }
+
             return redirect('/view_promodisers')->with('success', 'Promodiser details updated.');
         } catch (\Throwable $e) {
             if ($request->ajax()) {
                 return ['success' => 0, 'message' => 'An error occured. Please contact your system administrator.', 500];
             }
+
             return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
         }
     }
@@ -1051,7 +1064,7 @@ class ConsignmentPromodiserController extends Controller
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->whereBetween('ste.delivery_date', [$cutoffStart, $cutoffEnd])
             ->where('sted.t_warehouse', $store)
-            ->where(fn($q) => $q->whereIn('ste.transfer_as', ['For Return', 'Store Transfer'])->orWhereIn('ste.receive_as', ['Sales Return']))
+            ->where(fn ($q) => $q->whereIn('ste.transfer_as', ['For Return', 'Store Transfer'])->orWhereIn('ste.receive_as', ['Sales Return']))
             ->whereIn('ste.purpose', ['Material Transfer', 'Material Receipt'])
             ->where('ste.docstatus', 1)
             ->select('ste.name', 'ste.delivery_date', 'sted.s_warehouse', 'sted.t_warehouse', 'ste.creation', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'sted.stock_uom', 'sted.basic_rate', 'sted.basic_amount', 'ste.owner')

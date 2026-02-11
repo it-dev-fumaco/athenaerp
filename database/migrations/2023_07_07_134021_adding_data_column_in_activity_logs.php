@@ -13,7 +13,9 @@ class AddingDataColumnInActivityLogs extends Migration
      */
     public function up()
     {
-        if (Schema::hasColumn('tabActivity Log', 'data')) return;
+        if (Schema::hasColumn('tabActivity Log', 'data')) {
+            return;
+        }
         Schema::table('tabActivity Log', function (Blueprint $table) {
             $table->text('data')->nullable();
         });

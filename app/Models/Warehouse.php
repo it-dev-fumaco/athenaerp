@@ -10,8 +10,11 @@ class Warehouse extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     protected $table = 'tabWarehouse';
@@ -24,7 +27,7 @@ class Warehouse extends Model
     /**
      * Scope to get warehouses allowed for a user (by frappe_userid).
      *
-     * @param Builder $query
+     * @param  Builder  $query
      */
     public function scopeForUser($query, string $frappeUserid)
     {

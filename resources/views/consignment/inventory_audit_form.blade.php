@@ -114,7 +114,7 @@
                                             <tr class="{{ (session()->has('error') && session()->has('item_codes') && in_array($row->item_code, session()->get('item_codes'))) ? 'bg-warning' : '' }}">
                                                 <td colspan="3" style="border-top: 0 !important;">
                                                     <span class="font-weight-bold d-none">{{ $row->item_code }}</span>
-                                                    <div class="item-description">{!! strip_tags($row->description) !!}</div>
+                                                    <div class="item-description">{!! $row->description !!}</div>
                                                 </td>
                                             </tr>
                                             @empty

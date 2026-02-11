@@ -15,122 +15,65 @@ use App\Models\SalesOrder;
 use App\Models\StockEntry;
 use App\Models\StockEntryDetail;
 use App\Models\StockReservation;
-use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WorkOrder;
+use App\Pipelines\ViewMaterialIssuePipeline;
+use App\Pipelines\ViewMaterialTransferForManufacturePipeline;
+use App\Pipelines\ViewMaterialTransferPipeline;
 use App\Services\StockEntryService;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
+use ErrorException;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
-use ErrorException;
-use Exception;
 
 class MaterialTransferController extends Controller
 {
     use ERPTrait, GeneralTrait;
 
     public function __construct(
-        protected StockEntryService $stockEntryService
+        protected StockEntryService $stockEntryService,
+        protected ViewMaterialIssuePipeline $viewMaterialIssuePipeline,
+        protected ViewMaterialTransferForManufacturePipeline $viewMaterialTransferForManufacturePipeline,
+        protected ViewMaterialTransferPipeline $viewMaterialTransferPipeline
     ) {}
 
     public function viewMaterialIssue(Request $request)
     {
-        if (!$request->arr) {
+        if (! $request->arr) {
             return view('material_issue');
         }
-        $allowedWarehouses = $this->getAllowedWarehouseIds();
 
-        $entries = StockEntry::query()
-            ->from('tabStock Entry as ste')
-            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-            ->where('ste.docstatus', 0)
-            ->where('purpose', 'Material Issue')
-            ->whereIn('s_warehouse', $allowedWarehouses)
-            ->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample'])
-            ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.creation', 'ste.issue_as')
-            ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
-            ->get();
+        $passable = (object) [
+            'allowedWarehouses' => $this->getAllowedWarehouseIds(),
+            'getActualQtyBulk' => fn (array $pairs) => $this->getActualQtyBulk($pairs),
+            'getAvailableQtyBulk' => fn (array $pairs) => $this->getAvailableQtyBulk($pairs),
+            'getWarehouseParentsBulk' => fn (array $warehouses) => $this->getWarehouseParentsBulk($warehouses),
+        ];
 
-        $salesOrderNos = $entries->pluck('sales_order_no')->unique()->filter()->values()->toArray();
-        $itemCodes = $entries->pluck('item_code')->unique()->values()->toArray();
-        $ownerNames = $entries->pluck('owner')->unique()->filter()->values()->toArray();
-        $warehouses = $entries->pluck('s_warehouse')->unique()->filter()->values()->toArray();
-
-        $soCustomers = SalesOrder::query()
-            ->whereIn('name', $salesOrderNos)
-            ->pluck('customer', 'name')
-            ->toArray();
-
-        $partNosQuery = ItemSupplier::query()
-            ->whereIn('parent', $itemCodes)
-            ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))
-            ->groupBy('parent')
-            ->pluck('supplier_part_nos', 'parent')
-            ->toArray();
-
-        $ownerFullNames = User::query()
-            ->whereIn('name', $ownerNames)
-            ->pluck('full_name', 'name')
-            ->toArray();
-
-        $itemWarehousePairs = $entries->map(fn($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();
-        $actualQtyMap = $this->getActualQtyBulk($itemWarehousePairs);
-        $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
-        $parentWarehouses = $this->getWarehouseParentsBulk($warehouses);
-
-        $list = [];
-        foreach ($entries as $d) {
-            $customer = Arr::get($soCustomers, $d->sales_order_no, null);
-            $partNos = Arr::get($partNosQuery, $d->item_code, '');
-            $owner = Arr::get($ownerFullNames, $d->owner, '--');
-            $key = "{$d->item_code}-{$d->s_warehouse}";
-
-            $list[] = [
-                'customer' => $customer,
-                'item_code' => $d->item_code,
-                'description' => $d->description,
-                's_warehouse' => $d->s_warehouse,
-                't_warehouse' => $d->t_warehouse,
-                'actual_qty' => $actualQtyMap[$key] ?? 0,
-                'uom' => $d->uom,
-                'name' => $d->name,
-                'owner' => $owner,
-                'parent' => $d->parent,
-                'part_nos' => $partNos,
-                'qty' => $d->qty,
-                'validate_item_code' => $d->validate_item_code,
-                'status' => $d->status,
-                'balance' => $availableQtyMap[$key] ?? 0,
-                'sales_order_no' => $d->sales_order_no,
-                'issue_as' => $d->issue_as,
-                'parent_warehouse' => Arr::get($parentWarehouses, $d->s_warehouse, null),
-                'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A')
-            ];
-        }
-
-        return response()->json(['records' => $list]);
+        return $this->viewMaterialIssuePipeline->run($passable);
     }
 
     public function viewMaterialTransferForManufacture(Request $request)
     {
-        if (!$request->arr) {
+        if (! $request->arr) {
             return view('material_transfer_for_manufacture');
         }
 
-        $allowedWarehouses = $this->getAllowedWarehouseIds();
-        $entries = $this->getMaterialTransferForManufactureEntries($allowedWarehouses);
+        $passable = (object) [
+            'allowedWarehouses' => $this->getAllowedWarehouseIds(),
+            'getMaterialTransferForManufactureEntries' => fn ($allowedWarehouses) => $this->getMaterialTransferForManufactureEntries($allowedWarehouses),
+            'buildMaterialTransferLookupData' => fn ($entries) => $this->buildMaterialTransferLookupData($entries),
+            'buildMaterialTransferRecordsList' => fn ($entries, $lookupData) => $this->buildMaterialTransferRecordsList($entries, $lookupData),
+        ];
 
-        $lookupData = $this->buildMaterialTransferLookupData($entries);
-
-        $list = $this->buildMaterialTransferRecordsList($entries, $lookupData);
-
-        return response()->json(['records' => $list]);
+        return $this->viewMaterialTransferForManufacturePipeline->run($passable);
     }
 
     /**
@@ -302,7 +245,7 @@ class MaterialTransferController extends Controller
                 'production_order' => $d->work_order,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                 'delivery_date' => ($deliveryDate) ? Carbon::parse($deliveryDate)->format('M-d-Y') : null,
-                'delivery_status' => ($deliveryDate) ? ((Carbon::parse($deliveryDate) < now()) ? 'late' : null) : null
+                'delivery_status' => ($deliveryDate) ? ((Carbon::parse($deliveryDate) < now()) ? 'late' : null) : null,
             ];
         }
 
@@ -311,12 +254,26 @@ class MaterialTransferController extends Controller
 
     public function viewMaterialTransfer(Request $request)
     {
-        if (!$request->arr) {
+        if (! $request->arr) {
             return view('material_transfer');
         }
 
-        $allowedWarehouses = $this->getAllowedWarehouseIds();
+        $passable = (object) [
+            'allowedWarehouses' => $this->getAllowedWarehouseIds(),
+            'getMaterialTransferEntries' => fn ($allowedWarehouses) => $this->getMaterialTransferEntries($allowedWarehouses),
+            'buildMaterialTransferViewLookupData' => fn ($entries) => $this->buildMaterialTransferViewLookupData($entries),
+            'buildMaterialTransferViewRecordsList' => fn ($entries, $lookupData) => $this->buildMaterialTransferViewRecordsList($entries, $lookupData),
+        ];
 
+        return $this->viewMaterialTransferPipeline->run($passable);
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection|array  $allowedWarehouses
+     * @return \Illuminate\Support\Collection
+     */
+    private function getMaterialTransferEntries($allowedWarehouses)
+    {
         $q1 = StockEntry::query()
             ->from('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
@@ -327,7 +284,7 @@ class MaterialTransferController extends Controller
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
 
-        $entries = StockEntry::query()
+        return StockEntry::query()
             ->from('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
             ->where('ste.docstatus', 0)
@@ -338,7 +295,14 @@ class MaterialTransferController extends Controller
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->union($q1)
             ->get();
+    }
 
+    /**
+     * @param  \Illuminate\Support\Collection  $entries
+     * @return array{stockReservationQty: \Illuminate\Support\Collection, consumedQty: \Illuminate\Support\Collection, itemActualQty: \Illuminate\Support\Collection, totalIssuedSte: \Illuminate\Support\Collection, totalIssuedAt: \Illuminate\Support\Collection, references: \Illuminate\Support\Collection, partNosQuery: \Illuminate\Support\Collection, parentWarehouses: \Illuminate\Support\Collection}
+     */
+    private function buildMaterialTransferViewLookupData($entries)
+    {
         $itemCodes = array_values(array_unique(array_column($entries->toArray(), 'item_code')));
         $sourceWarehouses = array_values(array_unique(array_column($entries->toArray(), 's_warehouse')));
 
@@ -409,9 +373,37 @@ class MaterialTransferController extends Controller
             $parentWarehouses = Warehouse::where('disabled', 0)->whereIn('name', $sourceWarehouses)->pluck('parent_warehouse', 'name');
         }
 
+        return [
+            'stockReservationQty' => $stockReservationQty,
+            'consumedQty' => $consumedQty,
+            'itemActualQty' => $itemActualQty,
+            'totalIssuedSte' => $totalIssuedSte,
+            'totalIssuedAt' => $totalIssuedAt,
+            'references' => $references,
+            'partNosQuery' => $partNosQuery,
+            'parentWarehouses' => $parentWarehouses,
+        ];
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection  $entries
+     * @param  array{stockReservationQty: \Illuminate\Support\Collection, consumedQty: \Illuminate\Support\Collection, itemActualQty: \Illuminate\Support\Collection, totalIssuedSte: \Illuminate\Support\Collection, totalIssuedAt: \Illuminate\Support\Collection, references: \Illuminate\Support\Collection, partNosQuery: \Illuminate\Support\Collection, parentWarehouses: \Illuminate\Support\Collection}  $lookupData
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildMaterialTransferViewRecordsList($entries, array $lookupData)
+    {
+        $stockReservationQty = $lookupData['stockReservationQty'];
+        $consumedQty = $lookupData['consumedQty'];
+        $itemActualQty = $lookupData['itemActualQty'];
+        $totalIssuedSte = $lookupData['totalIssuedSte'];
+        $totalIssuedAt = $lookupData['totalIssuedAt'];
+        $references = $lookupData['references'];
+        $partNosQuery = $lookupData['partNosQuery'];
+        $parentWarehouses = $lookupData['parentWarehouses'];
+
         $list = [];
         foreach ($entries as $d) {
-            $arrKey = $d->item_code . str_replace(' ', '', $d->s_warehouse);
+            $arrKey = $d->item_code.str_replace(' ', '', $d->s_warehouse);
 
             $reservedQty = Arr::get($stockReservationQty, $arrKey, 0) - Arr::get($consumedQty, $arrKey, 0);
             $issuedQty = Arr::get($totalIssuedSte, $arrKey, 0) + Arr::get($totalIssuedAt, $arrKey, 0);
@@ -453,7 +445,7 @@ class MaterialTransferController extends Controller
             ];
         }
 
-        return response()->json(['records' => $list]);
+        return $list;
     }
 
     public function submitInternalTransfer(SubmitInternalTransferRequest $request)
@@ -466,7 +458,7 @@ class MaterialTransferController extends Controller
 
             $now = now();
 
-            if (!$stockEntry) {
+            if (! $stockEntry) {
                 throw new Exception('Record not found');
             }
 
@@ -484,7 +476,7 @@ class MaterialTransferController extends Controller
                 throw new Exception('Item already issued.');
             }
 
-            if (!$itemDetails) {
+            if (! $itemDetails) {
                 throw new Exception("Item <b>$itemCode</b> not found.");
             }
 
@@ -520,7 +512,7 @@ class MaterialTransferController extends Controller
                     $item->where('item_code', $itemCode);
                 })->find($stockEntry->material_request);
 
-                if (!$mreqQry) {
+                if (! $mreqQry) {
                     throw new Exception("Item $itemCode not found in $stockEntry->material_request<br/>Please contact MREQ owner: $stockEntry->requested_by");
                 }
 
@@ -529,7 +521,7 @@ class MaterialTransferController extends Controller
                 if ($mreqIssuedQty >= $mreqRequestedQty) {
                     $mreqIssuedQty = number_format($mreqIssuedQty);
                     $mreqRequestedQty = number_format($mreqRequestedQty);
-                    throw new Exception("Issued qty cannot be greater than requested qty<br/>Total Issued Qty: $mreqIssuedQty<br/>Requested Qty: $mreqRequestedQty<br/>Please contact MREQ owner: " . $stockEntry->requested_by);
+                    throw new Exception("Issued qty cannot be greater than requested qty<br/>Total Issued Qty: $mreqIssuedQty<br/>Requested Qty: $mreqRequestedQty<br/>Please contact MREQ owner: ".$stockEntry->requested_by);
                 }
 
                 if ($request->qty > ($mreqRequestedQty - $mreqIssuedQty)) {
@@ -563,12 +555,12 @@ class MaterialTransferController extends Controller
                         'cost_center' => 'Main - FI',
                         's_warehouse' => $stockEntryItem->s_warehouse,
                         'item_code' => $itemCode,
-                        'qty' => $unissuedQty
-                    ]]
+                        'qty' => $unissuedQty,
+                    ]],
                 ];
 
                 $unissuedResponse = $this->erpPost('Stock Entry', $unissuedStockEntry);
-                if (!isset($unissuedResponse['data'])) {
+                if (! isset($unissuedResponse['data'])) {
                     $err = data_get($unissuedResponse, 'exception', 'An error occured while submitting Stock entry for unissued items');
                     throw new Exception($err);
                 }
@@ -588,7 +580,7 @@ class MaterialTransferController extends Controller
             }
 
             $checker = collect($stockEntry->items)->where('name', '!=', $childId)->where('status', 'For Checking')->count();
-            if (!$checker) {
+            if (! $checker) {
                 $stockEntry->item_status = 'Issued';
                 $stockEntry->docstatus = 1;
             }
@@ -597,7 +589,7 @@ class MaterialTransferController extends Controller
 
             $response = $this->erpPut('Stock Entry', $stockEntry->name, collect($stockEntry)->toArray());
 
-            if (!Arr::has($response, 'data')) {
+            if (! Arr::has($response, 'data')) {
                 if (Arr::has($response, 'exc_type') && $response['exc_type'] == 'TimestampMismatchError') {
                     $stockEntry = $this->erpGet('Stock Entry', $stockEntry->name);
                     $stockEntry = $stockEntry['data'];
@@ -613,18 +605,19 @@ class MaterialTransferController extends Controller
                             $item['validate_item_code'] = $request->barcode;
                             $item['date_modified'] = $now->toDateTimeString();
                         }
+
                         return $item;
                     });
 
                     $checker = collect($stockEntry['items'])->where('name', '!=', $childId)->where('status', 'For Checking')->count();
-                    if (!$checker) {
+                    if (! $checker) {
                         $stockEntry['item_status'] = 'Issued';
                         $stockEntry['docstatus'] = 1;
                     }
 
                     $response = $this->erpPut('Stock Entry', $stockEntry['name'], collect($stockEntry)->toArray());
 
-                    if (!Arr::has($response, 'data')) {
+                    if (! Arr::has($response, 'data')) {
                         $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
                         throw new Exception($err);
                     }
@@ -640,6 +633,7 @@ class MaterialTransferController extends Controller
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             return ApiResponse::failure('Error creating transaction. Please contact your system administrator.');
         }
     }
@@ -653,7 +647,7 @@ class MaterialTransferController extends Controller
             ->select('ste.work_order', 'ste.transfer_as', 'ste.purpose', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.actual_qty', 'sted.validate_item_code', 'sted.owner', 'sted.status', 'sted.remarks', 'sted.stock_uom', 'ste.sales_order_no', 'ste.material_request', 'ste.issue_as', 'ste.docstatus')
             ->first();
 
-        if (!$q) {
+        if (! $q) {
             throw new ErrorException('Stock Entry not found.');
         }
 
@@ -705,7 +699,7 @@ class MaterialTransferController extends Controller
             'stock_reservation' => $stockReservationDetails,
             'docstatus' => $q->docstatus,
             'parent' => $q->parent,
-            'reference' => 'Stock Entry'
+            'reference' => 'Stock Entry',
         ];
 
         if ($q->purpose == 'Manufacture') {
@@ -726,11 +720,13 @@ class MaterialTransferController extends Controller
 
         if (in_array($q->transfer_as, ['Consignment', 'Sample Item'])) {
             $isStockEntry = true;
+
             return view('deliveries_modal_content', compact('data', 'isStockEntry'));
         }
 
         if ($q->purpose == 'Material Receipt') {
             $isStockEntry = true;
+
             return view('return_modal_content', compact('data', 'isStockEntry'));
         }
 
@@ -749,7 +745,7 @@ class MaterialTransferController extends Controller
     public function updateBin($stockEntry)
     {
         $result = $this->stockEntryService->updateBin($stockEntry);
-        if (!($result['success'] ?? true)) {
+        if (! ($result['success'] ?? true)) {
             return ApiResponse::failureLegacy($result['message'] ?? 'Error', 422, ['error' => $result['message'] ?? 'Error', 'id' => $result['id'] ?? $stockEntry]);
         }
     }
@@ -770,11 +766,11 @@ class MaterialTransferController extends Controller
             $productionOrderDetails = WorkOrder::with('items')->find($productionOrder);
             $productionOrderItems = collect($productionOrderDetails->items)->whereIn('item_code', collect($stockEntry->items)->pluck('item_code'));
 
-            if (!$productionOrderItems) {
+            if (! $productionOrderItems) {
                 throw new Exception('No item(s) found');
             }
 
-            $itemWarehousePairs = $productionOrderItems->map(fn($item) => [$item->item_code, $item->source_warehouse])->unique()->values()->toArray();
+            $itemWarehousePairs = $productionOrderItems->map(fn ($item) => [$item->item_code, $item->source_warehouse])->unique()->values()->toArray();
             $actualQtyMap = $this->getActualQtyBulk($itemWarehousePairs);
 
             $stockEntryDetail = [];
@@ -816,7 +812,7 @@ class MaterialTransferController extends Controller
                 ];
             }
 
-            if (!$stockEntryDetail) {
+            if (! $stockEntryDetail) {
                 return ['success' => 1, 'message' => 'No items found.'];
             }
 
@@ -844,7 +840,7 @@ class MaterialTransferController extends Controller
             ];
 
             $stockEntryResponse = $this->erpPost('Stock Entry', $stockEntryData);
-            if (!isset($stockEntryResponse['data'])) {
+            if (! isset($stockEntryResponse['data'])) {
                 $err = $stockEntryResponse['exception'] ?? 'An error occured while generating Stock Entry';
                 throw new Exception($err);
             }
@@ -855,6 +851,7 @@ class MaterialTransferController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
@@ -910,7 +907,7 @@ class MaterialTransferController extends Controller
                         ->sum('actual_qty');
 
                     if ($row->qty > $actualQty) {
-                        return ApiResponse::modal(false, 'Insufficient Stock', 'Insufficient stock for ' . $row->item_code . ' in ' . $row->s_warehouse, 422);
+                        return ApiResponse::modal(false, 'Insufficient Stock', 'Insufficient stock for '.$row->item_code.' in '.$row->s_warehouse, 422);
                     }
                 }
             }

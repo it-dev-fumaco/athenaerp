@@ -309,7 +309,7 @@
                 $('#qty-input').data('max', 0);
                 $('#img-src').attr('src', null);
                 $('#item-code-text').text(null);
-                $('#description-text').text(null);
+                $('#description-text').empty();
                 $('#img-src-display').attr('src', null);
                 $('#webp-src-display').attr('src', null);
             }
@@ -325,7 +325,7 @@
                 $('#qty-input').data('max', e.params.data.max);
                 $('#img-src-display').attr('src', e.params.data.img);
                 $('#webp-src-display').attr('src', e.params.data.webp);
-                $('#description-text').text(e.params.data.description);
+                $('#description-text').html(e.params.data.description);
 
                 $('#items-container').removeClass('d-none');
                 if($.inArray(e.params.data.id, items_array) !== -1){

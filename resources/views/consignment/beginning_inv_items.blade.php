@@ -156,7 +156,7 @@
                             <div class="p-1 col-1 text-center h-100 font-responsive remove-item" style="width: 15px !important; color: red; cursor: pointer" data-id="{{ $item['item_code'] }}"><i class="fa fa-remove"></i></div>
                         </div>
                         <div class="p-1 item-description" style="font-size: 9.5pt !important;">
-                            {!! strip_tags($item['item_description']) !!}
+                            {!! $item['item_description'] !!}
                         </div>
                     </td>
                 </tr>
@@ -539,7 +539,7 @@
 
         $(document).on('select2:select', '#item-selection', function(e){
             $('#new-item-code').text(e.params.data.id); // item code
-            $('#new-description').text(e.params.data.description); // description
+            $('#new-description').html(e.params.data.description); // description
             $('#new-classification').text(e.params.data.classification); // classification
             $('#new-img').attr('src', e.params.data.image); // image
             $('#new-img-txt').text(e.params.data.image); // image

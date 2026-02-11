@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 
 /**
  * Standardized API responses compatible with Frappe REST API format.
+ *
  * @see https://docs.frappe.io/framework/user/en/api/rest
  */
 class ApiResponse
@@ -46,6 +47,7 @@ class ApiResponse
         if ($data !== null) {
             $payload['data'] = $data;
         }
+
         return response()->json($payload, $status);
     }
 

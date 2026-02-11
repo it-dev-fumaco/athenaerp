@@ -30,7 +30,7 @@
 						<img src="{{ asset('storage/icon/upload.png') }}" class="img-circle" name="upload" id="btn" value="Upload Image" width="40px" onClick="javascript:void window.open('upload_image.php?item_id=LR00443','1445905018294','width=600,height=200,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=600,top=300');return false;">
 				  </div>
 			 </td>
-			 <td rowspan="{{ $rowspan }}"><b>{{ $row['name'] }}</b><br>{{ $row['description'] }}<br><br><b>Part No(s):{{ $row['part_nos'] }}</b></td>
+			 <td rowspan="{{ $rowspan }}"><b>{{ $row['name'] }}</b><br>{!! $row['description'] !!}<br><br><b>Part No(s):{{ $row['part_nos'] }}</b></td>
 			 <td class="text-center" rowspan="{{ $rowspan }}">{{ $row['item_group'] }}</td>
 			 <td class="text-center">{{ $row['stock_uom'] }}</td>
 			 <td class="text-center">{{ $row['item_classification'] }}</td>

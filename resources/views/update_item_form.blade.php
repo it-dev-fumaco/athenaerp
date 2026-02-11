@@ -5,6 +5,13 @@
 
 @section('content')
     <div class="container p-1 p-md-3" style="max-width: 100%;">
+        <div class="row mb-2">
+            <div class="col-12">
+                <a href="{{ url('/get_item_details/' . $itemCode) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to Item Profile
+                </a>
+            </div>
+        </div>
         <div class="row">
             <div class="col-4">
                 

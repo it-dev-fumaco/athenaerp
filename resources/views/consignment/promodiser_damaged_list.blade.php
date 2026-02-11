@@ -106,7 +106,7 @@
                                                                     </tr>
                                                                     <tr>
                                                                         <td colspan="2" class="text-justify p-1 align-middle" style="border-top: 0 !important;">
-                                                                            <p>{!! strip_tags($item['item_description']) !!}</p>
+                                                                            <p>{!! $item['item_description'] !!}</p>
                                                                             <p class="mt-1"><b>Reason: </b> {{ $item['damage_description'] }}</p>
                                                                         </td>
                                                                     </tr>
@@ -147,7 +147,7 @@
                                                 <div class="d-none"><!-- For Search -->
                                                     {{ $item['item_code'] }}
                                                 </div>
-                                                <div class="item-description">{!! strip_tags($item['item_description']) !!}</div>
+                                                <div class="item-description">{!! $item['item_description'] !!}</div>
                                                 <span class="d-block mt-1 font-weight-bold">{{ $item['store'] }}</span>
                                                 <b>Reason: </b> {{ $item['damage_description'] }} <br>
                                                 <b>Qty: </b> {{ number_format($item['damaged_qty']) }} <small style="white-space: nowrap">{{ $item['uom'] }}</small>

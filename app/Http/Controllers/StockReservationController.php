@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Helpers\ApiResponse;
 use App\Models\Bin;
 use App\Models\StockReservation;
 use App\Models\Warehouse;
-use App\Models\WarehouseAccess;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class StockReservationController extends Controller
 {
@@ -36,14 +34,14 @@ class StockReservationController extends Controller
 
             $binDetails = Bin::forItemAndWarehouse($request->item_code, $request->warehouse)->first();
 
-            if (!$binDetails) {
+            if (! $binDetails) {
                 return ApiResponse::modal(false, 'No Stock', 'No available stock.', 422);
             }
 
             $availableQty = $binDetails->getAvailableQty();
 
             if ($availableQty < $request->reserve_qty) {
-                return ApiResponse::modal(false, 'Insufficient Stock', 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $availableQty . '</b>, you need <b>' . $request->reserve_qty . '</b>', 422);
+                return ApiResponse::modal(false, 'Insufficient Stock', 'Qty not available for <b> '.$request->item_code.'</b> in <b>'.$request->s_warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->reserve_qty.'</b>', 422);
             }
 
             if ($request->type == 'In-house') {
@@ -52,7 +50,7 @@ class StockReservationController extends Controller
                 }
             }
 
-            if ($request->type == 'Consignment' && !$request->consignment_warehouse) {
+            if ($request->type == 'Consignment' && ! $request->consignment_warehouse) {
                 return ApiResponse::modal(false, 'Select Branch', 'Please select Branch.', 422);
             }
 
@@ -71,9 +69,9 @@ class StockReservationController extends Controller
 
             $latestName = StockReservation::max('name');
             $latestNameExploded = explode('-', $latestName);
-            $newId = (!$latestName) ? 1 : $latestNameExploded[1] + 1;
+            $newId = (! $latestName) ? 1 : $latestNameExploded[1] + 1;
             $newId = str_pad($newId, 5, '0', STR_PAD_LEFT);
-            $newId = 'STR-' . $newId;
+            $newId = 'STR-'.$newId;
 
             $now = now();
             $stockReservation = new StockReservation;
@@ -112,7 +110,7 @@ class StockReservationController extends Controller
 
             DB::connection('mysql')->commit();
 
-            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. ' . $newId . ' has been created.');
+            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. '.$newId.' has been created.');
         } catch (Exception $e) {
             DB::connection('mysql')->rollback();
 
@@ -169,7 +167,7 @@ class StockReservationController extends Controller
                 'owner' => $issuedItem->owner,
                 'issued_by' => $issuedItem->session_user,
                 'issued_at' => $issuedItem->modified,
-                'date' => $issuedItem->creation
+                'date' => $issuedItem->creation,
             ];
         }
 
@@ -182,7 +180,7 @@ class StockReservationController extends Controller
                 'owner' => $issuedItem->owner,
                 'issued_by' => $issuedItem->session_user,
                 'issued_at' => $issuedItem->modified,
-                'date' => $issuedItem->creation
+                'date' => $issuedItem->creation,
             ];
         }
 
@@ -206,6 +204,7 @@ class StockReservationController extends Controller
                 }
                 $reservedQty = (floor($row->reserve_qty) != $row->reserve_qty * 1) ? number_format($row->reserve_qty, 4) : $row->reserve_qty * 1;
                 $consumedQty = (floor($row->consumed_qty) != $row->consumed_qty * 1) ? number_format($row->consumed_qty, 4) : $row->consumed_qty * 1;
+
                 return [
                     'name' => $row->name,
                     'creation' => $row->creation,
@@ -236,6 +235,7 @@ class StockReservationController extends Controller
                 ];
             };
             $basePath = $request->url();
+
             return response()->json([
                 'item_code' => $itemCode,
                 'can_edit' => $canEdit,
@@ -294,7 +294,7 @@ class StockReservationController extends Controller
 
             DB::connection('mysql')->commit();
 
-            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. ' . $request->stock_reservation_id . ' has been cancelled.');
+            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. '.$request->stock_reservation_id.' has been cancelled.');
         } catch (Exception $e) {
             DB::connection('mysql')->rollback();
 
@@ -326,7 +326,7 @@ class StockReservationController extends Controller
                 ->where('warehouse', $request->warehouse)
                 ->first();
 
-            if (!$binDetails) {
+            if (! $binDetails) {
                 return ApiResponse::modal(false, 'No Stock', 'No available stock.', 422);
             }
             // get total reserved qty from stock reservation table
@@ -349,7 +349,7 @@ class StockReservationController extends Controller
             $availableQty = ($request->available_qty + ($reservedQty - $stockReservation->consumed_qty));
 
             if ($availableQty < $request->reserve_qty) {
-                return ApiResponse::modal(false, 'Insufficient Stock', 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $availableQty . '</b>, you need <b>' . $request->reserve_qty . '</b>', 422);
+                return ApiResponse::modal(false, 'Insufficient Stock', 'Qty not available for <b> '.$request->item_code.'</b> in <b>'.$request->s_warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->reserve_qty.'</b>', 422);
             }
 
             if ($stockReservation->type == 'Website Stocks') {
@@ -387,9 +387,10 @@ class StockReservationController extends Controller
 
             DB::connection('mysql')->commit();
 
-            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. ' . $request->id . ' has been updated.');
+            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. '.$request->id.' has been updated.');
         } catch (Exception $e) {
             DB::connection('mysql')->rollback();
+
             return ApiResponse::modal(false, 'Stock Reservation', 'There was a problem updating Stock Reservation.', 422);
         }
     }
@@ -405,7 +406,7 @@ class StockReservationController extends Controller
             ->whereIn('tabWarehouse.name', $allowedWarehouses)
             ->where('b.item_code', $request->item_code)
             ->when($request->q, function ($query) use ($request) {
-                return $query->where('tabWarehouse.name', 'like', '%' . $request->q . '%');
+                return $query->where('tabWarehouse.name', 'like', '%'.$request->q.'%');
             })
             ->select('tabWarehouse.name as id', 'tabWarehouse.name as text')
             ->orderBy('tabWarehouse.modified', 'desc')

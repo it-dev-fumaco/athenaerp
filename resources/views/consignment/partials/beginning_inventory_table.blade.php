@@ -131,7 +131,7 @@
 											</tr>
 											<tr>
 												<td colspan="4" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-													<div class="w-100 item-description">{{ strip_tags($item['item_description']) }}</div>
+													<div class="w-100 item-description">{!! $item['item_description'] !!}</div>
 													<span class="d-none">{{ $item['item_code'] }}</span>
 												</td>
 											</tr>

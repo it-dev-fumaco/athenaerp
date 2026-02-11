@@ -8,10 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class MaterialRequestItem extends Model
 {
     use HasFactory;
+
     protected $table = 'tabMaterial Request Item';
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     public function parentDoctype()
@@ -19,7 +24,8 @@ class MaterialRequestItem extends Model
         return $this->belongsTo(MaterialRequest::class, 'parent', 'name');
     }
 
-    public function defaultImage(){
+    public function defaultImage()
+    {
         return $this->hasOne(ItemImages::class, 'parent', 'item_code')->select('image_path', 'parent');
     }
 }

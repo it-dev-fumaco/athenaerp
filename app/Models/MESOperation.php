@@ -10,8 +10,12 @@ class MESOperation extends Model
     use HasFactory;
 
     protected $table = 'operation';
+
     protected $connection = 'mysql_mes';
+
     protected $primaryKey = 'operation_id';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 }

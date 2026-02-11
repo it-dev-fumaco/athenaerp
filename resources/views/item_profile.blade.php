@@ -552,7 +552,7 @@
                                                                 <a href="/get_item_details/{{ $a['item_code'] }}" class="text-dark" style="font-size: 9pt;">
                                                                     <div class="p-1 text-justify">
                                                                         <span class="font-weight-bold font-responsive">{{ $a['item_code'] }}</span>
-                                                                        <small class="font-italic font-responsive" style="font-size: 9pt;">{{ \Illuminate\Support\Str::limit(strip_tags($a['description']), $limit = 78, $end = '...') }}</small>
+                                                                        <small class="font-italic font-responsive item-alternative-description" style="font-size: 9pt;">{!! $a['description'] !!}</small>
                                                                         <br>
                                                                         <span class="badge badge-{{ ($a['actual_stocks'] > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($a['actual_stocks'] > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                                                     </div>
@@ -689,6 +689,12 @@
             min-width: 0;
             max-width: 406px;
         }
+        .item-alternative-description {
+            max-height: 5.5em;
+            overflow-y: auto;
+            display: block;
+        }
+        .item-alternative-description p { margin-bottom: 0.25em; }
         .variants-th-attr { min-width: 100px; }
         .variants-th-price { min-width: 90px; }
         .input-group-price { width: 120px; max-width: 100%; }

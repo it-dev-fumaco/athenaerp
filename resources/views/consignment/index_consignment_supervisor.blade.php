@@ -408,8 +408,6 @@
             }
         });
 
-        console.log(moment().startOf('month').format('YYYY-MMM-DD'));
-
         $(".date-range").on('apply.daterangepicker', function (ev, picker) {
             var duration = picker.startDate.format('YYYY-MMM-DD') + ' to ' + picker.endDate.format('YYYY-MMM-DD');
             $(this).val(duration);

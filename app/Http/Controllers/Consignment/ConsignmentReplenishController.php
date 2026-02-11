@@ -14,16 +14,16 @@ use App\Models\Warehouse;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Exception;
 
 class ConsignmentReplenishController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
 
     public function index(Request $request)
     {
@@ -34,7 +34,7 @@ class ConsignmentReplenishController extends Controller
 
         $consignmentStores = Warehouse::where([
             'disabled' => 0,
-            'parent_warehouse' => 'P2 Consignment Warehouse - FI'
+            'parent_warehouse' => 'P2 Consignment Warehouse - FI',
         ])->orderBy('name')->pluck('name');
 
         if ($request->ajax()) {
@@ -90,6 +90,7 @@ class ConsignmentReplenishController extends Controller
                 })
                 ->when($request['search'] ?? null, function ($query) use ($request) {
                     $searchString = $request['search'];
+
                     return $query->where('name', 'like', "%{$searchString}%");
                 })
                 ->orderByDesc('creation')
@@ -107,7 +108,7 @@ class ConsignmentReplenishController extends Controller
 
         $consignmentStores = Warehouse::where([
             'disabled' => 0,
-            'parent_warehouse' => 'P2 Consignment Warehouse - FI'
+            'parent_warehouse' => 'P2 Consignment Warehouse - FI',
         ])->orderBy('name')->pluck('name');
 
         return view('consignment.supervisor.consignment_order_edit', compact('details', 'consignmentStores'));
@@ -121,7 +122,7 @@ class ConsignmentReplenishController extends Controller
             $materialRequest = MaterialRequest::find($id);
             $consignmentStatus = $request->consignment_status;
 
-            if (!$materialRequest) {
+            if (! $materialRequest) {
                 throw new Exception("MREQ $id not found!");
             }
 
@@ -129,7 +130,7 @@ class ConsignmentReplenishController extends Controller
                 throw new Exception("MREQ $id is already canceled!");
             }
 
-            $method = $consignmentStatus == 'Cancelled' && !$materialRequest->docstatus ? 'delete' : 'put';
+            $method = $consignmentStatus == 'Cancelled' && ! $materialRequest->docstatus ? 'delete' : 'put';
 
             switch ($consignmentStatus) {
                 case 'Approved':
@@ -162,16 +163,16 @@ class ConsignmentReplenishController extends Controller
                 'project' => $request->project,
                 'notes00' => $request->remarks,
                 'docstatus' => $docstatus,
-                'items' => $items
+                'items' => $items,
             ];
 
             $response = $this->erpCall($method, 'Material Request', $id, $data);
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 $err = $response['exception'] ?? 'An error occured while updating material request';
                 throw new Exception($err);
             }
 
-            if ($consignmentStatus == 'Cancelled' && !$materialRequest->docstatus) {
+            if ($consignmentStatus == 'Cancelled' && ! $materialRequest->docstatus) {
                 return redirect('/consignment/replenish')->with('success', "MREQ $id successfully deleted");
             }
 
@@ -181,6 +182,7 @@ class ConsignmentReplenishController extends Controller
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             return redirect()->back()->with('error', 'An error occured. Please contact your system administrator.');
         }
     }
@@ -204,7 +206,7 @@ class ConsignmentReplenishController extends Controller
             $warehouse->whereIn('parent_warehouse', $allowedWarehouses);
         })->whereRaw("item_code IN ('$flattenItemCodes')")->select('warehouse', 'item_code')->get();
 
-        $itemWarehousePairs = $inventory->map(fn($item) => [$item->item_code, $item->warehouse])->unique()->values()->toArray();
+        $itemWarehousePairs = $inventory->map(fn ($item) => [$item->item_code, $item->warehouse])->unique()->values()->toArray();
         $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
         $inventory = collect($inventory)->map(function ($item) use ($availableQtyMap) {
@@ -239,7 +241,7 @@ class ConsignmentReplenishController extends Controller
         try {
             $response = $this->erpDelete('Material Request', $id);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 $err = data_get($response, 'exception', 'An error occured while deleting the document');
                 throw new Exception($err);
             }
@@ -288,12 +290,12 @@ class ConsignmentReplenishController extends Controller
                 'project' => $project,
                 'consignment_status' => $status,
                 'items' => $itemsData,
-                'transaction_date' => $now->toDateTimeString()
+                'transaction_date' => $now->toDateTimeString(),
             ];
 
             $response = $this->erpPost('Material Request', $data);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 $err = data_get($response, 'exception', 'An error occured while submitting your request');
                 throw new Exception($err);
             }
@@ -331,7 +333,7 @@ class ConsignmentReplenishController extends Controller
             $stockEntry = ConsignmentStockEntry::with('items')->find($id);
 
             $columnsToExclude = ['parent', 'creation', 'modified', 'modified_by', 'owner', 'docstatus', 'parentfield', 'parenttype'];
-            $mappedItems = collect($stockEntry->items)->map(function ($item) use ($items, $issue, $columnsToExclude) {
+            $mappedItems = collect($stockEntry->items)->map(function ($item) use ($columnsToExclude) {
                 $itemCode = $item->item_code;
 
                 foreach ($columnsToExclude as $column) {
@@ -389,7 +391,7 @@ class ConsignmentReplenishController extends Controller
             ];
 
             $response = $this->erpPut('Material Request', $id, $data);
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 $err = data_get($response, 'exception', 'An error occured while updating stock entry');
                 throw new Exception($err);
             }

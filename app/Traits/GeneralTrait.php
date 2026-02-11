@@ -5,7 +5,6 @@ namespace App\Traits;
 use App\Models\StockEntry;
 use App\Models\StockReservation;
 use App\Models\Warehouse;
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -54,6 +53,7 @@ trait GeneralTrait
     public function getWarehouseParent($childWarehouse)
     {
         $warehouse = Warehouse::where('disabled', 0)->where('name', $childWarehouse)->first();
+
         return $warehouse?->parent_warehouse;
     }
 
@@ -211,9 +211,10 @@ trait GeneralTrait
         // return "data:$mimetype;base64,$base64";
     }
 
-    public function sendMail($template, $data, $recipient, $subject = null){
+    public function sendMail($template, $data, $recipient, $subject = null)
+    {
         try {
-            Mail::send($template, $data, function($message) use ($recipient, $subject){
+            Mail::send($template, $data, function ($message) use ($recipient, $subject) {
                 $message->to($recipient);
                 $message->subject($subject);
             });
@@ -224,11 +225,13 @@ trait GeneralTrait
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             return ['success' => 0, 'message' => $th->getMessage()];
         }
     }
 
-    public function updateSteStatus($id = null) {
+    public function updateSteStatus($id = null)
+    {
         try {
             $pendingSte = StockEntry::with('items')
                 ->whereHas('items', function (Builder $query) {
@@ -268,6 +271,7 @@ trait GeneralTrait
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return 0;
         }
     }
@@ -323,7 +327,7 @@ trait GeneralTrait
 
     public function insertTransactionLog($transactionType, $id)
     {
-        if($transactionType == 'Picking Slip'){
+        if ($transactionType == 'Picking Slip') {
             $q = DB::table('tabPacking Slip as ps')
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                 ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
@@ -332,7 +336,7 @@ trait GeneralTrait
                 ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom')
                 ->first();
 
-            if(!$q){
+            if (! $q) {
                 $q = DB::table('tabPacking Slip as ps')
                     ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
                     ->join('tabPacked Item as pi', 'pi.name', 'psi.pi_detail')
@@ -349,7 +353,7 @@ trait GeneralTrait
             $sWarehouse = $q->warehouse;
             $tWarehouse = null;
             $referenceNo = $q->delivery_note;
-        } else if($transactionType == 'Delivery Note') {
+        } elseif ($transactionType == 'Delivery Note') {
             $q = DB::table('tabDelivery Note as dn')
                 ->join('tabDelivery Note Item as dni', 'dn.name', 'dni.parent')
                 ->where('dni.name', $id)->select('dni.name', 'dni.parent', 'dni.item_code', 'dni.description', 'dn.name as delivery_note', 'dni.warehouse', 'dni.qty', 'dni.barcode', 'dni.session_user', 'dni.stock_uom')
@@ -369,35 +373,35 @@ trait GeneralTrait
                 ->first();
 
             $type = null;
-            if($q->purpose == 'Manufacture') {
+            if ($q->purpose == 'Manufacture') {
                 $type = 'Check In - Received';
             }
 
-            if($q->purpose == 'Material Transfer for Manufacture') {
+            if ($q->purpose == 'Material Transfer for Manufacture') {
                 $type = 'Check Out - Issued';
             }
 
-            if($q->purpose == 'Material Transfer' && $q->transfer_as == 'Internal Transfer') {
+            if ($q->purpose == 'Material Transfer' && $q->transfer_as == 'Internal Transfer') {
                 $type = 'Check Out - Transferred';
             }
 
-            if($q->purpose == 'Material Transfer' && in_array($q->transfer_as, ['Consignment', 'Sample Item'])) {
+            if ($q->purpose == 'Material Transfer' && in_array($q->transfer_as, ['Consignment', 'Sample Item'])) {
                 $type = 'Check Out - Delivered';
             }
 
-            if($q->purpose == 'Material Transfer' && $q->transfer_as == 'For Return') {
+            if ($q->purpose == 'Material Transfer' && $q->transfer_as == 'For Return') {
                 $type = 'Check In - Returned';
             }
 
-            if($q->purpose == 'Material Issue' && $q->issue_as == 'Customer Replacement') {
+            if ($q->purpose == 'Material Issue' && $q->issue_as == 'Customer Replacement') {
                 $type = 'Check Out - Replaced';
             }
 
-            if($q->purpose == 'Material Issue' && $q->issue_as != 'Customer Replacement') {
+            if ($q->purpose == 'Material Issue' && $q->issue_as != 'Customer Replacement') {
                 $type = 'Check Out - Issued';
             }
 
-            if($q->purpose == 'Material Receipt' && $q->receive_as == 'Sales Return') {
+            if ($q->purpose == 'Material Receipt' && $q->receive_as == 'Sales Return') {
                 $type = 'Check In - Received';
             }
 
@@ -408,9 +412,9 @@ trait GeneralTrait
             $tWarehouse = $q->t_warehouse;
             $referenceNo = ($q->sales_order_no) ? $q->sales_order_no : $q->material_request;
         }
-       
+
         $now = now();
-        
+
         $values = [
             'name' => uniqid(date('mdY')),
             'reference_type' => $transactionType,
@@ -433,14 +437,14 @@ trait GeneralTrait
             'owner' => Auth::user()->wh_user,
             'uom' => $q->stock_uom,
             'purpose' => $purpose,
-            'transaction_type' => $type
+            'transaction_type' => $type,
         ];
 
         $existingLog = DB::table('tabAthena Transactions')
             ->where('reference_name', $q->name)->where('reference_parent', $q->parent)->where('status', 'Issued')
             ->exists();
 
-        if(!$existingLog){
+        if (! $existingLog) {
             DB::table('tabAthena Transactions')->insert($values);
         }
     }
@@ -482,36 +486,36 @@ trait GeneralTrait
     {
         try {
             $draftSte = StockEntry::with('items')->find($id);
-    
-            if (!$draftSte) {
+
+            if (! $draftSte) {
                 throw new Exception('Stock Entry not found');
             }
-    
+
             if ($draftSte->docstatus == 1) {
                 throw new Exception('Stock Entry already submitted');
             }
-    
+
             if ($draftSte->purpose) {
                 $countNotIssuedItems = collect($draftSte->items)
                     ->whereNotIn('status', ['Issued', 'Returned'])
                     ->count();
-    
+
                 if ($countNotIssuedItems) {
                     throw new Exception('All item(s) must be issued.');
                 }
             }
-    
-            if($draftSte->transfer_as != 'Consignment'){
+
+            if ($draftSte->transfer_as != 'Consignment') {
                 $stockEntryData = ['docstatus' => 1];
-    
+
                 return $stockEntryResponse = $this->erpPut('Stock Entry', $id, $stockEntryData);
             }
-    
-            if (!isset($stockEntryResponse['data'])) {
+
+            if (! isset($stockEntryResponse['data'])) {
                 $err = $stockEntryResponse['exception'] ?? 'An error occurred while submitting Stock Entry';
                 throw new Exception($err);
             }
-    
+
             return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
         } catch (Exception $e) {
             Log::error('GeneralTrait submitStockEntry failed', [
@@ -522,6 +526,7 @@ trait GeneralTrait
             if ($systemGenerated) {
                 return ['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()];
             }
+
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()]);
         }
     }

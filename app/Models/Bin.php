@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Bin extends Model
 {
     use HasFactory;
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
+
     protected $table = 'tabBin';
 
     protected $fillable = [
@@ -25,7 +29,8 @@ class Bin extends Model
         return $this->belongsTo(Warehouse::class, 'warehouse', 'name');
     }
 
-    public function item(){
+    public function item()
+    {
         return $this->belongsTo(Item::class, 'item_code', 'name');
     }
 

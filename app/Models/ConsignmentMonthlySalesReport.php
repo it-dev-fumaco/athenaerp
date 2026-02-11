@@ -10,8 +10,12 @@ class ConsignmentMonthlySalesReport extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabConsignment Monthly Sales Report';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 }

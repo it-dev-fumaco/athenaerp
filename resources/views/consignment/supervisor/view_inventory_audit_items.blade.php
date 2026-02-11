@@ -112,7 +112,7 @@
                                                         </a>
                                                     </div>
                                                     <div class="pl-2 m-0">
-                                                        <span class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</span>
+                                                        <span class="d-block"><b>{{ $row['item_code'] }}</b> - {!! $row['description'] !!}</span>
                                                     </div>
                                                 </div>
                                             </td>

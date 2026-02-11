@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\ProductionController;
 use App\Http\Helpers\ApiResponse;
 use App\Models\AssignedWarehouses;
 use App\Models\AthenaTransaction;
 use App\Models\BeginningInventory;
-use App\Models\Bin;
 use App\Models\ConsignmentInventoryAuditReport;
 use App\Models\ConsignmentSalesReportDeadline;
 use App\Models\ConsignmentStockEntry;
@@ -43,22 +41,22 @@ use App\Models\Warehouse;
 use App\Models\WarehouseUsers;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderItem;
+use App\Pipelines\IndexPipeline;
 use App\Services\CutoffDateService;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Exception;
 use ZipArchive;
 
 class MainController extends Controller
@@ -75,106 +73,20 @@ class MainController extends Controller
         return app(CutoffDateService::class)->getCutoffPeriod($transactionDate);
     }
 
-    public function index(Request $request)
+    public function index(Request $request, IndexPipeline $indexPipeline)
     {
-        $this->updateReservationStatus();
-        $user = Auth::user()->frappe_userid;
-        $allowedWarehouses = $this->getAllowedWarehouseIds();
-        if (Auth::user()->user_group == 'User') {
-            return redirect('/search_results');
-        }
+        $passable = (object) [
+            'updateReservationStatus' => fn () => $this->updateReservationStatus(),
+            'getConsignmentDashboardView' => fn () => $this->viewConsignmentDashboard(),
+        ];
 
-        if (Auth::user()->user_group == 'Promodiser') {
-            $assignedConsignmentStore = AssignedWarehouses::where('parent', $user)->orderBy('warehouse', 'asc')->pluck('warehouse');
-
-            if (count($assignedConsignmentStore) > 0) {
-                $cutoffDisplayInfo = app(CutoffDateService::class)->getCutoffDisplayInfo();
-                $due = $cutoffDisplayInfo['due'];
-
-                $invSummary = Bin::query()
-                    ->from('tabBin as b')
-                    ->join('tabItem as i', 'i.name', 'b.item_code')
-                    ->where('i.disabled', 0)
-                    ->where('i.is_stock_item', 1)
-                    ->whereIn('b.warehouse', $assignedConsignmentStore)
-                    ->where('b.consigned_qty', '>', 0)
-                    ->select('b.warehouse', 'b.consigned_qty')
-                    ->get()
-                    ->toArray();
-
-                $invSummary = collect($invSummary)->groupBy('warehouse');
-
-                $inventorySummary = [];
-                foreach ($invSummary as $warehouse => $row) {
-                    $inventorySummary[$warehouse] = [
-                        'items_on_hand' => collect($row)->count(),
-                        'total_qty' => collect($row)->sum('consigned_qty'),
-                    ];
-                }
-
-                // get total pending inventory audit
-                $storesWithBeginningInventory = BeginningInventory::query()
-                    ->where('status', 'Approved')
-                    ->whereIn('branch_warehouse', $assignedConsignmentStore)
-                    ->orderBy('branch_warehouse', 'asc')
-                    ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
-                    ->groupBy('branch_warehouse')
-                    ->pluck('transaction_date', 'branch_warehouse')
-                    ->toArray();
-
-                $inventoryAuditPerWarehouse = ConsignmentInventoryAuditReport::query()
-                    ->whereIn('branch_warehouse', array_keys($storesWithBeginningInventory))
-                    ->select(DB::raw('MAX(transaction_date) as transaction_date'), 'branch_warehouse')
-                    ->groupBy('branch_warehouse')
-                    ->pluck('transaction_date', 'branch_warehouse')
-                    ->toArray();
-
-                // get total stock transfer
-                $totalStockTransfer = ConsignmentStockEntry::query()
-                    ->whereIn('source_warehouse', $assignedConsignmentStore)
-                    ->where('status', 'Pending')
-                    ->count();
-
-                // get total consignment orders
-                $totalConsignmentOrders = MaterialRequest::where('custom_purpose', 'Consignment Order')->where('transfer_as', 'Consignment')->whereIn('branch_warehouse', $assignedConsignmentStore)->where('consignment_status', 'For Approval')->count();
-
-                // get incoming / to receive items
-                $beginningInventoryStart = BeginningInventory::orderBy('transaction_date', 'asc')->value('transaction_date');
-                $beginningInventoryStartDate = $beginningInventoryStart ? Carbon::parse($beginningInventoryStart)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
-
-                $now = now();
-
-                $branchesWithBeginningInventory = BeginningInventory::query()
-                    ->whereIn('branch_warehouse', $assignedConsignmentStore)
-                    ->where('status', '!=', 'Cancelled')
-                    ->distinct()
-                    ->pluck('branch_warehouse')
-                    ->toArray();
-
-                $branchesWithPendingBeginningInventory = [];
-                foreach ($assignedConsignmentStore as $store) {
-                    if (!in_array($store, $branchesWithBeginningInventory)) {
-                        $branchesWithPendingBeginningInventory[] = $store;
-                    }
-                }
-
-                return view('consignment.index_promodiser', compact('assignedConsignmentStore', 'inventorySummary', 'totalStockTransfer', 'totalConsignmentOrders', 'branchesWithPendingBeginningInventory', 'due'));
-            }
-
-            return redirect('/search_results');
-        }
-
-        if (Auth::user()->user_group == 'Consignment Supervisor') {
-            return $this->viewConsignmentDashboard();
-        }
-
-        return view('index');
+        return $indexPipeline->run($passable);
     }
 
     public function viewConsignmentDashboard()
     {
         $cutoffDisplayInfo = app(CutoffDateService::class)->getCutoffDisplayInfo();
-        $duration = Carbon::parse($cutoffDisplayInfo['durationFrom'])->format('M d, Y') . ' - ' . Carbon::parse($cutoffDisplayInfo['durationTo'])->format('M d, Y');
+        $duration = Carbon::parse($cutoffDisplayInfo['durationFrom'])->format('M d, Y').' - '.Carbon::parse($cutoffDisplayInfo['durationTo'])->format('M d, Y');
 
         $consignmentBranches = User::query()
             ->from('tabWarehouse Users as wu')
@@ -246,7 +158,7 @@ class MainController extends Controller
         $end = now()->endOfDay();
         $cutoffDay = app(CutoffDateService::class)->getCutoffDay();
 
-        $firstCutoff = Carbon::createFromFormat('m/d/Y', $end->format('m') . '/' . $cutoffDay . '/' . $end->format('Y'))->endOfDay();
+        $firstCutoff = Carbon::createFromFormat('m/d/Y', $end->format('m').'/'.$cutoffDay.'/'.$end->format('Y'))->endOfDay();
 
         if ($firstCutoff->gt($end)) {
             $end = $firstCutoff;
@@ -276,7 +188,7 @@ class MainController extends Controller
             $check = Carbon::parse($start)->between($periodFrom, $periodTo);
             if (Carbon::parse($start)->addDay()->startOfDay()->lt(Carbon::parse($periodTo)->startOfDay())) {
                 if ($lastAuditDate->endOfDay()->lt($end) && $beginningInventoryTransactionDate) {
-                    if (!$check) {
+                    if (! $check) {
                         $totalPendingInventoryAudit++;
                     }
                 }
@@ -304,7 +216,7 @@ class MainController extends Controller
 
                 if ($monthIndex == 0) {
                     $febCutoff = $cutoffDay <= 28 ? $cutoffDay : 28;
-                    $cutoffPeriod[] = $febCutoff . '-02-' . now()->format('Y');
+                    $cutoffPeriod[] = $febCutoff.'-02-'.now()->format('Y');
                 }
             }
 
@@ -316,7 +228,7 @@ class MainController extends Controller
             foreach ($cutoffPeriod as $index => $cutoffDateItem) {
                 if (Arr::exists($cutoffPeriod, $index + 1)) {
                     $cutoffFilters[] = [
-                        'id' => $cutoffPeriod[$index] . '/' . $cutoffPeriod[$index + 1],
+                        'id' => $cutoffPeriod[$index].'/'.$cutoffPeriod[$index + 1],
                         'cutoff_start' => Carbon::parse($cutoffPeriod[$index])->format('M. d, Y'),
                         'cutoff_end' => Carbon::parse($cutoffPeriod[$index + 1])->format('M. d, Y'),
                     ];
@@ -454,7 +366,7 @@ class MainController extends Controller
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->count();
 
-        return ($q1 + $q2);
+        return $q1 + $q2;
     }
 
     public function userAllowedWarehouse($user)
@@ -537,7 +449,7 @@ class MainController extends Controller
                 'so_customer_name' => $d->so_customer_name,
                 'parent_warehouse' => Arr::get($parentWarehouses, $d->t_warehouse, null),
                 'reference_doc' => 'stock_entry',
-                'transaction_date' => $d->creation
+                'transaction_date' => $d->creation,
             ];
         }
 
@@ -558,7 +470,7 @@ class MainController extends Controller
                 'so_customer_name' => $d->customer,
                 'parent_warehouse' => Arr::get($parentWarehouses, $d->warehouse, null),
                 'reference_doc' => 'delivery_note',
-                'transaction_date' => $d->creation
+                'transaction_date' => $d->creation,
             ];
         }
 
@@ -579,7 +491,7 @@ class MainController extends Controller
                 'so_customer_name' => $d->s_warehouse,
                 'parent_warehouse' => Arr::get($parentWarehouses, $d->t_warehouse, null),
                 'reference_doc' => 'stock_entry',
-                'transaction_date' => $d->creation
+                'transaction_date' => $d->creation,
             ];
         }
 
@@ -659,7 +571,7 @@ class MainController extends Controller
                 'produced_qty' => $request->r_qty + $request->ofeedback_qty,
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'status' => $request->r_qty == $request->f_qty ? 'Completed' : 'In Process'
+                'status' => $request->r_qty == $request->f_qty ? 'Completed' : 'In Process',
             ];
 
             $erpProd = WorkOrder::where('name', $request->prod_order)->where('docstatus', 1)->update($erpUpdate);
@@ -669,7 +581,7 @@ class MainController extends Controller
             $mesUpdate = [
                 'feedback_qty' => $request->r_qty + $request->ofeedback_qty,
                 'last_modified_by' => Auth::user()->wh_user,
-                'last_modified_at' => $now->toDateTimeString()
+                'last_modified_at' => $now->toDateTimeString(),
             ];
 
             // return $mesUpdate;
@@ -689,7 +601,7 @@ class MainController extends Controller
                 'transaction_time' => $now->format('H:i:s'),
                 'status' => '',
                 'created_at' => $now->toDateTimeString(),
-                'created_by' => Auth::user()->wh_user
+                'created_by' => Auth::user()->wh_user,
             ];
 
             // return $feedbackLog;
@@ -697,6 +609,7 @@ class MainController extends Controller
             $mesLog = DB::connection('mysql_mes')->table('feedbacked_logs')->insert($feedbackLog);
 
             DB::commit();
+
             return redirect()->back();
         } catch (Exception $e) {
             DB::rollback();
@@ -734,7 +647,7 @@ class MainController extends Controller
                 ->first();
         }
 
-        if (!$q) {
+        if (! $q) {
             return ApiResponse::modal(false, 'Not Found', 'Item not found. Please reload the page.', 422);
         }
 
@@ -745,7 +658,7 @@ class MainController extends Controller
         $img = $this->base64Image($img);
 
         $isBundle = false;
-        if (!$itemDetails->is_stock_item) {
+        if (! $itemDetails->is_stock_item) {
             $isBundle = ProductBundle::query()->where('name', $q->item_code)->exists();
         }
         $stockReservationDetails = [];
@@ -753,7 +666,7 @@ class MainController extends Controller
         if ($isBundle) {
             $query = PackedItem::query()->where('parent_detail_docname', $q->dri_name)->get();
 
-            $itemWarehousePairs = $query->map(fn($row) => [$row->item_code, $row->warehouse])->unique()->values()->toArray();
+            $itemWarehousePairs = $query->map(fn ($row) => [$row->item_code, $row->warehouse])->unique()->values()->toArray();
             $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
             $soDetails = SalesOrder::query()->where('name', $q->sales_order)->first();
@@ -767,7 +680,7 @@ class MainController extends Controller
                     'uom' => $row->uom,
                     'qty' => ($row->qty * 1),
                     'available_qty' => $availableQtyRow,
-                    'warehouse' => $row->warehouse
+                    'warehouse' => $row->warehouse,
                 ];
 
                 $stockReservationDetails = [];
@@ -777,7 +690,7 @@ class MainController extends Controller
             }
         }
 
-        if (!$stockReservationDetails) {
+        if (! $stockReservationDetails) {
             $stockReservationDetails = [];
             $soDetails = SalesOrder::query()->where('name', $q->sales_order)->first();
             if ($soDetails) {
@@ -818,10 +731,11 @@ class MainController extends Controller
             'stock_reservation' => $stockReservationDetails,
             'uom_conversion' => $uomConversion,
             'reference' => 'Picking Slip',
-            'docstatus' => $q->docstatus
+            'docstatus' => $q->docstatus,
         ];
 
         $isStockEntry = false;
+
         return view('deliveries_modal_content', compact('data', 'isStockEntry'));
     }
 
@@ -835,7 +749,7 @@ class MainController extends Controller
 
             $now = now();
 
-            if (!$stockEntry) {
+            if (! $stockEntry) {
                 throw new Exception('Record not found');
             }
 
@@ -853,7 +767,7 @@ class MainController extends Controller
                 throw new Exception('Item already issued.');
             }
 
-            if (!$itemDetails) {
+            if (! $itemDetails) {
                 throw new Exception("Item <b>$itemCode</b> not found.");
             }
 
@@ -888,7 +802,7 @@ class MainController extends Controller
             }
 
             $response = $this->erpPut('Stock Entry', $stockEntry->name, collect($stockEntry)->toArray());
-            if (!Arr::has($response, 'data')) {
+            if (! Arr::has($response, 'data')) {
                 if (Arr::has($response, 'exc_type') && $response['exc_type'] == 'TimestampMismatchError') {
                     $stockEntryData = $this->erpGet('Stock Entry', $stockEntry->name);
                     $stockEntryData = $stockEntryData['data'] ?? null;
@@ -904,6 +818,7 @@ class MainController extends Controller
                                 $item['validate_item_code'] = $request->barcode;
                                 $item['date_modified'] = $now->toDateTimeString();
                             }
+
                             return $item;
                         })->toArray();
                         $pendingItems = collect($stockEntryData['items'])->where('name', '!=', $childId)->where('status', 'For Checking')->count();
@@ -913,7 +828,7 @@ class MainController extends Controller
                         $response = $this->erpPut('Stock Entry', $stockEntryData['name'], $stockEntryData);
                     }
                 }
-                if (!Arr::has($response, 'data')) {
+                if (! Arr::has($response, 'data')) {
                     $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
                     throw new Exception($err);
                 }
@@ -925,6 +840,7 @@ class MainController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return ApiResponse::failure($e->getMessage());
         }
     }
@@ -946,7 +862,7 @@ class MainController extends Controller
                     ->where('status', 'For Checking')
                     ->exists();
 
-                if (!$itemsForChecking) {
+                if (! $itemsForChecking) {
                     if ($ste->receive_as == 'Sales Return') {
                         StockEntry::query()->where('name', $ste->name)->where('docstatus', 0)->update(['item_status' => 'Returned']);
                     } else {
@@ -969,7 +885,7 @@ class MainController extends Controller
         try {
             $itemsForChecking = PackingSlipItem::query()->where('parent', $id)->where('status', 'For Checking')->exists();
 
-            if (!$itemsForChecking) {
+            if (! $itemsForChecking) {
                 $this->erpPut('Packing Slip', $id, ['item_status' => 'Issued', 'docstatus' => 1]);
             }
 
@@ -979,6 +895,7 @@ class MainController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return ['success' => 0, 'message' => $e->getMessage()];
         }
     }
@@ -1012,6 +929,7 @@ class MainController extends Controller
                 $dates = explode(' to ', $request->ath_dates);
                 $from = Carbon::parse($dates[0]);
                 $to = Carbon::parse($dates[1])->endOfDay();
+
                 return $query->whereBetween('transaction_date', [$from, $to]);
             })
             ->orderBy('transaction_date', 'desc')
@@ -1041,7 +959,7 @@ class MainController extends Controller
         $referencesByType = [];
         foreach ($refsByType as $referenceType => $ids) {
             $ids = array_keys($ids);
-            $referencesByType[$referenceType] = DB::table('tab' . $referenceType)
+            $referencesByType[$referenceType] = DB::table('tab'.$referenceType)
                 ->whereIn('name', $ids)
                 ->get()
                 ->keyBy('name');
@@ -1052,7 +970,7 @@ class MainController extends Controller
             $referenceType = (in_array($row->reference_type, $psRef)) ? 'Packing Slip' : $row->reference_type;
 
             $existingReferenceNo = data_get($referencesByType, "{$referenceType}.{$row->reference_parent}");
-            if (!$existingReferenceNo) {
+            if (! $existingReferenceNo) {
                 $status = 'DELETED';
             } else {
                 if ($existingReferenceNo->docstatus == 2 or $row->docstatus == 2) {
@@ -1096,7 +1014,7 @@ class MainController extends Controller
                 'production_order' => Arr::get($productionOrders, $row->reference_parent),
                 'warehouse_user' => $row->warehouse_user,
                 'status' => $status,
-                'remarks' => $remarks
+                'remarks' => $remarks,
             ];
         }
 
@@ -1116,7 +1034,7 @@ class MainController extends Controller
                         ->where('sted.name', $request->name)
                         ->first();
 
-                    if (!$q) {
+                    if (! $q) {
                         return ApiResponse::failureLegacy('Stock Entry not found.');
                     }
 
@@ -1127,14 +1045,14 @@ class MainController extends Controller
                     StockEntryDetail::query()->where('name', $request->name)->update([
                         'status' => 'For Checking',
                         'modified_by' => Auth::user()->wh_user,
-                        'modified' => $now->toDateTimeString()
+                        'modified' => $now->toDateTimeString(),
                     ]);
 
                     if ($q->item_status == 'Issued') {
                         StockEntry::query()->where('name', $q->name)->update([
                             'item_status' => 'For Checking',
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user
+                            'modified_by' => Auth::user()->wh_user,
                         ]);
                     }
                     break;
@@ -1148,7 +1066,7 @@ class MainController extends Controller
                         ->select('dri.barcode_return', 'dri.name as c_name', 'dr.name', 'dr.customer', 'dri.item_code', 'dri.description', 'dri.warehouse', 'dri.qty', 'dri.against_sales_order', 'dr.dr_ref_no', 'dri.item_status', 'dri.stock_uom', 'dr.owner', 'dr.docstatus', 'dri.barcode', 'dri.parent', 'dri.session_user', 'dri.item_status')
                         ->first();
 
-                    if (!$q) {
+                    if (! $q) {
                         return ApiResponse::failureLegacy('Delivery Receipt not found.');
                     }
 
@@ -1159,7 +1077,7 @@ class MainController extends Controller
                     DeliveryNoteItem::query()->where('name', $request->name)->update([
                         'item_status' => 'For Return',
                         'modified_by' => Auth::user()->wh_user,
-                        'modified' => $now->toDateTimeString()
+                        'modified' => $now->toDateTimeString(),
                     ]);
                     break;
                 default:
@@ -1173,7 +1091,7 @@ class MainController extends Controller
                         ->select('psi.name', 'psi.parent', 'psi.item_code', 'psi.description', 'ps.delivery_note', 'dri.warehouse', 'psi.qty', 'psi.barcode', 'psi.session_user', 'psi.stock_uom', 'psi.parent')
                         ->first();
 
-                    if (!$q) {
+                    if (! $q) {
                         return ApiResponse::failureLegacy('Delivery Receipt not found.');
                     }
 
@@ -1184,14 +1102,14 @@ class MainController extends Controller
                     PackingSlipItem::query()->where('name', $request->name)->update([
                         'status' => 'For Checking',
                         'modified' => $now->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user
+                        'modified_by' => Auth::user()->wh_user,
                     ]);
 
                     if ($q->item_status == 'Issued') {
                         PackingSlip::query()->where('name', $q->parent)->update([
                             'item_status' => 'For Checking',
                             'modified' => $now->toDateTimeString(),
-                            'modified_by' => Auth::user()->wh_user
+                            'modified_by' => Auth::user()->wh_user,
                         ]);
                     }
                     break;
@@ -1200,10 +1118,11 @@ class MainController extends Controller
             AthenaTransaction::query()->where('reference_name', $request->name)->update([
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'status' => 'Cancelled'
+                'status' => 'Cancelled',
             ]);
 
             DB::commit();
+
             return ApiResponse::successLegacy('Issued item(s) cancelled.');
         } catch (\Throwable $th) {
             Log::error('MainController cancelIssuedItem failed', [
@@ -1211,6 +1130,7 @@ class MainController extends Controller
                 'trace' => $th->getTraceAsString(),
             ]);
             DB::rollback();
+
             return ApiResponse::failureLegacy('An error occured. Please try again.');
         }
     }
@@ -1220,25 +1140,25 @@ class MainController extends Controller
         DB::beginTransaction();
         try {
             $aTstatusUpdate = [
-                'docstatus' => 2
+                'docstatus' => 2,
             ];
 
             $sEstatusUpdate = [
-                'item_status' => 'For Checking'
+                'item_status' => 'For Checking',
             ];
 
             $sEDstatusUpdate = [
                 'status' => 'For Checking',
                 'session_user' => '',
                 'issued_qty' => 0,
-                'date_modified' => null
+                'date_modified' => null,
             ];
 
             $pSIstatusUpdate = [
                 'status' => 'For Checking',
                 'session_user' => '',
                 'barcode' => '',
-                'date_modified' => null
+                'date_modified' => null,
             ];
 
             $ATcancel = AthenaTransaction::query()->where('reference_parent', $request->athena_transaction_number)->update($aTstatusUpdate);
@@ -1249,7 +1169,7 @@ class MainController extends Controller
 
             DB::commit();
 
-            return ApiResponse::success('<b>' . $request->athena_transaction_number . '</b> has been cancelled.', ['item_code' => $request->itemCode]);
+            return ApiResponse::success('<b>'.$request->athena_transaction_number.'</b> has been cancelled.', ['item_code' => $request->itemCode]);
         } catch (Exception $e) {
             Log::error('MainController cancelAthenaTransaction failed', [
                 'message' => $e->getMessage(),
@@ -1265,7 +1185,7 @@ class MainController extends Controller
     {
         $warehouseUser = [];
         if ($request->wh_user != '' and $request->wh_user != 'null') {
-            $userQry = WarehouseUsers::query()->where('full_name', 'LIKE', '%' . $request->wh_user . '%')->orWhere('wh_user', 'LIKE', '%' . $request->wh_user . '%')->first();
+            $userQry = WarehouseUsers::query()->where('full_name', 'LIKE', '%'.$request->wh_user.'%')->orWhere('wh_user', 'LIKE', '%'.$request->wh_user.'%')->first();
 
             $warehouseUser = $userQry ? [$userQry->wh_user, $userQry->full_name] : [];
             $warehouseUser = $warehouseUser ? $warehouseUser : [$request->wh_user];
@@ -1383,7 +1303,7 @@ class MainController extends Controller
                 'date_modified' => $dateModified,
                 'session_user' => $sessionUser,
                 'posting_date' => $row->posting_date,
-                'status' => $status
+                'status' => $status,
             ];
         }
 
@@ -1392,7 +1312,7 @@ class MainController extends Controller
 
     public function update_production_order_items($productionOrder)
     {
-        if (!$productionOrder) {
+        if (! $productionOrder) {
             return;
         }
 
@@ -1528,7 +1448,7 @@ class MainController extends Controller
 
         $itemImages = ItemImages::query()->whereIn('parent', collect($query)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
 
-        $itemWarehousePairs = $query->map(fn($a) => [$a->item_code, $a->warehouse])->unique()->values()->toArray();
+        $itemWarehousePairs = $query->map(fn ($a) => [$a->item_code, $a->warehouse])->unique()->values()->toArray();
         $actualQtyMap = $this->getActualQtyBulk($itemWarehousePairs);
 
         $lowStockPairs = [];
@@ -1541,7 +1461,7 @@ class MainController extends Controller
         }
 
         $existingMrMap = [];
-        if (!empty($lowStockPairs)) {
+        if (! empty($lowStockPairs)) {
             $dateFrom = now()->subDays(30)->format('Y-m-d');
             $dateTo = now()->format('Y-m-d');
 
@@ -1576,7 +1496,7 @@ class MainController extends Controller
             if ($actualQty <= $a->warehouse_reorder_level) {
                 $existingMr = $existingMrMap[$key] ?? null;
 
-                $itemImage = Arr::get($itemImages, $a->item_code) ? '/img/' . $itemImages[$a->item_code] : '/icon/no_img.webp';
+                $itemImage = Arr::get($itemImages, $a->item_code) ? '/img/'.$itemImages[$a->item_code] : '/icon/no_img.webp';
                 $itemImage = $this->base64Image($itemImage);
 
                 $lowLevelStocks[] = [
@@ -1590,7 +1510,7 @@ class MainController extends Controller
                     'warehouse_reorder_qty' => $a->warehouse_reorder_qty,
                     'actual_qty' => $actualQty,
                     'image' => $itemImage,
-                    'existing_mr' => $existingMr
+                    'existing_mr' => $existingMr,
                 ];
             }
         }
@@ -1632,7 +1552,7 @@ class MainController extends Controller
         $list = [];
         foreach ($q as $row) {
             // $itemImagePath = ItemImages::query()->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
-            $image = Arr::get($itemImages, $row->item_code) ? '/img/' . $itemImages[$row->item_code] : '/icon/no_icon.png';
+            $image = Arr::get($itemImages, $row->item_code) ? '/img/'.$itemImages[$row->item_code] : '/icon/no_icon.png';
             $image = $this->base64Image($image);
 
             $list[] = [
@@ -1642,7 +1562,7 @@ class MainController extends Controller
                 'qty' => $row->qty * 1,
                 'warehouse' => $row->warehouse,
                 'stock_uom' => $row->stock_uom,
-                'image' => $image
+                'image' => $image,
             ];
         }
 
@@ -1707,7 +1627,7 @@ class MainController extends Controller
             ->whereDate('from', '>=', $from)
             ->whereDate('to', '<=', $to)
             ->when($request->search, function ($query) use ($request) {
-                return $query->where('name', 'like', '%' . $request->search . '%');
+                return $query->where('name', 'like', '%'.$request->search.'%');
             })
             ->when($request->store, function ($query) use ($request) {
                 return $query->where('warehouse', $request->store);
@@ -1727,7 +1647,7 @@ class MainController extends Controller
     // /replacements
     public function replacements(Request $request)
     {
-        if (!$request->arr) {
+        if (! $request->arr) {
             return view('replacement');
         }
 
@@ -1778,7 +1698,7 @@ class MainController extends Controller
             ->pluck('full_name', 'wh_user')
             ->toArray();
 
-        $itemWarehousePairs = $q->map(fn($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();
+        $itemWarehousePairs = $q->map(fn ($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();
         $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
         $parentWarehouses = $this->getWarehouseParentsBulk($warehouses);
@@ -1821,7 +1741,7 @@ class MainController extends Controller
                 'parent_warehouse' => $parentWarehouse,
                 'creation' => Carbon::parse($d->creation)->format('M-d-Y h:i:A'),
                 'delivery_date' => ($d->delivery_date) ? Carbon::parse($d->delivery_date)->format('M-d-Y') : null,
-                'delivery_status' => ($d->delivery_date) ? ((Carbon::parse($d->delivery_date) < now()) ? 'late' : null) : null
+                'delivery_status' => ($d->delivery_date) ? ((Carbon::parse($d->delivery_date) < now()) ? 'late' : null) : null,
             ];
         }
 
@@ -1830,7 +1750,7 @@ class MainController extends Controller
 
     public function feedbackedInTransit(Request $request)
     {
-        if (!$request->arr) {
+        if (! $request->arr) {
             return view('goods_in_transit');
         }
 
@@ -1930,7 +1850,7 @@ class MainController extends Controller
                 if (in_array($stedStatus, ['Received', 'Issued'])) {
                     $dateConfirmed = Carbon::parse($d->date_modified);
                     $receivedBy = $d->session_user;
-                    $durationInTransit = Carbon::parse($dateConfirmed)->diff(now())->days . ' Day(s)';
+                    $durationInTransit = Carbon::parse($dateConfirmed)->diff(now())->days.' Day(s)';
                 }
 
                 $partNos = ItemSupplier::query()->where('parent', $d->item_code)->pluck('supplier_part_no');
@@ -1959,7 +1879,7 @@ class MainController extends Controller
                     'sted_name' => $stedName,
                     'soi_name' => $d->soi_name,
                     'customer' => $d->customer,
-                    'reference_to_fg' => $stedStatus == 'Issued' ? optional(data_get($draftFg, $d->soi_name))->name : null
+                    'reference_to_fg' => $stedStatus == 'Issued' ? optional(data_get($draftFg, $d->soi_name))->name : null,
                 ];
             }
         }
@@ -1982,12 +1902,13 @@ class MainController extends Controller
                 'modified' => now()->toDateTimeString(),
                 'date_modified' => now()->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
-                'session_user' => Auth::user()->wh_user
+                'session_user' => Auth::user()->wh_user,
             ];
 
             StockEntryDetail::query()->where('name', $id)->update($update);
 
             DB::commit();
+
             return ApiResponse::successLegacy('Stocks Received!');
         } catch (\Throwable $th) {
             Log::error('MainController receiveTransitStocks failed', [
@@ -1996,6 +1917,7 @@ class MainController extends Controller
                 'trace' => $th->getTraceAsString(),
             ]);
             DB::rollback();
+
             return ApiResponse::failureLegacy('An error occured. Please try again.');
         }
     }
@@ -2017,7 +1939,7 @@ class MainController extends Controller
                 ->select('ste.*', 'sted.*', 'img.image_path as image')
                 ->first();
 
-            if (!$stockEntryDetail) {
+            if (! $stockEntryDetail) {
                 return ApiResponse::failureLegacy('Stock Entry not found.');
             }
 
@@ -2025,8 +1947,8 @@ class MainController extends Controller
 
             $salesOrder = SalesOrder::query()->where('name', $stockEntryDetail->sales_order_no)->first();
 
-            if (!$salesOrder) {
-                return ApiResponse::failureLegacy('Sales Order ' . $stockEntryDetail->sales_order_no . ' not found.');
+            if (! $salesOrder) {
+                return ApiResponse::failureLegacy('Sales Order '.$stockEntryDetail->sales_order_no.' not found.');
             }
 
             $response = $this->erpPost('Stock Entry', $body = [
@@ -2048,12 +1970,12 @@ class MainController extends Controller
                         'qty' => $stockEntryDetail->qty,
                         'transfer_qty' => $stockEntryDetail->transfer_qty,
                         's_warehouse' => 'Goods in Transit - FI',
-                        't_warehouse' => 'Finished Goods - FI'
-                    ]
-                ]
+                        't_warehouse' => 'Finished Goods - FI',
+                    ],
+                ],
             ]);
 
-            if (!Arr::has($response, 'data')) {
+            if (! Arr::has($response, 'data')) {
                 return ApiResponse::failureLegacy('An error occured. Please try again.');
             }
 
@@ -2062,7 +1984,7 @@ class MainController extends Controller
             DB::table($doctypeChild)->where('name', $id)->update([
                 'status' => 'Issued',
                 'modified' => now()->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user
+                'modified_by' => Auth::user()->wh_user,
             ]);
 
             $emailData = [
@@ -2077,7 +1999,7 @@ class MainController extends Controller
                 'transfer_qty' => $stockEntryDetail->transfer_qty,
                 'transaction_date' => now()->format('M. d, Y'),
                 'source_warehouse' => $data['from_warehouse'],
-                'target_warehouse' => $data['to_warehouse']
+                'target_warehouse' => $data['to_warehouse'],
             ];
 
             $emailSent = 1;
@@ -2100,6 +2022,7 @@ class MainController extends Controller
                 'trace' => $th->getTraceAsString(),
             ]);
             DB::rollback();
+
             return ApiResponse::failureLegacy('An error occured. Please try again.');
         }
     }
@@ -2113,16 +2036,16 @@ class MainController extends Controller
             $latestMrExploded = explode('-', $latestMr);
             $newId = $latestMrExploded[1] + 1;
             $newId = str_pad($newId, 5, '0', STR_PAD_LEFT);
-            $newId = 'PREQ-' . $newId;
+            $newId = 'PREQ-'.$newId;
 
             $itemDetails = DB::table('tabItem as i')->join('tabItem Reorder as ir', 'i.name', 'ir.parent')->where('ir.name', $id)->first();
 
-            if (!$itemDetails) {
-                return ApiResponse::failure('Item <b>' . $id . '</b> not found.');
+            if (! $itemDetails) {
+                return ApiResponse::failure('Item <b>'.$id.'</b> not found.');
             }
 
             if ($itemDetails->is_stock_item == 0) {
-                return ApiResponse::failure('Item  <b>' . $itemDetails->item_code . '</b> is not a stock item.');
+                return ApiResponse::failure('Item  <b>'.$itemDetails->item_code.'</b> is not a stock item.');
             }
 
             $actualQty = $this->getActualQty($itemDetails->item_code, $itemDetails->warehouse);
@@ -2146,7 +2069,7 @@ class MainController extends Controller
             ];
 
             $mrItem = [
-                'name' => 'ath' . uniqid(),
+                'name' => 'ath'.uniqid(),
                 'creation' => $now->toDateTimeString(),
                 'modified' => $now->toDateTimeString(),
                 'modified_by' => Auth::user()->wh_user,
@@ -2175,7 +2098,7 @@ class MainController extends Controller
 
             DB::commit();
 
-            return ApiResponse::success('Material Request for <b>' . $itemDetails->item_code . '</b> has been created.');
+            return ApiResponse::success('Material Request for <b>'.$itemDetails->item_code.'</b> has been created.');
         } catch (Exception $e) {
             Log::error('MainController createMaterialRequest failed', [
                 'message' => $e->getMessage(),
@@ -2194,7 +2117,7 @@ class MainController extends Controller
             ->where('is_group', 0)
             ->where('parent_warehouse', 'P2 Consignment Warehouse - FI')
             ->when($request->q, function ($query) use ($request) {
-                return $query->where('name', 'like', '%' . $request->q . '%');
+                return $query->where('name', 'like', '%'.$request->q.'%');
             })
             ->select('name as id', 'name as text')
             ->orderBy('modified', 'desc')
@@ -2214,7 +2137,7 @@ class MainController extends Controller
                 ->where('docstatus', 1)
                 ->exists();
 
-            if (!$existingSteTransfer) {
+            if (! $existingSteTransfer) {
                 throw new Exception('Materials Unavailable');
             }
 
@@ -2225,7 +2148,7 @@ class MainController extends Controller
             $productionOrderDetails = WorkOrder::with('items')->find($productionOrder);
             $mesProductionOrderDetails = MESProductionOrder::find($productionOrder);
 
-            if (!$productionOrderDetails || !$mesProductionOrderDetails) {
+            if (! $productionOrderDetails || ! $mesProductionOrderDetails) {
                 throw new Exception("Production Order $productionOrder not found.");
             }
 
@@ -2251,15 +2174,15 @@ class MainController extends Controller
 
             $remarksOverride = $producedQty > $mesProductionOrderDetails->produced_qty ? 'Override' : null;
 
-            if (!$mesProductionOrderDetails->is_stock_item) {
-                return redirect('/create_bundle_feedback/' . $productionOrder . '/' . $request->fg_completed_qty);
+            if (! $mesProductionOrderDetails->is_stock_item) {
+                return redirect('/create_bundle_feedback/'.$productionOrder.'/'.$request->fg_completed_qty);
             }
 
             $docstatus = $mesProductionOrderDetails->fg_warehouse == 'P2 - Housing Temporary - FI' ? 1 : 0;
 
             $productionOrderItems = app(ProductionController::class)->feedbackProductionOrderItems($productionOrder, $mesProductionOrderDetails->qty_to_manufacture, $request->fg_completed_qty);
 
-            if (!$productionOrderItems) {
+            if (! $productionOrderItems) {
                 throw new Exception('No items found.');
             }
 
@@ -2275,7 +2198,7 @@ class MainController extends Controller
                     'expense_account' => 'Cost of Goods Sold - FI',
                     's_warehouse' => $productionOrderDetails->wip_warehouse,
                     'cost_center' => 'Main - FI',
-                    'item_code' => $childItemCode
+                    'item_code' => $childItemCode,
                 ];
             }
 
@@ -2306,7 +2229,7 @@ class MainController extends Controller
                 'item_classification' => $productionOrderDetails->item_classification,
                 'so_customer_name' => $mesProductionOrderDetails->customer,
                 'order_type' => $mesProductionOrderDetails->classification,
-                'items' => $stockEntryDetail
+                'items' => $stockEntryDetail,
             ];
 
             // MES Transactions
@@ -2317,7 +2240,7 @@ class MainController extends Controller
                 'last_modified_at' => $now->toDateTimeString(),
                 'last_modified_by' => Auth::user()->wh_user,
                 'feedback_qty' => $manufacturedQty,
-                'remarks' => $remarksOverride
+                'remarks' => $remarksOverride,
             ];
 
             if ($status == 'Completed') {
@@ -2357,7 +2280,7 @@ class MainController extends Controller
             $feedbackLogId = DB::connection('mysql_mes')->table('feedbacked_logs')->insertGetId($feedbackedTimelogs, 'feedbacked_log_id');
 
             $stockEntryResponse = $this->erpPost('Stock Entry', $stockEntryData);
-            if (!Arr::has($stockEntryResponse, 'data')) {
+            if (! Arr::has($stockEntryResponse, 'data')) {
                 $err = Arr::get($stockEntryResponse, 'exception', 'An error occured while creating stock entry');
                 throw new Exception($err);
             }
@@ -2392,11 +2315,12 @@ class MainController extends Controller
                 'owner' => Auth::user()->wh_user,
                 'uom' => $filteredItem['stock_uom'],
                 'purpose' => 'Manufacture',
-                'transaction_type' => 'Check In - Received'
+                'transaction_type' => 'Check In - Received',
             ];
             AthenaTransaction::query()->insert($values);
 
             DB::commit();
+
             return ApiResponse::success('Stock Entry has been created.');
         } catch (Exception $e) {
             Log::error('MainController feedProductionOrder failed', [
@@ -2404,6 +2328,7 @@ class MainController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             DB::rollback();
+
             return ApiResponse::failure($e->getMessage(), 500);
         }
     }
@@ -2431,7 +2356,7 @@ class MainController extends Controller
 
         return [
             'labels' => collect($result)->keys(),
-            'data' => array_values($result)
+            'data' => array_values($result),
         ];
     }
 
@@ -2501,20 +2426,20 @@ class MainController extends Controller
             $standardPrice = ($price * $standardPriceComputation) * 1.12;
         }
 
-        $itemCost = '₱ ' . number_format($price, 2, '.', ',');
-        $standardPrice = '₱ ' . number_format($standardPrice, 2, '.', ',');
-        $minPrice = '₱ ' . number_format($minPrice, 2, '.', ',');
+        $itemCost = '₱ '.number_format($price, 2, '.', ',');
+        $standardPrice = '₱ '.number_format($standardPrice, 2, '.', ',');
+        $minPrice = '₱ '.number_format($minPrice, 2, '.', ',');
 
         return [
             'item_cost' => $itemCost,
             'standard_price' => $standardPrice,
-            'min_price' => $minPrice
+            'min_price' => $minPrice,
         ];
     }
 
     public function itemCostList(Request $request)
     {
-        if (!in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
+        if (! in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             return redirect('/');
         }
 
@@ -2544,7 +2469,7 @@ class MainController extends Controller
             ->where('has_variants', 1)
             ->enabled()
             ->stockItem()
-            ->where('name', 'LIKE', '%' . $request->q . '%')
+            ->where('name', 'LIKE', '%'.$request->q.'%')
             ->when($itemGroup, function ($query) use ($itemGroup) {
                 return $query->where('item_group', $itemGroup);
             })
@@ -2587,7 +2512,7 @@ class MainController extends Controller
 
     public function itemVariants($variantOf)
     {
-        if (!in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
+        if (! in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             return redirect('/');
         }
 
@@ -2689,7 +2614,7 @@ class MainController extends Controller
             $prices[$rowName] = [
                 'rate' => $rate,
                 'standard' => $standardPrice,
-                'minimum' => $minPrice
+                'minimum' => $minPrice,
             ];
         }
 
@@ -2731,11 +2656,11 @@ class MainController extends Controller
         try {
             if ($request->hasFile('import_zip')) {
                 $file = $request->file('import_zip');
-                if (!in_array($file->getClientOriginalExtension(), ['zip', 'ZIP'])) {
+                if (! in_array($file->getClientOriginalExtension(), ['zip', 'ZIP'])) {
                     return redirect()->back()->with('error', 'Only .zip files are allowed.');
                 }
 
-                if (!Storage::disk('public')->exists('/export/')) {
+                if (! Storage::disk('public')->exists('/export/')) {
                     Storage::disk('public')->makeDirectory('/export/');
                 }
 
@@ -2743,7 +2668,7 @@ class MainController extends Controller
 
                 $now = now();
                 $zip = new ZipArchive;
-                if (Storage::disk('public')->exists('/export/imported_athena_images.zip') and $zip->open(storage_path('/app/public/export/imported_athena_images.zip')) === TRUE) {
+                if (Storage::disk('public')->exists('/export/imported_athena_images.zip') and $zip->open(storage_path('/app/public/export/imported_athena_images.zip')) === true) {
                     $zip->extractTo(storage_path('/app/public/export/'));
                     $zip->close();
 
@@ -2760,16 +2685,16 @@ class MainController extends Controller
                     $imageName = Arr::get($exploded, 0);
                     $imageExtension = Arr::get($exploded, 1);
 
-                    if (!in_array($imageExtension, ['webp', 'WEBP', 'zip', 'ZIP'])) {
+                    if (! in_array($imageExtension, ['webp', 'WEBP', 'zip', 'ZIP'])) {
                         return [
                             'item_code' => Arr::get(explode('-', $imageName), 1),
-                            'image' => $image
+                            'image' => $image,
                         ];
                     }
                 });
 
                 $collectImagesArr = $collectImagesArr->filter(function ($value) {
-                    return !is_null($value);
+                    return ! is_null($value);
                 });
 
                 $imagesArr = collect($collectImagesArr)->groupBy('item_code');
@@ -2800,8 +2725,8 @@ class MainController extends Controller
                                 $a = $a + 1;
                                 $imageName = $image['image'];
                                 $imagePrefix = explode('-', $imageName)[0];
-                                $jpg = $imagePrefix . $a . '-' . str_replace($imagePrefix . '-', '', $imageName);
-                                $webp = explode('.', $jpg)[0] . '.webp';
+                                $jpg = $imagePrefix.$a.'-'.str_replace($imagePrefix.'-', '', $imageName);
+                                $webp = explode('.', $jpg)[0].'.webp';
 
                                 $newImages[] = [
                                     'name' => uniqid(),
@@ -2814,15 +2739,15 @@ class MainController extends Controller
                                     'parent' => $image['item_code'],
                                     'parentfield' => 'item_images',
                                     'parenttype' => 'Item',
-                                    'image_path' => $jpg
+                                    'image_path' => $jpg,
                                 ];
 
-                                if (Storage::disk('public')->exists('/export/' . $image['image']) and !Storage::disk('public')->exists('/img/' . $jpg)) {
-                                    Storage::disk('public')->move('/export/' . $image['image'], '/img/' . $jpg);
+                                if (Storage::disk('public')->exists('/export/'.$image['image']) and ! Storage::disk('public')->exists('/img/'.$jpg)) {
+                                    Storage::disk('public')->move('/export/'.$image['image'], '/img/'.$jpg);
                                 }
 
-                                if (Storage::disk('public')->exists('/export/' . explode('.', $image['image'])[0] . '.webp') and !Storage::disk('public')->exists('/img/' . $webp)) {
-                                    Storage::disk('public')->move('/export/' . explode('.', $image['image'])[0] . '.webp', '/img/' . $webp);
+                                if (Storage::disk('public')->exists('/export/'.explode('.', $image['image'])[0].'.webp') and ! Storage::disk('public')->exists('/img/'.$webp)) {
+                                    Storage::disk('public')->move('/export/'.explode('.', $image['image'])[0].'.webp', '/img/'.$webp);
                                 }
                             }
                         }
@@ -2831,8 +2756,10 @@ class MainController extends Controller
 
                 ItemImages::query()->insert($newImages);
                 DB::commit();
+
                 return redirect()->back()->with('success', 'E-Commerce Image(s) Imported');
             }
+
             return redirect()->back();
         } catch (Exception $e) {
             DB::rollback();
@@ -2840,6 +2767,7 @@ class MainController extends Controller
             if (Storage::disk('public')->exists('/export/')) {
                 Storage::disk('public')->deleteDirectory('/export/');
             }
+
             return redirect()->back()->with('error', 'An error occured. Please try again later.');
         }
     }
@@ -2848,13 +2776,13 @@ class MainController extends Controller
     {
         $webpPath = storage_path("app/public/img/$webp");
 
-        if (!file_exists($webpPath)) {
+        if (! file_exists($webpPath)) {
             return ApiResponse::failure('File not found', 404);
         }
 
         $image = imagecreatefromwebp($webpPath);
 
-        if (!$image) {
+        if (! $image) {
             return ApiResponse::failure('Failed to convert the image', 500);
         }
 
@@ -2867,7 +2795,7 @@ class MainController extends Controller
 
         return Response::make($jpgData, 200, [
             'Content-Type' => 'image/jpeg',
-            'Content-Disposition' => "attachment; filename=$name.jpg"
+            'Content-Disposition' => "attachment; filename=$name.jpg",
         ]);
     }
 

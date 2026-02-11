@@ -10,9 +10,13 @@ class ItemVariantAttribute extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $table = 'tabItem Variant Attribute';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [

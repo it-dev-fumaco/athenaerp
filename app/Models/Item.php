@@ -12,9 +12,13 @@ class Item extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
+
     protected $table = 'tabItem';
 
     protected $fillable = [
@@ -110,6 +114,7 @@ class Item extends Model
         if ($excludeName) {
             $q->where('name', '!=', $excludeName);
         }
+
         return $q;
     }
 
@@ -118,7 +123,7 @@ class Item extends Model
      */
     public function scopeSearch($query, ?string $searchString): Builder
     {
-        if (!$searchString) {
+        if (! $searchString) {
             return $query;
         }
 

@@ -8,13 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class ConsignmentStockEntry extends Model
 {
     use HasFactory;
+
     protected $table = 'tabConsignment Stock Entry';
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
-    public function items(){
+    public function items()
+    {
         return $this->hasMany(ConsignmentStockEntryDetail::class, 'parent', 'name');
     }
 

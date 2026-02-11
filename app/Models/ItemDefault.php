@@ -8,9 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class ItemDefault extends Model
 {
     use HasFactory;
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
+
     protected $table = 'tabItem Default';
 }

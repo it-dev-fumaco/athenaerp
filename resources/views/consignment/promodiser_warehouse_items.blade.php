@@ -73,7 +73,7 @@
                                     <tr>
                                         <td colspan="3" class="p-1">
                                             <div class="text-justify">
-                                                <div class="item-description" style="font-size: 12px; letter-spacing: 0;">{!! strip_tags($item->description) !!}</div>
+                                                <div class="item-description" style="font-size: 12px; letter-spacing: 0;">{!! $item->description !!}</div>
                                             </div>
                                         </td>
                                     </tr>

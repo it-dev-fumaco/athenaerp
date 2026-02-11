@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\StockReservation;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class StockReservationPolicy
 {
@@ -22,6 +21,7 @@ class StockReservationPolicy
     public function view(User $user, StockReservation $stockReservation): bool
     {
         $allowedWarehouses = $user->allowedWarehouseIds();
+
         return $allowedWarehouses->contains($stockReservation->warehouse);
     }
 
@@ -39,6 +39,7 @@ class StockReservationPolicy
     public function update(User $user, StockReservation $stockReservation): bool
     {
         $allowedWarehouses = $user->allowedWarehouseIds();
+
         return $allowedWarehouses->contains($stockReservation->warehouse);
     }
 
@@ -48,6 +49,7 @@ class StockReservationPolicy
     public function delete(User $user, StockReservation $stockReservation): bool
     {
         $allowedWarehouses = $user->allowedWarehouseIds();
+
         return $allowedWarehouses->contains($stockReservation->warehouse);
     }
 

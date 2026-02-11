@@ -37,7 +37,7 @@ class ProductionController extends Controller
 
     public function viewProductionToReceive(Request $request)
     {
-        if (!$request->arr) {
+        if (! $request->arr) {
             return view('production_to_receive');
         }
 
@@ -78,7 +78,7 @@ class ProductionController extends Controller
                     'created_at' => Carbon::parse($row->created_at)->format('M-d-Y h:i A'),
                     'operation_name' => $operationName,
                     'delivery_date' => ($row->delivery_date) ? Carbon::parse($row->delivery_date)->format('M-d-Y') : null,
-                    'delivery_status' => ($row->delivery_date) ? ((Carbon::parse($row->delivery_date) < now()) ? 'late' : null) : null
+                    'delivery_status' => ($row->delivery_date) ? ((Carbon::parse($row->delivery_date) < now()) ? 'late' : null) : null,
                 ];
             }
         } catch (QueryException $e) {
@@ -198,7 +198,7 @@ class ProductionController extends Controller
                     'stock_uom' => $row->stock_uom,
                     'transferred_qty' => $row->transferred_qty,
                     'consumed_qty' => $consumedQty,
-                    'balance_qty' => $balanceQty
+                    'balance_qty' => $balanceQty,
                 ];
 
                 $remaining = $remaining - $balanceQty;
@@ -215,16 +215,16 @@ class ProductionController extends Controller
             ->where('production_order', $productionOrder)
             ->first();
 
-        if (!$productionOrderDetails) {
-            return ApiResponse::failureLegacy('Production Order ' . $productionOrder . ' not found.');
+        if (! $productionOrderDetails) {
+            return ApiResponse::failureLegacy('Production Order '.$productionOrder.' not found.');
         }
 
         $bomScrapDetails = DB::table('tabBOM Scrap Item')
             ->where('parent', $productionOrderDetails->bom_no)
             ->first();
 
-        if (!$bomScrapDetails) {
-            return ApiResponse::failureLegacy('BOM ' . $productionOrderDetails->bom_no . ' not found.');
+        if (! $bomScrapDetails) {
+            return ApiResponse::failureLegacy('BOM '.$productionOrderDetails->bom_no.' not found.');
         }
 
         $uomDetails = DB::connection('mysql_mes')
@@ -232,7 +232,7 @@ class ProductionController extends Controller
             ->where('uom_name', 'Kilogram')
             ->first();
 
-        if (!$uomDetails) {
+        if (! $uomDetails) {
             return ApiResponse::failureLegacy('UoM Kilogram not found.');
         }
 

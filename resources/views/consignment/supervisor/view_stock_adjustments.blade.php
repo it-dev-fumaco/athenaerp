@@ -310,7 +310,7 @@
                                                                                                 </div>
                                                                                                 <div class="p-2 text-left">
                                                                                                     <b>{!! ''.$item->item_code !!}</b>
-                                                                                                    <span class="d-none d-xl-inline"> - {!! strip_tags($item->item_description) !!}</span>
+                                                                                                    <span class="d-none d-xl-inline"> - {!! $item->item_description !!}</span>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div class="d-none flex-row justify-content-start align-items-center" id="{{ $target }}-replacement-container">
@@ -435,7 +435,7 @@
                                                                                     </tr>
                                                                                     <tr class="d-xl-none">
                                                                                         <td colspan="4" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-                                                                                            <div class="w-100 item-description">{!! strip_tags($item->item_description) !!}</div>
+                                                                                            <div class="w-100 item-description">{!! $item->item_description !!}</div>
                                                                                         </td>
                                                                                     </tr>
                                                                                 @empty
@@ -831,7 +831,7 @@
 
                 // Display
                 $('#' + name + '-replacement-item-code').text(e.params.data.id); // item code
-                $('#' + name + '-replacement-description').text(e.params.data.description); // description
+                $('#' + name + '-replacement-description').html(e.params.data.description); // description
                 $('#' + name + '-replacement-img-src').attr('src', e.params.data.image); // image
 
                 $('#' + name + '-replacement-webp').attr('src', e.params.data.image_webp); // webp
@@ -852,7 +852,7 @@
                 var original_item_code = $(this).data('original-code');
 
                 var item_code = $('#' + target + '-replacement-item-code').text(); // item code
-                var description = $('#' + target + '-replacement-description').text(); // description
+                var description = $('#' + target + '-replacement-description').html(); // description
                 var webp = $('#' + target + '-replacement-display-webp').text();
                 var image = $('#' + target + '-replacement-display-image').text();
                 var alt = $('#' + target + '-replacement-display-alt').text();
@@ -863,7 +863,7 @@
                 $('#' + target + '-webp-replacement').attr('src', webp);
                 $('#' + target + '-img-src-replacement').attr('src', image);
                 $('#' + target + '-img-replacement').attr('src', image);
-                $('#' + target + '-description-replacement').text(description);
+                $('#' + target + '-description-replacement').html(description);
                 $('#' + target + '-uom').text(uom);
 
                 $('#' + target + '-container').removeClass('d-flex').addClass('d-none');
@@ -917,7 +917,7 @@
 
                 // Display
                 $('#' + name + '-item-code-display').text(e.params.data.id); // item code
-                $('#' + name + '-description-display').text(e.params.data.description); // description
+                $('#' + name + '-description-display').html(e.params.data.description); // description
                 $('#' + name + '-new-img').attr('src', e.params.data.image); // image
 
                 $('#' + name + '-new-src-img-webp').attr('src', e.params.data.image_webp); // webp

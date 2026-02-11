@@ -81,7 +81,7 @@
 												<span class="badge badge-warning">To Receive</span>
 												<i class="fas fa-arrow-right ml-3 mr-2"></i> <span class="target-warehouse">@{{ x.fg_warehouse }}</span>
 											</div>
-											<span class="d-block description">@{{ x.description }}</span>
+											<span class="d-block description" ng-bind-html="trustAsHtml(x.description)"></span>
 											<small class="d-none d-lg-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 											<div class="d-block d-lg-none">
 												<table class="table">
@@ -252,7 +252,8 @@
 	});
 
 	var app = angular.module('myApp', []);
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
+	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
+        $scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
         $http.get("/get_parent_warehouses").then(function (response) {
             $scope.wh = response.data.wh;
         });

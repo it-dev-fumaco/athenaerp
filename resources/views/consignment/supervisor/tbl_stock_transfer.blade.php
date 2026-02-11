@@ -179,7 +179,7 @@
                                                         </a>
                                                     </div>
                                                     <div class="p-2 text-left">
-                                                        <span class="d-block"><b>{{ $item->item_code }}</b> - {!! strip_tags($item->item_description) !!}</span>
+                                                        <span class="d-block"><b>{{ $item->item_code }}</b> - {!! $item->item_description !!}</span>
                                                     </div>
                                                 </div>
                                             </td>

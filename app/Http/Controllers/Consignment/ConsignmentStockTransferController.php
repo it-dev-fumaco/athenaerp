@@ -12,16 +12,16 @@ use App\Models\Item;
 use App\Models\ItemImages;
 use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
-use Exception;
 
 class ConsignmentStockTransferController extends Controller
 {
-    use GeneralTrait, ERPTrait;
+    use ERPTrait, GeneralTrait;
 
     public function count($purpose)
     {
@@ -34,14 +34,14 @@ class ConsignmentStockTransferController extends Controller
             $id = $request->cste;
             $table = 'Consignment Stock Entry';
             $details = $this->erpGet($table, $id);
-            if (!isset($details['data'])) {
+            if (! isset($details['data'])) {
                 throw new Exception('Record not found.');
             }
 
             $details = $details['data'];
 
             if (in_array($details['status'], ['Cancelled', 'Completed'])) {
-                throw new Exception('Stock Transfer is ' . $details['status']);
+                throw new Exception('Stock Transfer is '.$details['status']);
             }
 
             $sourceWarehouse = $details['source_warehouse'];
@@ -60,14 +60,14 @@ class ConsignmentStockTransferController extends Controller
             $validateItems = collect($items)->map(function ($item) use ($itemDetails, $sourceWarehouse) {
                 $itemCode = $item['item_code'];
 
-                if (!Arr::exists($itemDetails, $itemCode)) {
+                if (! Arr::exists($itemDetails, $itemCode)) {
                     return "Item $itemCode does not exist in $sourceWarehouse";
                 }
 
                 $binDetails = $itemDetails[$itemCode][0]->bin;
                 $binDetails = collect($binDetails)->groupBy('warehouse');
 
-                if (!isset($binDetails[$sourceWarehouse])) {
+                if (! isset($binDetails[$sourceWarehouse])) {
                     return "Item $itemCode does not exist in $sourceWarehouse";
                 }
 
@@ -100,7 +100,7 @@ class ConsignmentStockTransferController extends Controller
                     'issued_qty' => $item['qty'],
                     'date_modified' => $now->toDateTimeString(),
                     'return_reason' => $item['reason'] ?? null,
-                    'remarks' => 'Generated in AthenaERP'
+                    'remarks' => 'Generated in AthenaERP',
                 ];
             }
 
@@ -120,15 +120,15 @@ class ConsignmentStockTransferController extends Controller
                 'item_status' => 'Issued',
                 'transfer_as' => $details['purpose'] == 'Pull Out' ? 'Pull Out Item' : 'Store Transfer',
                 'delivery_date' => $now->format('Y-m-d'),
-                'remarks' => 'Generated in AthenaERP. ' . ($details['remarks'] ?? ''),
+                'remarks' => 'Generated in AthenaERP. '.($details['remarks'] ?? ''),
                 'order_from' => 'Other Reference',
                 'reference_no' => '-',
-                'items' => $stockEntryDetail
+                'items' => $stockEntryDetail,
             ];
 
             $response = $this->erpPost('Stock Entry', $stockEntryData);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception($response['exception']);
             }
 
@@ -136,13 +136,13 @@ class ConsignmentStockTransferController extends Controller
 
             $consignmentResponse = $this->erpPut($table, $details['name'], ['references' => $response['name']]);
 
-            if (!isset($consignmentResponse['data'])) {
+            if (! isset($consignmentResponse['data'])) {
                 session()->flash('error', $consignmentResponse['exception']);
             }
 
             $data = [
                 'stock_entry_name' => $response['name'],
-                'link' => 'http://10.0.0.83/app/stock-entry/' . $response['name']
+                'link' => 'http://10.0.0.83/app/stock-entry/'.$response['name'],
             ];
 
             return ApiResponse::success('Stock Entry has been created.', $data);
@@ -153,7 +153,7 @@ class ConsignmentStockTransferController extends Controller
 
     public function report(Request $request)
     {
-        if (!in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) {
+        if (! in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director'])) {
             return redirect('/')->with('error', 'Unauthorized');
         }
 
@@ -161,7 +161,7 @@ class ConsignmentStockTransferController extends Controller
             $purpose = $request->purpose;
 
             $list = ConsignmentStockEntry::with('items')
-                ->with('stock_entry', function ($stockEntry) {
+                ->with('stockEntry', function ($stockEntry) {
                     $stockEntry->select('docstatus', 'name', 'consignment_status', 'consignment_received_by', 'consignment_date_received');
                 })
                 ->where('purpose', $purpose)
@@ -205,16 +205,16 @@ class ConsignmentStockTransferController extends Controller
                     $itemCode = $item->item_code;
                     $consignmentDetails = isset($bin[$itemCode][0]) ? $bin[$itemCode][0] : null;
 
-                    if (!$consignmentDetails) {
+                    if (! $consignmentDetails) {
                         $item->consigned_qty = 0;
                         $item->image = '/icon/no_img.png';
                     } else {
                         $item->consigned_qty = (int) $consignmentDetails->consigned_qty;
                         $item->image = isset($consignmentDetails->defaultImage->image_path)
-                            ? '/img/' . $consignmentDetails->defaultImage->image_path
+                            ? '/img/'.$consignmentDetails->defaultImage->image_path
                             : '/icon/no_img.png';
-                        if (Storage::disk('public')->exists(explode('.', $item->image)[0] . '.webp')) {
-                            $item->image = explode('.', $item->image)[0] . '.webp';
+                        if (Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')) {
+                            $item->image = explode('.', $item->image)[0].'.webp';
                         }
                     }
 
@@ -241,7 +241,7 @@ class ConsignmentStockTransferController extends Controller
 
             $itemCodes = array_filter(collect($request->item_code)->unique()->toArray());
             $transferQty = collect($request->item)->map(function ($item) {
-                return is_array($item) ? array_map(fn($v) => preg_replace('/[^0-9 .]/', '', (string) $v), $item) : preg_replace('/[^0-9 .]/', '', (string) $item);
+                return is_array($item) ? array_map(fn ($v) => preg_replace('/[^0-9 .]/', '', (string) $v), $item) : preg_replace('/[^0-9 .]/', '', (string) $item);
             });
             $purpose = $request->transfer_as == 'Pull Out' ? 'Pull Out' : 'Store-to-Store Transfer';
 
@@ -250,12 +250,13 @@ class ConsignmentStockTransferController extends Controller
             $sourceWarehouse = $request->source_warehouse;
             $targetWarehouse = $request->transfer_as == 'Pull Out' ? 'Quarantine Warehouse - FI' : $request->target_warehouse;
 
-            if (!$itemCodes || !$transferQty->isNotEmpty()) {
+            if (! $itemCodes || ! $transferQty->isNotEmpty()) {
                 return redirect()->back()->with('error', 'Please select an item to return');
             }
 
             $hasInvalidQty = $transferQty->contains(function ($item) {
                 $qty = is_array($item) ? ($item['transfer_qty'] ?? 0) : $item;
+
                 return (float) $qty <= 0;
             });
             if ($hasInvalidQty) {
@@ -290,12 +291,12 @@ class ConsignmentStockTransferController extends Controller
                 'transaction_date' => $now->toDateTimeString(),
                 'status' => 'Pending',
                 'remarks' => $request->remarks,
-                'items' => $items
+                'items' => $items,
             ];
 
             $response = $this->erpPost('Consignment Stock Entry', $data);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception($response['exc_type']);
             }
 
@@ -313,7 +314,7 @@ class ConsignmentStockTransferController extends Controller
 
             $log = $this->erpPost('Activity Log', $logs);
 
-            if (!isset($log['data'])) {
+            if (! isset($log['data'])) {
                 session()->flash('warning', 'Activity Log not posted.');
             }
 
@@ -354,7 +355,7 @@ class ConsignmentStockTransferController extends Controller
             $steDetails = [];
             $activityLogsDetails = [];
             foreach ($itemDetails as $item) {
-                if (!isset($items[$item->name])) {
+                if (! isset($items[$item->name])) {
                     continue;
                 }
 
@@ -370,13 +371,13 @@ class ConsignmentStockTransferController extends Controller
                     'qty' => (float) $transferDetail['qty'],
                     'price' => (float) $item->consignment_price,
                     'amount' => $item->consignment_price * $transferDetail['qty'],
-                    'reason' => $transferDetail['reason'] ?? null
+                    'reason' => $transferDetail['reason'] ?? null,
                 ];
 
                 $activityLogsDetails[$itemCode]['quantity'] = [
                     'previous' => $item->consigned_qty,
                     'new' => $item->consigned_qty + (float) $transferDetail['qty'],
-                    'returned' => (float) $transferDetail['qty']
+                    'returned' => (float) $transferDetail['qty'],
                 ];
             }
 
@@ -386,17 +387,17 @@ class ConsignmentStockTransferController extends Controller
                 'transaction_date' => $now->toDateTimeString(),
                 'status' => 'Pending',
                 'remarks' => $request->remarks,
-                'items' => $steDetails
+                'items' => $steDetails,
             ];
 
             $response = $this->erpPost('Consignment Stock Entry', $data);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception($response['exc_type']);
             }
 
             $logData = [
-                'subject' => 'Item Return  to ' . $request->target_warehouse . ' has been created by ' . Auth::user()->full_name . ' at ' . $now->toDateTimeString(),
+                'subject' => 'Item Return  to '.$request->target_warehouse.' has been created by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
                 'reference_doctype' => 'Consignment Stock Entry',
@@ -404,12 +405,12 @@ class ConsignmentStockTransferController extends Controller
                 'reference_owner' => Auth::user()->wh_user,
                 'user' => Auth::user()->wh_user,
                 'full_name' => Auth::user()->full_name,
-                'data' => json_encode($activityLogsDetails, true)
+                'data' => json_encode($activityLogsDetails, true),
             ];
 
             $log = $this->erpPost('Activity Log', $logData);
 
-            if (!isset($log['data'])) {
+            if (! isset($log['data'])) {
                 session()->flash('warning', 'Activity Log not posted');
             }
 
@@ -425,7 +426,7 @@ class ConsignmentStockTransferController extends Controller
         try {
             $now = now();
             $stockEntry = ConsignmentStockEntry::find($id);
-            if (!$stockEntry) {
+            if (! $stockEntry) {
                 return redirect()->back()->with('error', 'Record not found.');
             }
 
@@ -435,7 +436,7 @@ class ConsignmentStockTransferController extends Controller
 
             $response = $this->erpPut('Consignment Stock Entry', $stockEntry->name, ['status' => 'Cancelled']);
 
-            if (!isset($response['data'])) {
+            if (! isset($response['data'])) {
                 throw new Exception($response['exc_type']);
             }
 
@@ -451,7 +452,7 @@ class ConsignmentStockTransferController extends Controller
                     if (isset($items[$item->item_code])) {
                         $itemDetails = $items[$item->item_code][0];
                         $this->erpPut('Bin', $itemDetails->name, [
-                            'consigned_qty' => $itemDetails->consigned_qty > $item->qty ? $itemDetails->consigned_qty - $item->qty : 0
+                            'consigned_qty' => $itemDetails->consigned_qty > $item->qty ? $itemDetails->consigned_qty - $item->qty : 0,
                         ]);
                     }
                 }
@@ -462,7 +463,7 @@ class ConsignmentStockTransferController extends Controller
             $transaction = $stockEntry->purpose;
 
             $logs = [
-                'subject' => $transaction . ' request from ' . $sourceWarehouse . ' to ' . $targetWarehouse . ' has been cancelled by ' . Auth::user()->full_name . ' at ' . $now->toDateTimeString(),
+                'subject' => $transaction.' request from '.$sourceWarehouse.' to '.$targetWarehouse.' has been cancelled by '.Auth::user()->full_name.' at '.$now->toDateTimeString(),
                 'content' => 'Consignment Activity Log',
                 'communication_date' => $now->toDateTimeString(),
                 'reference_doctype' => 'Consignment Stock Entry',
@@ -474,11 +475,11 @@ class ConsignmentStockTransferController extends Controller
 
             $log = $this->erpPost('Activity Log', $logs);
 
-            if (!isset($log['data'])) {
+            if (! isset($log['data'])) {
                 session()->flash('warning', 'Activity Log not posted');
             }
 
-            return redirect()->route('stock_transfers', ['purpose' => $stockEntry->purpose])->with('success', $transaction . ' has been cancelled.');
+            return redirect()->route('stock_transfers', ['purpose' => $stockEntry->purpose])->with('success', $transaction.' has been cancelled.');
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'Something went wrong. Please try again later.');
         }
@@ -517,7 +518,7 @@ class ConsignmentStockTransferController extends Controller
             $binArr = [];
             foreach ($bin as $b) {
                 $binArr[$b->warehouse][$b->item_code] = [
-                    'consigned_qty' => $b->consigned_qty
+                    'consigned_qty' => $b->consigned_qty,
                 ];
             }
 
@@ -542,7 +543,7 @@ class ConsignmentStockTransferController extends Controller
                             'transfer_qty' => $item->qty,
                             'uom' => $item->uom,
                             'image' => $img,
-                            'return_reason' => $item->reason
+                            'return_reason' => $item->reason,
                         ];
                     }
                 }
