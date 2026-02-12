@@ -253,6 +253,7 @@ class BrochureController extends Controller
 				$writer->save($excel_file);
 	
 				$transaction_date = Carbon::now()->toDateTimeString();
+
 				DB::table('tabProduct Brochure Log')->insert([
 					'name' => uniqid(),
 					'creation' => $transaction_date,
@@ -267,6 +268,33 @@ class BrochureController extends Controller
 					'transaction_type' => 'Upload Image'
 				]);
 
+				$existing = DB::table('tabItem Brochure Image')
+					->where('parent', $request->item_code)
+					->where('idx', $request->image_idx)
+					->first();
+				
+				if ($existing) {
+					DB::table('tabItem Brochure Image')
+						->where('name', $existing->name)
+						->update([
+							'modified' => $transaction_date,
+							'image_filename' => $filename,
+							'image_path' => 'storage/brochures/'.$filename
+						]);
+				} else {
+					DB::table('tabItem Brochure Image')->insert([
+						'name' => uniqid(),
+						'parent' => $request->item_code,
+						'idx' => $request->image_idx,
+						'creation' => $transaction_date,
+						'modified' => $transaction_date,
+						'modified_by' => $request->ip(),
+						'owner' => $request->ip(),
+						'image_filename' => $filename,
+						'image_path' => 'storage/brochures/'.$filename
+					]);
+				}
+				
 				DB::commit();
 
 				$data = [
@@ -279,7 +307,12 @@ class BrochureController extends Controller
 		} catch (Exception $e) {
 			DB::rollback();
 
-			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
+			return response()->json([
+				'status' => 0,
+				'message' => $e->getMessage(),
+				'line' => $e->getLine(),
+				'file' => $e->getFile()
+			]);
 		}
 		
 		return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
@@ -294,7 +327,7 @@ class BrochureController extends Controller
 		$highestRow = $sheet->getHighestRow(); // e.g. 10
 		$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
 
-		// Get the highest row and column numbers referenced in the worksheet
+		// Get the highest row and column numbers referenced in tdeleteImagehe worksheet
 		$highestRow = $sheet->getHighestRow(); // e.g. 10
 		$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
 
@@ -320,20 +353,23 @@ class BrochureController extends Controller
 					];
 
 					$attrib[$headerRowArr[$col]] = $value != '-' ? $value : null;
-
-					if ($headerRowArr[$col] == 'Image 1') {
-						$images['image1'] = $sheet->getCellByColumnAndRow($col, $row)->getValue();
-					}
-					if ($headerRowArr[$col] == 'Image 2') {
-						$images['image2'] = $sheet->getCellByColumnAndRow($col, $row)->getValue();
-					}
-					if ($headerRowArr[$col] == 'Image 3') {
-						$images['image3'] = $sheet->getCellByColumnAndRow($col, $row)->getValue();
-					}
 				}
 			}
 
 			$item_name = $sheet->getCellByColumnAndRow(1, $row)->getValue();
+
+			$item_code = Str::slug($item_name, '-');
+
+			$db_images = DB::table('tabItem Brochure Image')
+				->where('parent', $item_code)
+				->orderBy('idx')
+				->get();
+
+			$images = [];
+
+			foreach ($db_images as $img) {
+				$images['image'.$img->idx] = $img->image_filename;
+			}
 
 			// for ajax table
 			$attrib['Item Name'] = $item_name;
@@ -346,7 +382,7 @@ class BrochureController extends Controller
 			$customer = !$customer ? $sheet->getCellByColumnAndRow(2, 3)->getValue() : $customer;
 
 			$content[] = [
-				'id' => Str::slug($item_name, '-'),
+				'id' => $item_code,
 				'row' => $row,
 				'project' => $sheet->getCellByColumnAndRow(2, 2)->getValue(),
 				'item_name' => $item_name,
@@ -404,54 +440,47 @@ class BrochureController extends Controller
 		}
 	}
 
-	public function removeImage(Request $request) {
+	public function removeImage(Request $request)
+	{
 		DB::beginTransaction();
+	
 		try {
-			if ($request->id) {
-				DB::table('tabItem Brochure Image')->where('name', $request->id)->delete();
-
-				DB::commit();
-
-				return response()->json(['status' => 1, 'message' => 'Image removed.']);
+			$image = DB::table('tabItem Brochure Image')
+				->where('parent', $request->item_code)
+				->where('idx', $request->image_idx)
+				->first();
+	
+			if (!$image) {
+				return response()->json([
+					'status' => 0,
+					'message' => 'Image not found.'
+				]);
 			}
-
-			$folder = $request->project;
-			$dir = $request->filename;
-			$loc = $folder && $dir ? strtoupper($folder).'/'.$dir : null;
-
-			if($loc && Storage::disk('public')->exists('brochures/'.$loc)){
-				$excel_file = storage_path('/app/public/brochures/'.$loc);
-						
-				$reader = new ReaderXlsx();
-				$spreadsheet = $reader->load($excel_file);
-				$sheet = $spreadsheet->getActiveSheet();
-				// Get the highest row and column numbers referenced in the worksheet
-				$highestColumn = $sheet->getHighestColumn(); // e.g 'F'
-				$highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
-
-				$row = $request->row;
-				$column = null;
-				for ($col = 1; $col <= $highestColumnIndex; $col++) {
-					$value = $sheet->getCellByColumnAndRow($col, 4)->getValue();
-					if ($value == $request->column) {
-						$column = $col;
-						break;
-					}
-				}
-				
-				$sheet->setCellValueByColumnAndRow($column, $row, null);
-
-				$writer = new WriterXlsx($spreadsheet);
-				$writer->save($excel_file);
-
-				DB::commit();
-			}
-
-			return response()->json(['status' => 1, 'message' => 'Image removed.']);
-		}catch (Exception $e){
+	
+			// Delete physical file
+			Storage::disk('public')->delete('brochures/'.$image->image_filename);
+	
+			// Delete DB row
+			DB::table('tabItem Brochure Image')
+				->where('parent', $request->item_code)
+				->where('idx', $request->image_idx)
+				->delete();
+	
+			DB::commit();
+	
+			return response()->json([
+				'status' => 1,
+				'message' => 'Image removed.'
+			]);
+	
+		} catch (Exception $e) {
+	
 			DB::rollback();
-
-			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
+	
+			return response()->json([
+				'status' => 0,
+				'message' => $e->getMessage()
+			]);
 		}
 	}
 
