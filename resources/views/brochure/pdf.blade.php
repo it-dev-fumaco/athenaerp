@@ -73,8 +73,20 @@
         </style>
     </head>
     @php
-        $fumaco_logo = storage_path('app/public/fumaco_logo.png');
-        $fumaco_logo = asset('storage/fumaco_logo.png');
+        // Embed images as base64 so DomPDF can render them without resolving file paths (avoids Windows/path issues)
+        $imageToDataUri = function ($path) {
+            if (!$path || !is_string($path) || !file_exists($path)) {
+                return null;
+            }
+            $mime = @mime_content_type($path) ?: 'image/png';
+            $data = @file_get_contents($path);
+            return $data !== false ? 'data:' . $mime . ';base64,' . base64_encode($data) : null;
+        };
+        $fumaco_logo_path = public_path('storage/fumaco_logo.png');
+        if (!file_exists($fumaco_logo_path)) {
+            $fumaco_logo_path = storage_path('app/public/fumaco_logo.png');
+        }
+        $fumaco_logo_src = $imageToDataUri($fumaco_logo_path);
         $margin = '1.2in';
         $rows = 1;
         if(strlen($project) > 29){
@@ -89,7 +101,7 @@
         <table style="width: 100% !important; border-collapse: collapse;"> 
             <tr>
                 <td style="width: 43%; padding: 0 !important; vertical-align: top !important">
-                    <img src="{{ $fumaco_logo }}" alt="" style="width: 230px;">
+                    @if($fumaco_logo_src)<img src="{{ $fumaco_logo_src }}" alt="" style="width: 230px;">@endif
                 </td>
                 <td style="width: 55%; font-size: 11pt;">
                     <p style="text-transform: uppercase !important; margin: 0; line-height: .75rem;">
@@ -105,7 +117,7 @@
         <table style="width: 100% !important; border-collapse: collapse;">
             <tr>
                 <td style="width: 28%; vertical-align: top; padding-top: 15px;">
-                    <img src="{{ $fumaco_logo }}" style="width: 80%;">
+                    @if($fumaco_logo_src)<img src="{{ $fumaco_logo_src }}" style="width: 80%;">@endif
                 </td>
                 <td style="width: 15%;font-size: .6rem; padding: 0 15px 10px 0 !important; line-height: .5rem;">
                     www.fumaco.com
@@ -137,18 +149,46 @@
                 <div style="width: 240px !important;">
                     @for ($i = 1; $i <= 3; $i++)
                         @php
-                            $img = null;
-                            $img_exists = 0;
-                            if (isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
-                                if (isset($is_standard) && $is_standard) {
-                                    $img = isset($row['images']['image'.$i]['filepath']) ? $row['images']['image'.$i]['filepath'] : null;
-                                }else{
-                                    $img = public_path('storage/brochures/'.$row['images']['image'.$i]);
+                            // Use precomputed base64 data URI from controller when present (most reliable)
+                            $img_src = isset($row['image_data_uris'][$i]) && $row['image_data_uris'][$i] ? $row['image_data_uris'][$i] : null;
+                            if (!$img_src) {
+                                $img_path = null;
+                                if (isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
+                                    if (isset($is_standard) && $is_standard) {
+                                        $filepath = isset($row['images']['image'.$i]['filepath']) ? $row['images']['image'.$i]['filepath'] : null;
+                                        if ($filepath) {
+                                            $img_path = public_path($filepath);
+                                            if (!file_exists($img_path)) {
+                                                $img_path = storage_path('app/public/'.preg_replace('#^storage/#', '', $filepath));
+                                            }
+                                        }
+                                    } else {
+                                        $img_name = trim((string)($row['images']['image'.$i] ?? ''));
+                                        if ($img_name) {
+                                            $img_path = public_path('storage/brochures/'.strtoupper($project).'/'.$img_name);
+                                            if (!$img_path || !file_exists($img_path)) {
+                                                $img_path = storage_path('app/public/brochures/'.strtoupper($project).'/'.$img_name);
+                                            }
+                                            if (!$img_path || !file_exists($img_path)) {
+                                                $img_path = public_path('storage/brochures/'.$img_name);
+                                            }
+                                            if (!$img_path || !file_exists($img_path)) {
+                                                $img_path = storage_path('app/public/brochures/'.$img_name);
+                                            }
+                                            if (!$img_path || !file_exists($img_path)) {
+                                                $img_path = null;
+                                            }
+                                        }
+                                    }
+                                    if ($img_path && !file_exists($img_path)) {
+                                        $img_path = null;
+                                    }
                                 }
+                                $img_src = $img_path ? $imageToDataUri($img_path) : null;
                             }
                         @endphp
-                        @if ($img)
-                            <img src="{{ $img }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
+                        @if ($img_src)
+                            <img src="{{ $img_src }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
                         @endif
                     @endfor
                     &nbsp;
@@ -167,7 +207,11 @@
                 </div>
                 <table border="0" style="border-collapse: collapse; width: 100%; font-size: 8pt; line-height: .5rem">
                     @foreach ($row['attributes'] as $val)
-                        @if ($val['attribute_value'] && !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']))
+                        @php
+                            $attr_name_ok = !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']);
+                            $attr_val_is_image = preg_match('/\.(png|jpg|jpeg|gif|webp|bmp)$/i', trim((string)$val['attribute_value']));
+                        @endphp
+                        @if ($val['attribute_value'] && $attr_name_ok && !$attr_val_is_image)
                             <tr>
                                 <td class="regular-font" style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $val['attribute_name'] }}</td>
                                 <td class="bold" style="padding: 5px 0 5px 0 !important;width: 60%;">{{ $val['attribute_value'] }}</td>

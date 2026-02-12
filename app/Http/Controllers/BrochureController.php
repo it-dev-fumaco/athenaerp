@@ -183,6 +183,9 @@ class BrochureController extends Controller
 
 				$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d').$series;
 
+				// Resolve image paths and embed as base64 so PDF always finds uploaded images
+				$content = $this->resolveBrochureImagePathsForPdf($content, $project, $is_standard = false);
+
 				$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename'));
 				return $pdf->stream($new_filename.'.pdf');
 			}
@@ -655,6 +658,8 @@ class BrochureController extends Controller
 				$new_filename = Str::slug($project, '-').'-'.Carbon::now()->format('Y-m-d');
 				$remarks = '';
 
+				$content = $this->resolveBrochureImagePathsForPdf($content, $project, true);
+
 				$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard', 'remarks'));
 				return $pdf->stream($new_filename.'.pdf');
 			}
@@ -754,6 +759,8 @@ class BrochureController extends Controller
 
 				$is_standard = true;
 				DB::commit();
+
+				$content = $this->resolveBrochureImagePathsForPdf($content, $project, true);
 
 				$pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'is_standard', 'remarks', 'fumaco_logo'));
 				return $pdf->stream($new_filename.'.pdf');
@@ -989,5 +996,84 @@ class BrochureController extends Controller
 
 			return response()->json(['status' => 0, 'message' => 'Something went wrong. Please try again.']);
 		}
+	}
+
+	/**
+	 * Resolve brochure image paths and attach base64 data URIs so the PDF view can embed images reliably.
+	 */
+	private function resolveBrochureImagePathsForPdf(array $content, string $project, bool $is_standard): array
+	{
+		$imageExtensions = '/\.(png|jpg|jpeg|gif|webp|bmp)$/i';
+
+		foreach ($content as $r => $row) {
+			$content[$r]['image_data_uris'] = [1 => null, 2 => null, 3 => null];
+
+			$filenames = [];
+			if ($is_standard) {
+				for ($i = 1; $i <= 3; $i++) {
+					$fp = $row['images']['image'.$i]['filepath'] ?? null;
+					$filenames[$i] = $fp ? basename($fp) : null;
+				}
+			} else {
+				for ($i = 1; $i <= 3; $i++) {
+					$val = $row['images']['image'.$i] ?? null;
+					$filenames[$i] = $val ? trim((string) $val) : null;
+				}
+				// If Excel Image 1/2/3 columns are empty, use any attribute value that looks like an image filename
+				$fromAttrs = [];
+				foreach ($row['attributes'] ?? [] as $att) {
+					$v = trim((string)($att['attribute_value'] ?? ''));
+					if ($v && preg_match($imageExtensions, $v)) {
+						$fromAttrs[] = $v;
+					}
+				}
+				$idx = 0;
+				for ($i = 1; $i <= 3; $i++) {
+					if (empty($filenames[$i]) && isset($fromAttrs[$idx])) {
+						$filenames[$i] = $fromAttrs[$idx];
+						$idx++;
+					}
+				}
+			}
+
+			for ($i = 1; $i <= 3; $i++) {
+				$name = $filenames[$i] ?? null;
+				if (!$name) {
+					continue;
+				}
+
+				$absolutePath = null;
+				if ($is_standard) {
+					$filepath = $row['images']['image'.$i]['filepath'] ?? null;
+					if ($filepath) {
+						$absolutePath = public_path($filepath);
+						if (!file_exists($absolutePath)) {
+							$absolutePath = storage_path('app/public/' . preg_replace('#^storage/#', '', $filepath));
+						}
+					}
+				} else {
+					$tryPaths = [
+						storage_path('app/public/brochures/' . strtoupper($project) . '/' . $name),
+						storage_path('app/public/brochures/' . $name),
+					];
+					foreach ($tryPaths as $p) {
+						if ($p && file_exists($p)) {
+							$absolutePath = $p;
+							break;
+						}
+					}
+				}
+
+				if ($absolutePath && file_exists($absolutePath)) {
+					$mime = @mime_content_type($absolutePath) ?: 'image/png';
+					$data = @file_get_contents($absolutePath);
+					if ($data !== false) {
+						$content[$r]['image_data_uris'][$i] = 'data:' . $mime . ';base64,' . base64_encode($data);
+					}
+				}
+			}
+		}
+
+		return $content;
 	}
 }
