@@ -147,6 +147,7 @@
             </div>
             <div class="left-container">
                 <div style="width: 240px !important;">
+                    @php $slot2_src = null; @endphp
                     @for ($i = 1; $i <= 3; $i++)
                         @php
                             // Use precomputed base64 data URI from controller when present (most reliable)
@@ -185,6 +186,13 @@
                                     }
                                 }
                                 $img_src = $img_path ? $imageToDataUri($img_path) : null;
+                            }
+                            // Never show the same image in slot 3 as in slot 2
+                            if ($i === 2) {
+                                $slot2_src = $img_src;
+                            }
+                            if ($i === 3 && $slot2_src !== null && $img_src === $slot2_src) {
+                                $img_src = null;
                             }
                         @endphp
                         @if ($img_src)
