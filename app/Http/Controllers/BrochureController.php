@@ -618,19 +618,27 @@ class BrochureController extends Controller
 					];	
 				}
 
+				// Key by idx (1,2,3) so slot 3 never shows slot 2's image when only 2 images exist or idx is duplicated
+				$brochure_by_idx = [];
+				foreach ($brochure_images as $img) {
+					$slot = trim((string) ($img->idx ?? ''));
+					if (in_array($slot, ['1', '2', '3'], true) && !isset($brochure_by_idx[$slot])) {
+						$brochure_by_idx[$slot] = $img;
+					}
+				}
 				$images = [];
-				for($i = 0; $i < 3; $i++){
-					$row = $i + 1;
+				for ($row = 1; $row <= 3; $row++) {
+					$img = $brochure_by_idx[(string) $row] ?? null;
 					$images['image'.$row] = [
-						'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
-						'filepath' => isset($brochure_images[$i]) ? $brochure_images[$i]->image_path.$brochure_images[$i]->image_filename : null,
+						'id' => $img ? $img->name : null,
+						'filepath' => $img ? $img->image_path . $img->image_filename : null,
 					];
 				}
 
 				$content[] = [
 					'item_code' => $item_code,
 					'id' => Str::slug($item_name, '-'),
-					'row' => $i + 1,
+					'row' => $no,
 					'project' => $project,
 					'item_name' => $item_name,
 					'reference' => $details['fitting_type'],
@@ -703,16 +711,20 @@ class BrochureController extends Controller
 
 			$brochure_images = DB::table('tabItem Brochure Image')->where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
 
-			for($i = 0; $i < 3; $i++){
-				$row = $i + 1;
-				$filepath = null;
-				if(isset($brochure_images[$i])){
-					$filepath = $brochure_images[$i]->image_path.$brochure_images[$i]->image_filename;
-					// $base64 = $this->base64_image($filepath);
+			// Key by idx (1,2,3) so slot 3 never shows slot 2's image when only 2 images exist or idx is duplicated
+			$brochure_by_idx = [];
+			foreach ($brochure_images as $img) {
+				$slot = trim((string) ($img->idx ?? ''));
+				if (in_array($slot, ['1', '2', '3'], true) && !isset($brochure_by_idx[$slot])) {
+					$brochure_by_idx[$slot] = $img;
 				}
+			}
+			$images = [];
+			for ($row = 1; $row <= 3; $row++) {
+				$img = $brochure_by_idx[(string) $row] ?? null;
 				$images['image'.$row] = [
-					'id' => isset($brochure_images[$i]) ? $brochure_images[$i]->name : null,
-					'filepath' => $filepath,
+					'id' => $img ? $img->name : null,
+					'filepath' => $img ? $img->image_path . $img->image_filename : null,
 				];
 			}
 
@@ -1042,6 +1054,14 @@ class BrochureController extends Controller
 					continue;
 				}
 
+				// Never show the same image in slot 3 as in slot 2 (fix duplicate slot 3 bug)
+				if ($i === 3 && isset($filenames[2]) && $filenames[2] !== null && $name === $filenames[2]) {
+					if ($is_standard && isset($content[$r]['images']['image3'])) {
+						$content[$r]['images']['image3'] = ['id' => null, 'filepath' => null];
+					}
+					continue;
+				}
+
 				$absolutePath = null;
 				if ($is_standard) {
 					$filepath = $row['images']['image'.$i]['filepath'] ?? null;
@@ -1068,7 +1088,12 @@ class BrochureController extends Controller
 					$mime = @mime_content_type($absolutePath) ?: 'image/png';
 					$data = @file_get_contents($absolutePath);
 					if ($data !== false) {
-						$content[$r]['image_data_uris'][$i] = 'data:' . $mime . ';base64,' . base64_encode($data);
+						$dataUri = 'data:' . $mime . ';base64,' . base64_encode($data);
+						// Avoid slot 3 showing the same image as slot 2 (by data URI)
+						if ($i === 3 && isset($content[$r]['image_data_uris'][2]) && $content[$r]['image_data_uris'][2] === $dataUri) {
+							continue;
+						}
+						$content[$r]['image_data_uris'][$i] = $dataUri;
 					}
 				}
 			}
