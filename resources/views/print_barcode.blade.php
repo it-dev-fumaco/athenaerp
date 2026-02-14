@@ -34,8 +34,8 @@
                 <input type="button" onClick="findPrinter()" value="PRINT">
                 <br />
                 <input id="printer" type="text" value="zebra" size="15"><br />
-                <strong>{{ $item_details->description }}</strong>
-                <input id="barcode" type="hidden" value="{{ $item_details->name }}" size="15"><br />
+                <strong>{{ $itemDetails->description }}</strong>
+                <input id="barcode" type="hidden" value="{{ $itemDetails->name }}" size="15"><br />
                 <p>QUANTITY</p><input id="quantity" type="integer" value="1" size="15"/>
             </td>
         </tr>

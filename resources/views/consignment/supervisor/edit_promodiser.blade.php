@@ -41,14 +41,14 @@
                                 @csrf
                                 <div class="row">
                                     <div class="col-12">
-                                        <span><b>Username:</b> {{ $user_details->name }}</span> <br>
-                                        <span><b>Full Name:</b> {{ $user_details->full_name }}</span>
+                                        <span><b>Username:</b> {{ $userDetails->name }}</span> <br>
+                                        <span><b>Full Name:</b> {{ $userDetails->full_name }}</span>
                                     </div>
                                 </div>
                                 <div class="row mt-2">
                                     <div class="col-3">
                                         <div class="form-group">
-                                            <input type="checkbox" name="enabled" {{ $user_details->wh_user->enabled ? 'checked' : null }}>
+                                            <input type="checkbox" name="enabled" {{ $userDetails->wh_user->enabled ? 'checked' : null }}>
                                             <label for="customCheck1">Active</label>
                                         </div>
                                     </div>
@@ -59,7 +59,7 @@
                                     <div class="d-none">
                                         <select class="form-control warehouse-selection w-100" id="warehouses-select">
                                             <option value="" disabled selected>Select a warehouse</option>
-                                            @foreach ($consignment_stores as $store)
+                                            @foreach ($consignmentStores as $store)
                                                 <option value="{{ $store }}">{{ $store }}</option>
                                             @endforeach
                                         </select>
@@ -74,12 +74,12 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach ($assigned_warehouses as $warehouse)
+                                            @foreach ($assignedWarehouses as $warehouse)
                                                 <tr>
                                                     <td>
                                                         <select name="warehouses[]" class="form-control warehouse-selection w-100" required>
                                                             <option value="" disabled>Select a warehouse</option>
-                                                            @foreach ($consignment_stores as $store)
+                                                            @foreach ($consignmentStores as $store)
                                                                 <option value="{{ $store }}" {{ $store == $warehouse ? 'selected' : null }}>{{ $store }}</option>
                                                             @endforeach
                                                         </select>
@@ -89,7 +89,7 @@
                                             @endforeach
                                         </tbody>
                                     </table>
-                                    <span id='warehouse-count' class="d-none">{{ count($assigned_warehouses) }}</span>
+                                    <span id='warehouse-count' class="d-none">{{ count($assignedWarehouses) }}</span>
                                 </div>
                                 <div class="row">
                                     <button type="button" id="submit-btn" class="btn btn-primary w-100">Submit</button>

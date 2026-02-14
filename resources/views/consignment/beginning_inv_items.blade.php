@@ -1,5 +1,5 @@
 @php
-    $action = $inv_name ? "/update_beginning_inventory/$inv_name" : '/save_beginning_inventory';
+    $action = $invName ? "/update_beginning_inventory/$invName" : '/save_beginning_inventory';
 @endphp
 
 <form action='{{ $action }}' id='beginning-inventory-form' method="post" class="text-center {{ $branch != 'none' ? null : 'd-none' }}">
@@ -95,20 +95,20 @@
         </div>
     </div>
     <div id="item-codes-with-beginning-inventory" class='d-none'>
-        @foreach ($inv_items as $item)
+        @foreach ($invItems as $item)
             <span class="{{ $item }}">{{ $item }}</span>
         @endforeach
     </div>
     <div class="m-2">
         @php
-            if($inv_name) {
-                $transaction_date = $detail ? \Carbon\Carbon::parse($detail->transaction_date)->format('Y-m-d') : \Carbon\Carbon::now()->format('Y-m-d');
+            if($invName) {
+                $transactionDate = $detail ? \Carbon\Carbon::parse($detail->transaction_date)->format('Y-m-d') : now()->format('Y-m-d');
             } else {
-                $transaction_date = \Carbon\Carbon::now()->format('Y-m-d');
+                $transactionDate = now()->format('Y-m-d');
             }
         @endphp
         <label for="transaction-date" style="font-size: 16px;">Transaction Date</label>
-        <input type="date" id="transaction-date" name="transaction_date" class="form-control validate" value="{{ $transaction_date }}" required>
+        <input type="date" id="transaction-date" name="transaction_date" class="form-control validate" value="{{ $transactionDate }}" required>
     </div>
     <table class="table table-striped text-left" id="items-table"> 
         <thead>
@@ -120,7 +120,7 @@
             @forelse ($items as $item)
                 <tr id="{{ $item['item_code'] }}" class="{{ $item['item_code'] }}">
                     @php
-                        $img = isset($item_images[$item['item_code']]) ? $item_images[$item['item_code']] : $item_images['no_img'];
+                        $img = isset($itemImages[$item['item_code']]) ? $itemImages[$item['item_code']] : $itemImages['no_img'];
                     @endphp 
                     <td class="text-justify p-1 align-middle" colspan="3">
                         <input type="text" name="item_code[]" id="{{ $item['item_code'] }}-id" class="d-none" value="{{ $item['item_code'] }}" />
@@ -149,14 +149,14 @@
                             <div class="p-1 col">
                                 <div class="input-group p-1">
                                     <div class="p-0">
-                                        <input type="text" class="form-control form-control-sm qty validate price" id="{{ $item['item_code'] }}-price" data-item-code="{{ $item['item_code'] }}" placeholder="{{ $item['price'] }}" value="{{ $inv_name ? $item['price'] : 0 }}" name="price[{{ $item['item_code'] }}]" style="text-align: center;">
+                                        <input type="text" class="form-control form-control-sm qty validate price" id="{{ $item['item_code'] }}-price" data-item-code="{{ $item['item_code'] }}" placeholder="{{ $item['price'] }}" value="{{ $invName ? $item['price'] : 0 }}" name="price[{{ $item['item_code'] }}]" style="text-align: center;">
                                     </div>
                                 </div>
                             </div>
                             <div class="p-1 col-1 text-center h-100 font-responsive remove-item" style="width: 15px !important; color: red; cursor: pointer" data-id="{{ $item['item_code'] }}"><i class="fa fa-remove"></i></div>
                         </div>
                         <div class="p-1 item-description" style="font-size: 9.5pt !important;">
-                            {!! strip_tags($item['item_description']) !!}
+                            {!! $item['item_description'] !!}
                         </div>
                     </td>
                 </tr>
@@ -179,7 +179,7 @@
     <div class="col-12 text-right">
         <span class="d-block" style="font-size: 15px;">Total items: <b><span id="item-count">{{ count($items) }}</span></b></span>
         <div class="m-2">
-            @if ($inv_name)
+            @if ($invName)
                 <button type="button" class="btn btn-primary btn-block submit-once" id="submit-btn"><i class="fas fa-check"></i> UPDATE</button>
 
                 <button type="button" class="btn btn-secondary btn-block submit-once" data-toggle="modal" data-target="#cancel-beginning-inventory-modal"><i class="fas fa-remove"></i> CANCEL</button>
@@ -194,11 +194,11 @@
                                 </button>
                             </div>
                             <div class="modal-body">
-                                Are you sure you want to cancel Beginning Inventory Entry: <b>{{ $inv_name }}</b>?
+                                Are you sure you want to cancel Beginning Inventory Entry: <b>{{ $invName }}</b>?
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                <a href="/cancel_beginning_inventory/{{ $inv_name }}" class="btn btn-primary">Cancel</a>
+                                <a href="/cancel_beginning_inventory/{{ $invName }}" class="btn btn-primary">Cancel</a>
                             </div>
                         </div>
                     </div>
@@ -206,14 +206,14 @@
             @else
                 <button type="button" class="btn btn-primary btn-block submit-once" id="submit-btn"><i id="submit-logo" class="fas fa-check"></i> SUBMIT</button>
             @endif
-            <input type="checkbox" class='d-none' name="cancel" id="cancel-check" {{ $inv_name ? 'checked' : null }}>
+            <input type="checkbox" class='d-none' name="cancel" id="cancel-check" {{ $invName ? 'checked' : null }}>
         </div>
     </div>
 
     <div class="d-none">
         {{-- values to save --}}
         <input type="text" id="branch-warehouse" name="branch" value="{{ $branch }}">
-        <input type="text" name="inv_name" value="{{ $inv_name }}">
+        <input type="text" name="inv_name" value="{{ $invName }}">
     </div>
 
     <div class="w-100 text-center d-none p-2" id="add-item-success" style="position: absolute; top: 0; left: 0">
@@ -250,7 +250,7 @@
 <script>
     $(document).ready(function(){
         var branch = '{{ $branch }}';
-        var existing_record = '{{ $inv_name ? 1 : 0 }}';
+        var existing_record = '{{ $invName ? 1 : 0 }}';
 
         $(document).on('change', '#transaction-date', function(e){
             if(existing_record == 1){
@@ -539,7 +539,7 @@
 
         $(document).on('select2:select', '#item-selection', function(e){
             $('#new-item-code').text(e.params.data.id); // item code
-            $('#new-description').text(e.params.data.description); // description
+            $('#new-description').html(e.params.data.description); // description
             $('#new-classification').text(e.params.data.classification); // classification
             $('#new-img').attr('src', e.params.data.image); // image
             $('#new-img-txt').text(e.params.data.image); // image

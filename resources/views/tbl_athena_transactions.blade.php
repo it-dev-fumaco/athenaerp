@@ -30,7 +30,7 @@
                 <span class="d-block">{{ $row['reference_parent'] }}<br/></span>
                 <span class="badge {{ $label }}">{{ $row['status'] }}</span>
                 <div class="d-md-none mt-2">
-                    @if($user_group == 'Inventory Manager')
+                    @if($userGroup == 'Inventory Manager')
                     <button type="button" id="cancel-btn" class="btn btn-danger btn-sm cancel-transaction" data-toggle="modal" data-target="#mob-cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
                         Cancel
                     </button>
@@ -80,7 +80,7 @@
             <td class="text-center d-none d-sm-table-cell">{{ $row['transaction_date'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['warehouse_user'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['remarks'] }}</td>
-            @if($user_group == 'Inventory Manager')
+            @if($userGroup == 'Inventory Manager')
                 <td class="text-center d-none d-sm-table-cell">
                     <button type="button" id="cancel-btn" class="btn btn-secondary btn-sm cancel-transaction" data-toggle="modal" data-target="#cancel-transaction-modal-{{ $row['reference_parent'] }}" {{ $row['status'] == 'DRAFT' ? '' : 'disabled' }}>
                         Cancel
@@ -142,7 +142,7 @@
     </tbody>
 </table>
 
-<div class="box-footer clearfix" id="athena-transactions-pagination" data-item-code="{{ $item_code }}" style="font-size: 10pt;">
+<div class="box-footer clearfix" id="athena-transactions-pagination" data-item-code="{{ $itemCode }}" style="font-size: 10pt;">
     {{ $logs->links() }}
 </div>
 <style>

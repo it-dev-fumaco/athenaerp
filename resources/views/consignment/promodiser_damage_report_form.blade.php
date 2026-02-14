@@ -25,7 +25,7 @@
                                         {{ session()->get('error') }}
                                     </div>
                                 @endif
-                                <h6 class="text-center mt-2 font-weight-bolder">{{ \Carbon\Carbon::now()->format('F d, Y') }}</h6>
+                                <h6 class="text-center mt-2 font-weight-bolder">{{ now()->format('F d, Y') }}</h6>
                                 <form action="/promodiser/damage_report/submit" method="post">
                                     @csrf
                                     <div class="container">
@@ -33,7 +33,7 @@
                                             <div class="col-8">
                                                 <select name="branch" id="branch" class="form-control form-control-sm">
                                                     <option value="" disabled selected>Select a Branch</option>
-                                                    @foreach ($assigned_consignment_store as $store)
+                                                    @foreach ($assignedConsignmentStore as $store)
                                                         <option value="{{ $store }}">{{ $store }}</option>
                                                     @endforeach 
                                                 </select>
@@ -154,10 +154,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         input[type=number] {
             -moz-appearance: textfield;
         }
@@ -239,7 +236,7 @@
 
             function clear_add_table(){
                 $('#item-code-display').text('');
-                $('#description-display').text('');
+                $('#description-display').empty();
                 $('#img-display').text('');
                 $('#webp-display').text('');
                 $('#alt-display').text('');
@@ -256,7 +253,7 @@
             $(document).on('select2:select', '#item-selection', function(e){
                 // Display
                 $('#item-code-display').text(e.params.data.id); // item code
-                $('#description-display').text(e.params.data.description); // description
+                $('#description-display').html(e.params.data.description); // description
                 $('#selected-item-price').text(e.params.data.price); // description
                 $('#new-img').attr('src', e.params.data.img); // image
 

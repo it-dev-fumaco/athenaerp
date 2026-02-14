@@ -9,17 +9,17 @@
     </thead>
     @foreach ($months as $index => $month)
     @php
-        if(Carbon\Carbon::now() <= Carbon\Carbon::parse($month.'-'.$request_year)){
+        if(now() <= Carbon\Carbon::parse($month.'-'.$requestYear)){
             break;
         }
-        $total_per_month = 0;
-        $has_existing_record = false;
+        $totalPerMonth = 0;
+        $hasExistingRecord = false;
         $indicator = 'secondary';
         $status = 'Pending';
-        if (isset($sales_per_month[$month])) {
-            $total_per_month = $sales_per_month[$month][0]->total_amount;
-            $has_existing_record = true;
-            $status = $sales_per_month[$month][0]->status;
+        if (isset($salesPerMonth[$month])) {
+            $totalPerMonth = $salesPerMonth[$month][0]->total_amount;
+            $hasExistingRecord = true;
+            $status = $salesPerMonth[$month][0]->status;
             $indicator = $status == 'Draft' ? 'danger' : 'success';
         }
     @endphp
@@ -27,22 +27,22 @@
         <td class="p-2 align-middle text-left" style="white-space: nowrap">
             <span class="text-{{ $indicator }}">●</span> {{ $month }}
         </td>
-        <td class="p-2 text-center align-middle">{{ '₱ ' . number_format($total_per_month, 2) }}</td>
+        <td class="p-2 text-center align-middle">{{ '₱ ' . number_format($totalPerMonth, 2) }}</td>
         <td class="p-2 align-middle text-center">
             <div class="col-12 col-lg-4 mx-auto">
                 @switch($status)
                     @case('Pending')
-                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-primary w-1010 p-2">
+                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $requestYear }}" class="btn btn-xs btn-primary w-1010 p-2">
                             <i class="fas fa-plus"></i> Create
                         </a>
                         @break
                     @case('Draft')
-                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-warning w-1100 p-2">
+                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $requestYear }}" class="btn btn-xs btn-warning w-1100 p-2">
                             <i class="fas fa-pencil-alt"></i> Update
                         </a>
                         @break
                     @default
-                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $request_year }}" class="btn btn-xs btn-info w-1100 p-2">
+                        <a href="/view_monthly_sales_form/{{ $branch }}/{{ $month }}-{{ $requestYear }}" class="btn btn-xs btn-info w-1100 p-2">
                             <i class="far fa-eye"></i> View
                         </a>
                 @endswitch

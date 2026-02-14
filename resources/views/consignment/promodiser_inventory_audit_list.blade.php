@@ -30,7 +30,7 @@
                                                 </div>
                                                 <div class="col-3 p-0 d-flex flex-row justify-content-center align-items-center text-right">
                                                     @php
-                                                        $link = isset($row[0]['beginning_inventory_date']) && !$row[0]['beginning_inventory_date'] ? '/beginning_inventory' : '/view_inventory_audit_form/'.$store.'/'.Carbon\Carbon::now()->format('Y-m-d');
+                                                        $link = isset($row[0]['beginning_inventory_date']) && !$row[0]['beginning_inventory_date'] ? '/beginning_inventory' : '/view_inventory_audit_form/'.$store.'/'.now()->format('Y-m-d');
                                                     @endphp
                                                     <div class="p-0">
                                                         <a href="{{ $link }}" class="btn btn-primary btn-sm" style="font-size: 10pt;"><i class="fas fa-plus"></i> Create</a>
@@ -54,14 +54,14 @@
                                     <div class="p-0 col-8">
                                         <select class="form-control form-control-sm selection inventory-audit-history-filter" name="store">
                                             <option value="">Select Store</option>
-                                            @foreach ($assigned_consignment_stores as $assigned_store)
-                                            <option value="{{ $assigned_store }}">{{ $assigned_store }}</option>
+                                            @foreach ($assignedConsignmentStores as $assignedStore)
+                                            <option value="{{ $assignedStore }}">{{ $assignedStore }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="p-1 col-3">
                                         <select class="form-control form-control-sm selection inventory-audit-history-filter" name="year">
-                                            @foreach ($select_year as $year)
+                                            @foreach ($selectYear as $year)
                                             <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
                                             @endforeach
                                         </select>

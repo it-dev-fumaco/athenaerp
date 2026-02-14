@@ -124,13 +124,13 @@
       -webkit-border-radius: 45px;
     }
     .bg-box .bg1 {
-      background-image: url({{ $bg1 }});
+      background-image: url({{ $backgroundImage1 }});
       background-position: top center;
       -webkit-animation: fadeinBottom 1s both;
               animation: fadeinBottom 1s both;
     }
     .bg-box .bg2 {
-      background-image: url({{ $bg2 }});
+      background-image: url({{ $backgroundImage2 }});
       background-position: bottom center;
       -webkit-animation: fadeinTop 1s 0.3s both;
               animation: fadeinTop 1s 0.3s both;

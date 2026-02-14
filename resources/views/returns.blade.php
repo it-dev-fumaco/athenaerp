@@ -82,7 +82,7 @@
 													<span class="badge badge-warning" ng-if="r.status === 'For Return'">@{{ r.status }}</span>
 													<i class="fas fa-arrow-right ml-3 mr-2"></i> @{{ r.t_warehouse }}
 												</div>
-												<span class="d-block">@{{ r.description }}</span>
+												<span class="d-block" ng-bind-html="trustAsHtml(r.description)"></span>
 												<small class="d-none d-lg-block mt-2" ng-hide="r.owner == null"><b>Requested by:</b> @{{ r.owner }}</small>
 												<div class="table-reponsive d-block d-lg-none">
 													<table class="table">
@@ -127,13 +127,13 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" id="transactions-form" action="/submit_sales_return">
 		@csrf
-		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
 	</form>
 </div>
 <div class="modal fade" id="dr-modal">
 	<form method="POST" action="/submit_dr_sales_return_api">
 		@csrf
-		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
 	</form>
 </div>
 
@@ -348,7 +348,8 @@
 	});
 
 	var app = angular.module('myApp', []);
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
+	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
+        $scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
         $http.get("/get_parent_warehouses").then(function (response) {
 			$scope.wh = response.data.wh;
         });

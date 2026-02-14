@@ -1,5 +1,9 @@
 * text=auto
 
+# Shell scripts must use LF so they run in Linux containers
+*.sh text eol=lf
+docker/*.sh text eol=lf
+
 *.blade.php diff=html
 *.css diff=css
 *.html diff=html

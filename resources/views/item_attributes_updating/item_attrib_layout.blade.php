@@ -101,7 +101,7 @@
       FUMACO Inc.
     </div>
     <!-- Default to the left -->
-    <strong>Copyright &copy; 2023 <a href="https://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; 2023</strong> All rights reserved.
   </footer>
 
         <!-- jQuery -->
@@ -123,6 +123,8 @@
 
         <script src="{{ asset('/js/angular.min.js') }}"></script>
         <script src="{{ asset('/js/bootstrap-notify.js') }}"></script>
+
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @yield('script')
     </body>

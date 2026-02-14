@@ -62,7 +62,7 @@
                     <tr>
                         <td style="border: 1px solid black;text-align:justfy;">
                             <div style="display: inline-block; float: left; width: 10%;">
-                                <img src="{{ asset('storage/img/'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" alt="User Image" style="width: 100%;">
+                                <img src="{{ Storage::disk('upcloud')->url('img/'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" alt="User Image" style="width: 100%;">
                             </div>
                             <div style="display: inline-block; float: right; width: 89%;">
                                 <b>{{ $item['item_code'] }}</b> - {!! $item['description'] !!}

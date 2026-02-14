@@ -81,7 +81,7 @@
                                                     <div class="col-12 col-lg-2 col-xl-2 mt-2 mt-lg-0">
                                                         <select name="store" class="form-control filters-font consignment-store-select">
                                                             <option value="" disabled {{ !request('store') ? 'selected' : null }}>Select a store</option>
-                                                            @foreach ($consignment_stores as $store)
+                                                            @foreach ($consignmentStores as $store)
                                                             <option value="{{ $store }}" {{ request('store') == $store ? 'selected' : null }}>{{ $store }}</option>
                                                             @endforeach
                                                         </select>
@@ -106,7 +106,7 @@
                                             <th class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">Status</th>
                                             <th class="font-responsive align-middle p-2 text-center last-ro1w">Action</th>
                                         </thead>
-                                        @forelse ($inv_arr as $inv)
+                                        @forelse ($invArr as $inv)
                                             @php
                                                 switch ($inv->status) {
                                                     case 'Approved':
@@ -120,7 +120,7 @@
                                                         break;
                                                 }
 
-                                                $modal_form = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval' ? '/approve_beginning_inv/'.$inv->name : '/stock_adjust/submit/'.$inv->name;
+                                                $modalForm = in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval' ? '/approve_beginning_inv/'.$inv->name : '/stock_adjust/submit/'.$inv->name;
                                             @endphp
                                             <tr>
                                                 <td class="font-responsive align-middle p-2 text-center d-none d-lg-table-cell">
@@ -146,7 +146,7 @@
                                                     <div class="modal fade" id="{{ $inv->name }}-Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                         <div class="modal-dialog modal-xl" role="document">
                                                             <div class="modal-content">
-                                                                <form action="{{ $modal_form }}" method="post">
+                                                                <form action="{{ $modalForm }}" method="post">
                                                                     @csrf
                                                                     <div class="modal-header bg-navy">
                                                                         <h6 class="modal-title">{{ $inv->branch_warehouse }} <span class="badge badge-{{ $badge }} d-inline-block ml-2">{{ $inv->status }}</span></h6>
@@ -177,7 +177,7 @@
                                                                             <div class="pt-0 pr-2 pl-2 pb-2 col-12 col-lg-4 col-xl-4 text-left">
                                                                                 @if (in_array(Auth::user()->user_group, ['Consignment Supervisor', 'Director']) && $inv->status == 'For Approval')
                                                                                 @php
-                                                                                    $status_selection = [
+                                                                                    $statusSelection = [
                                                                                         ['title' => 'Approve', 'value' => 'Approved'],
                                                                                         ['title' => 'Cancel', 'value' => 'Cancelled']
                                                                                     ];
@@ -186,7 +186,7 @@
                                                                                 <div class="input-group">
                                                                                     <select class="custom-select font-responsive" name="status">
                                                                                         <option value="" selected disabled>Select a status</option>
-                                                                                        @foreach ($status_selection as $status)
+                                                                                        @foreach ($statusSelection as $status)
                                                                                         <option value="{{ $status['value'] }}">{{ $status['title'] }}</option>
                                                                                         @endforeach
                                                                                     </select>
@@ -295,7 +295,7 @@
                                                                                 @forelse ($inv->items as $i => $item)
                                                                                     @php
                                                                                         $target = $inv->name.'-'.$item->item_code;
-                                                                                        $img = asset("storage/$item->image");
+                                                                                        $img = Storage::disk(upcloud)->url($item->image");
                                                                                     @endphp
                                                                                     <tr id="row-{{ $target }}" class="{{ $item->item_code }}">
                                                                                         <td class="text-center p-1 align-middle">
@@ -310,7 +310,7 @@
                                                                                                 </div>
                                                                                                 <div class="p-2 text-left">
                                                                                                     <b>{!! ''.$item->item_code !!}</b>
-                                                                                                    <span class="d-none d-xl-inline"> - {!! strip_tags($item->item_description) !!}</span>
+                                                                                                    <span class="d-none d-xl-inline"> - {!! $item->item_description !!}</span>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div class="d-none flex-row justify-content-start align-items-center" id="{{ $target }}-replacement-container">
@@ -384,7 +384,7 @@
                                                                                                                             <picture>
                                                                                                                                 <source class="src-placeholder" id="{{ $target }}-replacement-webp" srcset="" type="image/webp">
                                                                                                                                 <source class="src-placeholder" id="{{ $target }}-replacement-img-src" srcset="" type="image/jpeg">
-                                                                                                                                <img class="d-block w-100 src-placeholder" id="{{ $target }}-replacement-img" src="{{ asset('storage/').$img }}" alt="">
+                                                                                                                                <img class="d-block w-100 src-placeholder" id="{{ $target }}-replacement-img" src="{{ Storage::disk('upcloud')->url($img) }}" alt="">
                                                                                                                             </picture>
                                                                                                                         </div>
                                                                                                                         <div class="p-2 col-10 vertically-align-element">
@@ -435,7 +435,7 @@
                                                                                     </tr>
                                                                                     <tr class="d-xl-none">
                                                                                         <td colspan="4" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-                                                                                            <div class="w-100 item-description">{!! strip_tags($item->item_description) !!}</div>
+                                                                                            <div class="w-100 item-description">{!! $item->item_description !!}</div>
                                                                                         </td>
                                                                                     </tr>
                                                                                 @empty
@@ -500,7 +500,7 @@
                                         @endforelse
                                     </table>
                                     <div class="float-right mt-4">
-                                        {{ $beginning_inventory->appends(request()->input())->links('pagination::bootstrap-4') }}
+                                        {{ $beginningInventory->appends(request()->input())->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="stock-adjustment-content" role="tabpanel" aria-labelledby="stock-adjustment-tab" style="font-size: 9pt;">
@@ -532,7 +532,7 @@
                                         <div class="col-3">
                                             <select id="activity-logs-user" class="form-control" style="font-size: 9pt;">
                                                 <option value="" selected disabled>Select a User</option>
-                                                @foreach ($activity_logs_users as $user)
+                                                @foreach ($activityLogsUsers as $user)
                                                     <option value="{{ $user }}">{{ $user }}</option>
                                                 @endforeach
                                             </select>
@@ -555,10 +555,7 @@
 
 @section('style')
     <style>
-        table .items-table{
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table .items-table { width: 100%; }
         .morectnt span {
             display: none;
         }
@@ -834,7 +831,7 @@
 
                 // Display
                 $('#' + name + '-replacement-item-code').text(e.params.data.id); // item code
-                $('#' + name + '-replacement-description').text(e.params.data.description); // description
+                $('#' + name + '-replacement-description').html(e.params.data.description); // description
                 $('#' + name + '-replacement-img-src').attr('src', e.params.data.image); // image
 
                 $('#' + name + '-replacement-webp').attr('src', e.params.data.image_webp); // webp
@@ -855,7 +852,7 @@
                 var original_item_code = $(this).data('original-code');
 
                 var item_code = $('#' + target + '-replacement-item-code').text(); // item code
-                var description = $('#' + target + '-replacement-description').text(); // description
+                var description = $('#' + target + '-replacement-description').html(); // description
                 var webp = $('#' + target + '-replacement-display-webp').text();
                 var image = $('#' + target + '-replacement-display-image').text();
                 var alt = $('#' + target + '-replacement-display-alt').text();
@@ -866,7 +863,7 @@
                 $('#' + target + '-webp-replacement').attr('src', webp);
                 $('#' + target + '-img-src-replacement').attr('src', image);
                 $('#' + target + '-img-replacement').attr('src', image);
-                $('#' + target + '-description-replacement').text(description);
+                $('#' + target + '-description-replacement').html(description);
                 $('#' + target + '-uom').text(uom);
 
                 $('#' + target + '-container').removeClass('d-flex').addClass('d-none');
@@ -920,7 +917,7 @@
 
                 // Display
                 $('#' + name + '-item-code-display').text(e.params.data.id); // item code
-                $('#' + name + '-description-display').text(e.params.data.description); // description
+                $('#' + name + '-description-display').html(e.params.data.description); // description
                 $('#' + name + '-new-img').attr('src', e.params.data.image); // image
 
                 $('#' + name + '-new-src-img-webp').attr('src', e.params.data.image_webp); // webp
@@ -1109,8 +1106,8 @@
                 }
             });
             
-            var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : Carbon\Carbon::now()->subDays(7)->format("Y-M-d")  }}';
-            var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : Carbon\Carbon::now()->format("Y-M-d")  }}';
+            var from_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[0])->format("Y-M-d") : now()->subDays(7)->format("Y-M-d")  }}';
+            var to_date = '{{ request("date") ? Carbon\Carbon::parse(explode(" to ", request("date"))[1])->format("Y-M-d") : now()->format("Y-M-d")  }}';
             $('#date-filter').daterangepicker({
                 opens: 'left',
                 startDate: from_date,

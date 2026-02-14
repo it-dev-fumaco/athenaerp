@@ -1,0 +1,177 @@
+/* Application styles – Vite entry. Add global CSS or keep minimal for Blade/AdminLTE. */
+
+/* ==========================================================================
+   Mobile responsive utilities (plan: mobile_responsiveness_overhaul)
+   ========================================================================== */
+
+/* Wide table scroll wrapper: use on a div wrapping <table> so table can scroll horizontally on small screens */
+.responsive-table-wrap {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	width: 100%;
+	margin-bottom: 1rem;
+}
+
+.responsive-table-wrap table {
+	width: max-content;
+	min-width: 100%;
+}
+
+/* Bootstrap already has .table-responsive; this is for when we need explicit touch scroll + max-content table */
+.table-responsive-x {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Modal sizing: desktop min-width; on small screens fit viewport */
+.modal-dialog.modal-warehouse-location {
+	min-width: 30%;
+}
+
+@media (max-width: 767.98px) {
+	.modal-dialog.modal-item-inquiry,
+	.modal-dialog.modal-warehouse-location,
+	.modal-dialog.modal-generic-narrow {
+		max-width: calc(100vw - 1rem);
+		width: 100%;
+		min-width: 0;
+		margin: 0.5rem;
+	}
+
+	.modal-dialog.modal-print-brochure {
+		max-width: 100%;
+		width: 100%;
+		margin: 0;
+	}
+
+	#print-brochure-modal .row > .col-4,
+	#print-brochure-modal .row > .col-8 {
+		flex: 0 0 100%;
+		max-width: 100%;
+	}
+
+	#print-brochure-modal #preview-brochure-container {
+		min-height: 400px;
+	}
+
+	.modal-body {
+		max-height: calc(100vh - 120px);
+		overflow-y: auto;
+	}
+}
+
+/* Replace fixed-width floaters / suggestion box (overrides from layout inline styles) */
+#brochure-list-floater {
+	max-width: min(280px, 92vw);
+}
+
+#suggesstion-box {
+	max-width: 100%;
+}
+
+/* .col-md-13 responsive: on small screens use full width */
+@media (max-width: 767.98px) {
+	.col-md-13 {
+		width: 100%;
+		margin: 0.5% 0;
+	}
+}
+
+/* Allow flex columns to shrink so content doesn’t clip (e.g. dashboard right column) */
+.min-width-0 {
+	min-width: 0;
+}
+
+/* Inventory Accuracy dashboard card: prevent right-side cutoff */
+.inv-accuracy-card {
+	min-width: 0;
+}
+.inv-accuracy-card .card-header {
+	min-width: 0;
+}
+.inv-accuracy-card .card-body {
+	min-width: 0;
+}
+.inv-accuracy-widget .filter-inv-accuracy {
+	min-width: 4rem;
+	max-width: 100%;
+}
+.inv-accuracy-widget .responsive-table-wrap {
+	min-width: 0;
+}
+.inv-accuracy-widget #monthly-inv-chart {
+	table-layout: auto;
+}
+.inv-accuracy-widget #monthly-inv-chart th,
+.inv-accuracy-widget #monthly-inv-chart td {
+	white-space: nowrap;
+}
+@media (max-width: 575.98px) {
+	.inv-accuracy-widget #monthly-inv-chart th,
+	.inv-accuracy-widget #monthly-inv-chart td {
+		white-space: normal;
+		word-break: break-word;
+	}
+}
+
+/* Item profile action buttons sidebar: prevent right-side cutoff */
+.item-profile-actions-col {
+	min-width: 0;
+}
+.item-profile-actions-box {
+	overflow: visible;
+	min-width: 0;
+}
+.item-profile-actions-buttons {
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow: visible;
+}
+.item-profile-actions-buttons .btn-app {
+	max-width: 100%;
+	box-sizing: border-box;
+	text-align: center;
+	white-space: normal;
+	word-break: break-word;
+}
+.item-profile-actions-buttons .dropdown-menu {
+	left: auto;
+	right: 0;
+}
+
+/* Item Alternatives: horizontal scroll so cards aren’t clipped */
+.item-alternatives-section {
+	min-width: 0;
+}
+.item-alternatives-scroll {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	width: 100%;
+	min-width: 0;
+	margin-bottom: 1rem;
+}
+.item-alternatives-scroll > .d-flex {
+	flex-shrink: 0;
+	width: max-content;
+	min-width: 100%;
+}
+.item-alternatives-scroll .custom-body {
+	flex-shrink: 0;
+	min-width: 280px;
+}
+/* Let card text wrap so product names aren’t truncated */
+.item-alternatives-scroll .custom-body .card-body .d-flex > a {
+	flex: 1 1 0%;
+	min-width: 0;
+	overflow-wrap: break-word;
+	word-break: break-word;
+	display: block;
+}
+.item-alternatives-scroll .custom-body .card-body .d-flex > a .p-1 {
+	min-width: 0;
+}
+.item-alternatives-scroll .custom-body .p-1.text-justify small,
+.item-alternatives-scroll .custom-body .p-1.text-justify .font-weight-bold {
+	white-space: normal;
+}

@@ -23,7 +23,7 @@
                         <div class="pdf-body">
                             <div style="disply: block; clear: both; color: #000">
                                 <div style="width: 43%; float: left; padding: 2px !important;">
-                                    <img src="{{ $fumaco_logo }}" width="230">
+                                    <img src="{{ $fumacoLogo }}" width="230">
                                 </div>
                                 <div style="width: 57%; float:left; text-transform: uppercase; font-size: 11pt;">
                                     <p>PROJECT: <b>{{ $item['project'] }}</b></p>
@@ -39,25 +39,25 @@
                                 <div style="width: 43%; float: left; padding: 2px !important;">
                                     @for($img = 1; $img <= 3; $img++)
                                         @php
-                                            $img_actual = 'd-none';
-                                            $img_temp = $img_src = $img_id = null;
+                                            $imgActual = 'd-none';
+                                            $imgTemp = $imgSrc = $imgId = null;
                                             if (isset($images['image'.$img]['filepath']) && $images['image'.$img]['filepath']) {
-                                                $img_actual = null;
-                                                $img_temp = 'd-none';
-                                                $img_src = $images['image'.$img]['filepath'];
-                                                $img_id = $images['image'.$img]['id'];
+                                                $imgActual = null;
+                                                $imgTemp = 'd-none';
+                                                $imgSrc = $images['image'.$img]['filepath'];
+                                                $imgId = $images['image'.$img]['id'];
                                             }
                                         @endphp
-                                        <div class="img-cont {{ $img_actual }}" style="margin-bottom: 20px !important;" id="{{ $item['item_code'] }}-0{{ $img }}-actual">
-                                            <img src="{{ $img_src }}" width="230" style="border: 2px solid;" id="{{ $item['item_code'] }}-0{{ $img }}-image">
+                                        <div class="img-cont {{ $imgActual }}" style="margin-bottom: 20px !important;" id="{{ $item['item_code'] }}-0{{ $img }}-actual">
+                                            <img src="{{ $imgSrc }}" width="230" style="border: 2px solid;" id="{{ $item['item_code'] }}-0{{ $img }}-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="{{ $item['item_code'] }}-0{{ $img }}" data-id="{{ $img_id }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="{{ $item['item_code'] }}-0{{ $img }}" data-id="{{ $imgId }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="upload-image-placeholder {{ $img_temp }}" id="{{ $item['item_code'] }}-0{{ $img }}" style="margin-bottom: 20px !important;" data-idx="{{ $img }}" data-item-code="{{ $item['item_code'] }}">
+                                        <div class="upload-image-placeholder {{ $imgTemp }}" id="{{ $item['item_code'] }}-0{{ $img }}" style="margin-bottom: 20px !important;" data-idx="{{ $img }}" data-item-code="{{ $item['item_code'] }}">
                                             <div class="upload-btn-wrapper">
                                                 <div class="custom-upload-btn">
                                                     <i class="far fa-image"></i>
@@ -97,7 +97,7 @@
                     </div>
                     <div class="pdf-footer">
                         <div class="pdf-footer-company-logo">
-                            <img src="{{ $fumaco_logo }}" width="155">
+                            <img src="{{ $fumacoLogo }}" width="155">
                         </div>
                         <div class="pdf-footer-company-website">www.fumaco.com</div>
                         <div class="pdf-footer-contacts">
@@ -150,7 +150,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-center mt-4" style="min-height: 200px;">
-                                                <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
+                                                <img src="{{ Storage::disk('upcloud')->url('icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
                                             </div>
                                         </div>
                                     </div>
@@ -235,7 +235,8 @@
     }
     .upload-image-placeholder {
         border: 2px dashed #d5d8dc;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
         height: 230px;
         border-radius: 13px;
         display: block;
@@ -244,7 +245,8 @@
         position: relative;
         overflow: hidden;
         display: block;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
         height: 230px;
         top: 0;
         left: 0;
@@ -283,7 +285,8 @@
     }
     .img-cont {
         position: relative;
-        width: 230px;
+        width: 100%;
+        max-width: 230px;
     }
     .custom-overlay {
         position: absolute;
@@ -408,7 +411,7 @@
         var file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
         if (!file) {
             $('#browse-file-text').text('Browse File');
-            $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+            $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
             $('#upload-btn').attr('disabled', true);
             return;
         }
@@ -427,7 +430,7 @@
     });
 
     $(document).on('hidden.bs.modal', '.modal', function () {
-        $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+        $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
         $('#browse-file-text').text('Browse File');
         $('#image-upload-form-1')[0].reset();
         $('#image-upload-form')[0].reset();

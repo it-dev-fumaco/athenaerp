@@ -70,16 +70,16 @@
                             </div>
                             <div class="modal-body">
                                 @if (!in_array($status, ['Cancelled', 'Completed']) && $purpose != 'Item Return')
-                                    @if (isset($ste->stock_entry->name))
+                                    @if (isset($ste->stockEntry->name))
                                         @php
-                                            $stock_entry = $ste->stock_entry;
+                                            $stockEntry = $ste->stockEntry;
                                         @endphp
-                                        @if ($stock_entry->docstatus == 0)
+                                        @if ($stockEntry->docstatus == 0)
                                             <div class="row">
                                                 <div class="col-8 offset-2">
                                                     <div class="callout callout-warning text-center mt-2">
-                                                        <i class="fas fa-info-circle"></i> A <b>DRAFT</b> Stock Entry has been created. <br> To submit the stock entry, please login to ERP and click <a class="text-dark" target="_blank" href="http://10.0.0.83/app/stock-entry/{{ $stock_entry->name }}">here</a>.
-                                                        <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stock_entry->name }}</b></span>
+                                                        <i class="fas fa-info-circle"></i> A <b>DRAFT</b> Stock Entry has been created. <br> To submit the stock entry, please login to ERP and click <a class="text-dark" target="_blank" href="http://10.0.0.83/app/stock-entry/{{ $stockEntry->name }}">here</a>.
+                                                        <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stockEntry->name }}</b></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -89,18 +89,18 @@
                                                     <div class="col-8 offset-2">
                                                         <div class="callout callout-success text-center mt-2">
                                                             <i class="fas fa-check"></i> Transaction Completed
-                                                            <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stock_entry->name }}</b></span>
+                                                            <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stockEntry->name }}</b></span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             @endif
                                             @if ($ste->purpose == 'Store Transfer')
-                                                @if ($stock_entry->consignment_status != 'Received')
+                                                @if ($stockEntry->consignment_status != 'Received')
                                                     <div class="row">
                                                         <div class="col-8 offset-2">
                                                             <div class="callout callout-info text-center mt-2">
                                                                 <i class="fas fa-info-circle"></i> Stock Entry has been <b>SUBMITTED</b>. <br> Awaiting for the promodiser of the target store / branch <br> to receive the items.
-                                                                <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stock_entry->name }}</b></span>
+                                                                <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stockEntry->name }}</b></span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -109,8 +109,8 @@
                                                         <div class="col-8 offset-2">
                                                             <div class="callout callout-success text-center mt-2">
                                                                 <i class="fas fa-check"></i> Transaction Completed. <br> Stocks have been <b>TRANSFERRED</b>.
-                                                                <p class="mt-2 p-0">Received by: {{ $stock_entry->consignment_received_by . ' ' . \Carbon\Carbon::parse($stock_entry->consignment_date_received)->format('Y-m-d h:i A') }}</p>
-                                                                <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stock_entry->name }}</b></span>
+                                                                <p class="mt-2 p-0">Received by: {{ $stockEntry->consignment_received_by . ' ' . \Carbon\Carbon::parse($stockEntry->consignment_date_received)->format('Y-m-d h:i A') }}</p>
+                                                                <span class="d-block mt-3">Reference Stock Entry: <b>{{ $stockEntry->name }}</b></span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -175,11 +175,11 @@
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-2 text-left">
                                                         <a href="{{ asset("$item->image") }}" class="view-images" data-item-code="{{ $item->item_code }}">
-                                                            <img src="{{ asset("storage/$item->image") }}" alt="{{ Str::slug($item->item_description, '-') }}" width="60" height="60">
+                                                            <img src="{{ Storage::disk(upcloud)->url($item->image") }}" alt="{{ Str::slug($item->item_description, '-') }}" width="60" height="60">
                                                         </a>
                                                     </div>
                                                     <div class="p-2 text-left">
-                                                        <span class="d-block"><b>{{ $item->item_code }}</b> - {!! strip_tags($item->item_description) !!}</span>
+                                                        <span class="d-block"><b>{{ $item->item_code }}</b> - {!! $item->item_description !!}</span>
                                                     </div>
                                                 </div>
                                             </td>

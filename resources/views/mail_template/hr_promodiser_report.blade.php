@@ -3,7 +3,7 @@
         <div class="col-md-12" style="margin-left:10%;margin-right:10%;">
             <h3><b>AthenaERP - List of promodisers who did not submit their inventory audit</b></h3>
             <br>
-            <p style="display:block;line-height: 15px; font-size: 12pt;">Cutoff Dates: <b>{{ $cutoff_dates }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 12pt;">Cutoff Dates: <b>{{ $cutoffDates }}</b></p>
             <table style="border: 1px solid black;border-collapse: collapse; font-size: 10pt;">
                 <thead>
                     <tr style="text-align:center">

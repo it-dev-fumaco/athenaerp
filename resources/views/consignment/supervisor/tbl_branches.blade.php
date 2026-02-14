@@ -10,13 +10,13 @@
     <tbody>
         @foreach ($branches as $i => $branch)
             @php
-                // $items_arr = isset($items[$branch->name]) ? $items[$branch->name] : [];
+                // $itemsArr = isset($items[$branch->name]) ? $items[$branch->name] : [];
                 $items = $branch->bin;
-                $assigned_promodisers = isset($promodisers[$branch->name]) ? $promodisers[$branch->name] : [];
+                $assignedPromodisers = isset($promodisers[$branch->name]) ? $promodisers[$branch->name] : [];
             @endphp
             <tr>
                 <td class="p-2">
-                    <span class="text-{{ $assigned_promodisers ? 'success' : 'secondary' }}">●</span>
+                    <span class="text-{{ $assignedPromodisers ? 'success' : 'secondary' }}">●</span>
                     <a href="#" data-toggle="modal" data-target="#modal-{{ $i }}">{{ $branch->name }}</a>
 
                     <div class="modal fade" id="modal-{{ $i }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -41,7 +41,7 @@
                                             <div class="col-4">
                                                 <p><b>Assigned Promodiser(s)</b>:</p>
                                                 <ul>
-                                                    @foreach ($assigned_promodisers as $promodiser)
+                                                    @foreach ($assignedPromodisers as $promodiser)
                                                         <li>{{ $promodiser->full_name }}</li>
                                                     @endforeach
                                                 </ul>
@@ -69,17 +69,17 @@
                                         </div>
                                         @forelse ($items as $item)
                                             @php
-                                                $item_code = $item->item_code;
-                                                $item_detail = isset($item_details[$item_code]) ? $item_details[$item_code] : [];
+                                                $itemCode = $item->item_code;
+                                                $itemDetail = isset($itemDetails[$itemCode]) ? $itemDetails[$itemCode] : [];
 
-                                                $item_description = $image = null;
-                                                if(isset($item_details[$item_code])){
-                                                    $item_detail = $item_details[$item_code][0];
+                                                $itemDescription = $image = null;
+                                                if(isset($itemDetails[$itemCode])){
+                                                    $itemDetail = $itemDetails[$itemCode][0];
 
-                                                    $item_description = $item_detail->description;
+                                                    $itemDescription = $itemDetail->description;
                                                     $image = "/icon/no_img.png";
-                                                    if($item_detail->defaultImage && Storage::disk('public')->exists('/img/'.$item_detail->defaultImage->image_path)){
-                                                        $image = $item_detail->defaultImage->image_path;
+                                                    if($itemDetail->defaultImage && Storage::disk('public')->exists('/img/'.$itemDetail->defaultImage->image_path)){
+                                                        $image = $itemDetail->defaultImage->image_path;
                                                         if(Storage::disk('public')->exists('/img/'.explode('.', $image)[0].'.webp')){
                                                             $image = explode('.', $image)[0].'.webp';
                                                         }
@@ -91,12 +91,12 @@
                                                 <div class="col-8 pt-2 pb-2 text-center border" style="font-size: 10pt;">
                                                     <div class="row">
                                                         <div class="col-2">
-                                                            <img src="{{ asset("storage/$image") }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive w-100 hover">
+                                                            <img src="{{ Storage::disk(upcloud)->url($image") }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive w-100 hover">
                                                         </div>
                                                         <div class="col-10 text-justify">
-                                                            <b>{{ $item_code }}</b>
+                                                            <b>{{ $itemCode }}</b>
                                                             <br/>
-                                                            {{ strip_tags($item_description) }}
+                                                            {{ strip_tags($itemDescription) }}
                                                         </div>
                                                     </div>
                                                 </div>

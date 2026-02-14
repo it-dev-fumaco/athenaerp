@@ -5,6 +5,7 @@
 
 @section('content')
     <div class="container-fluid align-center">
+        <div id="item-attribute-update-form-app"></div>
         <div class="modal fade" id="preloader-modal" data-backdrop="static" data-keyboard="false">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -57,7 +58,7 @@
                             </tr>
                             <form id="updateForm" action="/update_attribute" method="POST">
                                 {{-- @foreach($parentDesc as $desc)
-                                    <h3>Update <b>{{ $item_code }}</b> Attributes</h3>
+                                    <h3>Update <b>{{ $itemCode }}</b> Attributes</h3>
                                     <input type="text" id="itemCodeValue" name="parDesc" value="{{ $desc->description }}" readonly hidden/>
                                     <span>Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span>
                                     <br/>
@@ -66,7 +67,7 @@
                                     <br/>
                                 @endforeach --}}
                                 @foreach($parentDesc as $desc)
-                                    <h4 class="text-center">Update <b>{{ $item_code }}</b> Item Attributes</h4>
+                                    <h4 class="text-center">Update <b>{{ $itemCode }}</b> Item Attributes</h4>
                                     <input type="text" id="itemCodeValue" name="parDesc" value="{{ $desc->description }}" readonly hidden/>
                                     <div class="text-justify">
                                         <small>{{ $itemDesc->description }}</small>
@@ -74,9 +75,9 @@
                                     <span class="d-block text-left mt-2 mb-1">Variant of <b>{{ $itemDesc->variant_of }}</b> - {{ $desc->description }}</span>
                                 @endforeach
                                 
-                                <input type="text" id="itemCodeValue" name="itemCode" value="{{ $item_code }}" readonly hidden/>
+                                <input type="text" id="itemCodeValue" name="itemCode" value="{{ $itemCode }}" readonly hidden/>
                                 @csrf
-                                @forelse($attribute_values as $value)
+                                @forelse($attributeValues as $value)
                                     <tr>
                                         <td>
                                             <input type="text" name="attribName[]" value="{{ $value['attribute'] }}" readonly hidden/>

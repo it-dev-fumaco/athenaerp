@@ -5,16 +5,16 @@
 
 @section('content')
 @php
-    $target_warehouse = null;
+    $targetWarehouse = null;
     $method = 'post';
     $action = '/consignment/replenish';
 
     $items = [];
-    if($material_request){
-        $action .= "/$material_request->name";
+    if($materialRequest){
+        $action .= "/$materialRequest->name";
         $method = 'put';
-        $target_warehouse = $material_request->branch_warehouse;
-        $items = $material_request->items;
+        $targetWarehouse = $materialRequest->branch_warehouse;
+        $items = $materialRequest->items;
     }
 @endphp
     <div class="content">
@@ -26,9 +26,9 @@
                             <div class="card-header text-center p-2" id="report">
                                 <span class="font-responsive font-weight-bold text-uppercase d-inline-block">
                                     Consignment Order Form
-                                    @if ($material_request)
+                                    @if ($materialRequest)
                                         @php
-                                            switch ($material_request->consignment_status) {
+                                            switch ($materialRequest->consignment_status) {
                                                 case 'For Approval':
                                                     $badge = 'warning';
                                                     break;
@@ -46,7 +46,7 @@
                                                     break;
                                             }
                                         @endphp
-                                        <span class="badge badge-{{ $badge }}">{{ $material_request->consignment_status }}</span>
+                                        <span class="badge badge-{{ $badge }}">{{ $materialRequest->consignment_status }}</span>
                                     @endif
                                 </span>
                             </div>
@@ -63,14 +63,14 @@
                                 @endif
                                 <form id="replenish-form" action="{{ $action }}" method="post">
                                     @csrf
-                                    <input type="hidden" name="id" value="{{ $material_request ? $material_request->name : null }}">
+                                    <input type="hidden" name="id" value="{{ $materialRequest ? $materialRequest->name : null }}">
                                     <div class="container">
                                         <div class="row pt-2 pb-2">
                                             <div class="col-8">
                                                 <select name="branch" id="branch" class="form-control form-control-sm">
                                                     <option value="" disabled selected>Select a Branch</option>
-                                                    @foreach ($assigned_consignment_stores as $store)
-                                                        <option value="{{ $store }}" {{ $target_warehouse && $target_warehouse == $store ? 'selected' : null }}>{{ $store }}</option>
+                                                    @foreach ($assignedConsignmentStores as $store)
+                                                        <option value="{{ $store }}" {{ $targetWarehouse && $targetWarehouse == $store ? 'selected' : null }}>{{ $store }}</option>
                                                     @endforeach 
                                                 </select>
                                                 <small class="text-danger font-italic d-none branch-warning">* Select a branch</small>
@@ -171,6 +171,7 @@
                                             </div>
                                         </div>
                                         <div class="row">
+                                            <div class="responsive-table-wrap w-100">
                                             <table class="table table-striped" id="selected-items-table" style="font-size: 9pt;">
                                                 <thead>
                                                     <th class="font-responsive text-center p-1 align-middle">Item Code</th>
@@ -179,34 +180,34 @@
                                                 <tbody>
                                                     @forelse ($items as $item)
                                                         @php
-                                                            $item_code = $item->item_code;
-                                                            $image = isset($item_images[$item_code]) ? "img/".$item_images[$item_code] : '/icon/no_img.png';
+                                                            $itemCode = $item->item_code;
+                                                            $image = isset($itemImages[$itemCode]) ? "img/".$itemImages[$itemCode] : '/icon/no_img.png';
 
                                                             if(Storage::disk('public')->exists(explode('.', $image)[0].'.webp')){
                                                                 $image = explode('.', $image)[0].'.webp';
                                                             }
                                                         @endphp
-                                                        <tr id="row-{{ $item_code }}">
+                                                        <tr id="row-{{ $itemCode }}">
                                                             <div class="d-none">
-                                                                <input type="text" name="items[{{ $item_code }}][name]" value="{{ $item->name }}">
+                                                                <input type="text" name="items[{{ $itemCode }}][name]" value="{{ $item->name }}">
                                                             </div>
                                                             <td class="text-justify p-1 align-middle" colspan="2">
                                                                 <div class="col-12 text-right">
-                                                                    <a href="#" class="text-secondary" data-toggle="modal" data-target="#remove-{{ $item_code }}-modal">
+                                                                    <a href="#" class="text-secondary" data-toggle="modal" data-target="#remove-{{ $itemCode }}-modal">
                                                                         <i class="fa fa-remove"></i>
                                                                     </a>
 
-                                                                    <div class="modal fade" id="remove-{{ $item_code }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                    <div class="modal fade" id="remove-{{ $itemCode }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                                                         <div class="modal-dialog" role="document">
                                                                             <div class="modal-content">
                                                                                 <div class="modal-header">
-                                                                                    <h5 class="modal-title" id="exampleModalLabel">Remove {{ $item_code }}?</h5>
+                                                                                    <h5 class="modal-title" id="exampleModalLabel">Remove {{ $itemCode }}?</h5>
                                                                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                                         <span aria-hidden="true">&times;</span>
                                                                                     </button>
                                                                                 </div>
                                                                                 <div class="modal-body text-center">
-                                                                                    Remove Item <b>{{ $item_code }}</b> from the list?
+                                                                                    Remove Item <b>{{ $itemCode }}</b> from the list?
                                                                                 </div>
                                                                                 <div class="modal-footer">
                                                                                     <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
@@ -218,16 +219,16 @@
                                                                 </div>
                                                                 <div class="d-flex flex-row justify-content-center justify-content-xl-start align-items-center">
                                                                     <div class="p-1 col-2 col-xl-1 text-center">
-                                                                        <img src="{{ asset("storage/$image") }}" class="img-thumbnail" alt="User Image" width="100%">
+                                                                        <img src="{{ Storage::disk(upcloud)->url($image") }}" class="img-thumbnail" alt="User Image" width="100%">
                                                                     </div>
                                                                     <div class="p-1 col-5 col-xl-7 m-0" style="font-size: 9pt">
-                                                                        <span class="font-weight-bold font-responsive item-code">{{ $item_code }}</span>
+                                                                        <span class="font-weight-bold font-responsive item-code">{{ $itemCode }}</span>
                                                                         <div class="p-1 d-none d-xl-block" style="font-size: 9.5pt !important;">
-                                                                            {{ strip_tags($item->description) }}
+                                                                            {!! $item->description !!}
                                                                         </div>
                                                                     </div>
                                                                     <div class="p-0 col-4 col-xl-2">
-                                                                        @if ($material_request->consignment_status == 'Cancelled')
+                                                                        @if ($materialRequest->consignment_status == 'Cancelled')
                                                                             <div class="text-center">
                                                                                 <b>{{ number_format($item->qty) }}</b><br>
                                                                                 <small>{{ $item->uom }}</small>
@@ -237,7 +238,7 @@
                                                                                 <div class="input-group-prepend">
                                                                                     <button class="btn btn-outline-danger decrement" type="button">-</button>
                                                                                 </div>
-                                                                                <input type="text" name="items[{{ $item_code }}][qty]" class="form-control number-input number-validate text-center item-qty" value="{{ number_format($item->qty) }}" style="font-size: 9pt">
+                                                                                <input type="text" name="items[{{ $itemCode }}][qty]" class="form-control number-input number-validate text-center item-qty" value="{{ number_format($item->qty) }}" style="font-size: 9pt">
                                                                                 <div class="input-group-append">
                                                                                     <button class="btn btn-outline-success increment" type="button">+</button>
                                                                                 </div>
@@ -246,20 +247,20 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="p-1 item-description d-xl-none" style="font-size: 9.5pt !important;">
-                                                                    {{ strip_tags($item->description) }}
+                                                                    {!! $item->description !!}
                                                                 </div>
                                                                 <div class="p-1">
                                                                     @php
                                                                         $reasons = ['Customer Order', 'Stock Replenishment'];
                                                                     @endphp
-                                                                    <select class="form-control reason my-2" name="items[{{ $item_code }}][reason]" style="font-size: 9.5pt" required>
+                                                                    <select class="form-control reason my-2" name="items[{{ $itemCode }}][reason]" style="font-size: 9.5pt" required>
                                                                         <option value="">Select a reason</option>
                                                                         @foreach ($reasons as $reason)
                                                                             <option value="{{ $reason }}" {{ $item->consignment_reason == $reason ? 'selected' : null }}>{{ $reason }}</option>
                                                                         @endforeach
                                                                     </select>
 
-                                                                    <textarea class="form-control remarks" name="items[{{ $item_code }}][remarks]" placeholder='Reason...' rows=5 style="font-size: 9.5pt !important;">
+                                                                    <textarea class="form-control remarks" name="items[{{ $itemCode }}][remarks]" placeholder='Reason...' rows=5 style="font-size: 9.5pt !important;">
                                                                         {{ $item->remarks }}
                                                                     </textarea>
                                                                 </div>
@@ -274,9 +275,10 @@
                                                     @endforelse
                                                 </tbody>
                                             </table>
+                                            </div>
                                             <div class="col-12 text-right">
                                                 <div class="m-2">
-                                                    @if (!$material_request || $material_request->consignment_status == 'Draft')
+                                                    @if (!$materialRequest || $materialRequest->consignment_status == 'Draft')
                                                         <button type="button" class="btn btn-sm btn-primary btn-block submit-once submit-btn" data-status="0"><i id="submit-logo" class="fas fa-check"></i> Save as Draft</button>
                                                         <button type="button" class="btn btn-sm btn-success btn-block mb-2" data-toggle="modal" data-target="#submitModal">
                                                             <i id="submit-logo" class="fas fa-check"></i> Submit for Approval
@@ -305,7 +307,7 @@
                                                         </div>
                                                     @endif
 
-                                                    @if ($material_request && !$material_request->docstatus)
+                                                    @if ($materialRequest && !$materialRequest->docstatus)
                                                         <button type="button" class="btn btn-sm btn-secondary btn-block" data-toggle="modal" data-target="#deleteModal">
                                                             <i id="submit-logo" class="fas fa-remove"></i> Delete
                                                         </button>
@@ -314,19 +316,19 @@
                                                             <div class="modal-dialog" role="document">
                                                                 <div class="modal-content">
                                                                     <div class="modal-header">
-                                                                        <h5 class="modal-title" id="exampleModalLabel">Delete {{ $material_request->name }}</h5>
+                                                                        <h5 class="modal-title" id="exampleModalLabel">Delete {{ $materialRequest->name }}</h5>
                                                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                             <span aria-hidden="true">&times;</span>
                                                                         </button>
                                                                     </div>
                                                                     <div class="modal-body text-center">
-                                                                        Permanently Delete <b>{{ $material_request->name }}</b>?
+                                                                        Permanently Delete <b>{{ $materialRequest->name }}</b>?
                                                                         <br>
                                                                         <small class="font-italic">Note: * This cannot be undone</small>
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
-                                                                        <a href="/consignment/replenish/{{ $material_request->name }}/delete" class="btn btn-sm btn-primary">Delete</a>
+                                                                        <a href="/consignment/replenish/{{ $materialRequest->name }}/delete" class="btn btn-sm btn-primary">Delete</a>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -349,10 +351,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         input[type=number] {
             -moz-appearance: textfield;
         }
@@ -496,7 +495,7 @@
                 $('#item-selection-table').removeClass('d-none')
                 $('#item-selection-table .item-code').text(data.id)
                 $('#item-selection-table .img-thumbnail').attr('src', data.img)
-                $('#item-selection-table .item-description').text(data.description)
+                $('#item-selection-table .item-description').html(data.description)
 
                 truncate_description();
             });

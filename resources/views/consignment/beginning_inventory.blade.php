@@ -26,14 +26,14 @@
                                 </div>
                             @endif
                             <h5 class="text-center mt-2 font-weight-bolder">
-                                <span class="badge badge-success float-right {{ $inv_record ? null : 'd-none' }}">{{ $inv_record ? $inv_record->status : null }}</span>
+                                <span class="badge badge-success float-right {{ $invRecord ? null : 'd-none' }}">{{ $invRecord ? $invRecord->status : null }}</span>
                             </h5>
-                            @if (!$inv_record)
+                            @if (!$invRecord)
                             <div class="row">
                                 <div class="col-12 mb-2">
                                     <select name="branch" id="selected-branch" class="form-control form-control-sm">
                                         <option value="" disabled selected>SELECT A STORE</option>
-                                        @foreach ($assigned_consignment_store as $store)
+                                        @foreach ($assignedConsignmentStore as $store)
                                             <option value="{{ $store }}">{{ $store }}</option>
                                         @endforeach
                                     </select>
@@ -41,7 +41,9 @@
                                 </div>
                             </div>
                             @endif
-                            <div id="beginning-inventory"></div>
+                            <div class="responsive-table-wrap">
+                                <div id="beginning-inventory"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -53,10 +55,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         .select2-selection__rendered {
             line-height: 34px !important;
             text-align: left !important;
@@ -93,7 +92,7 @@
             }
             
             function get_inv_record(branch){
-                var inv_record = '{{ $inv_record ? $inv_record->name : null }}';
+                var inv_record = '{{ $invRecord ? $invRecord->name : null }}';
                 var link = inv_record ? 'update/' + branch + '/{{ $inv }}' : 'new/' + branch;
 
                 $.ajax({

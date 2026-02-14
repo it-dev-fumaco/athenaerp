@@ -4,12 +4,12 @@
         @if (count($list) > 0)
             @foreach ($list as $item)
                 @php
-                    $item_code = $item['item_code'];
-                    $item_name = isset($item_arr[$item_code]) ? $item_arr[$item_code][0]->item_name : null;
+                    $itemCode = $item['item_code'];
+                    $itemName = isset($itemArr[$itemCode]) ? $itemArr[$itemCode][0]->item_name : null;
                 @endphp
                 <div class="card card-primary text-left p-0 m-1" style="font-size: 9pt;">
                     <div class="card-body p-2 m-0">
-                        <b>{{ $item_code }}</b> - {{ \Illuminate\Support\Str::limit($item_name, 30, $end='...') }}
+                        <b>{{ $itemCode }}</b> - {{ \Illuminate\Support\Str::limit($itemName, 30, $end='...') }}
                     </div>
                 </div>
             @endforeach

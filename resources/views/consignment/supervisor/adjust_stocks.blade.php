@@ -145,10 +145,7 @@
 
 @section('style')
     <style>
-        table .items-table{
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table .items-table { width: 100%; }
         .morectnt span {
             display: none;
         }
@@ -324,7 +321,7 @@
 
             $('#stock-adjustment-modal').on('select2:select', '.items-selection', function(e){
                 $('#stock-adjustment-modal .item-code').text(e.params.data.id);
-                $('#stock-adjustment-modal .description').text(e.params.data.description);
+                $('#stock-adjustment-modal .description').html(e.params.data.description);
                 $('#stock-adjustment-modal .image').attr('src', e.params.data.img);
 
                 $('#stock-adjustment-modal .webp-placeholder').text(e.params.data.webp);

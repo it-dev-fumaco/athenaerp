@@ -1,5 +1,5 @@
 @php
-$filename = Carbon\Carbon::now()->format('M-d-Y').' '.$branch.'.xls';
+$filename = now()->format('M-d-Y').' '.$branch.'.xls';
 header("Content-Disposition: attachment; filename=".$filename);
 header("Content-Type: application/vnd.ms-excel");
 @endphp

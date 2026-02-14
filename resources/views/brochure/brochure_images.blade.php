@@ -4,9 +4,9 @@
         <input type="text" id="item-code" name="item_code" value="" placeholder="item_code">
         <input type="text" name="existing" value="1" placeholder="existing">
     </div>
-    @if ($current_images)
+    @if ($currentImages)
         <div class="row p-2">
-            @foreach ($current_images as $cii)
+            @foreach ($currentImages as $cii)
             <div class="col-3 p-0">
                 <label class="m-0 img-btn d-block">
                     <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>

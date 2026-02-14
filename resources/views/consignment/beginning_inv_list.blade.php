@@ -36,7 +36,7 @@
                                     <th class="font-responsive text-center p-2">Date</th>
                                     <th class="font-responsive text-center p-2" style="width: 70%;">Branch Warehouse</th>
                                 </thead>
-                                @forelse ($beginning_inventory as $store)
+                                @forelse ($beginningInventory as $store)
                                     @php
                                         $badge = 'secondary';
                                         if($store->status == 'Approved'){
@@ -67,7 +67,7 @@
                             </table>
                             <div class="mt-3 ml-3 clearfix pagination" style="display: block;">
                                 <div class="float-right">
-                                    {{ $beginning_inventory->links() }}
+                                    {{ $beginningInventory->links() }}
                                 </div>
                             </div>
                         </div>

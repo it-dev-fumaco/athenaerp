@@ -30,7 +30,7 @@
                                 <div class="col-2">
                                     <div class="d-flex flex-row align-items-center">
                                         <div class="pt-3 col-12 text-center">
-                                            <a href="{{ $previous_record_link ? $previous_record_link : '#' }}" class="text-dark">
+                                            <a href="{{ $previousRecordLink ? $previousRecordLink : '#' }}" class="text-dark">
                                                 <h1 class="m-0 font-details font-weight-bold" style="font-size: 30pt;"><i class="fas fa-angle-double-left"></i></h1>
                                             </a>
                                         </div>
@@ -56,9 +56,9 @@
                                 <div class="col-4">
                                     <div class="d-flex flex-row align-items-center">
                                         <div class="pt-3 col-12 text-center">
-                                            <h1 class="m-0 font-details font-weight-bold">{{ '₱ ' . number_format($total_sales, 2) }} 
-                                                @if ($total_sales > 0)
-                                                @if ($sales_increase)
+                                            <h1 class="m-0 font-details font-weight-bold">{{ '₱ ' . number_format($totalSales, 2) }} 
+                                                @if ($totalSales > 0)
+                                                @if ($salesIncrease)
                                                 <i class="fas fa-long-arrow-alt-up text-success"></i>
                                                 @else
                                                 <i class="fas fa-long-arrow-alt-down text-danger"></i>
@@ -72,7 +72,7 @@
                                 <div class="col-2">
                                     <div class="d-flex flex-row align-items-center">
                                         <div class="pt-3 col-12 text-center">
-                                            <a href="{{ $next_record_link ? $next_record_link : '#' }}" class="text-dark">
+                                            <a href="{{ $nextRecordLink ? $nextRecordLink : '#' }}" class="text-dark">
                                                 <h1 class="m-0 font-details font-weight-bold" style="font-size: 30pt;"><i class="fas fa-angle-double-right"></i></h1>
                                             </a>
                                         </div>
@@ -112,7 +112,7 @@
                                                         </a>
                                                     </div>
                                                     <div class="pl-2 m-0">
-                                                        <span class="d-block"><b>{{ $row['item_code'] }}</b> - {{ $row['description'] }}</span>
+                                                        <span class="d-block"><b>{{ $row['item_code'] }}</b> - {!! $row['description'] !!}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -123,39 +123,39 @@
                                                 <span class="d-block">{{ $row['audit_qty'] }}</span>
                                             </td>
                                             @php
-                                                $total_received = isset($received_items[$row['item_code']]) ? collect($received_items[$row['item_code']])->sum('qty') : '-';
-                                                $total_returned = isset($returned_items[$row['item_code']]) ? collect($returned_items[$row['item_code']])->sum('qty') : '-';
-                                                $total_transferred = isset($transferred_items[$row['item_code']]) ? collect($transferred_items[$row['item_code']])->sum('qty') : '-';
-                                                $total_damaged = isset($damaged_item_list[$row['item_code']]) ? collect($damaged_item_list[$row['item_code']])->sum('qty') : '-';
+                                                $totalReceived = isset($receivedItems[$row['item_code']]) ? collect($receivedItems[$row['item_code']])->sum('qty') : '-';
+                                                $totalReturned = isset($returnedItems[$row['item_code']]) ? collect($returnedItems[$row['item_code']])->sum('qty') : '-';
+                                                $totalTransferred = isset($transferredItems[$row['item_code']]) ? collect($transferredItems[$row['item_code']])->sum('qty') : '-';
+                                                $totalDamaged = isset($damagedItemList[$row['item_code']]) ? collect($damagedItemList[$row['item_code']])->sum('qty') : '-';
                                             @endphp
                                             <td class="text-center p-1 align-middle">
                                                 <b>{{ number_format($row['sold_qty']) }}</b>
                                             </td>
                                             <td class="text-center p-1 align-middle">
-                                                @if ($total_received != '-')
+                                                @if ($totalReceived != '-')
                                                 <a href="#" data-toggle="modal" data-target="#received-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ number_format($total_received) }}</span>
+                                                    <span class="d-block">{{ number_format($totalReceived) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
-                                                @if ($total_returned != '-')
+                                                @if ($totalReturned != '-')
                                                 <a href="#" data-toggle="modal" data-target="#returned-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ number_format($total_returned) }}</span>
+                                                    <span class="d-block">{{ number_format($totalReturned) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
-                                                @if ($total_transferred != '-')
+                                                @if ($totalTransferred != '-')
                                                 <a href="#" data-toggle="modal" data-target="#transferred-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ number_format($total_transferred) }}</span>
+                                                    <span class="d-block">{{ number_format($totalTransferred) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
                                             <td class="text-center p-1 align-middle font-weight-bold">
-                                                @if ($total_damaged != '-')
+                                                @if ($totalDamaged != '-')
                                                 <a href="#" data-toggle="modal" data-target="#damaged-{{ $row['item_code'] }}-modal">
-                                                    <span class="d-block">{{ number_format($total_damaged) }}</span>
+                                                    <span class="d-block">{{ number_format($totalDamaged) }}</span>
                                                 </a>
                                                 @endif
                                             </td>
@@ -178,10 +178,10 @@
 
 @foreach ($result as $r)
 @php
-    $receiving_txn = isset($received_items[$r['item_code']]) ? $received_items[$r['item_code']] : [];
-    $returned_txn = isset($returned_items[$r['item_code']]) ? $returned_items[$r['item_code']] : [];
-    $transfer_txn = isset($transferred_items[$r['item_code']]) ? $transferred_items[$r['item_code']] : [];
-    $damaged_txn = isset($damaged_item_list[$r['item_code']]) ? $damaged_item_list[$r['item_code']] : [];
+    $receivingTxn = isset($receivedItems[$r['item_code']]) ? $receivedItems[$r['item_code']] : [];
+    $returnedTxn = isset($returnedItems[$r['item_code']]) ? $returnedItems[$r['item_code']] : [];
+    $transferTxn = isset($transferredItems[$r['item_code']]) ? $transferredItems[$r['item_code']] : [];
+    $damagedTxn = isset($damagedItemList[$r['item_code']]) ? $damagedItemList[$r['item_code']] : [];
 @endphp
 <div class="modal fade" id="received-{{ $r['item_code'] }}-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document" style="font-size: 9pt;">
@@ -205,7 +205,7 @@
                         <th class="p-2 align-middle text-center">Received By</th>
                     </thead>
                     <tbody>
-                        @forelse ($receiving_txn as $rtxn)
+                        @forelse ($receivingTxn as $rtxn)
                         <tr>
                             <td class="p-1 align-middle text-center">{{ $rtxn['reference'] }}</td>
                             <td class="p-1 align-middle text-center">{{ $rtxn['delivery_date'] }}</td>
@@ -245,7 +245,7 @@
                         <th class="p-2 align-middle text-center">Damage Description</th>
                     </thead>
                     <tbody>
-                        @forelse ($damaged_txn as $dtxn)
+                        @forelse ($damagedTxn as $dtxn)
                         <tr>
                             <td class="p-1 align-middle text-center">{{ $dtxn['transaction_date'] }}</td>
                             <td class="p-1 align-middle text-center">{{ number_format($dtxn['qty']) }}</td>
@@ -286,7 +286,7 @@
                         <th class="p-2 align-middle text-center">Received By</th>
                     </thead>
                     <tbody>
-                        @forelse ($transfer_txn as $ttxn)
+                        @forelse ($transferTxn as $ttxn)
                         <tr>
                             <td class="p-1 align-middle text-center">{{ $ttxn['transaction_date'] }}</td>
                             <td class="p-1 align-middle text-center">{{ $ttxn['reference'] }}</td>
@@ -329,7 +329,7 @@
                         <th class="p-2 align-middle text-center">Amount</th>
                     </thead>
                     <tbody>
-                        @forelse ($returned_txn as $rrtxn)
+                        @forelse ($returnedTxn as $rrtxn)
                         <tr>
                             <td class="p-1 align-middle text-center">{{ $rrtxn['transaction_date'] }}</td>
                             <td class="p-1 align-middle text-center">{{ $rrtxn['reference'] }}</td>
@@ -351,10 +351,7 @@
 </div>
 @endforeach
 <style>
-    table {
-        table-layout: fixed;
-        width: 100%;   
-    }
+    table { width: 100%; }
     .morectnt span {
         display: none;
     }

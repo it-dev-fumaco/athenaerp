@@ -1,6 +1,6 @@
 <form action="/edit_warehouse_location" method="POST" autocomplete="off" id="edit-warehouse-location-form">
     @csrf
-    <input type="hidden" name="item_code" value="{{ $item_code }}">
+    <input type="hidden" name="item_code" value="{{ $itemCode }}">
     <table class="table table-striped table-bordered" style="font-size: 9pt;">
         <thead class="text-uppercase">
             <th class="p-2 text-center">Warehouse</th>

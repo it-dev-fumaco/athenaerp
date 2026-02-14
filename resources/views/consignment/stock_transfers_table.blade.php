@@ -14,7 +14,7 @@
         <th class="text-center p-1">Action</th>
     </thead>
     <tbody>
-    @forelse ($ste_arr as $ste)
+    @forelse ($steArr as $ste)
     @php
         $badge = 'secondary';
         $status = 'Unknown';
@@ -125,7 +125,7 @@
                                     </tr>
                                     <tr>
                                         <td colspan="3" class="text-justify pt-0 pb-1 pl-1 pr-1" style="border-top: 0 !important;">
-                                            <span class="item-description">{!! strip_tags($item['description']) !!}</span>
+                                            <span class="item-description">{!! $item['description'] !!}</span>
                                         </td>
                                     </tr>
                                     @if (in_array($ste['transfer_type'], ['Pull Out']))
@@ -139,7 +139,7 @@
                             </table>
                             <div class="container-fluid text-left p-1" style="font-size: 10pt;">
                                 @php
-                                    $remarks = str_replace('Generated in AthenaERP. ', null, $ste['remarks']);
+                                    $remarks = str_replace('Generated in AthenaERP. ', '', $ste['remarks']);
                                 @endphp
                                 @if ($remarks)
                                     Remarks: {{ $remarks }}
@@ -202,8 +202,8 @@
     </tbody>
 </table>
 <div class="container-fluid">
-    <span class="float-right p-2" style="font-size: 10pt;"><b>Total: </b>{{ $stock_transfers->total() }}</span>
+    <span class="float-right p-2" style="font-size: 10pt;"><b>Total: </b>{{ $stockTransfers->total() }}</span>
 </div>
 <div id="transfers-pagination" class="mt-3 ml-3 clearfix pagination d-block">
-    {{ $stock_transfers->links() }}
+    {{ $stockTransfers->links() }}
 </div>

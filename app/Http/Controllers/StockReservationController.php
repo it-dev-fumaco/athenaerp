@@ -2,335 +2,415 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use App\Http\Helpers\ApiResponse;
+use App\Models\Bin;
 use App\Models\StockReservation;
-use DB;
+use App\Models\Warehouse;
+use App\Traits\GeneralTrait;
 use Carbon\Carbon;
-use Auth;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class StockReservationController extends Controller
 {
-   public function user_allowed_warehouse($user){
-      $allowed_parent_warehouses = DB::table('tabWarehouse Access')
-          ->where('parent', $user)->pluck('warehouse');
+    use GeneralTrait;
 
-      return DB::table('tabWarehouse')
-          ->whereIn('parent_warehouse', $allowed_parent_warehouses)->pluck('name');
-   }
+    public function userAllowedWarehouse($user)
+    {
+        return \App\Models\User::getAllowedWarehouseIdsFor($user);
+    }
 
-   public function create_reservation(Request $request){
-      DB::connection('mysql')->beginTransaction();
-      try {
-         // restrict zero qty
-         if($request->reserve_qty <= 0) {
-            return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than 0.']);
-         }
-
-         $bin_details = DB::connection('mysql')->table('tabBin')
-            ->where('item_code', $request->item_code)
-            ->where('warehouse', $request->warehouse)
-            ->first();
-
-         if(!$bin_details) {
-            return response()->json(['error' => 1, 'modal_title' => 'No Stock', 'modal_message' => 'No available stock.']);
-         }
-
-         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $request->item_code)
-            ->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
-
-         $total_reserved_qty = $stock_reservation_qty + $bin_details->website_reserved_qty;
-
-         $available_qty = $bin_details->actual_qty - $total_reserved_qty;
-
-         if($available_qty < $request->reserve_qty) {
-            return response()->json(['error' => 1, 'modal_title' => 'Insufficient Stock', 'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->reserve_qty . '</b>']);
-         }
-
-         if($request->type == 'In-house'){
-            if(Carbon::createFromFormat('Y-m-d', $request->valid_until) <= Carbon::now()){
-               return response()->json(['error' => 1, 'modal_title' => 'Invalid Date', 'modal_message' => 'Validity date cannot be less than or equal to date today.']);
+    public function createReservation(Request $request)
+    {
+        DB::connection('mysql')->beginTransaction();
+        try {
+            // restrict zero qty
+            if ($request->reserve_qty <= 0) {
+                return ApiResponse::modal(false, 'Stock Reservation', 'Reserve Qty must be greater than 0.', 422);
             }
-         }
 
-         if($request->type == 'Consignment' && !$request->consignment_warehouse) {
-            return response()->json(['error' => 1, 'modal_title' => 'Select Branch', 'modal_message' => 'Please select Branch.']);
-         }
+            $binDetails = Bin::forItemAndWarehouse($request->item_code, $request->warehouse)->first();
 
-         $existing_stock_reservation = StockReservation::where('item_code', $request->item_code)
-            ->where('warehouse', $request->warehouse)->where('sales_person', $request->sales_person)
-            ->where('type', $request->type)->where('project', $request->project)->where('consignment_warehouse', $request->consignment_warehouse)
-            ->whereIn('status', ['Active', 'Partially Issued'])->exists();
-         
-         if($existing_stock_reservation){
-            return response()->json(['error' => 1, 'modal_title' => 'Already Exists', 'modal_message' => 'Stock Reservation already exists.']);
-         }
-
-         $latest_name = StockReservation::max('name');
-			$latest_name_exploded = explode("-", $latest_name);
-			$new_id = (!$latest_name) ? 1 : $latest_name_exploded[1] + 1;
-			$new_id = str_pad($new_id, 5, '0', STR_PAD_LEFT);
-			$new_id = 'STR-'.$new_id;
-
-         $now = Carbon::now();
-         $stock_reservation = new StockReservation;
-         $stock_reservation->name = $new_id;
-         $stock_reservation->creation = $now->toDateTimeString();
-         $stock_reservation->modified = null;
-         $stock_reservation->modified_by = null;
-         $stock_reservation->owner = Auth::user()->wh_user;
-         $stock_reservation->description = $request->description;
-         $stock_reservation->notes = $request->notes;
-         $stock_reservation->created_by = Auth::user()->full_name;
-         $stock_reservation->stock_uom = $request->stock_uom;
-         $stock_reservation->item_code = $request->item_code;
-         $stock_reservation->warehouse = $request->warehouse;
-         $stock_reservation->type = $request->type;
-         $stock_reservation->reserve_qty = $request->reserve_qty;
-         $stock_reservation->valid_until = ($request->type == 'In-house') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
-         $stock_reservation->sales_person = ($request->type == 'In-house') ? $request->sales_person : null;
-         $stock_reservation->project = ($request->type == 'In-house') ? $request->project : null;
-         $stock_reservation->consignment_warehouse = ($request->type == 'Consignment') ? $request->consignment_warehouse : null;
-         $stock_reservation->save();
-
-         if($request->type == 'Website Stocks'){
-            if($bin_details) {
-               $new_reserved_qty = $request->reserve_qty + $bin_details->website_reserved_qty;
-
-               $values = [
-                  "modified" => Carbon::now()->toDateTimeString(),
-                  "modified_by" => Auth::user()->wh_user,
-                  "website_reserved_qty" => $new_reserved_qty,
-               ];
-      
-               DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
+            if (! $binDetails) {
+                return ApiResponse::modal(false, 'No Stock', 'No available stock.', 422);
             }
-         }
 
-         DB::connection('mysql')->commit();
+            $availableQty = $binDetails->getAvailableQty();
 
-         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $new_id . ' has been created.']);
-      } catch (Exception $e) {
-         DB::connection('mysql')->rollback();
-
-         return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem creating Stock Reservation.']);
-      }
-   }
-
-   public function get_stock_reservation(Request $request, $item_code = null){
-      $webList = StockReservation::when($item_code, function($q) use ($item_code){
-         $q->where('item_code', $item_code)->where('type', 'Website Stocks')->orderby('creation', 'desc');
-      })->paginate(10, ['*'], 'tbl_1');
-
-      $inhouseList = StockReservation::when($item_code, function($q) use ($item_code){
-         $q->where('item_code', $item_code)->where('type', 'In-house')->orderby('valid_until', 'desc');
-      })->paginate(10, ['*'], 'tbl_3');
-
-      $consignmentList = StockReservation::when($item_code, function($q) use ($item_code){
-         $q->where('item_code', $item_code)->where('type', 'Consignment')->orderby('valid_until', 'desc');
-      })->paginate(10, ['*'], 'tbl_2');
-
-      $ste_issued = DB::table('tabStock Entry Detail as sted')
-         ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
-         ->where('sted.docstatus', 0)->where('sted.status', 'Issued')->where('sted.item_code', $item_code)->whereNotIn('ste.purpose', ['Manufacture', 'Material Receipt'])
-         ->select('sted.parent', 'sted.s_warehouse', 'sted.qty', 'sted.uom', 'ste.owner', 'sted.session_user', 'sted.modified', 'ste.creation')
-         ->orderBy('sted.modified', 'desc')->get();
-
-      $at_issued = DB::table('tabAthena Transactions as at')
-         ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-         ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-         ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-         ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])->where('dr.docstatus', 0)->where('ps.docstatus', '<', 2)->where('psi.status', 'Issued')->where('at.item_code', $item_code)->where('psi.item_code', $item_code)->where('at.status', 'Issued')
-         ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')
-         ->orderBy('psi.modified', 'desc')->get();
-      
-      $pending_arr = [];
-      foreach($ste_issued as $item){
-         $pending_arr[] = [
-            'id' => $item->parent,
-            'warehouse' => $item->s_warehouse,
-            'qty' => $item->qty * 1,
-            'uom' => $item->uom,
-            'owner' => $item->owner,
-            'issued_by' => $item->session_user,
-            'issued_at' => $item->modified,
-            'date' => $item->creation
-         ];
-      }
-
-      foreach ($at_issued as $item) {
-         $pending_arr[] = [
-            'id' => $item->name,
-            'warehouse' => $item->source_warehouse,
-            'qty' => $item->issued_qty * 1,
-            'uom' => $item->stock_uom,
-            'owner' => $item->owner,
-            'issued_by' => $item->session_user,
-            'issued_at' => $item->modified,
-            'date' => $item->creation
-         ];
-      }
-
-      // Get current page form url e.x. &page=1
-      $currentPage = LengthAwarePaginator::resolveCurrentPage();
-      // Create a new Laravel collection from the array data3
-      $itemCollection = collect($pending_arr);
-      // Define how many items we want to be visible in each page
-      $perPage = 10;
-      // Slice the collection to get the items to display in current page
-      $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
-      // Create our paginator and pass it to the view
-      $paginatedItems= new LengthAwarePaginator($currentPageItems, count($itemCollection), $perPage);
-      // set url path for generted links
-      $paginatedItems->setPath($request->url());
-      $pending_arr = $paginatedItems;
-
-      return view('stock_reservation.list', compact('consignmentList', 'webList', 'inhouseList', 'item_code', 'pending_arr'));
-   }
-
-   public function cancel_reservation(Request $request){
-      DB::connection('mysql')->beginTransaction();
-      try {
-         $now = Carbon::now();
-         $stock_reservation = StockReservation::find($request->stock_reservation_id);
-         $stock_reservation->modified = $now->toDateTimeString();
-         $stock_reservation->modified_by = Auth::user()->wh_user;
-         $stock_reservation->status = 'Cancelled';
-         $stock_reservation->save();
-
-         if($stock_reservation->type == 'Website Stocks'){
-            $bin_details = DB::connection('mysql')->table('tabBin')
-               ->where('item_code', $stock_reservation->item_code)
-               ->where('warehouse', $stock_reservation->warehouse)
-               ->first();
-
-            if($bin_details) {
-               $new_reserved_qty = $bin_details->website_reserved_qty - $stock_reservation->reserve_qty;
-
-               $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
-
-               $values = [
-                  "modified" => Carbon::now()->toDateTimeString(),
-                  "modified_by" => Auth::user()->wh_user,
-                  "website_reserved_qty" => $new_reserved_qty,
-               ];
-      
-               DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
+            if ($availableQty < $request->reserve_qty) {
+                return ApiResponse::modal(false, 'Insufficient Stock', 'Qty not available for <b> '.$request->item_code.'</b> in <b>'.$request->s_warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->reserve_qty.'</b>', 422);
             }
-         }
 
-         DB::connection('mysql')->commit();
-
-         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $request->stock_reservation_id . ' has been cancelled.']);
-      } catch (Exception $e) {
-         DB::connection('mysql')->rollback();
-
-         return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem cancelling Stock Reservation.']);
-      }
-   }
-
-   public function get_stock_reservation_details($id){
-      return StockReservation::find($id);
-   }
-
-   public function update_reservation(Request $request){
-      DB::connection('mysql')->beginTransaction();
-      try {
-         if($request->reserve_qty <= 0) {
-            return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve Qty must be greater than 0.']);
-         }
-
-         // get total partially issued qty
-         $partially_issued_qty = DB::table('tabStock Reservation')->where('item_code', $request->item_code)->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Partially Issued')->where('sales_person', $request->sales_person)->sum('consumed_qty');
-
-         if($partially_issued_qty > 0 && $partially_issued_qty >= $request->reserve_qty){
-            return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Reserve qty must be greater than the partially issued qty for this reservation.']);
-         }
-
-         $bin_details = DB::connection('mysql')->table('tabBin')
-            ->where('item_code', $request->item_code)
-            ->where('warehouse', $request->warehouse)
-            ->first();
-
-         if(!$bin_details) {
-            return response()->json(['error' => 1, 'modal_title' => 'No Stock', 'modal_message' => 'No available stock.']);
-         }
-         // get total reserved qty from stock reservation table
-         $stock_reservation_qty = DB::table('tabStock Reservation')->where('item_code', $request->item_code)
-            ->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Active')->sum('reserve_qty');
-         // total reserved qty = total reserved qty from stock reservation table + website reserved qty from tabbin table
-         $total_reserved_qty = $stock_reservation_qty + $bin_details->website_reserved_qty;
-
-         $now = Carbon::now();
-         $stock_reservation = StockReservation::find($request->id);
-         $stock_reservation->modified = $now->toDateTimeString();
-         $stock_reservation->modified_by = Auth::user()->wh_user;
-         $stock_reservation->notes = $request->notes;
-         
-         // calculate reserved qty
-         $reserved_qty = ($stock_reservation->type == 'In house') ? $stock_reservation->reserve_qty : $bin_details->website_reserved_qty;
-         $available_qty = ($request->available_qty + ($reserved_qty - $stock_reservation->consumed_qty));
-
-         if($available_qty < $request->reserve_qty) {
-            return response()->json(['error' => 1, 'modal_title' => 'Insufficient Stock', 'modal_message' => 'Qty not available for <b> ' . $request->item_code . '</b> in <b>' . $request->s_warehouse . '</b><br><br>Available qty is <b>' . $available_qty . '</b>, you need <b>' . $request->reserve_qty . '</b>']);
-         }
-
-         if($stock_reservation->type == 'Website Stocks'){
-            $reserved_qty = abs($stock_reservation->reserve_qty - $request->reserve_qty);
-            
-            if($bin_details) {
-               $new_reserved_qty = $bin_details->website_reserved_qty;
-               if($stock_reservation->reserve_qty > $request->reserve_qty){
-                  $new_reserved_qty = $bin_details->website_reserved_qty - $reserved_qty;
-               }
-
-               if($stock_reservation->reserve_qty < $request->reserve_qty){
-                  $new_reserved_qty = $bin_details->website_reserved_qty + $reserved_qty;
-               }
-
-               $new_reserved_qty = ($new_reserved_qty <= 0) ? 0 : $new_reserved_qty;
-
-               $values = [
-                  "modified" => Carbon::now()->toDateTimeString(),
-                  "modified_by" => Auth::user()->wh_user,
-                  "website_reserved_qty" => $new_reserved_qty,
-               ];
-      
-               DB::connection('mysql')->table('tabBin')->where('name', $bin_details->name)->update($values);
+            if ($request->type == 'In-house') {
+                if (Carbon::createFromFormat('Y-m-d', $request->valid_until) <= now()) {
+                    return ApiResponse::modal(false, 'Invalid Date', 'Validity date cannot be less than or equal to date today.', 422);
+                }
             }
-         }
 
-         $stock_reservation->warehouse = $request->warehouse;
-         $stock_reservation->reserve_qty = $request->reserve_qty;
-         $stock_reservation->valid_until = ($stock_reservation->type == 'In-house') ? Carbon::parse($request->valid_until)->format('Y-m-d') : null;
-         $stock_reservation->sales_person = ($stock_reservation->type == 'In-house') ? $request->sales_person : null;
-         $stock_reservation->project = ($stock_reservation->type == 'In-house') ? $request->project : null;
-         $stock_reservation->consignment_warehouse = ($stock_reservation->type == 'Consignment') ? $request->consignment_warehouse : null;
-         $stock_reservation->save();
+            if ($request->type == 'Consignment' && ! $request->consignment_warehouse) {
+                return ApiResponse::modal(false, 'Select Branch', 'Please select Branch.', 422);
+            }
 
-         DB::connection('mysql')->commit();
+            $existingStockReservation = StockReservation::query()
+                ->forItemAndWarehouse($request->item_code, $request->warehouse)
+                ->where('sales_person', $request->sales_person)
+                ->where('type', $request->type)
+                ->where('project', $request->project)
+                ->where('consignment_warehouse', $request->consignment_warehouse)
+                ->active()
+                ->exists();
 
-         return response()->json(['error' => 0, 'modal_title' => 'Stock Reservation', 'modal_message' => 'Stock Reservation No. ' . $request->id . ' has been updated.']);
-      } catch (Exception $e) {
-         DB::connection('mysql')->rollback();
-         return response()->json(['error' => 1, 'modal_title' => 'Stock Reservation', 'modal_message' => 'There was a problem updating Stock Reservation.']);
-      }
-   }
-   
-   public function get_warehouse_with_stocks(Request $request){
-      $user = Auth::user()->frappe_userid;
-      $allowed_warehouses = $this->user_allowed_warehouse($user);
+            if ($existingStockReservation) {
+                return ApiResponse::modal(false, 'Already Exists', 'Stock Reservation already exists.', 422);
+            }
 
-      return DB::table('tabWarehouse as w')->join('tabBin as b', 'b.warehouse', 'w.name')
-         ->where('w.disabled', 0)->where('w.is_group', 0)
-         ->whereIn('w.name', $allowed_warehouses)
-         ->where('b.item_code', $request->item_code)
-         ->when($request->q, function($q) use ($request){
-            return $q->where('w.name', 'like', '%'.$request->q.'%');
-         })
-         ->select('w.name as id', 'w.name as text')
-         ->orderBy('w.modified', 'desc')->limit(10)->get();
-   }
+            $latestName = StockReservation::max('name');
+            $latestNameExploded = explode('-', $latestName);
+            $newId = (! $latestName) ? 1 : $latestNameExploded[1] + 1;
+            $newId = str_pad($newId, 5, '0', STR_PAD_LEFT);
+            $newId = 'STR-'.$newId;
+
+            $now = now();
+            $stockReservation = new StockReservation;
+            $stockReservation->name = $newId;
+            $stockReservation->creation = $now->toDateTimeString();
+            $stockReservation->modified = null;
+            $stockReservation->modified_by = null;
+            $stockReservation->owner = Auth::user()->wh_user;
+            $stockReservation->description = $request->description;
+            $stockReservation->notes = $request->notes;
+            $stockReservation->created_by = Auth::user()->full_name;
+            $stockReservation->stock_uom = $request->stock_uom;
+            $stockReservation->item_code = $request->item_code;
+            $stockReservation->warehouse = $request->warehouse;
+            $stockReservation->type = $request->type;
+            $stockReservation->reserve_qty = $request->reserve_qty;
+            $stockReservation->valid_until = ($request->type == 'In-house') ? Carbon::createFromFormat('Y-m-d', $request->valid_until) : null;
+            $stockReservation->sales_person = ($request->type == 'In-house') ? $request->sales_person : null;
+            $stockReservation->project = ($request->type == 'In-house') ? $request->project : null;
+            $stockReservation->consignment_warehouse = ($request->type == 'Consignment') ? $request->consignment_warehouse : null;
+            $stockReservation->save();
+
+            if ($request->type == 'Website Stocks') {
+                if ($binDetails) {
+                    $newReservedQty = $request->reserve_qty + $binDetails->website_reserved_qty;
+
+                    $values = [
+                        'modified' => now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'website_reserved_qty' => $newReservedQty,
+                    ];
+
+                    Bin::where('name', $binDetails->name)->update($values);
+                }
+            }
+
+            DB::connection('mysql')->commit();
+
+            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. '.$newId.' has been created.');
+        } catch (Exception $e) {
+            DB::connection('mysql')->rollback();
+
+            return ApiResponse::modal(false, 'Stock Reservation', 'There was a problem creating Stock Reservation.', 422);
+        }
+    }
+
+    public function getStockReservation(Request $request, $itemCode = null)
+    {
+        $webList = StockReservation::when($itemCode, function ($query) use ($itemCode) {
+            $query->where('item_code', $itemCode)->where('type', 'Website Stocks')->orderby('creation', 'desc');
+        })->paginate(10, ['*'], 'tbl_1');
+
+        $inhouseList = StockReservation::when($itemCode, function ($query) use ($itemCode) {
+            $query->where('item_code', $itemCode)->where('type', 'In-house')->orderby('valid_until', 'desc');
+        })->paginate(10, ['*'], 'tbl_3');
+
+        $consignmentList = StockReservation::when($itemCode, function ($query) use ($itemCode) {
+            $query->where('item_code', $itemCode)->where('type', 'Consignment')->orderby('valid_until', 'desc');
+        })->paginate(10, ['*'], 'tbl_2');
+
+        $stockEntryIssued = DB::table('tabStock Entry Detail as sted')
+            ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
+            ->where('sted.docstatus', 0)
+            ->where('sted.status', 'Issued')
+            ->where('sted.item_code', $itemCode)
+            ->whereNotIn('ste.purpose', ['Manufacture', 'Material Receipt'])
+            ->select('sted.parent', 'sted.s_warehouse', 'sted.qty', 'sted.uom', 'ste.owner', 'sted.session_user', 'sted.modified', 'ste.creation')
+            ->orderBy('sted.modified', 'desc')
+            ->get();
+
+        $athenaIssued = DB::table('tabAthena Transactions as at')
+            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
+            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
+            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
+            ->where('dr.docstatus', 0)
+            ->where('ps.docstatus', '<', 2)
+            ->where('psi.status', 'Issued')
+            ->where('at.item_code', $itemCode)
+            ->where('psi.item_code', $itemCode)
+            ->where('at.status', 'Issued')
+            ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')
+            ->orderBy('psi.modified', 'desc')
+            ->get();
+
+        $pendingItems = [];
+        foreach ($stockEntryIssued as $issuedItem) {
+            $pendingItems[] = [
+                'id' => $issuedItem->parent,
+                'warehouse' => $issuedItem->s_warehouse,
+                'qty' => $issuedItem->qty * 1,
+                'uom' => $issuedItem->uom,
+                'owner' => $issuedItem->owner,
+                'issued_by' => $issuedItem->session_user,
+                'issued_at' => $issuedItem->modified,
+                'date' => $issuedItem->creation,
+            ];
+        }
+
+        foreach ($athenaIssued as $issuedItem) {
+            $pendingItems[] = [
+                'id' => $issuedItem->name,
+                'warehouse' => $issuedItem->source_warehouse,
+                'qty' => $issuedItem->issued_qty * 1,
+                'uom' => $issuedItem->stock_uom,
+                'owner' => $issuedItem->owner,
+                'issued_by' => $issuedItem->session_user,
+                'issued_at' => $issuedItem->modified,
+                'date' => $issuedItem->creation,
+            ];
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $itemCollection = collect($pendingItems);
+        $perPage = 10;
+        $currentPageItems = $itemCollection->slice(($currentPage * $perPage) - $perPage, $perPage)->all();
+        $paginatedPendingItems = new LengthAwarePaginator($currentPageItems, count($itemCollection), $perPage);
+        $paginatedPendingItems->setPath($request->url());
+
+        if ($request->expectsJson()) {
+            $canEdit = in_array(Auth::user()->user_group, ['Inventory Manager', 'Director']);
+            $serializeReservation = function ($row) {
+                $badge = 'secondary';
+                if ($row->status === 'Active') {
+                    $badge = 'primary';
+                } elseif ((round($row->consumed_qty) > 0 && $row->consumed_qty < $row->reserve_qty) || $row->status === 'Partially Issued') {
+                    $badge = 'info';
+                } elseif (($row->reserve_qty == round($row->consumed_qty) && $row->status !== 'Expired') || $row->status === 'Issued') {
+                    $badge = 'success';
+                }
+                $reservedQty = (floor($row->reserve_qty) != $row->reserve_qty * 1) ? number_format($row->reserve_qty, 4) : $row->reserve_qty * 1;
+                $consumedQty = (floor($row->consumed_qty) != $row->consumed_qty * 1) ? number_format($row->consumed_qty, 4) : $row->consumed_qty * 1;
+
+                return [
+                    'name' => $row->name,
+                    'creation' => $row->creation,
+                    'status' => $row->status,
+                    'reserve_qty' => $row->reserve_qty,
+                    'consumed_qty' => $row->consumed_qty,
+                    'stock_uom' => $row->stock_uom,
+                    'warehouse' => $row->warehouse,
+                    'created_by' => $row->created_by,
+                    'consignment_warehouse' => $row->consignment_warehouse ?? '',
+                    'sales_person' => $row->sales_person ?? '',
+                    'valid_until' => $row->valid_until ?? '',
+                    'badge' => $badge,
+                    'reserved_qty_formatted' => $reservedQty,
+                    'consumed_qty_formatted' => $consumedQty,
+                ];
+            };
+            $serializePending = function ($row) {
+                return [
+                    'id' => $row['id'],
+                    'warehouse' => $row['warehouse'],
+                    'qty' => $row['qty'],
+                    'uom' => $row['uom'],
+                    'owner' => $row['owner'],
+                    'issued_by' => $row['issued_by'],
+                    'issued_at' => $row['issued_at'],
+                    'date' => $row['date'],
+                ];
+            };
+            $basePath = $request->url();
+
+            return response()->json([
+                'item_code' => $itemCode,
+                'can_edit' => $canEdit,
+                'web' => [
+                    'data' => collect($webList->items())->map($serializeReservation)->values()->all(),
+                    'meta' => ['current_page' => $webList->currentPage(), 'last_page' => $webList->lastPage(), 'total' => $webList->total(), 'path' => $basePath],
+                ],
+                'consignment' => [
+                    'data' => collect($consignmentList->items())->map($serializeReservation)->values()->all(),
+                    'meta' => ['current_page' => $consignmentList->currentPage(), 'last_page' => $consignmentList->lastPage(), 'total' => $consignmentList->total(), 'path' => $basePath],
+                ],
+                'inhouse' => [
+                    'data' => collect($inhouseList->items())->map($serializeReservation)->values()->all(),
+                    'meta' => ['current_page' => $inhouseList->currentPage(), 'last_page' => $inhouseList->lastPage(), 'total' => $inhouseList->total(), 'path' => $basePath],
+                ],
+                'pending' => [
+                    'data' => collect($paginatedPendingItems->items())->map($serializePending)->values()->all(),
+                    'meta' => ['current_page' => $paginatedPendingItems->currentPage(), 'last_page' => $paginatedPendingItems->lastPage(), 'total' => $paginatedPendingItems->total(), 'path' => $basePath],
+                ],
+            ]);
+        }
+
+        return view('stock_reservation.list', compact('consignmentList', 'webList', 'inhouseList', 'itemCode', 'paginatedPendingItems'));
+    }
+
+    public function cancelReservation(Request $request)
+    {
+        DB::connection('mysql')->beginTransaction();
+        try {
+            $now = now();
+            $stockReservation = StockReservation::find($request->stock_reservation_id);
+            $stockReservation->modified = $now->toDateTimeString();
+            $stockReservation->modified_by = Auth::user()->wh_user;
+            $stockReservation->status = 'Cancelled';
+            $stockReservation->save();
+
+            if ($stockReservation->type == 'Website Stocks') {
+                $binDetails = Bin::where('item_code', $stockReservation->item_code)
+                    ->where('warehouse', $stockReservation->warehouse)
+                    ->first();
+
+                if ($binDetails) {
+                    $newReservedQty = $binDetails->website_reserved_qty - $stockReservation->reserve_qty;
+
+                    $newReservedQty = ($newReservedQty <= 0) ? 0 : $newReservedQty;
+
+                    $values = [
+                        'modified' => now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'website_reserved_qty' => $newReservedQty,
+                    ];
+
+                    Bin::where('name', $binDetails->name)->update($values);
+                }
+            }
+
+            DB::connection('mysql')->commit();
+
+            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. '.$request->stock_reservation_id.' has been cancelled.');
+        } catch (Exception $e) {
+            DB::connection('mysql')->rollback();
+
+            return ApiResponse::modal(false, 'Stock Reservation', 'There was a problem cancelling Stock Reservation.', 422);
+        }
+    }
+
+    public function getStockReservationDetails($id)
+    {
+        return StockReservation::find($id);
+    }
+
+    public function updateReservation(Request $request)
+    {
+        DB::connection('mysql')->beginTransaction();
+        try {
+            if ($request->reserve_qty <= 0) {
+                return ApiResponse::modal(false, 'Stock Reservation', 'Reserve Qty must be greater than 0.', 422);
+            }
+
+            // get total partially issued qty
+            $partiallyIssuedQty = StockReservation::where('item_code', $request->item_code)->where('warehouse', $request->warehouse)->where('type', 'In-house')->where('status', 'Partially Issued')->where('sales_person', $request->sales_person)->sum('consumed_qty');
+
+            if ($partiallyIssuedQty > 0 && $partiallyIssuedQty >= $request->reserve_qty) {
+                return ApiResponse::modal(false, 'Stock Reservation', 'Reserve qty must be greater than the partially issued qty for this reservation.', 422);
+            }
+
+            $binDetails = Bin::where('item_code', $request->item_code)
+                ->where('warehouse', $request->warehouse)
+                ->first();
+
+            if (! $binDetails) {
+                return ApiResponse::modal(false, 'No Stock', 'No available stock.', 422);
+            }
+            // get total reserved qty from stock reservation table
+            $stockReservationQty = StockReservation::where('item_code', $request->item_code)
+                ->where('warehouse', $request->warehouse)
+                ->where('type', 'In-house')
+                ->where('status', 'Active')
+                ->sum('reserve_qty');
+            // total reserved qty = total reserved qty from stock reservation table + website reserved qty from tabbin table
+            $totalReservedQty = $stockReservationQty + $binDetails->website_reserved_qty;
+
+            $now = now();
+            $stockReservation = StockReservation::find($request->id);
+            $stockReservation->modified = $now->toDateTimeString();
+            $stockReservation->modified_by = Auth::user()->wh_user;
+            $stockReservation->notes = $request->notes;
+
+            // calculate reserved qty
+            $reservedQty = ($stockReservation->type == 'In house') ? $stockReservation->reserve_qty : $binDetails->website_reserved_qty;
+            $availableQty = ($request->available_qty + ($reservedQty - $stockReservation->consumed_qty));
+
+            if ($availableQty < $request->reserve_qty) {
+                return ApiResponse::modal(false, 'Insufficient Stock', 'Qty not available for <b> '.$request->item_code.'</b> in <b>'.$request->s_warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->reserve_qty.'</b>', 422);
+            }
+
+            if ($stockReservation->type == 'Website Stocks') {
+                $reservedQty = abs($stockReservation->reserve_qty - $request->reserve_qty);
+
+                if ($binDetails) {
+                    $newReservedQty = $binDetails->website_reserved_qty;
+                    if ($stockReservation->reserve_qty > $request->reserve_qty) {
+                        $newReservedQty = $binDetails->website_reserved_qty - $reservedQty;
+                    }
+
+                    if ($stockReservation->reserve_qty < $request->reserve_qty) {
+                        $newReservedQty = $binDetails->website_reserved_qty + $reservedQty;
+                    }
+
+                    $newReservedQty = ($newReservedQty <= 0) ? 0 : $newReservedQty;
+
+                    $values = [
+                        'modified' => now()->toDateTimeString(),
+                        'modified_by' => Auth::user()->wh_user,
+                        'website_reserved_qty' => $newReservedQty,
+                    ];
+
+                    Bin::where('name', $binDetails->name)->update($values);
+                }
+            }
+
+            $stockReservation->warehouse = $request->warehouse;
+            $stockReservation->reserve_qty = $request->reserve_qty;
+            $stockReservation->valid_until = ($stockReservation->type == 'In-house') ? Carbon::parse($request->valid_until)->format('Y-m-d') : null;
+            $stockReservation->sales_person = ($stockReservation->type == 'In-house') ? $request->sales_person : null;
+            $stockReservation->project = ($stockReservation->type == 'In-house') ? $request->project : null;
+            $stockReservation->consignment_warehouse = ($stockReservation->type == 'Consignment') ? $request->consignment_warehouse : null;
+            $stockReservation->save();
+
+            DB::connection('mysql')->commit();
+
+            return ApiResponse::modal(true, 'Stock Reservation', 'Stock Reservation No. '.$request->id.' has been updated.');
+        } catch (Exception $e) {
+            DB::connection('mysql')->rollback();
+
+            return ApiResponse::modal(false, 'Stock Reservation', 'There was a problem updating Stock Reservation.', 422);
+        }
+    }
+
+    public function getWarehouseWithStocks(Request $request)
+    {
+        $allowedWarehouses = $this->getAllowedWarehouseIds();
+
+        return Warehouse::query()
+            ->join('tabBin as b', 'b.warehouse', 'tabWarehouse.name')
+            ->where('tabWarehouse.disabled', 0)
+            ->where('tabWarehouse.is_group', 0)
+            ->whereIn('tabWarehouse.name', $allowedWarehouses)
+            ->where('b.item_code', $request->item_code)
+            ->when($request->q, function ($query) use ($request) {
+                return $query->where('tabWarehouse.name', 'like', '%'.$request->q.'%');
+            })
+            ->select('tabWarehouse.name as id', 'tabWarehouse.name as text')
+            ->orderBy('tabWarehouse.modified', 'desc')
+            ->limit(10)
+            ->get();
+    }
 }

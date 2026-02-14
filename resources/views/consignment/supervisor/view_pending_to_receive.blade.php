@@ -13,14 +13,14 @@
                 @forelse ($result as $r)
                     @php
                         $mreq = isset($r->mreq->name) ? $r->mreq->name : '-';
-                        $target_warehouse = $r->to_warehouse ?? collect($r->items)->pluck('t_warehouse')->first();
+                        $targetWarehouse = $r->to_warehouse ?? collect($r->items)->pluck('t_warehouse')->first();
                     @endphp
                     <tr>
                         <td class="text-center align-middle">
                             {{ $r->name }} <br>
                             {{ $r->created_by }}
                         </td>
-                        <td class="text-center align-middle">{{ $target_warehouse }}</td>
+                        <td class="text-center align-middle">{{ $targetWarehouse }}</td>
                         <td class="text-center align-middle">{{ $mreq }}</td>
                         <td class="text-center align-middle">{{ $r->delivery_date }}</td>
                         <td class="text-center align-middle">
@@ -94,12 +94,12 @@
                                         <td class="text-left p-1 align-middle">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-1 text-left">
-                                                    <a href="{{ asset("storage/$i->image") }}" data-toggle="mobile-lightbox" data-gallery="{{ $i->item_code }}" data-title="{{ $i->item_code }}">
-                                                        <img src="{{ asset("storage/$i->image") }}" alt="{{ Str::slug($i->description, '-') }}" width="40" height="40">
+                                                    <a href="{{ Storage::disk(upcloud)->url($i->image") }}" data-toggle="mobile-lightbox" data-gallery="{{ $i->item_code }}" data-title="{{ $i->item_code }}">
+                                                        <img src="{{ Storage::disk(upcloud)->url($i->image") }}" alt="{{ Str::slug($i->description, '-') }}" width="40" height="40">
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">
-                                                    <span class="d-block"><b>{{ $i->item_code }}</b> {{ strip_tags($i->description) }}</span>
+                                                    <span class="d-block"><b>{{ $i->item_code }}</b> {!! $i->description !!}</span>
                                                 </div>
                                             </div>
                                         </td>

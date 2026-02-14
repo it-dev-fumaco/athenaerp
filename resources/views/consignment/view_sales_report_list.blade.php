@@ -21,29 +21,20 @@
                             </div>
                         </div>
                         <div class="card-body p-1">
-                            <h5 class="font-responsive font-weight-bold text-center m-1 text-uppercase d-block" id="branch-name">{{ $branch }}</h5>
-                            <div class="row mt-3" style="font-size: 13px;">
-                                <div class="col-6 offset-1 text-right">
-                                    <span class="d-inline-block mt-2 mb-2 font-weight-bold">Sales Report for the year: </span>
-                                </div>
-                                <div class="col-4">
-                                    <select class="form-control" id="sales-report-year">
-                                        @foreach ($years as $year)
-                                        <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>{{ $year }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
                             @if(session()->has('success'))
                                 <div class="row" style="font-size: 9pt;">
                                     <div class="col">
                                         <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
-                                            {{ session()->has('success') }}
+                                            {{ session()->get('success') }}
                                         </div>
                                     </div>
                                 </div>
                             @endif
-                            <div id="sales-report-table" class="mt-2"></div>
+                            <div id="sales-report-list"
+                                data-branch="{{ $branch }}"
+                                data-years='@json($years)'
+                                data-current-year="{{ $currentYear }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -54,26 +45,4 @@
 @endsection
 
 @section('script')
-<script>
-  $(document).ready(function (){
-    $('#sales-report-year').change(function() {
-        load_sales_report();
-    });
-      
-    load_sales_report();
-    function load_sales_report(){
-      $.ajax({
-        type: 'GET',
-        url: '/sales_report_list/' + $('#branch-name').text(),
-        data: {year: $('#sales-report-year').val()},
-        success: function(response){
-            $('#sales-report-table').html(response);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            showNotification("danger", 'Error in getting records.', "fa fa-info");
-        }
-      });
-    }
-  });
-</script>
 @endsection

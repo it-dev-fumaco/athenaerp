@@ -11,9 +11,9 @@
                 <div class="col-md-12 p-0 m-0">
                     <div class="card card-lightblue">
                         <div class="card-header text-center p-2">
-                            @if (count($assigned_consignment_stores) > 1)
+                            @if (count($assignedConsignmentStores) > 1)
                                 <select id="warehouse" class="form-control">
-                                    @foreach ($assigned_consignment_stores as $store)
+                                    @foreach ($assignedConsignmentStores as $store)
                                         <option value="{{ $store }}" {{ $store == $branch ? 'selected' : null }}>{{ $store }}</option>
                                     @endforeach
                                 </select>
@@ -39,14 +39,14 @@
                                         <th class="text-center align-middle p-1">Price</th>
                                     </tr>
                                 </thead>
-                                @forelse ($inv_summary as $item)
+                                @forelse ($invSummary as $item)
                                 @php
                                     $img = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no_img.png';
                                     if(Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')){
                                         $img = explode('.', $item->image)[0].'.webp';
                                     }
 
-                                    $img = asset("storage/$img");
+                                    $img = Storage::disk(upcloud)->url($img");
                                 @endphp
                                 <tbody>
                                     <tr>
@@ -73,7 +73,7 @@
                                     <tr>
                                         <td colspan="3" class="p-1">
                                             <div class="text-justify">
-                                                <div class="item-description" style="font-size: 12px; letter-spacing: 0;">{!! strip_tags($item->description) !!}</div>
+                                                <div class="item-description" style="font-size: 12px; letter-spacing: 0;">{!! $item->description !!}</div>
                                             </div>
                                         </td>
                                     </tr>
@@ -97,10 +97,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         .morectnt span {
             display: none;
         }
