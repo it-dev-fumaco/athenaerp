@@ -1485,6 +1485,16 @@
 				$('#upload-image-modal').modal('show');
 			});
 
+			$(document).on('click', '.upload-files-btn', function(e){
+				e.preventDefault();
+				var item_code = $(this).data('item-code');
+				var file_type = $(this).data('file-type');
+				$('#fileListModal input[name="item_code"]').val(item_code);
+				$('#fileListModal input[name="fileType"]').val(file_type);
+				$('#fileListModalTitle').text(file_type);
+				$('#fileListModal').modal('show');
+			});
+
 			$(document).on('click', '.edit-warehouse-location-btn', function(e) {
 				e.preventDefault();
 
@@ -1546,6 +1556,35 @@
 						fileReader.readAsDataURL(f);
 					}
 				});
+
+				$("#browse-file").on("change", function (e) {
+					var files = e.target.files;
+
+					for (var i = 0; i < files.length; i++) {
+						let f = files[i];
+						let fileReader = new FileReader();
+
+						fileReader.onload = function (e) {
+							let previewHtml = `
+								<div class="col-md-4 pip img_upload">
+									<div class="pdf-preview text-center p-5">
+                        				<i class="fas fa-file-pdf pdf-icon" style="font-size: 60px;"></i>
+										<p>${f.name}</p>
+									</div>
+									<span class="add-fav remove">&times;</span>
+								</div>
+							`;
+							
+							$(previewHtml).insertAfter("#file-previews");
+
+							$(".remove").click(function () {
+								$(this).closest(".pip").remove();
+							});
+						};
+
+						fileReader.readAsDataURL(f);
+					}
+				});
 			} else {
 				alert("Your browser doesn't support to File API");
 			}
@@ -1569,6 +1608,28 @@
 					},
 				});
 			});
+
+			
+			$('#upload-photometric-data-modal form').submit(function(e){
+				e.preventDefault();
+				var item_code = $(this).find('.item-code').eq(0).val();
+				$.ajax({
+					type: 'POST',
+					url: $(this).attr('action'),
+					data: new FormData(this),
+					cache: false,
+					contentType: false,
+					processData: false,
+					success: function(response){
+						$('#myModal').modal('show'); 
+						$('#myModalLabel').html('Message');
+						$('#desc').html(response.message);
+						view_item_details(item_code);
+						$('#upload-photometric-data-modal').modal('hide');
+					},
+				});
+			});
+
 
 			$(document).on('show.bs.modal', '.modal', function (event) {
 				var zIndex = 1040 + (10 * $('.modal:visible').length);

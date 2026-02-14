@@ -53,6 +53,12 @@
                         </a>
                     </li>
                     @endif
+                    <li class="nav-item">
+                        <a class="nav-link" id="getProductFiles" data-toggle="tab" href="#tabProductFiles">
+                            <span class="d-none d-lg-block">Product Files</span>
+                            <i class="fas fa-folder-open d-block d-lg-none"></i>
+                        </a>
+                    </li>
                 </ul>
                 <div class="d-none">
                     <form action="/add_to_brochure_list" id="add-to-brochure-form" method="post">
@@ -654,10 +660,103 @@
                             </div>
                         </div>
                     </div>
+
+
+                       <div class="container-fluid tab-pane bg-white" id="tabProductFiles">
+
+                       <div class="row border p-2">
+                        <div class="col-12 p-3">
+                            <h5 class="font-weight-bolder">Product / Item Files
+                                <span class="text-muted font-weight-normal">| Manage item files across different categories</span>
+                            </h5>
+                        </div>
+                        @if (in_array($user_group, ['Inventory Manager', 'Director']) || in_array(Auth::user()->department, ['Information Technology', 'Engineering']))
+                            <div class="col-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title font-weight-bolder">Supplier Brochure
+                                            <small class="d-block text-muted text-xs mt-1">Upload supplier brochure documents (PDF, DOCX, or images)</small>
+                                        </h5>
+
+                                        <div class="card-tools">
+                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $item_details->name }}" data-file-type="Supplier Brochure"><i class="fas fa-upload"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0" id="supplier-brochure-files-div">
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            
+
+                                 <div class="col-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title font-weight-bolder">Photometric Data
+                                         <small class="d-block text-muted text-xs mt-1">Upload hotometric data and technical specifications</small>
+
+                                        </h5>
+                                        <div class="card-tools">
+                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $item_details->name }}" data-file-type="Photometric Data"><i class="fas fa-upload"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0" id="photometric-data-files-div">
+                                    </div>
+                                </div>
+                            </div>
+
+                                 <div class="col-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title font-weight-bolder">IES Files
+                                        <small class="d-block text-muted text-xs mt-1">Upload IES (Illuminating Engineering Society) lighting files</small>
+                                        </h5>
+                                        <div class="card-tools">
+                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $item_details->name }}" data-file-type="IES Files"><i class="fas fa-upload"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0" id="ies-files-div">
+                                    </div>
+                                </div>
+                            </div>
+                       </div>
+                    </div>
+
+
+
                 </div>
             </div>
         </div>
     </div>
+
+     <div class="modal fade" id="deleteFileModal" tabindex="-1" role="dialog" aria-labelledby="deleteFileModalLabel" aria-hidden="true">
+        <form action="/delete_item_file" method="POST" id="delete-file-form">
+            @csrf
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger">
+                        <h6 class="modal-title" id="deleteFileModalLabel">Delete File</h6>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="file_name" id="deleteFileNameInput">
+                        <input type="hidden" name="file_id" id="fileIdInput">
+                        <p class="text-center">Delete file <span id="delete-file-name" class="font-weight-bold"></span> of this item?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    	@include('modals.fileListModal')
+
+
     <style>
         #ip-navs .nav-link {
             padding: 10px 20px;
@@ -886,6 +985,79 @@
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                }
+            });
+        });
+
+        function loadFiles(){
+            get_item_files('{{ isset($item_details) ? $item_details->name : "" }}', 'Supplier Brochure', 'supplier-brochure-files-div');
+            get_item_files('{{ isset($item_details) ? $item_details->name : "" }}', 'Photometric Data', 'photometric-data-files-div');
+            get_item_files('{{ isset($item_details) ? $item_details->name : "" }}', 'IES Files', 'ies-files-div');
+        }
+
+        loadFiles()
+
+        function get_item_files(item_code, file_type, container_id){ 
+            $.ajax({
+                type: 'GET',
+                url: '/get_item_files/' + item_code + '/' + file_type,
+                success: function (response) {
+                    $('#' + container_id).html(response);
+                }
+            });
+        }
+
+        $(document).on('click', '.delete-file-btn', function(e){
+            e.preventDefault();
+
+            var file_name = $(this).data('file-name');
+            var file_id = $(this).data('id');
+
+            $('#delete-file-name').text(file_name);
+
+            $('#deleteFileNameInput').val(file_name);
+            $('#fileIdInput').val(file_id);
+
+            $('#deleteFileModal').modal('show');
+        });
+
+        $(document).on('submit', '#delete-file-form', function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response){
+                    if (response.status) {
+                        showNotification("success", response.message, "fa fa-check");
+                        $('#deleteFileModal').modal('hide');
+                        loadFiles();
+                    } else {
+                        showNotification("danger", response.message, "fa fa-info");
+                    }
+                }
+            });
+        });
+
+             $(document).on('submit', '#fileListModal form', function(e){
+            e.preventDefault();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: new FormData(this),
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function(response){
+                    if (response.status) {
+                        showNotification("success", response.message, "fa fa-check");
+                        $('#fileListModal').modal('hide');
+                        loadFiles();
+                    } else {
+                        showNotification("danger", response.message, "fa fa-info");
+                    }
                 }
             });
         });

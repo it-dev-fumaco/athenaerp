@@ -157,6 +157,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/submit_stock_entry/{id}', [MainController::class, 'submitStockEntry']);
 
         Route::post('/upload_item_image', [ItemProfileController::class, 'uploadItemImage']);
+        Route::post('/uploadFiles', [MainController::class, 'uploadFiles']);
         Route::get('/load_item_images/{item_code}', [ItemProfileController::class, 'loadItemImages']);
 
         Route::post('/update_stock_entry', [MaterialTransferController::class, 'updateStockEntry']);
@@ -178,6 +179,11 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/get_stock_reservation_details/{id}', [StockReservationController::class, 'getStockReservationDetails']);
         Route::get('/get_stock_reservation/{item_code?}', [StockReservationController::class, 'getStockReservation']);
         Route::get('/get_item_images/{item_code}', [ItemProfileController::class, 'getItemImages']);
+        Route::get('/get_item_files/{item_code}/{file_category}', [MainController::class, 'getItemFiles']);
+        Route::get('/download/{path}', function ($path) {
+            return response()->download(storage_path('app/public/'.$path));
+        })->where('path', '.*')->name('file.download');
+        Route::post('/delete_item_file', [MainController::class, 'deleteItemFile']);
         Route::get('/get_low_stock_level_items', [MainController::class, 'getLowStockLevelItems']);
         Route::get('/allowed_parent_warehouses', [MainController::class, 'allowedParentWarehouses']);
         Route::get('/get_purchase_receipt_details/{id}', [MainController::class, 'getPurchaseReceiptDetails']);

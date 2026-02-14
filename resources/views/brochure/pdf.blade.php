@@ -73,8 +73,19 @@
         </style>
     </head>
     @php
-        $fumacoLogo = storage_path('app/public/fumaco_logo.png');
-        $fumacoLogo = Storage::disk('upcloud')->url('fumaco_logo.png');
+        $imageToDataUri = function ($path) {
+            if (!$path || !is_string($path) || !file_exists($path)) {
+                return null;
+            }
+            $mime = @mime_content_type($path) ?: 'image/png';
+            $data = @file_get_contents($path);
+            return $data !== false ? 'data:' . $mime . ';base64,' . base64_encode($data) : null;
+        };
+        $fumacoLogoPath = public_path('storage/fumaco_logo.png');
+        if (!file_exists($fumacoLogoPath)) {
+            $fumacoLogoPath = storage_path('app/public/fumaco_logo.png');
+        }
+        $fumacoLogoSrc = $imageToDataUri($fumacoLogoPath);
         $margin = '1.2in';
         $rows = 1;
         if(strlen($project) > 29){
@@ -89,7 +100,7 @@
         <table style="width: 100% !important; border-collapse: collapse;"> 
             <tr>
                 <td style="width: 43%; padding: 0 !important; vertical-align: top !important">
-                    <img src="{{ $fumacoLogo }}" alt="" style="width: 230px;">
+                    @if($fumacoLogoSrc)<img src="{{ $fumacoLogoSrc }}" alt="" style="width: 230px;">@endif
                 </td>
                 <td style="width: 55%; font-size: 11pt;">
                     <p style="text-transform: uppercase !important; margin: 0; line-height: .75rem;">
@@ -105,7 +116,7 @@
         <table style="width: 100% !important; border-collapse: collapse;">
             <tr>
                 <td style="width: 28%; vertical-align: top; padding-top: 15px;">
-                    <img src="{{ $fumacoLogo }}" style="width: 80%;">
+                    @if($fumacoLogoSrc)<img src="{{ $fumacoLogoSrc }}" style="width: 80%;">@endif
                 </td>
                 <td style="width: 15%;font-size: .6rem; padding: 0 15px 10px 0 !important; line-height: .5rem;">
                     www.fumaco.com
@@ -135,20 +146,48 @@
             </div>
             <div class="left-container">
                 <div style="width: 240px !important;">
+                    @php $slot2_src = null; @endphp
                     @for ($i = 1; $i <= 3; $i++)
                         @php
-                            $img = null;
-                            $imgExists = 0;
-                            if (isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
+                            $imgSrc = isset($row['image_data_uris'][$i]) && $row['image_data_uris'][$i] ? $row['image_data_uris'][$i] : null;
+                            if (!$imgSrc && isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
+                                $imgPath = null;
                                 if (isset($isStandard) && $isStandard) {
-                                    $img = isset($row['images']['image'.$i]['filepath']) ? $row['images']['image'.$i]['filepath'] : null;
-                                }else{
-                                    $img = public_path('storage/brochures/'.$row['images']['image'.$i]);
+                                    $filepath = $row['images']['image'.$i]['filepath'] ?? null;
+                                    if ($filepath) {
+                                        $imgPath = public_path($filepath);
+                                        if (!file_exists($imgPath)) {
+                                            $imgPath = storage_path('app/public/'.preg_replace('#^storage/#', '', $filepath));
+                                        }
+                                    }
+                                } else {
+                                    $imgName = trim((string)($row['images']['image'.$i] ?? ''));
+                                    if ($imgName) {
+                                        $tryPaths = [
+                                            public_path('storage/brochures/'.strtoupper($project).'/'.$imgName),
+                                            storage_path('app/public/brochures/'.strtoupper($project).'/'.$imgName),
+                                            public_path('storage/brochures/'.$imgName),
+                                            storage_path('app/public/brochures/'.$imgName),
+                                        ];
+                                        foreach ($tryPaths as $p) {
+                                            if ($p && file_exists($p)) {
+                                                $imgPath = $p;
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
+                                $imgSrc = ($imgPath ?? null) && file_exists($imgPath ?? '') ? $imageToDataUri($imgPath) : null;
+                            }
+                            if ($i === 2) {
+                                $slot2_src = $imgSrc;
+                            }
+                            if ($i === 3 && isset($slot2_src) && $slot2_src !== null && $imgSrc === $slot2_src) {
+                                $imgSrc = null;
                             }
                         @endphp
-                        @if ($img)
-                            <img src="{{ $img }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
+                        @if ($imgSrc)
+                            <img src="{{ $imgSrc }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
                         @endif
                     @endfor
                     &nbsp;
@@ -167,7 +206,11 @@
                 </div>
                 <table border="0" style="border-collapse: collapse; width: 100%; font-size: 8pt; line-height: .5rem">
                     @foreach ($row['attributes'] as $val)
-                        @if ($val['attribute_value'] && !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']))
+                        @php
+                            $attr_name_ok = !in_array($val['attribute_name'], ['Image 1', 'Image 2', 'Image 3']);
+                            $attr_val_is_image = preg_match('/\.(png|jpg|jpeg|gif|webp|bmp)$/i', trim((string)$val['attribute_value']));
+                        @endphp
+                        @if ($val['attribute_value'] && $attr_name_ok && !$attr_val_is_image)
                             <tr>
                                 <td class="regular-font" style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $val['attribute_name'] }}</td>
                                 <td class="bold" style="padding: 5px 0 5px 0 !important;width: 60%;">{{ $val['attribute_value'] }}</td>

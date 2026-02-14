@@ -73,6 +73,15 @@ class MainController extends Controller
         return app(CutoffDateService::class)->getCutoffPeriod($transactionDate);
     }
 
+    public function getApiHeaders()
+    {
+        return [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'token '.config('services.erp.api_key').':'.config('services.erp.api_secret_key'),
+            'Accept-Language' => 'en',
+        ];
+    }
+
     public function index(Request $request, IndexPipeline $indexPipeline)
     {
         $passable = (object) [
@@ -2871,5 +2880,85 @@ class MainController extends Controller
         });
 
         return view('user_manual', compact('consignmentPromodiserManuals', 'consignmentSupervisorManuals', 'genericManuals'));
+    }
+
+    private function humanFileSize($bytes, $decimals = 2)
+    {
+        $size = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $factor = floor((strlen((string) $bytes) - 1) / 3);
+
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).' '.$size[$factor];
+    }
+
+    public function uploadFiles(Request $request)
+    {
+        $now = Carbon::now();
+        if ($request->hasFile('itemFile')) {
+            $files = $request->file('itemFile');
+            $itemFiles = [];
+            foreach ($files as $i => $file) {
+                $microTime = round(microtime(true));
+                $fileIndex = 0;
+                $filename = "{$microTime}{$fileIndex}-{$request->item_code}";
+                $originalExtension = $file->getClientOriginalExtension();
+                $storedFilename = "$filename.$originalExtension";
+                Storage::putFileAs('itemFiles/', $file, $storedFilename);
+
+                if (! File::exists(public_path('temp'))) {
+                    File::makeDirectory(public_path('temp'), 0755, true);
+                }
+
+                $itemFiles[] = [
+                    'name' => uniqid(),
+                    'creation' => $now->toDateTimeString(),
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                    'owner' => Auth::user()->wh_user,
+                    'idx' => $i + 1,
+                    'parent' => $request->item_code,
+                    'parentfield' => 'item_files',
+                    'parenttype' => 'Item',
+                    'file_category' => $request->fileType,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => 'itemFiles/'.$storedFilename,
+                    'file_size' => $this->humanFileSize($file->getSize()),
+                ];
+            }
+
+            DB::table('tabItem File')->insert($itemFiles);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'File for '.$request->item_code.' has been uploaded.',
+            ]);
+        }
+    }
+
+    public function getItemFiles($itemCode, $fileCategory = null)
+    {
+        $itemFiles = DB::table('tabItem File')
+            ->where('parent', $itemCode)
+            ->where('file_category', $fileCategory)
+            ->orderBy('idx', 'asc')
+            ->get();
+
+        return view('tables.filesTable', compact('itemFiles'));
+    }
+
+    public function deleteItemFile(Request $request)
+    {
+        $id = $request->file_id;
+        $file = DB::table('tabItem File')->where('name', $id)->first();
+
+        if ($file && $file->file_path && Storage::disk('public')->exists($file->file_path)) {
+            Storage::disk('public')->delete($file->file_path);
+        }
+
+        DB::table('tabItem File')->where('name', $id)->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'File deleted successfully.',
+        ]);
     }
 }
