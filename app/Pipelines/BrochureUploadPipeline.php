@@ -24,7 +24,7 @@ class BrochureUploadPipeline
      */
     public function run(object $passable)
     {
-        return $this->pipeline
+        $result = $this->pipeline
             ->send($passable)
             ->through([
                 ValidateBrochureFilePipe::class,
@@ -33,8 +33,18 @@ class BrochureUploadPipeline
                 PersistBrochureLogPipe::class,
                 StoreBrochureFilePipe::class,
             ])
-            ->then(fn ($p) => ApiResponse::success(
-                '/preview/'.strtoupper($p->project).'/'.$p->newFilename.'.'.$p->fileExt
-            ));
+            ->thenReturn();
+
+        if ($result instanceof \Illuminate\Http\JsonResponse) {
+            return $result;
+        }
+
+        if (! isset($result->project, $result->newFilename, $result->fileExt)) {
+            return ApiResponse::failure('Upload did not complete. Please try again.');
+        }
+
+        $previewPath = '/preview/'.strtoupper($result->project).'/'.$result->newFilename.'.'.$result->fileExt;
+
+        return ApiResponse::success($previewPath);
     }
 }

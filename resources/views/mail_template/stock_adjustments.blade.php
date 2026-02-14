@@ -24,7 +24,7 @@
                 <tr>
                     <td style="border: 1px solid black !important;text-align:justfy; width: 50% !important;">
                         <div style="width: 10% !important; display: flex; justify-content: center !important; align-items: center !important; float: left !important">
-                            <img src="https://athena.fumaco.org/storage/{{ $image }}" style="width: 100%">
+                            <img src="{{ Storage::disk('upcloud')->url($image) }}" style="width: 100%">
                         </div>
                         <div style="width: 89% !important; display: flex; justify-content: center !important; align-items: center !important; float: right !important">
                             <p><b>{{ $item['item_code'] }}</b> - {{ strip_tags($item['item_description']) }}</p>

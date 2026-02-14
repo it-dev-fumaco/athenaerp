@@ -94,8 +94,8 @@
                                         <td class="text-left p-1 align-middle">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-1 text-left">
-                                                    <a href="{{ asset("storage/$i->image") }}" data-toggle="mobile-lightbox" data-gallery="{{ $i->item_code }}" data-title="{{ $i->item_code }}">
-                                                        <img src="{{ asset("storage/$i->image") }}" alt="{{ Str::slug($i->description, '-') }}" width="40" height="40">
+                                                    <a href="{{ Storage::disk(upcloud)->url($i->image") }}" data-toggle="mobile-lightbox" data-gallery="{{ $i->item_code }}" data-title="{{ $i->item_code }}">
+                                                        <img src="{{ Storage::disk(upcloud)->url($i->image") }}" alt="{{ Str::slug($i->description, '-') }}" width="40" height="40">
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">

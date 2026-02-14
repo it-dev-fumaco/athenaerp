@@ -175,7 +175,7 @@
                                                 <div class="d-flex flex-row justify-content-start align-items-center">
                                                     <div class="p-2 text-left">
                                                         <a href="{{ asset("$item->image") }}" class="view-images" data-item-code="{{ $item->item_code }}">
-                                                            <img src="{{ asset("storage/$item->image") }}" alt="{{ Str::slug($item->item_description, '-') }}" width="60" height="60">
+                                                            <img src="{{ Storage::disk(upcloud)->url($item->image") }}" alt="{{ Str::slug($item->item_description, '-') }}" width="60" height="60">
                                                         </a>
                                                     </div>
                                                     <div class="p-2 text-left">

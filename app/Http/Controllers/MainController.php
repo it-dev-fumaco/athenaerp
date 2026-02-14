@@ -2660,22 +2660,22 @@ class MainController extends Controller
                     return redirect()->back()->with('error', 'Only .zip files are allowed.');
                 }
 
-                if (! Storage::disk('public')->exists('/export/')) {
-                    Storage::disk('public')->makeDirectory('/export/');
+                if (! Storage::disk('upcloud')->exists('export/')) {
+                    Storage::disk('upcloud')->makeDirectory('export/');
                 }
 
-                $file->storeAs('/public/export/', 'imported_athena_images.zip');
+                $file->storeAs('export/', 'imported_athena_images.zip', 'upcloud');
 
                 $now = now();
                 $zip = new ZipArchive;
-                if (Storage::disk('public')->exists('/export/imported_athena_images.zip') and $zip->open(storage_path('/app/public/export/imported_athena_images.zip')) === true) {
-                    $zip->extractTo(storage_path('/app/public/export/'));
+                if (Storage::disk('upcloud')->exists('export/imported_athena_images.zip') and $zip->open(storage_path('app/public/export/imported_athena_images.zip')) === true) {
+                    $zip->extractTo(storage_path('app/public/export/'));
                     $zip->close();
 
-                    Storage::disk('public')->delete('/export/imported_athena_images.zip');
+                    Storage::disk('upcloud')->delete('export/imported_athena_images.zip');
                 }
 
-                $importedFiles = Storage::disk('public')->files('/export/');
+                $importedFiles = Storage::disk('upcloud')->files('export/');
 
                 // Collect image files to save in DB
                 $collectImagesArr = collect($importedFiles)->map(function ($filePath) {
@@ -2742,12 +2742,12 @@ class MainController extends Controller
                                     'image_path' => $jpg,
                                 ];
 
-                                if (Storage::disk('public')->exists('/export/'.$image['image']) and ! Storage::disk('public')->exists('/img/'.$jpg)) {
-                                    Storage::disk('public')->move('/export/'.$image['image'], '/img/'.$jpg);
+                                if (Storage::disk('upcloud')->exists('export/'.$image['image']) and ! Storage::disk('upcloud')->exists('img/'.$jpg)) {
+                                    Storage::disk('upcloud')->move('export/'.$image['image'], 'img/'.$jpg);
                                 }
 
-                                if (Storage::disk('public')->exists('/export/'.explode('.', $image['image'])[0].'.webp') and ! Storage::disk('public')->exists('/img/'.$webp)) {
-                                    Storage::disk('public')->move('/export/'.explode('.', $image['image'])[0].'.webp', '/img/'.$webp);
+                                if (Storage::disk('upcloud')->exists('export/'.explode('.', $image['image'])[0].'.webp') and ! Storage::disk('upcloud')->exists('img/'.$webp)) {
+                                    Storage::disk('upcloud')->move('export/'.explode('.', $image['image'])[0].'.webp', 'img/'.$webp);
                                 }
                             }
                         }
@@ -2764,8 +2764,8 @@ class MainController extends Controller
         } catch (Exception $e) {
             DB::rollback();
 
-            if (Storage::disk('public')->exists('/export/')) {
-                Storage::disk('public')->deleteDirectory('/export/');
+            if (Storage::disk('upcloud')->exists('export/')) {
+                Storage::disk('upcloud')->deleteDirectory('export/');
             }
 
             return redirect()->back()->with('error', 'An error occured. Please try again later.');
@@ -2774,13 +2774,11 @@ class MainController extends Controller
 
     public function downloadImage($webp)
     {
-        $webpPath = storage_path("app/public/img/$webp");
-
-        if (! file_exists($webpPath)) {
+        if (! Storage::disk('upcloud')->exists(Storage::disk('upcloud')->path($webp))) {
             return ApiResponse::failure('File not found', 404);
         }
 
-        $image = imagecreatefromwebp($webpPath);
+        $image = imagecreatefromwebp(Storage::disk('upcloud')->path($webp));
 
         if (! $image) {
             return ApiResponse::failure('Failed to convert the image', 500);
@@ -2856,7 +2854,7 @@ class MainController extends Controller
 
     public function getManuals()
     {
-        $files = collect(Storage::files('Manuals'))->map(function ($file) {
+        $files = collect(Storage::disk('upcloud')->files('Manuals'))->map(function ($file) {
             return basename($file);
         });
 

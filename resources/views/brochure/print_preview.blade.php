@@ -4,6 +4,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Product Brochure Preview</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
@@ -325,7 +326,7 @@
                     <div class="pdf-body">
                         <div style="disply: block; clear: both; color: #000">
                             <div style="width: 44%; float: left; padding: 2px !important;">
-                                <img src="{{ asset('/storage/fumaco_logo.png') }}" width="230">
+                                <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="230">
                             </div>
                             <div style="width: 54%; float:left; text-transform: uppercase; font-size: 11pt;">
                                 <p>PROJECT: <b>{{ $row['project'] }}</b></p>
@@ -345,7 +346,7 @@
                                     if (isset($row['images']['image1']) && $row['images']['image1']) {
                                         $img1Actual = null;
                                         $img1Temp = 'd-none';
-                                        $img1Src = asset('/storage/brochures/' . $row['images']['image1']);
+                                        $img1Src = Storage::disk('upcloud')->url('brochures/' . $row['images']['image1']);
                                     } else {
                                         $img1Actual = 'd-none';
                                         $img1Temp = null;
@@ -355,7 +356,7 @@
                                     if (isset($row['images']['image2']) && $row['images']['image2']) {
                                         $img2Actual = null;
                                         $img2Temp = 'd-none';
-                                        $img2Src = asset('/storage/brochures/' . $row['images']['image2']);
+                                        $img2Src = Storage::disk('upcloud')->url('brochures/' . $row['images']['image2']);
                                     } else {
                                         $img2Actual = 'd-none';
                                         $img2Temp = null;
@@ -365,7 +366,7 @@
                                     if (isset($row['images']['image3']) && $row['images']['image3']) {
                                         $img3Actual = null;
                                         $img3Temp = 'd-none';
-                                        $img3Src = asset('/storage/brochures/' . $row['images']['image3']);
+                                        $img3Src = Storage::disk('upcloud')->url('brochures/' . $row['images']['image3']);
                                     } else {
                                         $img3Actual = 'd-none';
                                         $img3Temp = null;
@@ -454,7 +455,7 @@
                 </div>
                 <div class="pdf-footer">
                     <div class="pdf-footer-company-logo">
-                        <img src="{{ asset('/storage/fumaco_logo.png') }}" width="155">
+                        <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="155">
                     </div>
                     <div class="pdf-footer-company-website">www.fumaco.com</div>
                     <div class="pdf-footer-contacts">
@@ -472,7 +473,7 @@
             <div style="display: block">
                 <div class="left-container">
                     <div class="brochure-print-block brochure-print-logo" style="width: 430px !important; max-width: 100%;">
-                        <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%">
+                        <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="100%">
                     </div>
                 </div>
                 <div class="right-container">
@@ -490,7 +491,7 @@
                     <div class="brochure-print-block brochure-print-images" style="width: 420px !important; max-width: 100%;">
                         @for ($i = 1; $i <= 3; $i++)
                             @php
-                                $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? '/storage/brochures/'.$row['images']['image'.$i] : null;
+                                $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? Storage::disk('upcloud')->url('brochures/'.$row['images']['image'.$i]) : null;
                             @endphp
                             <img id="item-{{ $r }}-0{{ $i }}-print-image" src="{{ asset($img) }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="padding: .5px !important; border: 2px solid #0C0C0C !important; margin-bottom: 20px !important;">
                         @endfor
@@ -525,7 +526,7 @@
         <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
             <div class="left-container">
                 <div style="width: 55%; display: inline-block; float: left;">
-                    <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
+                    <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
                 </div>
                 <div style="width: 38%; display: inline-block; float: right">
                     <div class="pdf-footer-company-website" style="font-size: 12pt;">www.fumaco.com</div>
@@ -650,7 +651,7 @@
                         if(response.success == 1){
                             var orig_name = (response.name_from_db);
                             var downloadLink = document.createElement('a');
-                            downloadLink.href = '{{ asset('storage/brochures') }}/' + response.orig_path;
+                            downloadLink.href = '{{ Storage::disk('upcloud')->url('brochures') }}/' + response.orig_path;
                             downloadLink.download = response.new_name;
                             document.body.appendChild(downloadLink);
                             downloadLink.click();
@@ -662,7 +663,7 @@
                     error: function(xhr){
                         if (xhr && xhr.status === 401) {
                             var fallbackLink = document.createElement('a');
-                            fallbackLink.href = '{{ asset('storage/brochures') }}/' + projectEncoded + '/' + fileEncoded;
+                            fallbackLink.href = '{{ Storage::disk('upcloud')->url('brochures') }}/' + projectEncoded + '/' + fileEncoded;
                             fallbackLink.download = file;
                             document.body.appendChild(fallbackLink);
                             fallbackLink.click();
@@ -725,7 +726,8 @@
                         }
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+                        var msg = (jqXHR.responseJSON && jqXHR.responseJSON.message) ? jqXHR.responseJSON.message : 'Something went wrong. Please try again.';
+                        showNotification("danger", msg, "fa fa-info");
                     }
                 });
             }

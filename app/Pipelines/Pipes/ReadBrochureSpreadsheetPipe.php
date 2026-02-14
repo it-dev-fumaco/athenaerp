@@ -9,6 +9,10 @@ class ReadBrochureSpreadsheetPipe implements Pipe
 {
     public function handle(mixed $passable, Closure $next): mixed
     {
+        if ($passable instanceof \Illuminate\Http\JsonResponse) {
+            return $passable;
+        }
+
         $fileContents = ($passable->readFileCallable)($passable->file);
 
         $passable->fileContents = $fileContents;

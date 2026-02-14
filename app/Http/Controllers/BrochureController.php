@@ -86,10 +86,20 @@ class BrochureController extends Controller
             DB::commit();
 
             return $response;
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Brochure upload failed: '.$e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-            return ApiResponse::failure('Something went wrong. Please try again.');
+            $message = config('app.debug')
+                ? $e->getMessage().' (in '.basename($e->getFile()).':'.$e->getLine().')'
+                : 'Something went wrong. Please try again.';
+
+            return ApiResponse::failure($message);
         }
     }
 
@@ -98,9 +108,9 @@ class BrochureController extends Controller
         try {
             ini_set('max_execution_time', '300');
             $projectParam = trim($project);
-            $file = storage_path('app/public/brochures/'.$projectParam.'/'.$filename);
+            $file = Storage::disk('upcloud')->path('brochures/'.$projectParam.'/'.$filename);
 
-            if (! Storage::disk('public')->exists('/brochures/'.$projectParam.'/'.$filename)) {
+            if (! file_exists($file)) {
                 return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
             }
 
@@ -116,7 +126,7 @@ class BrochureController extends Controller
             $tableOfContents = $fileContents['table_of_contents'];
 
             if (isset($request->pdf) && $request->pdf) {
-                $storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
+                $storage = Storage::disk('upcloud')->files('brochures/'.strtoupper($project));
 
                 $series = null;
                 if ($storage) {
@@ -142,94 +152,111 @@ class BrochureController extends Controller
     {
         DB::beginTransaction();
         try {
-            if ($request->hasFile('selected-file')) {
-                $file = $request->file('selected-file');
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
-
-                $folder = $request->project;
-                $dir = $request->filename;
-
-                $fileExt = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
-                if (! in_array($fileExt, $allowedExtensions)) {
-                    return ApiResponse::failure('Sorry, only .jpeg, .jpg and .png files are allowed.');
-                }
-
-                // get filename with extension
-                $filenamewithextension = $file->getClientOriginalName();
-                // //get filename without extension
-                $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-                // get file extension
-                $extension = $file->getClientOriginalExtension();
-                // filename to store
-                $microTime = round(microtime(true));
-
-                $destinationPath = storage_path('/app/public/brochures/');
-
-                $filename = $filename.'.'.$extension;
-
-                $file->move($destinationPath, $filename);
-
-                $excelFile = storage_path('/app/public/brochures/'.strtoupper($folder).'/'.$dir);
-
-                $reader = new ReaderXlsx;
-                $spreadsheet = $reader->load($excelFile);
-                $sheet = $spreadsheet->getActiveSheet();
-                // Get the highest row and column numbers referenced in the worksheet
-                $highestColumn = $sheet->getHighestColumn();  // e.g 'F'
-                $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);  // e.g. 5
-
-                $row = $request->row;
-                $column = null;
-                for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                    $value = $sheet->getCell([$col, 4])->getValue();
-                    if ($value == $request->column) {
-                        $column = $col;
-                        break;
-                    }
-                }
-
-                $sheet->setCellValue([$column, $row], $filename);
-
-                $writer = new WriterXlsx($spreadsheet);
-                $writer->save($excelFile);
-
-                $transactionDate = now()->toDateTimeString();
-                ProductBrochureLog::insert([
-                    'name' => uniqid(),
-                    'creation' => $transactionDate,
-                    'modified' => $transactionDate,
-                    'modified_by' => $request->ip(),
-                    'owner' => $request->ip(),
-                    'project' => $folder,
-                    'filename' => $filename,
-                    'created_by' => $request->ip(),
-                    'transaction_date' => $transactionDate,
-                    'remarks' => 'For '.$dir,
-                    'transaction_type' => 'Upload Image',
-                ]);
-
-                DB::commit();
-
-                $data = [
-                    'src' => $filename,
-                    'item_image_id' => $request->item_image_id,
-                ];
-
-                return ApiResponse::success('Image uploaded.', $data);
+            if (! $request->hasFile('selected-file')) {
+                return ApiResponse::failure('No file selected.');
             }
-        } catch (Exception $e) {
-            DB::rollback();
 
-            return ApiResponse::failure('Something went wrong. Please try again.');
+            $file = $request->file('selected-file');
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
+
+            $folder = $request->project;
+            $dir = $request->filename;
+
+            $fileExt = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
+            if (! in_array($fileExt, $allowedExtensions)) {
+                return ApiResponse::failure('Sorry, only .jpeg, .jpg, .png and .webp files are allowed.');
+            }
+
+            $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME).'.'.$file->getClientOriginalExtension();
+            $destinationPath = storage_path('app/public/brochures');
+
+            if (! is_dir($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            $file->move($destinationPath, $filename);
+
+            $excelFile = storage_path('app/public/brochures/'.strtoupper($folder).'/'.$dir);
+
+            if (! file_exists($excelFile)) {
+                DB::rollBack();
+
+                return ApiResponse::failure('Brochure file not found. Save the brochure first.');
+            }
+
+            $reader = new ReaderXlsx;
+            $spreadsheet = $reader->load($excelFile);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestColumn = $sheet->getHighestColumn();
+            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+
+            $row = (int) $request->row;
+            $column = null;
+            for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                $value = $sheet->getCell([$col, 4])->getValue();
+                if ($value == $request->column) {
+                    $column = $col;
+                    break;
+                }
+            }
+
+            if ($column === null) {
+                DB::rollBack();
+
+                return ApiResponse::failure('Column not found in spreadsheet.');
+            }
+
+            $sheet->setCellValue([$column, $row], $filename);
+
+            $writer = new WriterXlsx($spreadsheet);
+            $writer->save($excelFile);
+
+            $transactionDate = now()->toDateTimeString();
+            ProductBrochureLog::insert([
+                'name' => uniqid(),
+                'creation' => $transactionDate,
+                'modified' => $transactionDate,
+                'modified_by' => $request->ip(),
+                'owner' => $request->ip(),
+                'project' => $folder,
+                'filename' => $filename,
+                'created_by' => $request->ip(),
+                'transaction_date' => $transactionDate,
+                'remarks' => 'For '.$dir,
+                'transaction_type' => 'Upload Image',
+            ]);
+
+            DB::commit();
+
+            $data = [
+                'src' => $filename,
+                'item_image_id' => $request->item_image_id,
+            ];
+
+            return ApiResponse::success('Image uploaded.', $data);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Brochure image upload failed: '.$e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            $message = config('app.debug')
+                ? $e->getMessage().' (in '.basename($e->getFile()).':'.$e->getLine().')'
+                : 'Something went wrong. Please try again.';
+
+            return ApiResponse::failure($message);
         }
-
-        return ApiResponse::failure('Something went wrong. Please try again.');
     }
 
     public function readFile($file)
     {
+        $path = is_object($file) && method_exists($file, 'getRealPath')
+            ? $file->getRealPath()
+            : $file;
         $reader = new ReaderXlsx;
-        $spreadsheet = $reader->load($file);
+        $spreadsheet = $reader->load($path);
         $sheet = $spreadsheet->getActiveSheet();
 
         // Get the highest row and column numbers referenced in the worksheet
@@ -321,11 +348,11 @@ class BrochureController extends Controller
     public function downloadBrochure($project, $file)
     {
         try {
-            if (! Storage::disk('public')->exists('/brochures/'.strtoupper($project).'/'.$file)) {  // check if file exists
+            if (! Storage::disk('upcloud')->exists('brochures/'.strtoupper($project).'/'.$file)) {  // check if file exists
                 return ApiResponse::failureLegacy('File not found');
             }
 
-            $storage = Storage::disk('public')->files('/brochures/'.strtoupper($project));
+            $storage = Storage::disk('upcloud')->files('brochures/'.strtoupper($project));
 
             $series = null;
             if ($storage) {
@@ -366,8 +393,8 @@ class BrochureController extends Controller
             $dir = $request->filename;
             $loc = $folder && $dir ? strtoupper($folder).'/'.$dir : null;
 
-            if ($loc && Storage::disk('public')->exists('brochures/'.$loc)) {
-                $excelFile = storage_path('/app/public/brochures/'.$loc);
+            if ($loc && file_exists(Storage::disk('upcloud')->path('brochures/'.$loc))) {
+                $excelFile = Storage::disk('upcloud')->path('brochures/'.$loc);
 
                 $reader = new ReaderXlsx;
                 $spreadsheet = $reader->load($excelFile);
@@ -617,7 +644,7 @@ class BrochureController extends Controller
                 ];
             }
 
-            $fumacoLogo = asset('storage/fumaco_logo.png');
+            $fumacoLogo = Storage::disk('upcloud')->path('fumaco_logo.png');
 
             if ($preview) {
                 return view('brochure.preview_loop', compact('content', 'project', 'customer', 'fumacoLogo'));
@@ -665,14 +692,14 @@ class BrochureController extends Controller
             $currentImages = [];
             foreach ($currentItemImages as $e) {
                 $filename = $e->image_path;
-                if (! Storage::disk('public')->exists('img/'.$filename) && $filename) {
+                if (! Storage::disk('upcloud')->exists('img/'.$filename) && $filename) {
                     $filename = explode('.', $filename)[0].'.webp';
                 }
                 // $base64 = $this->base64Image('/img/'.$filename);
 
                 $currentImages[] = [
                     'filename' => $filename,
-                    'filepath' => 'storage/img/'.$filename,
+                    'filepath' => Storage::disk('upcloud')->path('img/'.$filename),
                 ];
             }
 
@@ -683,7 +710,7 @@ class BrochureController extends Controller
                 $filepath = null;
                 if (isset($brochureImages[$i])) {
                     $filepath = $brochureImages[$i]->image_path.$brochureImages[$i]->image_filename;
-                    $filepath = asset($filepath);
+                    $filepath = Storage::disk('upcloud')->path($filepath);
                 }
                 $images['image'.$row] = [
                     'id' => isset($brochureImages[$i]) ? $brochureImages[$i]->name : null,
@@ -691,7 +718,7 @@ class BrochureController extends Controller
                 ];
             }
 
-            $fumacoLogo = asset('storage/fumaco_logo.png');
+            $fumacoLogo = Storage::disk('upcloud')->path('fumaco_logo.png');
 
             if (isset($request->get_images) && $request->get_images) {
                 return view('brochure.brochure_images', compact('images', 'currentImages'));
@@ -741,7 +768,7 @@ class BrochureController extends Controller
             }
 
             $imgCheck = collect($currentImages)->map(function ($q) {
-                return Storage::disk('public')->exists($q['filepath']) ? 1 : 0;
+                return Storage::disk('upcloud')->exists($q['filepath']) ? 1 : 0;
             })->max();
 
             return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'currentImages', 'imgCheck', 'remarks', 'fumacoLogo'));
@@ -776,7 +803,7 @@ class BrochureController extends Controller
                 $base = pathinfo($filename, PATHINFO_FILENAME);
                 $webpFilename = $base.'.webp';
                 $imagePath = 'img/';
-                $storedFilename = Storage::disk('public')->exists($imagePath.$webpFilename)
+                $storedFilename = Storage::disk('upcloud')->exists($imagePath.$webpFilename)
                     ? $webpFilename
                     : $filename;
             }
@@ -822,7 +849,7 @@ class BrochureController extends Controller
                     }
 
                     $webStream = fopen($webpPath, 'r');
-                    Storage::disk('public')->put("$imagePath$webpFilename", $webStream);
+                    Storage::disk('upcloud')->put("$imagePath$webpFilename", $webStream);
                     if (is_resource($webStream)) {
                         fclose($webStream);
                     }
@@ -839,7 +866,7 @@ class BrochureController extends Controller
 
                     $storedFilename = "$filename.$extension";
                     $fallbackStream = fopen($file->getPathname(), 'r');
-                    Storage::disk('public')->put("$imagePath$storedFilename", $fallbackStream);
+                    Storage::disk('upcloud')->put("$imagePath$storedFilename", $fallbackStream);
                     if (is_resource($fallbackStream)) {
                         fclose($fallbackStream);
                     }
@@ -870,7 +897,7 @@ class BrochureController extends Controller
                     'parent' => $itemCode,
                     'idx' => $request->image_idx,
                     'image_filename' => $storedFilename,
-                    'image_path' => "storage/$imagePath",
+                    'image_path' => Storage::disk('upcloud')->path($imagePath),
                 ]);
             }
 
@@ -890,7 +917,7 @@ class BrochureController extends Controller
 
             DB::commit();
 
-            $dataSrc = "storage/$imagePath$storedFilename";
+            $dataSrc = Storage::disk('upcloud')->path($imagePath.$storedFilename);
 
             Log::info('uploadImageForStandard success', [
                 'item_code' => $itemCode,

@@ -9,8 +9,8 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 trait GeneralTrait
 {
@@ -190,7 +190,7 @@ trait GeneralTrait
     {
         // $file = explode('.', $file);
         // $file = $file[0].'.webp';
-        return asset("storage/$file");
+        return Storage::disk('upcloud')->url($file);
         // if(!$file){
         //     return null;
         // }

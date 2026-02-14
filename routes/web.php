@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\Consignment\ConsignmentBeginningInventoryController;
 use App\Http\Controllers\Consignment\ConsignmentInventoryAuditController;
 use App\Http\Controllers\Consignment\ConsignmentPromodiserController;
@@ -8,6 +7,7 @@ use App\Http\Controllers\Consignment\ConsignmentReplenishController;
 use App\Http\Controllers\Consignment\ConsignmentSalesController;
 use App\Http\Controllers\Consignment\ConsignmentStockAdjustmentController;
 use App\Http\Controllers\Consignment\ConsignmentStockTransferController;
+use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\ConsignmentController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\GuideController;
@@ -331,4 +331,13 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
     Route::post('/remove_image', [BrochureController::class, 'removeImage']);
 
     Route::get('/download_image/{file}', [MainController::class, 'downloadImage']);
+
+    Route::get('/debug-upcloud', function () {
+        return [
+            'default_disk' => config('filesystems.default'),
+            'bucket' => config('filesystems.disks.upcloud.bucket'),
+            'key' => config('filesystems.disks.upcloud.key'),
+            'endpoint' => config('filesystems.disks.upcloud.endpoint'),
+        ];
+    });
 });

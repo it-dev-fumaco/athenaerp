@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="back-btn">
-                    <img src="{{ asset('storage/icon/back.png') }}" id="back-btn" class="w-100">
+                    <img src="{{ Storage::disk('upcloud')->url('icon/back.png') }}" id="back-btn" class="w-100">
                 </div>
                 <ul class="nav nav-tabs" id="ip-navs" role="tablist" style="font-size: 10pt;">
                     <li class="nav-item">

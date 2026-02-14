@@ -11,14 +11,18 @@ class EnsureBrochureDirectoryAndFilenamePipe implements Pipe
 {
     public function handle(mixed $passable, Closure $next): mixed
     {
-        $project = $passable->project;
-        $projectPath = '/brochures/'.strtoupper($project);
-
-        if (! Storage::disk('public')->exists($projectPath)) {
-            Storage::disk('public')->makeDirectory($projectPath);
+        if ($passable instanceof \Illuminate\Http\JsonResponse) {
+            return $passable;
         }
 
-        $storageFiles = Storage::disk('public')->files($projectPath);
+        $project = $passable->project;
+        $projectPath = 'brochures/'.strtoupper($project);
+
+        if (! Storage::disk('upcloud')->exists($projectPath)) {
+            Storage::disk('upcloud')->makeDirectory($projectPath);
+        }
+
+        $storageFiles = Storage::disk('upcloud')->files($projectPath);
         $series = $storageFiles ? (count($storageFiles) > 1 ? count($storageFiles) : 1) : null;
         $seriesSuffix = $series ? '-'.(string) $series : '';
 

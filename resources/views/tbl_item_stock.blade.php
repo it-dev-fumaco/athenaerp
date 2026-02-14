@@ -26,16 +26,16 @@
                             $rate = data_get($priceListRates, "{$row->item_code}.0.price_list_rate");
                             $priceListRate = $rate ? '₱ ' . number_format($rate, 2, '.', ',') : '-';
                         @endphp
-                        <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
-                            @if(!Storage::disk('public')->exists('/img/'.explode('.', $itemImage)[0].'.webp'))
-                                <img class="w-100" src="{{ asset('storage/') }}{{ $img }}">
-                            @elseif(!Storage::disk('public')->exists('/img/'.$itemImage))
-                                <img class="w-100" src="{{ asset('storage/') }}{{ $imgWebp }}">
+                        <a href="{{ Storage::disk('upcloud')->url($img) }}" class="view-images" data-item-code="{{ $row->item_code }}">
+                            @if(!Storage::disk('upcloud')->exists('/img/'.explode('.', $itemImage)[0].'.webp'))
+                                <img class="w-100" src="{{ Storage::disk('upcloud')->url($img) }}">
+                            @elseif(!Storage::disk('upcloud')->exists('/img/'.$itemImage))
+                                <img class="w-100" src="{{ Storage::disk('upcloud')->url($imgWebp) }}">
                             @else
                                 <picture>
-                                    <source srcset="{{ asset('storage'.$imgWebp) }}" type="image/webp" class="w-100">
-                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" class="w-100">
-                                    <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
+                                    <source srcset="{{ Storage::disk('upcloud')->url($imgWebp) }}" type="image/webp" class="w-100">
+                                    <source srcset="{{ Storage::disk('upcloud')->url($img) }}" type="image/jpeg" class="w-100">
+                                    <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="w-100">
                                 </picture>
                             @endif
                         </a>

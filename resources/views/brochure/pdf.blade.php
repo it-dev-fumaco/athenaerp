@@ -74,7 +74,7 @@
     </head>
     @php
         $fumacoLogo = storage_path('app/public/fumaco_logo.png');
-        $fumacoLogo = asset('storage/fumaco_logo.png');
+        $fumacoLogo = Storage::disk('upcloud')->url('fumaco_logo.png');
         $margin = '1.2in';
         $rows = 1;
         if(strlen($project) > 29){

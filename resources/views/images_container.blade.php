@@ -10,10 +10,10 @@
                 @if (!$image->original)
                     <a href="/download_image/{{ $image->image }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" data-download="{{ $image->image_path }}"><i class="fa fa-download"></i> Download Image</a>
                 @else
-                    <a href="{{ asset("storage/$image->image_path") }}" class="btn btn-primary hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ asset("storage/$image->image_path") }}"><i class="fa fa-download"></i> Download Image</a>
+                    <a href="{{ Storage::disk(upcloud)->url($image->image_path") }}" class="btn btn-primary hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ Storage::disk(upcloud)->url($image->image_path") }}"><i class="fa fa-download"></i> Download Image</a>
                 @endif
                 <center>
-                    <img class="modal-img" src="{{ asset("storage/$image->image_path") }}">
+                    <img class="modal-img" src="{{ Storage::disk(upcloud)->url($image->image_path") }}">
                 </center>
                 <span class="font-italic hidden-on-slide" style="font-size: 8pt; font-weight: 600; position: absolute; right: 10px; bottom: 2px; z-index: 999">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }} - {{ Carbon\Carbon::parse($image->creation)->format('M. d, Y h:i A') }}</span>
             </div>

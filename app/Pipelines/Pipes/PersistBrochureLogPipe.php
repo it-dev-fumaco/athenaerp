@@ -5,12 +5,17 @@ namespace App\Pipelines\Pipes;
 use App\Contracts\Pipeline\Pipe;
 use App\Models\ProductBrochureLog;
 use Closure;
+use Illuminate\Support\Facades\DB;
 
 class PersistBrochureLogPipe implements Pipe
 {
     public function handle(mixed $passable, Closure $next): mixed
     {
-        ProductBrochureLog::insert([
+        if ($passable instanceof \Illuminate\Http\JsonResponse) {
+            return $passable;
+        }
+
+        DB::table((new ProductBrochureLog)->getTable())->insert([
             'name' => uniqid(),
             'creation' => $passable->transactionDate,
             'modified' => $passable->transactionDate,

@@ -65,7 +65,7 @@
                                         <div class="col-9">
                                             <div class="row p-0 m-0 w-100">
                                                 <div class="col-2 d-flex justify-content-center align-items-center text-center">
-                                                    <img src="{{ asset("storage/$item->image") }}" class="image w-75" alt="">
+                                                    <img src="{{ Storage::disk(upcloud)->url($item->image") }}" class="image w-75" alt="">
                                                 </div>
                                                 <div class="col-6 d-flex justify-content-center align-items-center text-center">
                                                     <div class="row w-100 p-1">

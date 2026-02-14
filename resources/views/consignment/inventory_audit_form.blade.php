@@ -75,11 +75,11 @@
                                                     <div class="d-flex flex-row justify-content-start align-items-center">
                                                         <div class="p-1 text-left mx-auto">
                                                             <input type="hidden" name="item[{{ $row->item_code }}][description]" value="{!! strip_tags($row->description) !!}">
-                                                            <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $row->item_code }}">
+                                                            <a href="{{ Storage::disk('upcloud')->url($img) }}" class="view-images" data-item-code="{{ $row->item_code }}">
                                                                 <picture>
-                                                                    <source srcset="{{ asset('storage'.$imgWebp) }}" type="image/webp" alt="" width="40" height="40">
-                                                                    <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="" width="40" height="40">
-                                                                    <img src="{{ asset('storage'.$img) }}" alt="" width="40" height="40">
+                                                                    <source srcset="{{ Storage::disk('upcloud')->url($imgWebp) }}" type="image/webp" alt="" width="40" height="40">
+                                                                    <source srcset="{{ Storage::disk('upcloud')->url($img) }}" type="image/jpeg" alt="" width="40" height="40">
+                                                                    <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="" width="40" height="40">
                                                                 </picture>
                                                             </a>
                                                         </div>

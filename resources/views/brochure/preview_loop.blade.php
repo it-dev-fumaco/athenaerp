@@ -150,7 +150,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-center mt-4" style="min-height: 200px;">
-                                                <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
+                                                <img src="{{ Storage::disk('upcloud')->url('icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
                                             </div>
                                         </div>
                                     </div>
@@ -411,7 +411,7 @@
         var file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
         if (!file) {
             $('#browse-file-text').text('Browse File');
-            $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+            $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
             $('#upload-btn').attr('disabled', true);
             return;
         }
@@ -430,7 +430,7 @@
     });
 
     $(document).on('hidden.bs.modal', '.modal', function () {
-        $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+        $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
         $('#browse-file-text').text('Browse File');
         $('#image-upload-form-1')[0].reset();
         $('#image-upload-form')[0].reset();

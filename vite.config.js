@@ -7,6 +7,9 @@ import vue from '@vitejs/plugin-vue';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+    server: {
+        cors: true,
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/brochure.js'],

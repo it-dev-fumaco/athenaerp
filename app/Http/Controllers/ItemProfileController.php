@@ -432,7 +432,7 @@ class ItemProfileController extends Controller
             ->pluck('image_path');
 
         foreach ($removedImages as $img) {
-            Storage::delete('/img/'.$img);
+            Storage::disk('upcloud')->delete(Storage::disk('upcloud')->path($img));
         }
 
         ItemImages::query()
@@ -452,9 +452,9 @@ class ItemProfileController extends Controller
                 $fileIndex = 0;
                 $filename = "{$microTime}{$fileIndex}-{$request->item_code}";
                 $originalExtension = $file->getClientOriginalExtension();
-                $storagePath = 'img/';
-                $jpegFilename = "$filename.$originalExtension";
-                $webpFilename = "$filename.webp";
+                $storagePath = Storage::disk('upcloud')->path($img);
+                $jpegFilename = Storage::disk('upcloud')->path("$filename.$originalExtension");
+                $webpFilename = Storage::disk('upcloud')->path("$filename.webp");
 
                 $webp = Webp::make($file);
 
@@ -466,7 +466,7 @@ class ItemProfileController extends Controller
                 $webp->save($webpPath);
 
                 $webContents = file_get_contents($webpPath);
-                Storage::put("/img/$webpFilename", $webContents);
+                Storage::disk('upcloud')->put(Storage::disk('upcloud')->path($webpFilename), $webContents);
 
                 unlink($webpPath);
 
@@ -480,7 +480,7 @@ class ItemProfileController extends Controller
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => $webpFilename,
+                    'image_path' => Storage::disk('upcloud')->path($webpFilename),
                 ];
             }
 
@@ -504,13 +504,12 @@ class ItemProfileController extends Controller
 
         $images = collect($images)->map(function ($image) {
             $image->image = $image->image_path;
-            $image->image_path = $image->image_path ? '/img/'.$image->image_path : '/icon/no_img.png';
+            $image->image_path = $image->image_path ? Storage::disk('upcloud')->path($image->image_path) : Storage::disk('upcloud')->path('icon/no_img.png');
 
             $image->original = 1;
-            if (Storage::disk('public')->exists(explode('.', $image->image_path)[0].'.webp')) {
+            if (Storage::disk('upcloud')->exists(Storage::disk('upcloud')->path(explode('.', $image->image_path)[0]).'.webp')) {
                 $image->original = 0;
-                $image->image = explode('.', $image->image)[0].'.webp';
-                $image->image_path = explode('.', $image->image_path)[0].'.webp';
+                $image->image = Storage::disk('upcloud')->path(explode('.', $image->image_path)[0]).'.webp';
             }
 
             return $image;
@@ -524,7 +523,7 @@ class ItemProfileController extends Controller
         $images = ItemImages::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('image_path', 'name');
 
         return collect($images)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return Storage::disk('upcloud')->path("img/$image");
         });
     }
 

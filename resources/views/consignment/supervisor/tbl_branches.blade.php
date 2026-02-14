@@ -91,7 +91,7 @@
                                                 <div class="col-8 pt-2 pb-2 text-center border" style="font-size: 10pt;">
                                                     <div class="row">
                                                         <div class="col-2">
-                                                            <img src="{{ asset("storage/$image") }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive w-100 hover">
+                                                            <img src="{{ Storage::disk(upcloud)->url($image") }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $image)[0], '-') }}" class="img-responsive w-100 hover">
                                                         </div>
                                                         <div class="col-10 text-justify">
                                                             <b>{{ $itemCode }}</b>

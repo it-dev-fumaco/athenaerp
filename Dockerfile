@@ -32,6 +32,8 @@ RUN apt-get update && apt-get install -y \
         intl \
         opcache \
         ldap \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer

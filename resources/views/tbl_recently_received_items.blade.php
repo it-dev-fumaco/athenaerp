@@ -35,14 +35,14 @@
                 <div class="row">
                     <div class="col-2" style="display: flex; justify-content: center; align-items: center;">
                         @if(!Storage::disk('public')->exists('/img/'.$imgWebp))
-                            <img src="{{ asset('storage/').$img }}" class="img w-100">
+                            <img src="{{ Storage::disk('upcloud')->url($img) }}" class="img w-100">
                         @elseif(!Storage::disk('public')->exists('/img/'.$img))
-                            <img src="{{ asset('storage/').$imgWebp }}" class="img w-100">
+                            <img src="{{ Storage::disk('upcloud')->url($imgWebp) }}" class="img w-100">
                         @else
                             <picture>
-                                <source srcset="{{ asset('storage'.$imgWebp) }}" type="image/webp">
-                                <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg">
-                                <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
+                                <source srcset="{{ Storage::disk('upcloud')->url($imgWebp) }}" type="image/webp">
+                                <source srcset="{{ Storage::disk('upcloud')->url($img) }}" type="image/jpeg">
+                                <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
                             </picture>
                         @endif
                     </div>

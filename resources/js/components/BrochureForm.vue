@@ -145,15 +145,21 @@ function getFormData(readOnly = false) {
 
 function showModal() {
   if (!modalRef.value) return;
-  if (typeof window.bootstrap !== 'undefined' && window.bootstrap.Modal) {
+  if (typeof window.bootstrap?.Modal?.getOrCreateInstance === 'function') {
     modalInstance = window.bootstrap.Modal.getOrCreateInstance(modalRef.value);
     modalInstance.show();
+  } else if (typeof window.jQuery !== 'undefined') {
+    window.jQuery(modalRef.value).modal('show');
+    modalInstance = { hide: () => window.jQuery(modalRef.value).modal('hide') };
   }
 }
 
 function hideModal() {
-  if (modalInstance) {
+  if (!modalInstance) return;
+  if (typeof modalInstance.hide === 'function') {
     modalInstance.hide();
+  } else if (typeof window.jQuery !== 'undefined' && modalRef.value) {
+    window.jQuery(modalRef.value).modal('hide');
   }
 }
 
@@ -168,15 +174,45 @@ async function openPreviewModal() {
   modalBodyHtml.value = '';
   try {
     const { data } = await axios.post('/read_file', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'X-CSRF-TOKEN': props.csrfToken,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
       responseType: 'text',
     });
+    const trimmed = typeof data === 'string' ? data.trim() : '';
+    if (trimmed.startsWith('{')) {
+      try {
+        const json = JSON.parse(data);
+        if (json.status === 0 && typeof json.message === 'string') {
+          errorMessage.value = json.message;
+          return;
+        }
+      } catch (_) {}
+    }
     modalBodyHtml.value = data;
     await nextTick();
     showModal();
   } catch (err) {
-    const msg = err.response?.data?.message ?? err.response?.data ?? 'Something went wrong. Please contact your system administrator.';
-    errorMessage.value = typeof msg === 'string' ? msg : 'Something went wrong. Please contact your system administrator.';
+    const status = err.response?.status;
+    let data = err.response?.data;
+    if (typeof data === 'string' && data.trim().startsWith('{')) {
+      try {
+        data = JSON.parse(data);
+      } catch (_) {}
+    }
+    const msg = typeof data?.message === 'string'
+      ? data.message
+      : typeof data?.exc === 'string'
+        ? data.exc
+        : typeof data === 'string' && !data.startsWith('<')
+          ? data
+          : status
+            ? `Request failed (${status}). Check the browser console for details.`
+            : 'No response from server. Check your connection and that you are using the same URL (e.g. athenaerp.local) for the page.';
+    errorMessage.value = msg;
+    console.error('Brochure preview error:', status, data, err.message || err.code);
   } finally {
     modalLoading.value = false;
   }
@@ -192,16 +228,36 @@ async function submitGenerate() {
   generating.value = true;
   try {
     const { data } = await axios.post('/read_file', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'X-CSRF-TOKEN': props.csrfToken,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
     });
-    if (data && data.message) {
+    if (data && data.status === 1 && data.message) {
       window.location.href = data.message;
       return;
     }
-    errorMessage.value = 'Unexpected response. Please try again.';
+    errorMessage.value = (data && typeof data.message === 'string') ? data.message : 'Unexpected response. Please try again.';
   } catch (err) {
-    const msg = err.response?.data?.message ?? err.response?.data ?? 'Something went wrong. Please contact your system administrator.';
-    errorMessage.value = typeof msg === 'string' ? msg : 'Something went wrong. Please contact your system administrator.';
+    const status = err.response?.status;
+    let data = err.response?.data;
+    if (typeof data === 'string' && data.trim().startsWith('{')) {
+      try {
+        data = JSON.parse(data);
+      } catch (_) {}
+    }
+    const msg = typeof data?.message === 'string'
+      ? data.message
+      : typeof data?.exc === 'string'
+        ? data.exc
+        : typeof data === 'string' && !data.startsWith('<')
+          ? data
+          : status
+            ? `Request failed (${status}). Check the browser console for details.`
+            : 'No response from server. Check your connection and that you are using the same URL for the page.';
+    errorMessage.value = msg;
+    console.error('Brochure upload error:', status, data, err.message || err.code);
   } finally {
     generating.value = false;
   }

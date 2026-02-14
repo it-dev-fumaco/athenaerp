@@ -12,7 +12,7 @@
 				<div class="col-sm-12">
                     <h6 class="title m-1">Item Variants of <b>{{ $variantOf }}</b></h6>
                     <div style="position: absolute; right: 70px; top: -10px;">
-                        <img src="{{ asset('storage/icon/back.png') }}" style="width: 35px; cursor: pointer;" id="back-btn">
+                        <img src="{{ Storage::disk('upcloud')->url('icon/back.png') }}" style="width: 35px; cursor: pointer;" id="back-btn">
                     </div>
                     <div class="card card-secondary card-outline">
                         <div class="card-body p-0">

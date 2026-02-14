@@ -45,37 +45,34 @@ class ProductBrochureLog extends Model
     }
 
     /**
-     * Get human-readable duration from transaction date.
+     * Get human-readable duration from transaction date (e.g. "44m ago", "2h ago").
      */
     public function getHumanDurationAttribute(): string
     {
         $parsedDate = Carbon::parse($this->transaction_date);
-        $seconds = now()->diffInSeconds($parsedDate);
-        $minutes = now()->diffInMinutes($parsedDate);
-        $hours = now()->diffInHours($parsedDate);
-        $days = now()->diffInDays($parsedDate);
-        $months = now()->diffInMonths($parsedDate);
-        $years = now()->diffInYears($parsedDate);
+        $seconds = (int) now()->diffInSeconds($parsedDate, true);
+        $minutes = (int) now()->diffInMinutes($parsedDate, true);
+        $hours = (int) now()->diffInHours($parsedDate, true);
+        $days = (int) now()->diffInDays($parsedDate, true);
+        $months = (int) now()->diffInMonths($parsedDate, true);
+        $years = (int) now()->diffInYears($parsedDate, true);
 
-        if ($seconds <= 59) {
-            return $seconds.'s ago';
+        if ($years >= 1) {
+            return $years.'y ago';
         }
-        if ($minutes <= 59) {
-            return $minutes.'m ago';
-        }
-        if ($hours >= 1) {
-            return $hours.'h ago';
+        if ($months >= 1) {
+            return $months.'mo ago';
         }
         if ($days >= 1) {
             return $days.'d ago';
         }
-        if ($months >= 1) {
-            return $months.'m ago';
+        if ($hours >= 1) {
+            return $hours.'h ago';
         }
-        if ($years >= 1) {
-            return $years.'y ago';
+        if ($minutes >= 1) {
+            return $minutes.'m ago';
         }
 
-        return $minutes.'m ago';
+        return $seconds.'s ago';
     }
 }

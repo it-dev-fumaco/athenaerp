@@ -135,7 +135,7 @@ class ConsignmentBeginningInventoryController extends Controller
                     $price = $item->status == 'For Approval' ? $item->price : $consignmentDetails->consignment_price;
 
                     $item->image = isset($consignmentDetails->defaultImage->image_path) ? '/img/'.$consignmentDetails->defaultImage->image_path : '/icon/no_img.png';
-                    if (Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')) {
+                    if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
                         $item->image = explode('.', $item->image)[0].'.webp';
                     }
                 }
@@ -794,7 +794,7 @@ class ConsignmentBeginningInventoryController extends Controller
 
             $item = $items[$itemCode][0];
             $img = Arr::get($itemImages, $itemCode, $noImg);
-            $img = asset("storage/$img");
+            $img = Storage::disk('upcloud')->url($img);
 
             $max = $item->consigned_qty * 1;
 

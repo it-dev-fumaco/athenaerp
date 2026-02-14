@@ -90,7 +90,7 @@
                         <td class="text-center p-1">
                             <div class="row">
                                 <div class="col-2 p-1">
-                                    <img src="{{ asset("storage/$image") }}" class="w-100">
+                                    <img src="{{ Storage::disk(upcloud)->url($image") }}" class="w-100">
                                 </div>
                                 <div class="col-10 text-left">
                                     <b>{{ $itemCode }}</b> - <span>{{ strip_tags($item->item_description) }}</span>

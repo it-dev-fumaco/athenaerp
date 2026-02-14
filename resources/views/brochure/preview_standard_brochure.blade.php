@@ -149,7 +149,7 @@
                         </div>
                         <div class="pdf-footer">
                             <div class="pdf-footer-company-logo">
-                                <img src="{{ asset('/storage/fumaco_logo.png') }}" width="155">
+                                <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="155">
                             </div>
                             <div class="pdf-footer-company-website">www.fumaco.com</div>
                             <div class="pdf-footer-contacts">
@@ -167,7 +167,7 @@
                     <div style="display: block">
                         <div class="left-container">
                             <div style="width: 430px !important; max-width: 100%;">
-                                <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%">
+                                <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="100%">
                             </div>
                         </div>
                         <div class="right-container">
@@ -217,7 +217,7 @@
                     <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
                         <div class="left-container">
                             <div style="width: 55%; display: inline-block; float: left;">
-                                <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
+                                <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
                             </div>
                             <div style="width: 38%; display: inline-block; float: right">
                                 <div class="pdf-footer-company-website" style="font-size: 12pt;">www.fumaco.com</div>
@@ -272,7 +272,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-center mt-4" style="min-height: 200px;">
-                                                <img src="{{ asset('/storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
+                                                <img src="{{ Storage::disk('upcloud')->url('icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
                                             </div>
                                         </div>
                                     </div>
@@ -309,9 +309,9 @@
                                                 <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>
                                                 <div class="c-img rounded">
                                                     <picture>
-                                                        <source srcset="{{ asset('storage/'.$imgWebp) }}" type="image/webp" alt="{{ $img }}">
-                                                        <source srcset="{{ asset('storage/'.$img) }}" type="image/jpeg" alt="{{ $img }}">
-                                                        <img src="{{ asset('storage/'.$img) }}" alt="{{ $img }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
+                                                        <source srcset="{{ Storage::disk('upcloud')->url($imgWebp) }}" type="image/webp" alt="{{ $img }}">
+                                                        <source srcset="{{ Storage::disk('upcloud')->url($img) }}" type="image/jpeg" alt="{{ $img }}">
+                                                        <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="{{ $img }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
                                                     </picture>
                                                 </div>
                                             </label>
@@ -590,7 +590,7 @@
             var file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
             if (!file) {
                 $('#browse-file-text').text('Browse File');
-                $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+                $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
                 $('#upload-btn').attr('disabled', true);
                 return;
             }
@@ -609,7 +609,7 @@
         });
 
         $(document).on('hidden.bs.modal', '.modal', function () {
-            $('#img-preview').addClass('d-none').attr('src', '{{ asset('/storage/icon/no_img.png') }}');
+            $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
             $('#browse-file-text').text('Browse File');
             $('#image-upload-form-1')[0].reset();
             $('#image-upload-form')[0].reset();

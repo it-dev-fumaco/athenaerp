@@ -76,7 +76,7 @@ class ConsignmentPromodiserController extends Controller
 
                 $item->transfer_qty = (int) $item->transfer_qty;
                 $item->image = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no_img.png';
-                if (Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')) {
+                if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
                     $item->image = explode('.', $item->image)[0].'.webp';
                 }
                 $item->price = $price;
@@ -491,7 +491,7 @@ class ConsignmentPromodiserController extends Controller
             $result = collect($list->items())->map(function ($stockEntry) use ($itemDetails) {
                 $stockEntry->items = collect($stockEntry->items)->map(function ($item) use ($itemDetails) {
                     $item->image = $item->defaultImage ? '/img/'.$item->defaultImage->image_path : 'icon/no_img.png';
-                    if (Storage::disk('public')->exists('/img/'.explode('.', $item->image)[0].'.webp')) {
+                    if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
                         $item->image = explode('.', $item->image)[0].'.webp';
                     }
                     $item->price = isset($itemDetails[$item->t_warehouse][$item->item_code]) ? (float) $itemDetails[$item->t_warehouse][$item->item_code][0]->consignment_price : 0;

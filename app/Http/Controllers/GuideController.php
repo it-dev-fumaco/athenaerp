@@ -12,7 +12,7 @@ class GuideController extends Controller
 
     private function getGuideImages(string $path, string $title): array
     {
-        $files = Storage::files($path);
+        $files = Storage::disk('upcloud')->files($path);
 
         $files = collect($files)->filter(function ($file) use ($path, $title) {
             return Str::startsWith($file, "$path/$title");
@@ -22,10 +22,10 @@ class GuideController extends Controller
             [$directory, $filename] = explode('/', $image);
             [$id] = explode('.', $filename);
 
-            return [$id => $this->base64Image($image)];
+            return [$id => Storage::disk('upcloud')->path($image)];
         })->all();
 
-        $noImg = $this->base64Image('icon/no_img.png');
+        $noImg = Storage::disk('upcloud')->path('icon/no_img.png');
         $images['no_img'] = $noImg;
 
         return $images;

@@ -504,10 +504,10 @@ class SearchController extends Controller
             $imgArr = [
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $itemImages[$currentKey]->image_path)[0]),
-                'orig_image_path' => asset('storage/').'/img/'.$img,
-                'orig_path' => Storage::disk('public')->exists('/img/'.$img) ? 1 : 0,
-                'webp_image_path' => asset('storage/').'/img/'.explode('.', $img)[0].'.webp',
-                'webp_path' => Storage::disk('public')->exists('/img/'.explode('.', $img)[0]) ? 1 : 0,
+                'orig_image_path' => Storage::disk('upcloud')->path($img),
+                'orig_path' => Storage::disk('upcloud')->exists($img) ? 1 : 0,
+                'webp_image_path' => Storage::disk('upcloud')->path(explode('.', $img)[0].'.webp'),
+                'webp_path' => Storage::disk('upcloud')->exists(explode('.', $img)[0].'.webp') ? 1 : 0,
                 'current_img_key' => $currentKey,
             ];
 

@@ -16,7 +16,7 @@
                                 <h6 class="font-weight-bold text-info text-uppercase my-3">User Manuals</h6>
                                 <ul class="list-group list-group-flush">
                                     @foreach ($genericManuals as $manual)
-                                        <li class="list-group-item p-2"><a href="{{ asset("storage/Manuals/$manual") }}" class="text-dark" target="_blank"><i class="fas fa-angle-right"></i> {{ $manual }}</a></li>
+                                        <li class="list-group-item p-2"><a href="{{ Storage::disk(upcloud)->url(Manuals/$manual") }}" class="text-dark" target="_blank"><i class="fas fa-angle-right"></i> {{ $manual }}</a></li>
                                     @endforeach
                                 </ul>
                             @endif
@@ -24,7 +24,7 @@
                                 <h6 class="font-weight-bold text-info text-uppercase my-3">Consignment Supervisor Manuals</h6>
                                 <ul class="list-group list-group-flush">
                                     @foreach ($consignmentSupervisorManuals as $manual)
-                                        <li class="list-group-item p-2"><a href="{{ asset("storage/Manuals/$manual") }}" class="text-dark" target="_blank"><i class="fas fa-angle-right"></i> {{ $manual }}</a></li>
+                                        <li class="list-group-item p-2"><a href="{{ Storage::disk(upcloud)->url(Manuals/$manual") }}" class="text-dark" target="_blank"><i class="fas fa-angle-right"></i> {{ $manual }}</a></li>
                                     @endforeach
                                 </ul>
                             @endif
@@ -32,7 +32,7 @@
                                 <h6 class="font-weight-bold text-info text-uppercase my-3">Promodiser Manuals</h6>
                                 <ul class="list-group list-group-flush">
                                     @foreach ($consignmentPromodiserManuals as $manual)
-                                        <li class="list-group-item p-2"><a href="{{ asset("storage/Manuals/$manual") }}" class="text-dark" target="_blank"><i class="fas fa-angle-right"></i> {{ $manual }}</a></li>
+                                        <li class="list-group-item p-2"><a href="{{ Storage::disk(upcloud)->url(Manuals/$manual") }}" class="text-dark" target="_blank"><i class="fas fa-angle-right"></i> {{ $manual }}</a></li>
                                     @endforeach
                                 </ul>
                             @endif

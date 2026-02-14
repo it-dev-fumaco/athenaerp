@@ -219,7 +219,7 @@
                                                                 </div>
                                                                 <div class="d-flex flex-row justify-content-center justify-content-xl-start align-items-center">
                                                                     <div class="p-1 col-2 col-xl-1 text-center">
-                                                                        <img src="{{ asset("storage/$image") }}" class="img-thumbnail" alt="User Image" width="100%">
+                                                                        <img src="{{ Storage::disk(upcloud)->url($image") }}" class="img-thumbnail" alt="User Image" width="100%">
                                                                     </div>
                                                                     <div class="p-1 col-5 col-xl-7 m-0" style="font-size: 9pt">
                                                                         <span class="font-weight-bold font-responsive item-code">{{ $itemCode }}</span>

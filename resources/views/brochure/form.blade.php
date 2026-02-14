@@ -102,7 +102,7 @@
         <div
           id="brochure-form-app"
           data-csrf="{{ csrf_token() }}"
-          data-template-url="{{ asset('storage/templates/AthenaERP - Brochure-Import-Template.xlsx') }}"
+          data-template-url="{{ Storage::disk('upcloud')->url('templates/AthenaERP - Brochure-Import-Template.xlsx') }}"
         ></div>
       </div>
 
@@ -135,6 +135,7 @@
     </div>
 
     @vite(['resources/js/brochure.js'])
+    <script src="{{ asset('/updated/plugins/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('/updated/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
   </body>
 </html>

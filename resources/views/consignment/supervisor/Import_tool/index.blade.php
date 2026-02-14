@@ -236,7 +236,7 @@
                 @endif
                 <div class="col-12 pt-3">
                   <button type="button" id="submit-form-btn" class="btn btn-primary btn-lg btn-block mb-3">Submit</button>
-                  <a href="{{ asset('storage/templates/AthenaERP - Consignment-Sales-Report-Template.xlsx') }}"
+                  <a href="{{ Storage::disk('upcloud')->url('templates/AthenaERP - Consignment-Sales-Report-Template.xlsx') }}"
                     class="btn btn-info btn-block" type="button">Download Template</a>
                 </div>
               </div>

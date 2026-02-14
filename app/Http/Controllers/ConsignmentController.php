@@ -27,7 +27,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReaderXlsx;
 
 class ConsignmentController extends Controller
 {
@@ -798,11 +799,11 @@ class ConsignmentController extends Controller
             $project = $request->project;
             $branch = $request->branch;
             $customerPurchaseOrder = $request->cpo;
-            $path = request()->file('selected_file')->storeAs('tmp', request()->file('selected_file')->getClientOriginalName().uniqid(), 'local');
+            $path = request()->file('selected_file')->storeAs('tmp', request()->file('selected_file')->getClientOriginalName().uniqid(), 'upcloud');
 
-            $path = storage_path().'/app/'.$path;
-            $reader = new ReaderXlsx;
-            $spreadsheet = $reader->load($path);
+            $file = Storage::disk('upcloud')->path($path);
+            $reader = new XlsxReaderXlsx;
+            $spreadsheet = $reader->load($file);
 
             $sheet = $spreadsheet->getActiveSheet();
 

@@ -295,7 +295,7 @@
                                                                                 @forelse ($inv->items as $i => $item)
                                                                                     @php
                                                                                         $target = $inv->name.'-'.$item->item_code;
-                                                                                        $img = asset("storage/$item->image");
+                                                                                        $img = Storage::disk(upcloud)->url($item->image");
                                                                                     @endphp
                                                                                     <tr id="row-{{ $target }}" class="{{ $item->item_code }}">
                                                                                         <td class="text-center p-1 align-middle">
@@ -384,7 +384,7 @@
                                                                                                                             <picture>
                                                                                                                                 <source class="src-placeholder" id="{{ $target }}-replacement-webp" srcset="" type="image/webp">
                                                                                                                                 <source class="src-placeholder" id="{{ $target }}-replacement-img-src" srcset="" type="image/jpeg">
-                                                                                                                                <img class="d-block w-100 src-placeholder" id="{{ $target }}-replacement-img" src="{{ asset('storage/').$img }}" alt="">
+                                                                                                                                <img class="d-block w-100 src-placeholder" id="{{ $target }}-replacement-img" src="{{ Storage::disk('upcloud')->url($img) }}" alt="">
                                                                                                                             </picture>
                                                                                                                         </div>
                                                                                                                         <div class="p-2 col-10 vertically-align-element">
