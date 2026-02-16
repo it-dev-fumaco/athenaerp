@@ -133,7 +133,7 @@ class ItemProfileController extends Controller
         $itemImages = ItemImages::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('image_path');
 
         $itemImages = collect($itemImages)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return $this->base64Image("/item-images/$image");
         });
 
         $noImg = $this->base64Image('/icon/no_img.png');
@@ -159,7 +159,7 @@ class ItemProfileController extends Controller
             ->toArray();
         foreach ($productionItemAlternatives as $a) {
             $a = (object) $a;
-            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/item-images/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
             $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $a->item_code, 0);
@@ -210,7 +210,7 @@ class ItemProfileController extends Controller
             $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
             foreach ($q as $a) {
-                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/item-images/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
                 $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                 $totalReserved = $totalConsumed = 0;
@@ -253,7 +253,7 @@ class ItemProfileController extends Controller
                 $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
                 foreach ($q as $a) {
-                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/img/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/item-images/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
                     $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                     $totalReserved = $totalConsumed = 0;
@@ -423,75 +423,84 @@ class ItemProfileController extends Controller
 
     public function uploadItemImage(Request $request)
     {
-        $existingImages = $request->existing_images ? $request->existing_images : [];
-        $removedImages = ItemImages::query()
-            ->where('parent', $request->item_code)
-            ->when($existingImages, function ($query) use ($existingImages) {
-                $query->whereNotIn('name', $existingImages);
-            })
-            ->pluck('image_path');
-
-        foreach ($removedImages as $img) {
-            Storage::disk('upcloud')->delete(Storage::disk('upcloud')->path($img));
+        $existingImages = $request->existing_images ?? [];
+    
+        $query = ItemImages::query()
+            ->where('parent', $request->item_code);
+    
+        if (!empty($existingImages)) {
+            $query->whereNotIn('name', $existingImages);
         }
-
-        ItemImages::query()
-            ->where('parent', $request->item_code)
-            ->when($existingImages, function ($query) use ($existingImages) {
-                $query->whereNotIn('name', $existingImages);
-            })
-            ->delete();
-
+    
+        $removedImages = $query->pluck('image_path')->toArray();
+    
+        // Delete from cloud
+        if (!empty($removedImages)) {
+            Storage::disk('upcloud')->delete($removedImages);
+        }
+    
+        // Delete DB records
+        $query->delete();
+    
         $now = now();
+    
         if ($request->hasFile('item_image')) {
+    
             $files = $request->file('item_image');
-
             $itemImagesArr = [];
+    
             foreach ($files as $i => $file) {
-                $microTime = round(microtime(true));
-                $fileIndex = 0;
-                $filename = "{$microTime}{$fileIndex}-{$request->item_code}";
-                $originalExtension = $file->getClientOriginalExtension();
-                $storagePath = Storage::disk('upcloud')->path($img);
-                $jpegFilename = Storage::disk('upcloud')->path("$filename.$originalExtension");
-                $webpFilename = Storage::disk('upcloud')->path("$filename.webp");
-
+    
+                // Unique filename
+                $filename = uniqid() . '-' . $request->item_code . '.webp';
+                $storageKey = "items/{$filename}";
+    
+                // Convert to webp
                 $webp = Webp::make($file);
-
-                if (! File::exists(public_path('temp'))) {
-                    File::makeDirectory(public_path('temp'), 0755, true);
+    
+                // Save temporarily
+                $tempPath = storage_path("app/temp/$filename");
+    
+                if (!File::exists(dirname($tempPath))) {
+                    File::makeDirectory(dirname($tempPath), 0755, true);
                 }
-
-                $webpPath = public_path("temp/$webpFilename");
-                $webp->save($webpPath);
-
-                $webContents = file_get_contents($webpPath);
-                Storage::disk('upcloud')->put(Storage::disk('upcloud')->path($webpFilename), $webContents);
-
-                unlink($webpPath);
-
+    
+                $webp->save($tempPath);
+    
+                // Upload to cloud
+                Storage::disk('upcloud')->put(
+                    $storageKey,
+                    file_get_contents($tempPath)
+                );
+    
+                unlink($tempPath);
+    
                 $itemImagesArr[] = [
                     'name' => uniqid(),
-                    'creation' => $now->toDateTimeString(),
-                    'modified' => $now->toDateTimeString(),
+                    'creation' => $now,
+                    'modified' => $now,
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
                     'idx' => $i + 1,
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
-                    'image_path' => Storage::disk('upcloud')->path($webpFilename),
+                    'image_path' => $storageKey, // store only object key
                 ];
             }
-
-            ItemImages::query()->insert($itemImagesArr);
-
-            return response()->json(['message' => 'Item image for '.$request->item_code.' has been uploaded.']);
-        } else {
-            return response()->json(['message' => 'Item image for '.$request->item_code.' has been updated.']);
+    
+            ItemImages::insert($itemImagesArr);
+    
+            return response()->json([
+                'message' => 'Item image for ' . $request->item_code . ' has been uploaded.'
+            ]);
         }
+    
+        return response()->json([
+            'message' => 'Item image for ' . $request->item_code . ' has been updated.'
+        ]);
     }
-
+    
     public function loadItemImages($itemCode, Request $request)
     {
         $images = ItemImages::where('parent', $itemCode)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->orderBy('idx', 'asc')->get();

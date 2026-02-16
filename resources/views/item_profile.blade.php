@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="back-btn">
-                    <img src="{{ Storage::disk('upcloud')->url('icon/back.png') }}" id="back-btn" class="w-100">
+                    <img src="{{ asset('storage/icon/back.png') }}" id="back-btn" class="w-100">
                 </div>
                 <ul class="nav nav-tabs" id="ip-navs" role="tablist" style="font-size: 10pt;">
                     <li class="nav-item">
@@ -670,7 +670,7 @@
                                 <span class="text-muted font-weight-normal">| Manage item files across different categories</span>
                             </h5>
                         </div>
-                        @if (in_array($user_group, ['Inventory Manager', 'Director']) || in_array(Auth::user()->department, ['Information Technology', 'Engineering']))
+                        @if (in_array($userGroup, ['Inventory Manager', 'Director']) || in_array(Auth::user()->department, ['Information Technology', 'Engineering']))
                             <div class="col-4">
                                 <div class="card">
                                     <div class="card-header">
@@ -679,7 +679,7 @@
                                         </h5>
 
                                         <div class="card-tools">
-                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $item_details->name }}" data-file-type="Supplier Brochure"><i class="fas fa-upload"></i></button>
+                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $itemDetails->name }}" data-file-type="Supplier Brochure"><i class="fas fa-upload"></i></button>
                                         </div>
                                     </div>
                                     <div class="card-body p-0" id="supplier-brochure-files-div">
@@ -697,7 +697,7 @@
 
                                         </h5>
                                         <div class="card-tools">
-                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $item_details->name }}" data-file-type="Photometric Data"><i class="fas fa-upload"></i></button>
+                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $itemDetails->name }}" data-file-type="Photometric Data"><i class="fas fa-upload"></i></button>
                                         </div>
                                     </div>
                                     <div class="card-body p-0" id="photometric-data-files-div">
@@ -712,7 +712,7 @@
                                         <small class="d-block text-muted text-xs mt-1">Upload IES (Illuminating Engineering Society) lighting files</small>
                                         </h5>
                                         <div class="card-tools">
-                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $item_details->name }}" data-file-type="IES Files"><i class="fas fa-upload"></i></button>
+                                            <button class="btn btn-sm btn-primary upload-files-btn" data-item-code="{{ $itemDetails->name }}" data-file-type="IES Files"><i class="fas fa-upload"></i></button>
                                         </div>
                                     </div>
                                     <div class="card-body p-0" id="ies-files-div">

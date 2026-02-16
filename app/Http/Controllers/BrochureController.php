@@ -108,7 +108,7 @@ class BrochureController extends Controller
         try {
             ini_set('max_execution_time', '300');
             $projectParam = trim($project);
-            $file = Storage::disk('upcloud')->path('brochures/'.$projectParam.'/'.$filename);
+            $file = Storage::disk('upcloud')->path('item-brochures/'.$projectParam.'/'.$filename);
 
             if (! file_exists($file)) {
                 return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
@@ -126,7 +126,7 @@ class BrochureController extends Controller
             $tableOfContents = $fileContents['table_of_contents'];
 
             if (isset($request->pdf) && $request->pdf) {
-                $storage = Storage::disk('upcloud')->files('brochures/'.strtoupper($project));
+                $storage = Storage::disk('upcloud')->files('item-brochures/'.strtoupper($project));
 
                 $series = null;
                 if ($storage) {
@@ -169,7 +169,7 @@ class BrochureController extends Controller
             }
 
             $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME).'.'.$file->getClientOriginalExtension();
-            $destinationPath = storage_path('app/public/brochures');
+            $destinationPath = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($folder));
 
             if (! is_dir($destinationPath)) {
                 mkdir($destinationPath, 0755, true);
@@ -177,7 +177,7 @@ class BrochureController extends Controller
 
             $file->move($destinationPath, $filename);
 
-            $excelFile = storage_path('app/public/brochures/'.strtoupper($folder).'/'.$dir);
+            $excelFile = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($folder).'/'.$dir);
 
             if (! file_exists($excelFile)) {
                 DB::rollBack();
@@ -394,8 +394,8 @@ class BrochureController extends Controller
             $dir = $request->filename;
             $loc = $folder && $dir ? strtoupper($folder).'/'.$dir : null;
 
-            if ($loc && file_exists(Storage::disk('upcloud')->path('brochures/'.$loc))) {
-                $excelFile = Storage::disk('upcloud')->path('brochures/'.$loc);
+            if ($loc && file_exists(Storage::disk('upcloud')->path('item-brochures/'.$loc))) {
+                $excelFile = Storage::disk('upcloud')->path('item-brochures/'.$loc);
 
                 $reader = new ReaderXlsx;
                 $spreadsheet = $reader->load($excelFile);
@@ -645,7 +645,7 @@ class BrochureController extends Controller
                 ];
             }
 
-            $fumacoLogo = Storage::disk('upcloud')->path('fumaco_logo.png');
+            $fumacoLogo = asset('storage/fumaco_logo.png');
 
             if ($preview) {
                 return view('brochure.preview_loop', compact('content', 'project', 'customer', 'fumacoLogo'));
@@ -693,14 +693,14 @@ class BrochureController extends Controller
             $currentImages = [];
             foreach ($currentItemImages as $e) {
                 $filename = $e->image_path;
-                if (! Storage::disk('upcloud')->exists('img/'.$filename) && $filename) {
+                if (! Storage::disk('upcloud')->exists('item-images/'.$filename) && $filename) {
                     $filename = explode('.', $filename)[0].'.webp';
                 }
                 // $base64 = $this->base64Image('/img/'.$filename);
 
                 $currentImages[] = [
                     'filename' => $filename,
-                    'filepath' => Storage::disk('upcloud')->path('img/'.$filename),
+                    'filepath' => Storage::disk('upcloud')->path('item-images/'.$filename),
                 ];
             }
 
@@ -711,7 +711,7 @@ class BrochureController extends Controller
                 $filepath = null;
                 if (isset($brochureImages[$i])) {
                     $filepath = $brochureImages[$i]->image_path.$brochureImages[$i]->image_filename;
-                    $filepath = Storage::disk('upcloud')->path($filepath);
+                    $filepath = Storage::disk('upcloud')->path('item-brochures/'.$filepath);
                 }
                 $images['image'.$row] = [
                     'id' => isset($brochureImages[$i]) ? $brochureImages[$i]->name : null,
@@ -719,7 +719,7 @@ class BrochureController extends Controller
                 ];
             }
 
-            $fumacoLogo = Storage::disk('upcloud')->path('fumaco_logo.png');
+            $fumacoLogo = asset('storage/fumaco_logo.png');
 
             if (isset($request->get_images) && $request->get_images) {
                 return view('brochure.brochure_images', compact('images', 'currentImages'));
@@ -803,7 +803,7 @@ class BrochureController extends Controller
                 $filename = $request->selected_image;
                 $base = pathinfo($filename, PATHINFO_FILENAME);
                 $webpFilename = $base.'.webp';
-                $imagePath = 'img/';
+                $imagePath = 'item-images/';
                 $storedFilename = Storage::disk('upcloud')->exists($imagePath.$webpFilename)
                     ? $webpFilename
                     : $filename;
@@ -825,7 +825,7 @@ class BrochureController extends Controller
                 $extension = $file->getClientOriginalExtension();
 
                 // Paths for storage
-                $imagePath = 'brochures/';
+                $imagePath = 'item-brochures/';
                 // $jpegFilename = "$filename.$extension";
                 $webpFilename = "$filename.webp";
 
@@ -898,7 +898,7 @@ class BrochureController extends Controller
                     'parent' => $itemCode,
                     'idx' => $request->image_idx,
                     'image_filename' => $storedFilename,
-                    'image_path' => Storage::disk('upcloud')->path($imagePath),
+                    'image_path' => Storage::disk('upcloud')->path('item-brochures/'.$imagePath),
                 ]);
             }
 
@@ -918,7 +918,7 @@ class BrochureController extends Controller
 
             DB::commit();
 
-            $dataSrc = Storage::disk('upcloud')->path($imagePath.$storedFilename);
+            $dataSrc = Storage::disk('upcloud')->path('item-brochures/'.$imagePath.$storedFilename);
 
             Log::info('uploadImageForStandard success', [
                 'item_code' => $itemCode,
@@ -1062,12 +1062,12 @@ class BrochureController extends Controller
                         }
                     }
                 } else {
-                    $upcloudPath = Storage::disk('upcloud')->path('brochures/'.strtoupper($project).'/'.$name);
+                    $upcloudPath = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($project).'/'.$name);
                     $tryPaths = [
                         $upcloudPath,
-                        Storage::disk('upcloud')->path('brochures/'.$name),
-                        storage_path('app/public/brochures/'.strtoupper($project).'/'.$name),
-                        storage_path('app/public/brochures/'.$name),
+                        Storage::disk('upcloud')->path('item-brochures/'.$name),
+                        Storage::disk('upcloud')->path('item-brochures/'.strtoupper($project).'/'.$name),
+                        Storage::disk('upcloud')->path('item-brochures/'.$name),
                     ];
                     foreach ($tryPaths as $p) {
                         if ($p && file_exists($p)) {

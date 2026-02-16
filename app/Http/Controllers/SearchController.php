@@ -187,7 +187,7 @@ class SearchController extends Controller
 
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
         $itemImages = collect($itemImages)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return $this->base64Image("/item-images/$image");
         });
         $noImgPlaceholder = $this->base64Image('/icon/no_img.png');
 
@@ -531,7 +531,7 @@ class SearchController extends Controller
 
         $imageCollection = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
         $imageCollection = collect($imageCollection)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return $this->base64Image("/item-images/$image");
         });
 
         $noImg = $this->base64Image('/icon/no_img.png');

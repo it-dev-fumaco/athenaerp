@@ -45,7 +45,7 @@
                                             @foreach ($ste->items as $item)
                                             @php
                                             $id = $ste->name.'-'.$item->item_code;
-                                            $img = Storage::disk(upcloud)->url($item->image");
+                                            $img = Storage::disk('upcloud')->url($item->image);
                                             @endphp
                                             <tr>
                                                 <td class="text-left p-1 align-middle"
