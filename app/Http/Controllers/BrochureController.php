@@ -822,6 +822,7 @@ class BrochureController extends Controller
                 $filenamewithextension = $file->getClientOriginalName();
                 $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
                 $filename = str_replace(' ', '-', $filename);
+
                 $extension = $file->getClientOriginalExtension();
 
                 // Paths for storage

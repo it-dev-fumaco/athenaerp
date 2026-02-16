@@ -52,7 +52,7 @@
                                             <img src="{{ $imgSrc }}" width="230" style="border: 2px solid;" id="{{ $item['item_code'] }}-0{{ $img }}-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="{{ $item['item_code'] }}-0{{ $img }}" data-id="{{ $imgId }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="{{ $item['item_code'] }}-0{{ $img }}" data-id="{{ $imgId }}" data-item-code="{{ $item['item_code'] }}" data-image-idx="{{ $img }}" data-image-filename="{{ isset($item['images']['image'.$img]['filepath']) ? basename($item['images']['image'.$img]['filepath']) : '' }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -483,6 +483,35 @@
                     $('#select-file-modal').modal('hide');
                 }
             },
+        });
+    });
+
+    $(document).on('click', '.remove-image-btn', function(e) {
+        e.preventDefault();
+        var el = $(this);
+        var details = {
+            'id': el.data('id'),
+            'item_image_id': el.data('item-image-id'),
+            'item_code': el.data('item-code'),
+            'image_idx': el.data('image-idx'),
+            'image_filename': el.data('image-filename'),
+            '_token': '{{ csrf_token() }}'
+        };
+        $.ajax({
+            url: '/remove_image',
+            type: 'POST',
+            data: details,
+            success: function(response){
+                if(response.status == 0){
+                    showNotification("danger", response.message, "fa fa-info");
+                }else{
+                    $('#' + details.item_image_id + '-actual').addClass('d-none');
+                    $('#' + details.item_image_id).removeClass('d-none');
+                }
+            },
+            error: function() {
+                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+            }
         });
     });
 </script>

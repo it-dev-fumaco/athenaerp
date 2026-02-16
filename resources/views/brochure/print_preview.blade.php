@@ -551,7 +551,7 @@
                                     if (isset($row['images']['image1']) && $row['images']['image1']) {
                                         $img1Actual = null;
                                         $img1Temp = 'd-none';
-                                        $img1Src = Storage::disk('upcloud')->url('brochures/' . $row['images']['image1']);
+                                        $img1Src = Storage::disk('upcloud')->url('item-brochures/' . strtoupper($row['project'] ?? '') . '/' . $row['images']['image1']);
                                     } else {
                                         $img1Actual = 'd-none';
                                         $img1Temp = null;
@@ -561,7 +561,7 @@
                                     if (isset($row['images']['image2']) && $row['images']['image2']) {
                                         $img2Actual = null;
                                         $img2Temp = 'd-none';
-                                        $img2Src = Storage::disk('upcloud')->url('brochures/' . $row['images']['image2']);
+                                        $img2Src = Storage::disk('upcloud')->url('item-brochures/' . strtoupper($row['project'] ?? '') . '/' . $row['images']['image2']);
                                     } else {
                                         $img2Actual = 'd-none';
                                         $img2Temp = null;
@@ -571,7 +571,7 @@
                                     if (isset($row['images']['image3']) && $row['images']['image3']) {
                                         $img3Actual = null;
                                         $img3Temp = 'd-none';
-                                        $img3Src = Storage::disk('upcloud')->url('brochures/' . $row['images']['image3']);
+                                        $img3Src = Storage::disk('upcloud')->url('item-brochures/' . strtoupper($row['project'] ?? '') . '/' . $row['images']['image3']);
                                     } else {
                                         $img3Actual = 'd-none';
                                         $img3Temp = null;
@@ -592,6 +592,8 @@
                                         <div class="custom-upload-btn">
                                             <i class="far fa-image"></i>
                                             <span>(230 x 230 px)<br>Add Image 1</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 {{-- 2 --}}
                                 <div class="img-cont {{ $img2Actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-02-actual">
@@ -629,6 +631,7 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
                                 <div style="width: 54%; float:left; color: #000">
                                     <p style="font-weight: bolder;">Fitting Type / Reference:</p>
                                     <p
@@ -706,7 +709,7 @@
                     <div class="brochure-print-block brochure-print-images" style="width: 420px !important; max-width: 100%;">
                         @for ($i = 1; $i <= 3; $i++)
                             @php
-                                $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? Storage::disk('upcloud')->url('brochures/'.$row['images']['image'.$i]) : null;
+                                $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? Storage::disk('upcloud')->url('item-brochures/'.strtoupper($row['project'] ?? '').'/'.$row['images']['image'.$i]) : null;
                             @endphp
                             <img id="item-{{ $r }}-0{{ $i }}-print-image" src="{{ $img ?? '#' }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="padding: .5px !important; border: 2px solid #0C0C0C !important; margin-bottom: 20px !important;">
                         @endfor
@@ -811,6 +814,7 @@
                 var details = {
                     item_code: el.data('item-code'),
                     image_idx: el.data('image-idx'),
+                    image_filename: el.data('image-filename'),
                     _token: '{{ csrf_token() }}'
                 };
 
