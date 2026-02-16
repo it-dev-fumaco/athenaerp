@@ -443,40 +443,56 @@ class BrochureController extends Controller
 	public function removeImage(Request $request)
 	{
 		DB::beginTransaction();
-	
+
 		try {
-			$image = DB::table('tabItem Brochure Image')
-				->where('parent', $request->item_code)
-				->where('idx', $request->image_idx)
-				->first();
-	
+			// Look up by item_code + image_idx (print_preview flow) or by id/name (standard brochure modal flow)
+			$image = null;
+			if (!empty($request->item_code) && $request->image_idx !== null && $request->image_idx !== '') {
+				$image = DB::table('tabItem Brochure Image')
+					->where('parent', $request->item_code)
+					->where('idx', $request->image_idx)
+					->first();
+			} elseif (!empty($request->id)) {
+				$image = DB::table('tabItem Brochure Image')->where('name', $request->id)->first();
+			}
+
 			if (!$image) {
+				// DB record already gone: still delete physical file if filename provided (clean up orphaned files)
+				$imageFilename = $request->image_filename ?? null;
+				if (!empty($imageFilename) && preg_match('/^[a-zA-Z0-9_.-]+$/', $imageFilename)) {
+					Storage::disk('public')->delete('brochures/'.$imageFilename);
+					DB::commit();
+					return response()->json([
+						'status' => 1,
+						'message' => 'Image removed.'
+					]);
+				}
+				DB::rollback();
 				return response()->json([
 					'status' => 0,
 					'message' => 'Image not found.'
 				]);
 			}
-	
+
 			// Delete physical file
 			Storage::disk('public')->delete('brochures/'.$image->image_filename);
-	
+
 			// Delete DB row
 			DB::table('tabItem Brochure Image')
-				->where('parent', $request->item_code)
-				->where('idx', $request->image_idx)
+				->where('name', $image->name)
 				->delete();
-	
+
 			DB::commit();
-	
+
 			return response()->json([
 				'status' => 1,
 				'message' => 'Image removed.'
 			]);
-	
+
 		} catch (Exception $e) {
-	
+
 			DB::rollback();
-	
+
 			return response()->json([
 				'status' => 0,
 				'message' => $e->getMessage()
