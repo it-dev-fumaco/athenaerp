@@ -67,7 +67,7 @@
                                             <img src="{{ $img1_src }}" width="230" style="border: 2px solid;" id="item-01-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-01" data-id="{{ $img1_id }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-01" data-id="{{ $img1_id }}" data-item-code="{{ $data['item_code'] }}" data-image-idx="1" data-image-filename="{{ isset($images['image1']['filepath']) ? basename($images['image1']['filepath']) : '' }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -86,7 +86,7 @@
                                             <img src="{{ $img2_src }}" width="230" style="border: 2px solid;" id="item-02-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-02" data-id="{{ $img2_id }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-02" data-id="{{ $img2_id }}" data-item-code="{{ $data['item_code'] }}" data-image-idx="2" data-image-filename="{{ isset($images['image2']['filepath']) ? basename($images['image2']['filepath']) : '' }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -105,7 +105,7 @@
                                             <img src="{{ $img3_src }}" width="230" style="border: 2px solid;" id="item-03-image">
                                             <div class="custom-overlay"></div>
                                             <div class="custom-hover-button">
-                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-03" data-id="{{ $img3_id }}">
+                                                <button type="button" class="btn btn-danger remove-image-btn" data-item-image-id="item-03" data-id="{{ $img3_id }}" data-item-code="{{ $data['item_code'] }}" data-image-idx="3" data-image-filename="{{ isset($images['image3']['filepath']) ? basename($images['image3']['filepath']) : '' }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -672,10 +672,13 @@
 
             var el = $(this);
             var details = {
-                'id': $(this).data('id'),
-                'item_image_id': $(this).data('item-image-id'),
+                'id': el.data('id'),
+                'item_image_id': el.data('item-image-id'),
+                'item_code': el.data('item-code'),
+                'image_idx': el.data('image-idx'),
+                'image_filename': el.data('image-filename'),
                 '_token': '{{ csrf_token() }}'
-            }
+            };
 
             $.ajax({
                 url: '/remove_image',

@@ -201,10 +201,13 @@
 
                 var el = $(this);
                 var details = {
-                    'id': $(this).data('id'),
-                    'item_image_id': $(this).data('item-image-id'),
+                    'id': el.data('id'),
+                    'item_image_id': el.data('item-image-id'),
+                    'item_code': el.data('item-code'),
+                    'image_idx': el.data('image-idx'),
+                    'image_filename': el.data('image-filename'),
                     '_token': '{{ csrf_token() }}'
-                }
+                };
 
                 $.ajax({
                     url: '/remove_image',

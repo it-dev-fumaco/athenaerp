@@ -442,7 +442,7 @@
                                         <div class="custom-overlay"></div>
                                         <div class="custom-hover-button">
                                             <button type="button" class="btn btn-danger remove-image-btn"
-                                                data-item-code="{{ $row['id'] }}" data-image-idx="1">
+                                                data-item-code="{{ $row['id'] }}" data-image-idx="1" data-image-filename="{{ $row['images']['image1'] ?? '' }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -468,7 +468,7 @@
                                         <div class="custom-overlay"></div>
                                         <div class="custom-hover-button">
                                             <button type="button" class="btn btn-danger remove-image-btn"
-                                                data-item-code="{{ $row['id'] }}" data-image-idx="2">
+                                                data-item-code="{{ $row['id'] }}" data-image-idx="2" data-image-filename="{{ $row['images']['image2'] ?? '' }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -494,7 +494,7 @@
                                         <div class="custom-overlay"></div>
                                         <div class="custom-hover-button">
                                             <button type="button" class="btn btn-danger remove-image-btn"
-                                                data-item-code="{{ $row['id'] }}" data-image-idx="3">
+                                                data-item-code="{{ $row['id'] }}" data-image-idx="3" data-image-filename="{{ $row['images']['image3'] ?? '' }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -681,6 +681,7 @@
                 var details = {
                     item_code: el.data('item-code'),
                     image_idx: el.data('image-idx'),
+                    image_filename: el.data('image-filename'),
                     _token: '{{ csrf_token() }}'
                 };
 
